@@ -26,14 +26,8 @@ except ImportError:
         "Reka is not installed. Please install it with `pip install reka-api`."
     )
 
-REKA_MODELS = [
-    "reka-edge",
-    "reka-flash",
-    "reka-core",
-    "reka-core-20240501",
-]
 
-DEFAULT_REKA_MODEL = "reka-core-20240501"
+DEFAULT_REKA_MODEL = "reka-flash"
 DEFAULT_REKA_MAX_TOKENS = 512
 
 
@@ -93,6 +87,28 @@ class RekaLLM(CustomLLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
+        """
+        Initialize the RekaLLM instance.
+
+        Args:
+            model (str): The Reka model to use, choose from ['reka-flash', 'reka-core', 'reka-edge'].
+            api_key (Optional[str]): The API key for Reka.
+            temperature (float): The temperature to use for sampling.
+            max_tokens (int): The maximum number of tokens to generate.
+            additional_kwargs (Optional[Dict[str, Any]]): Additional keyword arguments for Reka API calls.
+            callback_manager (Optional[CallbackManager]): A callback manager for handling callbacks.
+
+        Raises:
+            ValueError: If the Reka API key is not provided and not set in the environment.
+
+        Example:
+            >>> reka_llm = RekaLLM(
+            ...     model="reka-flash",
+            ...     api_key="your-api-key-here",
+            ...     temperature=0.7,
+            ...     max_tokens=100
+            ... )
+        """
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
@@ -136,6 +152,28 @@ class RekaLLM(CustomLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        """
+        Send a chat request to the Reka API.
+
+        Args:
+            messages (Sequence[ChatMessage]): A sequence of chat messages.
+            **kwargs: Additional keyword arguments for the API call.
+
+        Returns:
+            ChatResponse: The response from the Reka API.
+
+        Raises:
+            ValueError: If there's an error with the Reka API call.
+
+        Example:
+            >>> reka_llm = RekaLLM(api_key="your-api-key-here")
+            >>> messages = [
+            ...     ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+            ...     ChatMessage(role=MessageRole.USER, content="What's the capital of France?")
+            ... ]
+            >>> response = reka_llm.chat(messages)
+            >>> print(response.message.content)
+        """
         all_kwargs = self._get_all_kwargs(**kwargs)
         reka_messages = process_messages_for_reka(messages)
 
@@ -153,6 +191,24 @@ class RekaLLM(CustomLLM):
 
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        """
+        Send a completion request to the Reka API.
+
+        Args:
+            prompt (str): The prompt for completion.
+            **kwargs: Additional keyword arguments for the API call.
+
+        Returns:
+            CompletionResponse: The response from the Reka API.
+
+        Raises:
+            ValueError: If there's an error with the Reka API call.
+
+        Example:
+            >>> reka_llm = RekaLLM(api_key="your-api-key-here")
+            >>> response = reka_llm.complete("The capital of France is")
+            >>> print(response.text)
+        """
         all_kwargs = self._get_all_kwargs(**kwargs)
         try:
             response = self._client.chat.create(
@@ -169,6 +225,28 @@ class RekaLLM(CustomLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        """
+        Send a streaming chat request to the Reka API.
+
+        Args:
+            messages (Sequence[ChatMessage]): A sequence of chat messages.
+            **kwargs: Additional keyword arguments for the API call.
+
+        Returns:
+            ChatResponseGen: A generator yielding chat responses.
+
+        Raises:
+            ValueError: If there's an error with the Reka API call.
+
+        Example:
+            >>> reka_llm = RekaLLM(api_key="your-api-key-here")
+            >>> messages = [
+            ...     ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+            ...     ChatMessage(role=MessageRole.USER, content="Tell me a short story.")
+            ... ]
+            >>> for chunk in reka_llm.stream_chat(messages):
+            ...     print(chunk.delta, end="", flush=True)
+        """
         all_kwargs = self._get_all_kwargs(**kwargs)
         reka_messages = process_messages_for_reka(messages)
 
@@ -198,6 +276,25 @@ class RekaLLM(CustomLLM):
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        """
+        Send a streaming completion request to the Reka API.
+
+        Args:
+            prompt (str): The prompt for completion.
+            **kwargs: Additional keyword arguments for the API call.
+
+        Returns:
+            CompletionResponseGen: A generator yielding completion responses.
+
+        Raises:
+            ValueError: If there's an error with the Reka API call.
+
+        Example:
+            >>> reka_llm = RekaLLM(api_key="your-api-key-here")
+            >>> prompt = "Write a haiku about programming:"
+            >>> for chunk in reka_llm.stream_complete(prompt):
+            ...     print(chunk.delta, end="", flush=True)
+        """
         all_kwargs = self._get_all_kwargs(**kwargs)
         try:
             stream = self._client.chat.create_stream(
@@ -224,6 +321,35 @@ class RekaLLM(CustomLLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
+        """
+        Send an asynchronous chat request to the Reka API.
+
+        Args:
+            messages (Sequence[ChatMessage]): A sequence of chat messages.
+            **kwargs: Additional keyword arguments for the API call.
+
+        Returns:
+            ChatResponse: The response from the Reka API.
+
+        Raises:
+            ValueError: If there's an error with the Reka API call.
+
+        Example:
+            >>> import asyncio
+            >>> from llama_index.llms.reka import RekaLLM
+            >>> from llama_index.core.base.llms.types import ChatMessage, MessageRole
+            >>>
+            >>> async def main():
+            ...     reka_llm = RekaLLM(api_key="your-api-key-here")
+            ...     messages = [
+            ...         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+            ...         ChatMessage(role=MessageRole.USER, content="What's the meaning of life?")
+            ...     ]
+            ...     response = await reka_llm.achat(messages)
+            ...     print(response.message.content)
+            >>>
+            >>> asyncio.run(main())
+        """
         all_kwargs = self._get_all_kwargs(**kwargs)
         reka_messages = process_messages_for_reka(messages)
 
@@ -243,6 +369,31 @@ class RekaLLM(CustomLLM):
 
     @llm_completion_callback()
     async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        """
+        Send an asynchronous completion request to the Reka API.
+
+        Args:
+            prompt (str): The prompt for completion.
+            **kwargs: Additional keyword arguments for the API call.
+
+        Returns:
+            CompletionResponse: The response from the Reka API.
+
+        Raises:
+            ValueError: If there's an error with the Reka API call.
+
+        Example:
+            >>> import asyncio
+            >>> from llama_index.llms.reka import RekaLLM
+            >>>
+            >>> async def main():
+            ...     reka_llm = RekaLLM(api_key="your-api-key-here")
+            ...     prompt = "The capital of France is"
+            ...     response = await reka_llm.acomplete(prompt)
+            ...     print(response.text)
+            >>>
+            >>> asyncio.run(main())
+        """
         all_kwargs = self._get_all_kwargs(**kwargs)
         try:
             response = await self._aclient.chat.create(
@@ -259,6 +410,36 @@ class RekaLLM(CustomLLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
+        """
+        Send an asynchronous streaming chat request to the Reka API.
+
+        Args:
+            messages (Sequence[ChatMessage]): A sequence of chat messages.
+            **kwargs: Additional keyword arguments for the API call.
+
+        Returns:
+            ChatResponseAsyncGen: An asynchronous generator yielding chat responses.
+
+        Raises:
+            ValueError: If there's an error with the Reka API call.
+
+        Example:
+            >>> import asyncio
+            >>> from llama_index.llms.reka import RekaLLM
+            >>> from llama_index.core.base.llms.types import ChatMessage, MessageRole
+            >>>
+            >>> async def main():
+            ...     reka_llm = RekaLLM(api_key="your-api-key-here")
+            ...     messages = [
+            ...         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+            ...         ChatMessage(role=MessageRole.USER, content="Tell me a short story about a robot.")
+            ...     ]
+            ...     async for chunk in await reka_llm.astream_chat(messages):
+            ...         print(chunk.delta, end="", flush=True)
+            ...     print()  # New line after the story is complete
+            >>>
+            >>> asyncio.run(main())
+        """
         all_kwargs = self._get_all_kwargs(**kwargs)
         reka_messages = process_messages_for_reka(messages)
 
@@ -290,6 +471,32 @@ class RekaLLM(CustomLLM):
     async def astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
+        """
+        Send an asynchronous streaming completion request to the Reka API.
+
+        Args:
+            prompt (str): The prompt for completion.
+            **kwargs: Additional keyword arguments for the API call.
+
+        Returns:
+            CompletionResponseAsyncGen: An asynchronous generator yielding completion responses.
+
+        Raises:
+            ValueError: If there's an error with the Reka API call.
+
+        Example:
+            >>> import asyncio
+            >>> from llama_index.llms.reka import RekaLLM
+            >>>
+            >>> async def main():
+            ...     reka_llm = RekaLLM(api_key="your-api-key-here")
+            ...     prompt = "Write a haiku about artificial intelligence:"
+            ...     async for chunk in await reka_llm.astream_complete(prompt):
+            ...         print(chunk.delta, end="", flush=True)
+            ...     print()  # New line after the haiku is complete
+            >>>
+            >>> asyncio.run(main())
+        """
         all_kwargs = self._get_all_kwargs(**kwargs)
         try:
             stream = self._aclient.chat.create_stream(
