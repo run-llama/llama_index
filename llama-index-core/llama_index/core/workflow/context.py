@@ -82,6 +82,8 @@ class Context:
 
         Use `get` and `set` instead.
         """
+        msg = "`data` is deprecated, please use the `get` and `set` method to store data into the Context."
+        warnings.warn(msg, DeprecationWarning)
         return self._globals
 
     @property
@@ -92,6 +94,8 @@ class Context:
     @property
     def session(self) -> "Context":
         """This property is provided for backward compatibility."""
+        msg = "`session` is deprecated, please use the Context instance directly."
+        warnings.warn(msg, DeprecationWarning)
         return self
 
     def collect_events(
