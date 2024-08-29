@@ -1,4 +1,4 @@
-from typing import Dict, List, Sequence, Optional
+from typing import Any, Dict, List, Sequence, Optional
 from llama_index.core.llama_dataset.base import (
     BaseLlamaDataExample,
     BaseLlamaDataset,
@@ -8,7 +8,6 @@ from llama_index.core.llama_dataset.base import (
 )
 from llama_index.core.llms import LLM
 from llama_index.core.bridge.pydantic import Field
-from pandas import DataFrame as PandasDataFrame
 
 
 class SimpleExamplePrediction(BaseLlamaExamplePrediction):
@@ -36,8 +35,15 @@ class SimplePredictionDataset(BaseLlamaPredictionDataset):
 
     _prediction_type = SimpleExamplePrediction
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         data: Dict[str, List[str]] = {"label": []}
         if self.predictions:
             for t in self.predictions:
@@ -45,7 +51,7 @@ class SimplePredictionDataset(BaseLlamaPredictionDataset):
 
                 data["label"].append(t.label)
 
-        return PandasDataFrame(data)
+        return pd.DataFrame(data)
 
     @property
     def class_name(self) -> str:
@@ -82,8 +88,15 @@ class LabelledSimpleDataset(BaseLlamaDataset[LLM]):
         """
         return SimplePredictionDataset(predictions=predictions)
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         data: Dict[str, List[str]] = {
             "reference_label": [],
             "text": [],
@@ -99,7 +112,7 @@ class LabelledSimpleDataset(BaseLlamaDataset[LLM]):
             data["text"].append(example.text)
             data["text_by"].append(str(example.text_by))
 
-        return PandasDataFrame(data)
+        return pd.DataFrame(data)
 
     async def _apredict_example(
         self,

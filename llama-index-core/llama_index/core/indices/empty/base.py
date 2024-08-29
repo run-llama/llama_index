@@ -13,7 +13,6 @@ from llama_index.core.data_structs.data_structs import EmptyIndexStruct
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.llms.utils import LLMType
 from llama_index.core.schema import BaseNode
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.docstore.types import RefDocInfo
 
 
@@ -33,15 +32,12 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
     def __init__(
         self,
         index_struct: Optional[EmptyIndexStruct] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
             nodes=None,
             index_struct=index_struct or EmptyIndexStruct(),
-            service_context=service_context,
             **kwargs,
         )
 

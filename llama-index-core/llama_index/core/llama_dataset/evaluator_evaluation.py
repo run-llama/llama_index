@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import Dict, List, Sequence, Optional
+from typing import Any, Dict, List, Sequence, Optional
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.evaluation import (
@@ -17,7 +17,6 @@ from llama_index.core.llama_dataset.base import (
     BaseLlamaPredictionDataset,
     CreatedBy,
 )
-from pandas import DataFrame as PandasDataFrame
 
 
 class EvaluatorExamplePrediction(BaseLlamaExamplePrediction):
@@ -115,8 +114,15 @@ class EvaluatorPredictionDataset(BaseLlamaPredictionDataset):
 
     _prediction_type = EvaluatorExamplePrediction
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         data: Dict[str, List] = {
             "feedback": [],
             "score": [],
@@ -129,7 +135,7 @@ class EvaluatorPredictionDataset(BaseLlamaPredictionDataset):
             data["feedback"].append(pred.feedback)
             data["score"].append(pred.score)
 
-        return PandasDataFrame(data)
+        return pd.DataFrame(data)
 
     @property
     def class_name(self) -> str:
@@ -142,8 +148,15 @@ class LabelledEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
 
     _example_type = LabelledEvaluatorDataExample
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         data: Dict[str, List] = {
             "query": [],
             "answer": [],
@@ -156,6 +169,7 @@ class LabelledEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
             "reference_score": [],
             "reference_evaluation_by": [],
         }
+
         for example in self.examples:
             if not isinstance(example, LabelledEvaluatorDataExample):
                 raise ValueError(
@@ -172,7 +186,7 @@ class LabelledEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
             data["reference_score"].append(example.reference_score)
             data["reference_evaluation_by"].append(str(example.reference_evaluation_by))
 
-        return PandasDataFrame(data)
+        return pd.DataFrame(data)
 
     async def _apredict_example(  # type: ignore
         self,
@@ -289,8 +303,15 @@ class PairwiseEvaluatorPredictionDataset(BaseLlamaPredictionDataset):
 
     _prediction_type = PairwiseEvaluatorExamplePrediction
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         data: Dict[str, List] = {
             "feedback": [],
             "score": [],
@@ -305,7 +326,7 @@ class PairwiseEvaluatorPredictionDataset(BaseLlamaPredictionDataset):
             data["score"].append(prediction.score)
             data["ordering"].append(str(prediction.evaluation_source))
 
-        return PandasDataFrame(data)
+        return pd.DataFrame(data)
 
     @property
     def class_name(self) -> str:
@@ -340,8 +361,15 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
 
     _example_type = LabelledPairwiseEvaluatorDataExample
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         data: Dict[str, List] = {
             "query": [],
             "answer": [],
@@ -374,7 +402,7 @@ class LabelledPairwiseEvaluatorDataset(BaseLlamaDataset[BaseEvaluator]):
             data["reference_score"].append(example.reference_score)
             data["reference_evaluation_by"].append(str(example.reference_evaluation_by))
 
-        return PandasDataFrame(data)
+        return pd.DataFrame(data)
 
     async def _apredict_example(  # type: ignore
         self,

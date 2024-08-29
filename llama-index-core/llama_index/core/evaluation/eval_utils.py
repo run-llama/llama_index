@@ -10,7 +10,6 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
 
 from llama_index.core.async_utils import asyncio_module, asyncio_run
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -49,7 +48,7 @@ def get_results_df(
     eval_results_list: List[Dict[str, List[EvaluationResult]]],
     names: List[str],
     metric_keys: List[str],
-) -> pd.DataFrame:
+) -> Any:
     """Get results df.
 
     Args:
@@ -61,6 +60,13 @@ def get_results_df(
             List of metric keys to get.
 
     """
+    try:
+        import pandas as pd
+    except ImportError:
+        raise ImportError(
+            "Pandas is required to get results dataframes. Please install it with `pip install pandas`."
+        )
+
     metric_dict = defaultdict(list)
     metric_dict["names"] = names
     for metric_key in metric_keys:

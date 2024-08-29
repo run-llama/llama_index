@@ -76,9 +76,6 @@ class ReplicateMultiModal(MultiModalLLM):
         completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
-        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
-        self._completion_to_prompt = completion_to_prompt or (lambda x: x)
-
         super().__init__(
             model=model,
             temperature=temperature,
@@ -93,6 +90,8 @@ class ReplicateMultiModal(MultiModalLLM):
             image_key=image_key,
             callback_manager=callback_manager,
         )
+        self._messages_to_rompt = messages_to_prompt or generic_messages_to_prompt
+        self._completion_to_prompt = completion_to_prompt or (lambda x: x)
 
     @classmethod
     def class_name(cls) -> str:

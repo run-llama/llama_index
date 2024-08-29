@@ -14,12 +14,7 @@ from llama_index.core.data_structs.data_structs import IndexList
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.llms.llm import LLM
 from llama_index.core.schema import BaseNode, IndexNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    embed_model_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.utils import get_tqdm_iterable
 
@@ -57,15 +52,12 @@ class SummaryIndex(BaseIndex[IndexList]):
         objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[IndexList] = None,
         show_progress: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             show_progress=show_progress,
             objects=objects,
             **kwargs,
@@ -87,14 +79,12 @@ class SummaryIndex(BaseIndex[IndexList]):
         if retriever_mode == ListRetrieverMode.DEFAULT:
             return SummaryIndexRetriever(self, object_map=self._object_map, **kwargs)
         elif retriever_mode == ListRetrieverMode.EMBEDDING:
-            embed_model = embed_model or embed_model_from_settings_or_context(
-                Settings, self.service_context
-            )
+            embed_model = embed_model or Settings.embed_model
             return SummaryIndexEmbeddingRetriever(
                 self, object_map=self._object_map, embed_model=embed_model, **kwargs
             )
         elif retriever_mode == ListRetrieverMode.LLM:
-            llm = llm or llm_from_settings_or_context(Settings, self.service_context)
+            llm = llm or Settings.llm
             return SummaryIndexLLMRetriever(
                 self, object_map=self._object_map, llm=llm, **kwargs
             )

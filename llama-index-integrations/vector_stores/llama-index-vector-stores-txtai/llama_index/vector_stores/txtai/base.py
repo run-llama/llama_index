@@ -76,9 +76,9 @@ class TxtaiVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        self._txtai_index = cast(txtai.ann.ANN, txtai_index)
-
         super().__init__()
+
+        self._txtai_index = cast(txtai.ann.ANN, txtai_index)
 
     @classmethod
     def from_persist_dir(

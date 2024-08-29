@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, SerializeAsAny
 from llama_index.core.memory.types import (
     BaseMemory,
 )
@@ -25,10 +25,10 @@ class SimpleComposableMemory(BaseMemory):
             Retrieved messages from these sources get added to the system prompt message.
     """
 
-    primary_memory: BaseMemory = Field(
+    primary_memory: SerializeAsAny[BaseMemory] = Field(
         description="Primary memory source for chat agent.",
     )
-    secondary_memory_sources: List[BaseMemory] = Field(
+    secondary_memory_sources: List[SerializeAsAny[BaseMemory]] = Field(
         default_factory=list, description="Secondary memory sources."
     )
 

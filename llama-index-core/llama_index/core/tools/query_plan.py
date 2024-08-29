@@ -148,7 +148,7 @@ class QueryPlanTool(BaseTool):
         self, node: QueryNode, nodes_dict: Dict[int, QueryNode]
     ) -> ToolOutput:
         """Execute node."""
-        print_text(f"Executing node {node.json()}\n", color="blue")
+        print_text(f"Executing node {node.model_dump_json()}\n", color="blue")
         if len(node.dependencies) > 0:
             print_text(
                 f"Executing {len(node.dependencies)} child nodes\n", color="pink"

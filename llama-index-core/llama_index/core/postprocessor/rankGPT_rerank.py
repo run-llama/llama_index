@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, SerializeAsAny
 from llama_index.core.llms import LLM, ChatMessage, ChatResponse
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
@@ -31,7 +31,7 @@ class RankGPTRerank(BaseNodePostprocessor):
     verbose: bool = Field(
         default=False, description="Whether to print intermediate steps."
     )
-    rankgpt_rerank_prompt: BasePromptTemplate = Field(
+    rankgpt_rerank_prompt: SerializeAsAny[BasePromptTemplate] = Field(
         description="rankGPT rerank prompt."
     )
 

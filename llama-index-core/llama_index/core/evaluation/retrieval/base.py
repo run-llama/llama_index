@@ -3,10 +3,10 @@
 import asyncio
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Sequence, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from llama_index.core.async_utils import asyncio_run
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.evaluation.retrieval.metrics import resolve_metrics
 from llama_index.core.evaluation.retrieval.metrics_base import (
     BaseRetrievalMetric,
@@ -47,9 +47,7 @@ class RetrievalEvalResult(BaseModel):
 
     """
 
-    class Config:
-        arbitrary_types_allowed = True
-
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     query: str = Field(..., description="Query string")
     expected_ids: List[str] = Field(..., description="Expected ids")
     expected_texts: Optional[List[str]] = Field(
@@ -78,12 +76,10 @@ class RetrievalEvalResult(BaseModel):
 class BaseRetrievalEvaluator(BaseModel):
     """Base Retrieval Evaluator class."""
 
-    metrics: Sequence[BaseRetrievalMetric] = Field(
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    metrics: List[BaseRetrievalMetric] = Field(
         ..., description="List of metrics to evaluate"
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @classmethod
     def from_metric_names(

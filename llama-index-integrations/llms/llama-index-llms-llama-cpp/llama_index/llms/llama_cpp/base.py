@@ -159,7 +159,7 @@ class LlamaCPP(CustomLLM):
                     "Please check the path or provide a model_url to download."
                 )
             else:
-                self._model = Llama(model_path=model_path, **model_kwargs)
+                model = Llama(model_path=model_path, **model_kwargs)
         else:
             cache_dir = get_cache_dir()
             model_url = model_url or self._get_model_path_for_version()
@@ -170,7 +170,7 @@ class LlamaCPP(CustomLLM):
                 self._download_url(model_url, model_path)
                 assert os.path.exists(model_path)
 
-            self._model = Llama(model_path=model_path, **model_kwargs)
+            model = Llama(model_path=model_path, **model_kwargs)
 
         model_path = model_path
         generate_kwargs = generate_kwargs or {}
@@ -194,6 +194,7 @@ class LlamaCPP(CustomLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        self._model = model
 
     @classmethod
     def class_name(cls) -> str:

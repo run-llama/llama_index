@@ -26,8 +26,7 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from llama_index.core.schema import BaseNode, IndexNode, MetadataMode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.utils import get_tqdm_iterable
 
@@ -69,7 +68,6 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[KeywordTable] = None,
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         keyword_extract_template: Optional[BasePromptTemplate] = None,
         max_keywords_per_chunk: int = 10,
         use_async: bool = False,
@@ -78,7 +76,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
 
         self.max_keywords_per_chunk = max_keywords_per_chunk
         self.keyword_extract_template = (
@@ -92,7 +90,6 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             show_progress=show_progress,
             objects=objects,
             **kwargs,

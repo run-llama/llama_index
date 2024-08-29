@@ -1,7 +1,7 @@
 """Gemini embeddings file."""
 
 import os
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import google.generativeai as gemini
 from llama_index.core.base.embeddings.base import (
@@ -60,18 +60,18 @@ class GeminiEmbedding(BaseEmbedding):
         if transport:
             config_params["transport"] = transport
         # transport: A string, one of: [`rest`, `grpc`, `grpc_asyncio`].
-        gemini.configure(**config_params)
-        self._model = gemini
 
         super().__init__(
             api_key=api_key,
             model_name=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
+            title=title,
+            task_type=task_type,
             **kwargs,
         )
-        self.title = title
-        self.task_type = task_type
+        gemini.configure(**config_params)
+        self._model = gemini
 
     @classmethod
     def class_name(cls) -> str:

@@ -104,6 +104,13 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
                 "Pass the credential as a parameter or set the AZURE_INFERENCE_CREDENTIAL"
             )
 
+        super().__init__(
+            model_name=model_name or "unknown",
+            embed_batch_size=embed_batch_size,
+            callback_manager=callback_manager,
+            num_workers=num_workers,
+            **kwargs,
+        )
         self._client = EmbeddingsClient(
             endpoint=endpoint,
             credential=credential,
@@ -116,14 +123,6 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
             credential=credential,
             user_agent="llamaindex",
             **client_kwargs,
-        )
-
-        super().__init__(
-            model_name=model_name or "unknown",
-            embed_batch_size=embed_batch_size,
-            callback_manager=callback_manager,
-            num_workers=num_workers,
-            **kwargs,
         )
 
     @classmethod

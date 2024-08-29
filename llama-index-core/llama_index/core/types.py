@@ -16,7 +16,12 @@ from typing import (
 )
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
+)
+from llama_index.core.bridge.pydantic_core import CoreSchema, core_schema
 from llama_index.core.instrumentation import DispatcherSpanMixin
 
 Model = TypeVar("Model", bound=BaseModel)
@@ -30,11 +35,6 @@ RESPONSE_TEXT_TYPE = Union[BaseModel, str, TokenGen, TokenAsyncGen]
 # NOTE: this is necessary to make it compatible with pydantic
 class BaseOutputParser(DispatcherSpanMixin, ABC):
     """Output parser class."""
-
-    @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
-        """Avoids serialization issues."""
-        schema.update(type="object", default={})
 
     @abstractmethod
     def parse(self, output: str) -> Any:
@@ -55,6 +55,19 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
                 messages[-1].content = self.format(messages[-1].content or "")
 
         return messages
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source: Type[Any], handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.any_schema()
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> Dict[str, Any]:
+        json_schema = handler(core_schema)
+        return handler.resolve_ref_schema(json_schema)
 
 
 class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):

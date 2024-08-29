@@ -140,6 +140,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             index_name: DEPRECATED: Please use vector_index_name.
 
         """
+        super().__init__()
+
         if mongodb_client is not None:
             self._mongodb_client = cast(MongoClient, mongodb_client)
         else:
@@ -171,7 +173,6 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         self._fulltext_index_name = fulltext_index_name
         self._insert_kwargs = insert_kwargs or {}
         self._oversampling_factor = oversampling_factor
-        super().__init__()
 
     def add(
         self,

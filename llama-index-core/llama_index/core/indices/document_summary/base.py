@@ -31,12 +31,7 @@ from llama_index.core.schema import (
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    embed_model_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import get_tqdm_iterable
@@ -88,16 +83,11 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         summary_query: str = DEFAULT_SUMMARY_QUERY,
         show_progress: bool = False,
         embed_summaries: bool = True,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
-        self._embed_model = embed_model or embed_model_from_settings_or_context(
-            Settings, service_context
-        )
-
+        self._llm = llm or Settings.llm
+        self._embed_model = embed_model or Settings.embed_model
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
             llm=self._llm, response_mode=ResponseMode.TREE_SUMMARIZE
         )
@@ -107,7 +97,6 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             objects=objects,
@@ -226,7 +215,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
             summary_nodes_with_embedding = []
             for node in summary_nodes:
-                node_with_embedding = node.copy()
+                node_with_embedding = node.model_copy()
                 node_with_embedding.embedding = id_to_embed_map[node.node_id]
                 summary_nodes_with_embedding.append(node_with_embedding)
             self._vector_store.add(summary_nodes_with_embedding)

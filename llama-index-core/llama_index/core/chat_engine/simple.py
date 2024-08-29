@@ -10,12 +10,7 @@ from llama_index.core.chat_engine.types import (
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.types import Thread
 
 
@@ -48,12 +43,10 @@ class SimpleChatEngine(BaseChatEngine):
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
         llm: Optional[LLM] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "SimpleChatEngine":
         """Initialize a SimpleChatEngine from default parameters."""
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
 
         chat_history = chat_history or []
         memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
@@ -73,9 +66,7 @@ class SimpleChatEngine(BaseChatEngine):
             llm=llm,
             memory=memory,
             prefix_messages=prefix_messages,
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, service_context
-            ),
+            callback_manager=Settings.callback_manager,
         )
 
     @trace_method("chat")

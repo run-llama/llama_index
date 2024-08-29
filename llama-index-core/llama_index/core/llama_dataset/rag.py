@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.bridge.pydantic import Field
@@ -13,7 +13,6 @@ from llama_index.core.llama_dataset.base import (
     BaseLlamaPredictionDataset,
     CreatedBy,
 )
-from pandas import DataFrame as PandasDataFrame
 
 
 class RagExamplePrediction(BaseLlamaExamplePrediction):
@@ -83,8 +82,15 @@ class RagPredictionDataset(BaseLlamaPredictionDataset):
 
     _prediction_type = RagExamplePrediction
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         data: Dict[str, List] = {
             "response": [],
             "contexts": [],
@@ -97,7 +103,7 @@ class RagPredictionDataset(BaseLlamaPredictionDataset):
             data["response"].append(pred.response)
             data["contexts"].append(pred.contexts)
 
-        return PandasDataFrame(data)
+        return pd.DataFrame(data)
 
     @property
     def class_name(self) -> str:
@@ -110,8 +116,15 @@ class LabelledRagDataset(BaseLlamaDataset[BaseQueryEngine]):
 
     _example_type = LabelledRagDataExample
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
+
         data: Dict[str, List] = {
             "query": [],
             "reference_contexts": [],
@@ -130,7 +143,7 @@ class LabelledRagDataset(BaseLlamaDataset[BaseQueryEngine]):
             data["reference_answer_by"].append(str(example.reference_answer_by))
             data["query_by"].append(str(example.query_by))
 
-        return PandasDataFrame(data)
+        return pd.DataFrame(data)
 
     async def _apredict_example(  # type: ignore
         self,

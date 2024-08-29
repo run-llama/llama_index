@@ -49,7 +49,7 @@ class _TestEndEvent(BaseEvent):
 
 
 class _TestEventHandler(BaseEventHandler):
-    events = []
+    events: List[BaseEvent] = []
 
     @classmethod
     def class_name(cls):
