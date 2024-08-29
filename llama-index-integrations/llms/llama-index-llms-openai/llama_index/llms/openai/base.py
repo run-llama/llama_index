@@ -889,8 +889,6 @@ class OpenAI(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
-        print(f"TOOL CHOICE: {tool_choice}")
-
         return {
             "messages": messages,
             "tools": tool_specs or None,
