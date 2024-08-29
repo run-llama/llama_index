@@ -247,6 +247,8 @@ class Workflow(metaclass=_WorkflowMeta):
 
         # Bubble up the error if any step raised an exception
         if exception_raised:
+            # Make sure to stop streaming, in case the workflow terminated abnormally
+            ctx.write_event_to_stream(StopEvent())
             raise exception_raised
 
         # Raise WorkflowTimeoutError if the workflow timed out
