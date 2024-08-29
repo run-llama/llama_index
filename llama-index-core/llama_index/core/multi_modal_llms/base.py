@@ -93,13 +93,13 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
 
     @abstractmethod
     def complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self, prompt: str, image_documents: List[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         """Completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self, prompt: str, image_documents: List[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
         """Streaming completion endpoint for Multi-Modal LLM."""
 
@@ -123,13 +123,13 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
 
     @abstractmethod
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self, prompt: str, image_documents: List[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         """Async completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self, prompt: str, image_documents: List[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for Multi-Modal LLM."""
 

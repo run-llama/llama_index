@@ -190,7 +190,8 @@ class QueryFusionRetriever(BaseRetriever):
             for node_with_score in nodes_with_scores:
                 hash = node_with_score.node.hash
                 if hash in all_nodes:
-                    all_nodes[hash].score += node_with_score.score
+                    cur_score = all_nodes[hash].score or 0.0
+                    all_nodes[hash].score = cur_score + (node_with_score.score or 0.0)
                 else:
                     all_nodes[hash] = node_with_score
 
@@ -206,7 +207,9 @@ class QueryFusionRetriever(BaseRetriever):
             for node_with_score in nodes_with_scores:
                 hash = node_with_score.node.hash
                 if hash in all_nodes:
-                    max_score = max(node_with_score.score, all_nodes[hash].score)
+                    max_score = max(
+                        node_with_score.score or 0.0, all_nodes[hash].score or 0.0
+                    )
                     all_nodes[hash].score = max_score
                 else:
                     all_nodes[hash] = node_with_score
