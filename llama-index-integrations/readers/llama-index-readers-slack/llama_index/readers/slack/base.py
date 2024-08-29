@@ -11,7 +11,7 @@ from typing import Any, List, Optional, Dict
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
-
+from llama_index.core.async_utils import run_jobs
 
 logger = logging.getLogger(__name__)
 
@@ -235,6 +235,7 @@ class SlackReader(BasePydanticReader):
                     "channel": channel_id,
                     "cursor": next_cursor,
                     "latest": str(self.latest_date_timestamp),
+                    "limit": 800,  # limit is 1000
                 }
                 if self.earliest_date_timestamp is not None:
                     conversations_history_kwargs["oldest"] = str(
@@ -307,14 +308,26 @@ class SlackReader(BasePydanticReader):
                     **conversations_history_kwargs  # type: ignore
                 )
                 conversation_history = result["messages"]
+
                 # Print results
                 logger.info(
                     f"{len(conversation_history)} messages found in {channel_id}"
                 )
-                result_messages.extend(
-                    await self._aread_message(channel_id, message["ts"])
+
+                jobs = [
+                    self._aread_message(channel_id, message["ts"])
                     for message in conversation_history
+                ]
+
+                results = await run_jobs(
+                    jobs,
+                    show_progress=True,
+                    workers=5,
+                    desc="Reading slack messages",
                 )
+
+                result_messages.extend(results)
+
                 if not result["has_more"]:
                     break
                 next_cursor = result["response_metadata"]["next_cursor"]
