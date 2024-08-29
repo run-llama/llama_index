@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import time
+import asyncio
 from datetime import datetime
 from ssl import SSLContext
 from typing import Any, List, Optional, Dict
@@ -32,12 +33,14 @@ class SlackReader(BasePydanticReader):
         latest_date (Optional[datetime]): Latest date from which to
             read conversations. If not provided, defaults to current timestamp
             in combination with earliest_date.
+        use_async (Optional[bool]): Whether to use async client. Defaults to False.
     """
 
     is_remote: bool = True
     slack_token: str
     earliest_date_timestamp: Optional[float]
     latest_date_timestamp: float
+    use_async: bool = False
 
     _client: Any = PrivateAttr()
 
@@ -49,9 +52,11 @@ class SlackReader(BasePydanticReader):
         latest_date: Optional[datetime] = None,
         earliest_date_timestamp: Optional[float] = None,
         latest_date_timestamp: Optional[float] = None,
+        use_async: bool = False,
     ) -> None:
         """Initialize with parameters."""
         from slack_sdk import WebClient
+        from slack_sdk.web.async_client import AsyncWebClient
 
         if slack_token is None:
             slack_token = os.environ["SLACK_BOT_TOKEN"]
@@ -61,9 +66,17 @@ class SlackReader(BasePydanticReader):
                 "variable `SLACK_BOT_TOKEN`."
             )
         if ssl is None:
-            self._client = WebClient(token=slack_token)
+            self._client = (
+                AsyncWebClient(token=slack_token)
+                if use_async
+                else WebClient(token=slack_token)
+            )
         else:
-            self._client = WebClient(token=slack_token, ssl=ssl)
+            self._client = (
+                AsyncWebClient(token=slack_token, ssl=ssl)
+                if use_async
+                else WebClient(token=slack_token, ssl=ssl)
+            )
         if latest_date is not None and earliest_date is None:
             raise ValueError(
                 "Must specify `earliest_date` if `latest_date` is specified."
@@ -84,6 +97,7 @@ class SlackReader(BasePydanticReader):
             slack_token=slack_token,
             earliest_date_timestamp=earliest_date_timestamp,
             latest_date_timestamp=latest_date_timestamp,
+            use_async=use_async,
         )
 
     @classmethod
@@ -133,6 +147,62 @@ class SlackReader(BasePydanticReader):
                         f"Rate limit error reached, sleeping for: {retry_after} seconds"
                     )
                     time.sleep(retry_after)
+                elif error == "not_in_channel":
+                    logger.error(
+                        f"Error: Bot not in channel: {channel_id}, cannot read messages."
+                    )
+                    break
+                else:
+                    logger.error(
+                        f"Error parsing conversation replies for channel {channel_id}: {e}"
+                    )
+                    break
+
+        return "\n\n".join(messages_text)
+
+    async def _aread_message(self, channel_id: str, message_ts: str) -> str:
+        from slack_sdk.errors import SlackApiError
+
+        """Read a message asynchronously."""
+
+        messages_text: List[str] = []
+        next_cursor = None
+        while True:
+            try:
+                # https://slack.com/api/conversations.replies
+                # List all replies to a message, including the message itself.
+                if self.earliest_date_timestamp is None:
+                    result = await self._client.conversations_replies(
+                        channel=channel_id, ts=message_ts, cursor=next_cursor
+                    )
+                else:
+                    conversations_replies_kwargs = {
+                        "channel": channel_id,
+                        "ts": message_ts,
+                        "cursor": next_cursor,
+                        "latest": str(self.latest_date_timestamp),
+                    }
+                    if self.earliest_date_timestamp is not None:
+                        conversations_replies_kwargs["oldest"] = str(
+                            self.earliest_date_timestamp
+                        )
+                    result = await self._client.conversations_replies(
+                        **conversations_replies_kwargs  # type: ignore
+                    )
+                messages = result["messages"]
+                messages_text.extend(message["text"] for message in messages)
+                if not result["has_more"]:
+                    break
+
+                next_cursor = result["response_metadata"]["next_cursor"]
+            except SlackApiError as e:
+                error = e.response["error"]
+                if error == "ratelimited":
+                    retry_after = int(e.response.headers.get("retry-after", 1))
+                    logger.error(
+                        f"Rate limit error reached, sleeping for: {retry_after} seconds"
+                    )
+                    await asyncio.sleep(retry_after)
                 elif error == "not_in_channel":
                     logger.error(
                         f"Error: Bot not in channel: {channel_id}, cannot read messages."
@@ -209,6 +279,69 @@ class SlackReader(BasePydanticReader):
             else "\n\n".join(result_messages[::-1])
         )
 
+    async def _aread_channel(self, channel_id: str, reverse_chronological: bool) -> str:
+        from slack_sdk.errors import SlackApiError
+
+        """Read a channel asynchronously."""
+
+        result_messages: List[str] = []
+        next_cursor = None
+        while True:
+            try:
+                # Call the conversations.history method using the AsyncWebClient
+                # conversations.history returns the first 100 messages by default
+                # These results are paginated,
+                # see: https://api.slack.com/methods/conversations.history$pagination
+                conversations_history_kwargs = {
+                    "channel": channel_id,
+                    "cursor": next_cursor,
+                    "latest": str(self.latest_date_timestamp),
+                }
+                if self.earliest_date_timestamp is not None:
+                    conversations_history_kwargs["oldest"] = str(
+                        self.earliest_date_timestamp
+                    )
+                result = await self._client.conversations_history(
+                    **conversations_history_kwargs  # type: ignore
+                )
+                conversation_history = result["messages"]
+                # Print results
+                logger.info(
+                    f"{len(conversation_history)} messages found in {channel_id}"
+                )
+                result_messages.extend(
+                    await self._aread_message(channel_id, message["ts"])
+                    for message in conversation_history
+                )
+                if not result["has_more"]:
+                    break
+                next_cursor = result["response_metadata"]["next_cursor"]
+
+            except SlackApiError as e:
+                error = e.response["error"]
+                if error == "ratelimited":
+                    retry_after = int(e.response.headers.get("retry-after", 1))
+                    logger.error(
+                        f"Rate limit error reached, sleeping for: {retry_after} seconds"
+                    )
+                    await asyncio.sleep(retry_after)
+                elif error == "not_in_channel":
+                    logger.error(
+                        f"Error: Bot not in channel: {channel_id}, cannot read messages."
+                    )
+                    break
+                else:
+                    logger.error(
+                        f"Error parsing conversation replies for channel {channel_id}: {e}"
+                    )
+                    break
+
+        return (
+            "\n\n".join(result_messages)
+            if reverse_chronological
+            else "\n\n".join(result_messages[::-1])
+        )
+
     def load_data(
         self, channel_ids: List[str], reverse_chronological: bool = True
     ) -> List[Document]:
@@ -216,6 +349,7 @@ class SlackReader(BasePydanticReader):
 
         Args:
             channel_ids (List[str]): List of channel ids to read.
+            reverse_chronological (bool): Whether to return messages in reverse chronological order.
 
         Returns:
             List[Document]: List of documents.
@@ -223,6 +357,32 @@ class SlackReader(BasePydanticReader):
         results = []
         for channel_id in channel_ids:
             channel_content = self._read_channel(
+                channel_id, reverse_chronological=reverse_chronological
+            )
+            results.append(
+                Document(
+                    id_=channel_id,
+                    text=channel_content,
+                    metadata={"channel": channel_id},
+                )
+            )
+        return results
+
+    async def aload_data(
+        self, channel_ids: List[str], reverse_chronological: bool = True
+    ) -> List[Document]:
+        """Asynchronously load data from the input slack channel ids.
+
+        Args:
+            channel_ids (List[str]): List of channel ids to read.
+            reverse_chronological (bool): Whether to return messages in reverse chronological order.
+
+        Returns:
+            List[Document]: List of documents.
+        """
+        results = []
+        for channel_id in channel_ids:
+            channel_content = await self._read_channel_async(
                 channel_id, reverse_chronological=reverse_chronological
             )
             results.append(
