@@ -286,6 +286,10 @@ class AzureAICompletionsModel(FunctionCallingLLM):
                 # Get model info from the endpoint. This method may not be supported by all
                 # endpoints.
                 model_info = self._client.get_model_info()
+                if model_info:
+                    self._model_name = model_info.get("model_name", None)
+                    self._model_type = model_info.get("model_type", None)
+                    self._model_provider = model_info.get("model_provider_name", None)
             except Exception:
                 logger.warning(
                     f"Endpoint '{self._client._config.endpoint}' does support model metadata retrieval. "
@@ -294,10 +298,6 @@ class AzureAICompletionsModel(FunctionCallingLLM):
                 self._model_name = "unknown"
                 self._model_provider = "unknown"
                 self._model_type = "chat-completions"
-            if model_info:
-                self._model_name = model_info.get("model_name", None)
-                self._model_type = model_info.get("model_type", None)
-                self._model_provider = model_info.get("model_provider_name", None)
 
         return LLMMetadata(
             is_chat_model=self._model_type == "chat-completions",
