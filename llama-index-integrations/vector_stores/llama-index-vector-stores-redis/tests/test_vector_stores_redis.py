@@ -1,7 +1,6 @@
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.redis import RedisVectorStore
-from redis import Redis
 
 
 def test_class():

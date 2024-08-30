@@ -24,12 +24,12 @@ def docker_setup():
     container.remove()
 
 
-@pytest.fixture
+@pytest.fixture()
 def dummy_embedding() -> List:
     return [0] * 1536
 
 
-@pytest.fixture
+@pytest.fixture()
 def turtle_test() -> dict:
     return {
         "text": "something about turtles",
@@ -39,12 +39,11 @@ def turtle_test() -> dict:
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def documents(turtle_test, dummy_embedding) -> List[Document]:
     """List of documents represents data to be embedded in the datastore.
     Minimum requirements for Documents in the /upsert endpoint's UpsertRequest.
     """
-
     return [
         Document(
             text=turtle_test["text"],
@@ -61,12 +60,12 @@ def documents(turtle_test, dummy_embedding) -> List[Document]:
     ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_nodes(documents) -> TextNode:
     parser = SentenceSplitter()
     return parser.get_nodes_from_documents(documents)
 
 
-@pytest.fixture
+@pytest.fixture()
 def redis_client() -> Redis:
     return Redis.from_url("redis://localhost:6379/0")
