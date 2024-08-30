@@ -1,4 +1,5 @@
-from llama_index.core import StorageContext, VectorStoreIndex
+from llama_index.core import MockEmbedding, StorageContext, VectorStoreIndex
+from llama_index.core.llms import MockLLM
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.redis import RedisVectorStore
 
@@ -11,10 +12,14 @@ def test_class():
 def test_default_usage(documents, turtle_test, redis_client):
     vector_store = RedisVectorStore(redis_client=redis_client)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+    index = VectorStoreIndex.from_documents(
+        documents,
+        embedding=MockEmbedding(embed_dim=1536),
+        storage_context=storage_context,
+    )
 
     # create retrievers
-    query_engine = index.as_query_engine(similarity_top_k=1)
+    query_engine = index.as_query_engine(llm=MockLLM(), similarity_top_k=1)
     retriever = index.as_retriever(similarity_top_k=1)
 
     result_nodes = retriever.retrieve(turtle_test["question"])
