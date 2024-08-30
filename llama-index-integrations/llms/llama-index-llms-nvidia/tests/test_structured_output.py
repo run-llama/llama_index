@@ -5,7 +5,6 @@ from llama_index.core.program import LLMTextCompletionProgram
 from llama_index.core.program import FunctionCallingProgram
 import pytest
 from llama_index.llms.nvidia.utils import (
-    NVIDIA_STRUCTURED_OUTPUT_MODELS,
     NVIDIA_FUNTION_CALLING_MODELS,
     API_CATALOG_MODELS,
 )
@@ -31,12 +30,20 @@ Generate an example album, with an artist and a list of songs. \
 Using the movie {movie_name} as inspiration.\
 """
 
+llms = [
+    "google/codegemma-1.1-7b",
+    "google/codegemma-7b",
+    "meta/codellama-70b",
+    "meta/llama3-70b-instruct",
+    "meta/llama3-8b-instruct",
+]
+
 
 def unsupported_models():
     return API_CATALOG_MODELS.keys() - NVIDIA_FUNTION_CALLING_MODELS
 
 
-@pytest.mark.parametrize("key", NVIDIA_STRUCTURED_OUTPUT_MODELS)
+@pytest.mark.parametrize("key", llms)
 def test_prompt_generation(key):
     llm = NVIDIA(model=key)
     program = LLMTextCompletionProgram.from_defaults(
@@ -56,7 +63,7 @@ def test_prompt_generation(key):
     assert len(output.songs) > 0, "Album should contain at least one song"
 
 
-@pytest.mark.parametrize("key", NVIDIA_STRUCTURED_OUTPUT_MODELS)
+@pytest.mark.parametrize("key", NVIDIA_FUNTION_CALLING_MODELS)
 def test_empty_movie_name(key):
     llm = NVIDIA(model=key)
     program = LLMTextCompletionProgram.from_defaults(
