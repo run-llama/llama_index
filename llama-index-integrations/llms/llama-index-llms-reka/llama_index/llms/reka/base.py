@@ -29,6 +29,7 @@ except ImportError:
 
 DEFAULT_REKA_MODEL = "reka-flash"
 DEFAULT_REKA_MAX_TOKENS = 512
+DEFAULT_REKA_CONTEXT_WINDOW = 128000
 
 
 def process_messages_for_reka(messages: Sequence[ChatMessage]) -> List[Dict[str, str]]:
@@ -132,7 +133,7 @@ class RekaLLM(CustomLLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=4096,  # Adjust based on the specific Reka model
+            context_window=DEFAULT_REKA_CONTEXT_WINDOW,
             num_output=self.max_tokens,
             model_name=self.model,
             is_chat_model=True,
