@@ -103,7 +103,8 @@ nav:
           - ./examples/agent/memory/vector_memory.ipynb
           - ./examples/agent/mistral_agent.ipynb
           - ./examples/agent/multi_document_agents-v1.ipynb
-          - ./examples/agents/nvidia_agent.ipynb
+          - ./examples/agent/multi_document_agents.ipynb
+          - ./examples/agent/nvidia_agent.ipynb
           - ./examples/agent/openai_agent.ipynb
           - ./examples/agent/openai_agent_context_retrieval.ipynb
           - ./examples/agent/openai_agent_lengthy_tools.ipynb
@@ -121,6 +122,7 @@ nav:
           - ./examples/agent/react_agent_with_query_engine.ipynb
           - ./examples/agent/return_direct_agent.ipynb
           - ./examples/agent/structured_planner.ipynb
+          - ./examples/agents/nvidia_agent.ipynb
       - Chat Engines:
           - ./examples/chat_engine/chat_engine_best.ipynb
           - ./examples/chat_engine/chat_engine_condense_plus_context.ipynb
@@ -1383,6 +1385,8 @@ nav:
           - ./api_reference/retrievers/you.md
       - Schema:
           - ./api_reference/schema/index.md
+      - Selectors:
+          - ./api_reference/selectors/notdiamond.md
       - Storage:
           - Chat Store:
               - ./api_reference/storage/chat_store/azure.md
@@ -2144,6 +2148,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-gigachat
             - ../llama-index-integrations/embeddings/llama-index-embeddings-xinference
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-xinference-rerank
+            - ../llama-index-integrations/selectors/llama-index-selectors-notdiamond
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
