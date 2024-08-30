@@ -189,10 +189,10 @@ class Bedrock(LLM):
             output_parser=output_parser,
         )
         self._provider = get_provider(model)
-        messages_to_prompt = messages_to_prompt or self._provider.messages_to_prompt
-        completion_to_prompt = (
-            completion_to_prompt or self._provider.completion_to_prompt
-        )
+        self.messages_to_prompt = messages_to_prompt or self._provider.messages_to_prompt
+        self.completion_to_prompt = (
+                completion_to_prompt or self._provider.completion_to_prompt
+            )
         # Prior to general availability, custom boto3 wheel files were
         # distributed that used the bedrock service to invokeModel.
         # This check prevents any services still using those wheel files
