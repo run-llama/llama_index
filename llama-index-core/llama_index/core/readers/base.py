@@ -7,12 +7,12 @@ from typing import (
     Dict,
     Iterable,
     List,
-    Optional,
 )
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import Document as LCDocument
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, GetJsonSchemaHandler, ConfigDict
+from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.schema import BaseComponent, Document
 
 
@@ -46,8 +46,13 @@ class BaseReader(ABC):
         return [d.to_langchain_format() for d in docs]
 
     @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any], field: Optional[Any]):
-        field_schema.update({"title": cls.__name__})
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> Dict[str, Any]:
+        json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
+        json_schema = handler.resolve_ref_schema(json_schema)
+        json_schema.update({"title": cls.__name__})
+        return json_schema
 
     @classmethod
     def __get_pydantic_json_schema__(
@@ -62,13 +67,11 @@ class BaseReader(ABC):
 class BasePydanticReader(BaseReader, BaseComponent):
     """Serialiable Data Loader with Pydantic."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     is_remote: bool = Field(
         default=False,
         description="Whether the data is loaded from a remote API or a local file.",
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 class ResourcesReaderMixin(ABC):
@@ -209,14 +212,12 @@ class ResourcesReaderMixin(ABC):
 class ReaderConfig(BaseComponent):
     """Represents a reader and it's input arguments."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     reader: BasePydanticReader = Field(..., description="Reader to use.")
     reader_args: List[Any] = Field(default_factory=list, description="Reader args.")
     reader_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Reader kwargs."
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @classmethod
     def class_name(cls) -> str:

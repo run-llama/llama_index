@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from llama_index.core.instrumentation.events.base import BaseEvent
 from llama_index.core.schema import NodeWithScore, QueryType
+from llama_index.core.bridge.pydantic import ConfigDict
 
 
 class ReRankStartEvent(BaseEvent):
@@ -14,6 +15,7 @@ class ReRankStartEvent(BaseEvent):
         model_name (str): Name of the model used for reranking.
     """
 
+    model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
     query: Optional[QueryType]
     nodes: List[NodeWithScore]
     top_n: int

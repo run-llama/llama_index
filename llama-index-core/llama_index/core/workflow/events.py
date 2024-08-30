@@ -1,6 +1,7 @@
 from typing import Any, Dict, Type
+from _collections_abc import dict_keys, dict_items, dict_values
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
 
 
 class Event(BaseModel):
@@ -11,6 +12,7 @@ class Event(BaseModel):
 
     Examples:
         Basic example usage
+
         ```python
         from llama_index.core.workflows.events import Event
 
@@ -24,6 +26,7 @@ class Event(BaseModel):
         ```
 
         Custom event with additional Fields/PrivateAttr
+
         ```python
         from llama_index.core.workflows.events import Event
         from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -43,10 +46,8 @@ class Event(BaseModel):
         ```
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     _data: Dict[str, Any] = PrivateAttr(default_factory=dict)
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(self, **params: Any):
         """__init__.
@@ -58,7 +59,7 @@ class Event(BaseModel):
         private_attrs = {}
         data = {}
         for k, v in params.items():
-            if k in self.__fields__:
+            if k in self.model_fields:
                 fields[k] = v
             elif k in self.__private_attributes__:
                 private_attrs[k] = v
@@ -70,8 +71,8 @@ class Event(BaseModel):
         self._data = data
 
     def __getattr__(self, __name: str) -> Any:
-        if __name in self.__private_attributes__ or __name in self.__fields__:
-            return super().__getattr__(__name)
+        if __name in self.__private_attributes__ or __name in self.model_fields:
+            return super().__getattr__(__name)  # type: ignore
         else:
             try:
                 return self._data[__name]
@@ -81,7 +82,7 @@ class Event(BaseModel):
                 )
 
     def __setattr__(self, name, value) -> None:
-        if name in self.__private_attributes__ or name in self.__fields__:
+        if name in self.__private_attributes__ or name in self.model_fields:
             super().__setattr__(name, value)
         else:
             self._data.__setitem__(name, value)
@@ -98,13 +99,13 @@ class Event(BaseModel):
     def __contains__(self, key: str) -> bool:
         return key in self._data
 
-    def keys(self) -> Dict[str, Any].keys:
+    def keys(self) -> "dict_keys[str, Any]":
         return self._data.keys()
 
-    def values(self) -> Dict[str, Any].values:
+    def values(self) -> "dict_values[str, Any]":
         return self._data.values()
 
-    def items(self) -> Dict[str, Any].items:
+    def items(self) -> "dict_items[str, Any]":
         return self._data.items()
 
     def __len__(self) -> int:

@@ -29,13 +29,13 @@ license = "MIT"
 maintainers = ["ravi-theja"]
 name = "llama-index-packs-corrective-rag"
 readme = "README.md"
-version = "0.1.2"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.0"
 tavily-python = "^0.3.1"
-llama-index-tools-tavily-research = "^0.1.2"
+llama-index-tools-tavily-research = "^0.2.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

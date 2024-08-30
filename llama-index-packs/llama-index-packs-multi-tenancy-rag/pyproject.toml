@@ -29,11 +29,12 @@ license = "MIT"
 maintainers = ["ravi03071991"]
 name = "llama-index-packs-multi-tenancy-rag"
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
+llama-index-llms-openai = "^0.2.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

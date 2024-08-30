@@ -73,12 +73,12 @@ class OCIGenAIEmbeddings(BaseEmbedding):
         default=None,
     )
 
-    service_endpoint: str = Field(
+    service_endpoint: Optional[str] = Field(
         description="service endpoint url.",
         default=None,
     )
 
-    compartment_id: str = Field(
+    compartment_id: Optional[str] = Field(
         description="OCID of compartment.",
         default=None,
     )
@@ -100,8 +100,8 @@ class OCIGenAIEmbeddings(BaseEmbedding):
         model_name: str,
         truncate: str = "END",
         input_type: Optional[str] = None,
-        service_endpoint: str = None,
-        compartment_id: str = None,
+        service_endpoint: Optional[str] = None,
+        compartment_id: Optional[str] = None,
         auth_type: Optional[str] = "API_KEY",
         auth_profile: Optional[str] = "DEFAULT",
         client: Optional[Any] = None,
@@ -133,6 +133,17 @@ class OCIGenAIEmbeddings(BaseEmbedding):
             client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the
                                     provided service endpoint and authentifcation method.
         """
+        super().__init__(
+            model_name=model_name,
+            truncate=truncate,
+            input_type=input_type,
+            service_endpoint=service_endpoint,
+            compartment_id=compartment_id,
+            auth_type=auth_type,
+            auth_profile=auth_profile,
+            embed_batch_size=embed_batch_size,
+            callback_manager=callback_manager,
+        )
         if client is not None:
             self._client = client
         else:
@@ -202,18 +213,6 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                     auth_profile and auth_type are valid.""",
                     e,
                 ) from e
-
-        super().__init__(
-            model_name=model_name,
-            truncate=truncate,
-            input_type=input_type,
-            service_endpoint=service_endpoint,
-            compartment_id=compartment_id,
-            auth_type=auth_type,
-            auth_profile=auth_profile,
-            embed_batch_size=embed_batch_size,
-            callback_manager=callback_manager,
-        )
 
     @classmethod
     def class_name(self) -> str:

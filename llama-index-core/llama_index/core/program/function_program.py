@@ -17,6 +17,7 @@ from llama_index.core.bridge.pydantic import (
     BaseModel,
     create_model,
     ValidationError,
+    ConfigDict,
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.core.base.llms.types import ChatResponse
@@ -50,7 +51,7 @@ def _parse_tool_outputs(
 
 def _get_function_tool(output_cls: Type[Model]) -> FunctionTool:
     """Get function tool."""
-    schema = output_cls.schema()
+    schema = output_cls.model_json_schema()
     schema_description = schema.get("description", None)
 
     # NOTE: this does not specify the schema in the function signature,
@@ -68,8 +69,7 @@ def _get_function_tool(output_cls: Type[Model]) -> FunctionTool:
 
 
 class FlexibleModel(BaseModel):
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 def create_flexible_model(model: Type[BaseModel]) -> Type[FlexibleModel]:
@@ -246,7 +246,9 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             return output_cls()
 
         tool_fn_args = [call.tool_kwargs for call in tool_calls]
-        objects = [output_cls.parse_obj(tool_fn_arg) for tool_fn_arg in tool_fn_args]
+        objects = [
+            output_cls.model_validate(tool_fn_arg) for tool_fn_arg in tool_fn_args
+        ]
 
         if cur_objects is None or num_valid_fields(objects) > num_valid_fields(
             cur_objects
@@ -258,7 +260,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         new_cur_objects = []
         for obj in cur_objects:
             try:
-                new_obj = self._output_cls.parse_obj(obj.dict())
+                new_obj = self._output_cls.model_validate(obj.model_dump())
             except ValidationError as e:
                 _logger.warning(f"Failed to parse object: {e}")
                 new_obj = obj

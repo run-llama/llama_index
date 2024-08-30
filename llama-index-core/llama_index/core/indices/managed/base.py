@@ -3,6 +3,7 @@
 An index that is built on top of a managed service.
 
 """
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Type
 
@@ -11,7 +12,6 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.data_structs.data_structs import IndexDict
 from llama_index.core.indices.base import BaseIndex, IndexType
 from llama_index.core.schema import BaseNode, Document, TransformComponent
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 
@@ -33,15 +33,12 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
         index_struct: Optional[IndexDict] = None,
         storage_context: Optional[StorageContext] = None,
         show_progress: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             **kwargs,
@@ -88,8 +85,6 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
         show_progress: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         transformations: Optional[List[TransformComponent]] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> IndexType:
         """Build an index from a sequence of documents."""

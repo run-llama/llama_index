@@ -243,16 +243,6 @@ class ElasticsearchStore(BasePydanticVectorStore):
         metadata_mappings = metadata_mappings or {}
         metadata_mappings.update(base_metadata_mappings)
 
-        self._store = AsyncVectorStore(
-            user_agent=get_user_agent(),
-            client=es_client,
-            index=index_name,
-            retrieval_strategy=retrieval_strategy,
-            text_field=text_field,
-            vector_field=vector_field,
-            metadata_mappings=metadata_mappings,
-        )
-
         super().__init__(
             index_name=index_name,
             es_client=es_client,
@@ -266,6 +256,16 @@ class ElasticsearchStore(BasePydanticVectorStore):
             batch_size=batch_size,
             distance_strategy=distance_strategy,
             retrieval_strategy=retrieval_strategy,
+        )
+
+        self._store = AsyncVectorStore(
+            user_agent=get_user_agent(),
+            client=es_client,
+            index=index_name,
+            retrieval_strategy=retrieval_strategy,
+            text_field=text_field,
+            vector_field=vector_field,
+            metadata_mappings=metadata_mappings,
         )
 
         # Disable query embeddings when using Sparse vectors or BM25.
@@ -483,7 +483,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
         top_k_scores = []
         for hit in hits:
             source = hit["_source"]
-            metadata = source.get("metadata", None)
+            metadata = source.get("metadata", {})
             text = source.get(self.text_field, None)
             node_id = hit["_id"]
 
@@ -493,7 +493,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             except Exception:
                 # Legacy support for old metadata format
                 logger.warning(
-                    f"Could not parse metadata from hit {hit['_source']['metadata']}"
+                    f"Could not parse metadata from hit {hit['_source'].get('metadata')}"
                 )
                 node_info = source.get("node_info")
                 relationships = source.get("relationships", {})

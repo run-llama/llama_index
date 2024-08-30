@@ -29,12 +29,13 @@ license = "MIT"
 maintainers = ["anoopshrma"]
 name = "llama-index-packs-stock-market-data-query-engine"
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
 yfinance = "^0.2.36"
+llama-index-llms-openai = "^0.2.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
