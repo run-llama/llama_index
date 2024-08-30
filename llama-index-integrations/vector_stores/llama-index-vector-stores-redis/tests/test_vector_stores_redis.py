@@ -14,7 +14,7 @@ def test_default_usage(documents, turtle_test, redis_client):
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     index = VectorStoreIndex.from_documents(
         documents,
-        embedding=MockEmbedding(embed_dim=1536),
+        embed_model=MockEmbedding(embed_dim=1536),
         storage_context=storage_context,
     )
 
