@@ -1,6 +1,54 @@
 # ChangeLog
 
-## [2024-07-27]
+## [2024-08-29]
+
+### `llama-index-core` [0.11.3]
+
+- refact: merge Context and Session to simplify the workflows api (#15709)
+- chore: stop using deprecated `ctx.data` in workflows docs (#15716)
+- fix: stop streaming workflow events when a step raises (#15714)
+- Fix llm_chat_callback for multimodal llms (#15700)
+- chore: Increase unit tests coverage for the workflow package (#15691)
+- fix SimpleVectorStore.from_persist_dir() behaviour (#15534)
+
+### `llama-index-embeddings-azure-openai` [0.2.5]
+
+- fix json serialization for azure embeddings (#15724)
+
+### `llama-index-graph-stores-kuzu` [0.3.0]
+
+- Add KuzuPropertyGraphStore (#15678)
+
+### `llama-index-indices-managed-vectara` [0.2.1]
+
+- added new User Defined Function reranker (#15546)
+
+### `llama-index-llms-mistralai` [0.2.2]
+
+- Fix `random_seed` type in mistral llm (#15701)
+
+### `llama-index-llms-nvidia` [0.2.1]
+
+- Add function/tool calling support to nvidia llm (#15359)
+
+### `llama-index-multi-modal-llms-ollama` [0.3.0]
+
+- bump ollama client deps for multimodal llm (#15702)
+
+### `llama-index-readers-web` [0.2.1]
+
+- Fix: Firecrawl scraping url response (#15720)
+
+### `llama-index-selectors-notdiamond` [0.1.0]
+
+- Adding Not Diamond to llama_index (#15703)
+
+### `llama-index-vector-stores-milvus` [0.2.3]
+
+- MMR in Milvus vector stores (#15634)
+- feat: implement get_nodes for MilvusVectorStore (#15696)
+
+## [2024-08-27]
 
 ### `llama-index-core` [0.11.2]
 
@@ -58,7 +106,6 @@
 ### `llama-index-vector-stores-elasticsearch` [0.3.2]
 
 - Fix the ElasticsearchStore key error (#15631)
-
 
 ## [2024-08-23]
 
