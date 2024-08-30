@@ -6,6 +6,7 @@ An index that is built within Milvus.
 
 import logging
 from typing import Any, Dict, List, Optional, Union
+from copy import deepcopy
 from enum import Enum
 
 
@@ -411,8 +412,6 @@ class MilvusVectorStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
         """
-        from copy import deepcopy
-
         filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
 
         if node_ids:
@@ -435,6 +434,58 @@ class MilvusVectorStore(BasePydanticVectorStore):
     def clear(self) -> None:
         """Clears db."""
         self._milvusclient.drop_collection(self.collection_name)
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes by node ids or metadata filters.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to retrieve. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
+        Raises:
+            ValueError: Neither or both of node_ids and filters are provided.
+
+        Returns:
+            List[BaseNode]:
+        """
+        if node_ids is None and filters is None:
+            raise ValueError("Either node_ids or filters must be provided.")
+
+        filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
+        milvus_filter = _to_milvus_filter(filters_cpy)
+
+        if node_ids is not None and milvus_filter:
+            raise ValueError("Only one of node_ids or filters can be provided.")
+
+        res = self.client.query(
+            ids=node_ids, collection_name=self.collection_name, filter=milvus_filter
+        )
+
+        nodes = []
+        for item in res:
+            if not self.text_key:
+                node = metadata_dict_to_node(item)
+                node.embedding = item.get(self.embedding_field, None)
+            else:
+                try:
+                    text = item.pop(self.text_key)
+                except Exception:
+                    raise ValueError(
+                        "The passed in text_key value does not exist "
+                        "in the retrieved entity."
+                    ) from None
+                embedding = item.pop(self.embedding_field, None)
+                node = TextNode(
+                    text=text,
+                    embedding=embedding,
+                    metadata=item,
+                )
+            nodes.append(node)
+        return nodes
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
