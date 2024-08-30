@@ -131,8 +131,9 @@ class AlibabaCloudOpenSearchConfig:
         self.embedding_field = embedding_field
         self.text_field = text_field
         self.search_config = search_config
+        self.output_fields = output_fields
 
-        if output_fields is None:
+        if self.output_fields is None:
             self.output_fields = (
                 list(self.field_mapping.values()) if self.field_mapping else []
             )

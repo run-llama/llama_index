@@ -7,6 +7,27 @@ from llama_index.core.node_parser import SentenceSplitter
 
 import faker
 
+from requests_mock import Mocker
+
+
+@pytest.fixture()
+def known_unknown() -> str:
+    return "mock-model"
+
+
+@pytest.fixture()
+def mock_local_models(requests_mock: Mocker, known_unknown) -> None:
+    requests_mock.get(
+        "http://localhost:8000/v1/models",
+        json={
+            "data": [
+                {
+                    "id": known_unknown,
+                },
+            ]
+        },
+    )
+
 
 @pytest.fixture()
 def text() -> str:
@@ -75,11 +96,11 @@ def test_direct_empty_docs(query: str, model: str, mode: dict) -> None:
 def test_direct_top_n_negative(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
-    orig = NVIDIARerank.Config.validate_assignment
-    NVIDIARerank.Config.validate_assignment = False
+    orig = NVIDIARerank.model_config["validate_assignment"]
+    NVIDIARerank.model_config["validate_assignment"] = False
     ranker = NVIDIARerank(model=model, **mode)
     ranker.top_n = -100
-    NVIDIARerank.Config.validate_assignment = orig
+    NVIDIARerank.model_config["validate_assignment"] = orig
     result = ranker.postprocess_nodes(nodes=nodes, query_str=query)
     assert len(result) == 0
 
@@ -170,3 +191,22 @@ def test_rerank_batching(
     assert all(
         result[i].score >= result[i + 1].score for i in range(len(result) - 1)
     ), "results are not sorted"
+
+
+def test_default_known(mock_local_models, known_unknown: str) -> None:
+    """
+    Test that a model in the model table will be accepted.
+    """
+    # check if default model is getting set
+    with pytest.warns(UserWarning):
+        x = NVIDIARerank(base_url="http://localhost:8000/v1")
+        assert x.model == known_unknown
+
+
+def test_default_lora() -> None:
+    """
+    Test that a model in the model table will be accepted.
+    """
+    # find a model that matches the public_class under test
+    x = NVIDIARerank(base_url="http://localhost:8000/v1", model="lora1")
+    assert x.model == "lora1"

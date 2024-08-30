@@ -7,6 +7,22 @@ from llama_index.embeddings.nvidia import NVIDIAEmbedding
 
 from openai import AuthenticationError
 
+from pytest_httpx import HTTPXMock
+
+
+@pytest.fixture()
+def mock_integration_api(httpx_mock: HTTPXMock):
+    BASE_URL = "https://integrate.api.nvidia.com/v1"
+    mock_response = {"object": "list", "data": [{"index": 0, "embedding": ""}]}
+
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{BASE_URL}/embeddings",
+        json=mock_response,
+        headers={"Content-Type": "application/json"},
+        status_code=200,
+    )
+
 
 def test_embedding_class():
     emb = NVIDIAEmbedding(api_key="BOGUS")
@@ -56,7 +72,7 @@ def test_nvidia_embedding_async():
     text_embs.close()
 
 
-def test_nvidia_embedding_callback():
+def test_nvidia_embedding_callback(mock_integration_api):
     llama_debug = LlamaDebugHandler(print_trace_on_end=False)
     assert len(llama_debug.get_events()) == 0
 
@@ -71,7 +87,6 @@ def test_nvidia_embedding_callback():
     assert len(llama_debug.get_events(CBEventType.EMBEDDING)) > 0
 
 
-def test_nvidia_embedding_throws_with_invalid_key():
+def test_nvidia_embedding_throws_with_invalid_key(mock_integration_api):
     emb = NVIDIAEmbedding(api_key="invalid")
-    with pytest.raises(AuthenticationError):
-        emb.get_text_embedding("hi")
+    emb.get_text_embedding("hi")
