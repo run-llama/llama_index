@@ -10,7 +10,23 @@ pip install llama-index-multi-modal-llms-reka
 ```
 
 To obtain an API key, please visit https://platform.reka.ai/
-Usage
+Our baseline models always available for public access are:
+
+- `reka-edge`
+- `reka-flash`
+- `reka-core`
+
+Other models may be available. The Get Models API allows you to list what models you have available to you. Using the Python SDK, it can be accessed as follows:
+
+```python
+from reka.client import Reka
+
+client = Reka()
+print(client.models.get())
+```
+
+# Usage
+
 Here are some examples of how to use the Reka Multi-Modal LLM integration with LlamaIndex:
 Initialize the Reka Multi-Modal LLM client
 
