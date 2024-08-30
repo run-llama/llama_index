@@ -144,5 +144,5 @@ def test_get_metadata(caplog):
 
     assert (
         response.model_name != "unknown"
-        or "does support model metadata retrieval" in caplog.text
+        or "does not support model metadata retrieval" in caplog.text
     )

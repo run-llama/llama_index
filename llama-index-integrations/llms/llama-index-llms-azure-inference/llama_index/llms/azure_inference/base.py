@@ -292,7 +292,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
                     self._model_provider = model_info.get("model_provider_name", None)
             except Exception:
                 logger.warning(
-                    f"Endpoint '{self._client._config.endpoint}' does support model metadata retrieval. "
+                    f"Endpoint '{self._client._config.endpoint}' does not support model metadata retrieval. "
                     "Failed to get model info for method `metadata()`."
                 )
                 self._model_name = "unknown"
