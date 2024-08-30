@@ -25,13 +25,13 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Ofer Mendelevitch <ofer@vectara.com>"]
+authors = ["David Oplatka <david.oplatka@vectara.com>", "Ofer Mendelevitch <ofer@vectara.com>"]
 description = "llama-index managed vectara integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-indices-managed-vectara"
 readme = "README.md"
-version = "0.2.0"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

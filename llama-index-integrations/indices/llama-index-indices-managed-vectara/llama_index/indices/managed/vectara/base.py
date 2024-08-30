@@ -3,7 +3,6 @@ Managed index.
 
 A managed Index - where the index is accessible via some API that
 interfaces a managed service.
-
 """
 
 import json
@@ -70,6 +69,7 @@ class VectaraIndex(BaseManagedIndex):
         vectara_api_key: Optional[str] = None,
         use_core_api: bool = False,
         parallelize_ingest: bool = False,
+        x_source_str: str = "llama_index",
         **kwargs: Any,
     ) -> None:
         """Initialize the Vectara API."""
@@ -103,6 +103,9 @@ class VectaraIndex(BaseManagedIndex):
             raise ValueError("Missing Vectara credentials")
         else:
             _logger.debug(f"Using corpus id {self._vectara_corpus_id}")
+
+        # identifies usage source for internal measurement
+        self._x_source_str = x_source_str
 
         # setup requests session with max 3 retries and 90s timeout
         # for calling Vectara API
@@ -149,7 +152,7 @@ class VectaraIndex(BaseManagedIndex):
             "x-api-key": self._vectara_api_key,
             "customer-id": self._vectara_customer_id,
             "Content-Type": "application/json",
-            "X-Source": "llama_index",
+            "X-Source": self._x_source_str,
         }
 
     def _delete_doc(self, doc_id: str, corpus_id: Optional[str] = None) -> bool:

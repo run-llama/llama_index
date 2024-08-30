@@ -10,9 +10,9 @@ In our examples so far, we've only emitted one event from each step. But there a
 class ParallelFlow(Workflow):
     @step
     async def start(self, ctx: Context, ev: StartEvent) -> StepTwoEvent:
-        ctx.session.send_event(StepTwoEvent(query="Query 1"))
-        ctx.session.send_event(StepTwoEvent(query="Query 2"))
-        ctx.session.send_event(StepTwoEvent(query="Query 3"))
+        ctx.send_event(StepTwoEvent(query="Query 1"))
+        ctx.send_event(StepTwoEvent(query="Query 2"))
+        ctx.send_event(StepTwoEvent(query="Query 3"))
 
     @step(num_workers=4)
     async def step_two(self, ctx: Context, ev: StepTwoEvent) -> StopEvent:
@@ -32,9 +32,9 @@ If you execute the previous example, you'll note that the workflow stops after w
 class ConcurrentFlow(Workflow):
     @step
     async def start(self, ctx: Context, ev: StartEvent) -> StepTwoEvent:
-        ctx.session.send_event(StepTwoEvent(query="Query 1"))
-        ctx.session.send_event(StepTwoEvent(query="Query 2"))
-        ctx.session.send_event(StepTwoEvent(query="Query 3"))
+        ctx.send_event(StepTwoEvent(query="Query 1"))
+        ctx.send_event(StepTwoEvent(query="Query 2"))
+        ctx.send_event(StepTwoEvent(query="Query 3"))
 
     @step(num_workers=4)
     async def step_two(self, ctx: Context, ev: StepTwoEvent) -> StepThreeEvent:
@@ -70,9 +70,9 @@ class ConcurrentFlow(Workflow):
     async def start(
         self, ctx: Context, ev: StartEvent
     ) -> StepAEvent | StepBEvent | StepCEvent:
-        ctx.session.send_event(StepAEvent(query="Query 1"))
-        ctx.session.send_event(StepBEvent(query="Query 2"))
-        ctx.session.send_event(StepCEvent(query="Query 3"))
+        ctx.send_event(StepAEvent(query="Query 1"))
+        ctx.send_event(StepBEvent(query="Query 2"))
+        ctx.send_event(StepCEvent(query="Query 3"))
 
     @step
     async def step_a(self, ctx: Context, ev: StepAEvent) -> StepACompleteEvent:

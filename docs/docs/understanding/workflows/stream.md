@@ -1,6 +1,6 @@
 # Streaming events
 
-Workflows can be complex -- they are designed to handle complex, branching, concurrent logic -- which means they can take time to fully execute. To provide your user with a good experience, you may want to provide an indication of progress by streaming events as they occur. Workflows have built-in support for this on the `Context.session` object.
+Workflows can be complex -- they are designed to handle complex, branching, concurrent logic -- which means they can take time to fully execute. To provide your user with a good experience, you may want to provide an indication of progress by streaming events as they occur. Workflows have built-in support for this on the `Context` object.
 
 To get this done, let's bring in all the deps we need:
 
@@ -36,7 +36,7 @@ And define a workflow class that sends events:
 class MyWorkflow(Workflow):
     @step
     async def step_one(self, ctx: Context, ev: StartEvent) -> FirstEvent:
-        ctx.session.write_event_to_stream(Event(msg="Step one is happening"))
+        ctx.write_event_to_stream(Event(msg="Step one is happening"))
         return FirstEvent(first_output="First step complete.")
 
     @step
@@ -47,7 +47,7 @@ class MyWorkflow(Workflow):
         )
         async for response in generator:
             # Allow the workflow to stream this piece of response
-            ctx.session.write_event_to_stream(Event(msg=response.delta))
+            ctx.write_event_to_stream(Event(msg=response.delta))
         return SecondEvent(
             second_output="Second step complete, full response attached",
             response=str(response),
@@ -55,7 +55,7 @@ class MyWorkflow(Workflow):
 
     @step
     async def step_three(self, ctx: Context, ev: SecondEvent) -> StopEvent:
-        ctx.session.write_event_to_stream(Event(msg="Step three is happening"))
+        ctx.write_event_to_stream(Event(msg="Step three is happening"))
         return StopEvent(result="Workflow complete.")
 ```
 
