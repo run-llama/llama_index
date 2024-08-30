@@ -3,13 +3,8 @@ build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core"]
 
 [tool.codespell]
-# [tool.llamahub.class_authors]
-CLASS = "rekaai"
 check-filenames = true
 check-hidden = true
-# [tool.llamahub]
-# contains_example = true
-import_path = "llama_index.llms.reka"
 # Feel free to un-skip examples, and experimental, you will just need to
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
@@ -22,10 +17,10 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Alex Li <alexli@reka.ai>"]
-description = "llama-index llms reka integration"
+authors = ["Your Name <you@example.com>"]
+description = "llama-index multi_modal_llms reka integration"
 license = "MIT"
-name = "llama-index-llms-reka"
+name = "llama-index-multi-modal-llms-reka"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"
@@ -34,8 +29,7 @@ version = "0.1.0"
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
 reka-api = "^3.0.8"
-pytest = "^7.2.1"
-pytest-asyncio = "^0.21.0"
+pytest = "^8.3.2"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
