@@ -58,6 +58,7 @@ types-requests = "2.28.11.8"  # TODO: unpin when mypy>0.991
 types-setuptools = "67.1.0.0"
 
 [tool.poetry.group.test_integration.dependencies]
+pytest-httpx = "*"
 requests-mock = "^1.12.1"
 
 [tool.pytest.ini_options]
