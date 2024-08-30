@@ -8,10 +8,6 @@ from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
 
-from llama_index.llms.nvidia.utils import (
-    is_nvidia_function_calling_model,
-)
-
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from urllib.parse import urlparse, urlunparse
