@@ -958,7 +958,7 @@ class OpenAI(FunctionCallingLLM):
     ) -> BaseModel:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        llm_kwargs["tool_choice"] = "required"
+        llm_kwargs["tool_choice"] = "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         # by default structured prediction uses function calling to extract structured outputs 
         # here we force tool_choice to be required
         return super().structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
@@ -969,9 +969,11 @@ class OpenAI(FunctionCallingLLM):
         **kwargs: Any
     ) -> BaseModel:
         """Structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs["tool_choice"] = "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return await super().astructured_predict(*args, llm_kwargs={"tool_choice": "required"}, **kwargs)
+        return await super().astructured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
 
     @dispatcher.span
     def stream_structured_predict(
@@ -981,9 +983,11 @@ class OpenAI(FunctionCallingLLM):
         **kwargs: Any
     ) -> Generator[Union[Model, List[Model]], None, None]:
         """Stream structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs["tool_choice"] = "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return super().stream_structured_predict(*args, llm_kwargs={"tool_choice": "required"}, **kwargs)
+        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
 
     @dispatcher.span
     def stream_structured_predict(
@@ -993,9 +997,11 @@ class OpenAI(FunctionCallingLLM):
         **kwargs: Any
     ) -> Generator[Union[Model, List[Model]], None, None]:
         """Stream structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs["tool_choice"] = "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return super().stream_structured_predict(*args, llm_kwargs={"tool_choice": "required"}, **kwargs)
+        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
 
 
         
