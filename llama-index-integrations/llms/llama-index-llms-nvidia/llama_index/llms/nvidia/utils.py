@@ -32,6 +32,18 @@ API_CATALOG_MODELS: Dict[str, int] = {
     "upstage/solar-10.7b-instruct": 4096,
 }
 
+NVIDIA_FUNTION_CALLING_MODELS = (
+    "nv-mistralai/mistral-nemo-12b-instruct",
+    "meta/llama-3.1-8b-instruct",
+    "meta/llama-3.1-70b-instruct",
+    "meta/llama-3.1-405b-instruct",
+    "mistralai/mistral-large-2-instruct",
+)
+
+
+def is_nvidia_function_calling_model(modelname: str) -> bool:
+    return modelname in NVIDIA_FUNTION_CALLING_MODELS
+
 
 def catalog_modelname_to_contextsize(modelname: str) -> Optional[int]:
     return API_CATALOG_MODELS.get(modelname, None)
