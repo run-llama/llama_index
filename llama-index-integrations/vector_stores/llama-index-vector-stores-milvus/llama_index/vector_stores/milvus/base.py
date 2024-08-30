@@ -11,6 +11,7 @@ from enum import Enum
 
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
 from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.utils import iter_batch
 from llama_index.vector_stores.milvus.utils import (
@@ -42,6 +43,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BATCH_SIZE = 100
 MILVUS_ID_FIELD = "id"
+DEFAULT_MMR_PREFETCH_FACTOR = 4.0
 
 try:
     from pymilvus import WeightedRanker, RRFRanker
@@ -503,6 +505,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         elif query.mode == VectorStoreQueryMode.HYBRID:
             if self.enable_sparse is False:
                 raise ValueError(f"QueryMode is HYBRID, but enable_sparse is False.")
+        elif query.mode == VectorStoreQueryMode.MMR:
+            pass
         else:
             raise ValueError(f"Milvus does not support {query.mode} yet.")
 
@@ -597,6 +601,88 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 nodes.append(node)
                 similarities.append(hit["distance"])
                 ids.append(hit["id"])
+
+        elif query.mode == VectorStoreQueryMode.MMR:
+            # Perform MMR search
+            mmr_threshold = kwargs.get("mmr_threshold", None)
+
+            if (
+                kwargs.get("mmr_prefetch_factor") is not None
+                and kwargs.get("mmr_prefetch_k") is not None
+            ):
+                raise ValueError(
+                    "'mmr_prefetch_factor' and 'mmr_prefetch_k' "
+                    "cannot coexist in a call to query()"
+                )
+            else:
+                if kwargs.get("mmr_prefetch_k") is not None:
+                    prefetch_k0 = int(kwargs["mmr_prefetch_k"])
+                else:
+                    prefetch_k0 = int(
+                        query.similarity_top_k
+                        * kwargs.get("mmr_prefetch_factor", DEFAULT_MMR_PREFETCH_FACTOR)
+                    )
+
+            res = self._milvusclient.search(
+                collection_name=self.collection_name,
+                data=[query.query_embedding],
+                filter=string_expr,
+                limit=prefetch_k0,
+                output_fields=output_fields,
+                search_params=self.search_config,
+                anns_field=self.embedding_field,
+            )
+
+            nodes = res[0]
+            node_embeddings = []
+            node_ids = []
+            for node in nodes:
+                node_embeddings.append(node["entity"]["embedding"])
+                node_ids.append(node["id"])
+
+            mmr_similarities, mmr_ids = get_top_k_mmr_embeddings(
+                query_embedding=query.query_embedding,
+                embeddings=node_embeddings,
+                similarity_top_k=query.similarity_top_k,
+                embedding_ids=node_ids,
+                mmr_threshold=mmr_threshold,
+            )
+
+            node_dict = dict(list(zip(node_ids, nodes)))
+            selected_nodes = [node_dict[id] for id in mmr_ids if id in node_dict]
+
+            nodes = []
+            # Parse the results
+            for hit in selected_nodes:
+                if not self.text_key:
+                    node = metadata_dict_to_node(
+                        {
+                            "_node_content": hit["entity"].get("_node_content", None),
+                            "_node_type": hit["entity"].get("_node_type", None),
+                        }
+                    )
+                else:
+                    try:
+                        text = hit["entity"].get(self.text_key)
+                    except Exception:
+                        raise ValueError(
+                            "The passed in text_key value does not exist "
+                            "in the retrieved entity."
+                        )
+
+                    metadata = {
+                        key: hit["entity"].get(key) for key in self.output_fields
+                    }
+                    node = TextNode(text=text, metadata=metadata)
+
+                nodes.append(node)
+
+            similarities = mmr_similarities  # Passing the MMR similarities instead of the original similarities
+            ids = mmr_ids
+
+            logger.debug(
+                f"Successfully performed MMR on embeddings in collection: {self.collection_name}"
+            )
 
         else:
             # Perform hybrid search
