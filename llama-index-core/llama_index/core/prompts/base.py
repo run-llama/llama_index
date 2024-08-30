@@ -205,7 +205,6 @@ class PromptTemplate(BasePromptTemplate):
         }
 
         mapped_all_kwargs = self._map_all_vars(all_kwargs)
-        # prompt = self.template.format(**mapped_all_kwargs)
         prompt = format_string(self.template, **mapped_all_kwargs)
 
         if self.output_parser is not None:
@@ -312,7 +311,6 @@ class ChatPromptTemplate(BasePromptTemplate):
             content_template = message_template.content or ""
 
             # if there's mappings specified, make sure those are used
-            # content = content_template.format(**relevant_kwargs)
             content = format_string(content_template, **relevant_kwargs)
 
             message: ChatMessage = message_template.model_copy()

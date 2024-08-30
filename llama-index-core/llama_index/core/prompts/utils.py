@@ -1,4 +1,3 @@
-from string import Formatter
 from typing import Dict, List, Optional
 import re
 
@@ -6,6 +5,8 @@ from llama_index.core.base.llms.base import BaseLLM
 
 
 class SafeFormatter:
+    """Safe string formatter that does not raise KeyError if key is missing."""
+
     def __init__(self, format_dict: Optional[Dict[str, str]] = None):
         self.format_dict = format_dict or {}
 
@@ -21,6 +22,7 @@ class SafeFormatter:
 
 
 def format_string(string_to_format: str, **kwargs: Dict[str, str]) -> str:
+    """Format a string with kwargs."""
     formatter = SafeFormatter(format_dict=kwargs)
     return formatter.format(string_to_format)
 
@@ -36,7 +38,6 @@ def get_template_vars(template_str: str) -> List[str]:
             variables.append(variable_name)
 
     return variables
-
 
 
 def is_chat_model(llm: BaseLLM) -> bool:

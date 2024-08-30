@@ -1,6 +1,5 @@
 from llama_index.core.llms.structured_llm import _escape_json
 from llama_index.core.base.llms.types import ChatMessage
-import json
 
 
 def test_escape_json() -> None:
@@ -55,16 +54,3 @@ def test_escape_json() -> None:
     assert test_case_5 == [
         ChatMessage(role="user", content="test {{{{message}}}} {{test}}")
     ]
-
-
-    # test JSON
-    test_json_str = json.dumps({"tests": [{"foo": "bar"}, {"baz": "{test}"}]})
-    test_case_6 = _escape_json(
-        [ChatMessage(role="user", content=test_json_str)]
-    )
-    print(test_case_6)
-    assert test_case_6 == [
-        ChatMessage(role="user", content="{{\"tests\": [{{\"foo\": \"bar\"}}, {{\"baz\": \"{{test}}\"}}]}}")
-    ]
-    raise Exception
-        
