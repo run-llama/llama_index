@@ -16,7 +16,7 @@ A useful benchmark for embeddings is the [MTEB Leaderboard](https://huggingface.
 
 BEIR is useful for benchmarking if a particular retrieval model generalize well to niche domains in a zero-shot setting.
 
-Since most publically-available embedding and retrieval models are already benchmarked against BEIR (e.g. through the MTEB benchmark), utilizing BEIR is more helpful when you have a unique model that you want to evaluate.
+Since most publicly-available embedding and retrieval models are already benchmarked against BEIR (e.g. through the MTEB benchmark), utilizing BEIR is more helpful when you have a unique model that you want to evaluate.
 
 For instance, after fine-tuning an embedding model on your dataset, it may be helpful to view whether and by how much its performance degrades on a diverse set of domains. This can be an indication of how much data drift may affect your retrieval accuracy, such as if you add documents to your RAG system outside of your fine-tuning training distribution.
 
