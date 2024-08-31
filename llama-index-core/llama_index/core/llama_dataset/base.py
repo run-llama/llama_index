@@ -124,7 +124,7 @@ class BaseLlamaPredictionDataset(BaseModel):
 
 
 class BaseLlamaDataset(BaseModel, Generic[P]):
-    _example_type: ClassVar[Type[BaseLlamaDataExample]]  # type: ignore[misc]
+    _example_type: ClassVar[Type[BaseLlamaDataExample]]
     examples: List[BaseLlamaDataExample] = Field(
         default=[], description="Data examples of this dataset."
     )
