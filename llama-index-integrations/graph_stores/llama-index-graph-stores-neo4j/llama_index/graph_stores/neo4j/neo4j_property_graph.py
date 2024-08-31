@@ -40,6 +40,7 @@ EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
 CHUNK_SIZE = 1000
+VECTOR_INDEX_NAME = "entity"
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -162,6 +163,13 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_ENTITY_LABEL}`)
             REQUIRE n.id IS UNIQUE;"""
         )
+        # Verify version to check if we can use vector index
+        self.verify_version()
+        if self._vector_index:
+            self.structured_query(
+                f"CREATE VECTOR INDEX {VECTOR_INDEX_NAME} IF NOT EXISTS "
+                "FOR (m:__Entity__) ON m.embedding"
+            )
 
     @property
     def client(self):
@@ -585,22 +593,35 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             if conditions is not None
             else "1 = 1"
         )
-
-        data = self.structured_query(
-            f"""MATCH (e:`{BASE_ENTITY_LABEL}`)
-            WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension AND ({filters})
-            WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
-            ORDER BY score DESC LIMIT toInteger($limit)
-            RETURN e.id AS name,
-               [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS type,
-               e{{.* , embedding: Null, name: Null, id: Null}} AS properties,
-               score""",
-            param_map={
-                "embedding": query.query_embedding,
-                "dimension": len(query.query_embedding),
-                "limit": query.similarity_top_k,
-            },
-        )
+        if not query.filters and self._vector_index:
+            data = self.structured_query(
+                f"""CALL db.index.vector.queryNodes('{VECTOR_INDEX_NAME}', $limit, $embedding)
+                YIELD node, score RETURN node.id AS name,
+                [l in labels(node) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS type,
+                node{{.* , embedding: Null, name: Null, id: Null}} AS properties,
+                score
+                """,
+                param_map={
+                    "embedding": query.query_embedding,
+                    "limit": query.similarity_top_k,
+                },
+            )
+        else:
+            data = self.structured_query(
+                f"""MATCH (e:`{BASE_ENTITY_LABEL}`)
+                WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension AND ({filters})
+                WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
+                ORDER BY score DESC LIMIT toInteger($limit)
+                RETURN e.id AS name,
+                [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS type,
+                e{{.* , embedding: Null, name: Null, id: Null}} AS properties,
+                score""",
+                param_map={
+                    "embedding": query.query_embedding,
+                    "dimension": len(query.query_embedding),
+                    "limit": query.similarity_top_k,
+                },
+            )
         data = data if data else []
 
         nodes = []
@@ -929,6 +950,30 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 "\n".join(formatted_rels),
             ]
         )
+
+    def verify_version(self) -> None:
+        """
+        Check if the connected Neo4j database version supports vector indexing
+        without specifying embedding dimension.
+
+        Queries the Neo4j database to retrieve its version and compares it
+        against a target version (5.23.0) that is known to support vector
+        indexing. Raises a ValueError if the connected Neo4j version is
+        not supported.
+        """
+        db_data = self.structured_query("CALL dbms.components()")
+        version = db_data[0]["versions"][0]
+        if "aura" in version:
+            version_tuple = (*map(int, version.split("-")[0].split(".")), 0)
+        else:
+            version_tuple = tuple(map(int, version.split(".")))
+
+        target_version = (5, 23, 0)
+
+        if version_tuple >= target_version:
+            self._vector_index = True
+        else:
+            self._vector_index = False
 
 
 Neo4jPGStore = Neo4jPropertyGraphStore
