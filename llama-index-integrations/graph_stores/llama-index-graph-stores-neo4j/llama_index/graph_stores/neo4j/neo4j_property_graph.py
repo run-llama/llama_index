@@ -165,7 +165,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         )
         # Verify version to check if we can use vector index
         self.verify_version()
-        if self._vector_index:
+        if self._supports_vector_index:
             self.structured_query(
                 f"CREATE VECTOR INDEX {VECTOR_INDEX_NAME} IF NOT EXISTS "
                 "FOR (m:__Entity__) ON m.embedding"
@@ -593,7 +593,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             if conditions is not None
             else "1 = 1"
         )
-        if not query.filters and self._vector_index:
+        if not query.filters and self._supports_vector_index:
             data = self.structured_query(
                 f"""CALL db.index.vector.queryNodes('{VECTOR_INDEX_NAME}', $limit, $embedding)
                 YIELD node, score RETURN node.id AS name,
@@ -971,9 +971,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         target_version = (5, 23, 0)
 
         if version_tuple >= target_version:
-            self._vector_index = True
+            self._supports_vector_index = True
         else:
-            self._vector_index = False
+            self._supports_vector_index = False
 
 
 Neo4jPGStore = Neo4jPropertyGraphStore
