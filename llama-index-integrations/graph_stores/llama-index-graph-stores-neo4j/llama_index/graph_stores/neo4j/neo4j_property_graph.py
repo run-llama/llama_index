@@ -72,6 +72,19 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
 
+def convert_operator(operator: str) -> str:
+    # @Todo add custom mapping for any/all
+    mapping = {}
+    mapping["=="] = "="
+    mapping["!="] = "<>"
+    mapping["nin"] = "in"
+
+    try:
+        return mapping[operator]
+    except KeyError:
+        return operator
+
+
 class Neo4jPropertyGraphStore(PropertyGraphStore):
     r"""
     Neo4j Property Graph Store.
@@ -582,15 +595,18 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> Tuple[List[LabelledNode], List[float]]:
         """Query the graph store with a vector store query."""
-        conditions = None
+        conditions = []
+        filter_params = {}
         if query.filters:
-            conditions = [
-                f"e.{filter.key} {filter.operator.value} {filter.value}"
-                for filter in query.filters.filters
-            ]
+            for index, filter in enumerate(query.filters.filters):
+                conditions.append(
+                    f"{'NOT' if filter.operator.value in ['nin'] else ''} e.`{filter.key}` "
+                    f"{convert_operator(filter.operator.value)} $param_{index}"
+                )
+                filter_params[f"param_{index}"] = filter.value
         filters = (
-            f" {query.filters.condition.value} ".join(conditions).replace("==", "=")
-            if conditions is not None
+            f" {query.filters.condition.value} ".join(conditions)
+            if conditions
             else "1 = 1"
         )
         if not query.filters and self._supports_vector_index:
@@ -620,6 +636,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     "embedding": query.query_embedding,
                     "dimension": len(query.query_embedding),
                     "limit": query.similarity_top_k,
+                    **filter_params,
                 },
             )
         data = data if data else []
