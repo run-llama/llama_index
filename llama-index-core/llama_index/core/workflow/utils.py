@@ -19,7 +19,6 @@ except ImportError:  # pragma: no cover
 
 from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
-from .context import Context
 from .events import Event, EventType
 from .errors import WorkflowValidationError
 
@@ -57,7 +56,7 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
             continue
 
         # Get name and type of the Context param
-        if t.annotation == Context:
+        if hasattr(t.annotation, "__name__") and t.annotation.__name__ == "Context":
             context_parameter = name
             continue
 

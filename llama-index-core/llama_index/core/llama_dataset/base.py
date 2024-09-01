@@ -5,6 +5,7 @@ from abc import abstractmethod
 from enum import Enum
 from typing import (
     Any,
+    ClassVar,
     Generator,
     Generic,
     List,
@@ -72,9 +73,9 @@ class BaseLlamaDataExample(BaseModel):
 
 
 class BaseLlamaPredictionDataset(BaseModel):
-    _prediction_type: Type[BaseLlamaExamplePrediction] = BaseLlamaExamplePrediction  # type: ignore
-    predictions: Sequence[BaseLlamaExamplePrediction] = Field(
-        default_factory=list, description="Predictions on train_examples."
+    _prediction_type: ClassVar[Type[BaseLlamaExamplePrediction]]
+    predictions: List[BaseLlamaExamplePrediction] = Field(
+        default=list, description="Predictions on train_examples."
     )
 
     def __getitem__(
@@ -126,9 +127,9 @@ class BaseLlamaPredictionDataset(BaseModel):
 
 
 class BaseLlamaDataset(BaseModel, Generic[P]):
-    _example_type: Type[BaseLlamaDataExample] = BaseLlamaDataExample  # type: ignore
-    examples: Sequence[BaseLlamaDataExample] = Field(
-        default_factory=list, description="Data examples of this dataset."
+    _example_type: ClassVar[Type[BaseLlamaDataExample]]
+    examples: List[BaseLlamaDataExample] = Field(
+        default=[], description="Data examples of this dataset."
     )
     _predictions_cache: List[BaseLlamaExamplePrediction] = PrivateAttr(
         default_factory=list

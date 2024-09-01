@@ -91,7 +91,7 @@ class SimpleChatStore(BaseChatStore):
             fs.makedirs(dirpath)
 
         with fs.open(persist_path, "w") as f:
-            f.write(json.dumps(self.json()))
+            f.write(self.json())
 
     @classmethod
     def from_persist_path(
@@ -105,4 +105,8 @@ class SimpleChatStore(BaseChatStore):
             return cls()
         with fs.open(persist_path, "r") as f:
             data = json.load(f)
-        return cls.model_validate_json(data)
+
+        if isinstance(data, str):
+            return cls.model_validate_json(data)
+        else:
+            return cls.model_validate(data)
