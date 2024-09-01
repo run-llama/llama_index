@@ -12,6 +12,11 @@ def upstage_embedding():
     ).UpstageEmbedding
 
 
+@pytest.fixture()
+def setup_environment(monkeypatch):
+    monkeypatch.setenv('UPSTAGE_API_KEY', UPSTAGE_TEST_API_KEY)
+
+
 def test_upstage_embedding_class(upstage_embedding):
     names_of_base_classes = [b.__name__ for b in upstage_embedding.__mro__]
     assert BaseEmbedding.__name__ in names_of_base_classes
@@ -30,3 +35,8 @@ def test_upstage_embedding_api_key_alias(upstage_embedding):
     assert embedding1.api_key == UPSTAGE_TEST_API_KEY
     assert embedding2.api_key == UPSTAGE_TEST_API_KEY
     assert embedding3.api_key == ""
+
+
+def test_upstage_embedding_api_key_with_env(setup_environment, upstage_embedding):
+    embedding = upstage_embedding()
+    assert embedding.api_key == UPSTAGE_TEST_API_KEY
