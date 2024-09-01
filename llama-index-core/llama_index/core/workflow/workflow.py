@@ -25,13 +25,9 @@ from .session import WorkflowSession
 dispatcher = get_dispatcher(__name__)
 
 
-class _WorkflowMeta(type):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self._step_functions: Dict[str, Callable] = {}
+class Workflow:
+    _step_functions: Dict[str, Callable] = {}
 
-
-class Workflow(metaclass=_WorkflowMeta):
     def __init__(
         self,
         timeout: Optional[float] = 10.0,
@@ -139,7 +135,7 @@ class Workflow(metaclass=_WorkflowMeta):
                         print(f"Running step {name}")
 
                     # run step
-                    kwargs = {}
+                    kwargs: Dict[str, Any] = {}
                     if config.context_parameter:
                         kwargs[config.context_parameter] = session.get_context(name)
                     for service_definition in config.requested_services:

@@ -181,7 +181,10 @@ class MetadataFilters(BaseModel):
         """Convert MetadataFilters to legacy ExactMatchFilters."""
         filters = []
         for filter in self.filters:
-            if filter.operator != FilterOperator.EQ:
+            if (
+                isinstance(filter, MetadataFilters)
+                or filter.operator != FilterOperator.EQ
+            ):
                 raise ValueError(
                     "Vector Store only supports exact match filters. "
                     "Please use ExactMatchFilter or FilterOperator.EQ instead."

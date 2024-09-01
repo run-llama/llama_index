@@ -439,7 +439,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         """Get embedding similarity."""
         return similarity(embedding1=embedding1, embedding2=embedding2, mode=mode)
 
-    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[BaseNode]:
+    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
         embeddings = self.get_text_embedding_batch(
             [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
             **kwargs,
@@ -450,7 +450,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
 
         return nodes
 
-    async def acall(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[BaseNode]:
+    async def acall(
+        self, nodes: Sequence[BaseNode], **kwargs: Any
+    ) -> Sequence[BaseNode]:
         embeddings = await self.aget_text_embedding_batch(
             [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
             **kwargs,

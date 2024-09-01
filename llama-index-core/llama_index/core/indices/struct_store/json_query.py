@@ -42,11 +42,9 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
 def default_output_response_parser(llm_output: str) -> str:
     """Attempts to parse the JSON path prompt output. Only applicable if the default prompt is used."""
     try:
-        llm_output_parsed = re.search(
+        llm_output_parsed = re.search(  # type: ignore
             pattern=r"JSONPath:\s+(.*)", string=llm_output
-        ).groups()[
-            0
-        ]  # type: ignore
+        ).groups()[0]
     except Exception:
         logger.warning(
             f"JSON Path could not be parsed in the LLM response after the 'JSONPath' identifier. "

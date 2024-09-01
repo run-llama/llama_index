@@ -585,7 +585,7 @@ class IndexNode(TextNode):
 
             # check if its a node, else assume stringable
             try:
-                parsed_obj = json_to_doc(obj)
+                parsed_obj = json_to_doc(obj)  # type: ignore[assignment]
             except Exception:
                 parsed_obj = TextNode(text=str(obj))
 

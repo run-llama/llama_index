@@ -27,7 +27,7 @@ def async_to_sync(func_async: AsyncCallable) -> Callable:
     """Async from sync."""
 
     def _sync_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
-        return asyncio_run(func_async(*args, **kwargs))
+        return asyncio_run(func_async(*args, **kwargs))  # type: ignore[arg-type]
 
     return _sync_wrapped_fn
 
@@ -45,12 +45,14 @@ class FunctionTool(AsyncBaseTool):
         metadata: Optional[ToolMetadata] = None,
         async_fn: Optional[AsyncCallable] = None,
     ) -> None:
-        if fn is None and async_fn is None:
-            raise ValueError("Either fn or async_fn must be provided.")
         if fn is not None:
             self._fn = fn
-        else:
+        if async_fn is not None:
             self._fn = async_to_sync(async_fn)
+
+        if fn is None and async_fn is None:
+            raise ValueError("fn or async_fn must be provided.")
+
         if async_fn is not None:
             self._async_fn = async_fn
         else:
@@ -73,12 +75,14 @@ class FunctionTool(AsyncBaseTool):
         tool_metadata: Optional[ToolMetadata] = None,
     ) -> "FunctionTool":
         if tool_metadata is None:
-            name = name or fn.__name__
-            docstring = fn.__doc__
-            description = description or f"{name}{signature(fn)}\n{docstring}"
+            fn_to_parse = fn or async_fn
+            assert fn_to_parse is not None, "fn or async_fn must be provided."
+            name = name or fn_to_parse.__name__
+            docstring = fn_to_parse.__doc__
+            description = description or f"{name}{signature(fn_to_parse)}\n{docstring}"
             if fn_schema is None:
                 fn_schema = create_schema_from_function(
-                    f"{name}", fn or async_fn, additional_fields=None
+                    f"{name}", fn_to_parse, additional_fields=None
                 )
             tool_metadata = ToolMetadata(
                 name=name,

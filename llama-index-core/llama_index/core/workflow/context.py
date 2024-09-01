@@ -25,15 +25,12 @@ class Context:
         parent: Optional["Context"] = None,
     ) -> None:
         # Global data storage
-        if parent is not None:
-            self._globals = parent._globals
-        else:
-            self._globals: Dict[str, Any] = {}
-            self._lock = asyncio.Lock()
-            if session is None:
-                msg = "A workflow session is needed to create a root context"
-                raise ValueError(msg)
-            self._session = session
+        self._globals: Dict[str, Any] = parent._globals if parent else {}
+        self._lock = asyncio.Lock()
+        if session is None:
+            msg = "A workflow session is needed to create a root context"
+            raise ValueError(msg)
+        self._session = session
 
         # Local data storage
         self._locals: Dict[str, Any] = {}
@@ -85,7 +82,7 @@ class Context:
         raise ValueError(msg)
 
     @property
-    def data(self):
+    def data(self) -> Dict[str, Any]:
         """This property is provided for backward compatibility.
 
         Use `get` and `set` instead.

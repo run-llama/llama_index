@@ -6,10 +6,13 @@ from functools import partial
 from typing import (
     Any,
     AsyncGenerator,
+    Callable,
     Dict,
     Generator,
     Generic,
     List,
+    Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -116,14 +119,26 @@ class Thread(threading.Thread):
     """
 
     def __init__(
-        self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None
+        self,
+        group: Optional[Any] = None,
+        target: Optional[Callable[..., Any]] = None,
+        name: Optional[str] = None,
+        args: Tuple[Any, ...] = (),
+        kwargs: Optional[Dict[str, Any]] = None,
+        *,
+        daemon: Optional[bool] = None
     ) -> None:
+        if target is not None:
+            args = (
+                partial(target, *args, **(kwargs if isinstance(kwargs, dict) else {})),
+            )
+        else:
+            args = ()
+
         super().__init__(
             group=group,
             target=copy_context().run,
             name=name,
-            args=(
-                partial(target, *args, **(kwargs if isinstance(kwargs, dict) else {})),
-            ),
+            args=args,
             daemon=daemon,
         )
