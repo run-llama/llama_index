@@ -7,12 +7,20 @@ from llama_index.core.embeddings import BaseEmbedding
 
 def get_embeddings(
     api_key: str, api_base: str, model_name: str, input: List[str], **kwargs: Any
-):
-    if not api_key:
-        # If key is not provided, we assume the consumer has configured
-        # their LiteLLM proxy server with their API key.
-        api_key = "some key"
+) -> List[List[float]]:
+    """
+    Retrieve embeddings for a given list of input strings using the specified model.
 
+    Args:
+        api_key (str): The API key for authentication.
+        api_base (str): The base URL of the LiteLLM proxy server.
+        model_name (str): The name of the model to use for generating embeddings.
+        input (List[str]): A list of input strings for which embeddings are to be generated.
+        **kwargs (Any): Additional keyword arguments to be passed to the embedding function.
+
+    Returns:
+        List[List[float]]: A list of embeddings, where each embedding corresponds to an input string.
+    """
     response = embedding(
         api_key=api_key,
         api_base=api_base,
@@ -25,14 +33,14 @@ def get_embeddings(
 
 class LiteLLMEmbedding(BaseEmbedding):
     model_name: str = Field(
-        default="unknown", description="The name of the embedding model."
+        default=None, description="The name of the embedding model."
     )
     api_key: str = Field(
-        default="unknown",
+        default=None,
         description="OpenAI key. If not provided, the proxy server must be configured with the key.",
     )
     api_base: str = Field(
-        default="unknown", description="The base URL of the LiteLLM proxy."
+        default=None, description="The base URL of the LiteLLM proxy."
     )
     dimensions: Optional[int] = Field(
         default=None,
