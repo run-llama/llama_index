@@ -1,7 +1,6 @@
 import pytest
 from llama_index.core.base.embeddings.base import BaseEmbedding
 
-
 UPSTAGE_TEST_API_KEY = "upstage_test_key"
 
 
