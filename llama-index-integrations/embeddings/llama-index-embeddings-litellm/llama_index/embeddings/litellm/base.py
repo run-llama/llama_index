@@ -5,7 +5,9 @@ from llama_index.core.bridge.pydantic import Field
 from llama_index.core.embeddings import BaseEmbedding
 
 
-def get_embeddings(api_key: str, api_base: str, model_name: str, input: List[str], **kwargs: Any,):
+def get_embeddings(
+    api_key: str, api_base: str, model_name: str, input: List[str], **kwargs: Any
+):
     if not api_key:
         # If key is not provided, we assume the consumer has configured
         # their LiteLLM proxy server with their API key.
