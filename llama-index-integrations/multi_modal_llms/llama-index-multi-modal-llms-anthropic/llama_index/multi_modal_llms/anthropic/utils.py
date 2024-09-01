@@ -30,7 +30,7 @@ https://console.anthropic.com/settings/keys
 logger = logging.getLogger(__name__)
 
 
-def infer_image_mimetype_from_base64(base64_string):
+def infer_image_mimetype_from_base64(base64_string) -> str:
     # Decode the base64 string
     decoded_data = base64.b64decode(base64_string)
 
