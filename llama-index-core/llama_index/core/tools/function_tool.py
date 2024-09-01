@@ -45,17 +45,17 @@ class FunctionTool(AsyncBaseTool):
         metadata: Optional[ToolMetadata] = None,
         async_fn: Optional[AsyncCallable] = None,
     ) -> None:
-        if fn is not None:
-            self._fn = fn
-        if async_fn is not None:
-            self._fn = async_to_sync(async_fn)
-
         if fn is None and async_fn is None:
             raise ValueError("fn or async_fn must be provided.")
 
+        if fn is not None:
+            self._fn = fn
+        elif async_fn is not None:
+            self._fn = async_to_sync(async_fn)
+
         if async_fn is not None:
             self._async_fn = async_fn
-        else:
+        elif fn is not None:
             self._async_fn = sync_to_async(self._fn)
 
         if metadata is None:

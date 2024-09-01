@@ -1,7 +1,7 @@
 import asyncio
 import functools
 import warnings
-from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set
+from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set, Tuple
 
 from llama_index.core.instrumentation import get_dispatcher
 
@@ -20,9 +20,13 @@ from .utils import (
 dispatcher = get_dispatcher(__name__)
 
 
-class Workflow:
-    _step_functions: Dict[str, Callable] = {}
+class WorkflowMeta(type):
+    def __init__(cls, name: str, bases: Tuple[type, ...], dct: Dict[str, Any]) -> None:
+        super().__init__(name, bases, dct)
+        cls._step_functions = {}
 
+
+class Workflow(metaclass=WorkflowMeta):
     def __init__(
         self,
         timeout: Optional[float] = 10.0,

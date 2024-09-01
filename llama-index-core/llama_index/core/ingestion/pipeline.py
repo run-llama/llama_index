@@ -356,7 +356,8 @@ class IngestionPipeline(BaseModel):
         documents: Optional[Sequence[Document]],
         nodes: Optional[Sequence[BaseNode]],
     ) -> Sequence[BaseNode]:
-        input_nodes: Sequence[BaseNode]
+        input_nodes: Sequence[BaseNode] = []
+
         if documents is not None:
             input_nodes += documents  # type: ignore
 

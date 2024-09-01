@@ -158,7 +158,6 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
                 f"Model name {llm.metadata.model_name} does not support "
                 "function calling API. "
             )
-        assert isinstance(llm, FunctionCallingLLM)
 
         if prompt is None and prompt_template_str is None:
             raise ValueError("Must provide either prompt or prompt_template_str.")
@@ -169,7 +168,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
 
         return cls(
             output_cls=output_cls,  # type: ignore
-            llm=llm,
+            llm=llm,  # type: ignore
             prompt=cast(PromptTemplate, prompt),
             tool_choice=tool_choice,
             allow_parallel_tool_calls=allow_parallel_tool_calls,

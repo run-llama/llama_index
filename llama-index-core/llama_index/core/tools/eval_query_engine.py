@@ -75,9 +75,9 @@ class EvalQueryEngineTool(QueryEngineTool):
             metadata=ToolMetadata(
                 name=name or DEFAULT_NAME,
                 description=description or DEFAULT_DESCRIPTION,
+                return_direct=return_direct,
             ),
             resolve_input_errors=resolve_input_errors,
-            return_direct=return_direct,
         )
 
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
