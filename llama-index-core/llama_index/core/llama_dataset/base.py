@@ -75,7 +75,7 @@ class BaseLlamaDataExample(BaseModel):
 class BaseLlamaPredictionDataset(BaseModel):
     _prediction_type: ClassVar[Type[BaseLlamaExamplePrediction]]
     predictions: List[BaseLlamaExamplePrediction] = Field(
-        default=list, description="Predictions on train_examples."
+        default_factory=list, description="Predictions on train_examples."
     )
 
     def __getitem__(
