@@ -3,7 +3,17 @@
 import json
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Generator, Generic, List, Optional, Type, TypeVar, Union
+from typing import (
+    Any,
+    ClassVar,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import tqdm
 from llama_index.core.async_utils import asyncio_module
@@ -62,7 +72,7 @@ class BaseLlamaDataExample(BaseModel):
 
 
 class BaseLlamaPredictionDataset(BaseModel):
-    _prediction_type: Type[BaseLlamaExamplePrediction] = BaseLlamaExamplePrediction  # type: ignore[misc]
+    _prediction_type: ClassVar[Type[BaseLlamaExamplePrediction]]
     predictions: List[BaseLlamaExamplePrediction] = Field(
         default=list, description="Predictions on train_examples."
     )
@@ -114,7 +124,7 @@ class BaseLlamaPredictionDataset(BaseModel):
 
 
 class BaseLlamaDataset(BaseModel, Generic[P]):
-    _example_type: Type[BaseLlamaDataExample] = BaseLlamaDataExample  # type: ignore[misc]
+    _example_type: ClassVar[Type[BaseLlamaDataExample]]
     examples: List[BaseLlamaDataExample] = Field(
         default=[], description="Data examples of this dataset."
     )
