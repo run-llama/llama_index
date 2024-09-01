@@ -160,7 +160,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 
         if isinstance(self._llm, StructuredLLM):
             # convert string to output_cls
-            output = self._llm.output_cls.model_validate_json(response_str)
+            output = self._llm.output_cls.model_validate_json(str(response_str))
             return PydanticResponse(
                 output,
                 source_nodes=source_nodes,

@@ -21,6 +21,7 @@ from llama_index.core.bridge.pydantic import (
 )
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.settings import Settings
 from llama_index.core.types import BasePydanticProgram, Model
@@ -76,7 +77,7 @@ def create_flexible_model(model: Type[BaseModel]) -> Type[FlexibleModel]:
     return create_model(
         f"Flexible{model.__name__}",
         __base__=FlexibleModel,
-        **{field: (Optional[Any], None) for field in model.__fields__},
+        **{field: (Optional[Any], None) for field in model.model_fields},
     )  # type: ignore
 
 
@@ -142,8 +143,8 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         cls,
         output_cls: Type[Model],
         prompt_template_str: Optional[str] = None,
-        prompt: Optional[PromptTemplate] = None,
-        llm: Optional[FunctionCallingLLM] = None,
+        prompt: Optional[BasePromptTemplate] = None,
+        llm: Optional[LLM] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         tool_choice: Optional[Union[str, Dict[str, Any]]] = None,
@@ -167,7 +168,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             prompt = PromptTemplate(prompt_template_str)
 
         return cls(
-            output_cls=output_cls,
+            output_cls=output_cls,  # type: ignore
             llm=llm,
             prompt=cast(PromptTemplate, prompt),
             tool_choice=tool_choice,
@@ -271,14 +272,14 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             new_cur_objects.append(new_obj)
 
         if self._allow_parallel_tool_calls:
-            return new_cur_objects
+            return new_cur_objects  # type: ignore
         else:
             if len(new_cur_objects) > 1:
                 _logger.warning(
                     "Multiple outputs found, returning first one. "
                     "If you want to return all outputs, set output_multiple=True."
                 )
-            return new_cur_objects[0]
+            return new_cur_objects[0]  # type: ignore
 
     def stream_call(
         self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any

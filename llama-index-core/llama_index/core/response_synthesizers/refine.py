@@ -58,7 +58,12 @@ class DefaultRefineProgram(BasePydanticProgram):
     query_satisfied=True. In effect, doesn't do any answer filtering.
     """
 
-    def __init__(self, prompt: BasePromptTemplate, llm: LLM, output_cls: BaseModel):
+    def __init__(
+        self,
+        prompt: BasePromptTemplate,
+        llm: LLM,
+        output_cls: Optional[BaseModel] = None,
+    ):
         self._prompt = prompt
         self._llm = llm
         self._output_cls = output_cls

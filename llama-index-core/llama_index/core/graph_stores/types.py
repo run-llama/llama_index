@@ -1,6 +1,16 @@
 import fsspec
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Set, Protocol, runtime_checkable
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Set,
+    Sequence,
+    Protocol,
+    runtime_checkable,
+)
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
@@ -325,14 +335,14 @@ class PropertyGraphStore(ABC):
         for node in nodes:
             try:
                 converted_nodes.append(metadata_dict_to_node(node.properties))
-                converted_nodes[-1].set_content(node.text)
+                converted_nodes[-1].set_content(node.text)  # type: ignore
             except Exception:
                 continue
 
         return converted_nodes
 
     @abstractmethod
-    def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
+    def upsert_nodes(self, nodes: Sequence[LabelledNode]) -> None:
         """Upsert nodes."""
         ...
 
@@ -460,7 +470,7 @@ class PropertyGraphStore(ABC):
         for node in nodes:
             try:
                 converted_nodes.append(metadata_dict_to_node(node.properties))
-                converted_nodes[-1].set_content(node.text)
+                converted_nodes[-1].set_content(node.text)  # type: ignore
             except Exception:
                 continue
 

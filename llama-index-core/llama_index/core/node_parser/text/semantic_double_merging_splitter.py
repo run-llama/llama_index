@@ -58,7 +58,7 @@ class LanguageConfig:
             raise ImportError(
                 "Spacy is not installed, please install it with `pip install spacy`."
             )
-        self.nlp = spacy.load(self.spacy_model)
+        self.nlp = spacy.load(self.spacy_model)  # type: ignore
         self.stopwords = set(stopwords.words(self.language))  # type: ignore
 
 

@@ -90,7 +90,7 @@ class BaseObjectNodeMapping(Generic[OT]):
         """Load from serialization."""
         obj_node_mapping = None
         errors = []
-        for cls in BaseObjectNodeMapping.__subclasses__():  # type: ignore[misc]
+        for cls in BaseObjectNodeMapping.__subclasses__():  # type: ignore
             try:
                 obj_node_mapping = cls.from_persist_dir(
                     persist_dir=persist_dir,

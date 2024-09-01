@@ -38,7 +38,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         output_parser: Optional[BaseOutputParser] = None,
         output_cls: Optional[Type[BaseModel]] = None,
         prompt_template_str: Optional[str] = None,
-        prompt: Optional[PromptTemplate] = None,
+        prompt: Optional[BasePromptTemplate] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         **kwargs: Any,

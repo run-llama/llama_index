@@ -157,7 +157,7 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
         else:
             return MultiModalCompleteComponent(multi_modal_llm=self, **kwargs)
 
-    def __init_subclass__(cls, **kwargs) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         """
         The callback decorators installs events, so they must be applied before
         the span decorators, otherwise the spans wouldn't contain the events.
@@ -225,6 +225,8 @@ class MultiModalCompleteComponent(BaseMultiModalComponent):
         # TODO: support only complete for now
         prompt = kwargs["prompt"]
         image_documents = kwargs.get("image_documents", [])
+
+        response: Any
         if self.streaming:
             response = self.multi_modal_llm.stream_complete(prompt, image_documents)
         else:
@@ -237,6 +239,8 @@ class MultiModalCompleteComponent(BaseMultiModalComponent):
         # non-trivial to figure how to support chat/complete/etc.
         prompt = kwargs["prompt"]
         image_documents = kwargs.get("image_documents", [])
+
+        response: Any
         if self.streaming:
             response = await self.multi_modal_llm.astream_complete(
                 prompt, image_documents

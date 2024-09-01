@@ -54,7 +54,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
     _token_count: int = PrivateAttr(default=0)
 
     @field_serializer("chat_store")
-    def serialize_courses_in_order(chat_store: BaseChatStore):
+    def serialize_courses_in_order(self, chat_store: BaseChatStore) -> dict:
         res = chat_store.model_dump()
         res.update({"class_name": chat_store.class_name()})
         return res
