@@ -2,6 +2,9 @@ import pytest
 from llama_index.core.base.embeddings.base import BaseEmbedding
 
 
+UPSTAGE_TEST_API_KEY = "upstage_test_key"
+
+
 @pytest.fixture()
 def upstage_embedding():
     return pytest.importorskip(
@@ -20,11 +23,10 @@ def test_upstage_embedding_fail_wrong_model(upstage_embedding):
 
 
 def test_upstage_embedding_api_key_alias(upstage_embedding):
-    api_key = "test_key"
-    embedding1 = upstage_embedding(api_key=api_key)
-    embedding2 = upstage_embedding(upstage_api_key=api_key)
-    embedding3 = upstage_embedding(error_api_key=api_key)
+    embedding1 = upstage_embedding(api_key=UPSTAGE_TEST_API_KEY)
+    embedding2 = upstage_embedding(upstage_api_key=UPSTAGE_TEST_API_KEY)
+    embedding3 = upstage_embedding(error_api_key=UPSTAGE_TEST_API_KEY)
 
-    assert embedding1.api_key == api_key
-    assert embedding2.api_key == api_key
+    assert embedding1.api_key == UPSTAGE_TEST_API_KEY
+    assert embedding2.api_key == UPSTAGE_TEST_API_KEY
     assert embedding3.api_key == ""

@@ -51,7 +51,7 @@ class UpstageEmbedding(OpenAIEmbedding):
         default_factory=dict, description="Additional kwargs for the Upstage API."
     )
 
-    api_key: str = Field(alias="upstage_api_key", description="The Upstage API key.")
+    api_key: str = Field(description="The Upstage API key.")
     api_base: Optional[str] = Field(
         default=DEFAULT_UPSTAGE_API_BASE, description="The base URL for Upstage API."
     )
