@@ -687,7 +687,7 @@ class ReActAgentWorker(BaseAgentWorker):
             )
 
             agent_response_stream = StreamingAgentChatResponse(
-                chat_stream=agent_response_stream,
+                chat_stream=response_stream,
                 sources=task.extra_state["sources"],
             )
             thread = Thread(
