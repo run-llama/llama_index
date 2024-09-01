@@ -23,7 +23,7 @@ dispatcher = get_dispatcher(__name__)
 class WorkflowMeta(type):
     def __init__(cls, name: str, bases: Tuple[type, ...], dct: Dict[str, Any]) -> None:
         super().__init__(name, bases, dct)
-        cls._step_functions = {}
+        cls._step_functions: Dict[str, Callable] = {}
 
 
 class Workflow(metaclass=WorkflowMeta):
@@ -95,7 +95,7 @@ class Workflow(metaclass=WorkflowMeta):
 
     def _get_steps(self) -> Dict[str, Callable]:
         """Returns all the steps, whether defined as methods or free functions."""
-        return {**get_steps_from_instance(self), **self._step_functions}
+        return {**get_steps_from_instance(self), **self._step_functions}  # type: ignore[attr-defined]
 
     def _start(self, stepwise: bool = False) -> Context:
         """Sets up the queues and tasks for each declared step.
