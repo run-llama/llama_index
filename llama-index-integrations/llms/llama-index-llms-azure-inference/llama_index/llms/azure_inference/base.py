@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     from azure.core.credentials import TokenCredential
 
 from azure.core.credentials import AzureKeyCredential
+from azure.core.exceptions import HttpResponseError
 from azure.ai.inference.models import (
     ChatCompletionsToolCall,
     ChatRequestMessage,
@@ -290,7 +291,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
                     self._model_name = model_info.get("model_name", None)
                     self._model_type = model_info.get("model_type", None)
                     self._model_provider = model_info.get("model_provider_name", None)
-            except Exception:
+            except HttpResponseError:
                 logger.warning(
                     f"Endpoint '{self._client._config.endpoint}' does not support model metadata retrieval. "
                     "Failed to get model info for method `metadata()`."
