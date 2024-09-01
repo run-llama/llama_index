@@ -32,14 +32,14 @@ def get_embeddings(
 
 
 class LiteLLMEmbedding(BaseEmbedding):
-    model_name: str = Field(
+    model_name: Optional[str] = Field(
         default=None, description="The name of the embedding model."
     )
-    api_key: str = Field(
+    api_key: Optional[str] = Field(
         default=None,
         description="OpenAI key. If not provided, the proxy server must be configured with the key.",
     )
-    api_base: str = Field(
+    api_base: Optional[str] = Field(
         default=None, description="The base URL of the LiteLLM proxy."
     )
     dimensions: Optional[int] = Field(
