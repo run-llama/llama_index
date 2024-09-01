@@ -2,15 +2,13 @@ import os
 
 import pytest
 
-pytest_plugins = ('pytest_asyncio',)
-
 MOCK_EMBEDDING_DATA = [1.0, 2.0, 3.0]
 UPSTAGE_TEST_API_KEY = "UPSTAGE_TEST_API_KEY"
 
 
 @pytest.fixture()
 def setup_environment(monkeypatch):
-    monkeypatch.setenv('UPSTAGE_API_KEY', UPSTAGE_TEST_API_KEY)
+    monkeypatch.setenv("UPSTAGE_API_KEY", UPSTAGE_TEST_API_KEY)
 
 
 @pytest.fixture()
@@ -24,19 +22,27 @@ def upstage_embedding():
     return UpstageEmbedding()
 
 
-def test_upstage_embedding_query_embedding(mocker, setup_environment, upstage_embedding):
+def test_upstage_embedding_query_embedding(
+    mocker, setup_environment, upstage_embedding
+):
     query = "hello"
-    mock_openai_client = mocker.patch("llama_index.embeddings.upstage.base.UpstageEmbedding._get_query_embedding")
+    mock_openai_client = mocker.patch(
+        "llama_index.embeddings.upstage.base.UpstageEmbedding._get_query_embedding"
+    )
     mock_openai_client.return_value = MOCK_EMBEDDING_DATA
 
     embedding = upstage_embedding.get_query_embedding(query)
     assert isinstance(embedding, list)
 
 
-@pytest.mark.asyncio
-async def test_upstage_embedding_async_query_embedding(mocker, setup_environment, upstage_embedding):
+@pytest.mark.asyncio()
+async def test_upstage_embedding_async_query_embedding(
+    mocker, setup_environment, upstage_embedding
+):
     query = "hello"
-    mock_openai_client = mocker.patch("llama_index.embeddings.upstage.base.UpstageEmbedding._aget_query_embedding")
+    mock_openai_client = mocker.patch(
+        "llama_index.embeddings.upstage.base.UpstageEmbedding._aget_query_embedding"
+    )
     mock_openai_client.return_value = MOCK_EMBEDDING_DATA
 
     embedding = await upstage_embedding.aget_query_embedding(query)
@@ -45,25 +51,35 @@ async def test_upstage_embedding_async_query_embedding(mocker, setup_environment
 
 def test_upstage_embedding_text_embedding(mocker, setup_environment, upstage_embedding):
     text = "hello"
-    mock_openai_client = mocker.patch("llama_index.embeddings.upstage.base.UpstageEmbedding._get_text_embedding")
+    mock_openai_client = mocker.patch(
+        "llama_index.embeddings.upstage.base.UpstageEmbedding._get_text_embedding"
+    )
     mock_openai_client.return_value = MOCK_EMBEDDING_DATA
 
     embedding = upstage_embedding.get_text_embedding(text)
     assert isinstance(embedding, list)
 
 
-async def test_upstage_embedding_async_text_embedding(mocker, setup_environment, upstage_embedding):
+async def test_upstage_embedding_async_text_embedding(
+    mocker, setup_environment, upstage_embedding
+):
     text = "hello"
-    mock_openai_client = mocker.patch("llama_index.embeddings.upstage.base.UpstageEmbedding._aget_text_embedding")
+    mock_openai_client = mocker.patch(
+        "llama_index.embeddings.upstage.base.UpstageEmbedding._aget_text_embedding"
+    )
     mock_openai_client.return_value = MOCK_EMBEDDING_DATA
 
     embedding = await upstage_embedding.aget_text_embedding(text)
     assert isinstance(embedding, list)
 
 
-def test_upstage_embedding_text_embeddings(mocker, setup_environment, upstage_embedding):
+def test_upstage_embedding_text_embeddings(
+    mocker, setup_environment, upstage_embedding
+):
     texts = ["hello", "world"]
-    mock_openai_client = mocker.patch("llama_index.embeddings.upstage.base.UpstageEmbedding._get_text_embeddings")
+    mock_openai_client = mocker.patch(
+        "llama_index.embeddings.upstage.base.UpstageEmbedding._get_text_embeddings"
+    )
     mock_openai_client.return_value = [MOCK_EMBEDDING_DATA] * len(texts)
 
     embeddings = upstage_embedding.get_text_embedding_batch(texts)
@@ -78,7 +94,9 @@ def test_upstage_embedding_text_embeddings_fail_large_batch(mocker, setup_enviro
         "llama_index.embeddings.upstage", reason="Cannot import UpstageEmbedding"
     ).UpstageEmbedding
 
-    mock_openai_client = mocker.patch("llama_index.embeddings.upstage.base.UpstageEmbedding._get_text_embeddings")
+    mock_openai_client = mocker.patch(
+        "llama_index.embeddings.upstage.base.UpstageEmbedding._get_text_embeddings"
+    )
     mock_openai_client.return_value = [MOCK_EMBEDDING_DATA] * large_batch_size
 
     texts = ["hello"] * large_batch_size
@@ -87,9 +105,13 @@ def test_upstage_embedding_text_embeddings_fail_large_batch(mocker, setup_enviro
         upstage_embedding.get_text_embedding_batch(texts)
 
 
-async def test_upstage_embedding_async_text_embeddings(mocker, setup_environment, upstage_embedding):
+async def test_upstage_embedding_async_text_embeddings(
+    mocker, setup_environment, upstage_embedding
+):
     texts = ["hello", "world"]
-    mock_openai_client = mocker.patch("llama_index.embeddings.upstage.base.UpstageEmbedding._aget_text_embeddings")
+    mock_openai_client = mocker.patch(
+        "llama_index.embeddings.upstage.base.UpstageEmbedding._aget_text_embeddings"
+    )
     mock_openai_client.return_value = [MOCK_EMBEDDING_DATA] * len(texts)
 
     embeddings = await upstage_embedding.aget_text_embedding_batch(texts)
