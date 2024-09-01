@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from pytest_mock import MockerFixture
 
 MOCK_EMBEDDING_DATA = [1.0, 2.0, 3.0]
 UPSTAGE_TEST_API_KEY = "UPSTAGE_TEST_API_KEY"
@@ -23,7 +24,7 @@ def upstage_embedding():
 
 
 def test_upstage_embedding_query_embedding(
-    mocker, setup_environment, upstage_embedding
+    mocker: MockerFixture, setup_environment, upstage_embedding
 ):
     query = "hello"
     mock_openai_client = mocker.patch(
@@ -35,9 +36,8 @@ def test_upstage_embedding_query_embedding(
     assert isinstance(embedding, list)
 
 
-@pytest.mark.asyncio()
 async def test_upstage_embedding_async_query_embedding(
-    mocker, setup_environment, upstage_embedding
+    mocker: MockerFixture, setup_environment, upstage_embedding
 ):
     query = "hello"
     mock_openai_client = mocker.patch(
@@ -49,7 +49,9 @@ async def test_upstage_embedding_async_query_embedding(
     assert isinstance(embedding, list)
 
 
-def test_upstage_embedding_text_embedding(mocker, setup_environment, upstage_embedding):
+def test_upstage_embedding_text_embedding(
+    mocker: MockerFixture, setup_environment, upstage_embedding
+):
     text = "hello"
     mock_openai_client = mocker.patch(
         "llama_index.embeddings.upstage.base.UpstageEmbedding._get_text_embedding"
@@ -61,7 +63,7 @@ def test_upstage_embedding_text_embedding(mocker, setup_environment, upstage_emb
 
 
 async def test_upstage_embedding_async_text_embedding(
-    mocker, setup_environment, upstage_embedding
+    mocker: MockerFixture, setup_environment, upstage_embedding
 ):
     text = "hello"
     mock_openai_client = mocker.patch(
@@ -74,7 +76,7 @@ async def test_upstage_embedding_async_text_embedding(
 
 
 def test_upstage_embedding_text_embeddings(
-    mocker, setup_environment, upstage_embedding
+    mocker: MockerFixture, setup_environment, upstage_embedding
 ):
     texts = ["hello", "world"]
     mock_openai_client = mocker.patch(
@@ -88,7 +90,9 @@ def test_upstage_embedding_text_embeddings(
     assert all(isinstance(embedding, list) for embedding in embeddings)
 
 
-def test_upstage_embedding_text_embeddings_fail_large_batch(mocker, setup_environment):
+def test_upstage_embedding_text_embeddings_fail_large_batch(
+    mocker: MockerFixture, setup_environment
+):
     large_batch_size = 2049
     UpstageEmbedding = pytest.importorskip(
         "llama_index.embeddings.upstage", reason="Cannot import UpstageEmbedding"
@@ -106,7 +110,7 @@ def test_upstage_embedding_text_embeddings_fail_large_batch(mocker, setup_enviro
 
 
 async def test_upstage_embedding_async_text_embeddings(
-    mocker, setup_environment, upstage_embedding
+    mocker: MockerFixture, setup_environment, upstage_embedding
 ):
     texts = ["hello", "world"]
     mock_openai_client = mocker.patch(

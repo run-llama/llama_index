@@ -13,7 +13,7 @@ def upstage_embedding():
 
 @pytest.fixture()
 def setup_environment(monkeypatch):
-    monkeypatch.setenv('UPSTAGE_API_KEY', UPSTAGE_TEST_API_KEY)
+    monkeypatch.setenv("UPSTAGE_API_KEY", UPSTAGE_TEST_API_KEY)
 
 
 def test_upstage_embedding_class(upstage_embedding):
