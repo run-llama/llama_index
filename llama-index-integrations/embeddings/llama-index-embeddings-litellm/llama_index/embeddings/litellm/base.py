@@ -5,7 +5,7 @@ from llama_index.core.bridge.pydantic import Field
 from llama_index.core.embeddings import BaseEmbedding
 
 
-def get_embeddings(api_key: str, api_base: str, model_name: str, input: List[str]):
+def get_embeddings(api_key: str, api_base: str, model_name: str, input: List[str], **kwargs: Any,):
     if not api_key:
         # If key is not provided, we assume the consumer has configured
         # their LiteLLM proxy server with their API key.
@@ -16,6 +16,7 @@ def get_embeddings(api_key: str, api_base: str, model_name: str, input: List[str
         api_base=api_base,
         model=model_name,
         input=input,
+        **kwargs,
     )
     return [result["embedding"] for result in response.data]
 
@@ -30,6 +31,13 @@ class LiteLLMEmbedding(BaseEmbedding):
     )
     api_base: str = Field(
         default="unknown", description="The base URL of the LiteLLM proxy."
+    )
+    dimensions: Optional[int] = Field(
+        default=None,
+        description=(
+            "The number of dimensions the resulting output embeddings should have. "
+            "Only supported in text-embedding-3 and later models."
+        ),
     )
 
     @classmethod
@@ -47,6 +55,7 @@ class LiteLLMEmbedding(BaseEmbedding):
             api_key=self.api_key,
             api_base=self.api_base,
             model_name=self.model_name,
+            dimensions=self.dimensions,
             input=[query],
         )
         return embeddings[0]
@@ -56,6 +65,7 @@ class LiteLLMEmbedding(BaseEmbedding):
             api_key=self.api_key,
             api_base=self.api_base,
             model_name=self.model_name,
+            dimensions=self.dimensions,
             input=[text],
         )
         return embeddings[0]
@@ -65,5 +75,6 @@ class LiteLLMEmbedding(BaseEmbedding):
             api_key=self.api_key,
             api_base=self.api_base,
             model_name=self.model_name,
+            dimensions=self.dimensions,
             input=texts,
         )
