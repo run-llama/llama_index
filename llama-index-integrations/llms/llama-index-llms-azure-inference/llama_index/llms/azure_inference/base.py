@@ -1,6 +1,7 @@
 """Azure AI model inference chat completions client."""
 
 import json
+import logging
 from typing import (
     Any,
     Callable,
@@ -51,11 +52,14 @@ if TYPE_CHECKING:
     from azure.core.credentials import TokenCredential
 
 from azure.core.credentials import AzureKeyCredential
+from azure.core.exceptions import HttpResponseError
 from azure.ai.inference.models import (
     ChatCompletionsToolCall,
     ChatRequestMessage,
     ChatResponseMessage,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def to_inference_message(
@@ -279,11 +283,22 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         if not self._model_name:
-            model_info = self._client.get_model_info()
-            if model_info:
-                self._model_name = model_info.get("model_name", None)
-                self._model_type = model_info.get("model_type", None)
-                self._model_provider = model_info.get("model_provider_name", None)
+            try:
+                # Get model info from the endpoint. This method may not be supported by all
+                # endpoints.
+                model_info = self._client.get_model_info()
+                if model_info:
+                    self._model_name = model_info.get("model_name", None)
+                    self._model_type = model_info.get("model_type", None)
+                    self._model_provider = model_info.get("model_provider_name", None)
+            except HttpResponseError:
+                logger.warning(
+                    f"Endpoint '{self._client._config.endpoint}' does not support model metadata retrieval. "
+                    "Failed to get model info for method `metadata()`."
+                )
+                self._model_name = "unknown"
+                self._model_provider = "unknown"
+                self._model_type = "chat-completions"
 
         return LLMMetadata(
             is_chat_model=self._model_type == "chat-completions",
