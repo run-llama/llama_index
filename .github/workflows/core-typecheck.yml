@@ -31,7 +31,7 @@ jobs:
           cache-dependency-path: "**/poetry.lock"
       - name: Install core
         shell: bash
-        run: pip install ./llama-index-core/ mypy
+        run: cd ./llama-index-core/ && poetry install --with dev
       - name: Run MyPy
         shell: bash
         run: cd ./llama-index-core/ && poetry run mypy llama_index
