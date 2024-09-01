@@ -18,6 +18,7 @@ import fsspec
 from deprecated import deprecated
 from llama_index.core.bridge.pydantic import (
     BaseModel,
+    ConfigDict,
     StrictFloat,
     StrictInt,
     StrictStr,
@@ -69,10 +70,13 @@ class FilterOperator(str, Enum):
     NE = "!="  # not equal to (string, int, float)
     GTE = ">="  # greater than or equal to (int, float)
     LTE = "<="  # less than or equal to (int, float)
-    IN = "in"  # metadata in value array (string or number)
-    NIN = "nin"  # metadata not in value array (string or number)
+    IN = "in"  # In array (string or number)
+    NIN = "nin"  # Not in array (string or number)
+    ANY = "any"  # Contains any (array of strings)
+    ALL = "all"  # Contains all (array of strings)
     TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
     CONTAINS = "contains"  # metadata array contains value (string or number)
+    IS_EMPTY = "is_empty"  # the field is not exist or empty (null or empty array)
 
 
 class FilterCondition(str, Enum):
@@ -84,7 +88,7 @@ class FilterCondition(str, Enum):
 
 
 class MetadataFilter(BaseModel):
-    """Comprehensive metadata filter for vector stores to support more operators.
+    r"""Comprehensive metadata filter for vector stores to support more operators.
 
     Value uses Strict* types, as int, float and str are compatible types and were all
     converted to string before.
@@ -93,11 +97,15 @@ class MetadataFilter(BaseModel):
     """
 
     key: str
-    value: Union[
-        StrictInt,
-        StrictFloat,
-        StrictStr,
-        List[Union[StrictInt, StrictFloat, StrictStr]],
+    value: Optional[
+        Union[
+            StrictInt,
+            StrictFloat,
+            StrictStr,
+            List[StrictStr],
+            List[StrictFloat],
+            List[StrictInt],
+        ]
     ]
     operator: FilterOperator = FilterOperator.EQ
 
@@ -112,7 +120,7 @@ class MetadataFilter(BaseModel):
             filter_dict: Dict with key, value and operator.
 
         """
-        return MetadataFilter.parse_obj(filter_dict)
+        return MetadataFilter.model_validate(filter_dict)
 
 
 # # TODO: Deprecate ExactMatchFilter and use MetadataFilter instead
@@ -313,6 +321,7 @@ class VectorStore(Protocol):
 class BasePydanticVectorStore(BaseComponent, ABC):
     """Abstract vector store protocol."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     stores_text: bool
     is_embedding_query: bool = True
 
@@ -321,10 +330,27 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     def client(self) -> Any:
         """Get client."""
 
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from vector store."""
+        raise NotImplementedError("get_nodes not implemented")
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Asynchronously get nodes from vector store."""
+        return self.get_nodes(node_ids, filters)
+
     @abstractmethod
     def add(
         self,
         nodes: List[BaseNode],
+        **kwargs: Any,
     ) -> List[str]:
         """Add nodes to vector store."""
 
@@ -338,7 +364,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call add synchronously.
         """
-        return self.add(nodes)
+        return self.add(nodes, **kwargs)
 
     @abstractmethod
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -352,6 +378,32 @@ class BasePydanticVectorStore(BaseComponent, ABC):
         it will just call delete synchronously.
         """
         self.delete(ref_doc_id, **delete_kwargs)
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete nodes from vector store."""
+        raise NotImplementedError("delete_nodes not implemented")
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Asynchronously delete nodes from vector store."""
+        self.delete_nodes(node_ids, filters)
+
+    def clear(self) -> None:
+        """Clear all nodes from configured vector store."""
+        raise NotImplementedError("clear not implemented")
+
+    async def aclear(self) -> None:
+        """Asynchronously clear all nodes from configured vector store."""
+        self.clear()
 
     @abstractmethod
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:

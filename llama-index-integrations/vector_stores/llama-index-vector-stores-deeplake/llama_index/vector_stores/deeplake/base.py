@@ -8,11 +8,14 @@ import logging
 from typing import Any, List, Optional, cast
 
 from llama_index.core.bridge.pydantic import PrivateAttr
-from llama_index.core.schema import BaseNode, MetadataMode
+from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    MetadataFilters,
+    FilterCondition,
+    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -137,6 +140,87 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         """
         return self._vectorstore.dataset
 
+    def summary(self):
+        self._vectorstore.summary()
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from vector store."""
+        if node_ids:
+            data = self._vectorstore.search(filter={"id": node_ids})
+        else:
+            data = self._vectorstore.search(filter={})
+
+        nodes = []
+        for metadata in data["metadata"]:
+            nodes.append(metadata_dict_to_node(metadata))
+
+        def filter_func(doc):
+            if not filters:
+                return True
+
+            found_one = False
+            for f in filters.filters:
+                value = doc.metadata[f.key]
+                if f.operator == FilterOperator.EQ:
+                    result = value == f.value
+                elif f.operator == FilterOperator.GT:
+                    result = value > f.value
+                elif f.operator == FilterOperator.GTE:
+                    result = value >= f.value
+                elif f.operator == FilterOperator.LT:
+                    result = value < f.value
+                elif f.operator == FilterOperator.LTE:
+                    result = value <= f.value
+                elif f.operator == FilterOperator.NE:
+                    result = value != f.value
+                elif f.operator == FilterOperator.IN:
+                    result = value in f.value
+                elif f.operator == FilterOperator.NOT_IN:
+                    result = value not in f.value
+                elif f.operator == FilterOperator.TEXT_MATCH:
+                    result = f.value in value
+                else:
+                    raise ValueError(f"Unsupported filter operator: {f.operator}")
+
+                if result:
+                    found_one = True
+                    if filters.condition == FilterCondition.OR:
+                        return True
+                else:
+                    if filters.condition == FilterCondition.AND:
+                        return False
+
+            return found_one
+
+        if filters:
+            return [x for x in nodes if filter_func(x)]
+        else:
+            return nodes
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        if filters:
+            self._vectorstore.delete(
+                ids=[
+                    x.node_id
+                    for x in self.get_nodes(node_ids=node_ids, filters=filters)
+                ]
+            )
+        else:
+            self._vectorstore.delete(ids=node_ids)
+
+    def clear(self) -> None:
+        """Clear the vector store."""
+        self._vectorstore.delete(filter=lambda x: True)
+
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into DeepLake.
 
@@ -213,6 +297,8 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         metadatas = data["metadata"]
         nodes = []
         for metadata in metadatas:
+            if "_node_type" not in metadata:
+                metadata["_node_type"] = TextNode.class_name()
             nodes.append(metadata_dict_to_node(metadata))
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)

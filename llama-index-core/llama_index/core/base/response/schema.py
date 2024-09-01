@@ -4,6 +4,7 @@ import asyncio
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.types import TokenGen, TokenAsyncGen
@@ -57,11 +58,11 @@ class PydanticResponse:
 
     def __str__(self) -> str:
         """Convert to string representation."""
-        return self.response.json() if self.response else "None"
+        return self.response.model_dump_json() if self.response else "None"
 
     def __getattr__(self, name: str) -> Any:
         """Get attribute, but prioritize the pydantic  response object."""
-        if self.response is not None and name in self.response.dict():
+        if self.response is not None and name in self.response.model_dump():
             return getattr(self.response, name)
         else:
             return None
@@ -96,7 +97,7 @@ class PydanticResponse:
 
     def get_response(self) -> Response:
         """Get a standard response object."""
-        response_txt = self.response.json() if self.response else "None"
+        response_txt = self.response.model_dump_json() if self.response else "None"
         return Response(response_txt, self.source_nodes, self.metadata)
 
 
@@ -165,11 +166,11 @@ class AsyncStreamingResponse:
     Returned if streaming=True while using async.
 
     Attributes:
-        async_response_gen: The response async generator.
+        _async_response_gen: The response async generator.
 
     """
 
-    async_response_gen: TokenAsyncGen
+    response_gen: TokenAsyncGen
     source_nodes: List[NodeWithScore] = field(default_factory=list)
     metadata: Optional[Dict[str, Any]] = None
     response_txt: Optional[str] = None
@@ -179,7 +180,7 @@ class AsyncStreamingResponse:
 
     def __str__(self) -> str:
         """Convert to string representation."""
-        return asyncio.run(self._async_str)
+        return asyncio_run(self._async_str())
 
     async def _async_str(self) -> str:
         """Convert to string representation."""
@@ -190,9 +191,9 @@ class AsyncStreamingResponse:
     async def _yield_response(self) -> TokenAsyncGen:
         """Yield the string response."""
         async with self._lock:
-            if self.response_txt is None and self.async_response_gen is not None:
+            if self.response_txt is None and self.response_gen is not None:
                 self.response_txt = ""
-                async for text in self.async_response_gen:
+                async for text in self.response_gen:
                     self.response_txt += text
                     yield text
             else:

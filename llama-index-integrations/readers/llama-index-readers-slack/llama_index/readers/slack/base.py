@@ -1,14 +1,16 @@
 """Slack reader."""
 import logging
 import os
+import re
 import time
 from datetime import datetime
 from ssl import SSLContext
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
+
 
 logger = logging.getLogger(__name__)
 
@@ -59,9 +61,9 @@ class SlackReader(BasePydanticReader):
                 "variable `SLACK_BOT_TOKEN`."
             )
         if ssl is None:
-            self._client = WebClient(token=slack_token)
+            client = WebClient(token=slack_token)
         else:
-            self._client = WebClient(token=slack_token, ssl=ssl)
+            client = WebClient(token=slack_token, ssl=ssl)
         if latest_date is not None and earliest_date is None:
             raise ValueError(
                 "Must specify `earliest_date` if `latest_date` is specified."
@@ -74,7 +76,7 @@ class SlackReader(BasePydanticReader):
             latest_date_timestamp = latest_date.timestamp()
         else:
             latest_date_timestamp = datetime.now().timestamp() or latest_date_timestamp
-        res = self._client.api_test()
+        res = client.api_test()
         if not res["ok"]:
             raise ValueError(f"Error initializing Slack API: {res['error']}")
 
@@ -83,6 +85,7 @@ class SlackReader(BasePydanticReader):
             earliest_date_timestamp=earliest_date_timestamp,
             latest_date_timestamp=latest_date_timestamp,
         )
+        self._client = client
 
     @classmethod
     def class_name(cls) -> str:
@@ -124,15 +127,23 @@ class SlackReader(BasePydanticReader):
 
                 next_cursor = result["response_metadata"]["next_cursor"]
             except SlackApiError as e:
-                if e.response["error"] == "ratelimited":
+                error = e.response["error"]
+                if error == "ratelimited":
+                    retry_after = int(e.response.headers.get("retry-after", 1))
                     logger.error(
-                        "Rate limit error reached, sleeping for: {} seconds".format(
-                            e.response.headers["retry-after"]
-                        )
+                        f"Rate limit error reached, sleeping for: {retry_after} seconds"
                     )
-                    time.sleep(int(e.response.headers["retry-after"]))
+                    time.sleep(retry_after)
+                elif error == "not_in_channel":
+                    logger.error(
+                        f"Error: Bot not in channel: {channel_id}, cannot read messages."
+                    )
+                    break
                 else:
-                    logger.error(f"Error parsing conversation replies: {e}")
+                    logger.error(
+                        f"Error parsing conversation replies for channel {channel_id}: {e}"
+                    )
+                    break
 
         return "\n\n".join(messages_text)
 
@@ -175,15 +186,23 @@ class SlackReader(BasePydanticReader):
                 next_cursor = result["response_metadata"]["next_cursor"]
 
             except SlackApiError as e:
-                if e.response["error"] == "ratelimited":
+                error = e.response["error"]
+                if error == "ratelimited":
+                    retry_after = int(e.response.headers.get("retry-after", 1))
                     logger.error(
-                        "Rate limit error reached, sleeping for: {} seconds".format(
-                            e.response.headers["retry-after"]
-                        )
+                        f"Rate limit error reached, sleeping for: {retry_after} seconds"
                     )
-                    time.sleep(int(e.response.headers["retry-after"]))
+                    time.sleep(retry_after)
+                elif error == "not_in_channel":
+                    logger.error(
+                        f"Error: Bot not in channel: {channel_id}, cannot read messages."
+                    )
+                    break
                 else:
-                    logger.error(f"Error parsing conversation replies: {e}")
+                    logger.error(
+                        f"Error parsing conversation replies for channel {channel_id}: {e}"
+                    )
+                    break
 
         return (
             "\n\n".join(result_messages)
@@ -194,7 +213,7 @@ class SlackReader(BasePydanticReader):
     def load_data(
         self, channel_ids: List[str], reverse_chronological: bool = True
     ) -> List[Document]:
-        """Load data from the input directory.
+        """Load data from the input slack channel ids.
 
         Args:
             channel_ids (List[str]): List of channel ids to read.
@@ -216,7 +235,91 @@ class SlackReader(BasePydanticReader):
             )
         return results
 
+    def _is_regex(self, pattern: str) -> bool:
+        """Check if a string is a regex pattern."""
+        try:
+            re.compile(pattern)
+            return True
+        except re.error:
+            return False
+
+    def _list_channels(self) -> List[Dict[str, Any]]:
+        """List all channels (public and private)."""
+        from slack_sdk.errors import SlackApiError
+
+        try:
+            result = self._client.conversations_list(
+                types="public_channel,private_channel"
+            )
+            return result["channels"]
+        except SlackApiError as e:
+            logger.error(f"Error fetching channels: {e.response['error']}")
+            raise
+
+    def _filter_channels(
+        self, channels: List[Dict[str, Any]], patterns: List[str]
+    ) -> List[Dict[str, Any]]:
+        """Filter channels based on the provided names and regex patterns."""
+        regex_patterns = [pattern for pattern in patterns if self._is_regex(pattern)]
+        exact_names = [pattern for pattern in patterns if not self._is_regex(pattern)]
+
+        # Match Exact Channel names
+        filtered_channels = [
+            channel for channel in channels if channel["name"] in exact_names
+        ]
+
+        # Match Regex Patterns
+        for channel in channels:
+            for pattern in regex_patterns:
+                if re.match(pattern, channel["name"]):
+                    filtered_channels.append(channel)
+        return filtered_channels
+
+    def get_channel_ids(self, channel_patterns: List[str]) -> List[str]:
+        """Get list of channel IDs based on names and regex patterns.
+
+        Args:
+            channel_patterns List[str]: List of channel name patterns (names or regex) to read.
+
+        Returns:
+            List[Document]: List of documents.
+        """
+        if not channel_patterns:
+            raise ValueError("No channel patterns provided.")
+
+        channels = self._list_channels()
+        logger.info(f"Total channels fetched: {len(channels)}")
+
+        if not channels:
+            logger.info("No channels found in Slack.")
+            return []
+
+        filtered_channels = self._filter_channels(
+            channels=channels, patterns=channel_patterns
+        )
+        logger.info(f"Channels matching patterns: {len(filtered_channels)}")
+
+        if not filtered_channels:
+            logger.info(
+                "None of the channel names or pattern matched with Slack Channels."
+            )
+            return []
+
+        channel_ids = [channel["id"] for channel in filtered_channels]
+
+        return list(set(channel_ids))
+
 
 if __name__ == "__main__":
     reader = SlackReader()
-    logger.info(reader.load_data(channel_ids=["C04DC2VUY3F"]))
+
+    # load data using only channel ids
+    logger.info(reader.load_data(channel_ids=["C079KD1M8J3", "C078YQP5B51"]))
+
+    # load data using exact channel names and regex patterns
+    # get the channel ids first
+    channel_ids = reader.get_channel_ids(
+        channel_patterns=["^dev.*", "^qa.*", "test_channel"]
+    )
+    # load data using above channel_ids
+    logger.info(reader.load_data(channel_ids=channel_ids))

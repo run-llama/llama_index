@@ -7,8 +7,6 @@ An index that is built on top of multiple vector stores for different modalities
 import logging
 from typing import Any, List, Optional, Sequence, cast
 
-from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.data_structs.data_structs import (
     IndexDict,
@@ -22,18 +20,21 @@ from llama_index.core.indices.utils import (
     embed_image_nodes,
     embed_nodes,
 )
+from llama_index.core.indices.multi_modal.retriever import (
+    MultiModalVectorIndexRetriever,
+)
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.llms.utils import LLMType
 from llama_index.core.multi_modal_llms import MultiModalLLM
+from llama_index.core.query_engine.multi_modal import SimpleMultiModalQueryEngine
 from llama_index.core.schema import BaseNode, ImageNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.simple import (
     DEFAULT_VECTOR_STORE,
     SimpleVectorStore,
 )
-from llama_index.core.vector_stores.types import VectorStore
+from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -63,15 +64,13 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         # Image-related kwargs
         # image_vector_store going to be deprecated. image_store can be passed from storage_context
         # keep image_vector_store here for backward compatibility
-        image_vector_store: Optional[VectorStore] = None,
+        image_vector_store: Optional[BasePydanticVectorStore] = None,
         image_embed_model: EmbedType = "clip:ViT-B/32",
         is_image_to_text: bool = False,
         # is_image_vector_store_empty is used to indicate whether image_vector_store is empty
         # those flags are used for cases when only one vector store is used
         is_image_vector_store_empty: bool = False,
         is_text_vector_store_empty: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -103,7 +102,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             nodes=nodes,
             index_struct=index_struct,
             embed_model=embed_model,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             use_async=use_async,
@@ -112,7 +110,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         )
 
     @property
-    def image_vector_store(self) -> VectorStore:
+    def image_vector_store(self) -> BasePydanticVectorStore:
         return self._image_vector_store
 
     @property
@@ -127,12 +125,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     def is_text_vector_store_empty(self) -> bool:
         return self._is_text_vector_store_empty
 
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        # NOTE: lazy import
-        from llama_index.core.indices.multi_modal.retriever import (
-            MultiModalVectorIndexRetriever,
-        )
-
+    def as_retriever(self, **kwargs: Any) -> MultiModalVectorIndexRetriever:
         return MultiModalVectorIndexRetriever(
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
@@ -140,19 +133,13 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         )
 
     def as_query_engine(
-        self, llm: Optional[LLMType] = None, **kwargs: Any
-    ) -> BaseQueryEngine:
-        """As query engine."""
-        from llama_index.core.indices.multi_modal.retriever import (
-            MultiModalVectorIndexRetriever,
-        )
-        from llama_index.core.query_engine.multi_modal import (
-            SimpleMultiModalQueryEngine,
-        )
-
+        self,
+        llm: Optional[LLMType] = None,
+        **kwargs: Any,
+    ) -> SimpleMultiModalQueryEngine:
         retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever(**kwargs))
 
-        llm = llm or llm_from_settings_or_context(Settings, self._service_context)
+        llm = llm or Settings.llm
         assert isinstance(llm, MultiModalLLM)
 
         return SimpleMultiModalQueryEngine(
@@ -164,15 +151,13 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     @classmethod
     def from_vector_store(
         cls,
-        vector_store: VectorStore,
+        vector_store: BasePydanticVectorStore,
         embed_model: Optional[EmbedType] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         # Image-related kwargs
-        image_vector_store: Optional[VectorStore] = None,
+        image_vector_store: Optional[BasePydanticVectorStore] = None,
         image_embed_model: EmbedType = "clip",
         **kwargs: Any,
-    ) -> "VectorStoreIndex":
+    ) -> "MultiModalVectorStoreIndex":
         if not vector_store.stores_text:
             raise ValueError(
                 "Cannot initialize from a vector store that does not store text."
@@ -181,7 +166,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         return cls(
             nodes=[],
-            service_context=service_context,
             storage_context=storage_context,
             image_vector_store=image_vector_store,
             image_embed_model=image_embed_model,
@@ -236,7 +220,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         results = []
         for node in nodes:
             embedding = id_to_embed_map[node.node_id]
-            result = node.copy()
+            result = node.model_copy()
             result.embedding = embedding
             if is_image and id_to_text_embed_map:
                 text_embedding = id_to_text_embed_map[node.node_id]
@@ -287,7 +271,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         results = []
         for node in nodes:
             embedding = id_to_embed_map[node.node_id]
-            result = node.copy()
+            result = node.model_copy()
             result.embedding = embedding
             if is_image and id_to_text_embed_map:
                 text_embedding = id_to_text_embed_map[node.node_id]
@@ -351,7 +335,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         if not self._vector_store.stores_text or self._store_nodes_override:
             for node, new_id in zip(all_nodes, all_new_ids):
                 # NOTE: remove embedding from node to avoid duplication
-                node_without_embedding = node.copy()
+                node_without_embedding = node.model_copy()
                 node_without_embedding.embedding = None
 
                 index_struct.add_node(node_without_embedding, text_id=new_id)
@@ -413,7 +397,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         if not self._vector_store.stores_text or self._store_nodes_override:
             for node, new_id in zip(all_nodes, all_new_ids):
                 # NOTE: remove embedding from node to avoid duplication
-                node_without_embedding = node.copy()
+                node_without_embedding = node.model_copy()
                 node_without_embedding.embedding = None
 
                 index_struct.add_node(node_without_embedding, text_id=new_id)

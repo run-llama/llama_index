@@ -1,6 +1,5 @@
 """Program utils."""
 
-import warnings
 from typing import Any, List, Type
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, create_model
@@ -41,24 +40,16 @@ def get_program_for_llm(
 ) -> BasePydanticProgram:
     """Get a program based on the compatible LLM."""
     if pydantic_program_mode == PydanticProgramMode.DEFAULT:
-        # in default mode, we try to use the OpenAI program if available else
-        # we fall back to the LLM program
-        try:
-            from llama_index.program.openai import (
-                OpenAIPydanticProgram,
-            )  # pants: no-infer-dep
+        if llm.metadata.is_function_calling_model:
+            from llama_index.core.program.function_program import FunctionCallingProgram
 
-            return OpenAIPydanticProgram.from_defaults(
+            return FunctionCallingProgram.from_defaults(
                 output_cls=output_cls,
                 llm=llm,
                 prompt=prompt,
                 **kwargs,
             )
-        except (ValueError, ImportError):
-            warnings.warn(
-                "Failed to use `OpenAIPydanticProgram`. Please ensure "
-                "that is installed by running `pip install llama-index-program-openai`."
-            )
+        else:
             from llama_index.core.program.llm_program import (
                 LLMTextCompletionProgram,
             )
@@ -80,6 +71,16 @@ def get_program_for_llm(
             prompt=prompt,
             **kwargs,
         )
+    elif pydantic_program_mode == PydanticProgramMode.FUNCTION:
+        from llama_index.core.program.function_program import FunctionCallingProgram
+
+        return FunctionCallingProgram.from_defaults(
+            output_cls=output_cls,
+            llm=llm,
+            prompt=prompt,
+            **kwargs,
+        )
+
     elif pydantic_program_mode == PydanticProgramMode.LLM:
         from llama_index.core.program.llm_program import LLMTextCompletionProgram
 

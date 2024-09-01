@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union, cast
 
+from llama_index.core.bridge.pydantic import ValidationError
 from llama_index.agent.openai.utils import resolve_tool_choice
 from llama_index.core.llms.llm import LLM
 from llama_index.core.program.llm_prompt_program import BaseLLMFunctionProgram
@@ -10,6 +11,9 @@ from llama_index.core.settings import Settings
 from llama_index.core.types import Model
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import OpenAIToolCall, to_openai_tool
+from deprecated import deprecated
+
+from llama_index.program.openai.utils import parse_partial_json
 
 _logger = logging.getLogger(__name__)
 
@@ -77,6 +81,7 @@ def _parse_tool_calls(
         return outputs[0]
 
 
+@deprecated("Please use `FunctionCallingProgram` instead.")
 class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     """
     An OpenAI-based function that returns a pydantic model.
@@ -275,6 +280,36 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
                 if self._verbose:
                     print(f"Extracted object: {obj.json()}")
                 yield obj
+
+    def stream_partial_objects(
+        self,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Generator[Model, None, None]:
+        """Streams the intermediate partial object."""
+        llm_kwargs = llm_kwargs or {}
+        messages = self._prompt.format_messages(llm=self._llm, **kwargs)
+
+        description = self._description_eval(**kwargs)
+        openai_fn_spec = to_openai_tool(self._output_cls, description=description)
+        chat_response_gen = self._llm.stream_chat(
+            messages=messages,
+            tools=[openai_fn_spec],
+            tool_choice=self._tool_choice,
+            **llm_kwargs,
+        )
+        for partial_resp in chat_response_gen:
+            kwargs = partial_resp.message.additional_kwargs
+            tool_calls = kwargs["tool_calls"]
+            if len(tool_calls) == 0:
+                continue
+            fn_args = kwargs["tool_calls"][0].function.arguments
+            try:
+                partial_object = parse_partial_json(fn_args)
+                yield self._output_cls.parse_obj(partial_object)
+            except (ValidationError, ValueError):
+                continue
 
     def _description_eval(self, **kwargs: Any) -> Optional[str]:
         description = kwargs.get("description", None)

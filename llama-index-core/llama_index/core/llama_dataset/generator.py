@@ -1,12 +1,13 @@
 """Dataset generation from documents."""
+
 from __future__ import annotations
 
-import asyncio
 import re
+import warnings
 from typing import List, Optional
 
-from llama_index.core import Document, ServiceContext, SummaryIndex
-from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
+from llama_index.core import Document, SummaryIndex
+from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs, asyncio_run
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.ingestion import run_transformations
 from llama_index.core.llama_dataset import (
@@ -30,11 +31,8 @@ from llama_index.core.schema import (
     NodeWithScore,
     TransformComponent,
 )
-from llama_index.core.settings import (
-    Settings,
-    llm_from_settings_or_context,
-    transformations_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
+
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """\
 Context information is below.
@@ -55,7 +53,6 @@ class RagDatasetGenerator(PromptMixin):
 
     Args:
         nodes (List[Node]): List of nodes. (Optional)
-        service_context (ServiceContext): Service Context.
         num_questions_per_chunk: number of question to be \
         generated per chunk. Each document is chunked of size 512 words.
         text_question_template: Question generation template.
@@ -74,11 +71,10 @@ class RagDatasetGenerator(PromptMixin):
         metadata_mode: MetadataMode = MetadataMode.NONE,
         show_progress: bool = False,
         workers: int = DEFAULT_NUM_WORKERS,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> None:
         """Init params."""
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
+        self.num_questions_per_chunk = num_questions_per_chunk
         self.text_question_template = text_question_template or PromptTemplate(
             DEFAULT_QUESTION_GENERATION_PROMPT
         )
@@ -106,14 +102,10 @@ class RagDatasetGenerator(PromptMixin):
         exclude_keywords: Optional[List[str]] = None,
         show_progress: bool = False,
         workers: int = DEFAULT_NUM_WORKERS,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> RagDatasetGenerator:
         """Generate dataset from documents."""
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
-        transformations = transformations or transformations_from_settings_or_context(
-            Settings, service_context
-        )
+        llm = llm or Settings.llm
+        transformations = transformations or Settings.transformations
 
         nodes = run_transformations(
             documents, transformations, show_progress=show_progress
@@ -124,7 +116,6 @@ class RagDatasetGenerator(PromptMixin):
         exclude_keywords = exclude_keywords or []
         node_postprocessor = KeywordNodePostprocessor(
             llm=llm,
-            service_context=service_context,
             required_keywords=required_keywords,
             exclude_keywords=exclude_keywords,
         )
@@ -135,7 +126,6 @@ class RagDatasetGenerator(PromptMixin):
         return cls(
             nodes=nodes,
             llm=llm,
-            service_context=service_context,
             num_questions_per_chunk=num_questions_per_chunk,
             text_question_template=text_question_template,
             text_qa_template=text_qa_template,
@@ -185,7 +175,15 @@ class RagDatasetGenerator(PromptMixin):
             ]
             cleaned_questions = [
                 question for question in cleaned_questions if len(question) > 0
-            ]
+            ][: self.num_questions_per_chunk]
+
+            num_questions_generated = len(cleaned_questions)
+            if num_questions_generated < self.num_questions_per_chunk:
+                warnings.warn(
+                    f"Fewer questions generated ({num_questions_generated}) "
+                    f"than requested ({self.num_questions_per_chunk})."
+                )
+
             index = summary_indices[idx]
             reference_context = nodes[idx].text
             model_name = self._llm.metadata.model_name
@@ -239,11 +237,11 @@ class RagDatasetGenerator(PromptMixin):
 
     def generate_questions_from_nodes(self) -> LabelledRagDataset:
         """Generates questions but not the reference answers."""
-        return asyncio.run(self.agenerate_questions_from_nodes())
+        return asyncio_run(self.agenerate_questions_from_nodes())
 
     def generate_dataset_from_nodes(self) -> LabelledRagDataset:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_dataset_from_nodes())
+        return asyncio_run(self.agenerate_dataset_from_nodes())
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""

@@ -552,7 +552,7 @@ experience.
 The WebSocket connection in the `ChatView` component is used to establish real-time communication between the client and
 the server. The WebSocket connection is set up and managed in the `ChatView` component as follows:
 
-First, we want to initialize the the WebSocket reference:
+First, we want to initialize the WebSocket reference:
 
 const websocket = useRef<WebSocket | null>(null);
 

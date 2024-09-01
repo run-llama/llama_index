@@ -1,18 +1,23 @@
 """Document store."""
 
+import asyncio
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from llama_index.core.schema import BaseNode, TextNode
-from llama_index.core.storage.docstore.types import (
-    BaseDocumentStore,
-    RefDocInfo,
-)
+from llama_index.core.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.core.storage.docstore.utils import doc_to_json, json_to_doc
 from llama_index.core.storage.kvstore.types import DEFAULT_BATCH_SIZE, BaseKVStore
 
+# The default namespace prefix for the document store.
 DEFAULT_NAMESPACE = "docstore"
+# The nodes collection contains the content of each node, along with metadata specific
+# to each node, including associated attributes like excluded metadata and relationships.
 DEFAULT_COLLECTION_DATA_SUFFIX = "/data"
+# Contains mappings from each document to the list of node IDs that belong to it
+# including the document's metadata.
 DEFAULT_REF_DOC_COLLECTION_SUFFIX = "/ref_doc_info"
+# Contains references from each node to its corresponding document,
+# including the node's document hash and reference document ID.
 DEFAULT_METADATA_COLLECTION_SUFFIX = "/metadata"
 
 
@@ -120,33 +125,49 @@ class KVDocumentStore(BaseDocumentStore):
     def _merge_ref_doc_kv_pairs(self, ref_doc_kv_pairs: dict) -> List[Tuple[str, dict]]:
         merged_ref_doc_kv_pairs = []
         for key, kv_pairs in ref_doc_kv_pairs.items():
-            merged_node_ids = []
-            metadata = {}
-            for kv_pair in kv_pairs:
-                merged_node_ids.extend(kv_pair[1].get("node_ids", []))
-                metadata.update(kv_pair[1].get("metadata", {}))
-            merged_ref_doc_kv_pairs.append(
-                (key, {"node_ids": merged_node_ids, "metadata": metadata})
-            )
+            merged_ref_doc_kv_pairs = []
+            for key, kv_pairs in ref_doc_kv_pairs.items():
+                merged_node_ids = []
+                metadata = {}
+                for kv_pair in kv_pairs:
+                    nodes = kv_pair[1].get("node_ids", [])
+                    new_nodes = set(nodes).difference(set(merged_node_ids))
+                    merged_node_ids.extend(
+                        [node for node in nodes if node in new_nodes]
+                    )
+                    metadata.update(kv_pair[1].get("metadata", {}))
+                merged_ref_doc_kv_pairs.append(
+                    (key, {"node_ids": merged_node_ids, "metadata": metadata})
+                )
 
         return merged_ref_doc_kv_pairs
 
-    def add_documents(
-        self,
-        nodes: Sequence[BaseNode],
-        allow_update: bool = True,
-        batch_size: Optional[int] = None,
-        store_text: bool = True,
-    ) -> None:
-        """Add a document to the store.
+    def _prepare_kv_pairs(
+        self, nodes: Sequence[BaseNode], allow_update: bool, store_text: bool
+    ) -> Tuple[List[Tuple[str, dict]], List[Tuple[str, dict]], List[Tuple[str, dict]]]:
+        """
+        This method processes a sequence of document nodes and prepares key-value pairs for
+        nodes, their metadata, and reference documents. The key-value pairs are structured
+        for subsequent insertion into the key-value store. This method does not insert the
+        key-value pairs into the store; it only prepares them. The reference document key-value
+        pairs are merged to ensure each `ref_doc_id` has a consolidated entry.
 
         Args:
-            docs (List[BaseDocument]): documents
-            allow_update (bool): allow update of docstore from document
+            nodes (Sequence[BaseNode]): A sequence of document nodes to be processed.
+            allow_update (bool): A flag indicating whether existing nodes should be updated.
+            store_text (bool): A flag indicating whether the text content of the nodes should be stored.
+
+        Returns:
+            Tuple[
+                list,          # List of key-value pairs for nodes
+                list,          # List of key-value pairs for metadata
+                List[Tuple[str, dict]]  # Dictionary of key-value pairs for reference documents, keyed by ref_doc_id
+            ]
+
+        Raises:
+            ValueError: If a node already exists in the store and `allow_update` is False.
 
         """
-        batch_size = batch_size or self._batch_size
-
         node_kv_pairs = []
         metadata_kv_pairs = []
         ref_doc_kv_pairs: Dict[str, List[Tuple[str, dict]]] = {}
@@ -178,28 +199,14 @@ class KVDocumentStore(BaseDocumentStore):
                     ref_doc_kv_pairs[key] = []
                 ref_doc_kv_pairs[key].append(ref_doc_kv_pair)
 
-        self._kvstore.put_all(
-            node_kv_pairs,
-            collection=self._node_collection,
-            batch_size=batch_size,
-        )
-        self._kvstore.put_all(
-            metadata_kv_pairs,
-            collection=self._metadata_collection,
-            batch_size=batch_size,
-        )
-
         # multiple nodes can point to the same ref_doc_id
         merged_ref_doc_kv_pairs = self._merge_ref_doc_kv_pairs(ref_doc_kv_pairs)
-        self._kvstore.put_all(
-            merged_ref_doc_kv_pairs,
-            collection=self._ref_doc_collection,
-            batch_size=batch_size,
-        )
 
-    async def async_add_documents(
+        return node_kv_pairs, metadata_kv_pairs, merged_ref_doc_kv_pairs
+
+    def add_documents(
         self,
-        nodes: Sequence[BaseNode],
+        docs: Sequence[BaseNode],
         allow_update: bool = True,
         batch_size: Optional[int] = None,
         store_text: bool = True,
@@ -213,6 +220,54 @@ class KVDocumentStore(BaseDocumentStore):
         """
         batch_size = batch_size or self._batch_size
 
+        node_kv_pairs, metadata_kv_pairs, ref_doc_kv_pairs = self._prepare_kv_pairs(
+            docs, allow_update, store_text
+        )
+
+        self._kvstore.put_all(
+            node_kv_pairs,
+            collection=self._node_collection,
+            batch_size=batch_size,
+        )
+
+        self._kvstore.put_all(
+            metadata_kv_pairs,
+            collection=self._metadata_collection,
+            batch_size=batch_size,
+        )
+
+        self._kvstore.put_all(
+            ref_doc_kv_pairs,
+            collection=self._ref_doc_collection,
+            batch_size=batch_size,
+        )
+
+    async def _async_prepare_kv_pairs(
+        self, nodes: Sequence[BaseNode], allow_update: bool, store_text: bool
+    ) -> Tuple[List[Tuple[str, dict]], List[Tuple[str, dict]], List[Tuple[str, dict]]]:
+        """
+        This method processes a sequence of document nodes asynchronously and prepares
+        key-value pairs for nodes, their metadata, and reference documents. The key-value
+        pairs are structured for subsequent insertion into the key-value store. This method
+        does not insert the key-value pairs into the store; it only prepares them. The reference
+        document key-value pairs are merged to ensure each `ref_doc_id` has a consolidated entry.
+
+        Args:
+            nodes (Sequence[BaseNode]): A sequence of document nodes to be processed.
+            allow_update (bool): A flag indicating whether existing nodes should be updated.
+            store_text (bool): A flag indicating whether the text content of the nodes should be stored.
+
+        Returns:
+            Tuple[
+                list,          # List of key-value pairs for nodes
+                list,          # List of key-value pairs for metadata
+                List[Tuple[str, dict]]  # List of key-value pairs for reference documents, keyed by ref_doc_id
+            ]
+
+        Raises:
+            ValueError: If a node already exists in the store and `allow_update` is False.
+
+        """
         node_kv_pairs = []
         metadata_kv_pairs = []
         ref_doc_kv_pairs: Dict[str, List[Tuple[str, dict]]] = {}
@@ -246,23 +301,49 @@ class KVDocumentStore(BaseDocumentStore):
                     ref_doc_kv_pairs[key] = []
                 ref_doc_kv_pairs[key].append(ref_doc_kv_pair)
 
-        await self._kvstore.aput_all(
-            node_kv_pairs,
-            collection=self._node_collection,
-            batch_size=batch_size,
-        )
-        await self._kvstore.aput_all(
-            metadata_kv_pairs,
-            collection=self._metadata_collection,
-            batch_size=batch_size,
-        )
-
         # multiple nodes can point to the same ref_doc_id
         merged_ref_doc_kv_pairs = self._merge_ref_doc_kv_pairs(ref_doc_kv_pairs)
-        await self._kvstore.aput_all(
-            merged_ref_doc_kv_pairs,
-            collection=self._ref_doc_collection,
-            batch_size=batch_size,
+
+        return node_kv_pairs, metadata_kv_pairs, merged_ref_doc_kv_pairs
+
+    async def async_add_documents(
+        self,
+        docs: Sequence[BaseNode],
+        allow_update: bool = True,
+        batch_size: Optional[int] = None,
+        store_text: bool = True,
+    ) -> None:
+        """Add a document to the store.
+
+        Args:
+            docs (List[BaseDocument]): documents
+            allow_update (bool): allow update of docstore from document
+
+        """
+        batch_size = batch_size or self._batch_size
+
+        (
+            node_kv_pairs,
+            metadata_kv_pairs,
+            ref_doc_kv_pairs,
+        ) = await self._async_prepare_kv_pairs(docs, allow_update, store_text)
+
+        await asyncio.gather(
+            self._kvstore.aput_all(
+                node_kv_pairs,
+                collection=self._node_collection,
+                batch_size=batch_size,
+            ),
+            self._kvstore.aput_all(
+                metadata_kv_pairs,
+                collection=self._metadata_collection,
+                batch_size=batch_size,
+            ),
+            self._kvstore.aput_all(
+                ref_doc_kv_pairs,
+                collection=self._ref_doc_collection,
+                batch_size=batch_size,
+            ),
         )
 
     def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseNode]:
@@ -400,19 +481,16 @@ class KVDocumentStore(BaseDocumentStore):
         ref_doc_id = self._get_ref_doc_id(doc_id)
         if ref_doc_id is None:
             return
-        ref_doc_info = self._kvstore.get(
-            ref_doc_id, collection=self._ref_doc_collection
-        )
+        ref_doc_info = self.get_ref_doc_info(ref_doc_id)
         if ref_doc_info is None:
             return
-        ref_doc_obj = RefDocInfo(**ref_doc_info)
-        if doc_id in ref_doc_obj.node_ids:  # sanity check
-            ref_doc_obj.node_ids.remove(doc_id)
+        if doc_id in ref_doc_info.node_ids:  # sanity check
+            ref_doc_info.node_ids.remove(doc_id)
         # delete ref_doc from collection if it has no more doc_ids
-        if len(ref_doc_obj.node_ids) > 0:
+        if len(ref_doc_info.node_ids) > 0:
             self._kvstore.put(
                 ref_doc_id,
-                ref_doc_obj.to_dict(),
+                ref_doc_info.to_dict(),
                 collection=self._ref_doc_collection,
             )
         else:
@@ -425,47 +503,45 @@ class KVDocumentStore(BaseDocumentStore):
         Helper function to remove node doc_id from ref_doc_collection.
         If ref_doc has no more doc_ids, delete it from the collection.
         """
-        ref_doc_id = await self._aget_ref_doc_id(doc_id)
-        if ref_doc_id is None:
-            return
-        ref_doc_info = await self._kvstore.aget(
-            ref_doc_id, collection=self._ref_doc_collection
+        ref_doc_id, ref_doc_info = await asyncio.gather(
+            self._aget_ref_doc_id(doc_id),
+            self.aget_ref_doc_info(doc_id),
         )
-        if ref_doc_info is None:
+        if ref_doc_id is None or ref_doc_info is None:
             return
-        ref_doc_obj = RefDocInfo(**ref_doc_info)
-        if doc_id in ref_doc_obj.node_ids:  # sanity check
-            ref_doc_obj.node_ids.remove(doc_id)
+
+        if doc_id in ref_doc_info.node_ids:  # sanity check
+            ref_doc_info.node_ids.remove(doc_id)
         # delete ref_doc from collection if it has no more doc_ids
-        if len(ref_doc_obj.node_ids) > 0:
+        if len(ref_doc_info.node_ids) > 0:
             await self._kvstore.aput(
                 ref_doc_id,
-                ref_doc_obj.to_dict(),
+                ref_doc_info.to_dict(),
                 collection=self._ref_doc_collection,
             )
         else:
-            await self._kvstore.adelete(
-                ref_doc_id, collection=self._metadata_collection
+            await asyncio.gather(
+                self._kvstore.adelete(ref_doc_id, collection=self._metadata_collection),
+                self._kvstore.adelete(ref_doc_id, collection=self._node_collection),
+                self._kvstore.adelete(ref_doc_id, collection=self._ref_doc_collection),
             )
-            await self._kvstore.adelete(ref_doc_id, collection=self._node_collection)
-            await self._kvstore.adelete(ref_doc_id, collection=self._ref_doc_collection)
 
     def delete_document(self, doc_id: str, raise_error: bool = True) -> None:
         """Delete a document from the store."""
         self._remove_from_ref_doc_node(doc_id)
         delete_success = self._kvstore.delete(doc_id, collection=self._node_collection)
-        _ = self._kvstore.delete(doc_id, collection=self._metadata_collection)
+        self._kvstore.delete(doc_id, collection=self._metadata_collection)
 
         if not delete_success and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
 
     async def adelete_document(self, doc_id: str, raise_error: bool = True) -> None:
         """Delete a document from the store."""
-        await self._aremove_from_ref_doc_node(doc_id)
-        delete_success = await self._kvstore.adelete(
-            doc_id, collection=self._node_collection
+        _, delete_success, _ = await asyncio.gather(
+            self._aremove_from_ref_doc_node(doc_id),
+            self._kvstore.adelete(doc_id, collection=self._node_collection),
+            self._kvstore.adelete(doc_id, collection=self._metadata_collection),
         )
-        _ = await self._kvstore.adelete(doc_id, collection=self._metadata_collection)
 
         if not delete_success and raise_error:
             raise ValueError(f"doc_id {doc_id} not found.")
@@ -506,9 +582,11 @@ class KVDocumentStore(BaseDocumentStore):
             await self.adelete_document(doc_id, raise_error=False)
 
         # Deleting all the nodes should already delete the ref_doc, but just to be sure
-        await self._kvstore.adelete(ref_doc_id, collection=self._ref_doc_collection)
-        await self._kvstore.adelete(ref_doc_id, collection=self._metadata_collection)
-        await self._kvstore.adelete(ref_doc_id, collection=self._node_collection)
+        await asyncio.gather(
+            self._kvstore.adelete(ref_doc_id, collection=self._ref_doc_collection),
+            self._kvstore.adelete(ref_doc_id, collection=self._metadata_collection),
+            self._kvstore.adelete(ref_doc_id, collection=self._node_collection),
+        )
 
     def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
         """Set the hash for a given doc_id."""

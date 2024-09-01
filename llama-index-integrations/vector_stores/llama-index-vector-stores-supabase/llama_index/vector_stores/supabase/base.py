@@ -55,8 +55,8 @@ class SupabaseVectorStore(BasePydanticVectorStore):
 
     """
 
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
     _client: Optional[Any] = PrivateAttr()
     _collection: Optional[Collection] = PrivateAttr()
 
@@ -80,6 +80,13 @@ class SupabaseVectorStore(BasePydanticVectorStore):
             self._collection = self._client.create_collection(
                 name=collection_name, dimension=dimension
             )
+
+    def __del__(self) -> None:
+        """Close the client when the object is deleted."""
+        try:  # try-catch in case the attribute is not present
+            self._client.disconnect()
+        except AttributeError:
+            pass
 
     @property
     def client(self) -> None:

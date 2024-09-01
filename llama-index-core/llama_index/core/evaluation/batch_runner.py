@@ -2,7 +2,7 @@ import asyncio
 from tenacity import retry, stop_after_attempt, wait_exponential
 from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
-from llama_index.core.async_utils import asyncio_module
+from llama_index.core.async_utils import asyncio_module, asyncio_run
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
@@ -360,7 +360,7 @@ class BatchEvalRunner:
         Sync version of aevaluate_response_strs.
 
         """
-        return asyncio.run(
+        return asyncio_run(
             self.aevaluate_response_strs(
                 queries=queries,
                 response_strs=response_strs,
@@ -381,7 +381,7 @@ class BatchEvalRunner:
         Sync version of aevaluate_responses.
 
         """
-        return asyncio.run(
+        return asyncio_run(
             self.aevaluate_responses(
                 queries=queries,
                 responses=responses,
@@ -401,7 +401,7 @@ class BatchEvalRunner:
         Sync version of aevaluate_queries.
 
         """
-        return asyncio.run(
+        return asyncio_run(
             self.aevaluate_queries(
                 query_engine=query_engine,
                 queries=queries,

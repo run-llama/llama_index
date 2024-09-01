@@ -19,7 +19,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
 from llama_index.core.callbacks import (
     CallbackManager,
     trace_method,
@@ -55,6 +55,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     tools: Sequence[BaseTool] = Field(..., description="Tools to use for reasoning")
     llm: LLM = Field(..., description="LLM to use")
     callback_manager: CallbackManager = Field(
@@ -67,9 +68,6 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
 
     _get_tools: Callable[[str], Sequence[BaseTool]] = PrivateAttr()
 
-    class Config:
-        arbitrary_types_allowed = True
-
     def __init__(
         self,
         tools: Sequence[BaseTool],
@@ -77,7 +75,18 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        **kwargs: Any,
     ) -> None:
+        callback_manager = callback_manager or CallbackManager([])
+        super().__init__(
+            tools=tools,
+            llm=llm,
+            callback_manager=callback_manager or CallbackManager([]),
+            tool_retriever=tool_retriever,
+            verbose=verbose,
+            **kwargs,
+        )
+
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
         elif len(tools) > 0:
@@ -87,14 +96,6 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
             self._get_tools = lambda message: tool_retriever_c.retrieve(message)
         else:
             self._get_tools = lambda _: []
-
-        super().__init__(
-            tools=tools,
-            llm=llm,
-            callback_manager=callback_manager,
-            tool_retriever=tool_retriever,
-            verbose=verbose,
-        )
 
     @classmethod
     def from_tools(
@@ -114,8 +115,9 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
             tools=tools or [],
             tool_retriever=tool_retriever,
             llm=llm,
-            callback_manager=callback_manager,
+            callback_manager=callback_manager or CallbackManager([]),
             verbose=verbose,
+            **kwargs,
         )
 
     @abstractmethod

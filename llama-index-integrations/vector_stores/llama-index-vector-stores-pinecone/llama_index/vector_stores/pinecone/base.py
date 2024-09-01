@@ -73,7 +73,8 @@ def _transform_pinecone_filter_operator(operator: str) -> str:
 
 
 def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
-    """Build a list of sparse dictionaries from a batch of input_ids.
+    """
+    Build a list of sparse dictionaries from a batch of input_ids.
 
     NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
 
@@ -97,7 +98,8 @@ def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
 def generate_sparse_vectors(
     context_batch: List[str], tokenizer: Callable
 ) -> List[Dict[str, Any]]:
-    """Generate sparse vectors from a batch of contexts.
+    """
+    Generate sparse vectors from a batch of contexts.
 
     NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
 
@@ -109,7 +111,8 @@ def generate_sparse_vectors(
 
 
 def get_default_tokenizer() -> Callable:
-    """Get default tokenizer.
+    """
+    Get default tokenizer.
 
     NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
 
@@ -134,7 +137,11 @@ def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
     condition = _transform_pinecone_filter_condition(condition)
     if standard_filters.filters:
         for filter in standard_filters.filters:
-            if filter.operator:
+            if isinstance(filter, MetadataFilters):
+                sub_filter = _to_pinecone_filter(filter)
+                if sub_filter:
+                    filters_list.append(sub_filter)
+            elif filter.operator:
                 filters_list.append(
                     {
                         filter.key: {
@@ -161,7 +168,8 @@ import_err_msg = (
 
 
 class PineconeVectorStore(BasePydanticVectorStore):
-    """Pinecone Vector Store.
+    """
+    Pinecone Vector Store.
 
     In this vector store, embeddings and docs are stored within a
     Pinecone index.
@@ -247,7 +255,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
         if tokenizer is None and add_sparse_vector:
             tokenizer = get_default_tokenizer()
-        self._tokenizer = tokenizer
 
         super().__init__(
             index_name=index_name,
@@ -260,6 +267,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
             batch_size=batch_size,
             remove_text_from_metadata=remove_text_from_metadata,
         )
+
+        self._tokenizer = tokenizer
 
         # TODO: Make following instance check stronger -- check if pinecone_index is not pinecone.Index, else raise
         #  ValueError
@@ -300,7 +309,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
             pinecone.init(api_key=api_key, environment=environment)
             return pinecone.Index(index_name)
         else:  # If new version of Pinecone client (serverless):
-            pinecone_instance = pinecone.Pinecone(api_key=api_key)
+            pinecone_instance = pinecone.Pinecone(
+                api_key=api_key, source_tag="llamaindex"
+            )
             return pinecone_instance.Index(index_name)
 
     @classmethod
@@ -348,7 +359,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -402,13 +414,41 @@ class PineconeVectorStore(BasePydanticVectorStore):
             **delete_kwargs,
         )
 
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes using their ids.
+
+        Args:
+            node_ids (Optional[List[str]], optional): List of node IDs. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        node_ids = node_ids or []
+
+        if filters is not None:
+            filter = _to_pinecone_filter(filters)
+        else:
+            filter = None
+
+        self._pinecone_index.delete(
+            ids=node_ids, namespace=self.namespace, filter=filter, **delete_kwargs
+        )
+
+    def clear(self) -> None:
+        """Clears the index."""
+        self._pinecone_index.delete(namespace=self.namespace, deleteAll=True)
+
     @property
     def client(self) -> Any:
         """Return Pinecone client."""
         return self._pinecone_index
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding
@@ -433,7 +473,13 @@ class PineconeVectorStore(BasePydanticVectorStore):
                     "values": [v * (1 - query.alpha) for v in sparse_vector["values"]],
                 }
 
-        query_embedding = None
+        # pinecone requires a query embedding, so default to 0s if not provided
+        if query.query_embedding is not None:
+            dimension = len(query.query_embedding)
+        else:
+            dimension = self._pinecone_index.describe_index_stats()["dimension"]
+        query_embedding = [0.0] * dimension
+
         if query.mode in (VectorStoreQueryMode.DEFAULT, VectorStoreQueryMode.HYBRID):
             query_embedding = cast(List[float], query.query_embedding)
             if query.alpha is not None:

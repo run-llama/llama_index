@@ -2,10 +2,11 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import zep_python
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -20,7 +21,7 @@ from zep_python.document import DocumentCollection
 logger = logging.getLogger(__name__)
 
 
-class ZepVectorStore(VectorStore):
+class ZepVectorStore(BasePydanticVectorStore):
     """Zep Vector Store for storing and retrieving embeddings.
 
     Zep supports both normalized and non-normalized embeddings. Cosine similarity is
@@ -54,8 +55,11 @@ class ZepVectorStore(VectorStore):
         ```
     """
 
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
+
+    _client: ZepClient = PrivateAttr()
+    _collection: DocumentCollection = PrivateAttr()
 
     def __init__(
         self,
@@ -69,13 +73,13 @@ class ZepVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        super().__init__()
+
         self._client = ZepClient(base_url=api_url, api_key=api_key)
-        self._collection: Union[DocumentCollection, None] = None
+        collection: Union[DocumentCollection, None] = None
 
         try:
-            self._collection = self._client.document.get_collection(
-                name=collection_name
-            )
+            collection = self._client.document.get_collection(name=collection_name)
         except zep_python.NotFoundError:
             if embedding_dimensions is None:
                 raise ValueError(
@@ -87,13 +91,20 @@ class ZepVectorStore(VectorStore):
                 f"will try creating one with dimensions={embedding_dimensions}"
             )
 
-            self._collection = self._client.document.add_collection(
+            collection = self._client.document.add_collection(
                 name=collection_name,
                 embedding_dimensions=embedding_dimensions,
                 is_auto_embedded=is_auto_embedded,
                 description=collection_description,
                 metadata=collection_metadata,
             )
+
+        assert collection is not None
+        self._collection = collection
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "ZepVectorStore"
 
     @property
     def client(self) -> Any:

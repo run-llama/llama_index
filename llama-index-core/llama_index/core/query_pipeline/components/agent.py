@@ -2,14 +2,27 @@
 
 from inspect import signature
 from typing import Any, Callable, Dict, Optional, Set, Tuple, cast
+from typing_extensions import Annotated
 
 from llama_index.core.base.query_pipeline.query import (
     InputKeys,
     OutputKeys,
     QueryComponent,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import (
+    Field,
+    PrivateAttr,
+    ConfigDict,
+    WithJsonSchema,
+)
 from llama_index.core.callbacks.base import CallbackManager
+
+
+AnnotatedCallable = Annotated[
+    Callable,
+    WithJsonSchema({"type": "string"}, mode="serialization"),
+    WithJsonSchema({"type": "string"}, mode="validation"),
+]
 
 
 def get_parameters(fn: Callable) -> Tuple[Set[str], Set[str]]:
@@ -42,10 +55,15 @@ def default_agent_input_fn(task: Any, state: dict) -> dict:
 
 
 class AgentInputComponent(QueryComponent):
-    """Takes in agent inputs and transforms it into desired outputs."""
+    """Takes in agent inputs and transforms it into desired outputs.
 
-    fn: Callable = Field(..., description="Function to run.")
-    async_fn: Optional[Callable] = Field(
+    NOTE: this is now deprecated in favor of using `StatefulFnComponent`.
+
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    fn: AnnotatedCallable = Field(..., description="Function to run.")
+    async_fn: Optional[AnnotatedCallable] = Field(
         None, description="Async function to run. If not provided, will run `fn`."
     )
 
@@ -62,6 +80,7 @@ class AgentInputComponent(QueryComponent):
     ) -> None:
         """Initialize."""
         # determine parameters
+        super().__init__(fn=fn, async_fn=async_fn, **kwargs)
         default_req_params, default_opt_params = get_parameters(fn)
         if req_params is None:
             req_params = default_req_params
@@ -70,10 +89,6 @@ class AgentInputComponent(QueryComponent):
 
         self._req_params = req_params
         self._opt_params = opt_params
-        super().__init__(fn=fn, async_fn=async_fn, **kwargs)
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -149,8 +164,11 @@ class AgentFnComponent(BaseAgentComponent):
 
     Designed to let users easily modify state.
 
+    NOTE: this is now deprecated in favor of using `StatefulFnComponent`.
+
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     fn: Callable = Field(..., description="Function to run.")
     async_fn: Optional[Callable] = Field(
         None, description="Async function to run. If not provided, will run `fn`."
@@ -169,6 +187,7 @@ class AgentFnComponent(BaseAgentComponent):
     ) -> None:
         """Initialize."""
         # determine parameters
+        super().__init__(fn=fn, async_fn=async_fn, **kwargs)
         default_req_params, default_opt_params = get_parameters(fn)
         # make sure task and step are part of the list, and remove them from the list
         if "task" not in default_req_params or "state" not in default_req_params:
@@ -186,10 +205,6 @@ class AgentFnComponent(BaseAgentComponent):
 
         self._req_params = req_params
         self._opt_params = opt_params
-        super().__init__(fn=fn, async_fn=async_fn, **kwargs)
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -257,14 +272,14 @@ class CustomAgentComponent(BaseAgentComponent):
 
     Designed to let users easily modify state.
 
+    NOTE: this is now deprecated in favor of using `StatefulFnComponent`.
+
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, description="Callback manager"
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

@@ -1,9 +1,10 @@
 """Node parser interface."""
-import asyncio
+
 from abc import abstractmethod
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, cast
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.schema import (
     BaseNode,
@@ -92,7 +93,7 @@ class BaseExtractor(TransformComponent):
             nodes (Sequence[Document]): nodes to extract metadata from
 
         """
-        return asyncio.run(self.aextract(nodes))
+        return asyncio_run(self.aextract(nodes))
 
     async def aprocess_nodes(
         self,
@@ -139,7 +140,7 @@ class BaseExtractor(TransformComponent):
         excluded_llm_metadata_keys: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[BaseNode]:
-        return asyncio.run(
+        return asyncio_run(
             self.aprocess_nodes(
                 nodes,
                 excluded_embed_metadata_keys=excluded_embed_metadata_keys,

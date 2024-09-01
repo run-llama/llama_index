@@ -1,5 +1,8 @@
+import threading
 from abc import ABC, abstractmethod
+from contextvars import copy_context
 from enum import Enum
+from functools import partial
 from typing import (
     Any,
     AsyncGenerator,
@@ -7,15 +10,19 @@ from typing import (
     Generator,
     Generic,
     List,
-    Protocol,
     Type,
     TypeVar,
     Union,
-    runtime_checkable,
 )
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
+)
+from llama_index.core.bridge.pydantic_core import CoreSchema, core_schema
+from llama_index.core.instrumentation import DispatcherSpanMixin
 
 Model = TypeVar("Model", bound=BaseModel)
 
@@ -26,14 +33,8 @@ RESPONSE_TEXT_TYPE = Union[BaseModel, str, TokenGen, TokenAsyncGen]
 
 # TODO: move into a `core` folder
 # NOTE: this is necessary to make it compatible with pydantic
-@runtime_checkable
-class BaseOutputParser(Protocol):
+class BaseOutputParser(DispatcherSpanMixin, ABC):
     """Output parser class."""
-
-    @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
-        """Avoids serialization issues."""
-        schema.update(type="object", default={})
 
     @abstractmethod
     def parse(self, output: str) -> Any:
@@ -55,8 +56,21 @@ class BaseOutputParser(Protocol):
 
         return messages
 
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source: Type[Any], handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.any_schema()
 
-class BasePydanticProgram(ABC, Generic[Model]):
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> Dict[str, Any]:
+        json_schema = handler(core_schema)
+        return handler.resolve_ref_schema(json_schema)
+
+
+class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
     """A base class for LLM-powered function that return a pydantic model.
 
     Note: this interface is not yet stable.
@@ -74,6 +88,14 @@ class BasePydanticProgram(ABC, Generic[Model]):
     async def acall(self, *args: Any, **kwds: Any) -> Model:
         return self(*args, **kwds)
 
+    def stream_call(self, *args: Any, **kwds: Any) -> Generator[Model, None, None]:
+        raise NotImplementedError("stream_call is not supported by default.")
+
+    async def astream_call(
+        self, *args: Any, **kwds: Any
+    ) -> AsyncGenerator[Model, None]:
+        raise NotImplementedError("astream_call is not supported by default.")
+
 
 class PydanticProgramMode(str, Enum):
     """Pydantic program mode."""
@@ -81,5 +103,25 @@ class PydanticProgramMode(str, Enum):
     DEFAULT = "default"
     OPENAI = "openai"
     LLM = "llm"
+    FUNCTION = "function"
     GUIDANCE = "guidance"
     LM_FORMAT_ENFORCER = "lm-format-enforcer"
+
+
+class Thread(threading.Thread):
+    """
+    A wrapper for threading.Thread that copies the current context and uses the copy to run the target.
+    """
+
+    def __init__(
+        self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None
+    ) -> None:
+        super().__init__(
+            group=group,
+            target=copy_context().run,
+            name=name,
+            args=(
+                partial(target, *args, **(kwargs if isinstance(kwargs, dict) else {})),
+            ),
+            daemon=daemon,
+        )

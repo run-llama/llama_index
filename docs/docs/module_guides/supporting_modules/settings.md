@@ -1,6 +1,6 @@
 # Configuring Settings
 
-The `Settings` is a bundle of commonly used resources used during the indexing and querying stage in a LlamaIndex pipeline/application.
+The `Settings` is a bundle of commonly used resources used during the indexing and querying stage in a LlamaIndex workflow/application.
 
 You can use it to set the [global configuration](#setting-global-configuration). Local configurations (transformations, LLMs, embedding models) can be passed directly into the interfaces that make use of them.
 
@@ -105,7 +105,7 @@ from llama_index.core import Settings
 # maximum input size to the LLM
 Settings.context_window = 4096
 
-# number of tokens to leave room for the LLM to generate
+# number of tokens reserved for text generation.
 Settings.num_output = 256
 ```
 

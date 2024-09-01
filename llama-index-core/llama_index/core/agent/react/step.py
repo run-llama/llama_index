@@ -1,10 +1,9 @@
 """ReAct agent worker."""
 
 import asyncio
+import json
 import uuid
 from functools import partial
-from itertools import chain
-from threading import Thread
 from typing import (
     Any,
     AsyncGenerator,
@@ -45,6 +44,8 @@ from llama_index.core.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.agent import AgentToolCallEvent
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
@@ -54,7 +55,10 @@ from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
-from llama_index.core.utils import print_text, unit_generator
+from llama_index.core.types import Thread
+from llama_index.core.utils import print_text
+
+dispatcher = get_dispatcher(__name__)
 
 
 def add_user_step_to_reasoning(
@@ -97,6 +101,7 @@ def tell_llm_about_failure_in_extract_reasoning_step(
         },
     ) as event:
         event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(dummy_tool_output)})
+
     return dummy_tool_output
 
 
@@ -285,6 +290,12 @@ class ReActAgentWorker(BaseAgentWorker):
                     },
                 ) as event:
                     try:
+                        dispatcher.event(
+                            AgentToolCallEvent(
+                                arguments=json.dumps({**reasoning_step.action_input}),
+                                tool=tool.metadata,
+                            )
+                        )
                         tool_output = tool.call(**reasoning_step.action_input)
                     except Exception as e:
                         tool_output = ToolOutput(
@@ -304,9 +315,11 @@ class ReActAgentWorker(BaseAgentWorker):
 
         observation_step = ObservationReasoningStep(
             observation=str(tool_output),
-            return_direct=tool.metadata.return_direct and not tool_output.is_error
-            if tool
-            else False,
+            return_direct=(
+                tool.metadata.return_direct and not tool_output.is_error
+                if tool
+                else False
+            ),
         )
         current_reasoning.append(observation_step)
         if self._verbose:
@@ -349,6 +362,12 @@ class ReActAgentWorker(BaseAgentWorker):
                     },
                 ) as event:
                     try:
+                        dispatcher.event(
+                            AgentToolCallEvent(
+                                arguments=json.dumps({**reasoning_step.action_input}),
+                                tool=tool.metadata,
+                            )
+                        )
                         tool_output = await tool.acall(**reasoning_step.action_input)
                     except Exception as e:
                         tool_output = ToolOutput(
@@ -368,9 +387,11 @@ class ReActAgentWorker(BaseAgentWorker):
 
         observation_step = ObservationReasoningStep(
             observation=str(tool_output),
-            return_direct=tool.metadata.return_direct and not tool_output.is_error
-            if tool
-            else False,
+            return_direct=(
+                tool.metadata.return_direct and not tool_output.is_error
+                if tool
+                else False
+            ),
         )
         current_reasoning.append(observation_step)
         if self._verbose:
@@ -448,13 +469,16 @@ class ReActAgentWorker(BaseAgentWorker):
             next_steps=new_steps,
         )
 
-    def _infer_stream_chunk_is_final(self, chunk: ChatResponse) -> bool:
+    def _infer_stream_chunk_is_final(
+        self, chunk: ChatResponse, missed_chunks_storage: list
+    ) -> bool:
         """Infers if a chunk from a live stream is the start of the final
         reasoning step. (i.e., and should eventually become
         ResponseReasoningStep — not part of this function's logic tho.).
 
         Args:
             chunk (ChatResponse): the current chunk stream to check
+            missed_chunks_storage (list): list to store missed chunks
 
         Returns:
             bool: Boolean on whether the chunk is the start of the final response
@@ -462,41 +486,42 @@ class ReActAgentWorker(BaseAgentWorker):
         latest_content = chunk.message.content
         if latest_content:
             # doesn't follow thought-action format
-            if len(latest_content) > len("Thought") and not latest_content.startswith(
-                "Thought"
-            ):
+            # keep first chunks
+            if len(latest_content) < len("Thought"):
+                missed_chunks_storage.append(chunk)
+            elif not latest_content.startswith("Thought"):
                 return True
             elif "Answer: " in latest_content:
+                missed_chunks_storage.clear()
                 return True
         return False
 
     def _add_back_chunk_to_stream(
-        self, chunk: ChatResponse, chat_stream: Generator[ChatResponse, None, None]
+        self,
+        chunks: List[ChatResponse],
+        chat_stream: Generator[ChatResponse, None, None],
     ) -> Generator[ChatResponse, None, None]:
         """Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         Args:
-            chunk (ChatResponse): the chunk to add back to the beginning of the
+            chunks List[ChatResponse]: the chunks to add back to the beginning of the
                                     chat_stream.
 
         Return:
             Generator[ChatResponse, None, None]: the updated chat_stream
         """
-        updated_stream = chain.from_iterable(  # need to add back partial response chunk
-            [
-                unit_generator(chunk),
-                chat_stream,
-            ]
-        )
-        # use cast to avoid mypy issue with chain and Generator
-        updated_stream_c: Generator[ChatResponse, None, None] = cast(
-            Generator[ChatResponse, None, None], updated_stream
-        )
-        return updated_stream_c
+
+        def gen() -> Generator[ChatResponse, None, None]:
+            yield from chunks
+            yield from chat_stream
+
+        return gen()
 
     async def _async_add_back_chunk_to_stream(
-        self, chunk: ChatResponse, chat_stream: AsyncGenerator[ChatResponse, None]
+        self,
+        chunks: List[ChatResponse],
+        chat_stream: AsyncGenerator[ChatResponse, None],
     ) -> AsyncGenerator[ChatResponse, None]:
         """Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
@@ -504,13 +529,15 @@ class ReActAgentWorker(BaseAgentWorker):
         NOTE: this itself is not an async function.
 
         Args:
-            chunk (ChatResponse): the chunk to add back to the beginning of the
+            chunks List[ChatResponse]: the chunks to add back to the beginning of the
                                     chat_stream.
 
         Return:
             AsyncGenerator[ChatResponse, None]: the updated async chat_stream
         """
-        yield chunk
+        for chunk in chunks:
+            yield chunk
+
         async for item in chat_stream:
             yield item
 
@@ -531,7 +558,8 @@ class ReActAgentWorker(BaseAgentWorker):
         tools = self.get_tools(task.input)
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get(input=task.input)
+            + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -570,7 +598,8 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get(input=task.input)
+            + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
         # send prompt
@@ -608,7 +637,8 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get(input=task.input)
+            + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -618,10 +648,13 @@ class ReActAgentWorker(BaseAgentWorker):
         full_response = ChatResponse(
             message=ChatMessage(content=None, role="assistant")
         )
+        missed_chunks_storage = []
         is_done = False
         for latest_chunk in chat_stream:
             full_response = latest_chunk
-            is_done = self._infer_stream_chunk_is_final(latest_chunk)
+            is_done = self._infer_stream_chunk_is_final(
+                latest_chunk, missed_chunks_storage
+            )
             if is_done:
                 break
 
@@ -645,7 +678,7 @@ class ReActAgentWorker(BaseAgentWorker):
         else:
             # Get the response in a separate thread so we can yield the response
             response_stream = self._add_back_chunk_to_stream(
-                chunk=latest_chunk, chat_stream=chat_stream
+                chunks=[*missed_chunks_storage, latest_chunk], chat_stream=chat_stream
             )
 
             agent_response = StreamingAgentChatResponse(
@@ -679,7 +712,8 @@ class ReActAgentWorker(BaseAgentWorker):
 
         input_chat = self._react_chat_formatter.format(
             tools,
-            chat_history=task.memory.get() + task.extra_state["new_memory"].get_all(),
+            chat_history=task.memory.get(input=task.input)
+            + task.extra_state["new_memory"].get_all(),
             current_reasoning=task.extra_state["current_reasoning"],
         )
 
@@ -689,16 +723,19 @@ class ReActAgentWorker(BaseAgentWorker):
         full_response = ChatResponse(
             message=ChatMessage(content=None, role="assistant")
         )
+        missed_chunks_storage = []
         is_done = False
         async for latest_chunk in chat_stream:
             full_response = latest_chunk
-            is_done = self._infer_stream_chunk_is_final(latest_chunk)
+            is_done = self._infer_stream_chunk_is_final(
+                latest_chunk, missed_chunks_storage
+            )
             if is_done:
                 break
 
         if not is_done:
             # given react prompt outputs, call tools or return response
-            reasoning_steps, is_done = self._process_actions(
+            reasoning_steps, is_done = await self._aprocess_actions(
                 task, tools=tools, output=full_response, is_streaming=True
             )
             task.extra_state["current_reasoning"].extend(reasoning_steps)
@@ -717,7 +754,7 @@ class ReActAgentWorker(BaseAgentWorker):
         else:
             # Get the response in a separate thread so we can yield the response
             response_stream = self._async_add_back_chunk_to_stream(
-                chunk=latest_chunk, chat_stream=chat_stream
+                chunks=[*missed_chunks_storage, latest_chunk], chat_stream=chat_stream
             )
 
             agent_response = StreamingAgentChatResponse(
@@ -734,7 +771,7 @@ class ReActAgentWorker(BaseAgentWorker):
             # wait until response writing is done
             agent_response._ensure_async_setup()
 
-            await agent_response._is_function_false_event.wait()
+            await agent_response.is_function_false_event.wait()
 
         return self._get_task_step_response(agent_response, step, is_done)
 

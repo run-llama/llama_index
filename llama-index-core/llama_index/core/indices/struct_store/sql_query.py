@@ -5,7 +5,12 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.response.schema import Response
+from llama_index.core.base.response.schema import (
+    RESPONSE_TYPE,
+    AsyncStreamingResponse,
+    Response,
+    StreamingResponse,
+)
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.indices.struct_store.container_builder import (
     SQLContextContainerBuilder,
@@ -18,6 +23,7 @@ from llama_index.core.indices.struct_store.sql_retriever import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.objects.table_node_mapping import SQLTableSchema
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.default_prompts import (
     DEFAULT_TEXT_TO_SQL_PGVECTOR_PROMPT,
@@ -30,12 +36,7 @@ from llama_index.core.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.core.schema import QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Table
 
@@ -75,8 +76,14 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
     NOTE: deprecated in favor of SQLTableRetriever, kept for backward compatibility.
 
     Runs raw SQL over a SQLStructStoreIndex. No LLM calls are made here.
+
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
+
+    NOTE: Any Text-to-SQL application should be aware that executing
+    arbitrary SQL queries can be a security risk. It is recommended to
+    take precautions as needed, such as using restricted roles, read-only
+    databases, sandboxing, etc.
     """
 
     def __init__(
@@ -92,11 +99,7 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
             sql_context_container or index.sql_context_container
         )
         self._sql_only = sql_only
-        super().__init__(
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, index.service_context
-            )
-        )
+        super().__init__(callback_manager=Settings.callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt modules."""
@@ -138,6 +141,11 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
     NOTE: this query cannot work with composed indices - if the index
     contains subindices, those subindices will not be queried.
 
+    NOTE: Any Text-to-SQL application should be aware that executing
+    arbitrary SQL queries can be a security risk. It is recommended to
+    take precautions as needed, such as using restricted roles, read-only
+    databases, sandboxing, etc.
+
     Args:
         index (SQLStructStoreIndex): A SQL Struct Store Index
         text_to_sql_prompt (Optional[BasePromptTemplate]): A Text to SQL
@@ -166,10 +174,9 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
     ) -> None:
         """Initialize params."""
         self._index = index
-        self._llm = llm_from_settings_or_context(Settings, index.service_context)
+        self._llm = Settings.llm
         self._sql_database = index.sql_database
         self._sql_context_container = index.sql_context_container
-        self._service_context = index.service_context
         self._ref_doc_id_column = index.ref_doc_id_column
 
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
@@ -179,16 +186,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         self._context_query_kwargs = context_query_kwargs or {}
         self._synthesize_response = synthesize_response
         self._sql_only = sql_only
-        super().__init__(
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, index.service_context
-            )
-        )
-
-    @property
-    def service_context(self) -> Optional[ServiceContext]:
-        """Get service context."""
-        return self._service_context
+        super().__init__(callback_manager=Settings.callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt modules."""
@@ -200,6 +198,23 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         sql_result_start = response.find("SQLResult:")
         if sql_result_start != -1:
             response = response[:sql_result_start]
+        # If LLM returns SQLQuery: or ```sql, extract the SQL query
+        sql_query_start = response.find("SQLQuery:")
+        if sql_query_start != -1:
+            response = response[sql_query_start:]
+            response = response.replace("SQLQuery:", "")
+        sql_markdown_start = response.find("```sql")
+        if sql_markdown_start != -1:
+            response = response.replace("```sql", "")
+        response = response.replace("```", "")
+        # If LLM talks between the end of query and SQL result
+        # find semi-colon and remove everything after it
+        semi_colon = response.find(";")
+        if semi_colon != -1:
+            response = response[: semi_colon + 1]
+        # Replace escaped single quotes, happens when
+        # there's a ' in the value (e.g. "I'm")
+        response = response.replace("\\'", "''")
         return response.strip()
 
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
@@ -301,6 +316,14 @@ def _validate_prompt(
 
 
 class BaseSQLTableQueryEngine(BaseQueryEngine):
+    """Base SQL Table query engine.
+
+    NOTE: Any Text-to-SQL application should be aware that executing
+    arbitrary SQL queries can be a security risk. It is recommended to
+    take precautions as needed, such as using restricted roles, read-only
+    databases, sandboxing, etc.
+    """
+
     def __init__(
         self,
         llm: Optional[LLM] = None,
@@ -309,13 +332,11 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         callback_manager: Optional[CallbackManager] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         verbose: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
+        streaming: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._service_context = service_context
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         if callback_manager is not None:
             self._llm.callback_manager = callback_manager
 
@@ -332,11 +353,8 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
         self._synthesize_response = synthesize_response
         self._verbose = verbose
-        super().__init__(
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context),
-            **kwargs,
-        )
+        self._streaming = streaming
+        super().__init__(callback_manager=callback_manager or Settings.callback_manager)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
@@ -356,12 +374,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
     def sql_retriever(self) -> NLSQLRetriever:
         """Get SQL retriever."""
 
-    @property
-    def service_context(self) -> Optional[ServiceContext]:
-        """Get service context."""
-        return self._service_context
-
-    def _query(self, query_bundle: QueryBundle) -> Response:
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         retrieved_nodes, metadata = self.sql_retriever.retrieve_with_metadata(
             query_bundle
@@ -378,18 +391,21 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 text_qa_template=partial_synthesis_prompt,
                 refine_template=self._refine_synthesis_prompt,
                 verbose=self._verbose,
+                streaming=self._streaming,
             )
             response = response_synthesizer.synthesize(
                 query=query_bundle.query_str,
                 nodes=retrieved_nodes,
             )
             cast(Dict, response.metadata).update(metadata)
+            if self._streaming:
+                return cast(StreamingResponse, response)
             return cast(Response, response)
         else:
             response_str = "\n".join([node.node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
-    async def _aquery(self, query_bundle: QueryBundle) -> Response:
+    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         retrieved_nodes, metadata = await self.sql_retriever.aretrieve_with_metadata(
             query_bundle
@@ -406,12 +422,16 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 callback_manager=self.callback_manager,
                 text_qa_template=partial_synthesis_prompt,
                 refine_template=self._refine_synthesis_prompt,
+                verbose=self._verbose,
+                streaming=self._streaming,
             )
             response = await response_synthesizer.asynthesize(
                 query=query_bundle.query_str,
                 nodes=retrieved_nodes,
             )
             cast(Dict, response.metadata).update(metadata)
+            if self._streaming:
+                return cast(AsyncStreamingResponse, response)
             return cast(Response, response)
         else:
             response_str = "\n".join([node.node.text for node in retrieved_nodes])
@@ -423,6 +443,11 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
     Natural language SQL Table query engine.
 
     Read NLStructStoreQueryEngine's docstring for more info on NL SQL.
+
+    NOTE: Any Text-to-SQL application should be aware that executing
+    arbitrary SQL queries can be a security risk. It is recommended to
+    take precautions as needed, such as using restricted roles, read-only
+    databases, sandboxing, etc.
     """
 
     def __init__(
@@ -435,8 +460,8 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
-        service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         sql_only: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
@@ -451,7 +476,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             context_query_kwargs=context_query_kwargs,
             tables=tables,
             context_str_prefix=context_str_prefix,
-            service_context=service_context,
+            embed_model=embed_model,
             sql_only=sql_only,
             callback_manager=callback_manager,
             verbose=verbose,
@@ -461,7 +486,6 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             response_synthesis_prompt=response_synthesis_prompt,
             refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
-            service_context=service_context,
             callback_manager=callback_manager,
             verbose=verbose,
             **kwargs,
@@ -481,6 +505,11 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
 
     NOTE: this is a beta feature
 
+    NOTE: Any Text-to-SQL application should be aware that executing
+    arbitrary SQL queries can be a security risk. It is recommended to
+    take precautions as needed, such as using restricted roles, read-only
+    databases, sandboxing, etc.
+
     """
 
     def __init__(
@@ -493,7 +522,6 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
-        service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
         sql_only: bool = False,
         callback_manager: Optional[CallbackManager] = None,
@@ -509,7 +537,6 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
             tables=tables,
             sql_parser_mode=SQLParserMode.PGVECTOR,
             context_str_prefix=context_str_prefix,
-            service_context=service_context,
             sql_only=sql_only,
             callback_manager=callback_manager,
         )
@@ -518,7 +545,6 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
             response_synthesis_prompt=response_synthesis_prompt,
             refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
-            service_context=service_context,
             callback_manager=callback_manager,
             **kwargs,
         )
@@ -542,7 +568,6 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
-        service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
         sql_only: bool = False,
         callback_manager: Optional[CallbackManager] = None,
@@ -556,7 +581,6 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
             context_query_kwargs=context_query_kwargs,
             table_retriever=table_retriever,
             context_str_prefix=context_str_prefix,
-            service_context=service_context,
             sql_only=sql_only,
             callback_manager=callback_manager,
         )
@@ -565,7 +589,6 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
             response_synthesis_prompt=response_synthesis_prompt,
             refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
-            service_context=service_context,
             callback_manager=callback_manager,
             **kwargs,
         )

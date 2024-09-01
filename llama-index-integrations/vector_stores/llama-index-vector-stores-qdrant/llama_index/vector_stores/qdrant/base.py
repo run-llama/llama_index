@@ -18,6 +18,9 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
+    MetadataFilters,
+    FilterOperator,
+    FilterCondition,
 )
 from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
@@ -31,8 +34,8 @@ from llama_index.vector_stores.qdrant.utils import (
     relative_score_fusion,
     fastembed_sparse_encoder,
 )
+from qdrant_client.conversions.common_types import QuantizationConfig
 from qdrant_client.http import models as rest
-from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import (
     FieldCondition,
     Filter,
@@ -41,9 +44,12 @@ from qdrant_client.http.models import (
     MatchText,
     MatchValue,
     Payload,
+    PayloadField,
     Range,
     HasIdCondition,
+    IsEmptyCondition,
 )
+from qdrant_client.qdrant_fastembed import IDF_EMBEDDING_MODELS
 
 logger = logging.getLogger(__name__)
 import_err_msg = (
@@ -53,6 +59,7 @@ import_err_msg = (
 DENSE_VECTOR_NAME = "text-dense"
 SPARSE_VECTOR_NAME_OLD = "text-sparse"
 SPARSE_VECTOR_NAME = "text-sparse-new"
+DOCUMENT_ID_KEY = "doc_id"
 
 
 class QdrantVectorStore(BasePydanticVectorStore):
@@ -76,9 +83,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
         max_retries (int): maximum number of retries in case of a failure. Defaults to 3
         client_kwargs (Optional[dict]): additional kwargs for QdrantClient and AsyncQdrantClient
         enable_hybrid (bool): whether to enable hybrid search using dense and sparse vectors
+        fastembed_sparse_model (Optional[str]): name of the FastEmbed sparse model to use, if any
         sparse_doc_fn (Optional[SparseEncoderCallable]): function to encode sparse vectors
         sparse_query_fn (Optional[SparseEncoderCallable]): function to encode sparse queries
         hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
+        index_doc_id (bool): whether to create a payload index for the document ID. Defaults to True
 
     Examples:
         `pip install llama-index-vector-stores-qdrant`
@@ -99,7 +108,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
     flat_metadata: bool = False
 
     collection_name: str
-    path: Optional[str]
     url: Optional[str]
     api_key: Optional[str]
     batch_size: int
@@ -107,13 +115,18 @@ class QdrantVectorStore(BasePydanticVectorStore):
     max_retries: int
     client_kwargs: dict = Field(default_factory=dict)
     enable_hybrid: bool
+    index_doc_id: bool
+    fastembed_sparse_model: Optional[str]
 
-    _client: Any = PrivateAttr()
-    _aclient: Any = PrivateAttr()
+    _client: qdrant_client.QdrantClient = PrivateAttr()
+    _aclient: qdrant_client.AsyncQdrantClient = PrivateAttr()
     _collection_initialized: bool = PrivateAttr()
     _sparse_doc_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _sparse_query_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _hybrid_fusion_fn: Optional[HybridFusionCallable] = PrivateAttr()
+    _dense_config: Optional[rest.VectorParams] = PrivateAttr()
+    _sparse_config: Optional[rest.SparseVectorParams] = PrivateAttr()
+    _quantization_config: Optional[QuantizationConfig] = PrivateAttr()
 
     def __init__(
         self,
@@ -126,13 +139,31 @@ class QdrantVectorStore(BasePydanticVectorStore):
         parallel: int = 1,
         max_retries: int = 3,
         client_kwargs: Optional[dict] = None,
+        dense_config: Optional[rest.VectorParams] = None,
+        sparse_config: Optional[rest.SparseVectorParams] = None,
+        quantization_config: Optional[QuantizationConfig] = None,
         enable_hybrid: bool = False,
+        fastembed_sparse_model: Optional[str] = None,
         sparse_doc_fn: Optional[SparseEncoderCallable] = None,
         sparse_query_fn: Optional[SparseEncoderCallable] = None,
         hybrid_fusion_fn: Optional[HybridFusionCallable] = None,
+        index_doc_id: bool = True,
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        super().__init__(
+            collection_name=collection_name,
+            url=url,
+            api_key=api_key,
+            batch_size=batch_size,
+            parallel=parallel,
+            max_retries=max_retries,
+            client_kwargs=client_kwargs or {},
+            enable_hybrid=enable_hybrid,
+            index_doc_id=index_doc_id,
+            fastembed_sparse_model=fastembed_sparse_model,
+        )
+
         if (
             client is None
             and aclient is None
@@ -167,28 +198,24 @@ class QdrantVectorStore(BasePydanticVectorStore):
             self._collection_initialized = False
 
         # setup hybrid search if enabled
-        if enable_hybrid:
+        if enable_hybrid or fastembed_sparse_model is not None:
+            enable_hybrid = True
             self._sparse_doc_fn = sparse_doc_fn or self.get_default_sparse_doc_encoder(
-                collection_name
+                collection_name, fastembed_sparse_model=fastembed_sparse_model
             )
             self._sparse_query_fn = (
                 sparse_query_fn
-                or self.get_default_sparse_query_encoder(collection_name)
+                or self.get_default_sparse_query_encoder(
+                    collection_name, fastembed_sparse_model=fastembed_sparse_model
+                )
             )
             self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
                 HybridFusionCallable, relative_score_fusion
             )
 
-        super().__init__(
-            collection_name=collection_name,
-            url=url,
-            api_key=api_key,
-            batch_size=batch_size,
-            parallel=parallel,
-            max_retries=max_retries,
-            client_kwargs=client_kwargs or {},
-            enable_hybrid=enable_hybrid,
-        )
+        self._sparse_config = sparse_config
+        self._dense_config = dense_config
+        self._quantization_config = quantization_config
 
     @classmethod
     def class_name(cls) -> str:
@@ -204,7 +231,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
         self._sparse_query_fn = sparse_query_fn
         self._hybrid_fusion_fn = hybrid_fusion_fn
 
-    def _build_points(self, nodes: List[BaseNode]) -> Tuple[List[Any], List[str]]:
+    def _build_points(
+        self, nodes: List[BaseNode], sparse_vector_name: str
+    ) -> Tuple[List[Any], List[str]]:
         ids = []
         points = []
         for node_batch in iter_batch(nodes, self.batch_size):
@@ -235,7 +264,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         vectors.append(
                             {
                                 # Dynamically switch between the old and new sparse vector name
-                                self.sparse_vector_name: rest.SparseVector(
+                                sparse_vector_name: rest.SparseVector(
                                     indices=sparse_indices[i],
                                     values=sparse_vectors[i],
                                 ),
@@ -268,6 +297,105 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         return points, ids
 
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        limit: Optional[int] = None,
+    ) -> List[BaseNode]:
+        """
+        Get nodes from the index.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to retrieve.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+
+        Returns:
+            List[BaseNode]: List of nodes retrieved from the index.
+        """
+        should = []
+        if node_ids is not None:
+            should = [
+                HasIdCondition(
+                    has_id=node_ids,
+                )
+            ]
+            # If we pass a node_ids list,
+            # we can limit the search to only those nodes
+            # or less if limit is provided
+            limit = len(node_ids) if limit is None else min(len(node_ids), limit)
+
+        if filters is not None:
+            filter = self._build_subfilter(filters)
+            if filter.should is None:
+                filter.should = should
+            else:
+                filter.should.extend(should)
+        else:
+            filter = Filter(should=should)
+
+        # If we pass an empty list, Qdrant will not return any results
+        filter.must = filter.must if filter.must and len(filter.must) > 0 else None
+        filter.should = (
+            filter.should if filter.should and len(filter.should) > 0 else None
+        )
+        filter.must_not = (
+            filter.must_not if filter.must_not and len(filter.must_not) > 0 else None
+        )
+
+        response = self._client.scroll(
+            collection_name=self.collection_name,
+            limit=limit or 9999,
+            scroll_filter=filter,
+        )
+
+        return self.parse_to_query_result(response[0]).nodes
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        limit: Optional[int] = None,
+    ) -> List[BaseNode]:
+        """
+        Asynchronous method to get nodes from the index.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to retrieve.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+
+        Returns:
+            List[BaseNode]: List of nodes retrieved from the index.
+        """
+        should = []
+        if node_ids is not None:
+            should = [
+                HasIdCondition(
+                    has_id=node_ids,
+                )
+            ]
+            # If we pass a node_ids list,
+            # we can limit the search to only those nodes
+            # or less if limit is provided
+            limit = len(node_ids) if limit is None else min(len(node_ids), limit)
+
+        if filters is not None:
+            filter = self._build_subfilter(filters)
+            if filter.should is None:
+                filter.should = should
+            else:
+                filter.should.extend(should)
+        else:
+            filter = Filter(should=should)
+
+        response = await self._aclient.scroll(
+            collection_name=self.collection_name,
+            limit=limit or 9999,
+            scroll_filter=filter,
+        )
+
+        return self.parse_to_query_result(response[0]).nodes
+
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """
         Add nodes to index.
@@ -282,7 +410,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 vector_size=len(nodes[0].get_embedding()),
             )
 
-        points, ids = self._build_points(nodes)
+        sparse_vector_name = self.sparse_vector_name()
+        points, ids = self._build_points(nodes, sparse_vector_name)
 
         self._client.upload_points(
             collection_name=self.collection_name,
@@ -308,6 +437,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Raises:
             ValueError: If trying to using async methods without aclient
         """
+        from qdrant_client.http.exceptions import UnexpectedResponse
+
         collection_initialized = await self._acollection_exists(self.collection_name)
 
         if len(nodes) > 0 and not collection_initialized:
@@ -316,16 +447,22 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 vector_size=len(nodes[0].get_embedding()),
             )
 
-        points, ids = self._build_points(nodes)
+        sparse_vector_name = await self.asparse_vector_name()
+        points, ids = self._build_points(nodes, sparse_vector_name)
 
-        await self._aclient.upload_points(
-            collection_name=self.collection_name,
-            points=points,
-            batch_size=self.batch_size,
-            parallel=self.parallel,
-            max_retries=self.max_retries,
-            wait=True,
-        )
+        for batch in iter_batch(points, self.batch_size):
+            retries = 0
+            while retries < self.max_retries:
+                try:
+                    await self._aclient.upsert(
+                        collection_name=self.collection_name,
+                        points=batch,
+                    )
+                    break
+                except (RpcError, UnexpectedResponse) as exc:
+                    retries += 1
+                    if retries >= self.max_retries:
+                        raise exc  # noqa: TRY201
 
         return ids
 
@@ -342,7 +479,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             points_selector=rest.Filter(
                 must=[
                     rest.FieldCondition(
-                        key="doc_id", match=rest.MatchValue(value=ref_doc_id)
+                        key=DOCUMENT_ID_KEY, match=rest.MatchValue(value=ref_doc_id)
                     )
                 ]
             ),
@@ -361,11 +498,95 @@ class QdrantVectorStore(BasePydanticVectorStore):
             points_selector=rest.Filter(
                 must=[
                     rest.FieldCondition(
-                        key="doc_id", match=rest.MatchValue(value=ref_doc_id)
+                        key=DOCUMENT_ID_KEY, match=rest.MatchValue(value=ref_doc_id)
                     )
                 ]
             ),
         )
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Delete nodes using with node_ids.
+
+        Args:
+            node_ids (Optional[List[str]): List of node IDs to delete.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+        """
+        should = []
+        if node_ids is not None:
+            should = [
+                HasIdCondition(
+                    has_id=node_ids,
+                )
+            ]
+
+        if filters is not None:
+            filter = self._build_subfilter(filters)
+            if filter.should is None:
+                filter.should = should
+            else:
+                filter.should.extend(should)
+        else:
+            filter = Filter(should=should)
+
+        self._client.delete(
+            collection_name=self.collection_name,
+            points_selector=filter,
+        )
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Asynchronous method to delete nodes using with node_ids.
+
+        Args:
+            node_ids (Optional[List[str]): List of node IDs to delete.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+        """
+        should = []
+        if node_ids is not None:
+            should = [
+                HasIdCondition(
+                    has_id=node_ids,
+                )
+            ]
+
+        if filters is not None:
+            filter = self._build_subfilter(filters)
+            if filter.should is None:
+                filter.should = should
+            else:
+                filter.should.extend(should)
+        else:
+            filter = Filter(should=should)
+
+        await self._aclient.delete(
+            collection_name=self.collection_name,
+            points_selector=filter,
+        )
+
+    def clear(self) -> None:
+        """
+        Clear the index.
+        """
+        self._client.delete_collection(collection_name=self.collection_name)
+        self._collection_initialized = False
+
+    async def aclear(self) -> None:
+        """
+        Asynchronous method to clear the index.
+        """
+        await self._aclient.delete_collection(collection_name=self.collection_name)
+        self._collection_initialized = False
 
     @property
     def client(self) -> Any:
@@ -377,30 +598,46 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http import models as rest
         from qdrant_client.http.exceptions import UnexpectedResponse
 
+        dense_config = self._dense_config or rest.VectorParams(
+            size=vector_size,
+            distance=rest.Distance.COSINE,
+        )
+
+        sparse_config = self._sparse_config or rest.SparseVectorParams(
+            index=rest.SparseIndexParams(),
+            modifier=(
+                rest.Modifier.IDF
+                if self.fastembed_sparse_model in IDF_EMBEDDING_MODELS
+                else None
+            ),
+        )
+
         try:
             if self.enable_hybrid:
                 self._client.create_collection(
                     collection_name=collection_name,
                     vectors_config={
-                        DENSE_VECTOR_NAME: rest.VectorParams(
-                            size=vector_size,
-                            distance=rest.Distance.COSINE,
-                        )
+                        DENSE_VECTOR_NAME: dense_config,
                     },
                     # Newly created collection will have the new sparse vector name
-                    sparse_vectors_config={
-                        SPARSE_VECTOR_NAME: rest.SparseVectorParams(
-                            index=rest.SparseIndexParams()
-                        )
-                    },
+                    sparse_vectors_config={SPARSE_VECTOR_NAME: sparse_config},
+                    quantization_config=self._quantization_config,
                 )
             else:
                 self._client.create_collection(
                     collection_name=collection_name,
-                    vectors_config=rest.VectorParams(
-                        size=vector_size,
-                        distance=rest.Distance.COSINE,
-                    ),
+                    vectors_config=dense_config,
+                    quantization_config=self._quantization_config,
+                )
+
+            # To improve search performance Qdrant recommends setting up
+            # a payload index for fields used in filters.
+            # https://qdrant.tech/documentation/concepts/indexing
+            if self.index_doc_id:
+                self._client.create_payload_index(
+                    collection_name=collection_name,
+                    field_name=DOCUMENT_ID_KEY,
+                    field_schema=rest.PayloadSchemaType.KEYWORD,
                 )
         except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
@@ -416,29 +653,42 @@ class QdrantVectorStore(BasePydanticVectorStore):
         from qdrant_client.http import models as rest
         from qdrant_client.http.exceptions import UnexpectedResponse
 
+        dense_config = self._dense_config or rest.VectorParams(
+            size=vector_size,
+            distance=rest.Distance.COSINE,
+        )
+
+        sparse_config = self._sparse_config or rest.SparseVectorParams(
+            index=rest.SparseIndexParams(),
+            modifier=(
+                rest.Modifier.IDF
+                if self.fastembed_sparse_model in IDF_EMBEDDING_MODELS
+                else None
+            ),
+        )
+
         try:
             if self.enable_hybrid:
                 await self._aclient.create_collection(
                     collection_name=collection_name,
-                    vectors_config={
-                        DENSE_VECTOR_NAME: rest.VectorParams(
-                            size=vector_size,
-                            distance=rest.Distance.COSINE,
-                        )
-                    },
-                    sparse_vectors_config={
-                        SPARSE_VECTOR_NAME: rest.SparseVectorParams(
-                            index=rest.SparseIndexParams()
-                        )
-                    },
+                    vectors_config={DENSE_VECTOR_NAME: dense_config},
+                    sparse_vectors_config={SPARSE_VECTOR_NAME: sparse_config},
+                    quantization_config=self._quantization_config,
                 )
             else:
                 await self._aclient.create_collection(
                     collection_name=collection_name,
-                    vectors_config=rest.VectorParams(
-                        size=vector_size,
-                        distance=rest.Distance.COSINE,
-                    ),
+                    vectors_config=dense_config,
+                    quantization_config=self._quantization_config,
+                )
+            # To improve search performance Qdrant recommends setting up
+            # a payload index for fields used in filters.
+            # https://qdrant.tech/documentation/concepts/indexing
+            if self.index_doc_id:
+                await self._aclient.create_payload_index(
+                    collection_name=collection_name,
+                    field_name=DOCUMENT_ID_KEY,
+                    field_schema=rest.PayloadSchemaType.KEYWORD,
                 )
         except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
@@ -451,19 +701,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     def _collection_exists(self, collection_name: str) -> bool:
         """Check if a collection exists."""
-        try:
-            self._client.get_collection(collection_name)
-        except (RpcError, UnexpectedResponse, ValueError):
-            return False
-        return True
+        return self._client.collection_exists(collection_name)
 
     async def _acollection_exists(self, collection_name: str) -> bool:
         """Asynchronous method to check if a collection exists."""
-        try:
-            await self._aclient.get_collection(collection_name)
-        except (RpcError, UnexpectedResponse, ValueError):
-            return False
-        return True
+        return await self._aclient.collection_exists(collection_name)
 
     def query(
         self,
@@ -515,7 +757,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
                             # Dynamically switch between the old and new sparse vector name
-                            name=self.sparse_vector_name,
+                            name=self.sparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -558,7 +800,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
                             # Dynamically switch between the old and new sparse vector name
-                            name=self.sparse_vector_name,
+                            name=self.sparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -649,7 +891,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
                             # Dynamically switch between the old and new sparse vector name
-                            name=self.sparse_vector_name,
+                            name=await self.asparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -691,7 +933,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
                             # Dynamically switch between the old and new sparse vector name
-                            name=self.sparse_vector_name,
+                            name=await self.asparse_vector_name(),
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -748,8 +990,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
             try:
                 node = metadata_dict_to_node(payload)
             except Exception:
-                # NOTE: deprecated legacy logic for backward compatibility
-                logger.debug("Failed to parse Node metadata, fallback to legacy logic.")
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     payload
                 )
@@ -763,10 +1003,121 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     relationships=relationships,
                 )
             nodes.append(node)
-            similarities.append(point.score)
             ids.append(str(point.id))
+            try:
+                similarities.append(point.score)
+            except AttributeError:
+                # certain requests do not return a score
+                similarities.append(1.0)
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    def _build_subfilter(self, filters: MetadataFilters) -> Filter:
+        conditions = []
+        for subfilter in filters.filters:
+            # only for exact match
+            if isinstance(subfilter, MetadataFilters) and len(subfilter.filters) > 0:
+                conditions.append(self._build_subfilter(subfilter))
+            elif not subfilter.operator or subfilter.operator == FilterOperator.EQ:
+                if isinstance(subfilter.value, float):
+                    conditions.append(
+                        FieldCondition(
+                            key=subfilter.key,
+                            range=Range(
+                                gte=subfilter.value,
+                                lte=subfilter.value,
+                            ),
+                        )
+                    )
+                else:
+                    conditions.append(
+                        FieldCondition(
+                            key=subfilter.key,
+                            match=MatchValue(value=subfilter.value),
+                        )
+                    )
+            elif subfilter.operator == FilterOperator.LT:
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(lt=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.GT:
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(gt=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.GTE:
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(gte=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.LTE:
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        range=Range(lte=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.TEXT_MATCH:
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchText(text=subfilter.value),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.NE:
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchExcept(**{"except": [subfilter.value]}),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.IN:
+                # match any of the values
+                # https://qdrant.tech/documentation/concepts/filtering/#match-any
+                if isinstance(subfilter.value, List):
+                    values = [str(val) for val in subfilter.value]
+                else:
+                    values = str(subfilter.value).split(",")
+
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchAny(any=values),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.NIN:
+                # match none of the values
+                # https://qdrant.tech/documentation/concepts/filtering/#match-except
+                if isinstance(subfilter.value, List):
+                    values = [str(val) for val in subfilter.value]
+                else:
+                    values = str(subfilter.value).split(",")
+                conditions.append(
+                    FieldCondition(
+                        key=subfilter.key,
+                        match=MatchExcept(**{"except": values}),
+                    )
+                )
+            elif subfilter.operator == FilterOperator.IS_EMPTY:
+                # This condition will match all records where the field reports either does not exist, or has null or [] value.
+                # https://qdrant.tech/documentation/concepts/filtering/#is-empty
+                conditions.append(
+                    IsEmptyCondition(is_empty=PayloadField(key=subfilter.key))
+                )
+
+        filter = Filter()
+        if filters.condition == FilterCondition.AND:
+            filter.must = conditions
+        elif filters.condition == FilterCondition.OR:
+            filter.should = conditions
+        return filter
 
     def _build_query_filter(self, query: VectorStoreQuery) -> Optional[Any]:
         if not query.doc_ids and not query.query_str:
@@ -777,7 +1128,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         if query.doc_ids:
             must_conditions.append(
                 FieldCondition(
-                    key="doc_id",
+                    key=DOCUMENT_ID_KEY,
                     match=MatchAny(any=query.doc_ids),
                 )
             )
@@ -793,91 +1144,21 @@ class QdrantVectorStore(BasePydanticVectorStore):
         # filtering cannot handle longer queries and can effectively filter our all the
         # nodes. See: https://github.com/jerryjliu/llama_index/pull/1181
 
-        if query.filters is None:
-            return Filter(must=must_conditions)
-
-        for subfilter in query.filters.filters:
-            # only for exact match
-            if not subfilter.operator or subfilter.operator == "==":
-                if isinstance(subfilter.value, float):
-                    must_conditions.append(
-                        FieldCondition(
-                            key=subfilter.key,
-                            range=Range(
-                                gte=subfilter.value,
-                                lte=subfilter.value,
-                            ),
-                        )
-                    )
-                else:
-                    must_conditions.append(
-                        FieldCondition(
-                            key=subfilter.key,
-                            match=MatchValue(value=subfilter.value),
-                        )
-                    )
-            elif subfilter.operator == "<":
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        range=Range(lt=subfilter.value),
-                    )
-                )
-            elif subfilter.operator == ">":
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        range=Range(gt=subfilter.value),
-                    )
-                )
-            elif subfilter.operator == ">=":
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        range=Range(gte=subfilter.value),
-                    )
-                )
-            elif subfilter.operator == "<=":
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        range=Range(lte=subfilter.value),
-                    )
-                )
-            elif subfilter.operator == "text_match":
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        match=MatchText(text=subfilter.value),
-                    )
-                )
-            elif subfilter.operator == "!=":
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        match=MatchExcept(**{"except": [subfilter.value]}),
-                    )
-                )
-            elif subfilter.operator == "in":
-                # match any of the values
-                # https://qdrant.tech/documentation/concepts/filtering/#match-any
-                must_conditions.append(
-                    FieldCondition(
-                        key=subfilter.key,
-                        match=MatchAny(any=str(subfilter.value).split(",")),
-                    )
-                )
+        if query.filters and query.filters.filters:
+            must_conditions.append(self._build_subfilter(query.filters))
 
         return Filter(must=must_conditions)
 
     def use_old_sparse_encoder(self, collection_name: str) -> bool:
-        return (
-            self._collection_exists(collection_name)
-            and SPARSE_VECTOR_NAME_OLD
-            in self.client.get_collection(collection_name).config.params.vectors
-        )
+        collection_exists = self._collection_exists(collection_name)
+        if collection_exists:
+            cur_collection = self.client.get_collection(collection_name)
+            return SPARSE_VECTOR_NAME_OLD in (
+                cur_collection.config.params.sparse_vectors or {}
+            )
 
-    @property
+        return False
+
     def sparse_vector_name(self) -> str:
         return (
             SPARSE_VECTOR_NAME_OLD
@@ -885,18 +1166,41 @@ class QdrantVectorStore(BasePydanticVectorStore):
             else SPARSE_VECTOR_NAME
         )
 
+    async def ause_old_sparse_encoder(self, collection_name: str) -> bool:
+        collection_exists = await self._acollection_exists(collection_name)
+        if collection_exists:
+            cur_collection = await self._aclient.get_collection(collection_name)
+            return SPARSE_VECTOR_NAME_OLD in (
+                cur_collection.config.params.sparse_vectors or {}
+            )
+
+        return False
+
+    async def asparse_vector_name(self) -> str:
+        return (
+            SPARSE_VECTOR_NAME_OLD
+            if await self.ause_old_sparse_encoder(self.collection_name)
+            else SPARSE_VECTOR_NAME
+        )
+
     def get_default_sparse_doc_encoder(
-        self, collection_name: str
+        self, collection_name: str, fastembed_sparse_model: Optional[str] = None
     ) -> SparseEncoderCallable:
         if self.use_old_sparse_encoder(collection_name):
             return default_sparse_encoder("naver/efficient-splade-VI-BT-large-doc")
 
-        return fastembed_sparse_encoder(model_name="prithvida/Splade_PP_en_v1")
+        if fastembed_sparse_model is not None:
+            return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
+
+        return fastembed_sparse_encoder()
 
     def get_default_sparse_query_encoder(
-        self, collection_name: str
+        self, collection_name: str, fastembed_sparse_model: Optional[str] = None
     ) -> SparseEncoderCallable:
         if self.use_old_sparse_encoder(collection_name):
             return default_sparse_encoder("naver/efficient-splade-VI-BT-large-query")
 
-        return fastembed_sparse_encoder(model_name="prithvida/Splade_PP_en_v1")
+        if fastembed_sparse_model is not None:
+            return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
+
+        return fastembed_sparse_encoder()

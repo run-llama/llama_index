@@ -5,7 +5,7 @@ import metal_sdk  # noqa
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -29,7 +29,7 @@ def _to_metal_filters(standard_filters: MetadataFilters) -> list:
     return filters
 
 
-class MetalVectorStore(VectorStore):
+class MetalVectorStore(BasePydanticVectorStore):
     """Metal Vector Store.
 
     Examples:
@@ -52,6 +52,15 @@ class MetalVectorStore(VectorStore):
         ```
     """
 
+    stores_text: bool = True
+    flat_metadata: bool = False
+    is_embedding_query: bool = True
+
+    api_key: str
+    client_id: str
+    index_id: str
+    metal_client: Metal
+
     def __init__(
         self,
         api_key: str,
@@ -59,14 +68,16 @@ class MetalVectorStore(VectorStore):
         index_id: str,
     ):
         """Init params."""
-        self.api_key = api_key
-        self.client_id = client_id
-        self.index_id = index_id
+        super().__init__(
+            api_key=api_key,
+            client_id=client_id,
+            index_id=index_id,
+            metal_client=Metal(api_key, client_id, index_id),
+        )
 
-        self.metal_client = Metal(api_key, client_id, index_id)
-        self.stores_text = True
-        self.flat_metadata = False
-        self.is_embedding_query = True
+    @classmethod
+    def class_name(cls) -> str:
+        return "MetalVectorStore"
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         if query.filters is not None:

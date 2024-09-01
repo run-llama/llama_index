@@ -1,13 +1,28 @@
-from typing import Any, AsyncGenerator, Generator, List, Sequence
+import json
+import uuid
+from typing import (
+    Any,
+    AsyncGenerator,
+    Generator,
+    List,
+    Sequence,
+)
 from unittest.mock import MagicMock, patch
-
+from llama_index.core.agent.function_calling.step import (
+    build_error_tool_output,
+    build_missing_tool_message,
+)
+from llama_index.core.base.agent.types import TaskStepOutput
 import pytest
 from llama_index.agent.openai.base import OpenAIAgent
 from llama_index.agent.openai.step import (
     call_tool_with_error_handling,
     advanced_tool_call_parser,
 )
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+)
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
     StreamingAgentChatResponse,
@@ -15,7 +30,6 @@ from llama_index.core.chat_engine.types import (
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.llms.openai import OpenAI
-
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_chunk import Choice as ChunkChoice
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
@@ -109,6 +123,12 @@ async def mock_achat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
     return mock_chat_completion(*args, **kwargs)
 
 
+async def mock_achat_completion_tool_call(
+    function: Function, *args: Any, **kwargs: Any
+) -> ChatCompletion:
+    return mock_chat_completion_tool_call(function, *args, **kwargs)
+
+
 async def mock_achat_stream(
     *args: Any, **kwargs: Any
 ) -> AsyncGenerator[ChatCompletionChunk, None]:
@@ -153,6 +173,18 @@ def echo_tool() -> FunctionTool:
         return query
 
     return FunctionTool.from_defaults(fn=echo)
+
+
+@pytest.fixture()
+def malformed_echo_function() -> Function:
+    test_result: str = "This is a test"
+    return Function(name="echo", arguments=f'query = "{test_result}"')
+
+
+@pytest.fixture()
+def echo_function() -> Function:
+    test_result: str = "This is a test"
+    return Function(name="echo", arguments=json.dumps({"query": test_result}))
 
 
 class MockChatLLM(MockLLM):
@@ -306,13 +338,12 @@ def test_call_tool_with_error_handling() -> None:
 def test_call_tool_with_malformed_function_call(
     MockSyncOpenAI: MagicMock,
     echo_tool: FunctionTool,
+    malformed_echo_function: Function,
 ) -> None:
     """Test add step."""
     mock_instance = MockSyncOpenAI.return_value
-    test_result: str = "This is a test"
-    function = Function(name="echo", arguments=f'query = "{test_result}"')
     mock_instance.chat.completions.create.return_value = mock_chat_completion_tool_call(
-        function=function
+        function=malformed_echo_function
     )
 
     llm = OpenAI(model="gpt-3.5-turbo")
@@ -324,7 +355,7 @@ def test_call_tool_with_malformed_function_call(
     ## NOTE: can only take a single step before finishing,
     # since mocked chat output does not call any tools
     task = agent.create_task(
-        f"This happens if tool call is malformed like:\n{function.arguments}"
+        f"This happens if tool call is malformed like:\n{malformed_echo_function.arguments}"
     )
     step_output = agent.run_step(task.task_id)
     assert (
@@ -337,13 +368,13 @@ def test_call_tool_with_malformed_function_call(
 def test_call_tool_with_malformed_function_call_and_parser(
     MockSyncOpenAI: MagicMock,
     echo_tool: FunctionTool,
+    malformed_echo_function: Function,
 ) -> None:
     """Test add step."""
     mock_instance = MockSyncOpenAI.return_value
     test_result: str = "This is a test"
-    function = Function(name="echo", arguments=f'query = "{test_result}"')
     mock_instance.chat.completions.create.return_value = mock_chat_completion_tool_call(
-        function=function
+        function=malformed_echo_function
     )
 
     llm = OpenAI(model="gpt-3.5-turbo")
@@ -356,7 +387,7 @@ def test_call_tool_with_malformed_function_call_and_parser(
     ## NOTE: can only take a single step before finishing,
     # since mocked chat output does not call any tools
     task = agent.create_task(
-        f"This happens if tool call is malformed like:\n{function.arguments}"
+        f"This happens if tool call is malformed like:\n{malformed_echo_function.arguments}"
     )
     step_output = agent.run_step(task.task_id)
     assert str(step_output.output.sources[0]) == test_result
@@ -448,3 +479,111 @@ async def test_async_add_step(
 
     chat_history = task.memory.get_all()
     assert "tmp" in [m.content for m in chat_history]
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_run_step_returns_message_if_tool_not_found(
+    MockSyncOpenAI: MagicMock,
+    malformed_echo_function: Function,
+) -> None:
+    mock_instance = MockSyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = mock_chat_completion_tool_call(
+        function=malformed_echo_function
+    )
+    llm = OpenAI(model="gpt-3.5-turbo")
+    agent = OpenAIAgent.from_tools(tools=[], llm=llm)
+
+    task = agent.create_task("")
+    step_output = agent.run_step(task.task_id)
+    output_chat_response: AgentChatResponse = step_output.output
+
+    assert not step_output.is_last
+    assert len(step_output.next_steps) == 1
+    assert len(output_chat_response.sources) == 1
+    assert output_chat_response.sources[0] == build_error_tool_output(
+        malformed_echo_function.name,
+        malformed_echo_function.arguments,
+        build_missing_tool_message(malformed_echo_function.name),
+    )
+
+
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
+@pytest.mark.asyncio()
+async def test_arun_step_returns_message_if_tool_not_found(
+    MockAsyncOpenAI: MagicMock,
+    echo_function: Function,
+) -> None:
+    mock_instance = MockAsyncOpenAI.return_value
+    mock_instance.chat.completions.create.return_value = (
+        mock_achat_completion_tool_call(function=echo_function)
+    )
+
+    llm = OpenAI(model="gpt-3.5-turbo")
+    agent = OpenAIAgent.from_tools(tools=[], llm=llm)
+
+    task = agent.create_task("")
+    step_output = await agent.arun_step(task.task_id)
+    output_chat_response: AgentChatResponse = step_output.output
+
+    assert not step_output.is_last
+    assert len(step_output.next_steps) == 1
+    assert len(output_chat_response.sources) == 1
+    assert output_chat_response.sources[0] == build_error_tool_output(
+        echo_function.name,
+        echo_function.arguments,
+        build_missing_tool_message(echo_function.name),
+    )
+
+
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("method", ["run_step", "arun_step"])
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
+async def test_run_step_returns_correct_sources_history(
+    MockAsyncOpenAI: MagicMock,
+    MockSyncOpenAI: MagicMock,
+    method: str,
+    echo_tool: FunctionTool,
+    echo_function: Function,
+) -> None:
+    num_steps = 4
+    llm = OpenAI(model="gpt-3.5-turbo")
+    agent = OpenAIAgent.from_tools(
+        tools=[echo_tool],
+        llm=llm,
+    )
+    task = agent.create_task("")
+    step_outputs: List[TaskStepOutput] = []
+
+    if method == "run_step":
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = (
+            mock_chat_completion_tool_call(echo_function)
+        )
+    else:
+        mock_instance = MockAsyncOpenAI.return_value
+        mock_instance.chat.completions.create.side_effect = [
+            mock_achat_completion_tool_call(echo_function) for _ in range(num_steps)
+        ]
+
+    # Create steps
+    steps = [agent.agent_worker.initialize_step(task)]
+    for step_idx in range(num_steps - 1):
+        steps.append(
+            steps[-1].get_next_step(
+                step_id=str(uuid.uuid4()),
+                input=None,
+            )
+        )
+
+    # Run each step, invoking a single tool call each time
+    for step_idx in range(num_steps):
+        step_outputs.append(
+            agent.agent_worker.run_step(steps[step_idx], task)
+            if method == "run_step"
+            else await agent.agent_worker.arun_step(steps[step_idx], task)
+        )
+
+    # Ensure that each step only has one source for its one tool call
+    for step_idx in range(num_steps):
+        assert len(step_outputs[step_idx].output.sources) == 1

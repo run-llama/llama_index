@@ -3,7 +3,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Generic, Iterable, List, Optional, Type, TypeVar, cast
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, GenericModel
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+)
 from llama_index.core.readers.base import BasePydanticReader, ReaderConfig
 from llama_index.core.schema import BaseComponent, Document, TextNode
 
@@ -103,7 +107,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -120,7 +124,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -135,7 +139,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -150,7 +154,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -167,7 +171,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -182,7 +186,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -197,7 +201,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -214,7 +218,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -229,7 +233,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -244,7 +248,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -261,7 +265,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -276,7 +280,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -291,7 +295,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -306,7 +310,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -323,7 +327,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -338,7 +342,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -353,7 +357,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -370,7 +374,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -387,7 +391,7 @@ def build_configurable_data_source_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     enum_members.append(
@@ -438,7 +442,7 @@ ConfigurableDataSources = build_configurable_data_source_enum()
 T = TypeVar("T", bound=BaseComponent)
 
 
-class ConfiguredDataSource(GenericModel, Generic[T]):
+class ConfiguredDataSource(BaseModel, Generic[T]):
     """
     A class containing metadata & implementation for a data source in a pipeline.
     """

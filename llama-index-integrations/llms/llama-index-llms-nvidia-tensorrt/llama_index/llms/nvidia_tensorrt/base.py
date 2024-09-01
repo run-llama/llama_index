@@ -1,3 +1,29 @@
+# Copyright 2023-2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import gc
 import json
 import os
@@ -136,8 +162,8 @@ class LocalTensorRTLLM(CustomLLM):
 
         model_kwargs = model_kwargs or {}
         model_kwargs.update({"n_ctx": context_window, "verbose": verbose})
-        self._max_new_tokens = max_new_tokens
-        self._verbose = verbose
+        max_new_tokens = max_new_tokens
+        verbose = verbose
         # check if model is cached
         if model_path is not None:
             if not os.path.exists(model_path):
@@ -158,7 +184,9 @@ class LocalTensorRTLLM(CustomLLM):
                 ]
                 remove_input_padding = config["plugin_config"]["remove_input_padding"]
                 tp_size = config["builder_config"]["tensor_parallel"]
-                pp_size = config["builder_config"]["pipeline_parallel"]
+                pp_size = 1
+                if "pipeline_parallel" in config["builder_config"]:
+                    pp_size = config["builder_config"]["pipeline_parallel"]
                 world_size = tp_size * pp_size
                 assert (
                     world_size == tensorrt_llm.mpi_world_size()
@@ -176,7 +204,7 @@ class LocalTensorRTLLM(CustomLLM):
                     num_kv_heads = 1
                 num_kv_heads = (num_kv_heads + tp_size - 1) // tp_size
 
-                self._model_config = ModelConfig(
+                model_config = ModelConfig(
                     num_heads=num_heads,
                     num_kv_heads=num_kv_heads,
                     hidden_size=hidden_size,
@@ -185,6 +213,7 @@ class LocalTensorRTLLM(CustomLLM):
                     gpt_attention_plugin=use_gpt_attention_plugin,
                     paged_kv_cache=paged_kv_cache,
                     remove_input_padding=remove_input_padding,
+                    max_batch_size=config["builder_config"]["max_batch_size"],
                 )
 
                 assert (
@@ -202,10 +231,8 @@ class LocalTensorRTLLM(CustomLLM):
                     torch.cuda.is_available()
                 ), "LocalTensorRTLLM requires a Nvidia CUDA enabled GPU to operate"
                 torch.cuda.set_device(runtime_rank % runtime_mapping.gpus_per_node)
-                self._tokenizer = AutoTokenizer.from_pretrained(
-                    tokenizer_dir, legacy=False
-                )
-                self._sampling_config = SamplingConfig(
+                tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir, legacy=False)
+                sampling_config = SamplingConfig(
                     end_id=EOS_TOKEN,
                     pad_id=PAD_TOKEN,
                     num_beams=1,
@@ -216,9 +243,9 @@ class LocalTensorRTLLM(CustomLLM):
                 with open(serialize_path, "rb") as f:
                     engine_buffer = f.read()
                 decoder = tensorrt_llm.runtime.GenerationSession(
-                    self._model_config, engine_buffer, runtime_mapping, debug_mode=False
+                    model_config, engine_buffer, runtime_mapping, debug_mode=False
                 )
-                self._model = decoder
+                model = decoder
 
         generate_kwargs = generate_kwargs or {}
         generate_kwargs.update(
@@ -237,6 +264,12 @@ class LocalTensorRTLLM(CustomLLM):
             model_kwargs=model_kwargs,
             verbose=verbose,
         )
+        self._model = model
+        self._model_config = model_config
+        self._tokenizer = tokenizer
+        self._sampling_config = sampling_config
+        self._max_new_tokens = max_new_tokens
+        self._verbose = verbose
 
     @classmethod
     def class_name(cls) -> str:

@@ -37,7 +37,7 @@ class SageMakerEmbedding(BaseEmbedding):
         description="AWS Secret Access Key to use"
     )
     aws_session_token: Optional[str] = Field(description="AWS Session Token to use")
-    aws_region_name: Optional[str] = Field(
+    region_name: Optional[str] = Field(
         description="AWS region name to use. Uses region configured in AWS CLI if not passed"
     )
     max_retries: Optional[int] = Field(
@@ -79,6 +79,16 @@ class SageMakerEmbedding(BaseEmbedding):
         endpoint_kwargs = endpoint_kwargs or {}
         model_kwargs = model_kwargs or {}
         content_handler = content_handler
+
+        super().__init__(
+            endpoint_name=endpoint_name,
+            endpoint_kwargs=endpoint_kwargs,
+            model_kwargs=model_kwargs,
+            content_handler=content_handler,
+            embed_batch_size=embed_batch_size,
+            pydantic_program_mode=pydantic_program_mode,
+            callback_manager=callback_manager,
+        )
         self._client = get_aws_service_client(
             service_name="sagemaker-runtime",
             profile_name=profile_name,
@@ -90,16 +100,6 @@ class SageMakerEmbedding(BaseEmbedding):
             timeout=timeout,
         )
         self._verbose = verbose
-
-        super().__init__(
-            endpoint_name=endpoint_name,
-            endpoint_kwargs=endpoint_kwargs,
-            model_kwargs=model_kwargs,
-            content_handler=content_handler,
-            embed_batch_size=embed_batch_size,
-            pydantic_program_mode=pydantic_program_mode,
-            callback_manager=callback_manager,
-        )
 
     @classmethod
     def class_name(self) -> str:

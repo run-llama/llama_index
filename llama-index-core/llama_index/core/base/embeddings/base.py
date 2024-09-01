@@ -6,14 +6,20 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, List, Optional, Tuple
 
 import numpy as np
-from llama_index.core.bridge.pydantic import Field, validator
+from llama_index.core.bridge.pydantic import (
+    Field,
+    ConfigDict,
+    field_validator,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.constants import (
     DEFAULT_EMBED_BATCH_SIZE,
 )
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseNode, MetadataMode, TransformComponent
 from llama_index.core.utils import get_tqdm_iterable
+from llama_index.core.async_utils import run_jobs
 
 # TODO: change to numpy array
 Embedding = List[float]
@@ -58,9 +64,12 @@ def similarity(
         return product / norm
 
 
-class BaseEmbedding(TransformComponent):
+class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     """Base class for embeddings."""
 
+    model_config = ConfigDict(
+        protected_namespaces=("pydantic_model_",), arbitrary_types_allowed=True
+    )
     model_name: str = Field(
         default="unknown", description="The name of the embedding model."
     )
@@ -68,19 +77,19 @@ class BaseEmbedding(TransformComponent):
         default=DEFAULT_EMBED_BATCH_SIZE,
         description="The batch size for embedding calls.",
         gt=0,
-        lte=2048,
+        le=2048,
     )
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
+    num_workers: Optional[int] = Field(
+        default=None,
+        description="The number of workers to use for async embedding calls.",
+    )
 
-    class Config:
-        arbitrary_types_allowed = True
-
-    @validator("callback_manager", pre=True)
-    def _validate_callback_manager(
-        cls, v: Optional[CallbackManager]
-    ) -> CallbackManager:
+    @field_validator("callback_manager")
+    @classmethod
+    def check_callback_manager(cls, v: CallbackManager) -> CallbackManager:
         if v is None:
             return CallbackManager([])
         return v
@@ -114,11 +123,11 @@ class BaseEmbedding(TransformComponent):
         other examples of predefined instructions can be found in
         embeddings/huggingface_utils.py.
         """
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
+        dispatcher.event(
             EmbeddingStartEvent(
-                model_dict=self.to_dict(),
+                model_dict=model_dict,
             )
         )
         with self.callback_manager.event(
@@ -132,7 +141,7 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [query_embedding],
                 },
             )
-        dispatch_event(
+        dispatcher.event(
             EmbeddingEndEvent(
                 chunks=[query],
                 embeddings=[query_embedding],
@@ -143,11 +152,11 @@ class BaseEmbedding(TransformComponent):
     @dispatcher.span
     async def aget_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
+        dispatcher.event(
             EmbeddingStartEvent(
-                model_dict=self.to_dict(),
+                model_dict=model_dict,
             )
         )
         with self.callback_manager.event(
@@ -161,7 +170,7 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [query_embedding],
                 },
             )
-        dispatch_event(
+        dispatcher.event(
             EmbeddingEndEvent(
                 chunks=[query],
                 embeddings=[query_embedding],
@@ -238,11 +247,11 @@ class BaseEmbedding(TransformComponent):
         document for retrieval: ". If you're curious, other examples of
         predefined instructions can be found in embeddings/huggingface_utils.py.
         """
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
+        dispatcher.event(
             EmbeddingStartEvent(
-                model_dict=self.to_dict(),
+                model_dict=model_dict,
             )
         )
         with self.callback_manager.event(
@@ -256,7 +265,7 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [text_embedding],
                 }
             )
-        dispatch_event(
+        dispatcher.event(
             EmbeddingEndEvent(
                 chunks=[text],
                 embeddings=[text_embedding],
@@ -267,11 +276,11 @@ class BaseEmbedding(TransformComponent):
     @dispatcher.span
     async def aget_text_embedding(self, text: str) -> Embedding:
         """Async get text embedding."""
-        dispatch_event = dispatcher.get_dispatch_event()
-
-        dispatch_event(
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
+        dispatcher.event(
             EmbeddingStartEvent(
-                model_dict=self.to_dict(),
+                model_dict=model_dict,
             )
         )
         with self.callback_manager.event(
@@ -285,7 +294,7 @@ class BaseEmbedding(TransformComponent):
                     EventPayload.EMBEDDINGS: [text_embedding],
                 }
             )
-        dispatch_event(
+        dispatcher.event(
             EmbeddingEndEvent(
                 chunks=[text],
                 embeddings=[text_embedding],
@@ -301,8 +310,6 @@ class BaseEmbedding(TransformComponent):
         **kwargs: Any,
     ) -> List[Embedding]:
         """Get a list of text embeddings, with batching."""
-        dispatch_event = dispatcher.get_dispatch_event()
-
         cur_batch: List[str] = []
         result_embeddings: List[Embedding] = []
 
@@ -310,13 +317,15 @@ class BaseEmbedding(TransformComponent):
             get_tqdm_iterable(texts, show_progress, "Generating embeddings")
         )
 
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
         for idx, text in queue_with_progress:
             cur_batch.append(text)
             if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                dispatch_event(
+                dispatcher.event(
                     EmbeddingStartEvent(
-                        model_dict=self.to_dict(),
+                        model_dict=model_dict,
                     )
                 )
                 with self.callback_manager.event(
@@ -331,7 +340,7 @@ class BaseEmbedding(TransformComponent):
                             EventPayload.EMBEDDINGS: embeddings,
                         },
                     )
-                dispatch_event(
+                dispatcher.event(
                     EmbeddingEndEvent(
                         chunks=cur_batch,
                         embeddings=embeddings,
@@ -346,7 +355,10 @@ class BaseEmbedding(TransformComponent):
         self, texts: List[str], show_progress: bool = False
     ) -> List[Embedding]:
         """Asynchronously get a list of text embeddings, with batching."""
-        dispatch_event = dispatcher.get_dispatch_event()
+        num_workers = self.num_workers
+
+        model_dict = self.to_dict()
+        model_dict.pop("api_key", None)
 
         cur_batch: List[str] = []
         callback_payloads: List[Tuple[str, List[str]]] = []
@@ -356,9 +368,9 @@ class BaseEmbedding(TransformComponent):
             cur_batch.append(text)
             if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
                 # flush
-                dispatch_event(
+                dispatcher.event(
                     EmbeddingStartEvent(
-                        model_dict=self.to_dict(),
+                        model_dict=model_dict,
                     )
                 )
                 event_id = self.callback_manager.on_event_start(
@@ -371,19 +383,28 @@ class BaseEmbedding(TransformComponent):
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
         nested_embeddings = []
-        if show_progress:
-            try:
-                from tqdm.asyncio import tqdm_asyncio
 
-                nested_embeddings = await tqdm_asyncio.gather(
-                    *embeddings_coroutines,
-                    total=len(embeddings_coroutines),
-                    desc="Generating embeddings",
-                )
-            except ImportError:
-                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+        if num_workers and num_workers > 1:
+            nested_embeddings = await run_jobs(
+                embeddings_coroutines,
+                show_progress=show_progress,
+                workers=self.num_workers,
+                desc="Generating embeddings",
+            )
         else:
-            nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+            if show_progress:
+                try:
+                    from tqdm.asyncio import tqdm_asyncio
+
+                    nested_embeddings = await tqdm_asyncio.gather(
+                        *embeddings_coroutines,
+                        total=len(embeddings_coroutines),
+                        desc="Generating embeddings",
+                    )
+                except ImportError:
+                    nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+            else:
+                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
 
         result_embeddings = [
             embedding for embeddings in nested_embeddings for embedding in embeddings
@@ -392,7 +413,7 @@ class BaseEmbedding(TransformComponent):
         for (event_id, text_batch), embeddings in zip(
             callback_payloads, nested_embeddings
         ):
-            dispatch_event(
+            dispatcher.event(
                 EmbeddingEndEvent(
                     chunks=text_batch,
                     embeddings=embeddings,

@@ -23,7 +23,7 @@ image_documents = SimpleDirectoryReader(local_directory).load_data()
 
 # non-streaming
 openai_mm_llm = OpenAIMultiModal(
-    model="gpt-4-vision-preview", api_key=OPENAI_API_TOKEN, max_new_tokens=300
+    model="gpt-4-vision-preview", api_key=OPENAI_API_KEY, max_new_tokens=300
 )
 response = openai_mm_llm.complete(
     prompt="what is in the image?", image_documents=image_documents

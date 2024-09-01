@@ -123,8 +123,13 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.extractors import TitleExtractor
 from llama_index.core.ingestion import IngestionPipeline, IngestionCache
-from llama_index.core.ingestion.cache import RedisCache
+from llama_index.storage.kvstore.redis import RedisKVStore as RedisCache
 
+
+ingest_cache = IngestionCache(
+    cache=RedisCache.from_host_and_port(host="127.0.0.1", port=6379),
+    collection="my_test_cache",
+)
 
 pipeline = IngestionPipeline(
     transformations=[
@@ -132,11 +137,7 @@ pipeline = IngestionPipeline(
         TitleExtractor(),
         OpenAIEmbedding(),
     ],
-    cache=IngestionCache(
-        cache=RedisCache(
-            redis_uri="redis://127.0.0.1:6379", collection="test_cache"
-        )
-    ),
+    cache=ingest_cache,
 )
 
 # Ingest directly into a vector db
@@ -211,4 +212,4 @@ pipeline.run(documents=[...], num_workers=4)
 - [Document Management Pipeline](../../../examples/ingestion/document_management_pipeline.ipynb)
 - [Redis Ingestion Pipeline](../../../examples/ingestion/redis_ingestion_pipeline.ipynb)
 - [Google Drive Ingestion Pipeline](../../../examples/ingestion/ingestion_gdrive.ipynb)
-- [Parallel Execution Pipeline](../../../examples/ingestion/parallel_execution_ingestion_pipeline.ipynb)s
+- [Parallel Execution Pipeline](../../../examples/ingestion/parallel_execution_ingestion_pipeline.ipynb)

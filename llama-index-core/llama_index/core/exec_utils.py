@@ -86,6 +86,11 @@ def _get_restricted_globals(__globals: Union[dict, None]) -> Any:
     return restricted_globals
 
 
+vulnerable_code_snippets = [
+    "os.",
+]
+
+
 class DunderVisitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.has_access_to_private_entity = False
@@ -123,6 +128,11 @@ def _contains_protected_access(code: str) -> bool:
 
     dunder_visitor = DunderVisitor()
     dunder_visitor.visit(tree)
+
+    for vulnerable_code_snippet in vulnerable_code_snippets:
+        if vulnerable_code_snippet in code:
+            dunder_visitor.has_access_to_disallowed_builtin = True
+
     return (
         dunder_visitor.has_access_to_private_entity
         or dunder_visitor.has_access_to_disallowed_builtin

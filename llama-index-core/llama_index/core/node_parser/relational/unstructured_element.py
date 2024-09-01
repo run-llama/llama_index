@@ -11,7 +11,7 @@ from llama_index.core.node_parser.relational.base_element import (
     BaseElementNodeParser,
     Element,
 )
-from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.schema import BaseNode, NodeRelationship, TextNode
 from llama_index.core.node_parser.relational.utils import html_to_df
 
 
@@ -67,7 +67,35 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
         self.extract_table_summaries(table_elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
-        return self.get_nodes_from_elements(elements, node.metadata)
+        nodes = self.get_nodes_from_elements(
+            elements, node, ref_doc_text=node.get_content()
+        )
+
+        source_document = node.source_node or node.as_related_node_info()
+        for n in nodes:
+            n.relationships[NodeRelationship.SOURCE] = source_document
+            n.metadata.update(node.metadata)
+        return nodes
+
+    async def aget_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
+        """Get nodes from node."""
+        elements = self.extract_elements(
+            node.get_content(), table_filters=[self.filter_table]
+        )
+        table_elements = self.get_table_elements(elements)
+        # extract summaries over table elements
+        await self.aextract_table_summaries(table_elements)
+        # convert into nodes
+        # will return a list of Nodes and Index Nodes
+        nodes = self.get_nodes_from_elements(
+            elements, node, ref_doc_text=node.get_content()
+        )
+
+        source_document = node.source_node or node.as_related_node_info()
+        for n in nodes:
+            n.relationships[NodeRelationship.SOURCE] = source_document
+            n.metadata.update(node.metadata)
+        return nodes
 
     def extract_elements(
         self, text: str, table_filters: Optional[List[Callable]] = None, **kwargs: Any
@@ -79,7 +107,7 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
         elements = partition_html(text=text, **self.partitioning_parameters)
         output_els = []
         for idx, element in enumerate(elements):
-            if "unstructured.documents.html.HTMLTable" in str(type(element)):
+            if "unstructured.documents.elements.Table" in str(type(element)):
                 should_keep = all(tf(element) for tf in table_filters)
                 if should_keep:
                     table_df = html_to_df(str(element.metadata.text_as_html))
@@ -92,12 +120,12 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
                         )
                     )
                 else:
-                    # if not a table, keep it as Text as we don't want to loose context
-                    from unstructured.documents.html import HTMLText
+                    # if not a table, keep it as Text as we don't want to lose context
+                    from unstructured.documents.elements import Text
 
-                    newElement = HTMLText(str(element), tag=element.tag)
+                    new_element = Text(str(element))
                     output_els.append(
-                        Element(id=f"id_{idx}", type="text", element=newElement)
+                        Element(id=f"id_{idx}", type="text", element=new_element)
                     )
             else:
                 output_els.append(Element(id=f"id_{idx}", type="text", element=element))

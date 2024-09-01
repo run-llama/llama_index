@@ -1,4 +1,5 @@
 """Dataset generation from documents."""
+
 from __future__ import annotations
 
 import asyncio
@@ -8,9 +9,10 @@ import uuid
 from typing import Coroutine, Dict, List, Optional, Tuple
 
 from deprecated import deprecated
-from llama_index.core import Document, ServiceContext, SummaryIndex
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.indices.list import SummaryIndex
 from llama_index.core.ingestion import run_transformations
 from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.node import KeywordNodePostprocessor
@@ -23,15 +25,13 @@ from llama_index.core.prompts.mixin import (
 )
 from llama_index.core.schema import (
     BaseNode,
+    Document,
     MetadataMode,
     NodeWithScore,
     TransformComponent,
 )
 from llama_index.core.settings import (
     Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-    transformations_from_settings_or_context,
 )
 
 DEFAULT_QUESTION_GENERATION_PROMPT = """\
@@ -99,7 +99,7 @@ class QueryResponseDataset(BaseModel):
     def save_json(self, path: str) -> None:
         """Save json."""
         with open(path, "w") as f:
-            json.dump(self.dict(), f, indent=4)
+            json.dump(self.model_dump(), f, indent=4)
 
     @classmethod
     def from_json(cls, path: str) -> QueryResponseDataset:
@@ -141,15 +141,10 @@ class DatasetGenerator(PromptMixin):
         question_gen_query: str | None = None,
         metadata_mode: MetadataMode = MetadataMode.NONE,
         show_progress: bool = False,
-        # deprecated
-        service_context: ServiceContext | None = None,
     ) -> None:
         """Init params."""
-        self.llm = llm or llm_from_settings_or_context(Settings, service_context)
-        self.callback_manager = (
-            callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        self.llm = llm or Settings.llm
+        self.callback_manager = callback_manager or Settings.callback_manager
         self.text_question_template = text_question_template or PromptTemplate(
             DEFAULT_QUESTION_GENERATION_PROMPT
         )
@@ -180,18 +175,11 @@ class DatasetGenerator(PromptMixin):
         required_keywords: List[str] | None = None,
         exclude_keywords: List[str] | None = None,
         show_progress: bool = False,
-        # deprecated
-        service_context: ServiceContext | None = None,
     ) -> DatasetGenerator:
         """Generate dataset from documents."""
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
-        transformations = transformations or transformations_from_settings_or_context(
-            Settings, service_context
-        )
-        callback_manager = (
-            callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        llm = llm or Settings.llm
+        transformations = transformations or Settings.transformations
+        callback_manager = callback_manager or Settings.callback_manager
 
         nodes = run_transformations(
             documents, transformations, show_progress=show_progress
@@ -218,7 +206,6 @@ class DatasetGenerator(PromptMixin):
             text_qa_template=text_qa_template,
             question_gen_query=question_gen_query,
             show_progress=show_progress,
-            service_context=service_context,
         )
 
     async def _agenerate_dataset(
@@ -325,13 +312,13 @@ class DatasetGenerator(PromptMixin):
 
     def generate_questions_from_nodes(self, num: int | None = None) -> List[str]:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_questions_from_nodes(num=num))
+        return asyncio_run(self.agenerate_questions_from_nodes(num=num))
 
     def generate_dataset_from_nodes(
         self, num: int | None = None
     ) -> QueryResponseDataset:
         """Generates questions for each document."""
-        return asyncio.run(self.agenerate_dataset_from_nodes(num=num))
+        return asyncio_run(self.agenerate_dataset_from_nodes(num=num))
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""

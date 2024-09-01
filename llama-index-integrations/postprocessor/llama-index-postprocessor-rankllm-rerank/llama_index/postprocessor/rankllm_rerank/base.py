@@ -2,8 +2,15 @@ from typing import Any, List, Optional
 from enum import Enum
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.rerank import (
+    ReRankEndEvent,
+    ReRankStartEvent,
+)
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
+
+dispatcher = get_dispatcher(__name__)
 
 
 class RankLLMRerank(BaseNodePostprocessor):
@@ -39,6 +46,14 @@ class RankLLMRerank(BaseNodePostprocessor):
 
         from rank_llm.result import Result
 
+        super().__init__(
+            model=model,
+            top_n=top_n,
+            with_retrieval=with_retrieval,
+            step_size=step_size,
+            gpt_model=gpt_model,
+        )
+
         self._result = Result
 
         if model_enum == ModelType.VICUNA:
@@ -68,14 +83,6 @@ class RankLLMRerank(BaseNodePostprocessor):
 
             self._retriever = Retriever
 
-        super().__init__(
-            model=model,
-            top_n=top_n,
-            with_retrieval=with_retrieval,
-            step_size=step_size,
-            gpt_model=gpt_model,
-        )
-
     @classmethod
     def class_name(cls) -> str:
         return "RankLLMRerank"
@@ -85,7 +92,19 @@ class RankLLMRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        docs = [(node.get_content(), node.get_score()) for node in nodes]
+        dispatcher.event(
+            ReRankStartEvent(
+                query=query_bundle,
+                nodes=nodes,
+                top_n=self.top_n,
+                model_name=self.model,
+            )
+        )
+
+        docs = [
+            (node.get_content(metadata_mode=MetadataMode.EMBED), node.get_score())
+            for node in nodes
+        ]
 
         if self.with_retrieval:
             hits = [
@@ -131,6 +150,8 @@ class RankLLMRerank(BaseNodePostprocessor):
             new_nodes.append(
                 NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
             )
+
+        dispatcher.event(ReRankEndEvent(nodes=new_nodes[: self.top_n]))
         return new_nodes[: self.top_n]
 
 

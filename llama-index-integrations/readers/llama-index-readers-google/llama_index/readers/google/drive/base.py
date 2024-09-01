@@ -1,8 +1,8 @@
 """Google Drive files reader."""
 
+import json
 import logging
 import os
-import json
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -10,10 +10,15 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 
-from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BaseReader, BasePydanticReader
-from llama_index.core.bridge.pydantic import PrivateAttr, Field
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
+from llama_index.core.readers.base import (
+    BasePydanticReader,
+    BaseReader,
+    ResourcesReaderMixin,
+)
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -22,7 +27,9 @@ logger = logging.getLogger(__name__)
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
-class GoogleDriveReader(BasePydanticReader):
+class GoogleDriveReader(
+    BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin
+):
     """Google Drive Reader.
 
     Reads files from Google Drive. Credentials passed directly to the constructor
@@ -87,8 +94,43 @@ class GoogleDriveReader(BasePydanticReader):
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
+        # Read the file contents so they can be serialized and stored.
+        if client_config is None and os.path.isfile(credentials_path):
+            with open(credentials_path, encoding="utf-8") as json_file:
+                client_config = json.load(json_file)
+
+        if authorized_user_info is None and os.path.isfile(token_path):
+            with open(token_path, encoding="utf-8") as json_file:
+                authorized_user_info = json.load(json_file)
+
+        if service_account_key is None and os.path.isfile(service_account_key_path):
+            with open(service_account_key_path, encoding="utf-8") as json_file:
+                service_account_key = json.load(json_file)
+
+        if (
+            client_config is None
+            and service_account_key is None
+            and authorized_user_info is None
+        ):
+            raise ValueError(
+                "Must specify `client_config` or `service_account_key` or `authorized_user_info`."
+            )
+
+        super().__init__(
+            drive_id=drive_id,
+            folder_id=folder_id,
+            file_ids=file_ids,
+            query_string=query_string,
+            client_config=client_config,
+            authorized_user_info=authorized_user_info,
+            service_account_key=service_account_key,
+            token_path=token_path,
+            file_extractor=file_extractor,
+            **kwargs,
+        )
+
         self._creds = None
-        self._is_cloud = (is_cloud,)
+        self._is_cloud = is_cloud
         # Download Google Docs/Slides/Sheets as actual files
         # See https://developers.google.com/drive/v3/web/mime-types
         self._mimetypes = {
@@ -108,35 +150,6 @@ class GoogleDriveReader(BasePydanticReader):
             },
         }
 
-        # Read the file contents so they can be serialized and stored.
-        if client_config is None and os.path.isfile(credentials_path):
-            with open(credentials_path, encoding="utf-8") as json_file:
-                client_config = json.load(json_file)
-
-        if authorized_user_info is None and os.path.isfile(token_path):
-            with open(token_path, encoding="utf-8") as json_file:
-                authorized_user_info = json.load(json_file)
-
-        if service_account_key is None and os.path.isfile(service_account_key_path):
-            with open(service_account_key_path, encoding="utf-8") as json_file:
-                service_account_key = json.load(json_file)
-
-        if client_config is None and service_account_key is None:
-            raise ValueError("Must specify `client_config` or `service_account_key`.")
-
-        super().__init__(
-            drive_id=drive_id,
-            folder_id=folder_id,
-            file_ids=file_ids,
-            query_string=query_string,
-            client_config=client_config,
-            authorized_user_info=authorized_user_info,
-            service_account_key=service_account_key,
-            token_path=token_path,
-            file_extractor=file_extractor,
-            **kwargs,
-        )
-
     @classmethod
     def class_name(cls) -> str:
         return "GoogleDriveReader"
@@ -150,8 +163,6 @@ class GoogleDriveReader(BasePydanticReader):
         Returns:
             credentials
         """
-        from google_auth_oauthlib.flow import InstalledAppFlow
-
         # First, we need the Google API credentials for the app
         creds = None
 
@@ -224,6 +235,7 @@ class GoogleDriveReader(BasePydanticReader):
                     )
 
                 items = []
+                page_token = ""
                 # get files taking into account that the results are paginated
                 while True:
                     if drive_id:
@@ -236,6 +248,7 @@ class GoogleDriveReader(BasePydanticReader):
                                 includeItemsFromAllDrives=True,
                                 supportsAllDrives=True,
                                 fields="*",
+                                pageToken=page_token,
                             )
                             .execute()
                         )
@@ -247,6 +260,7 @@ class GoogleDriveReader(BasePydanticReader):
                                 includeItemsFromAllDrives=True,
                                 supportsAllDrives=True,
                                 fields="*",
+                                pageToken=page_token,
                             )
                             .execute()
                         )
@@ -531,3 +545,64 @@ class GoogleDriveReader(BasePydanticReader):
         else:
             logger.warning("Either 'folder_id' or 'file_ids' must be provided.")
             return []
+
+    def list_resources(self, **kwargs) -> List[str]:
+        """List resources in the specified Google Drive folder or files."""
+        self._creds = self._get_credentials()
+
+        drive_id = kwargs.get("drive_id", self.drive_id)
+        folder_id = kwargs.get("folder_id", self.folder_id)
+        file_ids = kwargs.get("file_ids", self.file_ids)
+        query_string = kwargs.get("query_string", self.query_string)
+
+        if folder_id:
+            fileids_meta = self._get_fileids_meta(
+                drive_id, folder_id, query_string=query_string
+            )
+        elif file_ids:
+            fileids_meta = []
+            for file_id in file_ids:
+                fileids_meta.extend(
+                    self._get_fileids_meta(
+                        drive_id, file_id=file_id, query_string=query_string
+                    )
+                )
+        else:
+            raise ValueError("Either 'folder_id' or 'file_ids' must be provided.")
+
+        return [meta[0] for meta in fileids_meta]  # Return list of file IDs
+
+    def get_resource_info(self, resource_id: str, **kwargs) -> Dict:
+        """Get information about a specific Google Drive resource."""
+        self._creds = self._get_credentials()
+
+        fileids_meta = self._get_fileids_meta(file_id=resource_id)
+        if not fileids_meta:
+            raise ValueError(f"Resource with ID {resource_id} not found.")
+
+        meta = fileids_meta[0]
+        return {
+            "file_path": meta[2],
+            "file_size": None,
+            "last_modified_date": meta[5],
+            "content_hash": None,
+            "content_type": meta[3],
+            "author": meta[1],
+            "created_date": meta[4],
+        }
+
+    def load_resource(self, resource_id: str, **kwargs) -> List[Document]:
+        """Load a specific resource from Google Drive."""
+        return self._load_from_file_ids(
+            self.drive_id, [resource_id], None, self.query_string
+        )
+
+    def read_file_content(self, file_path: Union[str, Path], **kwargs) -> bytes:
+        """Read the content of a specific file from Google Drive."""
+        self._creds = self._get_credentials()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_file = os.path.join(temp_dir, "temp_file")
+            downloaded_file = self._download_file(file_path, temp_file)
+            with open(downloaded_file, "rb") as file:
+                return file.read()

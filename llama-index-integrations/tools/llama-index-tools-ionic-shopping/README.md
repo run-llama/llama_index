@@ -21,7 +21,7 @@ ionic_tool = IonicShoppingToolSpec(api_key="<my Ionic API Key>").to_tool_list()
 
 ## Usage
 
-Try it out using the [Jupyter notebook](https://github.com/run-llama/llama-hub/blob/main/llama_hub/tools/notebooks/ionic_shopping.ipynb).
+Try it out using the [Jupyter notebook](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-ionic-shopping/examples/ionic_shopping.ipynb).
 
 ```python
 import openai

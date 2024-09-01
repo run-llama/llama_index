@@ -2,11 +2,18 @@ from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.rerank import (
+    ReRankEndEvent,
+    ReRankStartEvent,
+)
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 from llama_index.core.utils import infer_torch_device
 
 DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH = 512
+
+dispatcher = get_dispatcher(__name__)
 
 
 class SentenceTransformerRerank(BaseNodePostprocessor):
@@ -36,15 +43,16 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
                 "Cannot import sentence-transformers or torch package,",
                 "please `pip install torch sentence-transformers`",
             )
-        device = infer_torch_device() if device is None else device
-        self._model = CrossEncoder(
-            model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH, device=device
-        )
+
         super().__init__(
             top_n=top_n,
             model=model,
             device=device,
             keep_retrieval_score=keep_retrieval_score,
+        )
+        device = infer_torch_device() if device is None else device
+        self._model = CrossEncoder(
+            model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH, device=device
         )
 
     @classmethod
@@ -56,6 +64,15 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        dispatcher.event(
+            ReRankStartEvent(
+                query=query_bundle,
+                nodes=nodes,
+                top_n=self.top_n,
+                model_name=self.model,
+            )
+        )
+
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
         if len(nodes) == 0:
@@ -93,4 +110,5 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
             ]
             event.on_end(payload={EventPayload.NODES: new_nodes})
 
+        dispatcher.event(ReRankEndEvent(nodes=new_nodes))
         return new_nodes

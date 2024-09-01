@@ -1,6 +1,6 @@
 """Init file of LlamaIndex."""
 
-__version__ = "0.10.28"
+__version__ = "0.11.3"
 
 import logging
 from logging import NullHandler
@@ -28,6 +28,7 @@ from llama_index.core.indices import (
     GPTVectorStoreIndex,
     KeywordTableIndex,
     KnowledgeGraphIndex,
+    PropertyGraphIndex,
     ListIndex,
     RAKEKeywordTableIndex,
     SimpleKeywordTableIndex,
@@ -95,6 +96,7 @@ __all__ = [
     "TreeIndex",
     "DocumentSummaryIndex",
     "KnowledgeGraphIndex",
+    "PropertyGraphIndex",
     # indices - legacy names
     "GPTKeywordTableIndex",
     "GPTKnowledgeGraphIndex",
@@ -149,9 +151,6 @@ global_handler: Optional[BaseCallbackHandler] = None
 
 # NOTE: keep for backwards compatibility
 SQLContextBuilder = SQLDocumentContextBuilder
-
-# global service context for ServiceContext.from_defaults()
-global_service_context: Optional[ServiceContext] = None
 
 # global tokenizer
 global_tokenizer: Optional[Callable[[str], list]] = None

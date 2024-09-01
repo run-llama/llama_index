@@ -1,7 +1,11 @@
 from enum import Enum
 from typing import Generic, Type, TypeVar
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, GenericModel
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+)
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 
@@ -66,7 +70,7 @@ def build_conifurable_data_sink_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -83,7 +87,7 @@ def build_conifurable_data_sink_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -100,7 +104,7 @@ def build_conifurable_data_sink_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -117,7 +121,7 @@ def build_conifurable_data_sink_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     try:
@@ -134,7 +138,7 @@ def build_conifurable_data_sink_enum():
                 ),
             )
         )
-    except ImportError:
+    except (ImportError, ValidationError):
         pass
 
     return ConfigurableComponent("ConfigurableDataSinks", enum_members)
@@ -146,7 +150,7 @@ ConfigurableDataSinks = build_conifurable_data_sink_enum()
 T = TypeVar("T", bound=BasePydanticVectorStore)
 
 
-class ConfiguredDataSink(GenericModel, Generic[T]):
+class ConfiguredDataSink(BaseModel, Generic[T]):
     """
     A class containing metadata & implementation for a data sink in a pipeline.
     """

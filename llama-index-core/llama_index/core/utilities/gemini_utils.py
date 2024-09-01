@@ -8,14 +8,20 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 ROLES_TO_GEMINI: Dict[MessageRole, MessageRole] = {
     MessageRole.USER: MessageRole.USER,
     MessageRole.ASSISTANT: MessageRole.MODEL,
-    ## Gemini only has user and model roles. Put the rest in user role.
+    ## Gemini chat mode only has user and model roles. Put the rest in user role.
     MessageRole.SYSTEM: MessageRole.USER,
     MessageRole.MODEL: MessageRole.MODEL,
+    ## Gemini has function role, but chat mode only accepts user and model roles.
+    ## https://medium.com/@smallufo/openai-vs-gemini-function-calling-a664f7f2b29f
+    ## Agent response's 'tool/function' role is converted to 'user' role.
+    MessageRole.TOOL: MessageRole.USER,
+    MessageRole.FUNCTION: MessageRole.USER,
 }
 ROLES_FROM_GEMINI: Dict[MessageRole, MessageRole] = {
-    ## Gemini only has user and model roles.
+    ## Gemini has user, model and function roles.
     MessageRole.USER: MessageRole.USER,
     MessageRole.MODEL: MessageRole.ASSISTANT,
+    MessageRole.FUNCTION: MessageRole.TOOL,
 }
 
 
@@ -47,6 +53,7 @@ def merge_neighboring_same_role_messages(
             content="\n".join([str(msg_content) for msg_content in merged_content]),
             additional_kwargs=current_message.additional_kwargs,
         )
+
         merged_messages.append(merged_message)
         i += 1
 

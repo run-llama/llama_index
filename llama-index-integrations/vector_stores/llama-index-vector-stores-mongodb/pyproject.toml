@@ -21,22 +21,26 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = [
+    "The MongoDB Python Team",
+]
 description = "llama-index vector_stores mongodb integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-mongodb"
 readme = "README.md"
-version = "0.1.4"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
 pymongo = "^4.6.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
 jupyter = "^1.0.0"
+llama-index-embeddings-openai = "^0.1.5"
+llama-index-llms-openai = "^0.1.13"
+llama-index-readers-file = "^0.1.4"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"

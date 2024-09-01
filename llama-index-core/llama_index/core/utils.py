@@ -57,14 +57,14 @@ class GlobalsHelper:
 
         # ensure access to data is there
         try:
-            nltk.data.find("corpora/stopwords", paths=[self._nltk_data_dir])
+            nltk.data.find("corpora/stopwords")
         except LookupError:
             nltk.download("stopwords", download_dir=self._nltk_data_dir)
 
         try:
-            nltk.data.find("tokenizers/punkt", paths=[self._nltk_data_dir])
+            nltk.data.find("tokenizers/punkt_tab")
         except LookupError:
-            nltk.download("punkt", download_dir=self._nltk_data_dir)
+            nltk.download("punkt_tab", download_dir=self._nltk_data_dir)
 
     @property
     def stopwords(self) -> List[str]:

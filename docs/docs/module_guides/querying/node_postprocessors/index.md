@@ -9,7 +9,7 @@ In LlamaIndex, node postprocessors are most commonly applied within a query engi
 LlamaIndex offers several node postprocessors for immediate use, while also providing a simple API for adding your own custom postprocessors.
 
 !!! tip
-    Confused about where node postprocessor fits in the pipeline? Read about [high-level concepts](../../../getting_started/concepts.md)
+    Confused about where node postprocessor fits in the RAG workflow? Read about [high-level concepts](../../../getting_started/concepts.md)
 
 ## Usage Pattern
 
@@ -117,7 +117,7 @@ A dummy node-postprocessor can be implemented in just a few lines of code:
 
 ```python
 from llama_index.core import QueryBundle
-from llama_index.core.postprocessor import BaseNodePostprocessor
+from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore
 
 

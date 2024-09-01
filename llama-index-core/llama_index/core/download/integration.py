@@ -18,7 +18,6 @@ def download_integration(module_str: str, module_import_str: str, cls_name: str)
         raise Exception(f"Failed to pip install `{module_str}`") from e
 
     try:
-        exec(f"from {module_import_str} import {cls_name}")
         module_spec = importlib.util.find_spec(module_import_str)
         module = importlib.util.module_from_spec(module_spec)
         module_spec.loader.exec_module(module)

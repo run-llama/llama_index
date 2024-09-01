@@ -3,6 +3,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
+import redis
 from falkordb import FalkorDB
 from llama_index.core.graph_stores.types import GraphStore
 
@@ -31,7 +32,12 @@ class FalkorDBGraphStore(GraphStore):
         self._node_label = node_label
 
         self._driver = FalkorDB.from_url(url).select_graph(database)
-        self._driver.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
+
+        try:
+            self._driver.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
+        except redis.ResponseError as e:
+            # TODO: to find an appropriate way to handle this issue.
+            logger.warning("Create index failed: %s", e)
 
         self._database = database
 

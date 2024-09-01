@@ -33,4 +33,4 @@ agent.chat("who is ben affleck married to")
 `load`: Calls the wrapped function and loads the data into an index
 `read`: Searches the index for the specified query
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

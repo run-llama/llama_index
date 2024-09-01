@@ -3,7 +3,13 @@
 import logging
 from typing import Dict, List, Optional, cast
 
-from llama_index.core.bridge.pydantic import Field, validator
+from llama_index.core.bridge.pydantic import (
+    Field,
+    field_validator,
+    SerializeAsAny,
+    ConfigDict,
+)
+from llama_index.core.llms import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.response_synthesizers import (
@@ -11,7 +17,7 @@ from llama_index.core.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.core.schema import NodeRelationship, NodeWithScore, QueryBundle
-from llama_index.core.service_context import ServiceContext
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore import BaseDocumentStore
 
 logger = logging.getLogger(__name__)
@@ -160,7 +166,8 @@ class PrevNextNodePostprocessor(BaseNodePostprocessor):
     num_nodes: int = Field(default=1)
     mode: str = Field(default="next")
 
-    @validator("mode")
+    @field_validator("mode")
+    @classmethod
     def _validate_mode(cls, v: str) -> str:
         """Validate mode."""
         if v not in ["next", "previous", "both"]:
@@ -277,17 +284,14 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     docstore: BaseDocumentStore
-    service_context: ServiceContext
+    llm: Optional[SerializeAsAny[LLM]] = None
     num_nodes: int = Field(default=1)
     infer_prev_next_tmpl: str = Field(default=DEFAULT_INFER_PREV_NEXT_TMPL)
     refine_prev_next_tmpl: str = Field(default=DEFAULT_REFINE_INFER_PREV_NEXT_TMPL)
     verbose: bool = Field(default=False)
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    response_mode: ResponseMode = Field(default=ResponseMode.COMPACT)
 
     @classmethod
     def class_name(cls) -> str:
@@ -310,6 +314,8 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
+        llm = self.llm or Settings.llm
+
         if query_bundle is None:
             raise ValueError("Missing query bundle.")
 
@@ -324,10 +330,10 @@ class AutoPrevNextNodePostprocessor(BaseNodePostprocessor):
             # use response builder instead of llm directly
             # to be more robust to handling long context
             response_builder = get_response_synthesizer(
-                service_context=self.service_context,
+                llm=llm,
                 text_qa_template=infer_prev_next_prompt,
                 refine_template=refine_infer_prev_next_prompt,
-                response_mode=ResponseMode.TREE_SUMMARIZE,
+                response_mode=self.response_mode,
             )
             raw_pred = response_builder.get_response(
                 text_chunks=[node.node.get_content()],

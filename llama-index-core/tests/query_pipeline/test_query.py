@@ -233,6 +233,54 @@ def test_query_pipeline_multi() -> None:
     assert output == {"qc2": {"output": "3:7"}}
 
 
+def test_query_pipeline_multi_batch() -> None:
+    """Test query pipeline."""
+    # try run run_multi
+    # link both qc1_0 and qc1_1 to qc2
+    qc1_0 = QueryComponent1()
+    qc1_1 = QueryComponent1()
+    qc2 = QueryComponent2()
+    p = QueryPipeline()
+    p.add_modules({"qc1_0": qc1_0, "qc1_1": qc1_1, "qc2": qc2})
+    p.add_link("qc1_0", "qc2", dest_key="input1")
+    p.add_link("qc1_1", "qc2", dest_key="input2")
+    output = p.run_multi(
+        {
+            "qc1_0": {"input1": [1, 5], "input2": [2, 1]},
+            "qc1_1": {"input1": [3, 7], "input2": [4, 2]},
+        },
+        batch=True,
+    )
+    assert output == {"qc2": {"output": ["3:7", "6:9"]}}
+
+
+def test_query_pipeline_multi_intermediate_output() -> None:
+    """Test query pipeline showing intermediate outputs."""
+    # try run run_multi_with_intermediates
+    # link both qc1_0 and qc1_1 to qc2
+    qc1_0 = QueryComponent1()
+    qc1_1 = QueryComponent1()
+    qc2 = QueryComponent2()
+    p = QueryPipeline()
+    p.add_modules({"qc1_0": qc1_0, "qc1_1": qc1_1, "qc2": qc2})
+    p.add_link("qc1_0", "qc2", dest_key="input1")
+    p.add_link("qc1_1", "qc2", dest_key="input2")
+    outputs, intermediates = p.run_multi_with_intermediates(
+        {"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}}
+    )
+
+    assert outputs == {"qc2": {"output": "3:7"}}
+
+    assert intermediates["qc1_0"].inputs == {"input1": 1, "input2": 2}
+    assert intermediates["qc1_0"].outputs == {"output": 3}
+
+    assert intermediates["qc1_1"].inputs == {"input1": 3, "input2": 4}
+    assert intermediates["qc1_1"].outputs == {"output": 7}
+
+    assert intermediates["qc2"].inputs == {"input1": 3, "input2": 7}
+    assert intermediates["qc2"].outputs == {"output": "3:7"}
+
+
 @pytest.mark.asyncio()
 async def test_query_pipeline_async() -> None:
     """Test query pipeline in async fashion."""
@@ -271,6 +319,9 @@ async def test_query_pipeline_async() -> None:
     output = await p.arun(inp1=1, inp2=2)
     assert output == "3:1"
 
+    output = await p.arun(inp1=[1, 2], inp2=[2, 3], batch=True)
+    assert output == ["3:1", "5:2"]
+
     # try run run_multi
     # link both qc1_0 and qc1_1 to qc2
     qc1_0 = QueryComponent1()
@@ -284,6 +335,15 @@ async def test_query_pipeline_async() -> None:
         {"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}}
     )
     assert output == {"qc2": {"output": "3:7"}}
+
+    output = await p.arun_multi(
+        {
+            "qc1_0": {"input1": [1, 5], "input2": [2, 1]},
+            "qc1_1": {"input1": [3, 7], "input2": [4, 2]},
+        },
+        batch=True,
+    )
+    assert output == {"qc2": {"output": ["3:7", "6:9"]}}
 
 
 def test_query_pipeline_init() -> None:
@@ -360,6 +420,67 @@ def test_query_pipeline_chain_str() -> None:
     assert output == 11
 
 
+def test_query_pipeline_batch_chain_str() -> None:
+    """Test add_chain with only module strings."""
+    p = QueryPipeline(
+        modules={
+            "input": InputComponent(),
+            "a": QueryComponent3(),
+            "b": QueryComponent3(),
+            "c": QueryComponent3(),
+            "d": QueryComponent1(),
+        }
+    )
+    p.add_links(
+        [
+            Link("input", "a", src_key="inp1", dest_key="input"),
+            Link("input", "d", src_key="inp2", dest_key="input2"),
+            Link("c", "d", dest_key="input1"),
+        ]
+    )
+    p.add_chain(["a", "b", "c"])
+    output = p.run(inp1=[1, 5], inp2=[3, 4], batch=True)
+    assert output == [11, 44]
+
+
+def test_query_pipeline_chain_str_intermediate_output() -> None:
+    """Test add_chain with only module strings, showing intermediate outputs."""
+    p = QueryPipeline(
+        modules={
+            "input": InputComponent(),
+            "a": QueryComponent3(),
+            "b": QueryComponent3(),
+            "c": QueryComponent3(),
+            "d": QueryComponent1(),
+        },
+    )
+    p.add_links(
+        [
+            Link("input", "a", src_key="inp1", dest_key="input"),
+            Link("input", "d", src_key="inp2", dest_key="input2"),
+            Link("c", "d", dest_key="input1"),
+        ]
+    )
+    p.add_chain(["a", "b", "c"])
+    outputs, intermediates = p.run_with_intermediates(inp1=1, inp2=3)
+    assert outputs == 11
+
+    assert intermediates["input"].inputs == {"inp1": 1, "inp2": 3}
+    assert intermediates["input"].outputs == {"inp1": 1, "inp2": 3}
+
+    assert intermediates["a"].inputs == {"input": 1}
+    assert intermediates["a"].outputs == {"output": 2}
+
+    assert intermediates["b"].inputs == {"input": 2}
+    assert intermediates["b"].outputs == {"output": 4}
+
+    assert intermediates["c"].inputs == {"input": 4}
+    assert intermediates["c"].outputs == {"output": 8}
+
+    assert intermediates["d"].inputs == {"input1": 8, "input2": 3}
+    assert intermediates["d"].outputs == {"output": 11}
+
+
 def test_query_pipeline_conditional_edges() -> None:
     """Test conditional edges."""
 
@@ -408,3 +529,91 @@ def test_query_pipeline_conditional_edges() -> None:
     output = p.run(inp1=2, inp2=3)
     # should go to b
     assert output == "3:2"
+
+
+def test_query_pipeline_super_conditional() -> None:
+    """This tests that paths are properly pruned and maintained for many conditional edges."""
+
+    def simple_fn(val: int):
+        print("Running simple_fn", flush=True)
+        return val
+
+    def over_twenty_fn(val: int):
+        print("Running over_twenty_fn", flush=True)
+        return val + 100
+
+    def final_fn(x: int, y: int, z: int):
+        print("Running final_fn", flush=True)
+        return {
+            "x": x,
+            "y": y,
+            "z": z,
+        }
+
+    simple_function_component = FnComponent(fn=simple_fn, output_key="output")
+    over_twenty_function_2 = FnComponent(fn=over_twenty_fn, output_key="output")
+    final_fn = FnComponent(fn=final_fn, output_key="output")
+
+    qp = QueryPipeline(
+        modules={
+            "first_decision": simple_function_component,
+            "second_decision": simple_function_component,
+            "under_ten": simple_function_component,
+            "over_twenty": simple_function_component,
+            "over_twenty_2": over_twenty_function_2,
+            "final": final_fn,
+        },
+        verbose=True,
+    )
+
+    qp.add_link(
+        "first_decision",
+        "under_ten",
+        condition_fn=lambda x: x < 10,
+    )
+    qp.add_link("under_ten", "final", dest_key="x")
+    qp.add_link("under_ten", "final", dest_key="y")
+    qp.add_link("under_ten", "final", dest_key="z")
+
+    qp.add_link(
+        "first_decision",
+        "second_decision",
+        condition_fn=lambda x: x >= 10,
+    )
+
+    qp.add_link(
+        "second_decision",
+        "over_twenty",
+        condition_fn=lambda x: x > 20,
+    )
+    qp.add_link(
+        "second_decision",
+        "over_twenty_2",
+        condition_fn=lambda x: x > 20,
+    )
+
+    qp.add_link(
+        "second_decision",
+        "final",
+        dest_key="z",
+        condition_fn=lambda x: x > 20,
+    )
+    qp.add_link(
+        "over_twenty",
+        "final",
+        dest_key="x",
+    )
+    qp.add_link(
+        "over_twenty_2",
+        "final",
+        dest_key="y",
+    )
+
+    response = qp.run(val=9)
+    assert response == {"x": 9, "y": 9, "z": 9}
+
+    response = qp.run(val=11)
+    assert response == 11
+
+    response = qp.run(val=21)
+    assert response == {"x": 21, "y": 121, "z": 21}

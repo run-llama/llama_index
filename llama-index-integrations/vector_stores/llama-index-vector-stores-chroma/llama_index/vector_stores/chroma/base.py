@@ -48,6 +48,10 @@ def _transform_chroma_filter_operator(operator: str) -> str:
         return "$gte"
     elif operator == "<=":
         return "$lte"
+    elif operator == "in":
+        return "$in"
+    elif operator == "nin":
+        return "$nin"
     else:
         raise ValueError(f"Filter operator {operator} not supported")
 
@@ -144,7 +148,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     persist_dir: Optional[str]
     collection_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    _collection: Any = PrivateAttr()
+    _collection: Collection = PrivateAttr()
 
     def __init__(
         self,
@@ -160,13 +164,6 @@ class ChromaVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Init params."""
         collection_kwargs = collection_kwargs or {}
-        if chroma_collection is None:
-            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
-            self._collection = client.get_or_create_collection(
-                name=collection_name, **collection_kwargs
-            )
-        else:
-            self._collection = cast(Collection, chroma_collection)
 
         super().__init__(
             host=host,
@@ -177,6 +174,13 @@ class ChromaVectorStore(BasePydanticVectorStore):
             persist_dir=persist_dir,
             collection_kwargs=collection_kwargs or {},
         )
+        if chroma_collection is None:
+            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+            self._collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        else:
+            self._collection = cast(Collection, chroma_collection)
 
     @classmethod
     def from_collection(cls, collection: Any) -> "ChromaVectorStore":
@@ -231,6 +235,32 @@ class ChromaVectorStore(BasePydanticVectorStore):
     def class_name(cls) -> str:
         return "ChromaVectorStore"
 
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]],
+        filters: Optional[List[MetadataFilters]] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from index.
+
+        Args:
+            node_ids (List[str]): list of node ids
+            filters (List[MetadataFilters]): list of metadata filters
+
+        """
+        if not self._collection:
+            raise ValueError("Collection not initialized")
+
+        node_ids = node_ids or []
+
+        if filters:
+            where = _to_chroma_filter(filters)
+        else:
+            where = {}
+
+        result = self._get(None, where=where, ids=node_ids)
+
+        return result.nodes
+
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to index.
 
@@ -282,6 +312,35 @@ class ChromaVectorStore(BasePydanticVectorStore):
         """
         self._collection.delete(where={"document_id": ref_doc_id})
 
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[List[MetadataFilters]] = None,
+    ) -> None:
+        """Delete nodes from index.
+
+        Args:
+            node_ids (List[str]): list of node ids
+            filters (List[MetadataFilters]): list of metadata filters
+
+        """
+        if not self._collection:
+            raise ValueError("Collection not initialized")
+
+        node_ids = node_ids or []
+
+        if filters:
+            where = _to_chroma_filter(filters)
+        else:
+            where = {}
+
+        self._collection.delete(ids=node_ids, where=where)
+
+    def clear(self) -> None:
+        """Clear the collection."""
+        ids = self._collection.get()["ids"]
+        self._collection.delete(ids=ids)
+
     @property
     def client(self) -> Any:
         """Return client."""
@@ -326,7 +385,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             **kwargs,
         )
 
-        logger.debug(f"> Top {len(results['documents'])} nodes:")
+        logger.debug(f"> Top {len(results['documents'][0])} nodes:")
         nodes = []
         similarities = []
         ids = []
@@ -367,7 +426,9 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
-    def _get(self, limit: int, where: dict, **kwargs) -> VectorStoreQueryResult:
+    def _get(
+        self, limit: Optional[int], where: dict, **kwargs
+    ) -> VectorStoreQueryResult:
         results = self._collection.get(
             limit=limit,
             where=where,
@@ -382,7 +443,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             results["ids"] = [[]]
 
         for node_id, text, metadata in zip(
-            results["ids"][0], results["documents"], results["metadatas"]
+            results["ids"], results["documents"], results["metadatas"]
         ):
             try:
                 node = metadata_dict_to_node(metadata)
