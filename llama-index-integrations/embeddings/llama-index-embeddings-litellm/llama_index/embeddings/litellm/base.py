@@ -32,8 +32,8 @@ def get_embeddings(
 
 
 class LiteLLMEmbedding(BaseEmbedding):
-    model_name: Optional[str] = Field(
-        default=None, description="The name of the embedding model."
+    model_name: str = Field(
+        description="The name of the embedding model."
     )
     api_key: Optional[str] = Field(
         default=None,
