@@ -1,4 +1,4 @@
-from typing import List, Any, Optional
+from typing import Any, List, Optional
 from litellm import embedding
 
 from llama_index.core.bridge.pydantic import Field
