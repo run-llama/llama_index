@@ -18,7 +18,7 @@ jobs:
       matrix:
         python-version: ["3.9"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
       - name: Install Poetry
