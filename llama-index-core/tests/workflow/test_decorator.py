@@ -3,8 +3,8 @@ import re
 import pytest
 
 from llama_index.core.workflow.decorators import step
-from llama_index.core.workflow.events import Event
 from llama_index.core.workflow.errors import WorkflowValidationError
+from llama_index.core.workflow.events import Event
 from llama_index.core.workflow.workflow import Workflow
 
 
@@ -17,6 +17,21 @@ def test_decorated_config(workflow):
     assert config.accepted_events == [Event]
     assert config.event_name == "ev"
     assert config.return_types == [Event]
+
+
+def test_decorate_method():
+    class TestWorkflow(Workflow):
+        @step
+        def f1(self, ev: Event) -> Event:
+            return ev
+
+        @step
+        def f2(self, ev: Event) -> Event:
+            return ev
+
+    wf = TestWorkflow()
+    assert getattr(wf.f1, "__step_config")
+    assert getattr(wf.f2, "__step_config")
 
 
 def test_decorate_wrong_signature():
@@ -42,10 +57,31 @@ def test_decorate_free_function_wrong_decorator():
     with pytest.raises(
         WorkflowValidationError,
         match=re.escape(
-            "To decorate f please pass a workflow instance to the @step() decorator."
+            "To decorate f please pass a workflow class to the @step decorator."
         ),
     ):
 
-        @step()
+        @step
         def f(ev: Event) -> Event:
+            return Event()
+
+
+def test_decorate_free_function_wrong_num_workers():
+    class TestWorkflow(Workflow):
+        pass
+
+    with pytest.raises(
+        WorkflowValidationError, match="num_workers must be an integer greater than 0"
+    ):
+
+        @step(workflow=TestWorkflow, num_workers=0)
+        def f1(ev: Event) -> Event:
+            return Event()
+
+    with pytest.raises(
+        WorkflowValidationError, match="num_workers must be an integer greater than 0"
+    ):
+
+        @step(workflow=TestWorkflow, num_workers=0.5)
+        def f2(ev: Event) -> Event:
             return Event()

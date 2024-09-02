@@ -1,9 +1,12 @@
+import logging
 import os
 import pytest
 import json
 from llama_index.llms.azure_inference import AzureAICompletionsModel
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.tools import FunctionTool
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.mark.skipif(
@@ -117,4 +120,29 @@ def test_chat_completion_with_tools():
     assert (
         response.message.additional_kwargs["tool_calls"][0]["function"]["name"]
         == "echo"
+    )
+
+
+@pytest.mark.skipif(
+    not {
+        "AZURE_INFERENCE_ENDPOINT",
+        "AZURE_INFERENCE_CREDENTIAL",
+    }.issubset(set(os.environ)),
+    reason="Azure AI endpoint and/or credential are not set.",
+)
+def test_get_metadata(caplog):
+    """Tests if we can get model metadata back from the endpoint. If so,
+    model_name should not be 'unknown'. Some endpoints may not support this
+    and in those cases a warning should be logged.
+    """
+    # In case the endpoint being tested serves more than one model
+    model_name = os.environ.get("AZURE_INFERENCE_MODEL", None)
+
+    llm = AzureAICompletionsModel(model_name=model_name)
+
+    response = llm.metadata
+
+    assert (
+        response.model_name != "unknown"
+        or "does not support model metadata retrieval" in caplog.text
     )

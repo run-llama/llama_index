@@ -35,8 +35,8 @@ class ElasticsearchEmbedding(BaseEmbedding):
         input_field: str = "text_field",
         **kwargs: Any,
     ):
-        self._client = client
         super().__init__(model_id=model_id, input_field=input_field, **kwargs)
+        self._client = client
 
     @classmethod
     def from_es_connection(

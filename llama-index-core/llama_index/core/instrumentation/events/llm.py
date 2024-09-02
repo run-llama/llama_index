@@ -1,5 +1,5 @@
 from typing import Any, List, Optional
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, SerializeAsAny, ConfigDict
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -17,7 +17,7 @@ class LLMPredictStartEvent(BaseEvent):
         template_args (Optional[dict]): Prompt template arguments.
     """
 
-    template: BasePromptTemplate
+    template: SerializeAsAny[BasePromptTemplate]
     template_args: Optional[dict]
 
     @classmethod
@@ -53,7 +53,7 @@ class LLMStructuredPredictStartEvent(BaseEvent):
     """
 
     output_cls: Any
-    template: BasePromptTemplate
+    template: SerializeAsAny[BasePromptTemplate]
     template_args: Optional[dict]
 
     @classmethod
@@ -69,7 +69,7 @@ class LLMStructuredPredictEndEvent(BaseEvent):
         output (BaseModel): Predicted output class.
     """
 
-    output: BaseModel
+    output: SerializeAsAny[BaseModel]
 
     @classmethod
     def class_name(cls):
@@ -84,7 +84,7 @@ class LLMStructuredPredictInProgressEvent(BaseEvent):
         output (BaseModel): Predicted output class.
     """
 
-    output: BaseModel
+    output: SerializeAsAny[BaseModel]
 
     @classmethod
     def class_name(cls):
@@ -101,6 +101,7 @@ class LLMCompletionStartEvent(BaseEvent):
         model_dict (dict): Model dictionary.
     """
 
+    model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
     prompt: str
     additional_kwargs: dict
     model_dict: dict
@@ -154,6 +155,7 @@ class LLMChatStartEvent(BaseEvent):
         model_dict (dict): Model dictionary.
     """
 
+    model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
     messages: List[ChatMessage]
     additional_kwargs: dict
     model_dict: dict

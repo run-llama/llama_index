@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List
 
-from llama_index.core import ServiceContext, VectorStoreIndex
+from llama_index.core import Settings, VectorStoreIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.node_parser import (
     SentenceWindowNodeParser,
@@ -40,15 +40,12 @@ class SentenceWindowRetrieverPack(BaseLlamaPack):
         self.embed_model = HuggingFaceEmbedding(
             model_name="sentence-transformers/all-mpnet-base-v2", max_length=512
         )
-        self.service_context = ServiceContext.from_defaults(
-            llm=self.llm,
-            embed_model=self.embed_model,
-        )
+        Settings.llm = self.llm
+        Settings.embed_model = self.embed_model
+
         # extract nodes
         nodes = self.node_parser.get_nodes_from_documents(docs)
-        self.sentence_index = VectorStoreIndex(
-            nodes, service_context=self.service_context
-        )
+        self.sentence_index = VectorStoreIndex(nodes)
         self.postprocessor = MetadataReplacementPostProcessor(
             target_metadata_key="window"
         )
@@ -67,7 +64,6 @@ class SentenceWindowRetrieverPack(BaseLlamaPack):
             "llm": self.llm,
             "embed_model": self.embed_model,
             "query_engine": self.query_engine,
-            "service_context": self.service_context,
         }
 
     def run(self, *args: Any, **kwargs: Any) -> Any:

@@ -91,12 +91,19 @@ def _build_metadata_filter_fn(
         filter_matches_list = []
         for filter_ in filter_list:
             filter_matches = True
-
-            filter_matches = _process_filter_match(
-                operator=filter_.operator,
-                value=filter_.value,
-                metadata_value=metadata.get(filter_.key, None),
-            )
+            metadata_value = metadata.get(filter_.key, None)
+            if filter_.operator == FilterOperator.IS_EMPTY:
+                filter_matches = (
+                    metadata_value is None
+                    or metadata_value == ""
+                    or metadata_value == []
+                )
+            else:
+                filter_matches = _process_filter_match(
+                    operator=filter_.operator,
+                    value=filter_.value,
+                    metadata_value=metadata_value,
+                )
 
             filter_matches_list.append(filter_matches)
 
@@ -156,14 +163,11 @@ class SimpleVectorStore(BasePydanticVectorStore):
     def from_persist_dir(
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
-        namespace: Optional[str] = None,
+        namespace: str = DEFAULT_VECTOR_STORE,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleVectorStore":
         """Load from persist dir."""
-        if namespace:
-            persist_fname = f"{namespace}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}"
-        else:
-            persist_fname = DEFAULT_PERSIST_FNAME
+        persist_fname = f"{namespace}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}"
 
         if fs is not None:
             persist_path = concat_dirs(persist_dir, persist_fname)

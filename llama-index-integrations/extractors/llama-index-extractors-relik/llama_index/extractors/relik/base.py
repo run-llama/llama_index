@@ -92,6 +92,10 @@ class RelikPathExtractor(TransformComponent):
             relik_out = self.relik_model(text)
         except Exception as e:
             if self.skip_errors:
+                node.metadata[KG_NODES_KEY] = node.metadata.get(KG_NODES_KEY, [])
+                node.metadata[KG_RELATIONS_KEY] = node.metadata.get(
+                    KG_RELATIONS_KEY, []
+                )
                 return node
             raise ValueError(f"Failed to extract triples from text: {e}")
 

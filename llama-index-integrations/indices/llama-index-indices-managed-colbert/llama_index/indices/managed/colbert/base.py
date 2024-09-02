@@ -7,7 +7,6 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.data_structs.data_structs import IndexDict
 from llama_index.core.indices.base import BaseIndex, IndexNode
 from llama_index.core.schema import BaseNode, NodeWithScore
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 
@@ -58,8 +57,6 @@ class ColbertIndex(BaseIndex[IndexDict]):
         doc_maxlen: int = 120,
         query_maxlen: int = 60,
         kmeans_niters: int = 4,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         self.model_name = model_name
@@ -83,7 +80,6 @@ class ColbertIndex(BaseIndex[IndexDict]):
             nodes=nodes,
             index_struct=index_struct,
             index_name=index_name,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             objects=objects,

@@ -1,6 +1,7 @@
 """Google's Gemini multi-modal models."""
+
 import os
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 import google.generativeai as genai
 import PIL
@@ -77,6 +78,7 @@ class GeminiMultiModal(MultiModalLLM):
         generation_config: Optional["genai.types.GenerationConfigDict"] = None,
         safety_settings: "genai.types.SafetySettingOptions" = None,
         api_base: Optional[str] = None,
+        default_headers: Optional[Dict[str, str]] = None,
         transport: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         **generate_kwargs: Any,
@@ -89,6 +91,13 @@ class GeminiMultiModal(MultiModalLLM):
         }
         if api_base:
             config_params["client_options"] = {"api_endpoint": api_base}
+        if default_headers:
+            default_metadata: Sequence[Tuple[str, str]] = []
+            for key, value in default_headers.items():
+                default_metadata.append((key, value))
+            # `default_metadata` contains (key, value) pairs that will be sent with every request.
+            # These will be sent as HTTP headers When using `transport="rest"`.
+            config_params["default_metadata"] = default_metadata
         if transport:
             config_params["transport"] = transport
         # transport: A string, one of: [`rest`, `grpc`, `grpc_asyncio`].
@@ -105,15 +114,15 @@ class GeminiMultiModal(MultiModalLLM):
                 f"Available models are: {GEMINI_MM_MODELS}"
             )
 
-        self._model = genai.GenerativeModel(
+        model = genai.GenerativeModel(
             model_name=model_name,
             generation_config=final_gen_config,
             safety_settings=safety_settings,
         )
 
-        self._model_meta = genai.get_model(model_name)
+        model_meta = genai.get_model(model_name)
 
-        supported_methods = self._model_meta.supported_generation_methods
+        supported_methods = model_meta.supported_generation_methods
         if "generateContent" not in supported_methods:
             raise ValueError(
                 f"Model {model_name} does not support content generation, only "
@@ -121,9 +130,9 @@ class GeminiMultiModal(MultiModalLLM):
             )
 
         if not max_tokens:
-            max_tokens = self._model_meta.output_token_limit
+            max_tokens = model_meta.output_token_limit
         else:
-            max_tokens = min(max_tokens, self._model_meta.output_token_limit)
+            max_tokens = min(max_tokens, model_meta.output_token_limit)
 
         super().__init__(
             model_name=model_name,
@@ -132,6 +141,8 @@ class GeminiMultiModal(MultiModalLLM):
             generate_kwargs=generate_kwargs,
             callback_manager=callback_manager,
         )
+        self._model = model
+        self._model_meta = model_meta
 
     @classmethod
     def class_name(cls) -> str:

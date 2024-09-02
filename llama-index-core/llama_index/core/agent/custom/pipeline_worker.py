@@ -15,7 +15,7 @@ from llama_index.core.agent.types import (
     TaskStepOutput,
 )
 from llama_index.core.base.query_pipeline.query import QueryComponent
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.callbacks import (
     CallbackManager,
     trace_method,
@@ -72,13 +72,11 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     pipeline: QueryPipeline = Field(..., description="Query pipeline")
     callback_manager: CallbackManager = Field(..., exclude=True)
     task_key: str = Field("task", description="Key to store task in state")
     step_state_key: str = Field("step_state", description="Key to store step in state")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(
         self,

@@ -2,7 +2,7 @@
 
 A `Workflow` in LlamaIndex is an event-driven abstraction used to chain together several events. Workflows are made up of `steps`, with each step responsible for handling certain event types and emitting new events.
 
-`Workflow`s in LlamaIndex work by decorating function with a `@step()` decorator. This is used to infer the input and output types of each workflow for validation, and ensures each step only runs when an accepted event is ready.
+`Workflow`s in LlamaIndex work by decorating function with a `@step` decorator. This is used to infer the input and output types of each workflow for validation, and ensures each step only runs when an accepted event is ready.
 
 You can create a `Workflow` to do anything! Build an agent, a RAG flow, an extraction flow, or anything else you want.
 
@@ -50,7 +50,7 @@ class JokeEvent(Event):
 class JokeFlow(Workflow):
     llm = OpenAI()
 
-    @step()
+    @step
     async def generate_joke(self, ev: StartEvent) -> JokeEvent:
         topic = ev.topic
 
@@ -58,7 +58,7 @@ class JokeFlow(Workflow):
         response = await self.llm.acomplete(prompt)
         return JokeEvent(joke=str(response))
 
-    @step()
+    @step
     async def critique_joke(self, ev: JokeEvent) -> StopEvent:
         joke = ev.joke
 
@@ -99,7 +99,7 @@ Our workflow is implemented by subclassing the `Workflow` class. For simplicity,
 class JokeFlow(Workflow):
     ...
 
-    @step()
+    @step
     async def generate_joke(self, ev: StartEvent) -> JokeEvent:
         topic = ev.topic
 
@@ -114,7 +114,7 @@ Here, we come to the entry-point of our workflow. While events are use-defined, 
 
 The `StartEvent` is a bit of a special object since it can hold arbitrary attributes. Here, we accessed the topic with `ev.topic`, which would raise an error if it wasn't there. You could also do `ev.get("topic")` to handle the case where the attribute might not be there without raising an error.
 
-At this point, you may have noticed that we haven't explicitly told the workflow what events are handled by which steps. Instead, the `@step()` decorator is used to infer the input and output types of each step. Furthermore, these inferred input and output types are also used to verify for you that the workflow is valid before running!
+At this point, you may have noticed that we haven't explicitly told the workflow what events are handled by which steps. Instead, the `@step` decorator is used to infer the input and output types of each step. Furthermore, these inferred input and output types are also used to verify for you that the workflow is valid before running!
 
 ### Workflow Exit Points
 
@@ -122,7 +122,7 @@ At this point, you may have noticed that we haven't explicitly told the workflow
 class JokeFlow(Workflow):
     ...
 
-    @step()
+    @step
     async def critique_joke(self, ev: JokeEvent) -> StopEvent:
         joke = ev.joke
 
@@ -184,17 +184,17 @@ Optionally, you can choose to use global context between steps. For example, may
 from llama_index.core.workflow import Context
 
 
-@step(pass_context=True)
+@step
 async def query(self, ctx: Context, ev: MyEvent) -> StopEvent:
     # retrieve from context
-    query = ctx.data.get("query")
+    query = await ctx.get("query")
 
     # do something with context and event
     val = ...
     result = ...
 
     # store in context
-    ctx.data["key"] = val
+    await ctx.set("key", val)
 
     return StopEvent(result=result)
 ```
@@ -209,7 +209,7 @@ For example, you might have a step that waits for a query and retrieved nodes be
 from llama_index.core import get_response_synthesizer
 
 
-@step(pass_context=True)
+@step
 async def synthesize(
     self, ctx: Context, ev: QueryEvent | RetrieveEvent
 ) -> StopEvent | None:
@@ -234,7 +234,7 @@ Using `ctx.collect_events()` we can buffer and wait for ALL expected events to a
 
 ## Manually Triggering Events
 
-Normally, events are triggered by returning another event during a step. However, events can also be manually dispatched using the `self.send_event(event)` method within a workflow.
+Normally, events are triggered by returning another event during a step. However, events can also be manually dispatched using the `ctx.send_event(event)` method within a workflow.
 
 Here is a short toy example showing how this would be used:
 
@@ -255,18 +255,20 @@ class GatherEvent(Event):
 
 
 class MyWorkflow(Workflow):
-    @step()
-    async def dispatch_step(self, ev: StartEvent) -> MyEvent | GatherEvent:
-        self.send_event(MyEvent())
-        self.send_event(MyEvent())
+    @step
+    async def dispatch_step(
+        self, ctx: Context, ev: StartEvent
+    ) -> MyEvent | GatherEvent:
+        ctx.send_event(MyEvent())
+        ctx.send_event(MyEvent())
 
         return GatherEvent()
 
-    @step()
+    @step
     async def handle_my_event(self, ev: MyEvent) -> MyEventResult:
         return MyEventResult(result="result")
 
-    @step(pass_context=True)
+    @step
     async def gather(
         self, ctx: Context, ev: GatherEvent | MyEventResult
     ) -> StopEvent | None:
@@ -346,7 +348,18 @@ async def critique_joke(ev: JokeEvent) -> StopEvent:
 
 You can find many useful examples of using workflows in the notebooks below:
 
-- [RAG + Reranking](../../examples/workflow/rag.ipynb)
-- [Reliable Structured Generation](../../examples/workflow/reflection.ipynb)
+- [Citation Query Engine](../../examples/workflow/citation_query_engine.ipynb)
+- [Common Workflow Patterns](../../examples/workflow/workflows_cookbook.ipynb)
+- [Corrective RAG](../../examples/workflow/corrective_rag_pack.ipynb)
 - [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb)
+- [JSON Query Engine](../../examples/workflow/JSONalyze_query_engine.ipynb)
+- [Long RAG](../../examples/workflow/long_rag_pack.ipynb)
+- [Multi-Step Query Engine](../../examples/workflow/multi_step_query_engine.ipynb)
+- [Multi-Strategy Workflow](../../examples/workflow/multi_strategy_workflow.ipynb)
+- [RAG + Reranking](../../examples/workflow/rag.ipynb)
 - [ReAct Agent](../../examples/workflow/react_agent.ipynb)
+- [Reliable Structured Generation](../../examples/workflow/reflection.ipynb)
+- [Router Query Engine](../../examples/workflow/router_query_engine.ipynb)
+- [Self Discover Workflow](../../examples/workflow/self_discover_workflow.ipynb)
+- [Sub-Question Query Engine](../../examples/workflow/sub_question_query_engine.ipynb)
+- [Utilizing Concurrency](../../examples/workflow/parallel_execution.ipynb)

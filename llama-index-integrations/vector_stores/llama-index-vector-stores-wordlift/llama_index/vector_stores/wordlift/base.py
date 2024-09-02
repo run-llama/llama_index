@@ -66,10 +66,15 @@ class WordliftVectorStore(BasePydanticVectorStore):
 
     _account: Optional[AccountInfo] = PrivateAttr(default=None)
     _configuration: Configuration = PrivateAttr()
+    _fields: Optional[List[str]] = PrivateAttr()
 
     def __init__(
-        self, key: Optional[str] = None, configuration: Optional[Configuration] = None
+        self,
+        key: Optional[str] = None,
+        configuration: Optional[Configuration] = None,
+        fields: Optional[List[str]] = None,
     ):
+        super().__init__(use_async=True)
         nest_asyncio.apply()
 
         if configuration is None:
@@ -77,7 +82,10 @@ class WordliftVectorStore(BasePydanticVectorStore):
         else:
             self._configuration = configuration
 
-        super().__init__(use_async=True)
+        if fields is None:
+            self._fields = ["schema:url", "schema:name"]
+        else:
+            self._fields = fields
 
     @property
     def account(self) -> AccountInfo:
@@ -207,13 +215,13 @@ class WordliftVectorStore(BasePydanticVectorStore):
             request = VectorSearchQueryRequest(
                 query_string=query.query_str,
                 similarity_top_k=query.similarity_top_k,
-                fields=["schema:url", "schema:name"],
+                fields=self._fields,
             )
         else:
             request = VectorSearchQueryRequest(
                 query_embedding=query.query_embedding,
                 similarity_top_k=query.similarity_top_k,
-                fields=["schema:url", "schema:name"],
+                fields=self._fields,
             )
 
         async with wordlift_client.ApiClient(self._configuration) as api_client:

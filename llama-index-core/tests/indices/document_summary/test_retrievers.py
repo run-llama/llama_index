@@ -1,4 +1,5 @@
 """Test document summary retrievers."""
+
 from llama_index.core.indices.document_summary.base import (
     DocumentSummaryIndex,
     DocumentSummaryRetrieverMode,
@@ -9,9 +10,7 @@ from llama_index.core.indices.document_summary.retrievers import (
 )
 
 
-def test_embedding_retriever(
-    index: DocumentSummaryIndex,
-) -> None:
+def test_embedding_retriever(index: DocumentSummaryIndex) -> None:
     retriever = index.as_retriever()
     assert isinstance(retriever, DocumentSummaryIndexEmbeddingRetriever)
     results = retriever.retrieve("Test query")
