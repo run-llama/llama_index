@@ -128,6 +128,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         llm: Optional[FunctionCallingLLM] = None,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
+        allow_parallel_tool_calls: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
@@ -167,6 +168,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
             **kwargs,
         )
 
@@ -373,7 +375,9 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         except AttributeError:
             response_str = str(response)
 
-        agent_response = AgentChatResponse(response=response_str, sources=tool_outputs)
+        agent_response = AgentChatResponse(
+            response=response_str, sources=task.extra_state["sources"]
+        )
 
         return TaskStepOutput(
             output=agent_response,
@@ -466,7 +470,9 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         except AttributeError:
             response_str = str(response)
 
-        agent_response = AgentChatResponse(response=response_str, sources=tool_outputs)
+        agent_response = AgentChatResponse(
+            response=response_str, sources=task.extra_state["sources"]
+        )
 
         return TaskStepOutput(
             output=agent_response,
