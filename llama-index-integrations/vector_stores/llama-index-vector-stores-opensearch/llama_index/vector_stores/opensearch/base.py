@@ -56,6 +56,7 @@ class OpensearchVectorClient:
             This includes engine, metric, and other config params. Defaults to:
             {"name": "hnsw", "space_type": "l2", "engine": "faiss",
             "parameters": {"ef_construction": 256, "m": 48}}
+        space_type (Optional[str]): space type to perform distance metric on. Defaults to: l2
         **kwargs: Optional arguments passed to the OpenSearch client from opensearch-py.
 
     """
@@ -69,6 +70,7 @@ class OpensearchVectorClient:
         text_field: str = "content",
         method: Optional[dict] = None,
         engine: Optional[str] = "nmslib",
+        space_type: Optional['str'] = "l2",
         max_chunk_bytes: int = 1 * 1024 * 1024,
         search_pipeline: Optional[str] = None,
         os_client: Optional[OSClient] = None,
@@ -94,6 +96,7 @@ class OpensearchVectorClient:
 
         self._search_pipeline = search_pipeline
         http_auth = kwargs.get("http_auth")
+        self.space_type = space_type
         self.is_aoss = self._is_aoss_enabled(http_auth=http_auth)
         # initialize mapping
         idx_conf = {
@@ -328,6 +331,13 @@ class OpensearchVectorClient:
             search_query = self._default_approximate_search_query(
                 query_embedding, k, vector_field=embedding_field
             )
+        elif self.is_aoss:
+            search_query = self._default_scoring_script_query(                
+                query_embedding,
+                k,
+                space_type=self.space_type,
+                pre_filter={"bool": {"filter": pre_filter}},
+                vector_field=embedding_field,)
         else:
             # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
             search_query = self._default_painless_scripting_query(
@@ -382,7 +392,8 @@ class OpensearchVectorClient:
     def __get_painless_scripting_source(
         self, space_type: str, vector_field: str = "embedding"
     ) -> str:
-        """For Painless Scripting, it returns the script source based on space type."""
+        """For Painless Scripting, it returns the script source based on space type. 
+        This does not work with Opensearch Serverless currently."""
         source_value = (
             f"(1.0 + {space_type}(params.query_value, doc['{vector_field}']))"
         )
@@ -391,31 +402,54 @@ class OpensearchVectorClient:
         else:
             return f"1/{source_value}"
 
-    def _default_painless_scripting_query(
+    def _get_knn_scoring_script(self, space_type, vector_field, query_vector):  
+        """Default scoring script that will work with AWS Opensearch Serverless"""
+        return {
+                    "source": "knn_score",
+                    "lang": "knn",
+                    "params": {
+                        "field": vector_field,
+                        "query_value": query_vector,
+                        "space_type": space_type
+                    }
+                }
+    
+    def _get_painless_scoring_script(self, space_type, vector_field, query_vector):
+        source = self.__get_painless_scripting_source(space_type, vector_field)
+        return {
+                    "source": source,
+                    "params": {
+                        "field": vector_field,
+                        "query_value": query_vector,
+                    },
+                }
+    
+    def _default_scoring_script_query(
         self,
         query_vector: List[float],
         k: int = 4,
-        space_type: str = "l2Squared",
+        space_type: str = "l2",
         pre_filter: Optional[Union[Dict, List]] = None,
         vector_field: str = "embedding",
     ) -> Dict:
-        """For Painless Scripting Search, this is the default query."""
+        """For Scoring Script Search, this is the default query. Has to account for Opensearch Service 
+        Serverless which does not support l2squared painless scripting so defaults to knn_score."""
+
         if not pre_filter:
             pre_filter = MATCH_ALL_QUERY
 
-        source = self.__get_painless_scripting_source(space_type, vector_field)
+        # check if we can use painless scripting or have to use default knn_score script
+        if self.is_aoss:
+            script = self._get_knn_scoring_script(space_type, vector_field, query_vector)
+        else:
+            script = self._get_painless_scoring_script(space_type, vector_field, query_vector)
+
         return {
             "size": k,
             "query": {
                 "script_score": {
                     "query": pre_filter,
-                    "script": {
-                        "source": source,
-                        "params": {
-                            "field": vector_field,
-                            "query_value": query_vector,
-                        },
-                    },
+                    "script": script,
                 }
             },
         }
