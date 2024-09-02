@@ -467,7 +467,7 @@ class BedrockConverse(FunctionCallingLLM):
         async def gen() -> ChatResponseAsyncGen:
             content = {}
             role = MessageRole.ASSISTANT
-            for chunk in response["stream"]:
+            async for chunk in response["stream"]:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)

@@ -1,5 +1,64 @@
 # ChangeLog
 
+## [2024-07-27]
+
+### `llama-index-core` [0.11.2]
+
+- fix tool schemas generation for pydantic v2 to handle nested models (#15679)
+- feat: support default values for nested workflows (#15660)
+- feat: allow FunctionTool with just an async fn (#15638)
+- feat: Allow streaming events from steps (#15488)
+- fix auto-retriever pydantic indent error (#15648)
+- Implement Router Query Engine example using workflows (#15635)
+- Add multi step query engine example using workflows (#15438)
+- start traces for llm-level operations (#15542)
+- Pass callback_manager to init in CodeSplitter from_defaults (#15585)
+
+### `llama-index-embeddings-xinference` [0.1.0]
+
+- Add Xinference Embedding Class (#15579)
+
+### `llama-index-llms-ai21` [0.3.3]
+
+- Integrations: AI21 function calling Support (#15622)
+
+### `llama-index-llms-anthropic` [0.3.0]
+
+- Added support for anthropic models through GCP Vertex AI (#15661)
+
+### `llama-index-llms-cerebras` [0.1.0]
+
+- Implement Cerebras Integration (#15665)
+
+### `llama-index-postprocessor-nvidia-rerank` [0.3.1]
+
+- fix downloaded nim endpoint path (#15645)
+- fix llama-index-postprocessor-nvidia-rerank tests (#15643)
+
+### `llama-index-postprocessor-xinference-rerank` [0.1.0]
+
+- add xinference rerank class (#15639)
+
+### `llama-index-vector-stores-alibabacloud-opensearch` [0.2.1]
+
+- fix set output fields in AlibabaCloudOpenSearchConfig (#15562)
+
+### `llama-index-vector-stores-azureaisearch` [0.2.1]
+
+- Upgrade azure-search-documents to 2024-07-01 GA API and Add Support for Scalar and Binary Quantization in Index Creation (#15650)
+
+### `llama-index-vector-stores-neo4j` [0.2.1]
+
+- Neo4j Vector Store: Make Embedding Dimension Check Optional (#15628)
+
+### `llama-inde-vector-stores-milvus` [0.2.1]
+
+- Change the default consistency level of Milvus (#15577)
+
+### `llama-index-vector-stores-elasticsearch` [0.3.2]
+
+- Fix the ElasticsearchStore key error (#15631)
+
 ## [2024-08-23]
 
 ### `llama-index-core` [0.11.1]

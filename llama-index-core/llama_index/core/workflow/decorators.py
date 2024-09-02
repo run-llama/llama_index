@@ -1,11 +1,16 @@
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type, Dict
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type
 
 from llama_index.core.bridge.pydantic import BaseModel
 
 from .errors import WorkflowValidationError
-from .utils import is_free_function, validate_step_signature, inspect_signature
+from .utils import (
+    is_free_function,
+    validate_step_signature,
+    inspect_signature,
+    ServiceDefinition,
+)
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
 
 
@@ -15,7 +20,7 @@ class StepConfig(BaseModel):
     return_types: List[Any]
     context_parameter: Optional[str]
     num_workers: int
-    services: Dict[str, List[Any]]
+    requested_services: List[ServiceDefinition]
 
 
 def step(
@@ -33,13 +38,6 @@ def step(
     """
 
     def decorator(func: Callable) -> Callable:
-        # If this is a free function, call add_step() explicitly.
-        if is_free_function(func.__qualname__):
-            if workflow is None:
-                msg = f"To decorate {func.__name__} please pass a workflow class to the @step decorator."
-                raise WorkflowValidationError(msg)
-            workflow.add_step(func)
-
         if not isinstance(num_workers, int) or num_workers <= 0:
             raise WorkflowValidationError(
                 "num_workers must be an integer greater than 0"
@@ -57,8 +55,15 @@ def step(
             return_types=spec.return_types,
             context_parameter=spec.context_parameter,
             num_workers=num_workers,
-            services=spec.requested_services or {},
+            requested_services=spec.requested_services or [],
         )
+
+        # If this is a free function, call add_step() explicitly.
+        if is_free_function(func.__qualname__):
+            if workflow is None:
+                msg = f"To decorate {func.__name__} please pass a workflow class to the @step decorator."
+                raise WorkflowValidationError(msg)
+            workflow.add_step(func)
 
         return func
 

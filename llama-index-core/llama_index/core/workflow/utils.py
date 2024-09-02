@@ -14,14 +14,22 @@ from typing import (
 # handle python version compatibility
 try:
     from types import UnionType
-except ImportError:
+except ImportError:  # pragma: no cover
     UnionType = Union
 
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
-from .context import Context
 from .events import Event, EventType
 from .errors import WorkflowValidationError
+
+
+class ServiceDefinition(BaseModel):
+    # Make the service definition hashable
+    model_config = ConfigDict(frozen=True)
+
+    name: str
+    service: Any
+    default_value: Optional[Any]
 
 
 class StepSignatureSpec(BaseModel):
@@ -30,7 +38,7 @@ class StepSignatureSpec(BaseModel):
     accepted_events: Dict[str, List[EventType]]
     return_types: List[Any]
     context_parameter: Optional[str]
-    requested_services: Optional[Dict[str, List[Any]]]
+    requested_services: Optional[List[ServiceDefinition]]
 
 
 def inspect_signature(fn: Callable) -> StepSignatureSpec:
@@ -39,7 +47,7 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
 
     accepted_events: Dict[str, List[EventType]] = {}
     context_parameter = None
-    requested_services = {}
+    requested_services = []
 
     # Inspect function parameters
     for name, t in sig.parameters.items():
@@ -48,7 +56,7 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
             continue
 
         # Get name and type of the Context param
-        if t.annotation == Context:
+        if hasattr(t.annotation, "__name__") and t.annotation.__name__ == "Context":
             context_parameter = name
             continue
 
@@ -62,10 +70,16 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
             accepted_events[name] = param_types
             continue
 
-        # Everything else will be treated as a service
-        requested_services[name] = param_types
+        # Everything else will be treated as a service request
+        default_value = t.default
+        if default_value is inspect.Parameter.empty:
+            default_value = None
 
-    # Inspect function return types
+        requested_services.append(
+            ServiceDefinition(
+                name=name, service=param_types[0], default_value=default_value
+            )
+        )
 
     return StepSignatureSpec(
         accepted_events=accepted_events,
