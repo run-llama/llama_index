@@ -245,6 +245,9 @@ class Workflow(metaclass=_WorkflowMeta):
             t.cancel()
             await asyncio.sleep(0)
 
+        # remove context
+        self._contexts.remove(ctx)
+
         # Bubble up the error if any step raised an exception
         if exception_raised:
             # Make sure to stop streaming, in case the workflow terminated abnormally
