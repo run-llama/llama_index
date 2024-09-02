@@ -324,7 +324,7 @@ class Ollama(FunctionCallingLLM):
                 tool_calls = r["message"].get("tool_calls", [])
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
-                    response["usage"] = token_counts
+                    r["usage"] = token_counts
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -367,7 +367,7 @@ class Ollama(FunctionCallingLLM):
                 tool_calls = r["message"].get("tool_calls", [])
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
-                    response["usage"] = token_counts
+                    r["usage"] = token_counts
 
                 yield ChatResponse(
                     message=ChatMessage(
