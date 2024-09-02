@@ -67,6 +67,9 @@ class Workflow(metaclass=WorkflowMeta):
 
             yield ev
 
+        # remove context to free up room for the next stream_events call
+        self._contexts.remove(ctx)
+
     @classmethod
     def add_step(cls, func: Callable) -> None:
         """Adds a free function as step for this workflow instance.
