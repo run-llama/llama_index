@@ -555,6 +555,7 @@ class AgentRunner(BaseAgentRunner):
         step_output.output.sources = self.get_task(task_id).extra_state.get(
             "sources", []
         )
+        step_output.output.set_source_nodes()
 
         return cast(AGENT_CHAT_RESPONSE_TYPE, step_output.output)
 

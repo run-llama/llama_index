@@ -13,6 +13,7 @@ import_path = "llama_index.graph_stores.falkordb"
 
 [tool.llamahub.class_authors]
 FalkorDBGraphStore = "llama-index"
+FalkorDBPropertyGraphStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -475,6 +475,7 @@ nav:
           - ./examples/output_parsing/llm_program.ipynb
           - ./examples/output_parsing/lmformatenforcer_pydantic_program.ipynb
           - ./examples/output_parsing/lmformatenforcer_regular_expressions.ipynb
+          - ./examples/output_parsing/nvidia_output_parsing.ipynb
           - ./examples/output_parsing/openai_pydantic_program.ipynb
           - ./examples/output_parsing/openai_sub_question.ipynb
       - Param Optimizer:
@@ -655,6 +656,7 @@ nav:
           - ./examples/vector_stores/qdrant_hybrid.ipynb
       - Workflow:
           - ./examples/workflow/JSONalyze_query_engine.ipynb
+          - ./examples/workflow/advanced_text_to_sql.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
           - ./examples/workflow/function_calling_agent.ipynb
