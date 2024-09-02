@@ -14,7 +14,10 @@ skip = "./llama_index/core/_static,./examples,./experimental,*.csv,*.html,*.json
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
+explicit_package_bases = true
 ignore_missing_imports = true
+namespace_packages = true
+plugins = "pydantic.mypy"
 python_version = "3.8"
 
 [tool.poetry]
@@ -79,7 +82,7 @@ ipython = "8.10.0"
 jupyter = "^1.0.0"
 llama-cloud = ">=0.0.6"
 motor = "^3.3.2"
-mypy = "0.991"
+mypy = "1.11.0"
 openai = "*"
 pandas = "*"
 pre-commit = "3.2.0"

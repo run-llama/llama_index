@@ -48,7 +48,7 @@ def _escape_braces(text: str) -> str:
     Only captures template variables, skips already escaped braces.
     """
 
-    def replace(match):
+    def replace(match: re.Match[str]) -> str:
         if match.group(0).startswith("{{") and match.group(0).endswith("}}"):
             return match.group(0)  # Already escaped, return as is
         return "{{" + match.group(1) + "}}"
@@ -210,11 +210,12 @@ class StructuredLLM(LLM):
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return query component."""
+        base_component: BaseLLMComponent
         if self.metadata.is_chat_model:
             base_component = LLMChatComponent(llm=self, **kwargs)
         else:
             base_component = LLMCompleteComponent(llm=self, **kwargs)
-        # llm_component = self.llm.as_query_component()
+
         return StructuredLLMComponent(llm_component=base_component)
 
 
@@ -250,7 +251,7 @@ class StructuredLLMComponent(QueryComponent):
 
     async def _arun_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        output = await self.llm_component.arun_component(**kwargs)["output"]
+        output = (await self.llm_component.arun_component(**kwargs))["output"]
         # NOTE: can either be a CompletionResponse or ChatResponse
         # other types are not supported at the moment
         if isinstance(output, CompletionResponse):

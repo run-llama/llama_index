@@ -18,6 +18,7 @@ explicit_package_bases = true
 ignore_missing_imports = true
 mypy_path = "llama_index"
 namespace_packages = true
+plugins = "pydantic.mypy"
 python_version = "3.8"
 
 [tool.poetry]

@@ -38,7 +38,7 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         output_parser: Optional[BaseOutputParser] = None,
         output_cls: Optional[Type[BaseModel]] = None,
         prompt_template_str: Optional[str] = None,
-        prompt: Optional[PromptTemplate] = None,
+        prompt: Optional[BasePromptTemplate] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -90,9 +90,9 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         if self._llm.metadata.is_chat_model:
             messages = self._prompt.format_messages(llm=self._llm, **kwargs)
             messages = self._llm._extend_messages(messages)
-            response = self._llm.chat(messages, **llm_kwargs)
+            chat_response = self._llm.chat(messages, **llm_kwargs)
 
-            raw_output = response.message.content or ""
+            raw_output = chat_response.message.content or ""
         else:
             formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
 
@@ -117,9 +117,9 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
         if self._llm.metadata.is_chat_model:
             messages = self._prompt.format_messages(llm=self._llm, **kwargs)
             messages = self._llm._extend_messages(messages)
-            response = await self._llm.achat(messages, **llm_kwargs)
+            chat_response = await self._llm.achat(messages, **llm_kwargs)
 
-            raw_output = response.message.content or ""
+            raw_output = chat_response.message.content or ""
         else:
             formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
 

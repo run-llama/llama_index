@@ -1,0 +1,37 @@
+name: Core Typecheck
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  POETRY_VERSION: "1.8.3"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      # You can use PyPy versions in python-version.
+      # For example, pypy-2.7 and pypy-3.8
+      matrix:
+        python-version: ["3.9"]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "poetry"
+          cache-dependency-path: "**/poetry.lock"
+      - name: Install core
+        shell: bash
+        run: cd ./llama-index-core/ && poetry install --with dev
+      - name: Run MyPy
+        shell: bash
+        run: cd ./llama-index-core/ && poetry run mypy llama_index

@@ -17,7 +17,7 @@ class BaseEvent(BaseModel):
     tags: Dict[str, Any] = Field(default={})
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Return class name."""
         return "BaseEvent"
 
