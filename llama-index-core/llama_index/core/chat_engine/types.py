@@ -54,11 +54,14 @@ class AgentChatResponse:
     is_dummy_stream: bool = False
     metadata: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self) -> None:
+    def set_source_nodes(self) -> None:
         if self.sources and not self.source_nodes:
             for tool_output in self.sources:
                 if isinstance(tool_output.raw_output, (Response, StreamingResponse)):
                     self.source_nodes.extend(tool_output.raw_output.source_nodes)
+
+    def __post_init__(self) -> None:
+        self.set_source_nodes()
 
     def __str__(self) -> str:
         return self.response
@@ -116,11 +119,14 @@ class StreamingAgentChatResponse:
     # Track if an exception occurred
     exception: Optional[Exception] = None
 
-    def __post_init__(self) -> None:
+    def set_source_nodes(self) -> None:
         if self.sources and not self.source_nodes:
             for tool_output in self.sources:
                 if isinstance(tool_output.raw_output, (Response, StreamingResponse)):
                     self.source_nodes.extend(tool_output.raw_output.source_nodes)
+
+    def __post_init__(self) -> None:
+        self.set_source_nodes()
 
     def __str__(self) -> str:
         if self.is_done and not self.queue.empty() and not self.is_function:
