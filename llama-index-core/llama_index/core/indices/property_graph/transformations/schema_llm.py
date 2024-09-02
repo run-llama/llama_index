@@ -5,7 +5,7 @@ try:
     from typing import TypeAlias  # type: ignore
 except ImportError:
     # python 3.8 and 3.9 compatibility
-    from typing_extensions import TypeAlias
+    from typing import Any as TypeAlias  # type: ignore
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.bridge.pydantic import create_model, field_validator
