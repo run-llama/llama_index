@@ -32,12 +32,12 @@ def draw_all_possible_flows(
 
     # Add nodes from all steps
     steps = get_steps_from_class(workflow)
-    if len(steps) <= 1:
+    if not steps:
         # If no steps are defined in the class, try to get them from the instance
         steps = get_steps_from_instance(workflow)
 
     step_config: Optional[StepConfig] = None
-    for step_name, step_func in get_steps_from_class(workflow).items():
+    for step_name, step_func in steps.items():
         step_config = getattr(step_func, "__step_config", None)
         if step_config is None:
             continue
@@ -55,7 +55,7 @@ def draw_all_possible_flows(
             )  # Light green for events
 
     # Add edges from all steps
-    for step_name, step_func in get_steps_from_class(workflow).items():
+    for step_name, step_func in steps:
         step_config = getattr(step_func, "__step_config", None)
 
         if step_config is None:
