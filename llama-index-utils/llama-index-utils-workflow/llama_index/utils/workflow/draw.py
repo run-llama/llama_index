@@ -54,7 +54,7 @@ def draw_all_possible_flows(
             )  # Light green for events
 
     # Add edges from all steps
-    for step_name, step_func in steps:
+    for step_name, step_func in steps.items():
         step_config = getattr(step_func, "__step_config", None)
 
         if step_config is None:
