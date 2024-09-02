@@ -56,7 +56,7 @@ class OpensearchVectorClient:
             This includes engine, metric, and other config params. Defaults to:
             {"name": "hnsw", "space_type": "l2", "engine": "faiss",
             "parameters": {"ef_construction": 256, "m": 48}}
-        space_type (Optional[str]): space type to perform distance metric on. Defaults to: l2
+        space_type (Optional[str]): space type for distance metric calculation. Defaults to: l2
         **kwargs: Optional arguments passed to the OpenSearch client from opensearch-py.
 
     """
