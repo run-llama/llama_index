@@ -1,7 +1,7 @@
 import asyncio
 import functools
 import warnings
-from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set
+from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set, Tuple
 
 from llama_index.core.instrumentation import get_dispatcher
 
@@ -20,13 +20,13 @@ from .utils import (
 dispatcher = get_dispatcher(__name__)
 
 
-class _WorkflowMeta(type):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self._step_functions: Dict[str, Callable] = {}
+class WorkflowMeta(type):
+    def __init__(cls, name: str, bases: Tuple[type, ...], dct: Dict[str, Any]) -> None:
+        super().__init__(name, bases, dct)
+        cls._step_functions: Dict[str, Callable] = {}
 
 
-class Workflow(metaclass=_WorkflowMeta):
+class Workflow(metaclass=WorkflowMeta):
     def __init__(
         self,
         timeout: Optional[float] = 10.0,
@@ -95,7 +95,7 @@ class Workflow(metaclass=_WorkflowMeta):
 
     def _get_steps(self) -> Dict[str, Callable]:
         """Returns all the steps, whether defined as methods or free functions."""
-        return {**get_steps_from_instance(self), **self._step_functions}
+        return {**get_steps_from_instance(self), **self._step_functions}  # type: ignore[attr-defined]
 
     def _start(self, stepwise: bool = False) -> Context:
         """Sets up the queues and tasks for each declared step.
@@ -134,7 +134,7 @@ class Workflow(metaclass=_WorkflowMeta):
                         print(f"Running step {name}")
 
                     # run step
-                    kwargs = {}
+                    kwargs: Dict[str, Any] = {}
                     if config.context_parameter:
                         kwargs[config.context_parameter] = ctx
                     for service_definition in config.requested_services:

@@ -5,6 +5,7 @@ from typing import (
     Any,
     List,
     Optional,
+    Sequence,
     cast,
 )
 
@@ -25,7 +26,6 @@ from llama_index.core.chat_engine.types import (
 )
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.query_pipeline.components.agent import (
-    AgentFnComponent,
     AgentInputComponent,
     BaseAgentComponent,
 )
@@ -36,7 +36,9 @@ from deprecated import deprecated
 DEFAULT_MODEL_NAME = "gpt-3.5-turbo-0613"
 
 
-def _get_agent_components(query_component: QueryComponent) -> List[BaseAgentComponent]:
+def _get_agent_components(
+    query_component: QueryComponent,
+) -> Sequence[BaseAgentComponent]:
     """Get agent components."""
     agent_components: List[BaseAgentComponent] = []
     for c in query_component.sub_query_components:
@@ -116,7 +118,7 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         return cast(AgentInputComponent, self.pipeline.module_dict[root_key])
 
     @property
-    def agent_components(self) -> List[AgentFnComponent]:
+    def agent_components(self) -> Sequence[BaseAgentComponent]:
         """Get agent output component."""
         return _get_agent_components(self.pipeline)
 

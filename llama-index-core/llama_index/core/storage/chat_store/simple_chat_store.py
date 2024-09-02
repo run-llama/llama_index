@@ -9,7 +9,9 @@ from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
 
 
-def chat_message_serialization(chat_message: Any, handler, info) -> Dict[str, Any]:
+def chat_message_serialization(
+    chat_message: Any, handler: Any, info: Any
+) -> Dict[str, Any]:
     partial_result = handler(chat_message, info)
 
     for key, value in partial_result.get("additional_kwargs", {}).items():
