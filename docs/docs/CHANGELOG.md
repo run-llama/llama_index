@@ -1,5 +1,65 @@
 # ChangeLog
 
+## [2024-09-02]
+
+### `llama-index-core` [0.11.4]
+
+- Add mypy to core (#14883)
+- Fix incorrect instrumentation fields/types (#15752)
+- FunctionCallingAgent sources bug + light wrapper to create agent (#15783)
+- Add text to sql advanced workflow nb (#15775)
+- fix: remove context after streaming workflow to enable streaming again (#15776)
+- Fix chat memory persisting and loading methods to use correct JSON format (#15545)
+- Fix `_example_type` class var being read as private attr with Pydantic V2 (#15758)
+
+### `llama-index-embeddings-litellm` [0.2.1]
+
+- add dimensions param to LiteLLMEmbedding, fix a bug that prevents reading vars from env (#15770)
+
+### `llama-index-embeddings-upstage` [0.2.1]
+
+- Bugfix upstage embedding when initializing the UpstageEmbedding class (#15767)
+
+### `llama-index-embeddings-sagemaker-endpoint` [0.2.2]
+
+- Fix Sagemaker Field required issue (#15778)
+
+### `llama-index-graph-stores-falkordb` [0.2.1]
+
+- fix relations upsert with special chars (#15769)
+
+### `llama-index-graph-stores-neo4j` [0.3.1]
+
+- Add native vector index support for neo4j lpg and fix vector filters (#15759)
+
+### `llama-index-llms-azure-inference` [0.2.2]
+
+- fix: GitHub Models metadata retrieval (#15747)
+
+### `llama-index-llms-bedrock` [0.2.1]
+
+- Update `base.py` to fix `self` issues (#15729)
+
+### `llama-index-llms-ollama` [0.3.1]
+
+- add ollama response usage (#15773)
+
+### `llama-index-llms-sagemaker-endpoint` [0.2.2]
+
+- Fix Sagemaker Field required issue (#15778)
+
+### `llama-index-multi-modal-llms-anthropic` [0.2.1]
+
+- Support image type detection without knowing the file name (#15763)
+
+### `llama-index-vector-stores-milvus` [0.2.2]
+
+- feat: implement get_nodes for MilvusVectorStore (#15696)
+
+### `llama-index-vector-stores-tencentvectordb` [0.2.1]
+
+- fix: tencentvectordb inconsistent attribute name (#15733)
+
 ## [2024-08-29]
 
 ### `llama-index-core` [0.11.3]
