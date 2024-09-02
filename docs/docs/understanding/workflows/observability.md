@@ -26,9 +26,9 @@ class ConcurrentFlow(Workflow):
     async def start(
         self, ctx: Context, ev: StartEvent
     ) -> StepAEvent | StepBEvent | StepCEvent:
-        ctx.session.send_event(StepAEvent(query="Query 1"))
-        ctx.session.send_event(StepBEvent(query="Query 2"))
-        ctx.session.send_event(StepCEvent(query="Query 3"))
+        ctx.send_event(StepAEvent(query="Query 1"))
+        ctx.send_event(StepBEvent(query="Query 2"))
+        ctx.send_event(StepCEvent(query="Query 3"))
 
     @step
     async def step_a(self, ctx: Context, ev: StepAEvent) -> StepACompleteEvent:
