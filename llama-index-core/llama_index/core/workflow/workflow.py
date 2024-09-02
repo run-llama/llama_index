@@ -67,6 +67,9 @@ class Workflow(metaclass=_WorkflowMeta):
 
             yield ev
 
+        # remove context to free up room for the next stream_events call
+        self._contexts.remove(ctx)
+
     @classmethod
     def add_step(cls, func: Callable) -> None:
         """Adds a free function as step for this workflow instance.
@@ -244,9 +247,6 @@ class Workflow(metaclass=_WorkflowMeta):
         for t in unfinished:
             t.cancel()
             await asyncio.sleep(0)
-
-        # remove context
-        self._contexts.remove(ctx)
 
         # Bubble up the error if any step raised an exception
         if exception_raised:
