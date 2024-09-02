@@ -373,7 +373,9 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         except AttributeError:
             response_str = str(response)
 
-        agent_response = AgentChatResponse(response=response_str, sources=tool_outputs)
+        agent_response = AgentChatResponse(
+            response=response_str, sources=task.extra_state["sources"]
+        )
 
         return TaskStepOutput(
             output=agent_response,
@@ -466,7 +468,9 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         except AttributeError:
             response_str = str(response)
 
-        agent_response = AgentChatResponse(response=response_str, sources=tool_outputs)
+        agent_response = AgentChatResponse(
+            response=response_str, sources=task.extra_state["sources"]
+        )
 
         return TaskStepOutput(
             output=agent_response,
