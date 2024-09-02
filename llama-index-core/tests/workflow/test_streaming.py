@@ -67,3 +67,20 @@ async def test_task_raised():
     # Make sure the await actually caught the exception
     with pytest.raises(ValueError, match="The step raised an error!"):
         await r
+
+
+@pytest.mark.asyncio()
+async def test_multiple_streams():
+    wf = StreamingWorkflow()
+    r = asyncio.create_task(wf.run())
+
+    # stream 1
+    async for _ in wf.stream_events():
+        pass
+    await r
+
+    # stream 2 -- should not raise an error
+    r = asyncio.create_task(wf.run())
+    async for _ in wf.stream_events():
+        pass
+    await r
