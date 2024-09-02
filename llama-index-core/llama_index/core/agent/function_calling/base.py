@@ -36,6 +36,7 @@ class FunctionCallingAgent(AgentRunner):
         memory: Optional[BaseMemory] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         state: Optional[AgentState] = None,
+        allow_parallel_tool_calls: bool = True,
         **kwargs: Any,
     ) -> "FunctionCallingAgent":
         """Create a FunctionCallingAgent from a list of tools."""
@@ -67,6 +68,7 @@ class FunctionCallingAgent(AgentRunner):
             callback_manager=callback_manager,
             system_prompt=system_prompt,
             prefix_messages=prefix_messages,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
         )
 
         return cls(
