@@ -1,10 +1,14 @@
 import os
-from typing import Any, Optional
+from typing import Any, Optional, Generator, AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from llama_index.core.base.llms.types import LLMMetadata
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    LLMMetadata,
+)
 from llama_index.llms.nvidia import NVIDIA as Interface
+from llama_index.llms.nvidia.utils import COMPLETION_MODELS
 from openai.types.completion import Completion, CompletionChoice, CompletionUsage
 
 
@@ -27,12 +31,12 @@ class CachedNVIDIApiKeys:
             os.environ["NVIDIA_API_KEY"] = self.api_env_was
 
 
-def mock_completion_v1(*args: Any, **kwargs: Any) -> Completion:
+def mock_completion_v1(model_name: str) -> Completion:
     return Completion(
         id="cmpl-4162e407-e121-42b4-8590-1c173380be7d",
         object="text_completion",
         created=1713474384,
-        model="mistralai/mistral-7b-instruct-v0.2",
+        model=model_name,
         usage=CompletionUsage(
             completion_tokens=304, prompt_tokens=11, total_tokens=315
         ),
@@ -48,13 +52,49 @@ async def mock_async_completion_v1(*args: Any, **kwargs: Any) -> Completion:
     return mock_completion_v1(*args, **kwargs)
 
 
+def mock_chat_completion_stream_v1(
+    model_name: str,
+) -> Generator[Completion, None, None]:
+    responses = [
+        Completion(
+            id="chatcmpl-998d9b96-0b71-41f5-b910-dd3bc00f38c6",
+            object="text_completion",
+            created=1713474736,
+            model=model_name,
+            choices=[CompletionChoice(text="Test", finish_reason="stop", index=0)],
+        ),
+        Completion(
+            id="chatcmpl-998d9b96-0b71-41f5-b910-dd3bc00f38c6",
+            object="text_completion",
+            created=1713474736,
+            model="google/gemma-7b",
+            choices=[
+                CompletionChoice(text="Second Test", finish_reason="stop", index=0)
+            ],
+        ),
+    ]
+
+    yield from responses
+
+
+async def mock_async_chat_completion_stream_v1(
+    *args: Any, **kwargs: Any
+) -> AsyncGenerator[Completion, None]:
+    async def gen() -> AsyncGenerator[Completion, None]:
+        for response in mock_chat_completion_stream_v1(*args, **kwargs):
+            yield response
+
+    return gen()
+
+
 @patch("llama_index.llms.openai.base.SyncOpenAI")
-def test_model_basic(MockSyncOpenAI: MagicMock) -> None:
+@pytest.mark.parametrize("model", COMPLETION_MODELS)
+def test_model_completions(MockSyncOpenAI: MagicMock, model: str) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
-        mock_instance.completions.create.return_value = mock_completion_v1()
+        mock_instance.completions.create.return_value = mock_completion_v1(model)
 
-        llm = Interface(model="bigcode/starcoder2-7b")
+        llm = Interface(model=model)
         prompt = "test prompt"
 
         response = llm.complete(prompt)
@@ -63,14 +103,15 @@ def test_model_basic(MockSyncOpenAI: MagicMock) -> None:
 
 @pytest.mark.asyncio()
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
-async def test_async_model_basic(MockAsyncOpenAI: MagicMock) -> None:
+@pytest.mark.parametrize("model", COMPLETION_MODELS)
+async def test_async_model_completions(MockAsyncOpenAI: MagicMock, model: str) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):
         mock_instance = MockAsyncOpenAI.return_value
         create_fn = AsyncMock()
         create_fn.side_effect = mock_async_completion_v1
-        mock_instance.completions.create = create_fn
+        mock_instance.completions.create = create_fn(model=model)
 
-        llm = Interface(model="bigcode/starcoder2-7b")
+        llm = Interface(model=model)
         prompt = "test prompt"
 
         response = await llm.acomplete(prompt)
@@ -88,3 +129,41 @@ def test_validates_api_key_is_present() -> None:
 
 def test_metadata() -> None:
     assert isinstance(Interface().metadata, LLMMetadata)
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+@pytest.mark.parametrize("model", COMPLETION_MODELS)
+def test_completions_model_streaming(MockSyncOpenAI: MagicMock, model: str) -> None:
+    with CachedNVIDIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.completions.create.return_value = mock_chat_completion_stream_v1(
+            model
+        )
+
+        llm = Interface(model=model)
+        prompt = "test prompt"
+
+        response_gen = llm.stream_complete(prompt)
+        responses = list(response_gen)
+        assert responses[-1].text == "TestSecond Test"
+
+
+@pytest.mark.asyncio()
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
+@pytest.mark.parametrize("model", COMPLETION_MODELS)
+async def test_async_streaming_completion_model(
+    MockAsyncOpenAI: MagicMock, model: str
+) -> None:
+    with CachedNVIDIApiKeys(set_fake_key=True):
+        mock_instance = MockAsyncOpenAI.return_value
+        create_fn = AsyncMock()
+        create_fn.side_effect = mock_async_chat_completion_stream_v1
+        mock_instance.chat.completions.create = create_fn(model)
+
+        llm = Interface(model=model)
+        prompt = "test prompt"
+        message = ChatMessage(role="user", content="test message")
+
+        response_gen = await llm.astream_complete(prompt)
+        responses = [response async for response in response_gen]
+        assert responses[-1].text == "TestSecond Test"
