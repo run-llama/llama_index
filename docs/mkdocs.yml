@@ -57,7 +57,7 @@ nav:
           - Subclassing workflows: ./understanding/workflows/subclass.md
           - Nested workflows: ./understanding/workflows/nested.md
           - Observability: ./understanding/workflows/observability.md
-          - Unbound syntax: ./understanding/workflows/unbound.md
+          - Unbound syntax: ./understanding/workflows/unbound_functions.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
