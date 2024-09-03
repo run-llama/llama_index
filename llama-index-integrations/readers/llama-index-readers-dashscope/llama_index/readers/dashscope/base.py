@@ -38,23 +38,27 @@ logger = get_stream_logger(name=__name__)
 class DashScopeParse(BasePydanticReader):
     """A smart-parser for files."""
 
-    api_key: str = Field(default="", description="The API key for the DashScope API.", validate_default=True)
+    api_key: str = Field(
+        default="",
+        description="The API key for the DashScope API.",
+        validate_default=True,
+    )
     workspace_id: str = Field(
         default="",
         description="The Workspace  for the DashScope API.If not set, "
         "it will use the default workspace.",
-        validate_default=True
+        validate_default=True,
     )
     category_id: str = Field(
         default=DASHSCOPE_DEFAULT_DC_CATEGORY,
         description="The dc category for the DashScope API.If not set, "
         "it will use the default dc category.",
-        validate_default=True
+        validate_default=True,
     )
     base_url: str = Field(
         default=DASHSCOPE_DEFAULT_BASE_URL,
         description="The base URL of the DashScope Parsing API.",
-        validate_default=True
+        validate_default=True,
     )
     result_type: ResultType = Field(
         default=ResultType.DASHSCOPE_DOCMIND,
