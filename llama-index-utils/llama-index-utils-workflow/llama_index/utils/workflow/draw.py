@@ -1,4 +1,3 @@
-from pyvis.network import Network
 from typing import Optional
 
 from llama_index.core.workflow.events import StartEvent, StopEvent
@@ -7,14 +6,17 @@ from llama_index.core.workflow.utils import (
     get_steps_from_class,
     get_steps_from_instance,
 )
+from llama_index.core.workflow.workflow import Workflow
 
 
 def draw_all_possible_flows(
-    workflow,
+    workflow: Workflow,
     filename: str = "workflow_all_flows.html",
     notebook: bool = False,
 ) -> None:
     """Draws all possible flows of the workflow."""
+    from pyvis.network import Network
+
     net = Network(directed=True, height="750px", width="100%")
 
     # Add the nodes + edge for stop events
@@ -33,8 +35,9 @@ def draw_all_possible_flows(
         # If no steps are defined in the class, try to get them from the instance
         steps = get_steps_from_instance(workflow)
 
-    for step_name, step_func in get_steps_from_class(workflow).items():
-        step_config: Optional[StepConfig] = getattr(step_func, "__step_config", None)
+    step_config: Optional[StepConfig] = None
+    for step_name, step_func in steps.items():
+        step_config = getattr(step_func, "__step_config", None)
         if step_config is None:
             continue
 
@@ -51,8 +54,8 @@ def draw_all_possible_flows(
             )  # Light green for events
 
     # Add edges from all steps
-    for step_name, step_func in get_steps_from_class(workflow).items():
-        step_config: Optional[StepConfig] = getattr(step_func, "__step_config", None)
+    for step_name, step_func in steps.items():
+        step_config = getattr(step_func, "__step_config", None)
 
         if step_config is None:
             continue
@@ -68,15 +71,21 @@ def draw_all_possible_flows(
 
 
 def draw_most_recent_execution(
-    workflow,
+    workflow: Workflow,
     filename: str = "workflow_recent_execution.html",
     notebook: bool = False,
 ) -> None:
     """Draws the most recent execution of the workflow."""
+    from pyvis.network import Network
+
     net = Network(directed=True, height="750px", width="100%")
 
     # Add nodes and edges based on execution history
-    for i, (step, event) in enumerate(workflow._accepted_events):
+    existing_context = next(iter(workflow._contexts), None)
+    if existing_context is None:
+        raise ValueError("No runs found in workflow")
+
+    for i, (step, event) in enumerate(existing_context._accepted_events):
         event_node = f"{event}_{i}"
         step_node = f"{step}_{i}"
         net.add_node(
@@ -88,7 +97,7 @@ def draw_most_recent_execution(
         net.add_edge(event_node, step_node)
 
         if i > 0:
-            prev_step_node = f"{workflow._accepted_events[i - 1][0]}_{i - 1}"
+            prev_step_node = f"{existing_context._accepted_events[i - 1][0]}_{i - 1}"
             net.add_edge(prev_step_node, event_node)
 
     net.show(filename, notebook=notebook)

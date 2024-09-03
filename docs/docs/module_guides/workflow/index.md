@@ -187,14 +187,14 @@ from llama_index.core.workflow import Context
 @step
 async def query(self, ctx: Context, ev: MyEvent) -> StopEvent:
     # retrieve from context
-    query = ctx.get("query")
+    query = await ctx.get("query")
 
     # do something with context and event
     val = ...
     result = ...
 
     # store in context
-    ctx.set("key", val)
+    await ctx.set("key", val)
 
     return StopEvent(result=result)
 ```
@@ -348,6 +348,7 @@ async def critique_joke(ev: JokeEvent) -> StopEvent:
 
 You can find many useful examples of using workflows in the notebooks below:
 
+- [Advanced Text-to-SQL](../../examples/workflow/advanced_text_to_sql.ipynb)
 - [Citation Query Engine](../../examples/workflow/citation_query_engine.ipynb)
 - [Common Workflow Patterns](../../examples/workflow/workflows_cookbook.ipynb)
 - [Corrective RAG](../../examples/workflow/corrective_rag_pack.ipynb)

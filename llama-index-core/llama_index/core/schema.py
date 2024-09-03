@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from dataclasses_json import DataClassJsonMixin
 from llama_index.core.bridge.pydantic import (
@@ -154,10 +154,14 @@ class TransformComponent(BaseComponent, DispatcherSpanMixin):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @abstractmethod
-    def __call__(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
+    def __call__(
+        self, nodes: Sequence["BaseNode"], **kwargs: Any
+    ) -> Sequence["BaseNode"]:
         """Transform nodes."""
 
-    async def acall(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
+    async def acall(
+        self, nodes: Sequence["BaseNode"], **kwargs: Any
+    ) -> Sequence["BaseNode"]:
         """Async transform nodes."""
         return self.__call__(nodes, **kwargs)
 
@@ -581,7 +585,7 @@ class IndexNode(TextNode):
 
             # check if its a node, else assume stringable
             try:
-                parsed_obj = json_to_doc(obj)
+                parsed_obj = json_to_doc(obj)  # type: ignore[assignment]
             except Exception:
                 parsed_obj = TextNode(text=str(obj))
 

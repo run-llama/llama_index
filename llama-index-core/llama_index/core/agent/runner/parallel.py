@@ -147,7 +147,7 @@ class ParallelAgentRunner(BaseAgentRunner):
             and task_state.completed_steps[-1].is_last
         ]
 
-    def get_task_output(self, task_id: str) -> TaskStepOutput:
+    def get_task_output(self, task_id: str, **kwargs: Any) -> TaskStepOutput:
         """Get task output."""
         task_state = self.state.task_dict[task_id]
         if len(task_state.completed_steps) == 0:

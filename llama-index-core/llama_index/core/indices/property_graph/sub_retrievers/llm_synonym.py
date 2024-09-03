@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 from llama_index.core.llms.llm import LLM
 from llama_index.core.indices.property_graph.sub_retrievers.base import (
@@ -6,7 +6,6 @@ from llama_index.core.indices.property_graph.sub_retrievers.base import (
 )
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
-    Triplet,
     KG_SOURCE_REL,
 )
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
@@ -59,9 +58,9 @@ class LLMSynonymRetriever(BasePGRetriever):
         ] = DEFAULT_SYNONYM_EXPAND_TEMPLATE,
         max_keywords: int = 10,
         path_depth: int = 1,
-        output_parsing_fn: Optional[callable] = None,
+        output_parsing_fn: Optional[Callable] = None,
         llm: Optional[LLM] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         self._llm = llm or Settings.llm
         if isinstance(synonym_prompt, str):
@@ -81,7 +80,7 @@ class LLMSynonymRetriever(BasePGRetriever):
         # capitalize to normalize with ingestion
         return [x.strip().capitalize() for x in matches if x.strip()]
 
-    def _prepare_matches(self, matches: List[Triplet]) -> List[NodeWithScore]:
+    def _prepare_matches(self, matches: List[str]) -> List[NodeWithScore]:
         kg_nodes = self._graph_store.get(ids=matches)
         triplets = self._graph_store.get_rel_map(
             kg_nodes,

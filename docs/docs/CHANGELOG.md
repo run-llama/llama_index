@@ -1,6 +1,114 @@
 # ChangeLog
 
-## [2024-07-27]
+## [2024-09-02]
+
+### `llama-index-core` [0.11.4]
+
+- Add mypy to core (#14883)
+- Fix incorrect instrumentation fields/types (#15752)
+- FunctionCallingAgent sources bug + light wrapper to create agent (#15783)
+- Add text to sql advanced workflow nb (#15775)
+- fix: remove context after streaming workflow to enable streaming again (#15776)
+- Fix chat memory persisting and loading methods to use correct JSON format (#15545)
+- Fix `_example_type` class var being read as private attr with Pydantic V2 (#15758)
+
+### `llama-index-embeddings-litellm` [0.2.1]
+
+- add dimensions param to LiteLLMEmbedding, fix a bug that prevents reading vars from env (#15770)
+
+### `llama-index-embeddings-upstage` [0.2.1]
+
+- Bugfix upstage embedding when initializing the UpstageEmbedding class (#15767)
+
+### `llama-index-embeddings-sagemaker-endpoint` [0.2.2]
+
+- Fix Sagemaker Field required issue (#15778)
+
+### `llama-index-graph-stores-falkordb` [0.2.1]
+
+- fix relations upsert with special chars (#15769)
+
+### `llama-index-graph-stores-neo4j` [0.3.1]
+
+- Add native vector index support for neo4j lpg and fix vector filters (#15759)
+
+### `llama-index-llms-azure-inference` [0.2.2]
+
+- fix: GitHub Models metadata retrieval (#15747)
+
+### `llama-index-llms-bedrock` [0.2.1]
+
+- Update `base.py` to fix `self` issues (#15729)
+
+### `llama-index-llms-ollama` [0.3.1]
+
+- add ollama response usage (#15773)
+
+### `llama-index-llms-sagemaker-endpoint` [0.2.2]
+
+- Fix Sagemaker Field required issue (#15778)
+
+### `llama-index-multi-modal-llms-anthropic` [0.2.1]
+
+- Support image type detection without knowing the file name (#15763)
+
+### `llama-index-vector-stores-milvus` [0.2.2]
+
+- feat: implement get_nodes for MilvusVectorStore (#15696)
+
+### `llama-index-vector-stores-tencentvectordb` [0.2.1]
+
+- fix: tencentvectordb inconsistent attribute name (#15733)
+
+## [2024-08-29]
+
+### `llama-index-core` [0.11.3]
+
+- refact: merge Context and Session to simplify the workflows api (#15709)
+- chore: stop using deprecated `ctx.data` in workflows docs (#15716)
+- fix: stop streaming workflow events when a step raises (#15714)
+- Fix llm_chat_callback for multimodal llms (#15700)
+- chore: Increase unit tests coverage for the workflow package (#15691)
+- fix SimpleVectorStore.from_persist_dir() behaviour (#15534)
+
+### `llama-index-embeddings-azure-openai` [0.2.5]
+
+- fix json serialization for azure embeddings (#15724)
+
+### `llama-index-graph-stores-kuzu` [0.3.0]
+
+- Add KuzuPropertyGraphStore (#15678)
+
+### `llama-index-indices-managed-vectara` [0.2.1]
+
+- added new User Defined Function reranker (#15546)
+
+### `llama-index-llms-mistralai` [0.2.2]
+
+- Fix `random_seed` type in mistral llm (#15701)
+
+### `llama-index-llms-nvidia` [0.2.1]
+
+- Add function/tool calling support to nvidia llm (#15359)
+
+### `llama-index-multi-modal-llms-ollama` [0.3.0]
+
+- bump ollama client deps for multimodal llm (#15702)
+
+### `llama-index-readers-web` [0.2.1]
+
+- Fix: Firecrawl scraping url response (#15720)
+
+### `llama-index-selectors-notdiamond` [0.1.0]
+
+- Adding Not Diamond to llama_index (#15703)
+
+### `llama-index-vector-stores-milvus` [0.2.3]
+
+- MMR in Milvus vector stores (#15634)
+- feat: implement get_nodes for MilvusVectorStore (#15696)
+
+## [2024-08-27]
 
 ### `llama-index-core` [0.11.2]
 
@@ -58,7 +166,6 @@
 ### `llama-index-vector-stores-elasticsearch` [0.3.2]
 
 - Fix the ElasticsearchStore key error (#15631)
-
 
 ## [2024-08-23]
 
