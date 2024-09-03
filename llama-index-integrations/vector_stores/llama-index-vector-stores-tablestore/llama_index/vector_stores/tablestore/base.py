@@ -60,6 +60,7 @@ class TablestoreVectorStore(BasePydanticVectorStore):
     _index_name: str = PrivateAttr(default="llama_index_vector_store_ots_index_v1")
     _text_field: str = PrivateAttr(default="content")
     _vector_field: str = PrivateAttr(default="embedding")
+    _ref_doc_id_field: str = PrivateAttr(default="ref_doc_id")
     _metadata_mappings: List[tablestore.FieldSchema] = PrivateAttr(default=None)
 
     def __init__(
@@ -73,6 +74,7 @@ class TablestoreVectorStore(BasePydanticVectorStore):
         index_name: str = "llama_index_vector_store_ots_index_v1",
         text_field: str = "content",
         vector_field: str = "embedding",
+        ref_doc_id_field: str = "ref_doc_id",
         vector_dimension: int = 512,
         vector_metric_type: tablestore.VectorMetricType = tablestore.VectorMetricType.VM_COSINE,
         metadata_mappings: Optional[List[tablestore.FieldSchema]] = None,
@@ -93,6 +95,7 @@ class TablestoreVectorStore(BasePydanticVectorStore):
         self._index_name = index_name
         self._text_field = text_field
         self._vector_field = vector_field
+        self._ref_doc_id_field = ref_doc_id_field
 
         self._metadata_mappings = [
             tablestore.FieldSchema(
@@ -102,6 +105,13 @@ class TablestoreVectorStore(BasePydanticVectorStore):
                 enable_sort_and_agg=False,
                 store=False,
                 analyzer=tablestore.AnalyzerType.MAXWORD,
+            ),
+            tablestore.FieldSchema(
+                ref_doc_id_field,
+                tablestore.FieldType.KEYWORD,
+                index=True,
+                enable_sort_and_agg=True,
+                store=False,
             ),
             tablestore.FieldSchema(
                 vector_field,
@@ -118,6 +128,7 @@ class TablestoreVectorStore(BasePydanticVectorStore):
                 if (
                     mapping.field_name == text_field
                     or mapping.field_name == vector_field
+                    or mapping.field_name == ref_doc_id_field
                 ):
                     continue
                 self._metadata_mappings.append(mapping)
@@ -356,6 +367,124 @@ class TablestoreVectorStore(BasePydanticVectorStore):
                 e.get_request_id(),
             )
 
+    def _filter(
+        self,
+        filters: Optional[MetadataFilters] = None,
+        return_type: Optional[
+            tablestore.ColumnReturnType
+        ] = tablestore.ColumnReturnType.ALL,
+        limit: Optional[int] = 100,
+    ) -> List:
+        if filters is None:
+            return []
+        filter_query = self._parse_filters(filters)
+        search_query = tablestore.SearchQuery(
+            filter_query, limit=1, get_total_count=False
+        )
+        all_rows = []
+        try:
+            # first round
+            search_response = self._tablestore_client.search(
+                table_name=self._table_name,
+                index_name=self._index_name,
+                search_query=search_query,
+                columns_to_get=tablestore.ColumnsToGet(return_type=return_type),
+            )
+            all_rows.extend(search_response.rows)
+            # loop
+            while search_response.next_token:
+                search_query.next_token = search_response.next_token
+                search_response = self._tablestore_client.search(
+                    table_name=self._table_name,
+                    index_name=self._index_name,
+                    search_query=search_query,
+                    columns_to_get=tablestore.ColumnsToGet(return_type=return_type),
+                )
+                all_rows.extend(search_response.rows)
+            return all_rows
+        except tablestore.OTSClientError as e:
+            self._logger.exception("Tablestore search failed with client error:%s", e)
+        except tablestore.OTSServiceError as e:
+            self._logger.exception(
+                "Tablestore search failed with client error:%s, http_status:%d, error_code:%s, error_message:%s, request_id:%s",
+                e,
+                e.get_http_status(),
+                e.get_error_code(),
+                e.get_error_message(),
+                e.get_request_id(),
+            )
+
+    def _to_get_nodes_result(self, rows) -> List[TextNode]:
+        nodes = []
+        for row in rows:
+            node_id = row[0][0][1]
+            meta_data = {}
+            text = None
+            embedding = None
+            for col in row[1]:
+                key = col[0]
+                val = col[1]
+                if key == self._text_field:
+                    text = val
+                    continue
+                if key == self._vector_field:
+                    embedding = json.loads(val)
+                    continue
+                meta_data[key] = val
+            node = TextNode(
+                id_=node_id,
+                text=text,
+                metadata=meta_data,
+                embedding=embedding,
+            )
+            nodes.append(node)
+        return nodes
+
+    def _get_row(self, row_id: str) -> Optional[TextNode]:
+        primary_key = [("id", row_id)]
+        try:
+            _, row, _ = self._tablestore_client.get_row(
+                self._table_name, primary_key, None, None, 1
+            )
+            self._logger.debug("Tablestore get row successfully. id:%s", row_id)
+            if row is None:
+                return None
+            node_id = row.primary_key[0][1]
+            meta_data = {}
+            text = None
+            embedding = None
+            for col in row.attribute_columns:
+                key = col[0]
+                val = col[1]
+                if key == self._text_field:
+                    text = val
+                    continue
+                if key == self._vector_field:
+                    embedding = json.loads(val)
+                    continue
+                meta_data[key] = val
+            return TextNode(
+                id_=node_id,
+                text=text,
+                metadata=meta_data,
+                embedding=embedding,
+            )
+        except tablestore.OTSClientError as e:
+            self._logger.exception(
+                "Tablestore get row failed with client error:%s, id:%s", e, row_id
+            )
+        except tablestore.OTSServiceError as e:
+            self._logger.exception(
+                "Tablestore get row failed with client error:%s, "
+                "id:%s, http_status:%d, error_code:%s, error_message:%s, request_id:%s",
+                e,
+                row_id,
+                e.get_http_status(),
+                e.get_error_code(),
+                e.get_error_message(),
+                e.get_request_id(),
+            )
+
     def _to_query_result(self, search_response) -> VectorStoreQueryResult:
         nodes = []
         ids = []
@@ -392,7 +521,13 @@ class TablestoreVectorStore(BasePydanticVectorStore):
         self, filters: MetadataFilters
     ) -> tablestore.BoolQuery:
         """Parse (possibly nested) MetadataFilters to equivalent tablestore search expression."""
-        bool_query = tablestore.BoolQuery()
+        bool_query = tablestore.BoolQuery(
+            must_queries=[],
+            must_not_queries=[],
+            filter_queries=[],
+            should_queries=[],
+            minimum_should_match=None,
+        )
         if filters.condition is FilterCondition.AND:
             bool_clause = bool_query.must_queries
         elif filters.condition is FilterCondition.OR:
@@ -441,7 +576,13 @@ class TablestoreVectorStore(BasePydanticVectorStore):
                 field_name=key, range_to=val, include_upper=True
             )
         elif op == FilterOperator.NE:
-            bq = tablestore.BoolQuery()
+            bq = tablestore.BoolQuery(
+                must_queries=[],
+                must_not_queries=[],
+                filter_queries=[],
+                should_queries=[],
+                minimum_should_match=None,
+            )
             bq.must_not_queries.append(
                 tablestore.TermQuery(field_name=key, column_value=val)
             )
@@ -449,13 +590,25 @@ class TablestoreVectorStore(BasePydanticVectorStore):
         elif op in [FilterOperator.IN, FilterOperator.ANY]:
             return tablestore.TermsQuery(field_name=key, column_values=val)
         elif op == FilterOperator.NIN:
-            bq = tablestore.BoolQuery()
+            bq = tablestore.BoolQuery(
+                must_queries=[],
+                must_not_queries=[],
+                filter_queries=[],
+                should_queries=[],
+                minimum_should_match=None,
+            )
             bq.must_not_queries.append(
                 tablestore.TermsQuery(field_name=key, column_values=val)
             )
             return bq
         elif op == FilterOperator.ALL:
-            bq = tablestore.BoolQuery()
+            bq = tablestore.BoolQuery(
+                must_queries=[],
+                must_not_queries=[],
+                filter_queries=[],
+                should_queries=[],
+                minimum_should_match=None,
+            )
             for val_item in val:
                 bq.must_queries.append(
                     tablestore.TermQuery(field_name=key, column_value=val_item)
@@ -488,9 +641,66 @@ class TablestoreVectorStore(BasePydanticVectorStore):
             ids.append(node.node_id)
         return ids
 
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete nodes from vector store."""
+        if node_ids is None and filters is None:
+            raise RuntimeError("node_ids and filters cannot be None at the same time.")
+        if node_ids is not None and filters is not None:
+            raise RuntimeError("node_ids and filters cannot be set at the same time.")
+        if filters is not None:
+            rows = self._filter(
+                filters=filters, return_type=tablestore.ColumnReturnType.NONE
+            )
+            for row in rows:
+                self._delete_row(row[0][0][1])
+        if node_ids is not None:
+            for node_id in node_ids:
+                self._delete_row(node_id)
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from vector store."""
+        if node_ids is None and filters is None:
+            raise RuntimeError("node_ids and filters cannot be None at the same time.")
+        if node_ids is not None and filters is not None:
+            raise RuntimeError("node_ids and filters cannot be set at the same time.")
+        if filters is not None:
+            rows = self._filter(
+                filters=filters, return_type=tablestore.ColumnReturnType.ALL
+            )
+            return self._to_get_nodes_result(rows)
+        if node_ids is not None:
+            nodes = []
+            for node_id in node_ids:
+                nodes.append(self._get_row(node_id))
+            return nodes
+        return []
+
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete nodes using with ref_doc_id."""
-        self._delete_row(ref_doc_id)
+        rows = self._filter(
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key=self._ref_doc_id_field,
+                        value=ref_doc_id,
+                        operator=FilterOperator.EQ,
+                    ),
+                ],
+                condition=FilterCondition.AND,
+            ),
+            return_type=tablestore.ColumnReturnType.NONE,
+        )
+        for row in rows:
+            self._delete_row(row[0][0][1])
 
     def clear(self) -> None:
         """Clear all nodes from configured vector store."""

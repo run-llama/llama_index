@@ -40,6 +40,7 @@ def test_tablestore() -> None:
 
     # 1. create tablestore vector store
     test_dimension_size = 4
+    ref_doc_id_field = "ref_doc_id"
     store = TablestoreVectorStore(
         endpoint=os.getenv("end_point"),
         instance_name=os.getenv("instance_name"),
@@ -47,6 +48,7 @@ def test_tablestore() -> None:
         access_key_secret=os.getenv("access_key_secret"),
         vector_dimension=test_dimension_size,
         vector_metric_type=tablestore.VectorMetricType.VM_COSINE,
+        ref_doc_id_field=ref_doc_id_field,
         # metadata mapping is used to filter non-vector fields.
         metadata_mappings=[
             tablestore.FieldSchema(
@@ -73,37 +75,37 @@ def test_tablestore() -> None:
         TextNode(
             id_="1",
             text="hello world",
-            metadata={"type": "a", "time": 1995},
+            metadata={"type": "a", "time": 1995, ref_doc_id_field: "1"},
         ),
         TextNode(
             id_="2",
             text="a b c",
-            metadata={"type": "a", "time": 1990},
+            metadata={"type": "a", "time": 1990, ref_doc_id_field: "1"},
         ),
         TextNode(
             id_="3",
             text="sky cloud table",
-            metadata={"type": "a", "time": 2009},
+            metadata={"type": "a", "time": 2009, ref_doc_id_field: "2"},
         ),
         TextNode(
             id_="4",
             text="dog cat",
-            metadata={"type": "a", "time": 2023},
+            metadata={"type": "a", "time": 2023, ref_doc_id_field: "3"},
         ),
         TextNode(
             id_="5",
             text="computer python java",
-            metadata={"type": "b", "time": 2018},
+            metadata={"type": "b", "time": 2018, ref_doc_id_field: "4"},
         ),
         TextNode(
             id_="6",
             text="java python js nodejs",
-            metadata={"type": "c", "time": 2010},
+            metadata={"type": "c", "time": 2010, ref_doc_id_field: "5"},
         ),
         TextNode(
             id_="7",
             text="sdk golang python",
-            metadata={"type": "a", "time": 2023},
+            metadata={"type": "a", "time": 2023, ref_doc_id_field: "6"},
         ),
     ]
     for movie in movies:
@@ -113,8 +115,33 @@ def test_tablestore() -> None:
     ids = store.add(movies)
     assert len(ids) == 7
 
+    nodes = store.get_nodes(["0", "1", "7", "8"])
+    assert len(nodes) == 4
+    assert nodes[0] is None
+    assert nodes[3] is None
+
+    nodes = store.get_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="time", value=2000, operator=FilterOperator.GTE),
+            ],
+            condition=FilterCondition.AND,
+        )
+    )
+    assert len(nodes) == 5
+
     # 6. delete docs
-    store.delete(ids[0])
+    store.delete_nodes(["0"])
+    store.delete_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="time", value=1990, operator=FilterOperator.GTE),
+                MetadataFilter(key="time", value=1995, operator=FilterOperator.LT),
+            ],
+            condition=FilterCondition.AND,
+        )
+    )
+    store.delete(ref_doc_id="1")
 
     # 7. query with filters
     query_embedding = embedder.get_text_embedding("nature fight physical")
@@ -138,5 +165,3 @@ def test_tablestore() -> None:
     assert query_result.ids is not None
     assert query_result.similarities is not None
     assert query_result.similarities is not None
-
-    store.clear()
