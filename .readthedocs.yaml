@@ -12,7 +12,6 @@ build:
   jobs:
     pre_build:
       - python docs/merge_llama_deploy_docs.py
-      - make lint
 
 mkdocs:
   configuration: docs/mkdocs.yml
