@@ -42,24 +42,6 @@ NVIDIA_FUNTION_CALLING_MODELS = (
 
 COMPLETION_MODELS = ("bigcode/starcoder2-7b", "bigcode/starcoder2-15b")
 
-completions_arguments = {
-    "frequency_penalty",
-    "max_tokens",
-    "presence_penalty",
-    "seed",
-    "stop",
-    "temperature",
-    "top_p",
-    "best_of",
-    "echo",
-    "logit_bias",
-    "logprobs",
-    "n",
-    "suffix",
-    "user",
-    "stream",
-}
-
 
 def is_chat_model(modelname: str):
     return modelname not in COMPLETION_MODELS
