@@ -1,11 +1,12 @@
-import logging
-from typing import Any, Dict, Optional, Sequence, Tuple, List
 import base64
-import httpx
+import logging
+from typing import Any, Dict, List, Optional, Sequence, Tuple
+import filetype
 
+import httpx
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.multi_modal_llms.generic_utils import encode_image
 from llama_index.core.schema import ImageDocument
-from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 DEFAULT_ANTHROPIC_API_TYPE = "anthropic_ai"
 DEFAULT_ANTHROPIC_API_BASE = "https://api.anthropic.com"
@@ -16,6 +17,7 @@ ANTHROPIC_MULTI_MODAL_MODELS = {
     "claude-3-opus-20240229": 180000,
     "claude-3-sonnet-20240229": 180000,
     "claude-3-haiku-20240307": 180000,
+    "claude-3-5-sonnet-20240620": 180000,
 }
 
 
@@ -28,7 +30,18 @@ https://console.anthropic.com/settings/keys
 logger = logging.getLogger(__name__)
 
 
-def infer_image_mimetype(image_file_path: str) -> str:
+def infer_image_mimetype_from_base64(base64_string) -> str:
+    # Decode the base64 string
+    decoded_data = base64.b64decode(base64_string)
+
+    # Use filetype to guess the MIME type
+    kind = filetype.guess(decoded_data)
+
+    # Return the MIME type if detected, otherwise return None
+    return kind.mime if kind is not None else None
+
+
+def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
     # Get the file extension
     file_extension = image_file_path.split(".")[-1].lower()
 
@@ -63,7 +76,7 @@ def generate_anthropic_multi_modal_chat_message(
     for image_document in image_documents:
         image_content: Dict[str, Any] = {}
         if image_document.image_path and image_document.image_path != "":
-            mimetype = infer_image_mimetype(image_document.image_path)
+            mimetype = infer_image_mimetype_from_file_path(image_document.image_path)
             base64_image = encode_image(image_document.image_path)
             image_content = {
                 "type": "image",
@@ -77,7 +90,9 @@ def generate_anthropic_multi_modal_chat_message(
             "file_path" in image_document.metadata
             and image_document.metadata["file_path"] != ""
         ):
-            mimetype = infer_image_mimetype(image_document.metadata["file_path"])
+            mimetype = infer_image_mimetype_from_file_path(
+                image_document.metadata["file_path"]
+            )
             base64_image = encode_image(image_document.metadata["file_path"])
             image_content = {
                 "type": "image",
@@ -88,7 +103,7 @@ def generate_anthropic_multi_modal_chat_message(
                 },
             }
         elif image_document.image_url and image_document.image_url != "":
-            mimetype = infer_image_mimetype(image_document.image_url)
+            mimetype = infer_image_mimetype_from_file_path(image_document.image_url)
             image_content = {
                 "type": "image",
                 "source": {
@@ -97,6 +112,17 @@ def generate_anthropic_multi_modal_chat_message(
                     "data": base64.b64encode(
                         httpx.get(image_document.image_url).content
                     ).decode("utf-8"),
+                },
+            }
+        elif image_document.image != "":
+            base64_image = image_document.image
+            mimetype = infer_image_mimetype_from_base64(base64_image)
+            image_content = {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": mimetype,
+                    "data": base64_image,
                 },
             }
         completion_content.append(image_content)
@@ -111,7 +137,8 @@ def resolve_anthropic_credentials(
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[Optional[str], str, str]:
-    """ "Resolve Anthropic credentials.
+    """
+    "Resolve Anthropic credentials.
 
     The order of precedence is:
     1. param

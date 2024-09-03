@@ -18,7 +18,6 @@ MKDOCS_YML = "docs/mkdocs.yml"
 EXAMPLES_DIR = "docs/docs/examples"
 FOLDER_NAME_TO_LABEL = {
     "./examples/agent": "Agents",
-    "./examples/callbacks": "Callbacks",
     "./examples/cookbooks": "Cookbooks",
     "./examples/chat_engine": "Chat Engines",
     "./examples/customization": "Customization",
@@ -40,6 +39,7 @@ FOLDER_NAME_TO_LABEL = {
     "./examples/node_parsers": "Node Parsers & Text Splitters",
     "./examples/node_postprocessor": "Node Postprocessors",
     "./examples/objects": "Object Stores",
+    "./examples/observability": "Observability",
     "./examples/output_parsing": "Output Parsers",
     "./examples/param_optimizer": "Param Optimizer",
     "./examples/pipeline": "Query Pipeline",
@@ -52,6 +52,7 @@ FOLDER_NAME_TO_LABEL = {
     "./examples/transforms": "Transforms",
     "./examples/usecases": "Use Cases",
     "./examples/vector_stores": "Vector Stores",
+    "./examples/workflow": "Workflow",
 }
 
 # integration config
@@ -92,8 +93,10 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "response_synthesizers": "Response Synthesizers",
     "retrievers": "Retrievers",
     "schema": "Schema",
+    "selectors": "Selectors",
     "storage": "Storage",
     "tools": "Tools",
+    "workflow": "Workflow",
 }
 API_REF_TEMPLATE = """::: {import_path}
     options:
@@ -410,6 +413,17 @@ mkdocs["nav"][api_ref_idx]["API Reference"] = sorted(
     mkdocs["nav"][api_ref_idx]["API Reference"],
     key=lambda x: next(iter(x.keys())) if isinstance(x, dict) else x,
 )
+
+# sort the examples
+for idx, item in enumerate(mkdocs["nav"][examples_idx]["Examples"]):
+    if isinstance(item, dict):
+        for key in item:
+            mkdocs["nav"][examples_idx]["Examples"][idx][key] = sorted(
+                mkdocs["nav"][examples_idx]["Examples"][idx][key],
+                key=lambda x: next(iter(x.keys()))
+                if isinstance(x, dict)
+                else x,
+            )
 
 
 # update search paths

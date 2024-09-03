@@ -22,7 +22,7 @@ More resources are below.
 
 ## Query Transformations
 
-A user query can be transformed before it enters a pipeline (query engine, agent, and more). See resources below on query transformations:
+A user query can be transformed before it enters a flow (query engine, agent, and more). See resources below on query transformations:
 
 - [Query Transform Cookbook](../../examples/query_transformations/query_transform_cookbook.ipynb)
 - [Query Transformations Docs](../../optimizing/advanced_retrieval/query_transformations.md)

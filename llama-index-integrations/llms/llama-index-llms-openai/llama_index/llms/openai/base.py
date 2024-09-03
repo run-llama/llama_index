@@ -1,5 +1,4 @@
 import functools
-import json
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -71,9 +70,9 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDelta,
     ChoiceDeltaToolCall,
 )
+from llama_index.core.llms.utils import parse_partial_json
 
 if TYPE_CHECKING:
-    from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
@@ -116,6 +115,22 @@ class OpenAI(FunctionCallingLLM):
     """
     OpenAI LLM.
 
+    Args:
+        model: name of the OpenAI model to use.
+        temperature: a float from 0 to 1 controlling randomness in generation; higher will lead to more creative, less deterministic responses.
+        max_tokens: the maximum number of tokens to generate.
+        additional_kwargs: Add additional parameters to OpenAI request body.
+        max_retries: How many times to retry the API call if it fails.
+        timeout: How long to wait, in seconds, for an API call before failing.
+        reuse_client: Reuse the OpenAI client between requests. When doing anything with large volumes of async API calls, setting this to false can improve stability.
+        api_key: Your OpenAI api key
+        api_base: The base URL of the API to call
+        api_version: the version of the API to call
+        callback_manager: the callback manager is used for observability.
+        default_headers: override the default headers for API requests.
+        http_client: pass in your own httpx.Client instance.
+        async_http_client: pass in your own httpx.AsyncClient instance.
+
     Examples:
         `pip install llama-index-llms-openai`
 
@@ -151,7 +166,8 @@ class OpenAI(FunctionCallingLLM):
         gt=0,
     )
     logprobs: Optional[bool] = Field(
-        description="Whether to return logprobs per token."
+        description="Whether to return logprobs per token.",
+        default=None,
     )
     top_logprobs: int = Field(
         description="The number of top token log probs to return.",
@@ -172,7 +188,7 @@ class OpenAI(FunctionCallingLLM):
         description="The timeout, in seconds, for API requests.",
         gte=0,
     )
-    default_headers: Dict[str, str] = Field(
+    default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
     )
     reuse_client: bool = Field(
@@ -186,6 +202,10 @@ class OpenAI(FunctionCallingLLM):
     api_key: str = Field(default=None, description="The OpenAI API key.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
+    strict: bool = Field(
+        default=False,
+        description="Whether to use strict mode for invoking tools/using schemas.",
+    )
 
     _client: Optional[SyncOpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
@@ -214,6 +234,7 @@ class OpenAI(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        strict: bool = False,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -242,6 +263,7 @@ class OpenAI(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            strict=strict,
             **kwargs,
         )
 
@@ -369,7 +391,13 @@ class OpenAI(FunctionCallingLLM):
                 base_kwargs["top_logprobs"] = self.top_logprobs
             else:
                 base_kwargs["logprobs"] = self.top_logprobs  # int in this case
-        return {**base_kwargs, **self.additional_kwargs}
+
+        # can't send stream_options to the API when not streaming
+        all_kwargs = {**base_kwargs, **self.additional_kwargs}
+        if "stream" not in all_kwargs and "stream_options" in all_kwargs:
+            del all_kwargs["stream_options"]
+
+        return all_kwargs
 
     @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -465,8 +493,7 @@ class OpenAI(FunctionCallingLLM):
             is_function = False
             for response in client.chat.completions.create(
                 messages=message_dicts,
-                stream=True,
-                **self._get_model_kwargs(**kwargs),
+                **self._get_model_kwargs(stream=True, **kwargs),
             ):
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
@@ -540,18 +567,19 @@ class OpenAI(FunctionCallingLLM):
     @llm_retry_decorator
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         client = self._get_client()
-        all_kwargs = self._get_model_kwargs(**kwargs)
+        all_kwargs = self._get_model_kwargs(stream=True, **kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
         def gen() -> CompletionResponseGen:
             text = ""
             for response in client.completions.create(
                 prompt=prompt,
-                stream=True,
-                **all_kwargs,
+                **kwargs,
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
+                    if delta is None:
+                        delta = ""
                 else:
                     delta = ""
                 text += delta
@@ -581,18 +609,29 @@ class OpenAI(FunctionCallingLLM):
 
     def _get_response_token_counts(self, raw_response: Any) -> dict:
         """Get the token usage reported by the response."""
-        if not isinstance(raw_response, dict):
-            return {}
-
-        usage = raw_response.get("usage", {})
-        # NOTE: other model providers that use the OpenAI client may not report usage
-        if usage is None:
+        if hasattr(raw_response, "usage"):
+            try:
+                prompt_tokens = raw_response.usage.prompt_tokens
+                completion_tokens = raw_response.usage.completion_tokens
+                total_tokens = raw_response.usage.total_tokens
+            except AttributeError:
+                return {}
+        elif isinstance(raw_response, dict):
+            usage = raw_response.get("usage", {})
+            # NOTE: other model providers that use the OpenAI client may not report usage
+            if usage is None:
+                return {}
+            # Backwards compatibility with old dict type
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+            total_tokens = usage.get("total_tokens", 0)
+        else:
             return {}
 
         return {
-            "prompt_tokens": usage.get("prompt_tokens", 0),
-            "completion_tokens": usage.get("completion_tokens", 0),
-            "total_tokens": usage.get("total_tokens", 0),
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": total_tokens,
         }
 
     # ===== Async Endpoints =====
@@ -694,8 +733,7 @@ class OpenAI(FunctionCallingLLM):
             first_chat_chunk = True
             async for response in await aclient.chat.completions.create(
                 messages=message_dicts,
-                stream=True,
-                **self._get_model_kwargs(**kwargs),
+                **self._get_model_kwargs(stream=True, **kwargs),
             ):
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
@@ -781,18 +819,19 @@ class OpenAI(FunctionCallingLLM):
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         aclient = self._get_aclient()
-        all_kwargs = self._get_model_kwargs(**kwargs)
+        all_kwargs = self._get_model_kwargs(stream=True, **kwargs)
         self._update_max_tokens(all_kwargs, prompt)
 
         async def gen() -> CompletionResponseAsyncGen:
             text = ""
             async for response in await aclient.completions.create(
                 prompt=prompt,
-                stream=True,
                 **all_kwargs,
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
+                    if delta is None:
+                        delta = ""
                 else:
                     delta = ""
                 text += delta
@@ -805,7 +844,7 @@ class OpenAI(FunctionCallingLLM):
 
         return gen()
 
-    def chat_with_tools(
+    def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
@@ -813,13 +852,28 @@ class OpenAI(FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         tool_choice: Union[str, dict] = "auto",
+        strict: Optional[bool] = None,
         **kwargs: Any,
-    ) -> ChatResponse:
+    ) -> Dict[str, Any]:
         """Predict and call the tool."""
         from llama_index.agent.openai.utils import resolve_tool_choice
 
         # misralai uses the same openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+
+        # if strict is passed in, use, else default to the class-level attribute, else default to True`
+        if strict is not None:
+            strict = strict
+        else:
+            strict = self.strict
+
+        if self.metadata.is_function_calling_model:
+            for tool_spec in tool_specs:
+                if tool_spec["type"] == "function":
+                    tool_spec["function"]["strict"] = strict
+                    tool_spec["function"]["parameters"][
+                        "additionalProperties"
+                    ] = False  # in current openai 1.40.0 it is always false.
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
@@ -828,52 +882,28 @@ class OpenAI(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
-        response = self.chat(
-            messages,
-            tools=tool_specs,
-            tool_choice=resolve_tool_choice(tool_choice),
+        return {
+            "messages": messages,
+            "tools": tool_specs or None,
+            "tool_choice": resolve_tool_choice(tool_choice) if tool_specs else None,
             **kwargs,
-        )
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-        return response
+        }
 
-    async def achat_with_tools(
+    def _validate_chat_with_tools_response(
         self,
+        response: ChatResponse,
         tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
         **kwargs: Any,
     ) -> ChatResponse:
-        """Predict and call the tool."""
-        from llama_index.agent.openai.utils import resolve_tool_choice
-
-        # misralai uses the same openai tool format
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
-
-        if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-
-        messages = chat_history or []
-        if user_msg:
-            messages.append(user_msg)
-
-        response = await self.achat(
-            messages,
-            tools=tool_specs,
-            tool_choice=resolve_tool_choice(tool_choice),
-            **kwargs,
-        )
+        """Validate the response from chat_with_tools."""
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
         return response
 
     def get_tool_calls_from_response(
         self,
-        response: "AgentChatResponse",
+        response: "ChatResponse",
         error_on_no_tool_call: bool = True,
         **kwargs: Any,
     ) -> List[ToolSelection]:
@@ -894,7 +924,12 @@ class OpenAI(FunctionCallingLLM):
                 raise ValueError("Invalid tool_call object")
             if tool_call.type != "function":
                 raise ValueError("Invalid tool type. Unsupported by OpenAI")
-            argument_dict = json.loads(tool_call.function.arguments)
+
+            # this should handle both complete and partial jsons
+            try:
+                argument_dict = parse_partial_json(tool_call.function.arguments)
+            except ValueError:
+                argument_dict = {}
 
             tool_selections.append(
                 ToolSelection(

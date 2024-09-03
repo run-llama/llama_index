@@ -31,6 +31,6 @@ PG_STORE_KEY = "property_graph_store"
 
 # llama-cloud constants
 DEFAULT_PIPELINE_NAME = "default"
-DEFAULT_PROJECT_NAME = "default"
+DEFAULT_PROJECT_NAME = "Default"
 DEFAULT_BASE_URL = "https://api.cloud.llamaindex.ai"
 DEFAULT_APP_URL = "https://cloud.llamaindex.ai"

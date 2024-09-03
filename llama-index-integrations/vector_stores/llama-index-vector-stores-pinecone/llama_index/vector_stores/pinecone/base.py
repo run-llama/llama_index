@@ -255,7 +255,6 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
         if tokenizer is None and add_sparse_vector:
             tokenizer = get_default_tokenizer()
-        self._tokenizer = tokenizer
 
         super().__init__(
             index_name=index_name,
@@ -268,6 +267,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
             batch_size=batch_size,
             remove_text_from_metadata=remove_text_from_metadata,
         )
+
+        self._tokenizer = tokenizer
 
         # TODO: Make following instance check stronger -- check if pinecone_index is not pinecone.Index, else raise
         #  ValueError
@@ -412,6 +413,33 @@ class PineconeVectorStore(BasePydanticVectorStore):
             namespace=self.namespace,
             **delete_kwargs,
         )
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes using their ids.
+
+        Args:
+            node_ids (Optional[List[str]], optional): List of node IDs. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        node_ids = node_ids or []
+
+        if filters is not None:
+            filter = _to_pinecone_filter(filters)
+        else:
+            filter = None
+
+        self._pinecone_index.delete(
+            ids=node_ids, namespace=self.namespace, filter=filter, **delete_kwargs
+        )
+
+    def clear(self) -> None:
+        """Clears the index."""
+        self._pinecone_index.delete(namespace=self.namespace, deleteAll=True)
 
     @property
     def client(self) -> Any:

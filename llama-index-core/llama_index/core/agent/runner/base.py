@@ -392,14 +392,15 @@ class AgentRunner(BaseAgentRunner):
         **kwargs: Any,
     ) -> TaskStepOutput:
         """Execute step."""
-        dispatcher.event(
-            AgentRunStepStartEvent(task_id=task_id, step=step, input=input)
-        )
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
         if input is not None:
             step.input = input
+
+        dispatcher.event(
+            AgentRunStepStartEvent(task_id=task_id, step=step, input=input)
+        )
 
         if self.verbose:
             print(f"> Running step {step.step_id}. Step input: {step.input}")
@@ -550,6 +551,12 @@ class AgentRunner(BaseAgentRunner):
         if self.delete_task_on_finish:
             self.delete_task(task_id)
 
+        # Attach all sources generated across all steps
+        step_output.output.sources = self.get_task(task_id).extra_state.get(
+            "sources", []
+        )
+        step_output.output.set_source_nodes()
+
         return cast(AGENT_CHAT_RESPONSE_TYPE, step_output.output)
 
     @dispatcher.span
@@ -695,6 +702,8 @@ class AgentRunner(BaseAgentRunner):
                 and chat_response.is_dummy_stream
             )
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
+
+        assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
     @dispatcher.span
@@ -720,6 +729,8 @@ class AgentRunner(BaseAgentRunner):
                 and chat_response.is_dummy_stream
             )
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
+
+        assert isinstance(chat_response, StreamingAgentChatResponse)
         return chat_response
 
     def undo_step(self, task_id: str) -> None:

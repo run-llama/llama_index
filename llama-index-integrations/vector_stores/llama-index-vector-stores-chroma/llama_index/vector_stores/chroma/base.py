@@ -48,6 +48,10 @@ def _transform_chroma_filter_operator(operator: str) -> str:
         return "$gte"
     elif operator == "<=":
         return "$lte"
+    elif operator == "in":
+        return "$in"
+    elif operator == "nin":
+        return "$nin"
     else:
         raise ValueError(f"Filter operator {operator} not supported")
 
@@ -160,13 +164,6 @@ class ChromaVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Init params."""
         collection_kwargs = collection_kwargs or {}
-        if chroma_collection is None:
-            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
-            self._collection = client.get_or_create_collection(
-                name=collection_name, **collection_kwargs
-            )
-        else:
-            self._collection = cast(Collection, chroma_collection)
 
         super().__init__(
             host=host,
@@ -177,6 +174,13 @@ class ChromaVectorStore(BasePydanticVectorStore):
             persist_dir=persist_dir,
             collection_kwargs=collection_kwargs or {},
         )
+        if chroma_collection is None:
+            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+            self._collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        else:
+            self._collection = cast(Collection, chroma_collection)
 
     @classmethod
     def from_collection(cls, collection: Any) -> "ChromaVectorStore":
@@ -439,7 +443,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             results["ids"] = [[]]
 
         for node_id, text, metadata in zip(
-            results["ids"][0], results["documents"], results["metadatas"]
+            results["ids"], results["documents"], results["metadatas"]
         ):
             try:
                 node = metadata_dict_to_node(metadata)

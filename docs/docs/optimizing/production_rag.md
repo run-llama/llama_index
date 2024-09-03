@@ -2,7 +2,7 @@
 
 Prototyping a RAG application is easy, but making it performant, robust, and scalable to a large knowledge corpus is hard.
 
-This guide contains a variety of tips and tricks to improve the performance of your RAG pipeline. We first outline
+This guide contains a variety of tips and tricks to improve the performance of your RAG workflow. We first outline
 some general techniques - they are loosely ordered in terms of most straightforward to most challenging.
 We then dive a bit more deeply into each technique, the use cases that it solves,
 and how to implement it with LlamaIndex!

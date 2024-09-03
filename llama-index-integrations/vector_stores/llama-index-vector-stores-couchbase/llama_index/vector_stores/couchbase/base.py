@@ -186,6 +186,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
                 f"got {type(cluster)}"
             )
 
+        super().__init__()
         self._cluster = cluster
 
         if not bucket_name:
@@ -241,8 +242,6 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
         self._bucket = self._cluster.bucket(self._bucket_name)
         self._scope = self._bucket.scope(self._scope_name)
         self._collection = self._scope.collection(self._collection_name)
-
-        super().__init__()
 
     def add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """

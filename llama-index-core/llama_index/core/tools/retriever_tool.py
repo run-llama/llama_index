@@ -77,10 +77,10 @@ class RetrieverTool(AsyncBaseTool):
             raise ValueError("Cannot call query engine without inputs")
 
         docs = self._retriever.retrieve(query_str)
-        docs = self._apply_node_postprocessors(docs, query_str)
+        docs = self._apply_node_postprocessors(docs, QueryBundle(query_str))
         content = ""
         for doc in docs:
-            node_copy = doc.node.copy()
+            node_copy = doc.node.model_copy()
             node_copy.text_template = "{metadata_str}\n{content}"
             node_copy.metadata_template = "{key} = {value}"
             content += node_copy.get_content(MetadataMode.LLM) + "\n\n"
@@ -103,9 +103,9 @@ class RetrieverTool(AsyncBaseTool):
             raise ValueError("Cannot call query engine without inputs")
         docs = await self._retriever.aretrieve(query_str)
         content = ""
-        docs = self._apply_node_postprocessors(docs, query_str)
+        docs = self._apply_node_postprocessors(docs, QueryBundle(query_str))
         for doc in docs:
-            node_copy = doc.node.copy()
+            node_copy = doc.node.model_copy()
             node_copy.text_template = "{metadata_str}\n{content}"
             node_copy.metadata_template = "{key} = {value}"
             content += node_copy.get_content(MetadataMode.LLM) + "\n\n"

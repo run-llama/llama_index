@@ -86,6 +86,9 @@ class UpstageEmbedding(OpenAIEmbedding):
                 f"embed_batch_size should be less than or equal to {MAX_EMBED_BATCH_SIZE}."
             )
 
+        if "upstage_api_key" in kwargs:
+            api_key = kwargs.pop("upstage_api_key")
+
         api_key, api_base = resolve_upstage_credentials(
             api_key=api_key, api_base=api_base
         )
@@ -124,14 +127,14 @@ class UpstageEmbedding(OpenAIEmbedding):
     def class_name(cls) -> str:
         return "UpstageEmbedding"
 
-    def _get_credential_kwargs(self) -> Dict[str, Any]:
+    def _get_credential_kwargs(self, is_async: bool = False) -> Dict[str, Any]:
         return {
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
             "timeout": self.timeout,
             "default_headers": self.default_headers,
-            "http_client": self._http_client,
+            "http_client": self._async_http_client if is_async else self._http_client,
         }
 
     def _get_query_embedding(self, query: str) -> List[float]:

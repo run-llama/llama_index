@@ -1,6 +1,5 @@
 import os
 from typing import Any, Callable, Dict, Optional, Sequence, Union
-import copy
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -50,6 +49,7 @@ class PredibaseLLM(CustomLLM):
             predibase_sdk_version=None,  # optional parameter (defaults to the latest Predibase SDK version if omitted)
             adapter_id="my-adapter-id",  # optional parameter
             adapter_version=3,  # optional parameter (applies to Predibase only)
+            api_token,  # optional parameter for accessing services hosting adapters (e.g., HuggingFace)
             temperature=0.3,
             max_new_tokens=512,
         )
@@ -71,6 +71,10 @@ class PredibaseLLM(CustomLLM):
     adapter_version: str = Field(
         default=None,
         description="The optional version number of fine-tuned adapter use (applies to Predibase only).",
+    )
+    api_token: str = Field(
+        default=None,
+        description="The adapter hosting service API key to use.",
     )
     max_new_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
@@ -98,6 +102,7 @@ class PredibaseLLM(CustomLLM):
         predibase_sdk_version: Optional[str] = None,
         adapter_id: Optional[str] = None,
         adapter_version: Optional[int] = None,
+        api_token: Optional[str] = None,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
         temperature: float = DEFAULT_TEMPERATURE,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
@@ -113,7 +118,10 @@ class PredibaseLLM(CustomLLM):
             if predibase_api_key
             else os.environ.get("PREDIBASE_API_TOKEN")
         )
-        assert predibase_api_key is not None
+        if not predibase_api_key:
+            raise ValueError(
+                'Your "PREDIBASE_API_TOKEN" is empty.  Please generate a valid "PREDIBASE_API_TOKEN" in your Predibase account.'
+            )
 
         super().__init__(
             model_name=model_name,
@@ -121,6 +129,7 @@ class PredibaseLLM(CustomLLM):
             predibase_sdk_version=predibase_sdk_version,
             adapter_id=adapter_id,
             adapter_version=adapter_version,
+            api_token=api_token,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             context_window=context_window,
@@ -155,7 +164,9 @@ class PredibaseLLM(CustomLLM):
             os.environ["PREDIBASE_GATEWAY"] = "https://api.app.predibase.com"
             return Predibase(api_token=self.predibase_api_key)
         except ValueError as e:
-            raise ValueError("Your API key is not correct. Please try again") from e
+            raise ValueError(
+                'Your "PREDIBASE_API_TOKEN" is not correct.  Please try again.'
+            ) from e
 
     @classmethod
     def class_name(cls) -> str:
@@ -174,13 +185,14 @@ class PredibaseLLM(CustomLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> "CompletionResponse":
-        options: Dict[str, Union[str, float]] = copy.deepcopy(kwargs)
-        options.update(
-            {
+        options: Dict[str, Union[str, float]] = {
+            **{
+                "api_token": self.api_token,
                 "max_new_tokens": self.max_new_tokens,
                 "temperature": self.temperature,
-            }
-        )
+            },
+            **(kwargs or {}),
+        }
 
         response_text: str
 
@@ -242,6 +254,7 @@ class PredibaseLLM(CustomLLM):
                 if self.adapter_version:
                     # Since the adapter version is provided, query the Predibase repository.
                     pb_adapter_id: str = f"{self.adapter_id}/{self.adapter_version}"
+                    options.pop("api_token", None)
                     try:
                         response = lorax_client.generate(
                             prompt=prompt,

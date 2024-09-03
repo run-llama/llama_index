@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any, Sequence, Callable
 import httpx
 from llama_index.core.base.llms.types import LLMMetadata, ChatMessage
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai.base import to_openai_message_dicts
 
 from llama_index.llms.upstage.utils import (
     resolve_upstage_credentials,
@@ -13,6 +14,8 @@ from llama_index.llms.upstage.utils import (
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.bridge.pydantic import ConfigDict
+from tokenizers import Tokenizer
 from pydantic import Field, PrivateAttr
 from openai import OpenAI as SyncOpenAI
 from openai import AsyncOpenAI
@@ -41,6 +44,7 @@ class Upstage(OpenAI):
         ```
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
     model: str = Field(
         default=DEFAULT_UPSTAGE_MODEL, description="The Upstage model to use."
     )
@@ -78,8 +82,17 @@ class Upstage(OpenAI):
         ),
         default=True,
     )
+    tokenizer_name: str = Field(
+        description=(
+            "Huggingface pretrained tokenizer name "
+            "upstage opened solar tokenizer in Huggingface. https://huggingface.co/upstage/solar-1-mini-tokenizer"
+        ),
+        default="upstage/solar-1-mini-tokenizer",
+    )
 
-    api_key: str = Field(default=None, description="The Upstage API key.")
+    api_key: str = Field(
+        default=None, alias="upstage_api_key", description="The Upstage API key."
+    )
     api_base: str = Field(
         default="https://api.upstage.ai/v1/solar",
         description="The Upstage API base URL.",
@@ -100,6 +113,7 @@ class Upstage(OpenAI):
         max_retries: int = 3,
         timeout: float = 60.0,
         reuse_client: bool = True,
+        tokenizer_name: str = "upstage/solar-1-mini-tokenizer",
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -112,6 +126,8 @@ class Upstage(OpenAI):
         output_parser: Optional[BaseOutputParser] = None,
         **kwargs: Any
     ) -> None:
+        if "upstage_api_key" in kwargs:
+            api_key = kwargs.pop("upstage_api_key")
         additional_kwargs = additional_kwargs or {}
         api_key, api_base = resolve_upstage_credentials(
             api_key=api_key, api_base=api_base
@@ -140,6 +156,7 @@ class Upstage(OpenAI):
             **kwargs
         )
 
+        self.tokenizer_name = tokenizer_name
         self._client = None
         self._aclient = None
         self._http_client = http_client
@@ -164,3 +181,29 @@ class Upstage(OpenAI):
             ),
             model_name=self.model,
         )
+
+    @property
+    def _tokenizer(self) -> Optional[Tokenizer]:
+        """
+        Get a Huggingface tokenizer for solar models.
+        """
+        return Tokenizer.from_pretrained(self.tokenizer_name)
+
+    def get_num_tokens_from_message(self, messages: Sequence[ChatMessage]) -> int:
+        tokens_per_message = 5  # <|im_start|>{role}\n{message}<|im_end|>
+        tokens_prefix = 1  # <|startoftext|>
+        tokens_suffix = 3  # <|im_start|>assistant\n
+
+        num_tokens = 0
+
+        num_tokens += tokens_prefix
+
+        message_dicts = to_openai_message_dicts(messages)
+        for message in message_dicts:
+            num_tokens += tokens_per_message
+            for value in message.values():
+                num_tokens += len(
+                    self._tokenizer.encode(str(value), add_special_tokens=False)
+                )
+        num_tokens += tokens_suffix
+        return num_tokens

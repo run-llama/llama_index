@@ -61,6 +61,7 @@ class AzureDocumentStore(KVDocumentStore):
         metadata_collection_suffix: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
         partition_key: Optional[str] = None,
+        **kwargs,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from an Azure connection string."""
         azure_kvstore = AzureKVStore.from_connection_string(
@@ -74,6 +75,7 @@ class AzureDocumentStore(KVDocumentStore):
             node_collection_suffix,
             ref_doc_collection_suffix,
             metadata_collection_suffix,
+            **kwargs,
         )
 
     @classmethod
@@ -87,6 +89,7 @@ class AzureDocumentStore(KVDocumentStore):
         metadata_collection_suffix: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
         partition_key: Optional[str] = None,
+        **kwargs,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from an account name and key."""
         azure_kvstore = AzureKVStore.from_account_and_key(
@@ -101,6 +104,7 @@ class AzureDocumentStore(KVDocumentStore):
             node_collection_suffix,
             ref_doc_collection_suffix,
             metadata_collection_suffix,
+            **kwargs,
         )
 
     @classmethod
@@ -114,6 +118,7 @@ class AzureDocumentStore(KVDocumentStore):
         metadata_collection_suffix: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
         partition_key: Optional[str] = None,
+        **kwargs,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from a SAS token."""
         azure_kvstore = AzureKVStore.from_sas_token(
@@ -128,6 +133,7 @@ class AzureDocumentStore(KVDocumentStore):
             node_collection_suffix,
             ref_doc_collection_suffix,
             metadata_collection_suffix,
+            **kwargs,
         )
 
     @classmethod
@@ -140,6 +146,7 @@ class AzureDocumentStore(KVDocumentStore):
         metadata_collection_suffix: Optional[str] = None,
         service_mode: ServiceMode = ServiceMode.STORAGE,
         partition_key: Optional[str] = None,
+        **kwargs,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from an AAD token."""
         azure_kvstore = AzureKVStore.from_aad_token(
@@ -153,6 +160,7 @@ class AzureDocumentStore(KVDocumentStore):
             node_collection_suffix,
             ref_doc_collection_suffix,
             metadata_collection_suffix,
+            **kwargs,
         )
 
     def _extract_doc_metadatas(
@@ -167,7 +175,7 @@ class AzureDocumentStore(KVDocumentStore):
 
     def add_documents(
         self,
-        nodes: Sequence[BaseNode],
+        docs: Sequence[BaseNode],
         allow_update: bool = True,
         batch_size: Optional[int] = None,
         store_text: bool = True,
@@ -176,7 +184,7 @@ class AzureDocumentStore(KVDocumentStore):
         batch_size = batch_size or self._batch_size
 
         node_kv_pairs, metadata_kv_pairs, ref_doc_kv_pairs = super()._prepare_kv_pairs(
-            nodes, allow_update, store_text
+            docs, allow_update, store_text
         )
 
         # Change ref_doc_kv_pairs
@@ -202,7 +210,7 @@ class AzureDocumentStore(KVDocumentStore):
 
     async def async_add_documents(
         self,
-        nodes: Sequence[BaseNode],
+        docs: Sequence[BaseNode],
         allow_update: bool = True,
         batch_size: Optional[int] = None,
         store_text: bool = True,
@@ -214,7 +222,7 @@ class AzureDocumentStore(KVDocumentStore):
             node_kv_pairs,
             metadata_kv_pairs,
             ref_doc_kv_pairs,
-        ) = await super()._async_prepare_kv_pairs(nodes, allow_update, store_text)
+        ) = await super()._async_prepare_kv_pairs(docs, allow_update, store_text)
 
         # Change ref_doc_kv_pairs
         ref_doc_kv_pairs = self._extract_doc_metadatas(ref_doc_kv_pairs)
@@ -263,24 +271,24 @@ class AzureDocumentStore(KVDocumentStore):
 
     async def aget_ref_doc_info(self, ref_doc_id: str) -> Optional[RefDocInfo]:
         """Get the RefDocInfo for a given ref_doc_id."""
-        ref_doc_infos, doc_metadata = await asyncio.gather(
-            self._kvstore.aquery(
-                f"PartitionKey eq '{self._kvstore.partition_key}' and ref_doc_id eq '{ref_doc_id}'",
-                self._metadata_collection,
-                select="RowKey",
-            ),
-            self._kvstore.aget(
-                ref_doc_id, collection=self._doc_metadata_collection, select="metadata"
-            ),
+        metadatas = await self._kvstore.aquery(
+            f"PartitionKey eq '{self._kvstore.partition_key}' and RowKey eq '{ref_doc_id}'",
+            self._metadata_collection,
+            select="RowKey",
         )
 
-        node_ids = [doc["RowKey"] async for doc in ref_doc_infos]
+        node_ids = [metadata["RowKey"] async for metadata in metadatas]
+
         if not node_ids:
             return None
 
+        doc_metadata = await self._kvstore.aget(
+            ref_doc_id, collection=self._ref_doc_collection, select="metadata"
+        )
+
         ref_doc_info_dict = {
             "node_ids": node_ids,
-            "metadata": doc_metadata.get("metadata"),
+            "metadata": doc_metadata.get("metadata") if doc_metadata else None,
         }
 
         # TODO: deprecated legacy support

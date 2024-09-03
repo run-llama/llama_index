@@ -1,4 +1,5 @@
 """Vector store index types."""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
@@ -17,6 +18,7 @@ import fsspec
 from deprecated import deprecated
 from llama_index.core.bridge.pydantic import (
     BaseModel,
+    ConfigDict,
     StrictFloat,
     StrictInt,
     StrictStr,
@@ -74,6 +76,7 @@ class FilterOperator(str, Enum):
     ALL = "all"  # Contains all (array of strings)
     TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
     CONTAINS = "contains"  # metadata array contains value (string or number)
+    IS_EMPTY = "is_empty"  # the field is not exist or empty (null or empty array)
 
 
 class FilterCondition(str, Enum):
@@ -85,7 +88,7 @@ class FilterCondition(str, Enum):
 
 
 class MetadataFilter(BaseModel):
-    """Comprehensive metadata filter for vector stores to support more operators.
+    r"""Comprehensive metadata filter for vector stores to support more operators.
 
     Value uses Strict* types, as int, float and str are compatible types and were all
     converted to string before.
@@ -94,13 +97,15 @@ class MetadataFilter(BaseModel):
     """
 
     key: str
-    value: Union[
-        StrictInt,
-        StrictFloat,
-        StrictStr,
-        List[StrictInt],
-        List[StrictFloat],
-        List[StrictStr],
+    value: Optional[
+        Union[
+            StrictInt,
+            StrictFloat,
+            StrictStr,
+            List[StrictStr],
+            List[StrictFloat],
+            List[StrictInt],
+        ]
     ]
     operator: FilterOperator = FilterOperator.EQ
 
@@ -115,7 +120,7 @@ class MetadataFilter(BaseModel):
             filter_dict: Dict with key, value and operator.
 
         """
-        return MetadataFilter.parse_obj(filter_dict)
+        return MetadataFilter.model_validate(filter_dict)
 
 
 # # TODO: Deprecate ExactMatchFilter and use MetadataFilter instead
@@ -176,7 +181,10 @@ class MetadataFilters(BaseModel):
         """Convert MetadataFilters to legacy ExactMatchFilters."""
         filters = []
         for filter in self.filters:
-            if filter.operator != FilterOperator.EQ:
+            if (
+                isinstance(filter, MetadataFilters)
+                or filter.operator != FilterOperator.EQ
+            ):
                 raise ValueError(
                     "Vector Store only supports exact match filters. "
                     "Please use ExactMatchFilter or FilterOperator.EQ instead."
@@ -316,11 +324,9 @@ class VectorStore(Protocol):
 class BasePydanticVectorStore(BaseComponent, ABC):
     """Abstract vector store protocol."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     stores_text: bool
     is_embedding_query: bool = True
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @property
     @abstractmethod
@@ -346,13 +352,14 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     @abstractmethod
     def add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
+        **kwargs: Any,
     ) -> List[str]:
         """Add nodes to vector store."""
 
     async def async_add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -360,7 +367,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call add synchronously.
         """
-        return self.add(nodes)
+        return self.add(nodes, **kwargs)
 
     @abstractmethod
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:

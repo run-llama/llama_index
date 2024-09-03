@@ -29,6 +29,7 @@ class TrafilaturaWebReader(BasePydanticReader):
         include_formatting=False,
         include_links=False,
         show_progress=False,
+        no_ssl=False,
         **kwargs,
     ) -> List[Document]:
         """Load data from the urls.
@@ -42,6 +43,7 @@ class TrafilaturaWebReader(BasePydanticReader):
             include_formatting (bool, optional): Include formatting in the output. Defaults to False.
             include_links (bool, optional): Include links in the output. Defaults to False.
             show_progress (bool, optional): Show progress bar. Defaults to False
+            no_ssl (bool, optional): Bypass SSL verification. Defaults to False.
             kwargs: Additional keyword arguments for the `trafilatura.extract` function.
 
         Returns:
@@ -61,7 +63,7 @@ class TrafilaturaWebReader(BasePydanticReader):
         else:
             iterator = urls
         for url in iterator:
-            downloaded = trafilatura.fetch_url(url)
+            downloaded = trafilatura.fetch_url(url, no_ssl=no_ssl)
             response = trafilatura.extract(
                 downloaded,
                 include_comments=include_comments,

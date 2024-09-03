@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/vector-search/queries",
+    "headers": {
+      "Accept": {
+        "equalTo": "application/json"
+      },
+      "Authorization": {
+        "equalTo": "Key key43245932904328493223"
+      },
+      "Content-Type": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "bodyFileName": "vector-search/queries/response_1.json",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

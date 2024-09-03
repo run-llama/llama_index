@@ -1,14 +1,17 @@
 """Elasticsearch/Opensearch vector store."""
 
 import asyncio
-import json
 import uuid
+from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
+    FilterCondition,
+    FilterOperator,
+    MetadataFilter,
     MetadataFilters,
     BasePydanticVectorStore,
     VectorStoreQuery,
@@ -20,6 +23,7 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 from opensearchpy import AsyncOpenSearch
+from opensearchpy.client import Client as OSClient
 from opensearchpy.exceptions import NotFoundError
 from opensearchpy.helpers import async_bulk
 
@@ -64,8 +68,10 @@ class OpensearchVectorClient:
         embedding_field: str = "embedding",
         text_field: str = "content",
         method: Optional[dict] = None,
+        engine: Optional[str] = "nmslib",
         max_chunk_bytes: int = 1 * 1024 * 1024,
         search_pipeline: Optional[str] = None,
+        os_client: Optional[OSClient] = None,
         **kwargs: Any,
     ):
         """Init params."""
@@ -73,7 +79,7 @@ class OpensearchVectorClient:
             method = {
                 "name": "hnsw",
                 "space_type": "l2",
-                "engine": "nmslib",
+                "engine": engine,
                 "parameters": {"ef_construction": 256, "m": 48},
             }
         if embedding_field is None:
@@ -102,7 +108,9 @@ class OpensearchVectorClient:
                 }
             },
         }
-        self._os_client = self._get_async_opensearch_client(self._endpoint, **kwargs)
+        self._os_client = os_client or self._get_async_opensearch_client(
+            self._endpoint, **kwargs
+        )
         not_found_error = self._import_not_found_error()
 
         event_loop = asyncio.get_event_loop()
@@ -205,13 +213,89 @@ class OpensearchVectorClient:
             "query": {"knn": {vector_field: {"vector": query_vector, "k": k}}},
         }
 
-    def _parse_filters(self, filters: Optional[MetadataFilters]) -> Any:
-        pre_filter = []
-        if filters is not None:
-            for f in filters.legacy_filters():
-                pre_filter.append({f.key: json.loads(str(f.value))})
+    def _is_text_field(self, value: Any) -> bool:
+        """Check if value is a string and keyword filtering needs to be performed.
 
-        return pre_filter
+        Not applied to datetime strings.
+        """
+        if isinstance(value, str):
+            try:
+                datetime.fromisoformat(value)
+                return False
+            except ValueError as e:
+                return True
+        else:
+            return False
+
+    def _parse_filter(self, filter: MetadataFilter) -> dict:
+        """Parse a single MetadataFilter to equivalent OpenSearch expression.
+
+        As Opensearch does not differentiate between scalar/array keyword fields, IN and ANY are equivalent.
+        """
+        key = f"metadata.{filter.key}"
+        op = filter.operator
+
+        equality_postfix = ".keyword" if self._is_text_field(value=filter.value) else ""
+
+        if op == FilterOperator.EQ:
+            return {"term": {f"{key}{equality_postfix}": filter.value}}
+        elif op in [
+            FilterOperator.GT,
+            FilterOperator.GTE,
+            FilterOperator.LT,
+            FilterOperator.LTE,
+        ]:
+            return {"range": {key: {filter.operator.name.lower(): filter.value}}}
+        elif op == FilterOperator.NE:
+            return {
+                "bool": {
+                    "must_not": {"term": {f"{key}{equality_postfix}": filter.value}}
+                }
+            }
+        elif op in [FilterOperator.IN, FilterOperator.ANY]:
+            return {"terms": {key: filter.value}}
+        elif op == FilterOperator.NIN:
+            return {"bool": {"must_not": {"terms": {key: filter.value}}}}
+        elif op == FilterOperator.ALL:
+            return {
+                "terms_set": {
+                    key: {
+                        "terms": filter.value,
+                        "minimum_should_match_script": {"source": "params.num_terms"},
+                    }
+                }
+            }
+        elif op == FilterOperator.TEXT_MATCH:
+            return {"match": {key: {"query": filter.value, "fuzziness": "AUTO"}}}
+        elif op == FilterOperator.CONTAINS:
+            return {"wildcard": {key: f"*{filter.value}*"}}
+        else:
+            raise ValueError(f"Unsupported filter operator: {filter.operator}")
+
+    def _parse_filters_recursively(self, filters: MetadataFilters) -> dict:
+        """Parse (possibly nested) MetadataFilters to equivalent OpenSearch expression."""
+        condition_map = {FilterCondition.AND: "must", FilterCondition.OR: "should"}
+
+        bool_clause = condition_map[filters.condition]
+        bool_query: dict[str, dict[str, list[dict]]] = {"bool": {bool_clause: []}}
+
+        for filter_item in filters.filters:
+            if isinstance(filter_item, MetadataFilter):
+                bool_query["bool"][bool_clause].append(self._parse_filter(filter_item))
+            elif isinstance(filter_item, MetadataFilters):
+                bool_query["bool"][bool_clause].append(
+                    self._parse_filters_recursively(filter_item)
+                )
+            else:
+                raise ValueError(f"Unsupported filter type: {type(filter_item)}")
+
+        return bool_query
+
+    def _parse_filters(self, filters: Optional[MetadataFilters]) -> List[dict]:
+        """Parse MetadataFilters to equivalent OpenSearch expression."""
+        if filters is None:
+            return []
+        return [self._parse_filters_recursively(filters=filters)]
 
     def _knn_search_query(
         self,
@@ -265,17 +349,34 @@ class OpensearchVectorClient:
         k: int,
         filters: Optional[MetadataFilters] = None,
     ) -> Dict:
-        knn_query = self._knn_search_query(
-            embedding_field, query_embedding, k, filters
-        )["query"]
-        lexical_query = {"must": {"match": {text_field: {"query": query_str}}}}
+        knn_query = self._knn_search_query(embedding_field, query_embedding, k, filters)
+        lexical_query = self._lexical_search_query(text_field, query_str, k, filters)
+
+        return {
+            "size": k,
+            "query": {
+                "hybrid": {"queries": [lexical_query["query"], knn_query["query"]]}
+            },
+        }
+
+    def _lexical_search_query(
+        self,
+        text_field: str,
+        query_str: str,
+        k: int,
+        filters: Optional[MetadataFilters] = None,
+    ) -> Dict:
+        lexical_query = {
+            "bool": {"must": {"match": {text_field: {"query": query_str}}}}
+        }
 
         parsed_filters = self._parse_filters(filters)
         if len(parsed_filters) > 0:
-            lexical_query["filter"] = parsed_filters
+            lexical_query["bool"]["filter"] = parsed_filters
+
         return {
             "size": k,
-            "query": {"hybrid": {"queries": [{"bool": lexical_query}, knn_query]}},
+            "query": lexical_query,
         }
 
     def __get_painless_scripting_source(
@@ -367,6 +468,35 @@ class OpensearchVectorClient:
         }
         await self._os_client.delete_by_query(index=self._index, body=search_query)
 
+    async def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        if not node_ids and not filters:
+            return
+
+        query = {"query": {"bool": {"filter": []}}}
+        if node_ids:
+            query["query"]["bool"]["filter"].append({"terms": {"_id": node_ids or []}})
+
+        if filters:
+            query["query"]["bool"]["filter"].extend(self._parse_filters(filters))
+
+        await self._os_client.delete_by_query(index=self._index, body=query)
+
+    async def clear(self) -> None:
+        """Clears index."""
+        query = {"query": {"bool": {"filter": []}}}
+        await self._os_client.delete_by_query(index=self._index, body=query)
+
     async def aquery(
         self,
         query_mode: VectorStoreQueryMode,
@@ -389,6 +519,11 @@ class OpensearchVectorClient:
             params = {
                 "search_pipeline": self._search_pipeline,
             }
+        elif query_mode == VectorStoreQueryMode.TEXT_SEARCH:
+            search_query = self._lexical_search_query(
+                self._text_field, query_str, k, filters=filters
+            )
+            params = None
         else:
             search_query = self._knn_search_query(
                 self._embedding_field, query_embedding, k, filters=filters
@@ -546,6 +681,44 @@ class OpensearchVectorStore(BasePydanticVectorStore):
 
         """
         await self._client.delete_by_doc_id(ref_doc_id)
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes async.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        await self._client.delete_nodes(node_ids, filters, **delete_kwargs)
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        asyncio.get_event_loop().run_until_complete(
+            self.adelete_nodes(node_ids, filters, **delete_kwargs)
+        )
+
+    async def aclear(self) -> None:
+        """Clears index."""
+        await self._client.clear()
+
+    def clear(self) -> None:
+        """Clears index."""
+        asyncio.get_event_loop().run_until_complete(self.aclear())
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """

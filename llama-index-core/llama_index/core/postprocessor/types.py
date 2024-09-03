@@ -8,19 +8,18 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, SerializeAsAny, ConfigDict
 from llama_index.core.callbacks import CallbackManager
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.schema import BaseComponent, NodeWithScore, QueryBundle
 
 
-class BaseNodePostprocessor(ChainableMixin, BaseComponent, ABC):
+class BaseNodePostprocessor(ChainableMixin, BaseComponent, DispatcherSpanMixin, ABC):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -70,10 +69,10 @@ class BaseNodePostprocessor(ChainableMixin, BaseComponent, ABC):
 class PostprocessorComponent(QueryComponent):
     """Postprocessor component."""
 
-    postprocessor: BaseNodePostprocessor = Field(..., description="Postprocessor")
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    postprocessor: SerializeAsAny[BaseNodePostprocessor] = Field(
+        ..., description="Postprocessor"
+    )
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

@@ -40,10 +40,9 @@ class VoyageAIRerank(BaseNodePostprocessor):
                 "Cannot import voyageai package, please `pip install voyageai`."
             )
 
-        self._client = Client(api_key=api_key)
-
         top_n = top_n or top_k
         super().__init__(top_n=top_n, model=model, truncation=truncation)
+        self._client = Client(api_key=api_key)
 
     @classmethod
     def class_name(cls) -> str:

@@ -51,7 +51,7 @@ class DashScopeRerank(BaseNodePostprocessor):
     ) -> List[NodeWithScore]:
         dispatcher.event(
             ReRankStartEvent(
-                model=self.model,
+                model_name=self.model,
                 top_n=self.top_n,
                 query=query_bundle,
                 nodes=nodes,

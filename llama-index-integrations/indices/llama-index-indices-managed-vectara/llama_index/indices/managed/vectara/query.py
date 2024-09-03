@@ -7,10 +7,8 @@ from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.schema import NodeWithScore, QueryBundle
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import (
     Settings,
-    callback_manager_from_settings_or_context,
 )
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
@@ -121,14 +119,17 @@ class VectaraQueryEngine(BaseQueryEngine):
 
         if self._streaming:
             nodes = self.retrieve(query_bundle)
-
             query_response = StreamingResponse(
                 response_gen=self._retriever._vectara_stream(query_bundle, chat=False),
                 source_nodes=nodes,
             )
         else:
             nodes, response, _ = self._retriever._vectara_query(query_bundle, **kwargs)
-            query_response = Response(response=response["text"], source_nodes=nodes)
+            query_response = Response(
+                response=response["text"],
+                source_nodes=nodes,
+                metadata={"fcs": response.get("fcs", None)},
+            )
 
         return query_response
 
@@ -184,7 +185,6 @@ class VectaraChatEngine(BaseChatEngine):
         cls,
         retriever: VectaraRetriever,
         streaming: bool = False,
-        service_context: Optional[ServiceContext] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         **kwargs: Any,
     ) -> "VectaraChatEngine":
@@ -194,9 +194,7 @@ class VectaraChatEngine(BaseChatEngine):
             retriever,
             streaming,
             node_postprocessors=node_postprocessors,
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, service_context
-            ),
+            callback_manager=Settings.callback_manager,
             **kwargs,
         )
 
@@ -221,6 +219,7 @@ class VectaraChatEngine(BaseChatEngine):
             return AgentChatResponse(
                 response=summary["text"],
                 source_nodes=nodes,
+                metadata={"fcs": summary.get("fcs", None)},
             )
 
     async def achat(self, message: str) -> AgentChatResponse:
