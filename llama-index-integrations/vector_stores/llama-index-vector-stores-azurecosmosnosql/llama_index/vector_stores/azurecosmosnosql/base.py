@@ -49,10 +49,10 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
 
     def __init__(
             self,
-            cosmos_client: Optional[Any] = None,
-            vector_embedding_policy: Optional[Dict[str, Any]] = None,
-            indexing_policy: Optional[Dict[str, Any]] = None,
-            cosmos_container_properties: Optional[Dict[str, Any]] = None,
+            cosmos_client: CosmosClient,
+            vector_embedding_policy: Dict[str, Any],
+            indexing_policy: Dict[str, Any],
+            cosmos_container_properties: Dict[str, Any],
             cosmos_database_properties: Optional[Dict[str, Any]] = None,
             database_name: str = "vectorSearchDB",
             container_name: str = "vectorSearchContainer",
@@ -189,10 +189,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
 
         """
 
-        if ref_doc_id is None:
-            raise ValueError("No id provided to delete.")
-
-        self._container.delete_item(ref_doc_id,partition_key=ref_doc_id)
+        self._container.delete_item(ref_doc_id, partition_key=ref_doc_id)
 
     @property
     def client(self) -> Any:
@@ -210,14 +207,11 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         top_k_ids = []
         top_k_scores = []
 
-        params["k"] = 1
-
         for item in self._container.query_items(
                 query='SELECT TOP @k c.id, c.embedding, c.text, c.metadata, VectorDistance(c.embedding,@embedding) AS SimilarityScore FROM c ORDER BY VectorDistance(c.embedding,@embedding)',
                 parameters=[{"name": "@k", "value": params['k']},
                             {"name": "@embedding", "value": params["vector"]}],
                 enable_cross_partition_query=True):
-
             node = metadata_dict_to_node(item[self._metadata_key])
             node.set_content(item[self._text_key])
 

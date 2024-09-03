@@ -164,6 +164,5 @@ class TestAzureCosmosNoSqlVectorSearch:
             VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)
         )
         print("res:\n", res)
-        sleep(5)
         assert res.nodes
         assert res.nodes[0].get_content() == "lorem ipsum"
