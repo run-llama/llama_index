@@ -10,7 +10,7 @@ build:
   tools:
     python: "3.12"
   jobs:
-    post_checkout:
+    pre_build:
       - python docs/merge_llama_deploy_docs.py
       - make lint
 
