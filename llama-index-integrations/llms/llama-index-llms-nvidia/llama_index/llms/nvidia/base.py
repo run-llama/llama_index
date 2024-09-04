@@ -8,7 +8,10 @@ from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
 
-from llama_index.llms.nvidia.utils import is_nvidia_function_calling_model
+from llama_index.llms.nvidia.utils import (
+    is_nvidia_function_calling_model,
+    is_chat_model,
+)
 
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.core.llms.function_calling import FunctionCallingLLM
@@ -21,7 +24,6 @@ from llama_index.core.base.llms.types import (
 )
 
 from llama_index.core.llms.llm import ToolSelection
-
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -101,7 +103,7 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             api_key=api_key,
             api_base=base_url,
             max_tokens=max_tokens,
-            is_chat_model=True,
+            is_chat_model=is_chat_model(model),
             default_headers={"User-Agent": "llama-index-llms-nvidia"},
             is_function_calling_model=is_nvidia_function_calling_model(model),
             **kwargs,
@@ -219,7 +221,7 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
 
     @property
     def _is_chat_model(self) -> bool:
-        return True
+        return is_chat_model(self.model)
 
     def _prepare_chat_with_tools(
         self,

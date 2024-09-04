@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.minio"
 
 [tool.llamahub.class_authors]
-BotoMinioReader = "llama-index"
+BotoMinioReader = "webcoderz"
 MinioReader = "llama-index"
 
 [tool.mypy]

@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.bridge.pydantic import Field
@@ -91,12 +91,17 @@ class RagPredictionDataset(BaseLlamaPredictionDataset):
                 "pandas is required for this function. Please install it with `pip install pandas`."
             )
 
-        data = {}
-        if self.predictions:
-            data = {
-                "response": [t.response for t in self.predictions],
-                "contexts": [t.contexts for t in self.predictions],
-            }
+        data: Dict[str, List] = {
+            "response": [],
+            "contexts": [],
+        }
+        for pred in self.predictions:
+            if not isinstance(pred, RagExamplePrediction):
+                raise ValueError(
+                    "All predictions in the dataset must be of type RagExamplePrediction."
+                )
+            data["response"].append(pred.response)
+            data["contexts"].append(pred.contexts)
 
         return pd.DataFrame(data)
 
@@ -120,17 +125,27 @@ class LabelledRagDataset(BaseLlamaDataset[BaseQueryEngine]):
                 "pandas is required for this function. Please install it with `pip install pandas`."
             )
 
-        data = {
-            "query": [t.query for t in self.examples],
-            "reference_contexts": [t.reference_contexts for t in self.examples],
-            "reference_answer": [t.reference_answer for t in self.examples],
-            "reference_answer_by": [str(t.reference_answer_by) for t in self.examples],
-            "query_by": [str(t.query_by) for t in self.examples],
+        data: Dict[str, List] = {
+            "query": [],
+            "reference_contexts": [],
+            "reference_answer": [],
+            "reference_answer_by": [],
+            "query_by": [],
         }
+        for example in self.examples:
+            if not isinstance(example, LabelledRagDataExample):
+                raise ValueError(
+                    "All examples in the dataset must be of type LabelledRagDataExample."
+                )
+            data["query"].append(example.query)
+            data["reference_contexts"].append(example.reference_contexts)
+            data["reference_answer"].append(example.reference_answer)
+            data["reference_answer_by"].append(str(example.reference_answer_by))
+            data["query_by"].append(str(example.query_by))
 
         return pd.DataFrame(data)
 
-    async def _apredict_example(
+    async def _apredict_example(  # type: ignore
         self,
         predictor: BaseQueryEngine,
         example: LabelledRagDataExample,
@@ -143,7 +158,7 @@ class LabelledRagDataset(BaseLlamaDataset[BaseQueryEngine]):
             response=str(response), contexts=[s.text for s in response.source_nodes]
         )
 
-    def _predict_example(
+    def _predict_example(  # type: ignore
         self,
         predictor: BaseQueryEngine,
         example: LabelledRagDataExample,
@@ -156,8 +171,8 @@ class LabelledRagDataset(BaseLlamaDataset[BaseQueryEngine]):
             response=str(response), contexts=[s.text for s in response.source_nodes]
         )
 
-    def _construct_prediction_dataset(
-        self, predictions: List[RagExamplePrediction]
+    def _construct_prediction_dataset(  # type: ignore
+        self, predictions: Sequence[RagExamplePrediction]
     ) -> RagPredictionDataset:
         """Construct prediction dataset."""
         return RagPredictionDataset(predictions=predictions)

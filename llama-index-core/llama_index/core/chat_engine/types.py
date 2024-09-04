@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from queue import Queue, Empty
 from threading import Event
-from typing import AsyncGenerator, Generator, List, Optional, Union, Dict, Any
+from typing import AsyncGenerator, Callable, Generator, List, Optional, Union, Dict, Any
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -54,11 +54,14 @@ class AgentChatResponse:
     is_dummy_stream: bool = False
     metadata: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self) -> None:
+    def set_source_nodes(self) -> None:
         if self.sources and not self.source_nodes:
             for tool_output in self.sources:
                 if isinstance(tool_output.raw_output, (Response, StreamingResponse)):
                     self.source_nodes.extend(tool_output.raw_output.source_nodes)
+
+    def __post_init__(self) -> None:
+        self.set_source_nodes()
 
     def __str__(self) -> str:
         return self.response
@@ -116,11 +119,14 @@ class StreamingAgentChatResponse:
     # Track if an exception occurred
     exception: Optional[Exception] = None
 
-    def __post_init__(self) -> None:
+    def set_source_nodes(self) -> None:
         if self.sources and not self.source_nodes:
             for tool_output in self.sources:
                 if isinstance(tool_output.raw_output, (Response, StreamingResponse)):
                     self.source_nodes.extend(tool_output.raw_output.source_nodes)
+
+    def __post_init__(self) -> None:
+        self.set_source_nodes()
 
     def __str__(self) -> str:
         if self.is_done and not self.queue.empty() and not self.is_function:
@@ -143,6 +149,9 @@ class StreamingAgentChatResponse:
         self.is_function_not_none_thread_event.set()
 
     def aput_in_queue(self, delta: Optional[str]) -> None:
+        assert self.aqueue is not None
+        assert self.new_item_event is not None
+
         self.aqueue.put_nowait(delta)
         self.new_item_event.set()
 
@@ -150,7 +159,7 @@ class StreamingAgentChatResponse:
     def write_response_to_history(
         self,
         memory: BaseMemory,
-        on_stream_end_fn: Optional[callable] = None,
+        on_stream_end_fn: Optional[Callable] = None,
     ) -> None:
         if self.chat_stream is None:
             raise ValueError(
@@ -199,9 +208,12 @@ class StreamingAgentChatResponse:
     async def awrite_response_to_history(
         self,
         memory: BaseMemory,
-        on_stream_end_fn: Optional[callable] = None,
+        on_stream_end_fn: Optional[Callable] = None,
     ) -> None:
         self._ensure_async_setup()
+        assert self.aqueue is not None
+        assert self.is_function_false_event is not None
+        assert self.new_item_event is not None
 
         if self.achat_stream is None:
             raise ValueError(
@@ -268,6 +280,8 @@ class StreamingAgentChatResponse:
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
         self._ensure_async_setup()
+        assert self.aqueue is not None
+
         while True:
             if not self.aqueue.empty() or not self.is_done:
                 if self.exception is not None:

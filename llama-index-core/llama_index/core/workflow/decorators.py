@@ -24,11 +24,11 @@ class StepConfig(BaseModel):
 
 
 def step(
-    *args,
+    *args: Any,
     workflow: Optional[Type["Workflow"]] = None,
     pass_context: bool = False,
     num_workers: int = 1,
-):
+) -> Callable:
     """Decorator used to mark methods and functions as workflow steps.
 
     Decorators are evaluated at import time, but we need to wait for
@@ -49,7 +49,7 @@ def step(
         event_name, accepted_events = next(iter(spec.accepted_events.items()))
 
         # store the configuration in the function object
-        func.__step_config = StepConfig(
+        func.__step_config = StepConfig(  # type: ignore[attr-defined]
             accepted_events=accepted_events,
             event_name=event_name,
             return_types=spec.return_types,

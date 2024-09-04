@@ -19,9 +19,9 @@ from llama_index.core.bridge.pydantic import (
     ValidationError,
     ConfigDict,
 )
-from llama_index.core.llms.llm import LLM
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.settings import Settings
 from llama_index.core.types import BasePydanticProgram, Model
@@ -34,7 +34,7 @@ _logger = logging.getLogger(__name__)
 def _parse_tool_outputs(
     agent_response: AgentChatResponse,
     allow_parallel_tool_calls: bool = False,
-) -> List[BaseModel]:
+) -> Union[BaseModel, List[BaseModel]]:
     """Parse tool outputs."""
     outputs = [cast(BaseModel, s.raw_output) for s in agent_response.sources]
     if allow_parallel_tool_calls:
@@ -77,11 +77,13 @@ def create_flexible_model(model: Type[BaseModel]) -> Type[FlexibleModel]:
     return create_model(
         f"Flexible{model.__name__}",
         __base__=FlexibleModel,
-        **{field: (Optional[Any], None) for field in model.__fields__},
-    )
+        **{field: (Optional[Any], None) for field in model.model_fields},
+    )  # type: ignore
 
 
-def num_valid_fields(obj: BaseModel) -> int:
+def num_valid_fields(
+    obj: Union[BaseModel, List[BaseModel], Dict[str, BaseModel]]
+) -> int:
     """
     Recursively count the number of fields in a Pydantic object (including nested objects) that aren't None.
 
@@ -122,9 +124,9 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
     def __init__(
         self,
         output_cls: Type[Model],
-        llm: LLM,
+        llm: FunctionCallingLLM,
         prompt: BasePromptTemplate,
-        tool_choice: Union[str, Dict[str, Any]],
+        tool_choice: Optional[Union[str, Dict[str, Any]]] = None,
         allow_parallel_tool_calls: bool = False,
         verbose: bool = False,
     ) -> None:
@@ -141,14 +143,16 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         cls,
         output_cls: Type[Model],
         prompt_template_str: Optional[str] = None,
-        prompt: Optional[PromptTemplate] = None,
+        prompt: Optional[BasePromptTemplate] = None,
         llm: Optional[LLM] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         tool_choice: Optional[Union[str, Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> "FunctionCallingProgram":
-        llm = llm or Settings.llm
+        llm = llm or Settings.llm  # type: ignore
+        assert llm is not None
+
         if not llm.metadata.is_function_calling_model:
             raise ValueError(
                 f"Model name {llm.metadata.model_name} does not support "
@@ -163,8 +167,8 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             prompt = PromptTemplate(prompt_template_str)
 
         return cls(
-            output_cls=output_cls,
-            llm=llm,
+            output_cls=output_cls,  # type: ignore
+            llm=llm,  # type: ignore
             prompt=cast(PromptTemplate, prompt),
             tool_choice=tool_choice,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
@@ -188,7 +192,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Union[Model, List[Model]]:
+    ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
         tool = _get_function_tool(self._output_cls)
 
@@ -205,14 +209,14 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         return _parse_tool_outputs(
             agent_response,
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
-        )
+        )  # type: ignore
 
     async def acall(
         self,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Union[Model, List[Model]]:
+    ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
         tool = _get_function_tool(self._output_cls)
 
@@ -226,7 +230,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         return _parse_tool_outputs(
             agent_response,
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
-        )
+        )  # type: ignore
 
     def _process_objects(
         self,
@@ -243,7 +247,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         # TODO: change
         if len(tool_calls) == 0:
             # if no tool calls, return single blank output_class
-            return output_cls()
+            return output_cls()  # type: ignore
 
         tool_fn_args = [call.tool_kwargs for call in tool_calls]
         objects = [
@@ -263,18 +267,18 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
                 new_obj = self._output_cls.model_validate(obj.model_dump())
             except ValidationError as e:
                 _logger.warning(f"Failed to parse object: {e}")
-                new_obj = obj
+                new_obj = obj  # type: ignore
             new_cur_objects.append(new_obj)
 
         if self._allow_parallel_tool_calls:
-            return new_cur_objects
+            return new_cur_objects  # type: ignore
         else:
             if len(new_cur_objects) > 1:
                 _logger.warning(
                     "Multiple outputs found, returning first one. "
                     "If you want to return all outputs, set output_multiple=True."
                 )
-            return new_cur_objects[0]
+            return new_cur_objects[0]  # type: ignore
 
     def stream_call(
         self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
@@ -308,7 +312,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         partial_output_cls = create_flexible_model(self._output_cls)
         cur_objects = None
         for partial_resp in chat_response_gen:
-            objects = self._process_objects(
+            objects: Union[Model, List[Model]] = self._process_objects(
                 partial_resp, partial_output_cls, cur_objects=cur_objects
             )
             cur_objects = objects if isinstance(objects, list) else [objects]
@@ -323,7 +327,6 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         or a list of objects until it returns.
 
         """
-        llm_kwargs = llm_kwargs or {}
 
         async def gen() -> AsyncGenerator[Union[Model, List[Model]], None]:
             # TODO: we can extend this to non-function calling LLMs as well, coming soon
@@ -340,7 +343,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
                 chat_history=messages,
                 verbose=self._verbose,
                 allow_parallel_tool_calls=self._allow_parallel_tool_calls,
-                **llm_kwargs,
+                **(llm_kwargs or {}),
             )
             # NOTE: create a new class that treats all its fields as optional
             # inspired by instructor
@@ -348,7 +351,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             partial_output_cls = create_flexible_model(self._output_cls)
             cur_objects = None
             async for partial_resp in chat_response_gen:
-                objects = self._process_objects(
+                objects: Union[Union[Model, List[Model]]] = self._process_objects(
                     partial_resp, partial_output_cls, cur_objects=cur_objects
                 )
                 cur_objects = objects if isinstance(objects, list) else [objects]
