@@ -52,13 +52,13 @@ class BaseComponent(BaseModel):
     def __get_pydantic_json_schema__(
         cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
-        json_schema = handler(core_schema)
-        json_schema = handler.resolve_ref_schema(json_schema)
-        json_schema["properties"]["class_name"] = {
-            "title": "Class Name",
-            "type": "string",
-            "default": cls.class_name(),
-        }
+        json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
+        if "properties" in json_schema:
+            json_schema["properties"]["class_name"] = {
+                "title": "Class Name",
+                "type": "string",
+                "default": cls.class_name(),
+            }
         return json_schema
 
     @classmethod
