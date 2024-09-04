@@ -326,6 +326,7 @@ class OpensearchVectorClient:
         Returns:
             Up to k docs closest to query_embedding
         """
+
         pre_filter = self._parse_filters(filters)
         if not pre_filter:
             search_query = self._default_approximate_search_query(
@@ -340,14 +341,13 @@ class OpensearchVectorClient:
                 vector_field=embedding_field,)
         else:
             # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
-            search_query = self._default_painless_scripting_query(
+            search_query = self._default_scoring_script_query(
                 query_embedding,
                 k,
                 space_type="l2Squared",
                 pre_filter={"bool": {"filter": pre_filter}},
                 vector_field=embedding_field,
             )
-
         return search_query
 
     def _hybrid_search_query(
@@ -433,7 +433,7 @@ class OpensearchVectorClient:
         vector_field: str = "embedding",
     ) -> Dict:
         """For Scoring Script Search, this is the default query. Has to account for Opensearch Service 
-        Serverless which does not support l2squared painless scripting so defaults to knn_score."""
+        Serverless which does not support painless scripting functions so defaults to knn_score."""
 
         if not pre_filter:
             pre_filter = MATCH_ALL_QUERY
@@ -443,7 +443,6 @@ class OpensearchVectorClient:
             script = self._get_knn_scoring_script(space_type, vector_field, query_vector)
         else:
             script = self._get_painless_scoring_script(space_type, vector_field, query_vector)
-
         return {
             "size": k,
             "query": {
