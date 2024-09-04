@@ -155,6 +155,7 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
         self._delta_sync_index_spec = index_description.delta_sync_index_spec
         self._direct_access_index_spec = index_description.direct_access_index_spec
         self._doc_id_to_pk = {}
+        self._node_info_columns = ["relationships", "start_char_idx", "end_char_idx"]
 
         if columns is None:
             columns = []
@@ -219,9 +220,19 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
         ids = []
         for node in nodes:
             node_id = node.node_id
-            metadata = node_to_metadata_dict(node, remove_text=True, flat_metadata=True)
-            # TODO: what if we have record_type as a column
-            metadata = json.loads(metadata.get("_node_content", None))
+
+            # unroll metadata in node_content
+            node_metadata = node_to_metadata_dict(
+                node, remove_text=True, flat_metadata=True
+            )
+            node_content = json.loads(node_metadata.get("_node_content", None))
+            metadata = node_content.get("metadata", {})
+
+            # add node_info (star_char, end_char, relationships)
+            node_info = {key: node_content[key] for key in self._node_info_columns}
+            metadata.update(
+                {"doc_id": node_metadata["doc_id"], "node_info": str(node_info)}
+            )
             metadata_columns = self.columns or []
 
             # explicitly record doc_id as metadata (for delete)
@@ -233,7 +244,7 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
                 self.text_column: node.get_content(),
                 self._embedding_vector_column_name(): node.get_embedding(),
                 **{
-                    col: str(metadata.get(col))
+                    col: metadata.get(col)
                     for col in filter(
                         lambda column: column
                         not in (self._primary_key, self.text_column),
@@ -337,21 +348,29 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
         for result in search_resp.get("result", {}).get("data_array", []):
             doc_id = result[columns.index(self._primary_key)]
             text_content = result[columns.index(self.text_column)]
+
+            # extract metadata and node_info respectively from metadata_dict
             metadata_dict = {
                 col: value
                 for col, value in zip(columns[:-1], result[:-1])
-                if col not in [self._primary_key, self.text_column]
+                if col not in [self._primary_key, self.text_column, "doc_id"]
             }
+            metadata = {
+                col: value
+                for col, value in metadata_dict.items()
+                if col not in ["node_info"]
+            }
+            node_info = json.loads(
+                metadata_dict.get("node_info", "{}").replace("'", '"')
+            )
             score = result[-1]
             node = TextNode(
                 text=text_content,
                 id_=doc_id,
-                metadata=json.loads(metadata_dict.get("metadata", "{}")),
-                start_char_idx=metadata_dict.get("start_char_idx", None),
-                end_char_idx=metadata_dict.get("end_char_idx", None),
-                relationships=json.loads(
-                    metadata_dict.get("relationships", "{}").replace("'", '"')
-                ),
+                metadata=metadata,
+                start_char_idx=node_info.get("start_char_idx", None),
+                end_char_idx=node_info.get("end_char_idx", None),
+                relationships=node_info.get("relationships", {}),
             )
             top_k_ids.append(doc_id)
             top_k_nodes.append(node)
