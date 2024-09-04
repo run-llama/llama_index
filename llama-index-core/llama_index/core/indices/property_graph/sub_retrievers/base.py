@@ -86,7 +86,7 @@ class BasePGRetriever(BaseRetriever):
         result_nodes: List[NodeWithScore] = []
         for node_with_score in retrieved_nodes:
             mapped_node = og_node_map.get(node_with_score.node.ref_doc_id or "", None)
-            assert isinstance(node, BaseNode) or node is None
+
             if mapped_node:
                 graph_content = graph_node_map.get(node.node_id, [])
                 if len(graph_content) > 0:
