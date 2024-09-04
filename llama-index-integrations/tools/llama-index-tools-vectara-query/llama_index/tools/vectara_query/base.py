@@ -16,9 +16,9 @@ class VectaraQueryToolSpec(BaseToolSpec):
 
     def __init__(
         self,
-        vectara_customer_id: str,
-        vectara_corpus_id: str,
-        vectara_api_key: str,
+        vectara_customer_id: Optional[str] = None,
+        vectara_corpus_id: Optional[str] = None,
+        vectara_api_key: Optional[str] = None,
         num_results: int = 5,
         lambda_val: float = 0.005,
         n_sentences_before: int = 2,
@@ -41,8 +41,11 @@ class VectaraQueryToolSpec(BaseToolSpec):
 
         Parameters:
         - vectara_customer_id (str): Your Vectara customer ID.
+            If not specified, reads for environment variable "VECTARA_CUSTOMER_ID".
         - vectara_corpus_id (str): The corpus ID for the corpus you want to search for information.
+            If not specified, reads for environment variable "VECTARA_CORPUS_ID".
         - vectara_api_key (str): An API key that has query permissions for the given corpus.
+            If not specified, reads for environment variable "VECTARA_API_KEY".
         - num_results (int): Number of search results to return with response.
         - lambda_val (float): Lambda value for the Vectara query.
         - n_sentences_before (int): Number of sentences before the summary.

@@ -4,7 +4,7 @@ This tool connects to a Vectara corpus and allows agents to make semantic search
 
 ## Usage
 
-This tool has a more extensive example usage documented in a Jupyter notebok [here](valid_link_to_notebok)
+This tool has a more extensive example usage documented in a Jupyter notebok [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-vectara-query/examples/vectara_query.ipynb)
 
 To use this tool, you'll need the following information in your environment:
 
@@ -19,11 +19,7 @@ from llama_index.tools.vectara_query import VectaraQueryToolSpec
 from llama_index.agent.openai import OpenAIAgent
 
 # Connecting to a Vectara corpus about Electric Vehicles
-tool_spec = VectaraQueryToolSpec(
-    vectara_customer_id=os.environ["VECTARA_CUSTOMER_ID"],
-    vectara_corpus_id=os.environ["VECTARA_CORPUS_ID"],
-    vectara_api_key=os.environ["VECTARA_API_KEY"],
-)
+tool_spec = VectaraQueryToolSpec()
 
 agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
 
