@@ -1,7 +1,8 @@
-from typing import List, Dict, Optional
+from typing import Any, List, Dict, Optional
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.schema import QueryBundle
 from llama_index.core.base.response.schema import Response
+from llama_index.core.callbacks.base import CallbackManager
 
 from llama_index.indices.managed.vectara import VectaraIndex
 from llama_index.indices.managed.vectara.retriever import VectaraRetriever
@@ -26,10 +27,15 @@ class VectaraQueryToolSpec(BaseToolSpec):
         reranker: str = "mmr",
         rerank_k: int = 50,
         mmr_diversity_bias: float = 0.2,
+        udf_expression: str = None,
         summarizer_prompt_name: str = "vectara-summary-ext-24-05-sml",
         summary_num_results: int = 5,
         summary_response_lang: str = "eng",
-        citations_pattern: Optional[str] = None,
+        citations_style: Optional[str] = None,
+        citations_url_pattern: Optional[str] = None,
+        citations_text_pattern: Optional[str] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ) -> None:
         """Initializes the Vectara API and query parameters.
 
@@ -42,17 +48,24 @@ class VectaraQueryToolSpec(BaseToolSpec):
         - n_sentences_before (int): Number of sentences before the summary.
         - n_sentences_after (int): Number of sentences after the summary.
         - metadata_filter (str): A string with expressions to filter the search documents.
-        - reranker (str): The reranker mode, either "mmr", "slingshot", "multilingual_reranker_v1", or "none".
+        - reranker (str): The reranker mode, either "mmr", "slingshot", "multilingual_reranker_v1", "udf", or "none".
         - rerank_k (int): Number of top-k documents for reranking.
         - mmr_diversity_bias (float): MMR diversity bias.
+        - udf_expression (str): the user defined expression for reranking results.
+            See (https://docs.vectara.com/docs/learn/user-defined-function-reranker)
+            for more details about syntax for udf reranker expressions.
         - summarizer_prompt_name (str): If enable_summarizer is True, the Vectara summarizer to use.
         - summary_num_results (int): If enable_summarizer is True, the number of summary results.
         - summary_response_lang (str): If enable_summarizer is True, the response language for the summary.
-        - citations_pattern (str): URL pattern for citations.
-            If specified, then citations are returned in MARKDOWN format in the specified pattern.
-            For more details, see (https://docs.vectara.com/docs/api-reference/search-apis/search#citation-format-in-summary).
-            If unspecified, citations are generated in numeric form [1],[2], etc.
-            This is a Vectara Scale Plan feature (https://vectara.com/pricing).
+        - citations_style (str): The style of the citations in the summary generation,
+            either "numeric", "html", "markdown", or "none".
+            This is a Vectara Scale only feature. Defaults to None.
+        - citations_url_pattern (str): URL pattern for html and markdown citations.
+            If non-empty, specifies the URL pattern to use for citations; e.g. "{doc.url}".
+            See (https://docs.vectara.com/docs/api-reference/search-apis/search#citation-format-in-summary) for more details.
+            This is a Vectara Scale only feature. Defaults to None.
+        - citations_text_pattern (str): The displayed text for citations.
+            Must be specified for html and markdown citations.
         """
         self.index = VectaraIndex(
             vectara_customer_id=vectara_customer_id,
@@ -70,7 +83,10 @@ class VectaraQueryToolSpec(BaseToolSpec):
             reranker=reranker,
             rerank_k=rerank_k,
             mmr_diversity_bias=mmr_diversity_bias,
+            udf_expression=udf_expression,
             summary_enabled=False,
+            callback_manager=callback_manager,
+            **kwargs,
         )
 
         query_engine_retriever = VectaraRetriever(
@@ -83,11 +99,16 @@ class VectaraQueryToolSpec(BaseToolSpec):
             reranker=reranker,
             rerank_k=rerank_k,
             mmr_diversity_bias=mmr_diversity_bias,
+            udf_expression=udf_expression,
             summary_enabled=True,
             summary_response_lang=summary_response_lang,
             summary_num_results=summary_num_results,
             summary_prompt_name=summarizer_prompt_name,
-            citations_url_pattern=citations_pattern,
+            citations_style=citations_style,
+            citations_url_pattern=citations_url_pattern,
+            citations_text_pattern=citations_text_pattern,
+            callback_manager=callback_manager,
+            **kwargs,
         )
 
         self.query_engine = VectaraQueryEngine(retriever=query_engine_retriever)
