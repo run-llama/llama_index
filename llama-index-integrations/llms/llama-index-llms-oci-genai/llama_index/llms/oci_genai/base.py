@@ -224,12 +224,23 @@ class OCIGenAI(FunctionCallingLLM):
 
         response = self._client.chat(request)
 
+        generation_info = self._provider.chat_generation_info(response)
+
+        llm_output = {
+            "model_id": response.data.model_id,
+            "model_version": response.data.model_version,
+            "request_id": response.request_id,
+            "content-length": response.headers["content-length"],
+        }
+
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=self._provider.chat_response_to_text(response),
+                additional_kwargs=generation_info,
             ),
             raw=response.__dict__,
+            additional_kwargs=llm_output
         )
 
     def stream_chat(

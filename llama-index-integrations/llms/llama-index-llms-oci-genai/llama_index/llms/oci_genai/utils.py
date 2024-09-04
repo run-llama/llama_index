@@ -1,8 +1,9 @@
 import inspect
 import json
+import uuid
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Sequence, Dict, Union, Type, Callable
+from typing import Any, Sequence, Dict, Union, Type, Callable, Optional, List
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.tools import BaseTool
@@ -51,6 +52,28 @@ JSON_TO_PYTHON_TYPES = {
     "array": "List",
     "object": "Dict",
 }
+
+
+def _format_oci_tool_calls(
+        tool_calls: Optional[List[Any]] = None,
+) -> List[Dict]:
+    """
+    Formats an OCI GenAI API response into the tool call format used in LlamaIndex.
+    """
+    if not tool_calls:
+        return []
+
+    formatted_tool_calls = []
+    for tool_call in tool_calls:
+        formatted_tool_calls.append(
+            {
+                "toolUseId": uuid.uuid4().hex[:],
+                "name": tool_call.name,
+                "input": json.dumps(tool_call.parameters),
+            }
+        )
+    return formatted_tool_calls
+
 
 
 def create_client(auth_type, auth_profile, service_endpoint):
@@ -181,6 +204,14 @@ class Provider(ABC):
         ...
 
     @abstractmethod
+    def chat_generation_info(self, response: Any) -> Dict[str, Any]:
+        ...
+
+    @abstractmethod
+    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
+        ...
+
+    @abstractmethod
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         ...
 
@@ -230,6 +261,44 @@ class CohereProvider(Provider):
             return event_data["text"]
         else:
             return ""
+
+    def chat_generation_info(self, response: Any) -> Dict[str, Any]:
+        generation_info: Dict[str, Any] = {
+            "documents": response.data.chat_response.documents,
+            "citations": response.data.chat_response.citations,
+            "search_queries": response.data.chat_response.search_queries,
+            "is_search_required": response.data.chat_response.is_search_required,
+            "finish_reason": response.data.chat_response.finish_reason,
+        }
+        if response.data.chat_response.tool_calls:
+            # Only populate tool_calls when 1) present on the response and
+            #  2) has one or more calls.
+            generation_info["tool_calls"] = _format_oci_tool_calls(
+                response.data.chat_response.tool_calls
+            )
+
+        return generation_info
+
+    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
+        generation_info: Dict[str, Any] = {
+            "documents": event_data.get("documents"),
+            "citations": event_data.get("citations"),
+            "finish_reason": event_data.get("finishReason"),
+        }
+        if "toolCalls" in event_data:
+            generation_info["tool_calls"] = []
+            for tool_call in event_data["toolCalls"]:
+                generation_info["tool_calls"].append(
+                    {
+                        "toolUseId": uuid.uuid4().hex[:],
+                        "name": tool_call.name,
+                        "input": json.dumps(tool_call.parameters),
+                    }
+                )
+
+        generation_info = {k: v for k, v in generation_info.items() if v is not None}
+
+        return generation_info
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         role_map = {
@@ -461,6 +530,17 @@ class MetaProvider(Provider):
             return event_data["message"]["content"][0]["text"]
         else:
             return ""
+
+    def chat_generation_info(self, response: Any) -> Dict[str, Any]:
+        return {
+            "finish_reason": response.data.chat_response.choices[0].finish_reason,
+            "time_created": str(response.data.chat_response.time_created),
+        }
+
+    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
+        return {
+            "finish_reason": event_data["finishReason"],
+        }
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         role_map = {
