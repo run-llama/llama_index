@@ -428,7 +428,7 @@ class OpensearchVectorClient:
         self,
         query_vector: List[float],
         k: int = 4,
-        space_type: str = "l2",
+        space_type: str = "l2Squared",
         pre_filter: Optional[Union[Dict, List]] = None,
         vector_field: str = "embedding",
     ) -> Dict:
@@ -440,6 +440,8 @@ class OpensearchVectorClient:
 
         # check if we can use painless scripting or have to use default knn_score script
         if self.is_aoss:
+            if space_type == "l2Squared":
+                raise ValueError("Unsupported space type for aoss. Can only use l1, l2, cosinesimil.")
             script = self._get_knn_scoring_script(space_type, vector_field, query_vector)
         else:
             script = self._get_painless_scoring_script(space_type, vector_field, query_vector)
