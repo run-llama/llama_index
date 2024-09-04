@@ -338,6 +338,7 @@ nav:
           - ./examples/llm/nvidia.ipynb
           - ./examples/llm/nvidia_nim.ipynb
           - ./examples/llm/nvidia_tensorrt.ipynb
+          - ./examples/llm/nvidia_text_completion.ipynb
           - ./examples/llm/nvidia_triton.ipynb
           - ./examples/llm/oci_genai.ipynb
           - ./examples/llm/octoai.ipynb
@@ -1470,6 +1471,7 @@ nav:
               - ./api_reference/storage/vector_store/lancedb.md
               - ./api_reference/storage/vector_store/lantern.md
               - ./api_reference/storage/vector_store/lindorm.md
+              - ./api_reference/storage/vector_store/mariadb.md
               - ./api_reference/storage/vector_store/metal.md
               - ./api_reference/storage/vector_store/milvus.md
               - ./api_reference/storage/vector_store/mongodb.md
@@ -2151,6 +2153,7 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-xinference
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-xinference-rerank
             - ../llama-index-integrations/selectors/llama-index-selectors-notdiamond
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-mariadb
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
