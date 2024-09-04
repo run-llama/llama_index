@@ -11,7 +11,8 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-latest-unit-tester
+    #runs-on: ubuntu-latest-unit-tester
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
