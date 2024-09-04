@@ -30,7 +30,7 @@ license = "MIT"
 name = "llama-index-llms-ipex-llm"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.6"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
@@ -42,9 +42,12 @@ intel_extension_for_pytorch = {optional = true, source = "ipex-xpu-src-us", vers
 bigdl-core-xe-21 = {optional = true, version = "*"}
 bigdl-core-xe-batch-21 = {optional = true, version = "*"}
 bigdl-core-xe-addons-21 = {optional = true, version = "*"}
+dpcpp-cpp-rt = {markers = "platform_system == 'Windows'", optional = true, version = "2024.0.2"}
+mkl-dpcpp = {markers = "platform_system == 'Windows'", optional = true, version = "2024.0.0"}
+onednn = {markers = "platform_system == 'Windows'", optional = true, version = "2024.0.0"}
 
 [tool.poetry.extras]
-xpu = ["bigdl-core-xe-21", "bigdl-core-xe-addons-21", "bigdl-core-xe-batch-21", "intel_extension_for_pytorch", "torch", "torchvision"]
+xpu = ["bigdl-core-xe-21", "bigdl-core-xe-addons-21", "bigdl-core-xe-batch-21", "dpcpp-cpp-rt", "intel_extension_for_pytorch", "mkl-dpcpp", "onednn", "torch", "torchvision"]
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

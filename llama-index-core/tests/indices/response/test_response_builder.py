@@ -12,31 +12,25 @@ from llama_index.core.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.core.schema import Document
-from llama_index.core.service_context import ServiceContext
-from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 from tests.mock_utils.mock_utils import mock_tokenizer
 
 
 def test_give_response(
-    mock_service_context: ServiceContext,
-    documents: List[Document],
+    documents: List[Document], patch_llm_predictor, patch_token_text_splitter
 ) -> None:
     """Test give response."""
     prompt_helper = PromptHelper(
         context_window=DEFAULT_CONTEXT_WINDOW, num_output=DEFAULT_NUM_OUTPUTS
     )
-
-    service_context = mock_service_context
-    service_context.prompt_helper = prompt_helper
     query_str = "What is?"
 
     # test single line
     builder = get_response_synthesizer(
         response_mode=ResponseMode.REFINE,
-        service_context=service_context,
         text_qa_template=MOCK_TEXT_QA_PROMPT,
         refine_template=MOCK_REFINE_PROMPT,
+        prompt_helper=prompt_helper,
     )
     response = builder.get_response(
         text_chunks=["This is a single line."], query_str=query_str
@@ -56,7 +50,7 @@ def test_give_response(
     assert str(response) == expected_answer
 
 
-def test_compact_response(mock_service_context: ServiceContext) -> None:
+def test_compact_response(patch_llm_predictor, patch_token_text_splitter) -> None:
     """Test give response."""
     # test response with ResponseMode.COMPACT
     # NOTE: here we want to guarantee that prompts have 0 extra tokens
@@ -80,8 +74,6 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
         separator="\n\n",
         chunk_size_limit=4,
     )
-    service_context = mock_service_context
-    service_context.prompt_helper = prompt_helper
     cur_chunk_size = prompt_helper._get_available_chunk_size(
         mock_qa_prompt, 1, padding=1
     )
@@ -95,20 +87,17 @@ def test_compact_response(mock_service_context: ServiceContext) -> None:
         "This\n\nis\n\na\n\ntest",
     ]
     builder = get_response_synthesizer(
-        service_context=service_context,
         text_qa_template=mock_qa_prompt,
         refine_template=mock_refine_prompt,
         response_mode=ResponseMode.COMPACT,
+        prompt_helper=prompt_helper,
     )
 
     response = builder.get_response(text_chunks=texts, query_str=query_str)
     assert str(response) == "What is?:This:is:a:bar:This:is:a:test"
 
 
-def test_accumulate_response(
-    mock_service_context: ServiceContext,
-    documents: List[Document],
-) -> None:
+def test_accumulate_response(patch_llm_predictor, patch_token_text_splitter) -> None:
     """Test accumulate response."""
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarantee that prompts have 0 extra tokens
@@ -127,8 +116,6 @@ def test_accumulate_response(
         separator="\n\n",
         chunk_size_limit=4,
     )
-    service_context = mock_service_context
-    service_context.prompt_helper = prompt_helper
     cur_chunk_size = prompt_helper._get_available_chunk_size(
         mock_qa_prompt, 1, padding=1
     )
@@ -142,9 +129,9 @@ def test_accumulate_response(
         "This\nis\nfoo",
     ]
     builder = get_response_synthesizer(
-        service_context=service_context,
         text_qa_template=mock_qa_prompt,
         response_mode=ResponseMode.ACCUMULATE,
+        prompt_helper=prompt_helper,
     )
 
     response = builder.get_response(text_chunks=texts, query_str=query_str)
@@ -165,8 +152,7 @@ def test_accumulate_response(
 
 
 def test_accumulate_response_async(
-    mock_service_context: ServiceContext,
-    documents: List[Document],
+    patch_llm_predictor, patch_token_text_splitter
 ) -> None:
     """Test accumulate response."""
     # test response with ResponseMode.ACCUMULATE
@@ -186,8 +172,6 @@ def test_accumulate_response_async(
         separator="\n\n",
         chunk_size_limit=4,
     )
-    service_context = mock_service_context
-    service_context.prompt_helper = prompt_helper
     cur_chunk_size = prompt_helper._get_available_chunk_size(
         mock_qa_prompt, 1, padding=1
     )
@@ -201,10 +185,10 @@ def test_accumulate_response_async(
         "This\nis\nfoo",
     ]
     builder = get_response_synthesizer(
-        service_context=service_context,
         text_qa_template=mock_qa_prompt,
         response_mode=ResponseMode.ACCUMULATE,
         use_async=True,
+        prompt_helper=prompt_helper,
     )
 
     response = builder.get_response(text_chunks=texts, query_str=query_str)
@@ -225,8 +209,7 @@ def test_accumulate_response_async(
 
 
 def test_accumulate_response_aget(
-    mock_service_context: ServiceContext,
-    documents: List[Document],
+    patch_llm_predictor, patch_token_text_splitter
 ) -> None:
     """Test accumulate response."""
     # test response with ResponseMode.ACCUMULATE
@@ -246,8 +229,6 @@ def test_accumulate_response_aget(
         separator="\n\n",
         chunk_size_limit=4,
     )
-    service_context = mock_service_context
-    service_context.prompt_helper = prompt_helper
     cur_chunk_size = prompt_helper._get_available_chunk_size(
         mock_qa_prompt, 1, padding=1
     )
@@ -261,9 +242,9 @@ def test_accumulate_response_aget(
         "This\nis\nfoo",
     ]
     builder = get_response_synthesizer(
-        service_context=service_context,
         text_qa_template=mock_qa_prompt,
         response_mode=ResponseMode.ACCUMULATE,
+        prompt_helper=prompt_helper,
     )
 
     response = asyncio_run(
@@ -289,7 +270,7 @@ def test_accumulate_response_aget(
     assert str(response) == expected
 
 
-def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
+def test_accumulate_compact_response(patch_llm_predictor):
     """Test accumulate response."""
     # test response with ResponseMode.ACCUMULATE
     # NOTE: here we want to guarantee that prompts have 0 extra tokens
@@ -308,8 +289,6 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
         separator="\n\n",
         chunk_size_limit=4,
     )
-    service_context = ServiceContext.from_defaults(embed_model=MockEmbedding())
-    service_context.prompt_helper = prompt_helper
     cur_chunk_size = prompt_helper._get_available_chunk_size(
         mock_qa_prompt, 1, padding=1
     )
@@ -330,9 +309,9 @@ def test_accumulate_compact_response(patch_llm_predictor: None) -> None:
     assert compacted_chunks == ["This\n\nis\n\nbar\n\nThis", "is\n\nfoo"]
 
     builder = get_response_synthesizer(
-        service_context=service_context,
         text_qa_template=mock_qa_prompt,
         response_mode=ResponseMode.COMPACT_ACCUMULATE,
+        prompt_helper=prompt_helper,
     )
 
     response = builder.get_response(text_chunks=texts, query_str=query_str)

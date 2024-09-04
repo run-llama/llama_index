@@ -12,18 +12,13 @@ from llama_index.core.chat_engine.types import (
 )
 from llama_index.core.indices.base_retriever import BaseRetriever
 from llama_index.core.indices.query.schema import QueryBundle
-from llama_index.core.indices.service_context import ServiceContext
 from llama_index.core.base.llms.generic_utils import messages_to_history_str
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.schema import MetadataMode, NodeWithScore
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.types import Thread
 from llama_index.core.utilities.token_counting import TokenCounter
 
@@ -98,7 +93,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         cls,
         retriever: BaseRetriever,
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         system_prompt: Optional[str] = None,
@@ -110,7 +104,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         **kwargs: Any,
     ) -> "CondensePlusContextChatEngine":
         """Initialize a CondensePlusContextChatEngine from default parameters."""
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
 
         chat_history = chat_history or []
         memory = memory or ChatMemoryBuffer.from_defaults(
@@ -124,9 +118,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             context_prompt=context_prompt,
             condense_prompt=condense_prompt,
             skip_condense=skip_condense,
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, service_context
-            ),
+            callback_manager=Settings.callback_manager,
             node_postprocessors=node_postprocessors,
             system_prompt=system_prompt,
             verbose=verbose,

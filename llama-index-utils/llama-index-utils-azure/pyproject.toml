@@ -26,10 +26,11 @@ license = "MIT"
 maintainers = ["falven"]
 name = "llama-index-utils-azure"
 readme = "README.md"
-version = "0.1.0"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -57,5 +58,4 @@ extras = ["toml"]
 version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
-from = "llama-index-utils-azure/llama_index/utils/azure"
-include = "llama_index.utils.azure"
+include = "llama_index/"

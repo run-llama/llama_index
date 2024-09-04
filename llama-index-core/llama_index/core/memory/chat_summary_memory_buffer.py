@@ -3,7 +3,13 @@ import logging
 from typing import Any, Callable, Dict, List, Tuple, Optional
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, root_validator
+from llama_index.core.bridge.pydantic import (
+    Field,
+    PrivateAttr,
+    model_validator,
+    field_serializer,
+    SerializeAsAny,
+)
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory.types import DEFAULT_CHAT_STORE_KEY, BaseMemory
 from llama_index.core.storage.chat_store import BaseChatStore, SimpleChatStore
@@ -35,20 +41,26 @@ class ChatSummaryMemoryBuffer(BaseMemory):
 
     token_limit: int
     count_initial_tokens: bool = False
-    llm: Optional[LLM] = None
+    llm: Optional[SerializeAsAny[LLM]] = None
     summarize_prompt: Optional[str] = None
     tokenizer_fn: Callable[[str], List] = Field(
-        # NOTE: mypy does not handle the typing here well, hence the cast
         default_factory=get_tokenizer,
         exclude=True,
     )
 
-    chat_store: BaseChatStore = Field(default_factory=SimpleChatStore)
+    chat_store: SerializeAsAny[BaseChatStore] = Field(default_factory=SimpleChatStore)
     chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
 
     _token_count: int = PrivateAttr(default=0)
 
-    @root_validator(pre=True)
+    @field_serializer("chat_store")
+    def serialize_courses_in_order(self, chat_store: BaseChatStore) -> dict:
+        res = chat_store.model_dump()
+        res.update({"class_name": chat_store.class_name()})
+        return res
+
+    @model_validator(mode="before")
+    @classmethod
     def validate_memory(cls, values: dict) -> dict:
         """Validate the memory."""
         # Validate token limits
@@ -76,10 +88,14 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         tokenizer_fn: Optional[Callable[[str], List]] = None,
         summarize_prompt: Optional[str] = None,
         count_initial_tokens: bool = False,
+        **kwargs: Any,
     ) -> "ChatSummaryMemoryBuffer":
         """Create a chat memory buffer from an LLM
         and an initial list of chat history messages.
         """
+        if kwargs:
+            raise ValueError(f"Unexpected keyword arguments: {kwargs}")
+
         if llm is not None:
             context_window = llm.metadata.context_window
             token_limit = token_limit or int(context_window * DEFAULT_TOKEN_LIMIT_RATIO)
@@ -131,11 +147,11 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         # NOTE: this handles backwards compatibility with the old chat history
         if "chat_history" in data:
             chat_history = data.pop("chat_history")
-            chat_store = SimpleChatStore(store={DEFAULT_CHAT_STORE_KEY: chat_history})
-            data["chat_store"] = chat_store
+            simple_store = SimpleChatStore(store={DEFAULT_CHAT_STORE_KEY: chat_history})
+            data["chat_store"] = simple_store
         elif "chat_store" in data:
-            chat_store = data.pop("chat_store")
-            chat_store = load_chat_store(chat_store)
+            chat_store_dict = data.pop("chat_store")
+            chat_store = load_chat_store(chat_store_dict)
             data["chat_store"] = chat_store
 
         # NOTE: The llm will have to be set manually in kwargs
@@ -144,7 +160,9 @@ class ChatSummaryMemoryBuffer(BaseMemory):
 
         return cls(**data, **kwargs)
 
-    def get(self, initial_token_count: int = 0, **kwargs: Any) -> List[ChatMessage]:
+    def get(
+        self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any
+    ) -> List[ChatMessage]:
         """Get chat history."""
         chat_history = self.get_all()
         if len(chat_history) == 0:
@@ -211,7 +229,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         """Determine which messages will be included as full text,
         and which will have to be summarized by the llm.
         """
-        chat_history_full_text = []
+        chat_history_full_text: List[ChatMessage] = []
         message_count = len(chat_history)
         while (
             message_count > 0
@@ -238,6 +256,8 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         """Use the llm to summarize the messages that do not fit into the
         buffer.
         """
+        assert self.llm is not None
+
         # Only summarize if there is new information to be summarized
         if (
             len(chat_history_to_be_summarized) == 1
@@ -257,22 +277,33 @@ class ChatSummaryMemoryBuffer(BaseMemory):
 
     def _get_prompt_to_summarize(
         self, chat_history_to_be_summarized: List[ChatMessage]
-    ):
+    ) -> str:
         """Ask the LLM to summarize the chat history so far."""
         # TODO: This probably works better when question/answers are considered together.
         prompt = '"Transcript so far: '
         for msg in chat_history_to_be_summarized:
             prompt += msg.role + ": "
-            prompt += msg.content + "\n\n"
+            if msg.content:
+                prompt += msg.content + "\n\n"
+            else:
+                prompt += (
+                    "\n".join(
+                        [
+                            f"Calling a function: {call!s}"
+                            for call in msg.additional_kwargs.get("tool_calls", [])
+                        ]
+                    )
+                    + "\n\n"
+                )
         prompt += '"\n\n'
-        prompt += self.summarize_prompt
+        prompt += self.summarize_prompt or ""
         return prompt
 
     def _handle_assistant_and_tool_messages(
         self,
         chat_history_full_text: List[ChatMessage],
         chat_history_to_be_summarized: List[ChatMessage],
-    ) -> Tuple[List[ChatMessage], List[ChatMessage]]:
+    ) -> None:
         """To avoid breaking API's, we need to ensure the following.
 
         - the first message cannot be ASSISTANT
@@ -280,9 +311,8 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         Therefore, we switch messages to summarized list until the first message is
         not an ASSISTANT or TOOL message.
         """
-        if len(chat_history_full_text) > 0:
-            while chat_history_full_text[0].role in (
-                MessageRole.ASSISTANT,
-                MessageRole.TOOL,
-            ):
-                chat_history_to_be_summarized.append(chat_history_full_text.pop(0))
+        while chat_history_full_text and chat_history_full_text[0].role in (
+            MessageRole.ASSISTANT,
+            MessageRole.TOOL,
+        ):
+            chat_history_to_be_summarized.append(chat_history_full_text.pop(0))

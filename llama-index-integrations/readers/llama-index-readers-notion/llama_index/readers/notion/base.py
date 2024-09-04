@@ -1,6 +1,7 @@
 """Notion reader."""
 
 import os
+import time
 from typing import Any, Dict, List, Optional
 
 import requests  # type: ignore
@@ -61,7 +62,7 @@ class NotionPageReader(BasePydanticReader):
             block_url = BLOCK_CHILD_URL_TMPL.format(block_id=cur_block_id)
             query_dict: Dict[str, Any] = {}
 
-            res = requests.request(
+            res = self._request_with_retry(
                 "GET", block_url, headers=self.headers, json=query_dict
             )
             data = res.json()
@@ -98,6 +99,35 @@ class NotionPageReader(BasePydanticReader):
 
         return "\n".join(result_lines_arr)
 
+    def _request_with_retry(
+        self,
+        method: str,
+        url: str,
+        headers: Dict[str, str],
+        json: Optional[Dict[str, Any]] = None,
+    ) -> requests.Response:
+        """Make a request with retry and rate limit handling."""
+        max_retries = 5
+        backoff_factor = 1
+
+        for attempt in range(max_retries):
+            try:
+                response = requests.request(method, url, headers=headers, json=json)
+                response.raise_for_status()
+                return response
+            except requests.exceptions.HTTPError:
+                if response.status_code == 429:
+                    # Rate limit exceeded
+                    retry_after = int(response.headers.get("Retry-After", 1))
+                    time.sleep(backoff_factor * (2**attempt) + retry_after)
+                else:
+                    raise requests.exceptions.HTTPError(
+                        f"Request failed: {response.text}"
+                    )
+            except requests.exceptions.RequestException as err:
+                raise requests.exceptions.RequestException(f"Request failed: {err}")
+        raise Exception("Maximum retries exceeded")
+
     def read_page(self, page_id: str) -> str:
         """Read a page."""
         return self._read_block(page_id)
@@ -108,7 +138,8 @@ class NotionPageReader(BasePydanticReader):
         """Get all the pages from a Notion database."""
         pages = []
 
-        res = requests.post(
+        res = self._request_with_retry(
+            "POST",
             DATABASE_URL_TMPL.format(database_id=database_id),
             headers=self.headers,
             json=query_dict,
@@ -120,7 +151,8 @@ class NotionPageReader(BasePydanticReader):
 
         while data.get("has_more"):
             query_dict["start_cursor"] = data.get("next_cursor")
-            res = requests.post(
+            res = self._request_with_retry(
+                "POST",
                 DATABASE_URL_TMPL.format(database_id=database_id),
                 headers=self.headers,
                 json=query_dict,
@@ -142,7 +174,9 @@ class NotionPageReader(BasePydanticReader):
             }
             if next_cursor is not None:
                 query_dict["start_cursor"] = next_cursor
-            res = requests.post(SEARCH_URL, headers=self.headers, json=query_dict)
+            res = self._request_with_retry(
+                "POST", SEARCH_URL, headers=self.headers, json=query_dict
+            )
             data = res.json()
             for result in data["results"]:
                 page_id = result["id"]
@@ -156,43 +190,73 @@ class NotionPageReader(BasePydanticReader):
         return page_ids
 
     def load_data(
-        self, page_ids: List[str] = [], database_id: Optional[str] = None
+        self,
+        page_ids: List[str] = [],
+        database_ids: Optional[List[str]] = None,
+        load_all_if_empty: bool = False,
     ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
             page_ids (List[str]): List of page ids to load.
-            database_id (str): Database_id from which to load page ids.
+            database_ids Optional (List[str]): List database ids from which to load page ids.
+            load_all_if_empty (bool): If True, load all pages and dbs if no page_ids or database_ids are provided.
 
         Returns:
             List[Document]: List of documents.
 
         """
-        if not page_ids and not database_id:
-            raise ValueError("Must specify either `page_ids` or `database_id`.")
+        if not page_ids and not database_ids:
+            if not load_all_if_empty:
+                raise ValueError(
+                    "Must specify either `page_ids` or `database_ids` if "
+                    "`load_all_if_empty` is False."
+                )
+            else:
+                database_ids = self.list_databases()
+                page_ids = self.list_pages()
+
         docs = []
-        if database_id is not None:
-            # get all the pages in the database
-            page_ids = self.query_database(database_id)
-            for page_id in page_ids:
-                page_text = self.read_page(page_id)
-                docs.append(
-                    Document(
-                        text=page_text, id_=page_id, extra_info={"page_id": page_id}
-                    )
-                )
-        else:
-            for page_id in page_ids:
-                page_text = self.read_page(page_id)
-                docs.append(
-                    Document(
-                        text=page_text, id_=page_id, extra_info={"page_id": page_id}
-                    )
-                )
+        all_page_ids = set(page_ids) if page_ids is not None else set()
+        # TODO: in the future add special logic for database_ids
+        if database_ids is not None:
+            for database_id in database_ids:
+                # get all the pages in the database
+                db_page_ids = self.query_database(database_id)
+                all_page_ids.update(db_page_ids)
+
+        for page_id in all_page_ids:
+            page_text = self.read_page(page_id)
+            docs.append(
+                Document(text=page_text, id_=page_id, extra_info={"page_id": page_id})
+            )
 
         return docs
+
+    def list_databases(self) -> List[str]:
+        """List all databases in the Notion workspace."""
+        query_dict = {"filter": {"property": "object", "value": "database"}}
+        res = self._request_with_retry(
+            "POST", SEARCH_URL, headers=self.headers, json=query_dict
+        )
+        res.raise_for_status()
+        data = res.json()
+        return [db["id"] for db in data["results"]]
+
+    def list_pages(self) -> List[str]:
+        """List all pages in the Notion workspace."""
+        query_dict = {"filter": {"property": "object", "value": "page"}}
+        res = self._request_with_retry(
+            "POST", SEARCH_URL, headers=self.headers, json=query_dict
+        )
+        res.raise_for_status()
+        data = res.json()
+        return [page["id"] for page in data["results"]]
 
 
 if __name__ == "__main__":
     reader = NotionPageReader()
     print(reader.search("What I"))
+
+    # get list of database from notion
+    databases = reader.list_databases()

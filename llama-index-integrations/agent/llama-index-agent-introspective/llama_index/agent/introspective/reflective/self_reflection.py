@@ -146,14 +146,13 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         **kwargs: Any,
     ) -> None:
         """__init__."""
-        self._llm = llm
-        self._verbose = verbose
-
         super().__init__(
             callback_manager=callback_manager or CallbackManager([]),
             max_iterations=max_iterations,
             **kwargs,
         )
+        self._llm = llm
+        self._verbose = verbose
 
     @classmethod
     def from_defaults(
@@ -191,6 +190,8 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         messages = task.memory.get()
         for message in messages:
             new_memory.put(message)
+        # inject new input into memory
+        new_memory.put(ChatMessage(content=task.input, role=MessageRole.USER))
 
         # initialize task state
         task_state = {
@@ -222,7 +223,7 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         )
 
         if self._verbose:
-            print(f"> Reflection: {reflection.dict()}")
+            print(f"> Reflection: {reflection.model_dump()}")
 
         # end state: return user message
         reflection_output_str = (
@@ -257,6 +258,7 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         state = step.step_state
         state["count"] += 1
 
+        # new_memory should at the very least contain the user input
         messages = task.extra_state["new_memory"].get()
         prev_correct_str = messages[-1].content
         prev_correct_str_without_prefix = self._remove_correction_str_prefix(
@@ -337,7 +339,7 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         )
 
         if self._verbose:
-            print(f"> Reflection: {reflection.dict()}")
+            print(f"> Reflection: {reflection.model_dump()}")
 
         # end state: return user message
         reflection_output_str = (

@@ -14,8 +14,6 @@ DEFAULT_NUMBER_OF_RESULTS = 100
 SEARCH_TEXT_BASE_URL = "https://places.googleapis.com/v1/places:searchText"
 # Maximum results per page
 MAX_RESULTS_PER_PAGE = 20
-# Maximum text length
-MAX_TEXT_LENGTH = 512
 
 
 class Review(BaseModel):
@@ -28,13 +26,16 @@ class Review(BaseModel):
 class Place(BaseModel):
     reviews: List[Review]
     address: str
-    average_rating: int
+    average_rating: float
     display_name: str
     number_of_ratings: int
 
 
 class GoogleMapsTextSearchReader(BaseReader):
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+    ):
         self.api_key = api_key or os.getenv("GOOGLE_MAPS_API_KEY")
         if not self.api_key:
             raise ValueError(
@@ -56,12 +57,15 @@ class GoogleMapsTextSearchReader(BaseReader):
         documents = []
         while "nextPageToken" in response:
             next_page_token = response["nextPageToken"]
-            places = response["places"]
-
+            places = response.get("places", [])
+            if len(places) == 0:
+                break
             for place in places:
                 formatted_address = place["formattedAddress"]
-                rating = place["rating"]
+                average_rating = place["rating"]
                 display_name = place["displayName"]
+                if isinstance(display_name, dict):
+                    display_name = display_name["text"]
                 number_of_ratings = place["userRatingCount"]
                 reviews = []
                 for review in place["reviews"]:
@@ -81,7 +85,7 @@ class GoogleMapsTextSearchReader(BaseReader):
                 place = Place(
                     reviews=reviews,
                     address=formatted_address,
-                    average_rating=rating,
+                    average_rating=average_rating,
                     display_name=display_name,
                     number_of_ratings=number_of_ratings,
                 )
@@ -92,17 +96,14 @@ class GoogleMapsTextSearchReader(BaseReader):
                     ]
                 )
                 place_text = f"Place: {place.display_name}, Address: {place.address}, Average Rating: {place.average_rating}, Number of Ratings: {place.number_of_ratings}"
-                text = f"{place_text}\n{reviews_text}"
+                document_text = f"{place_text}\n{reviews_text}"
 
                 if len(documents) == number_of_results:
                     return documents
 
-                if len(text) > MAX_TEXT_LENGTH:
-                    text = text[:MAX_TEXT_LENGTH]
-                documents.append(Document(text=text, extra_info=place.dict()))
-
+                documents.append(Document(text=document_text, extra_info=place.dict()))
             response = self._search_text_request(
-                text, number_of_results, next_page_token
+                text, MAX_RESULTS_PER_PAGE, next_page_token
             )
 
         return documents

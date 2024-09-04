@@ -4,24 +4,25 @@ import logging
 from typing import Callable, Dict, Optional, Union
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
+from llama_index.core.base.response.schema import (
+    RESPONSE_TYPE,
+    Response,
+    StreamingResponse,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.query.query_transform.base import BaseQueryTransform
 from llama_index.core.indices.struct_store.sql_query import (
     BaseSQLTableQueryEngine,
     NLSQLTableQueryEngine,
 )
+from llama_index.core.llms import LLM
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.schema import QueryBundle
 from llama_index.core.selectors.llm_selectors import LLMSingleSelector
 from llama_index.core.selectors.pydantic_selectors import PydanticSingleSelector
 from llama_index.core.selectors.utils import get_selector_from_llm
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
-)
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.core.tools.query_engine import QueryEngineTool
 from llama_index.core.utils import print_text
 
@@ -121,7 +122,7 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         sql_augment_transform_prompt: Optional[BasePromptTemplate] = None,
         check_stop_parser: Optional[Callable[[QueryBundle], bool]] = None,
     ) -> None:
@@ -176,7 +177,6 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             other_query_tool (QueryEngineTool): Other query engine tool.
         selector (Optional[Union[LLMSingleSelector, PydanticSingleSelector]]):
             Selector to use.
-        service_context (Optional[ServiceContext]): Service context to use.
         sql_join_synthesis_prompt (Optional[BasePromptTemplate]):
             PromptTemplate to use for SQL join synthesis.
         sql_augment_query_transform (Optional[SQLAugmentQueryTransform]): Query
@@ -192,14 +192,13 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         sql_query_tool: QueryEngineTool,
         other_query_tool: QueryEngineTool,
         selector: Optional[Union[LLMSingleSelector, PydanticSingleSelector]] = None,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         sql_join_synthesis_prompt: Optional[BasePromptTemplate] = None,
         sql_augment_query_transform: Optional[SQLAugmentQueryTransform] = None,
         use_sql_join_synthesis: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = True,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
+        streaming: bool = False,
     ) -> None:
         """Initialize params."""
         super().__init__(callback_manager=callback_manager)
@@ -215,9 +214,9 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         self._sql_query_tool = sql_query_tool
         self._other_query_tool = other_query_tool
 
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
 
-        self._selector = selector or get_selector_from_llm(self._llm, is_multi=False)
+        self._selector = selector or get_selector_from_llm(self._llm, is_multi=False)  # type: ignore
         assert isinstance(self._selector, (LLMSingleSelector, PydanticSingleSelector))
 
         self._sql_join_synthesis_prompt = (
@@ -228,6 +227,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         )
         self._use_sql_join_synthesis = use_sql_join_synthesis
         self._verbose = verbose
+        self._streaming = streaming
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
@@ -282,26 +282,46 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             print_text(f"query engine response: {other_response}\n", color="pink")
         logger.info(f"> query engine response: {other_response}")
 
-        response_str = self._llm.predict(
-            self._sql_join_synthesis_prompt,
-            query_str=query_bundle.query_str,
-            sql_query_str=sql_query,
-            sql_response_str=str(sql_response),
-            query_engine_query_str=new_query.query_str,
-            query_engine_response_str=str(other_response),
-        )
-        if self._verbose:
-            print_text(f"Final response: {response_str}\n", color="green")
-        response_metadata = {
-            **(sql_response.metadata or {}),
-            **(other_response.metadata or {}),
-        }
-        source_nodes = other_response.source_nodes
-        return Response(
-            response_str,
-            metadata=response_metadata,
-            source_nodes=source_nodes,
-        )
+        if self._streaming:
+            response_str = self._llm.stream(
+                self._sql_join_synthesis_prompt,
+                query_str=query_bundle.query_str,
+                sql_query_str=sql_query,
+                sql_response_str=str(sql_response),
+                query_engine_query_str=new_query.query_str,
+                query_engine_response_str=str(other_response),
+            )
+
+            response_metadata = {
+                **(sql_response.metadata or {}),
+                **(other_response.metadata or {}),
+            }
+            source_nodes = other_response.source_nodes
+            return StreamingResponse(
+                response_str,
+                metadata=response_metadata,
+                source_nodes=source_nodes,
+            )
+        else:
+            response_str = self._llm.predict(
+                self._sql_join_synthesis_prompt,
+                query_str=query_bundle.query_str,
+                sql_query_str=sql_query,
+                sql_response_str=str(sql_response),
+                query_engine_query_str=new_query.query_str,
+                query_engine_response_str=str(other_response),
+            )
+
+            response_metadata = {
+                **(sql_response.metadata or {}),
+                **(other_response.metadata or {}),
+            }
+            source_nodes = other_response.source_nodes
+            return Response(
+                response_str,
+                metadata=response_metadata,
+                source_nodes=source_nodes,
+            )
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Query and get response."""
@@ -320,10 +340,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
                     f"Querying other query engine: {result.reason}\n", color="blue"
                 )
             logger.info(f"> Querying other query engine: {result.reason}")
-            response = self._other_query_tool.query_engine.query(query_bundle)
-            if self._verbose:
-                print_text(f"Query Engine response: {response}\n", color="pink")
-            return response
+            return self._other_query_tool.query_engine.query(query_bundle)
         else:
             raise ValueError(f"Invalid result.ind: {result.ind}")
 

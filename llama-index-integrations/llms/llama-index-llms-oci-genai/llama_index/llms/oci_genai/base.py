@@ -44,12 +44,12 @@ class OCIGenAI(FunctionCallingLLM):
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
     context_size: int = Field("The maximum number of tokens available for input.")
 
-    service_endpoint: str = Field(
+    service_endpoint: Optional[str] = Field(
         default=None,
         description="service endpoint url.",
     )
 
-    compartment_id: str = Field(
+    compartment_id: Optional[str] = Field(
         default=None,
         description="OCID of compartment.",
     )
@@ -81,8 +81,8 @@ class OCIGenAI(FunctionCallingLLM):
         temperature: Optional[float] = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = 512,
         context_size: Optional[int] = None,
-        service_endpoint: str = None,
-        compartment_id: str = None,
+        service_endpoint: Optional[str] = None,
+        compartment_id: Optional[str] = None,
         auth_type: Optional[str] = "API_KEY",
         auth_profile: Optional[str] = "DEFAULT",
         client: Optional[Any] = None,
@@ -95,6 +95,34 @@ class OCIGenAI(FunctionCallingLLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
+        """
+        Initializes the OCIGenAI class.
+
+        Args:
+            model (str): The Id of the model to be used for generating embeddings, e.g., "meta.llama-2-70b-chat".
+
+            temperature (Optional[float]): The temperature to use for sampling. Default specified in lama_index.core.constants.DEFAULT_TEMPERATURE.
+
+            max_tokens (Optional[int]): The maximum number of tokens to generate. Default is 512.
+
+            context_size (Optional[int]): The maximum number of tokens available for input. If not specified, the default context size for the model will be used.
+
+            service_endpoint (str): service endpoint url, e.g., "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
+
+            compartment_id (str): OCID of the compartment.
+
+            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCEAL, RESOURCE_PRINCIPAL.
+                                    If not specified, API_KEY will be used
+
+            auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
+
+            client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the
+                                    provided service endpoint and authentifcation method.
+
+            provider (Optional[str]): Provider name of the model. If not specified, the provider will be derived from the model name.
+
+            additional_kwargs (Optional[Dict[str, Any]]): Additional kwargs for the the LLM.
+        """
         context_size = get_context_size(model, context_size)
 
         additional_kwargs = additional_kwargs or {}

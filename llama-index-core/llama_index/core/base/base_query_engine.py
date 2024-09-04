@@ -12,10 +12,11 @@ from llama_index.core.base.query_pipeline.query import (
     validate_and_convert_stringable,
 )
 from llama_index.core.base.response.schema import RESPONSE_TYPE
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict, SerializeAsAny
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.core.schema import NodeWithScore, QueryBundle, QueryType
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.query import (
     QueryEndEvent,
     QueryStartEvent,
@@ -26,7 +27,7 @@ dispatcher = instrument.get_dispatcher(__name__)
 logger = logging.getLogger(__name__)
 
 
-class BaseQueryEngine(ChainableMixin, PromptMixin):
+class BaseQueryEngine(ChainableMixin, PromptMixin, DispatcherSpanMixin):
     """Base query engine."""
 
     def __init__(
@@ -107,10 +108,10 @@ class BaseQueryEngine(ChainableMixin, PromptMixin):
 class QueryEngineComponent(QueryComponent):
     """Query engine component."""
 
-    query_engine: BaseQueryEngine = Field(..., description="Query engine")
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    query_engine: SerializeAsAny[BaseQueryEngine] = Field(
+        ..., description="Query engine"
+    )
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

@@ -27,7 +27,7 @@ def get_top_k_embeddings(
 
     similarity_heap: List[Tuple[float, Any]] = []
     for i, emb in enumerate(embeddings_np):
-        similarity = similarity_fn(query_embedding_np, emb)
+        similarity = similarity_fn(query_embedding_np, emb)  # type: ignore[arg-type]
         if similarity_cutoff is None or similarity > similarity_cutoff:
             heapq.heappush(similarity_heap, (similarity, embedding_ids[i]))
             if similarity_top_k and len(similarity_heap) > similarity_top_k:

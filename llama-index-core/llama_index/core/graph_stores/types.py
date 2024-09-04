@@ -1,8 +1,18 @@
 import fsspec
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Set, Protocol, runtime_checkable
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Set,
+    Sequence,
+    Protocol,
+    runtime_checkable,
+)
 
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, SerializeAsAny
 from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import BaseNode, MetadataMode
@@ -53,6 +63,8 @@ class EntityNode(LabelledNode):
 
     def __str__(self) -> str:
         """Return the string representation of the node."""
+        if self.properties:
+            return f"{self.name} ({self.properties})"
         return self.name
 
     @property
@@ -91,6 +103,8 @@ class Relation(BaseModel):
 
     def __str__(self) -> str:
         """Return the string representation of the relation."""
+        if self.properties:
+            return f"{self.label} ({self.properties})"
         return self.label
 
     @property
@@ -105,11 +119,23 @@ Triplet = Tuple[LabelledNode, Relation, LabelledNode]
 class LabelledPropertyGraph(BaseModel):
     """In memory labelled property graph containing entities and relations."""
 
-    nodes: Dict[str, LabelledNode] = Field(default_factory=dict)
-    relations: Dict[str, Relation] = Field(default_factory=dict)
+    nodes: SerializeAsAny[Dict[str, LabelledNode]] = Field(default_factory=dict)
+    relations: SerializeAsAny[Dict[str, Relation]] = Field(default_factory=dict)
     triplets: Set[Tuple[str, str, str]] = Field(
         default_factory=set, description="List of triplets (subject, relation, object)."
     )
+
+    def _get_relation_key(
+        self,
+        relation: Optional[Relation] = None,
+        subj_id: Optional[str] = None,
+        obj_id: Optional[str] = None,
+        rel_id: Optional[str] = None,
+    ) -> str:
+        """Get relation id."""
+        if relation:
+            return f"{relation.source_id}_{relation.label}_{relation.target_id}"
+        return f"{subj_id}_{rel_id}_{obj_id}"
 
     def get_all_nodes(self) -> List[LabelledNode]:
         """Get all entities."""
@@ -122,7 +148,13 @@ class LabelledPropertyGraph(BaseModel):
     def get_triplets(self) -> List[Triplet]:
         """Get all triplets."""
         return [
-            (self.nodes[subj], self.relations[rel], self.nodes[obj])
+            (
+                self.nodes[subj],
+                self.relations[
+                    self._get_relation_key(obj_id=obj, subj_id=subj, rel_id=rel)
+                ],
+                self.nodes[obj],
+            )
             for subj, rel, obj in self.triplets
         ]
 
@@ -135,7 +167,7 @@ class LabelledPropertyGraph(BaseModel):
         self.triplets.add((subj.id, rel.id, obj.id))
         self.nodes[subj.id] = subj
         self.nodes[obj.id] = obj
-        self.relations[rel.id] = rel
+        self.relations[self._get_relation_key(relation=rel)] = rel
 
     def add_node(self, node: LabelledNode) -> None:
         """Add a node."""
@@ -163,8 +195,10 @@ class LabelledPropertyGraph(BaseModel):
             del self.nodes[subj.id]
         if obj.id in self.nodes:
             del self.nodes[obj.id]
-        if rel.id in self.relations:
-            del self.relations[rel.id]
+
+        rel_key = self._get_relation_key(relation=rel)
+        if rel_key in self.relations:
+            del self.relations[rel_key]
 
     def delete_node(self, node: LabelledNode) -> None:
         """Delete a node."""
@@ -173,8 +207,9 @@ class LabelledPropertyGraph(BaseModel):
 
     def delete_relation(self, relation: Relation) -> None:
         """Delete a relation."""
-        if relation.id in self.relations:
-            del self.relations[relation.id]
+        rel_key = self._get_relation_key(relation=relation)
+        if rel_key in self.relations:
+            del self.relations[rel_key]
 
 
 @runtime_checkable
@@ -300,14 +335,14 @@ class PropertyGraphStore(ABC):
         for node in nodes:
             try:
                 converted_nodes.append(metadata_dict_to_node(node.properties))
-                converted_nodes[-1].set_content(node.text)
+                converted_nodes[-1].set_content(node.text)  # type: ignore
             except Exception:
                 continue
 
         return converted_nodes
 
     @abstractmethod
-    def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
+    def upsert_nodes(self, nodes: Sequence[LabelledNode]) -> None:
         """Upsert nodes."""
         ...
 
@@ -435,7 +470,7 @@ class PropertyGraphStore(ABC):
         for node in nodes:
             try:
                 converted_nodes.append(metadata_dict_to_node(node.properties))
-                converted_nodes[-1].set_content(node.text)
+                converted_nodes[-1].set_content(node.text)  # type: ignore
             except Exception:
                 continue
 

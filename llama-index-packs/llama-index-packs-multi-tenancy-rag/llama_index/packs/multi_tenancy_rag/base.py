@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from llama_index.core import ServiceContext, VectorStoreIndex, get_response_synthesizer
+from llama_index.core import Settings, VectorStoreIndex, get_response_synthesizer
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.query_engine import RetrieverQueryEngine
@@ -14,11 +14,9 @@ from llama_index.llms.openai import OpenAI
 class MultiTenancyRAGPack(BaseLlamaPack):
     def __init__(self) -> None:
         llm = OpenAI(model="gpt-3.5-turbo", temperature=0.1)
-        service_context = ServiceContext.from_defaults(llm=llm)
         self.llm = llm
-        self.index = VectorStoreIndex.from_documents(
-            documents=[], service_context=service_context
-        )
+        Settings.llm = self.llm
+        self.index = VectorStoreIndex.from_documents(documents=[])
 
     def get_modules(self) -> Dict[str, Any]:
         """Get modules."""
@@ -52,7 +50,7 @@ class MultiTenancyRAGPack(BaseLlamaPack):
                     )
                 ]
             ),
-            **kwargs
+            **kwargs,
         )
         # Define response synthesizer
         response_synthesizer = get_response_synthesizer(response_mode="compact")

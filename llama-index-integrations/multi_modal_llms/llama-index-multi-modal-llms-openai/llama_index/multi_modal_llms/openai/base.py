@@ -1,6 +1,9 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
 
 import httpx
+from llama_index.core.base.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -18,24 +21,14 @@ from llama_index.core.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.core.base.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
-)
-from llama_index.core.multi_modal_llms import (
-    MultiModalLLM,
-    MultiModalLLMMetadata,
-)
-from llama_index.core.schema import ImageDocument
+from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
+from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
+from llama_index.core.schema import ImageNode
 from llama_index.llms.openai.utils import (
     from_openai_message,
     resolve_openai_credentials,
     to_openai_message_dicts,
 )
-from llama_index.multi_modal_llms.openai.utils import (
-    GPT4V_MODELS,
-    generate_openai_multi_modal_chat_message,
-)
-
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
@@ -43,6 +36,11 @@ from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
     ChoiceDelta,
     ChoiceDeltaToolCall,
+)
+
+from llama_index.multi_modal_llms.openai.utils import (
+    GPT4V_MODELS,
+    generate_openai_multi_modal_chat_message,
 )
 
 
@@ -76,7 +74,7 @@ class OpenAIMultiModal(MultiModalLLM):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
     )
-    default_headers: Dict[str, str] = Field(
+    default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
     )
 
@@ -106,8 +104,6 @@ class OpenAIMultiModal(MultiModalLLM):
         http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
-        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
-        self._completion_to_prompt = completion_to_prompt or (lambda x: x)
         api_key, api_base, api_version = resolve_openai_credentials(
             api_key=api_key,
             api_base=api_base,
@@ -130,6 +126,8 @@ class OpenAIMultiModal(MultiModalLLM):
             default_headers=default_headers,
             **kwargs,
         )
+        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
+        self._completion_to_prompt = completion_to_prompt or (lambda x: x)
         self._http_client = http_client
         self._client, self._aclient = self._get_clients(**kwargs)
 
@@ -165,7 +163,7 @@ class OpenAIMultiModal(MultiModalLLM):
         self,
         prompt: str,
         role: str,
-        image_documents: Sequence[ImageDocument],
+        image_documents: Sequence[ImageNode],
         **kwargs: Any,
     ) -> List[ChatCompletionMessageParam]:
         return to_openai_message_dicts(
@@ -210,8 +208,9 @@ class OpenAIMultiModal(MultiModalLLM):
             "total_tokens": usage.get("total_tokens", 0),
         }
 
+    @llm_completion_callback()
     def _complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
@@ -229,6 +228,7 @@ class OpenAIMultiModal(MultiModalLLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_chat_callback()
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dicts = to_openai_message_dicts(messages)
@@ -246,8 +246,9 @@ class OpenAIMultiModal(MultiModalLLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_completion_callback()
     def _stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
@@ -281,6 +282,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
         return gen()
 
+    @llm_chat_callback()
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -330,12 +332,12 @@ class OpenAIMultiModal(MultiModalLLM):
         return gen()
 
     def complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         return self._complete(prompt, image_documents, **kwargs)
 
     def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
         return self._stream_complete(prompt, image_documents, **kwargs)
 
@@ -355,8 +357,9 @@ class OpenAIMultiModal(MultiModalLLM):
 
     # ===== Async Endpoints =====
 
+    @llm_completion_callback()
     async def _acomplete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
@@ -375,12 +378,13 @@ class OpenAIMultiModal(MultiModalLLM):
         )
 
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         return await self._acomplete(prompt, image_documents, **kwargs)
 
+    @llm_completion_callback()
     async def _astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
@@ -414,6 +418,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
         return gen()
 
+    @llm_chat_callback()
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
@@ -433,6 +438,7 @@ class OpenAIMultiModal(MultiModalLLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_chat_callback()
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
@@ -482,7 +488,7 @@ class OpenAIMultiModal(MultiModalLLM):
         return gen()
 
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         return await self._astream_complete(prompt, image_documents, **kwargs)
 

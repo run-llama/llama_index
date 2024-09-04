@@ -61,14 +61,14 @@ class LMStudio(CustomLLM):
     )
     num_output: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
-        description=LLMMetadata.__fields__["num_output"].field_info.description,
+        description=LLMMetadata.model_fields["num_output"].description,
     )
 
     is_chat_model: bool = Field(
         default=True,
         description=(
             "LM Studio API supports chat."
-            + LLMMetadata.__fields__["is_chat_model"].field_info.description
+            + LLMMetadata.model_fields["is_chat_model"].description
         ),
     )
 

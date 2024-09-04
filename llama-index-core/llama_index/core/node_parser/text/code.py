@@ -56,6 +56,20 @@ class CodeSplitter(TextSplitter):
         """Initialize a CodeSplitter."""
         from tree_sitter import Parser  # pants: no-infer-dep
 
+        callback_manager = callback_manager or CallbackManager([])
+        id_func = id_func or default_id_func
+
+        super().__init__(
+            language=language,
+            chunk_lines=chunk_lines,
+            chunk_lines_overlap=chunk_lines_overlap,
+            max_chars=max_chars,
+            callback_manager=callback_manager,
+            include_metadata=include_metadata,
+            include_prev_next_rel=include_prev_next_rel,
+            id_func=id_func,
+        )
+
         if parser is None:
             try:
                 import tree_sitter_languages  # pants: no-infer-dep
@@ -78,20 +92,6 @@ class CodeSplitter(TextSplitter):
 
         self._parser = parser
 
-        callback_manager = callback_manager or CallbackManager([])
-        id_func = id_func or default_id_func
-
-        super().__init__(
-            language=language,
-            chunk_lines=chunk_lines,
-            chunk_lines_overlap=chunk_lines_overlap,
-            max_chars=max_chars,
-            callback_manager=callback_manager,
-            include_metadata=include_metadata,
-            include_prev_next_rel=include_prev_next_rel,
-            id_func=id_func,
-        )
-
     @classmethod
     def from_defaults(
         cls,
@@ -108,6 +108,7 @@ class CodeSplitter(TextSplitter):
             chunk_lines=chunk_lines,
             chunk_lines_overlap=chunk_lines_overlap,
             max_chars=max_chars,
+            callback_manager=callback_manager,
             parser=parser,
         )
 

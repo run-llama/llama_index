@@ -1,23 +1,24 @@
 """Test vector store indexes."""
+
 import pickle
 from typing import Any, List, cast
 
 from llama_index.core.indices.loading import load_index_from_storage
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
-from llama_index.core.llms.mock import MockLLM
 from llama_index.core.schema import Document
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.simple import SimpleVectorStore
 
 
 def test_build_simple(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
     documents: List[Document],
 ) -> None:
     """Test build VectorStoreIndex."""
     index = VectorStoreIndex.from_documents(
-        documents=documents, service_context=mock_service_context
+        documents=documents, embed_model=mock_embed_model
     )
     assert isinstance(index, VectorStoreIndex)
     assert len(index.index_struct.nodes_dict) == 4
@@ -44,11 +45,13 @@ def test_build_simple(
 
 def test_simple_insert(
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
 ) -> None:
     """Test insert VectorStoreIndex."""
     index = VectorStoreIndex.from_documents(
-        documents=documents, service_context=mock_service_context
+        documents=documents, embed_model=mock_embed_model
     )
     assert isinstance(index, VectorStoreIndex)
     # insert into index
@@ -72,7 +75,7 @@ def test_simple_insert(
 
 
 def test_simple_delete(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
 ) -> None:
     """Test delete VectorStoreIndex."""
     new_documents = [
@@ -82,7 +85,7 @@ def test_simple_delete(
         Document(text="This is a test v2.", id_="test_id_3"),
     ]
     index = VectorStoreIndex.from_documents(
-        documents=new_documents, service_context=mock_service_context
+        documents=new_documents, embed_model=mock_embed_model
     )
     assert isinstance(index, VectorStoreIndex)
 
@@ -121,7 +124,7 @@ def test_simple_delete(
 
 
 def test_simple_delete_ref_node_from_docstore(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor, patch_token_text_splitter, mock_embed_model
 ) -> None:
     """Test delete VectorStoreIndex."""
     new_documents = [
@@ -129,7 +132,7 @@ def test_simple_delete_ref_node_from_docstore(
         Document(text="This is another test.", id_="test_id_2"),
     ]
     index = VectorStoreIndex.from_documents(
-        documents=new_documents, service_context=mock_service_context
+        documents=new_documents, embed_model=mock_embed_model
     )
     assert isinstance(index, VectorStoreIndex)
 
@@ -148,11 +151,13 @@ def test_simple_delete_ref_node_from_docstore(
 def test_simple_async(
     allow_networking: Any,
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
 ) -> None:
     """Test simple vector index with use_async."""
     index = VectorStoreIndex.from_documents(
-        documents=documents, use_async=True, service_context=mock_service_context
+        documents=documents, use_async=True, embed_model=mock_embed_model
     )
     assert isinstance(index, VectorStoreIndex)
     assert len(index.index_struct.nodes_dict) == 4
@@ -173,12 +178,14 @@ def test_simple_async(
 
 def test_simple_insert_save(
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
 ) -> None:
     storage_context = StorageContext.from_defaults()
     index = VectorStoreIndex.from_documents(
         documents=documents,
-        service_context=mock_service_context,
+        embed_model=mock_embed_model,
         storage_context=storage_context,
     )
     assert isinstance(index, VectorStoreIndex)
@@ -196,17 +203,14 @@ def test_simple_insert_save(
 
 
 def test_simple_pickle(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
     documents: List[Document],
 ) -> None:
     """Test build VectorStoreIndex."""
-    service_context = ServiceContext.from_service_context(
-        mock_service_context,
-        llm=MockLLM(),
-    )
-
     index = VectorStoreIndex.from_documents(
-        documents=documents, service_context=service_context
+        documents=documents, embed_model=mock_embed_model
     )
 
     data = pickle.dumps(index)

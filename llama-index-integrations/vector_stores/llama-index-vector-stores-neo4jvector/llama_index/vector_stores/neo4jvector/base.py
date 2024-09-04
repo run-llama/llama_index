@@ -200,7 +200,7 @@ class Neo4jVectorStore(BasePydanticVectorStore):
     """
 
     stores_text: bool = True
-    flat_metadata = True
+    flat_metadata: bool = True
 
     distance_strategy: str
     index_name: str
@@ -294,6 +294,10 @@ class Neo4jVectorStore(BasePydanticVectorStore):
                         "Vector and keyword index don't index the same node label"
                     )
 
+    @property
+    def client(self) -> neo4j.GraphDatabase.driver:
+        return self._driver
+
     def _verify_version(self) -> None:
         """
         Check if the connected Neo4j database version supports vector indexing.
@@ -380,9 +384,9 @@ class Neo4jVectorStore(BasePydanticVectorStore):
             self.index_name = index_information[0]["name"]
             self.node_label = index_information[0]["labelsOrTypes"][0]
             self.embedding_node_property = index_information[0]["properties"][0]
-            self.embedding_dimension = index_information[0]["options"]["indexConfig"][
-                "vector.dimensions"
-            ]
+            index_config = index_information[0]["options"]["indexConfig"]
+            if "vector.dimensions" in index_config:
+                self.embedding_dimension = index_config["vector.dimensions"]
 
             return True
         except IndexError:
@@ -496,9 +500,12 @@ class Neo4jVectorStore(BasePydanticVectorStore):
             base_index_query = parallel_query + (
                 f"MATCH (n:`{self.node_label}`) WHERE "
                 f"n.`{self.embedding_node_property}` IS NOT NULL AND "
-                f"size(n.`{self.embedding_node_property}`) = "
-                f"toInteger({self.embedding_dimension}) AND "
             )
+            if self.embedding_dimension:
+                base_index_query += (
+                    f"size(n.`{self.embedding_node_property}`) = "
+                    f"toInteger({self.embedding_dimension}) AND "
+                )
             base_cosine_query = (
                 " WITH n as node, vector.similarity.cosine("
                 f"n.`{self.embedding_node_property}`, "
