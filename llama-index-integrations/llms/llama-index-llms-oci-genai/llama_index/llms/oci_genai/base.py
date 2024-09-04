@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence, List, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -22,11 +22,10 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-
-from llama_index.core.llms.llm import LLM
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
-from llama_index.llms.oci_genai.utils import (
+from utils import (
     CHAT_MODELS,
     create_client,
     get_provider,
@@ -37,37 +36,8 @@ from llama_index.llms.oci_genai.utils import (
 )
 
 
-# TODO:
-# (1) placeholder for future LLMs in utils.py e.g., llama3, command R+
-class OCIGenAI(LLM):
-    """OCI large language models.
-
-    To authenticate, the OCI client uses the methods described in
-    https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
-
-    The authentifcation method is passed through auth_type and should be one of:
-    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL
-
-    Make sure you have the required policies (profile/roles) to
-    access the OCI Generative AI service.
-    If a specific config profile is used, you must pass
-    the name of the profile (from ~/.oci/config) through auth_profile.
-
-    To use, you must provide the compartment id
-    along with the endpoint url, and model id
-    as named parameters to the constructor.
-
-    Example:
-        .. code-block:: python
-
-            from llama_index.llms.oci_genai import OCIGenAI
-
-            llm = OCIGenAI(
-                    model="MY_MODEL_ID",
-                    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
-                    compartment_id="MY_OCID"
-                )
-    """
+class OCIGenAI(FunctionCallingLLM):
+    """OCI large language models with function calling support."""
 
     model: str = Field(description="Id of the OCI Generative AI model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
@@ -125,46 +95,6 @@ class OCIGenAI(LLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        """
-        Initializes the OCIGenAI class.
-
-        Args:
-            model (str): The Id of the model to be used for generating embeddings, e.g., "meta.llama-2-70b-chat".
-
-            temperature (Optional[float]): The temperature to use for sampling. Default specified in lama_index.core.constants.DEFAULT_TEMPERATURE.
-
-            max_tokens (Optional[int]): The maximum number of tokens to generate. Default is 512.
-
-            context_size (Optional[int]): The maximum number of tokens available for input. If not specified, the default context size for the model will be used.
-
-            service_endpoint (str): service endpoint url, e.g., "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
-
-            compartment_id (str): OCID of the compartment.
-
-            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCEAL, RESOURCE_PRINCIPAL.
-                                    If not specified, API_KEY will be used
-
-            auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
-
-            client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the
-                                    provided service endpoint and authentifcation method.
-
-            provider (Optional[str]): Provider name of the model. If not specified, the provider will be derived from the model name.
-
-            additional_kwargs (Optional[Dict[str, Any]]): Additional kwargs for the the LLM.
-        """
-        self._client = client or create_client(
-            auth_type, auth_profile, service_endpoint
-        )
-
-        self._provider = get_provider(model, provider)
-
-        self._serving_mode = get_serving_mode(model)
-
-        self._completion_generator = get_completion_generator()
-
-        self._chat_generator = get_chat_generator()
-
         context_size = get_context_size(model, context_size)
 
         additional_kwargs = additional_kwargs or {}
@@ -188,9 +118,20 @@ class OCIGenAI(LLM):
             output_parser=output_parser,
         )
 
+        self._client = client or create_client(
+            auth_type, auth_profile, service_endpoint
+        )
+
+        self._provider = get_provider(model, provider)
+
+        self._serving_mode = get_serving_mode(model)
+
+        self._completion_generator = get_completion_generator()
+
+        self._chat_generator = get_chat_generator()
+
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "OCIGenAI_LLM"
 
     @property
@@ -221,7 +162,7 @@ class OCIGenAI(LLM):
 
     @llm_completion_callback()
     def complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
+            self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = False
@@ -241,7 +182,7 @@ class OCIGenAI(LLM):
 
     @llm_completion_callback()
     def stream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
+            self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = True
@@ -292,7 +233,7 @@ class OCIGenAI(LLM):
         )
 
     def stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
+            self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = True
@@ -322,26 +263,58 @@ class OCIGenAI(LLM):
 
         return gen()
 
-    async def acomplete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
-        # do synchronous complete for now
-        return self.complete(prompt, formatted=formatted, **kwargs)
+    # Function tooling integration methods
+    def _prepare_chat_with_tools(
+            self,
+            tools: Sequence["BaseTool"],
+            user_msg: Optional[Union[str, ChatMessage]] = None,
+            chat_history: Optional[List[ChatMessage]] = None,
+            **kwargs: Any,
+    ) -> Dict[str, Any]:
+        tool_specs = [self._provider.convert_to_oci_tool(tool) for tool in tools]
 
-    async def achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        oci_params = self._provider.messages_to_oci_params(messages)
+        chat_params = self._get_all_kwargs(**kwargs)
+
+        return {
+            "messages": messages,
+            "tools": tool_specs,
+            **oci_params,
+            **chat_params,
+        }
+
+    def chat_with_tools(
+            self,
+            tools: Sequence["BaseTool"],
+            user_msg: Optional[Union[str, ChatMessage]] = None,
+            chat_history: Optional[List[ChatMessage]] = None,
+            **kwargs: Any,
     ) -> ChatResponse:
-        # do synchronous chat for now
-        return self.chat(messages, **kwargs)
+        chat_kwargs = self._prepare_chat_with_tools(
+            tools,
+            user_msg=user_msg,
+            chat_history=chat_history,
+            **kwargs,
+        )
+        response = self.chat(**chat_kwargs)
+        return self._validate_chat_with_tools_response(
+            response,
+            tools,
+            **kwargs,
+        )
 
-    async def astream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        # do synchronous stream chat for now
-        return self.stream_chat(messages, **kwargs)
-
-    async def astream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponseAsyncGen:
-        # do synchronous stream complete for now
-        return self.stream_complete(prompt, formatted, **kwargs)
+    def _validate_chat_with_tools_response(
+            self,
+            response: ChatResponse,
+            tools: Sequence["BaseTool"],
+            **kwargs: Any,
+    ) -> ChatResponse:
+        # Placeholder for future implementation details
+        return response

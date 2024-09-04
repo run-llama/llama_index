@@ -1,7 +1,11 @@
+import inspect
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Sequence, Dict
-from llama_index.core.base.llms.types import ChatMessage
+from typing import Any, Sequence, Dict, Union, Type, Callable
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.tools import BaseTool
+from oci.generative_ai_inference.models import CohereTool
 
 
 class OCIAuthType(Enum):
@@ -36,6 +40,15 @@ STREAMING_MODELS = {
     "cohere.command-r",
     "cohere.command-r-plus",
     "meta.llama-3-70b-instruct",
+}
+
+JSON_TO_PYTHON_TYPES = {
+    "string": "str",
+    "number": "float",
+    "boolean": "bool",
+    "integer": "int",
+    "array": "List",
+    "object": "Dict",
 }
 
 
@@ -170,6 +183,12 @@ class Provider(ABC):
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         ...
 
+    @abstractmethod
+    def convert_to_oci_tool(
+            self,
+            tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+    ) -> Dict[str, Any]: ...
+
 
 class CohereProvider(Provider):
     def __init__(self) -> None:
@@ -184,7 +203,16 @@ class CohereProvider(Provider):
 
         self.oci_completion_request = models.CohereLlmInferenceRequest
         self.oci_chat_request = models.CohereChatRequest
-        self.oci_chat_message = models.CohereMessage
+        self.oci_tool = models.CohereTool
+        self.oci_tool_param = models.CohereParameterDefinition
+        self.oci_tool_result = models.CohereToolResult
+        self.oci_tool_call = models.CohereToolCall
+        self.oci_chat_message = {
+            "USER": models.CohereUserMessage,
+            "CHATBOT": models.CohereChatBotMessage,
+            "SYSTEM": models.CohereSystemMessage,
+            "TOOL": models.CohereToolMessage,
+        }
         self.chat_api_format = models.BaseChatRequest.API_FORMAT_COHERE
 
     def completion_response_to_text(self, response: Any) -> str:
@@ -205,21 +233,188 @@ class CohereProvider(Provider):
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         role_map = {
             "user": "USER",
-            "system": "USER",
-            "chatbot": "CHATBOT",
+            "system": "SYSTEM",
             "assistant": "CHATBOT",
+            "tool": "TOOL",
+            "function": "TOOL",
+            "chatbot": "CHATBOT",
+            "model": "CHATBOT"
         }
 
-        oci_chat_history = [
-            self.oci_chat_message(role=role_map[msg.role.value], message=msg.content)
-            for msg in messages[:-1]
-        ]
+        oci_chat_history = []
 
-        return {
-            "message": messages[-1].content,
+        for msg in messages[:-1]:
+            role = role_map[msg.role.value]
+
+            # Handle tool calls for AI/Assistant messages
+            if role == "CHATBOT" and "tool_calls" in msg.additional_kwargs:
+                tool_calls = [
+                    self.oci_tool_call(
+                        name=tool_call["function"].get("name"),
+                        parameters=tool_call["function"].get("arguments")
+                    )
+                    for tool_call in msg.additional_kwargs.get("tool_calls", [])
+                ]
+
+                oci_chat_history.append(
+                    self.oci_chat_message[role](
+                        message=msg.content if msg.content else " ",
+                        tool_calls=tool_calls if tool_calls else None
+                    )
+                )
+            else:
+                oci_chat_history.append(
+                    self.oci_chat_message[role](
+                        message=msg.content
+                    )
+                )
+
+        # Handling the current chat turn, especially the latest message
+        current_chat_turn_messages = []
+        for message in messages[::-1]:
+            current_chat_turn_messages.append(message)
+            if message.role == MessageRole.USER:
+                break
+        current_chat_turn_messages = current_chat_turn_messages[::-1]
+
+        oci_tool_results = []
+        for message in current_chat_turn_messages:
+            if message.role == MessageRole.TOOL:
+                tool_message = message
+                previous_ai_msgs = [
+                    message
+                    for message in current_chat_turn_messages
+                    if message.role == MessageRole.ASSISTANT and "tool_calls" in message.additional_kwargs
+                ]
+                if previous_ai_msgs:
+                    previous_ai_msg = previous_ai_msgs[-1]
+                    for lc_tool_call in previous_ai_msg.additional_kwargs.get("tool_calls", []):
+                        if lc_tool_call["id"] == tool_message.additional_kwargs.get("tool_call_id"):
+                            tool_result = self.oci_tool_result()
+                            tool_result.call = self.oci_tool_call(
+                                name=lc_tool_call["function"]["name"],
+                                parameters=lc_tool_call["function"]["arguments"]
+                            )
+                            tool_result.outputs = [{"output": tool_message.content}]
+                            oci_tool_results.append(tool_result)
+
+        if not oci_tool_results:
+            oci_tool_results = None
+
+        message_str = "" if oci_tool_results else messages[-1].content
+
+        oci_params = {
+            "message": message_str,
             "chat_history": oci_chat_history,
+            "tool_results": oci_tool_results,
             "api_format": self.chat_api_format,
         }
+
+        return {k: v for k, v in oci_params.items() if v is not None}
+
+    def convert_to_oci_tool(self,
+                            tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+                            ) -> CohereTool | Dict[str, Any]:
+        """
+        Convert a Pydantic class, JSON schema dict, BaseTool to an OCI tool format.
+
+        Args:
+            tool: The tool to convert, which can be a Pydantic class, a callable, or a JSON schema dictionary.
+
+        Returns:
+            A dictionary representing the tool in the OCI API format.
+        """
+        if isinstance(tool, BaseTool):
+            tool_name, tool_description = getattr(tool, "name", None), getattr(
+                tool, "description", None
+            )
+            if not tool_name or not tool_description:
+                # get the tool's name and description from the metadata if they aren't defined
+                tool_name = getattr(tool.metadata, "name", None)
+                if tool_fn := getattr(tool, "fn", None):
+                    # get the tool's description from the function's docstring
+                    tool_description = tool_fn.__doc__
+                    if not tool_name:
+                        tool_name = tool_fn.__name__
+                else:
+                    tool_description = getattr(tool.metadata, "description", None)
+                if not tool_name or not tool_description:
+                    raise ValueError(f"Tool {tool} does not have a name or description.")
+            return self.oci_tool(
+                name=tool_name,
+                description=tool_description,
+                parameters={
+                    p_name: self.oci_tool_param(
+                        type=JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
+                        description=p_def.get("description", ""),
+                        is_required=p_name in tool.metadata.get_parameters_dict().get("required", []))
+                    for p_name, p_def in tool.metadata.get_parameters_dict().get("properties", {}).items()
+                },
+            )
+
+        elif isinstance(tool, dict):
+            if not all(k in tool for k in ("title", "description", "properties")):
+                raise ValueError(
+                    "Unsupported dict type. Tool must be passed in as a BaseTool instance, "
+                    "JSON schema dict, or BaseModel type."
+                )
+            return {
+                "name": tool.get("title"),
+                "description": tool.get("description"),
+                "parameters": {
+                    p_name: {
+                        "type": JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
+                        "description": p_def.get("description", ""),
+                    }
+                    for p_name, p_def in tool.get("properties", {}).items()
+                },
+            }
+
+        elif isinstance(tool, type) and issubclass(tool, BaseModel):
+            schema = tool.model_json_schema()
+            properties = schema.get("properties", {})
+            return {
+                "name": schema.get("title", tool.__name__),
+                "description": schema.get("description", tool.__name__),
+                "parameters": {
+                    p_name: {
+                        "type": JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
+                        "description": p_def.get("description", ""),
+                        "is_required": p_name in schema.get("required", [])
+                    }
+                    for p_name, p_def in properties.items()
+                },
+            }
+
+        elif callable(tool):
+            # Use inspect to extract callable signature and arguments
+            signature = inspect.signature(tool)
+            parameters = {}
+            for param_name, param in signature.parameters.items():
+                param_type = param.annotation if param.annotation != inspect._empty else "string"
+                param_default = param.default if param.default != inspect._empty else None
+
+                # Convert type to JSON schema type (or leave as default)
+                json_type = JSON_TO_PYTHON_TYPES.get(
+                    param_type, param_type.__name__ if isinstance(param_type, type) else "string")
+
+                parameters[param_name] = {
+                    "type": json_type,
+                    "description": f"Parameter: {param_name}",
+                    "default": param_default if param_default is not None else None,
+                }
+
+            return {
+                "name": tool.__name__,
+                "description": tool.__doc__ or f"Callable function: {tool.__name__}",
+                "parameters": parameters,
+            }
+
+        else:
+            raise ValueError(
+                f"Unsupported tool type {type(tool)}. "
+                f"Tool must be passed in as a BaseTool instance, JSON schema dict, or BaseModel type."
+            )
 
 
 class MetaProvider(Provider):
