@@ -1,4 +1,5 @@
 import inspect
+import json
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Sequence, Dict, Union, Type, Callable
@@ -248,13 +249,15 @@ class CohereProvider(Provider):
 
             # Handle tool calls for AI/Assistant messages
             if role == "CHATBOT" and "tool_calls" in msg.additional_kwargs:
-                tool_calls = [
-                    self.oci_tool_call(
-                        name=tool_call["function"].get("name"),
-                        parameters=tool_call["function"].get("arguments")
-                    )
-                    for tool_call in msg.additional_kwargs.get("tool_calls", [])
-                ]
+                tool_calls = []
+                for tool_call in msg.additional_kwargs.get("tool_calls", []):
+                    validate_tool_call(tool_call)
+                    tool_calls.append(self.oci_tool_call(
+                        name=tool_call.get("name"),
+                        parameters=json.loads(tool_call["input"])
+                        if isinstance(tool_call["input"], str)
+                        else tool_call["input"]
+                    ))
 
                 oci_chat_history.append(
                     self.oci_chat_message[role](
@@ -288,12 +291,15 @@ class CohereProvider(Provider):
                 ]
                 if previous_ai_msgs:
                     previous_ai_msg = previous_ai_msgs[-1]
-                    for lc_tool_call in previous_ai_msg.additional_kwargs.get("tool_calls", []):
-                        if lc_tool_call["id"] == tool_message.additional_kwargs.get("tool_call_id"):
+                    for li_tool_call in previous_ai_msg.additional_kwargs.get("tool_calls", []):
+                        validate_tool_call(li_tool_call)
+                        if li_tool_call["toolUseId"] == tool_message.additional_kwargs.get("tool_call_id"):
                             tool_result = self.oci_tool_result()
                             tool_result.call = self.oci_tool_call(
-                                name=lc_tool_call["function"]["name"],
-                                parameters=lc_tool_call["function"]["arguments"]
+                                name=li_tool_call.get("name"),
+                                parameters=json.loads(li_tool_call["input"])
+                                if isinstance(li_tool_call["input"], str)
+                                else li_tool_call["input"]
                             )
                             tool_result.outputs = [{"output": tool_message.content}]
                             oci_tool_results.append(tool_result)
@@ -512,3 +518,12 @@ def get_context_size(model: str, context_size: int = None) -> int:
             ) from e
     else:
         return context_size
+
+
+def validate_tool_call(tool_call: Dict[str, Any]):
+    if (
+            "input" not in tool_call
+            or "toolUseId" not in tool_call
+            or "name" not in tool_call
+    ):
+        raise ValueError("Invalid tool call.")
