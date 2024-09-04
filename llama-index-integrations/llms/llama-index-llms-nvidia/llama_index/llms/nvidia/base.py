@@ -14,7 +14,11 @@ from llama_index.llms.openai_like import OpenAILike
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from urllib.parse import urlparse, urlunparse
 
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    MessageRole,
+)
 
 from llama_index.core.llms.llm import ToolSelection
 
