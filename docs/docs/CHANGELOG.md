@@ -1,5 +1,33 @@
 # ChangeLog
 
+## [2024-09-04]
+
+### `llama-index-core` [0.11.5]
+
+- remove unneeded assert in property graph retriever (#15832)
+- make simple property graphs serialize again (#15833)
+- fix json schema for fastapi return types on core components (#15816)
+
+### `llama-index-llms-nvidia` [0.2.2]
+
+- NVIDIA llm: Add Completion for starcoder models (#15802)
+
+### `llama-index-llms-ollama` [0.3.1]
+
+- add ollama response usage (#15773)
+
+### `llama-index-readers-dashscope` [0.2.1]
+
+- fix pydantic v2 validation errors (#15800)
+
+### `llama-index-readers-discord` [0.2.1]
+
+- fix: convert Document id from int to string in DiscordReader (#15806)
+
+### `llama-index-vector-stores-mariadb` [0.1.0]
+
+- Add MariaDB vector store integration package (#15564)
+
 ## [2024-09-02]
 
 ### `llama-index-core` [0.11.4]
