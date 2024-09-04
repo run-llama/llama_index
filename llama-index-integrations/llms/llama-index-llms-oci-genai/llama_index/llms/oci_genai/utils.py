@@ -314,25 +314,22 @@ class CohereProvider(Provider):
 
     def convert_to_oci_tool(self,
                             tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
-                            ) -> CohereTool | Dict[str, Any]:
+                            ) -> CohereTool:
         """
-        Convert a Pydantic class, JSON schema dict, BaseTool to an OCI tool format.
+        Convert a Pydantic class, JSON schema dict, callable, or BaseTool to a CohereTool format for OCI.
 
         Args:
             tool: The tool to convert, which can be a Pydantic class, a callable, or a JSON schema dictionary.
 
         Returns:
-            A dictionary representing the tool in the OCI API format.
+            A CohereTool representing the tool in the OCI API format.
         """
         if isinstance(tool, BaseTool):
-            tool_name, tool_description = getattr(tool, "name", None), getattr(
-                tool, "description", None
-            )
+            # Extract tool name and description for BaseTool
+            tool_name, tool_description = getattr(tool, "name", None), getattr(tool, "description", None)
             if not tool_name or not tool_description:
-                # get the tool's name and description from the metadata if they aren't defined
                 tool_name = getattr(tool.metadata, "name", None)
                 if tool_fn := getattr(tool, "fn", None):
-                    # get the tool's description from the function's docstring
                     tool_description = tool_fn.__doc__
                     if not tool_name:
                         tool_name = tool_fn.__name__
@@ -340,6 +337,7 @@ class CohereProvider(Provider):
                     tool_description = getattr(tool.metadata, "description", None)
                 if not tool_name or not tool_description:
                     raise ValueError(f"Tool {tool} does not have a name or description.")
+
             return self.oci_tool(
                 name=tool_name,
                 description=tool_description,
@@ -353,38 +351,40 @@ class CohereProvider(Provider):
             )
 
         elif isinstance(tool, dict):
+            # Ensure dict-based tools follow a standard schema format
             if not all(k in tool for k in ("title", "description", "properties")):
                 raise ValueError(
-                    "Unsupported dict type. Tool must be passed in as a BaseTool instance, "
-                    "JSON schema dict, or BaseModel type."
+                    "Unsupported dict type. Tool must be passed in as a BaseTool instance, JSON schema dict, or BaseModel type."
                 )
-            return {
-                "name": tool.get("title"),
-                "description": tool.get("description"),
-                "parameters": {
-                    p_name: {
-                        "type": JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
-                        "description": p_def.get("description", ""),
-                    }
+            return self.oci_tool(
+                name=tool.get("title"),
+                description=tool.get("description"),
+                parameters={
+                    p_name: self.oci_tool_param(
+                        type=JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
+                        description=p_def.get("description", ""),
+                        is_required=p_name in tool.get("required", [])
+                    )
                     for p_name, p_def in tool.get("properties", {}).items()
                 },
-            }
+            )
 
         elif isinstance(tool, type) and issubclass(tool, BaseModel):
+            # Handle Pydantic BaseModel tools
             schema = tool.model_json_schema()
             properties = schema.get("properties", {})
-            return {
-                "name": schema.get("title", tool.__name__),
-                "description": schema.get("description", tool.__name__),
-                "parameters": {
-                    p_name: {
-                        "type": JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
-                        "description": p_def.get("description", ""),
-                        "is_required": p_name in schema.get("required", [])
-                    }
+            return self.oci_tool(
+                name=schema.get("title", tool.__name__),
+                description=schema.get("description", tool.__name__),
+                parameters={
+                    p_name: self.oci_tool_param(
+                        type=JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
+                        description=p_def.get("description", ""),
+                        is_required=p_name in schema.get("required", [])
+                    )
                     for p_name, p_def in properties.items()
                 },
-            }
+            )
 
         elif callable(tool):
             # Use inspect to extract callable signature and arguments
@@ -396,24 +396,31 @@ class CohereProvider(Provider):
 
                 # Convert type to JSON schema type (or leave as default)
                 json_type = JSON_TO_PYTHON_TYPES.get(
-                    param_type, param_type.__name__ if isinstance(param_type, type) else "string")
+                    param_type, param_type.__name__ if isinstance(param_type, type) else "string"
+                )
 
                 parameters[param_name] = {
                     "type": json_type,
                     "description": f"Parameter: {param_name}",
-                    "default": param_default if param_default is not None else None,
+                    "is_required": param_default is None
                 }
 
-            return {
-                "name": tool.__name__,
-                "description": tool.__doc__ or f"Callable function: {tool.__name__}",
-                "parameters": parameters,
-            }
+            return self.oci_tool(
+                name=tool.__name__,
+                description=tool.__doc__ or f"Callable function: {tool.__name__}",
+                parameters={
+                    param_name: self.oci_tool_param(
+                        type=param_data["type"],
+                        description=param_data["description"],
+                        is_required=param_data["is_required"]
+                    )
+                    for param_name, param_data in parameters.items()
+                },
+            )
 
         else:
             raise ValueError(
-                f"Unsupported tool type {type(tool)}. "
-                f"Tool must be passed in as a BaseTool instance, JSON schema dict, or BaseModel type."
+                f"Unsupported tool type {type(tool)}. Tool must be passed in as a BaseTool instance, JSON schema dict, or BaseModel type."
             )
 
 
