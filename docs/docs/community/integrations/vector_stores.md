@@ -39,6 +39,7 @@ as the storage backend for `VectorStoreIndex`.
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/).
 - Relyt (`RelytVectorStore`). [Quickstart](https://docs.relyt.cn/docs/vector-engine/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
+- Tablestore (`Tablestore`). [Installation](https://www.aliyun.com/product/ots).
 - TiDB (`TiDBVectorStore`). [Quickstart](../../examples/vector_stores/TiDBVector.ipynb). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
@@ -661,6 +662,38 @@ vector_store = SingleStoreVectorStore(
 )
 ```
 
+**Tablestore**
+
+```python
+import os
+import tablestore
+from llama_index.vector_stores.tablestore import TablestoreVectorStore
+
+vector_store = TablestoreVectorStore(
+    endpoint=os.getenv("end_point"),
+    instance_name=os.getenv("instance_name"),
+    access_key_id=os.getenv("access_key_id"),
+    access_key_secret=os.getenv("access_key_secret"),
+    vector_dimension=512,
+    vector_metric_type=tablestore.VectorMetricType.VM_COSINE,
+    # metadata mapping is used to filter non-vector fields.
+    metadata_mappings=[
+        tablestore.FieldSchema(
+            "type",
+            tablestore.FieldType.KEYWORD,
+            index=True,
+            enable_sort_and_agg=True,
+        ),
+        tablestore.FieldSchema(
+            "time",
+            tablestore.FieldType.LONG,
+            index=True,
+            enable_sort_and_agg=True,
+        ),
+    ],
+)
+```
+
 **TiDB**
 
 ```python
@@ -917,6 +950,7 @@ documents = reader.load_data(
 - [Rockset](../../examples/vector_stores/RocksetIndexDemo.ipynb)
 - [Simple](../../examples/vector_stores/SimpleIndexDemo.ipynb)
 - [Supabase](../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb)
+- [Tablestore](../../examples/vector_stores/TablestoreDemo.ipynb)
 - [Tair](../../examples/vector_stores/TairIndexDemo.ipynb)
 - [Tencent](../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb)
 - [Timesacle](../../examples/vector_stores/Timescalevector.ipynb)
