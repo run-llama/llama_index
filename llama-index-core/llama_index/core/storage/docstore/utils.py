@@ -13,7 +13,7 @@ from llama_index.core.schema import (
 
 def doc_to_json(doc: BaseNode) -> dict:
     return {
-        DATA_KEY: doc.dict(),
+        DATA_KEY: doc.to_dict(),
         TYPE_KEY: doc.get_type(),
     }
 
