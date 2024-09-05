@@ -203,10 +203,22 @@ def test_default_known(mock_local_models, known_unknown: str) -> None:
         assert x.model == known_unknown
 
 
-def test_default_lora() -> None:
+def test_local_model_not_found(mock_local_models) -> None:
     """
     Test that a model in the model table will be accepted.
     """
-    # find a model that matches the public_class under test
-    x = NVIDIARerank(base_url="http://localhost:8000/v1", model="lora1")
-    assert x.model == "lora1"
+    err_msg = f"No locally hosted lora3 was found."
+    with pytest.raises(ValueError) as msg:
+        x = NVIDIARerank(base_url="http://localhost:8000/v1", model="lora3")
+    assert err_msg == str(msg.value)
+
+
+def test_model_incompatible_client() -> None:
+    model_name = "x"
+    err_msg = (
+        f"Model {model_name} is incompatible with client NVIDIARerank. "
+        f"Please check `NVIDIARerank.available_models()`."
+    )
+    with pytest.raises(ValueError) as msg:
+        NVIDIARerank(api_key="BOGUS", model=model_name)
+    assert err_msg == str(msg.value)

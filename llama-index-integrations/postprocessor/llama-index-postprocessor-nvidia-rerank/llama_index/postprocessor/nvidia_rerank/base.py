@@ -117,21 +117,22 @@ class NVIDIARerank(BaseNodePostprocessor):
             # in this case we trust the model name and base_url
             self._inference_url = self._validate_url(base_url) + "/ranking"
         else:  # hosted mode
-            if not model:
-                model = MODEL_ENDPOINT_MAP.get(base_url)
-            if model not in MODEL_ENDPOINT_MAP:
-                raise ValueError(
-                    f"Model '{model}' not found. "
-                    f"Available models are: {', '.join(MODEL_ENDPOINT_MAP.keys())}"
-                )
             if self._api_key == "NO_API_KEY_PROVIDED":
                 raise ValueError("An API key is required for hosted NIM.")
-            self._inference_url = MODEL_ENDPOINT_MAP[model]
+            if not model:
+                model = MODEL_ENDPOINT_MAP.get(base_url)
+            if model in MODEL_ENDPOINT_MAP:
+                self._inference_url = MODEL_ENDPOINT_MAP[model]
 
-        if not model:
-            self.__set_default_model()
+        self.model = model
+        if self._is_hosted and not self.model:
+            self.model = DEFAULT_MODEL
+        elif not self._is_hosted and not self.model:
+            self.__get_default_model()
 
-    def __set_default_model(self):
+        self._validate_model(self.model)  ## validate model
+
+    def __get_default_model(self):
         """Set default model."""
         if not self._is_hosted:
             valid_models = [
@@ -213,6 +214,26 @@ class NVIDIARerank(BaseNodePostprocessor):
             else:
                 raise ValueError(f"Invalid base_url, {expected_format}")
         return base_url
+
+    def _validate_model(self, model_name: str) -> None:
+        """
+        Validates compatibility of the hosted model with the client.
+
+        Args:
+            model_name (str): The name of the model.
+
+        Raises:
+            ValueError: If the model is incompatible with the client.
+        """
+        if self._is_hosted:
+            if model_name not in MODEL_ENDPOINT_MAP:
+                raise ValueError(
+                    f"Model {model_name} is incompatible with client {self.class_name()}. "
+                    f"Please check `{self.class_name()}.available_models()`."
+                )
+        else:
+            if model_name not in [model.id for model in self.available_models]:
+                raise ValueError(f"No locally hosted {model_name} was found.")
 
     @property
     def available_models(self) -> List[Model]:
