@@ -73,10 +73,8 @@ class GlobalsHelper:
             try:
                 import nltk
                 from nltk.corpus import stopwords
-            except ImportError:
-                raise ImportError(
-                    "`nltk` package not found, please run `pip install nltk`"
-                )
+            except ImportError as exc:
+                raise ImportError("`nltk` package not found, please run `pip install nltk`") from exc
 
             try:
                 nltk.data.find("corpora/stopwords", paths=[self._nltk_data_dir])
@@ -114,8 +112,8 @@ def get_tokenizer() -> Callable[[str], List]:
         )
         try:
             import tiktoken
-        except ImportError:
-            raise ImportError(tiktoken_import_err)
+        except ImportError as exc:
+            raise ImportError(tiktoken_import_err) from exc
 
         # set tokenizer cache temporarily
         should_revert = False
@@ -297,10 +295,8 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
     """
     try:
         from transformers import AutoTokenizer  # pants: no-infer-dep
-    except ImportError:
-        raise ValueError(
-            "`transformers` package not found, please run `pip install transformers`"
-        )
+    except ImportError as exc:
+        raise ValueError("`transformers` package not found, please run `pip install transformers`") from exc
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     return tokenizer.tokenize
 
