@@ -145,6 +145,15 @@ nav:
           - ./examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
           - ./examples/cookbooks/mistralai.ipynb
           - ./examples/cookbooks/mixedbread_reranker.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-2/Components_Of_LlamaIndex.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-3/Evaluating_RAG_Systems.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-4/Ingestion_Pipeline.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-4/Metadata_Extraction.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-5/Observability.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-6/Agents.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-6/Router_And_SubQuestion_QueryEngine.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-7/Multi_Modal_RAG_System.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-8/Advanced_RAG_with_LlamaParse.ipynb
           - ./examples/cookbooks/prometheus2_cookbook.ipynb
       - Customization:
           - ./examples/customization/llms/AzureOpenAI.ipynb
