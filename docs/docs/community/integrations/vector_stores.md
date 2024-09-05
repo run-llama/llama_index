@@ -28,6 +28,7 @@ as the storage backend for `VectorStoreIndex`.
 - txtai (`TxtaiVectorStore`). [Installation](https://neuml.github.io/txtai/install/).
 - Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
 - Lantern (`LanternVectorStore`). [Quickstart](https://docs.lantern.dev/get-started/overview).
+- MariaDB (`MariaDBVectorStore`). [MariaDB Vector Overview](https://mariadb.com/kb/en/vector-overview/)
 - Milvus (`MilvusVectorStore`). [Installation](https://milvus.io/docs)
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart](https://www.mongodb.com/atlas/database).
 - MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
@@ -482,6 +483,22 @@ vector_store.logout()
 
 **Note**: Client(requires jaguardb-http-client) <--> Http Gateway <--> JaguarDB Server
 Client side needs to run: "pip install -U jaguardb-http-client"
+
+**MariaDB**
+
+```python
+from llama_index.vector_stores.mariadb import MariaDBVectorStore
+
+vector_store = MariaDBVectorStore.from_params(
+    host="localhost",
+    port=3306,
+    user="llamaindex",
+    password="password",
+    database="vectordb",
+    table_name="llama_index_vectorstore",
+    embed_dim=1536,  # OpenAI embedding dimension
+)
+```
 
 **Milvus**
 

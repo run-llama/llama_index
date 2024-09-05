@@ -9,12 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.azure_openai"
+import_path = "llama_index.vector_stores.mariadb"
 
 [tool.llamahub.class_authors]
-AsyncAzureOpenAI = "llama-index"
-AzureOpenAI = "llama-index"
-SyncAzureOpenAI = "llama-index"
+MariaDBVectorStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -24,19 +22,20 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index llms azure openai integration"
+description = "llama-index vector_stores mariadb integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-llms-azure-openai"
+name = "llama-index-vector-stores-mariadb"
 readme = "README.md"
-version = "0.2.1"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-llms-openai = "^0.2.1"
-azure-identity = "^1.15.0"
-httpx = "*"
 llama-index-core = "^0.11.0"
+pymysql = "^1.1.1"
+
+[tool.poetry.dependencies.sqlalchemy]
+version = "~2.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -65,3 +64,8 @@ version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:",
+]

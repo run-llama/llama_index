@@ -8,16 +8,24 @@ from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
 
-from llama_index.llms.nvidia.utils import is_nvidia_function_calling_model
+from llama_index.llms.nvidia.utils import (
+    is_nvidia_function_calling_model,
+    is_chat_model,
+)
 
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from urllib.parse import urlparse, urlunparse
 
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    MessageRole,
+    CompletionResponse,
+    CompletionResponseGen,
+)
 
 from llama_index.core.llms.llm import ToolSelection
-
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -97,7 +105,7 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             api_key=api_key,
             api_base=base_url,
             max_tokens=max_tokens,
-            is_chat_model=True,
+            is_chat_model=is_chat_model(model),
             default_headers={"User-Agent": "llama-index-llms-nvidia"},
             is_function_calling_model=is_nvidia_function_calling_model(model),
             **kwargs,
@@ -215,7 +223,7 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
 
     @property
     def _is_chat_model(self) -> bool:
-        return True
+        return is_chat_model(self.model)
 
     def _prepare_chat_with_tools(
         self,
@@ -289,3 +297,29 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             )
 
         return tool_selections
+
+    def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+        client = self._get_client()
+        all_kwargs = self._get_model_kwargs(**kwargs)
+        self._update_max_tokens(all_kwargs, prompt)
+
+        def gen() -> CompletionResponseGen:
+            text = ""
+            for response in client.completions.create(
+                prompt=prompt,
+                stream=True,
+                **all_kwargs,
+            ):
+                if len(response.choices) > 0:
+                    delta = response.choices[0].text
+                else:
+                    delta = ""
+                text += delta
+                yield CompletionResponse(
+                    delta=delta,
+                    text=text,
+                    raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
+                )
+
+        return gen()

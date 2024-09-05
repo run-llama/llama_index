@@ -574,7 +574,7 @@ class OpenAI(FunctionCallingLLM):
             text = ""
             for response in client.completions.create(
                 prompt=prompt,
-                **kwargs,
+                **all_kwargs,
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
