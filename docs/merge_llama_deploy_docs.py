@@ -18,7 +18,12 @@ os.system(
     "cp -r llama-agents/docs/docs/api_reference/llama_deploy ./docs/docs/api_reference/"
 )
 
-print("Copied in latest llama-deploy api reference")
+# copy the module guides
+os.system(
+    "cp -r llama-agents/docs/docs/module_guides/workflow/deployment.md ./docs/docs/module_guides/workflow/deployment.md"
+)
+
+print("Copied in latest llama-deploy docs")
 
 # open current mkdocs.yml
 with open("./docs/mkdocs.yml") as f:
@@ -67,6 +72,25 @@ mkdocs["plugins"][mkdocs_plugins_idx]["mkdocstrings"]["handlers"]["python"][
 ].append("../llama-agents")
 
 print("Updated search paths")
+
+# Add the deployment guide to the nav
+for value in mkdocs["nav"]:
+    if isinstance(value, dict) and "Component Guides" in value:
+        for item in value["Component Guides"]:
+            if isinstance(item, dict) and "Querying" in item:
+                for section in item["Querying"]:
+                    if isinstance(section, dict) and "Workflows" in section:
+                        if isinstance(section["Workflows"], str):
+                            section["Workflows"] = [
+                                section["Workflows"],
+                                "module_guides/workflow/deployment.md",
+                            ]
+                        else:
+                            section["Workflows"].append(
+                                "./module_guides/workflow/deployment.md"
+                            )
+
+print("Updated nav")
 
 # Save the updated mkdocs.yml
 with open("./docs/mkdocs.yml", "w") as f:
