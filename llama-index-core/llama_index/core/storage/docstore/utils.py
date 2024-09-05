@@ -27,9 +27,10 @@ def json_to_doc(doc_dict: dict) -> BaseNode:
         return legacy_json_to_doc(doc_dict)
     else:
         if doc_type == Document.get_type():
-            doc = Document.from_dict(data_dict)
-        elif doc_type == ImageDocument.get_type():
-            doc = ImageDocument.from_dict(data_dict)
+            if data_dict["class_name"] == ImageDocument.class_name():
+                doc = ImageDocument.from_dict(data_dict)
+            else:
+                doc = Document.from_dict(data_dict)
         elif doc_type == TextNode.get_type():
             doc = TextNode.from_dict(data_dict)
         elif doc_type == ImageNode.get_type():
