@@ -131,6 +131,10 @@ class VectaraQueryToolSpec(BaseToolSpec):
         if len(response) == 0:
             return Response(response="Tool failed to retrieve any documents.")
 
+        ## FOR DEBUGGING ONLY
+        # for doc in response:
+        #     print(f"DEBUG: RETRIEVED DOCUMENT WITH TEXT {doc.node.text} AND SCORE {doc.score}")
+
         return [
             {
                 "text": doc.node.text,

@@ -1,9 +1,13 @@
-# from typing import List
-# from llama_index.core.schema import Document
+from typing import List
+from llama_index.core.schema import Document
+from llama_index.indices.managed.vectara import VectaraIndex
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.vectara_query import VectaraQueryToolSpec
 
-# import pytest
+# from llama_index.agent.openai import OpenAIAgent
+
+import pytest
+
 # import re
 
 #
@@ -26,145 +30,147 @@ def test_class():
     names_of_base_classes = [b.__name__ for b in VectaraQueryToolSpec.__mro__]
     assert BaseToolSpec.__name__ in names_of_base_classes
 
-    tool_spec = VectaraQueryToolSpec()
+    # tool_spec = VectaraQueryToolSpec()
 
-    print(
-        f'Tried query and got response: {tool_spec.rag_query("What can I learn in this course?")}\n\n'
+    # print(
+    #     f'Tried query and got response: {tool_spec.rag_query("What can I learn in this course?")}\n\n'
+    # )
+
+    # print(
+    #     f'Tried query and got response: {tool_spec.rag_query("Who is the lecturer for this course?")}\n\n'
+    # )
+
+    # print(
+    #     f'Tried retrieval and got response: {tool_spec.semantic_search("What years does the information in this course cover?")}'
+    # )
+
+
+def get_docs() -> List[Document]:
+    inputs = [
+        {
+            "text": "This is test text for Vectara integration with LlamaIndex",
+            "metadata": {"test_num": "1", "test_score": 10, "date": "2020-02-25"},
+        },
+        {
+            "text": "And now for something completely different",
+            "metadata": {"test_num": "2", "test_score": 2, "date": "2015-10-13"},
+        },
+        {
+            "text": "when 900 years you will be, look as good you will not",
+            "metadata": {"test_num": "3", "test_score": 20, "date": "2023-09-12"},
+        },
+        {
+            "text": "when 850 years you will be, look as good you will not",
+            "metadata": {"test_num": "4", "test_score": 50, "date": "2022-01-01"},
+        },
+    ]
+    docs: List[Document] = []
+    for inp in inputs:
+        doc = Document(
+            text=str(inp["text"]),
+            metadata=inp["metadata"],  # type: ignore
+        )
+        docs.append(doc)
+    return docs
+
+
+@pytest.fixture()
+def vectara1():
+    docs = get_docs()
+    try:
+        vectara1 = VectaraIndex.from_documents(docs)
+    except ValueError:
+        pytest.skip("Missing Vectara credentials, skipping test")
+
+    yield vectara1
+
+    # Tear down code
+    for id in vectara1.doc_ids:
+        vectara1._delete_doc(id)
+
+
+def test_simple_retrieval(vectara1) -> None:
+    docs = get_docs()
+    tool_spec = VectaraQueryToolSpec(num_results=1)
+    res = tool_spec.semantic_search("Find me something different.")
+    assert len(res) == 1
+    assert res[0]["text"] == docs[1].text
+
+
+def test_mmr_retrieval(vectara1) -> None:
+    docs = get_docs()
+
+    # test with diversity bias = 0
+    tool_spec = VectaraQueryToolSpec(
+        num_results=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="mmr",
+        rerank_k=10,
+        mmr_diversity_bias=0.0,
+    )
+    res = tool_spec.semantic_search("How will I look?")
+    assert len(res) == 2
+    assert res[0]["text"] == docs[2].text
+    assert res[1]["text"] == docs[3].text
+
+    # test with diversity bias = 1
+    tool_spec = VectaraQueryToolSpec(
+        num_results=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="mmr",
+        rerank_k=10,
+        mmr_diversity_bias=1.0,
+    )
+    res = tool_spec.semantic_search("How will I look?")
+    assert len(res) == 2
+    assert res[0]["text"] == docs[2].text
+    assert res[1]["text"] == docs[0].text
+
+
+def test_retrieval_with_filter(vectara1) -> None:
+    docs = get_docs()
+
+    tool_spec = VectaraQueryToolSpec(
+        num_results=1, metadata_filter="doc.test_num = '1'"
+    )
+    res = tool_spec.semantic_search("What does this test?")
+    assert len(res) == 1
+    assert res[0]["text"] == docs[0].text
+
+
+def test_udf_retrieval(vectara1) -> None:
+    docs = get_docs()
+
+    # test with basic math expression
+    tool_spec = VectaraQueryToolSpec(
+        num_results=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="udf",
+        udf_expression="get('$.score') + get('$.document_metadata.test_score')",
     )
 
-    print(
-        f'Tried query and got response: {tool_spec.rag_query("Who is the lecturer for this course?")}\n\n'
+    res = tool_spec.semantic_search("What will the future look like?")
+    assert len(res) == 2
+    print(f"DEBUG: RECEIVED RESULTS {res}")
+    # assert res[0]['text'] == docs[3].text
+    # assert res[1]['text'] == docs[2].text
+
+    # test with dates: Weight of score subtracted by number of years from current date
+    tool_spec = VectaraQueryToolSpec(
+        num_results=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="udf",
+        udf_expression="max(0, 5 * get('$.score') - (to_unix_timestamp(now()) - to_unix_timestamp(datetime_parse(get('$.document_metadata.date'), 'yyyy-MM-dd'))) / 31536000)",
     )
 
-    print(
-        f'Tried retrieval and got response: {tool_spec.semantic_search("What years does the information in this course cover?")}'
-    )
-
-
-# def get_docs() -> List[Document]:
-#     inputs = [
-#         {
-#             "text": "This is test text for Vectara integration with LlamaIndex",
-#             "metadata": {"test_num": "1", "test_score": 10, "date": "2020-02-25"},
-#         },
-#         {
-#             "text": "And now for something completely different",
-#             "metadata": {"test_num": "2", "test_score": 2, "date": "2015-10-13"},
-#         },
-#         {
-#             "text": "when 900 years you will be, look as good you will not",
-#             "metadata": {"test_num": "3", "test_score": 20, "date": "2023-09-12"},
-#         },
-#         {
-#             "text": "when 850 years you will be, look as good you will not",
-#             "metadata": {"test_num": "4", "test_score": 50, "date": "2022-01-01"},
-#         },
-#     ]
-#     docs: List[Document] = []
-#     for inp in inputs:
-#         doc = Document(
-#             text=str(inp["text"]),
-#             metadata=inp["metadata"],  # type: ignore
-#         )
-#         docs.append(doc)
-#     return docs
-
-
-# @pytest.fixture()
-# def vectara1():
-#     docs = get_docs()
-#     try:
-#         vectara1 = VectaraIndex.from_documents(docs)
-#     except ValueError:
-#         pytest.skip("Missing Vectara credentials, skipping test")
-
-#     yield vectara1
-
-#     # Tear down code
-#     for id in vectara1.doc_ids:
-#         vectara1._delete_doc(id)
-
-
-# def test_simple_retrieval(vectara1) -> None:
-#     docs = get_docs()
-#     qe = vectara1.as_retriever(similarity_top_k=1)
-#     res = qe.retrieve("Find me something different")
-#     assert len(res) == 1
-#     assert res[0].node.get_content() == docs[1].text
-
-
-# def test_mmr_retrieval(vectara1) -> None:
-#     docs = get_docs()
-
-#     # test with diversity bias = 0
-#     qe = vectara1.as_retriever(
-#         similarity_top_k=2,
-#         n_sentences_before=0,
-#         n_sentences_after=0,
-#         reranker="mmr",
-#         mmr_k=10,
-#         mmr_diversity_bias=0.0,
-#     )
-#     res = qe.retrieve("how will I look?")
-#     assert len(res) == 2
-#     assert res[0].node.get_content() == docs[2].text
-#     assert res[1].node.get_content() == docs[3].text
-
-#     # test with diversity bias = 1
-#     qe = vectara1.as_retriever(
-#         similarity_top_k=2,
-#         n_sentences_before=0,
-#         n_sentences_after=0,
-#         reranker="mmr",
-#         mmr_k=10,
-#         mmr_diversity_bias=1.0,
-#     )
-#     res = qe.retrieve("how will I look?")
-#     assert len(res) == 2
-#     assert res[0].node.get_content() == docs[2].text
-#     assert res[1].node.get_content() == docs[0].text
-
-
-# def test_retrieval_with_filter(vectara1) -> None:
-#     docs = get_docs()
-
-#     assert isinstance(vectara1, VectaraIndex)
-#     qe = vectara1.as_retriever(similarity_top_k=1, filter="doc.test_num = '1'")
-#     res = qe.retrieve("What does this test?")
-#     assert len(res) == 1
-#     assert res[0].node.get_content() == docs[0].text
-
-
-# def test_udf_retrieval(vectara1) -> None:
-#     docs = get_docs()
-
-#     # test with basic math expression
-#     qe = vectara1.as_retriever(
-#         similarity_top_k=2,
-#         n_sentences_before=0,
-#         n_sentences_after=0,
-#         reranker="udf",
-#         udf_expression="get('$.score') + get('$.document_metadata.test_score')",
-#     )
-
-#     res = qe.retrieve("What will the future look like?")
-#     assert len(res) == 2
-#     assert res[0].node.get_content() == docs[3].text
-#     assert res[1].node.get_content() == docs[2].text
-
-#     # test with dates: Weight of score subtracted by number of years from current date
-#     qe = vectara1.as_retriever(
-#         similarity_top_k=2,
-#         n_sentences_before=0,
-#         n_sentences_after=0,
-#         reranker="udf",
-#         udf_expression="max(0, 5 * get('$.score') - (to_unix_timestamp(now()) - to_unix_timestamp(datetime_parse(get('$.document_metadata.date'), 'yyyy-MM-dd'))) / 31536000)",
-#     )
-
-#     res = qe.retrieve("What will the future look like?")
-#     assert res[0].node.get_content() == docs[2].text
-#     assert res[1].node.get_content() == docs[3].text
-#     assert len(res) == 2
+    res = tool_spec.semantic_search("What will the future look like?")
+    assert res[0]["text"] == docs[2].text
+    assert res[1]["text"] == docs[3].text
+    assert len(res) == 2
 
 
 # @pytest.fixture()
