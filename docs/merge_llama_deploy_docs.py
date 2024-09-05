@@ -1,26 +1,24 @@
 import os
 import yaml
 
-# clone the llama-agents repo
-if not os.path.exists("llama-agents"):
-    os.system(
-        "git clone --branch v0.1.0 https://github.com/run-llama/llama-agents.git"
-    )
+# clone the llama_deploy repo
+if not os.path.exists("llama_deploy"):
+    os.system("git clone https://github.com/run-llama/llama_deploy.git")
 
-    print("Cloned llama-agents")
+    print("Cloned llama_deploy")
 else:
-    os.system("git -C llama-agents pull")
+    os.system("git -C llama_deploy pull")
 
-    print("Updated llama-agents")
+    print("Updated llama_deploy")
 
-# copy the llama-agents/docs/docs/api_reference/llama_deploy to the current docs/api_reference
+# copy the llama_deploy/docs/docs/api_reference/llama_deploy to the current docs/api_reference
 os.system(
-    "cp -r llama-agents/docs/docs/api_reference/llama_deploy ./docs/docs/api_reference/"
+    "cp -r llama_deploy/docs/docs/api_reference/llama_deploy ./docs/docs/api_reference/"
 )
 
 # copy the module guides
 os.system(
-    "cp -r llama-agents/docs/docs/module_guides/workflow/deployment.md ./docs/docs/module_guides/workflow/deployment.md"
+    "cp -r llama_deploy/docs/docs/module_guides/workflow/deployment.md ./docs/docs/module_guides/workflow/deployment.md"
 )
 
 print("Copied in latest llama-deploy docs")
@@ -30,7 +28,7 @@ with open("./docs/mkdocs.yml") as f:
     mkdocs = yaml.safe_load(f)
 
 # open llama-deploy mkdocs.yml
-with open("./llama-agents/docs/mkdocs.yml") as f:
+with open("./llama_deploy/docs/mkdocs.yml") as f:
     llama_deploy_mkdocs = yaml.safe_load(f)
 
 llama_docs_api_reference_idx = 0
@@ -69,7 +67,7 @@ for idx, item in enumerate(mkdocs["plugins"]):
 
 mkdocs["plugins"][mkdocs_plugins_idx]["mkdocstrings"]["handlers"]["python"][
     "paths"
-].append("../llama-agents")
+].append("../llama_deploy")
 
 print("Updated search paths")
 
@@ -83,7 +81,7 @@ for value in mkdocs["nav"]:
                         if isinstance(section["Workflows"], str):
                             section["Workflows"] = [
                                 section["Workflows"],
-                                "module_guides/workflow/deployment.md",
+                                "./module_guides/workflow/deployment.md",
                             ]
                         else:
                             section["Workflows"].append(
