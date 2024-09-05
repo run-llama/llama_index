@@ -11,6 +11,7 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.llms.nvidia.utils import (
     is_nvidia_function_calling_model,
     is_chat_model,
+    ALL_MODELS,
 )
 
 from llama_index.llms.openai_like import OpenAILike
@@ -110,16 +111,19 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             is_function_calling_model=is_nvidia_function_calling_model(model),
             **kwargs,
         )
-        self.model = model
         self._is_hosted = base_url in KNOWN_URLS
 
         if self._is_hosted and api_key == "NO_API_KEY_PROVIDED":
             warnings.warn(
                 "An API key is required for the hosted NIM. This will become an error in 0.2.0.",
             )
-
-        if not model:
+        self.model = model
+        if self._is_hosted and not self.model:
+            self.model = DEFAULT_MODEL
+        elif not self._is_hosted and not self.model:
             self.__get_default_model()
+
+        self._validate_model(self.model)  ## validate model
 
     def __get_default_model(self):
         """Set default model."""
@@ -162,6 +166,26 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             else:
                 raise ValueError(f"Invalid base_url, {expected_format}")
         return urlunparse((result.scheme, result.netloc, "v1", "", "", ""))
+
+    def _validate_model(self, model_name: str) -> None:
+        """
+        Validates compatibility of the hosted model with the client.
+
+        Args:
+            model_name (str): The name of the model.
+
+        Raises:
+            ValueError: If the model is incompatible with the client.
+        """
+        if self._is_hosted:
+            if model_name not in ALL_MODELS:
+                raise ValueError(
+                    f"Model {model_name} is incompatible with client {self.class_name()}. "
+                    f"Please check `{self.class_name()}.available_models()`."
+                )
+        else:
+            if model_name not in [model.id for model in self.available_models]:
+                raise ValueError(f"No locally hosted {model_name} was found.")
 
     @property
     def available_models(self) -> List[Model]:

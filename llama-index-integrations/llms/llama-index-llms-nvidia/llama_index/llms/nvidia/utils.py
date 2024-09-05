@@ -42,6 +42,10 @@ NVIDIA_FUNTION_CALLING_MODELS = (
 
 COMPLETION_MODELS = ("bigcode/starcoder2-7b", "bigcode/starcoder2-15b")
 
+ALL_MODELS = (
+    tuple(API_CATALOG_MODELS.keys()) + NVIDIA_FUNTION_CALLING_MODELS + COMPLETION_MODELS
+)
+
 
 def is_chat_model(modelname: str):
     return modelname not in COMPLETION_MODELS
