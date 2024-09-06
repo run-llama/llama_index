@@ -21,8 +21,6 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     MessageRole,
-    CompletionResponse,
-    CompletionResponseGen,
 )
 
 from llama_index.core.llms.llm import ToolSelection
@@ -301,29 +299,3 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             )
 
         return tool_selections
-
-    def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        client = self._get_client()
-        all_kwargs = self._get_model_kwargs(**kwargs)
-        self._update_max_tokens(all_kwargs, prompt)
-
-        def gen() -> CompletionResponseGen:
-            text = ""
-            for response in client.completions.create(
-                prompt=prompt,
-                stream=True,
-                **all_kwargs,
-            ):
-                if len(response.choices) > 0:
-                    delta = response.choices[0].text
-                else:
-                    delta = ""
-                text += delta
-                yield CompletionResponse(
-                    delta=delta,
-                    text=text,
-                    raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
-                )
-
-        return gen()
