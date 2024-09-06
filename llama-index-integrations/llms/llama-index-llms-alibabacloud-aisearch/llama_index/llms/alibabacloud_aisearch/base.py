@@ -1,15 +1,19 @@
 import asyncio
 import time
-from typing import Dict, Any, Sequence
+from typing import Dict, Any, List, Sequence
 
 from llama_index.core.llms import (
     CustomLLM,
     CompletionResponse,
     LLMMetadata,
 )
-from llama_index.core.llms.callbacks import llm_completion_callback
+from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    MessageRole,
+)
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 try:
@@ -77,20 +81,12 @@ class AlibabaCloudAISearchLLM(CustomLLM):
 
     read_timeout: int = 60000
     connection_timeout: int = 5000
+    csi_level: str = "strict"
 
     def __init__(
         self, endpoint: str = None, aisearch_api_key: str = None, **kwargs: Any
     ) -> None:
-        def messages_to_prompt(messages: Sequence[ChatMessage]):
-            results = []
-            for message in messages:
-                message = GetTextGenerationRequestMessages(
-                    content=message.content, role=message.role
-                )
-                results.append(message)
-            return results
-
-        super().__init__(messages_to_prompt=messages_to_prompt, **kwargs)
+        super().__init__(**kwargs)
         self.aisearch_api_key = get_from_param_or_env(
             "aisearch_api_key", aisearch_api_key, "AISEARCH_API_KEY"
         )
@@ -121,14 +117,26 @@ class AlibabaCloudAISearchLLM(CustomLLM):
             **self.additional_kwargs,
         }
 
-    @llm_completion_callback()
+    @staticmethod
+    def _convert_chat_messages(
+        messages: Sequence[ChatMessage],
+    ) -> List[GetTextGenerationRequestMessages]:
+        results = []
+        for message in messages:
+            message = GetTextGenerationRequestMessages(
+                content=message.content, role=message.role
+            )
+            results.append(message)
+        return results
+
     @retry_decorator
-    def complete(self, messages: Any, **kwargs: Any) -> CompletionResponse:
+    def _get_text_generation(
+        self, messages: List[GetTextGenerationRequestMessages], **kwargs: Any
+    ) -> GetTextGenerationResponse:
         parameters: Dict[str, Any] = self._default_params
         parameters.update(kwargs)
-
         request = GetTextGenerationRequest(
-            csi_level="strict", messages=messages, parameters=parameters
+            csi_level=self.csi_level, messages=messages, parameters=parameters
         )
 
         response: GetTextGenerationResponse = (
@@ -140,20 +148,16 @@ class AlibabaCloudAISearchLLM(CustomLLM):
                 runtime=self._options,
             )
         )
-        text = response.body.result.text
-        return CompletionResponse(text=text)
+        return response
 
-    def stream_complete(self, messages: Any, **kwargs: Any) -> CompletionResponse:
-        raise NotImplementedError
-
-    @llm_completion_callback()
     @aretry_decorator
-    async def acomplete(self, messages: Any, **kwargs: Any) -> CompletionResponse:
+    async def _aget_text_generation(
+        self, messages: List[GetTextGenerationRequestMessages], **kwargs: Any
+    ) -> GetTextGenerationResponse:
         parameters: Dict[str, Any] = self._default_params
         parameters.update(kwargs)
-
         request = GetTextGenerationRequest(
-            csi_level="strict", messages=messages, parameters=parameters
+            csi_level=self.csi_level, messages=messages, parameters=parameters
         )
 
         response: GetTextGenerationResponse = (
@@ -165,8 +169,57 @@ class AlibabaCloudAISearchLLM(CustomLLM):
                 runtime=self._options,
             )
         )
+
+        return response
+
+    @llm_completion_callback()
+    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        messages = [
+            GetTextGenerationRequestMessages(content=prompt, role=MessageRole.USER)
+        ]
+        response: GetTextGenerationResponse = self._get_text_generation(
+            messages, **kwargs
+        )
         text = response.body.result.text
-        return CompletionResponse(text=text)
+        return CompletionResponse(text=text, raw=response)
+
+    def stream_complete(self, messages: Any, **kwargs: Any) -> CompletionResponse:
+        raise NotImplementedError
+
+    @llm_completion_callback()
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        messages = [
+            GetTextGenerationRequestMessages(content=prompt, role=MessageRole.USER)
+        ]
+        response: GetTextGenerationResponse = await self._aget_text_generation(
+            messages, **kwargs
+        )
+        text = response.body.result.text
+        return CompletionResponse(text=text, raw=response)
+
+    @llm_chat_callback()
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        messages = self._convert_chat_messages(messages)
+        response: GetTextGenerationResponse = self._get_text_generation(
+            messages, **kwargs
+        )
+        text = response.body.result.text
+        return ChatResponse(
+            message=ChatMessage(role=MessageRole.ASSISTANT, content=text), raw=response
+        )
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        messages = self._convert_chat_messages(messages)
+        response: GetTextGenerationResponse = await self._aget_text_generation(
+            messages, **kwargs
+        )
+        text = response.body.result.text
+        return ChatResponse(
+            message=ChatMessage(role=MessageRole.ASSISTANT, content=text), raw=response
+        )
 
     @classmethod
     def class_name(cls) -> str:
