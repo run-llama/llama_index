@@ -48,6 +48,8 @@ def force_single_tool_call(response: ChatResponse) -> None:
 class Model(BaseModel):
     id: str
     base_model: Optional[str]
+    is_function_calling_model: Optional[bool] = False
+    is_chat_model: Optional[bool] = False
 
 
 class NVIDIA(OpenAILike, FunctionCallingLLM):
@@ -169,6 +171,8 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             Model(
                 id=model.id,
                 base_model=getattr(model, "params", {}).get("root", None),
+                is_function_calling_model=is_nvidia_function_calling_model(model.id),
+                is_chat_model=is_chat_model(model.id),
             )
             for model in self._get_client().models.list().data
         ]
