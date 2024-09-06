@@ -6,6 +6,9 @@ from pathlib import Path
 import tempfile
 from typing import Any, Dict, List, Union, Optional
 from typing import Any, Dict, List, Optional
+import httpx
+from contextlib import nullcontext
+import asyncio
 
 import requests
 from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
@@ -128,6 +131,42 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             logger.error(json_response["error"])
             raise ValueError(error_message)
 
+    async def _aget_access_token(self, client: httpx.AsyncClient) -> str:
+        """
+        Gets the access_token for accessing file from SharePoint asynchronously.
+
+        Returns:
+            str: The access_token for accessing the file.
+
+        Raises:
+            ValueError: If there is an error in obtaining the access_token.
+        """
+        authority = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/token"
+
+        payload = {
+            "grant_type": "client_credentials",
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "resource": "https://graph.microsoft.com/",
+        }
+
+        response = await client.post(
+            url=authority,
+            data=payload,
+        )
+
+        json_response = response.json()
+
+        if response.status_code == 200 and "access_token" in json_response:
+            return json_response["access_token"]
+
+        else:
+            error_message = json_response.get("error_description") or json_response.get(
+                "error"
+            )
+            logger.error(json_response["error"])
+            raise ValueError(error_message)
+
     def _get_site_id_with_host_name(
         self, access_token, sharepoint_site_name: Optional[str]
     ) -> str:
@@ -158,6 +197,71 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         while site_information_endpoint:
             response = requests.get(
+                url=site_information_endpoint,
+                headers=self._authorization_headers,
+            )
+
+            json_response = response.json()
+            if response.status_code == 200 and "value" in json_response:
+                if (
+                    len(json_response["value"]) > 0
+                    and "id" in json_response["value"][0]
+                ):
+                    # find the site with the specified name
+                    for site in json_response["value"]:
+                        if (
+                            "name" in site
+                            and site["name"].lower() == sharepoint_site_name.lower()
+                        ):
+                            return site["id"]
+                    site_information_endpoint = json_response.get(
+                        "@odata.nextLink", None
+                    )
+                else:
+                    raise ValueError(
+                        f"The specified sharepoint site {sharepoint_site_name} is not found."
+                    )
+            else:
+                error_message = json_response.get(
+                    "error_description"
+                ) or json_response.get("error")
+                logger.error(json_response["error"])
+                raise ValueError(error_message)
+
+        raise ValueError(
+            f"The specified sharepoint site {sharepoint_site_name} is not found."
+        )
+
+    async def _aget_site_id_with_host_name(
+        self,
+        access_token,
+        sharepoint_site_name: Optional[str],
+        client: httpx.AsyncClient,
+    ) -> str:
+        """
+        Retrieves the site ID of a SharePoint site using the provided site name asynchronously.
+
+        Args:
+            sharepoint_site_name (str): The name of the SharePoint site.
+
+        Returns:
+            str: The ID of the SharePoint site.
+        """
+        if hasattr(self, "_site_id_with_host_name"):
+            return self._site_id_with_host_name
+
+        self._authorization_headers = {"Authorization": f"Bearer {access_token}"}
+
+        if self.sharepoint_site_id:
+            return self.sharepoint_site_id
+
+        if not (sharepoint_site_name):
+            raise ValueError("The SharePoint site name or ID must be provided.")
+
+        site_information_endpoint = f"https://graph.microsoft.com/v1.0/sites"
+
+        while site_information_endpoint:
+            response = await client.get(
                 url=site_information_endpoint,
                 headers=self._authorization_headers,
             )
@@ -237,6 +341,47 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             logger.error(json_response["error"])
             raise ValueError(error_message)
 
+    async def _aget_drive_id(self, client: httpx.AsyncClient) -> str:
+        """
+        Retrieves the drive ID of the SharePoint site asynchronously.
+
+        Returns:
+            str: The ID of the SharePoint site drive.
+        """
+        if hasattr(self, "_drive_id"):
+            return self._drive_id
+
+        if self.drive_id:
+            return self.drive_id
+
+        self._drive_id_endpoint = f"https://graph.microsoft.com/v1.0/sites/{self._site_id_with_host_name}/drives"
+
+        response = await client.get(
+            url=self._drive_id_endpoint,
+            headers=self._authorization_headers,
+        )
+        json_response = response.json()
+
+        if response.status_code == 200 and "value" in json_response:
+            if len(json_response["value"]) > 0 and self.drive_name is not None:
+                for drive in json_response["value"]:
+                    if drive["name"].lower() == self.drive_name.lower():
+                        return drive["id"]
+                raise ValueError(f"The specified drive {self.drive_name} is not found.")
+
+            if len(json_response["value"]) > 0 and "id" in json_response["value"][0]:
+                return json_response["value"][0]["id"]
+            else:
+                raise ValueError(
+                    "Error occurred while fetching the drives for the sharepoint site."
+                )
+        else:
+            error_message = json_response.get("error_description") or json_response.get(
+                "error"
+            )
+            logger.error(json_response["error"])
+            raise ValueError(error_message)
+
     def _get_sharepoint_folder_id(self, folder_path: str) -> str:
         """
         Retrieves the folder ID of the SharePoint site.
@@ -260,6 +405,36 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             return response.json()["id"]
         else:
             raise ValueError(response.json()["error"])
+
+    async def _aget_sharepoint_folder_id(
+        self,
+        folder_path: str,
+        client: httpx.AsyncClient,
+    ) -> str:
+        """
+        Retrieves the folder ID of the SharePoint site asynchronously.
+
+        Args:
+            folder_path (str): The path of the folder in the SharePoint site.
+
+        Returns:
+            str: The ID of the SharePoint site folder.
+        """
+        folder_id_endpoint = (
+            f"{self._drive_id_endpoint}/{self._drive_id}/root:/{folder_path}"
+        )
+
+        response = await client.get(
+            url=folder_id_endpoint,
+            headers=self._authorization_headers,
+        )
+
+        json_response = response.json()
+
+        if response.status_code == 200 and "id" in json_response:
+            return json_response["id"]
+        else:
+            raise ValueError(json_response["error"])
 
     def _download_files_and_extract_metadata(
         self,
@@ -295,6 +470,48 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         return metadata
 
+    async def _adownload_files_and_extract_metadata(
+        self,
+        folder_id: str,
+        download_dir: str,
+        client: httpx.AsyncClient,
+        include_subfolders: bool = False,
+    ) -> Dict[str, str]:
+        """
+        Downloads files from the specified folder ID and extracts metadata.
+
+        Args:
+            folder_id (str): The ID of the folder from which the files should be downloaded.
+            download_dir (str): The directory where the files should be downloaded.
+            include_subfolders (bool): If True, files from all subfolders are downloaded.
+
+        Returns:
+            Dict[str, str]: A dictionary containing the metadata of the downloaded files.
+
+        Raises:
+            ValueError: If there is an error in downloading the files.
+        """
+        files_path = await self.alist_resources(
+            sharepoint_site_name=self.sharepoint_site_name,
+            sharepoint_site_id=self.sharepoint_site_id,
+            sharepoint_folder_id=folder_id,
+            client=client,
+        )
+
+        async def process_file(file_path):
+            item = await self._aget_item_from_path(file_path, client)
+            return await self._adownload_file(item, download_dir, client)
+
+        file_metadata_list = await asyncio.gather(
+            *[process_file(file_path) for file_path in files_path]
+        )
+
+        metadata = {}
+        for file_metadata in file_metadata_list:
+            metadata.update(file_metadata)
+
+        return metadata
+
     def _get_file_content_by_url(self, item: Dict[str, Any]) -> bytes:
         """
         Retrieves the content of the file from the provided URL.
@@ -307,6 +524,31 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         """
         file_download_url = item["@microsoft.graph.downloadUrl"]
         response = requests.get(file_download_url)
+
+        if response.status_code != 200:
+            json_response = response.json()
+            error_message = json_response.get("error_description") or json_response.get(
+                "error"
+            )
+            logger.error(json_response["error"])
+            raise ValueError(error_message)
+
+        return response.content
+
+    async def _aget_file_content_by_url(
+        self, item: Dict[str, Any], client: httpx.AsyncClient
+    ) -> bytes:
+        """
+        Retrieves the content of the file from the provided URL.
+
+        Args:
+            item (Dict[str, Any]): Dictionary containing file metadata.
+
+        Returns:
+            bytes: The content of the file.
+        """
+        file_download_url = item["@microsoft.graph.downloadUrl"]
+        response = await client.get(file_download_url)
 
         if response.status_code != 200:
             json_response = response.json()
@@ -343,6 +585,33 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         return file_path
 
+    async def _adownload_file_by_url(
+        self, item: Dict[str, Any], download_dir: str, client: httpx.AsyncClient
+    ) -> str:
+        """
+        Downloads the file from the provided URL.
+
+        Args:
+            item (Dict[str, Any]): Dictionary containing file metadata.
+            download_dir (str): The directory where the files should be downloaded.
+
+        Returns:
+            str: The path of the downloaded file in the temporary directory.
+        """
+        # Get the download URL for the file.
+        file_name = item["name"]
+
+        content = await self._aget_file_content_by_url(item, client)
+
+        # Create the directory if it does not exist and save the file.
+        if not os.path.exists(download_dir):
+            os.makedirs(download_dir)
+        file_path = os.path.join(download_dir, file_name)
+        with open(file_path, "wb") as f:  # TODO: use aiofiles
+            f.write(content)
+
+        return file_path
+
     def _get_permissions_info(self, item: Dict[str, Any]) -> Dict[str, str]:
         """
         Extracts the permissions information for the file. For more information, see:
@@ -359,6 +628,69 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             f"{self._drive_id_endpoint}/{self._drive_id}/items/{item_id}/permissions"
         )
         response = requests.get(
+            url=permissions_info_endpoint,
+            headers=self._authorization_headers,
+        )
+        permissions = response.json()
+
+        identity_sets = []
+        for permission in permissions["value"]:
+            # user type permissions
+            granted_to = permission.get("grantedToV2", None)
+            if granted_to:
+                identity_sets.append(granted_to)
+
+            # link type permissions
+            granted_to_identities = permission.get("grantedToIdentitiesV2", [])
+            for identity in granted_to_identities:
+                identity_sets.append(identity)
+
+        # Extract the identity information from each identity set
+        # they can be 'application', 'device', 'user', 'group', 'siteUser' or 'siteGroup'
+        # 'siteUser' and 'siteGroup' are site-specific, 'group' is for Microsoft 365 groups
+        permissions_dict = {}
+        for identity_set in identity_sets:
+            for identity, identity_info in identity_set.items():
+                id = identity_info.get("id")
+                display_name = identity_info.get("displayName")
+                ids_key = f"allowed_{identity}_ids"
+                display_names_key = f"allowed_{identity}_display_names"
+
+                if ids_key not in permissions_dict:
+                    permissions_dict[ids_key] = []
+                if display_names_key not in permissions_dict:
+                    permissions_dict[display_names_key] = []
+
+                permissions_dict[ids_key].append(id)
+                permissions_dict[display_names_key].append(display_name)
+
+        # sort to get consistent results, if possible
+        for key in permissions_dict:
+            try:
+                permissions_dict[key] = sorted(permissions_dict[key])
+            except TypeError:
+                pass
+
+        return permissions_dict
+
+    async def _aget_permissions_info(
+        self, item: Dict[str, Any], client: httpx.AsyncClient
+    ) -> Dict[str, str]:
+        """
+        Extracts the permissions information for the file. For more information, see:
+        https://learn.microsoft.com/en-us/graph/api/resources/permission?view=graph-rest-1.0.
+
+        Args:
+            item (Dict[str, Any]): Dictionary containing file metadata.
+
+        Returns:
+            Dict[str, str]: A dictionary containing the extracted permissions information.
+        """
+        item_id = item.get("id")
+        permissions_info_endpoint = (
+            f"{self._drive_id_endpoint}/{self._drive_id}/items/{item_id}/permissions"
+        )
+        response = await client.get(
             url=permissions_info_endpoint,
             headers=self._authorization_headers,
         )
@@ -431,6 +763,35 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         return metadata
 
+    async def _aextract_metadata_for_file(
+        self, item: Dict[str, Any], client: httpx.AsyncClient
+    ) -> Dict[str, str]:
+        """
+        Extracts metadata related to the file.
+
+        Parameters:
+        - item (Dict[str, str]): Dictionary containing file metadata.
+
+        Returns:
+        - Dict[str, str]: A dictionary containing the extracted metadata.
+        """
+        # Extract the required metadata for file.
+        if self.attach_permission_metadata:
+            metadata = await self._aget_permissions_info(item, client)
+        else:
+            metadata = {}
+
+        metadata.update(
+            {
+                "file_id": item.get("id"),
+                "file_name": item.get("name"),
+                "url": item.get("webUrl"),
+                "file_path": item.get("file_path"),
+            }
+        )
+
+        return metadata
+
     def _download_file(
         self,
         item: Dict[str, Any],
@@ -441,6 +802,19 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         file_path = self._download_file_by_url(item, download_dir)
 
         metadata[file_path] = self._extract_metadata_for_file(item)
+        return metadata
+
+    async def _adownload_file(
+        self,
+        item: Dict[str, Any],
+        download_dir: str,
+        client: httpx.AsyncClient,
+    ):
+        metadata = {}
+
+        file_path = await self._adownload_file_by_url(item, download_dir, client)
+
+        metadata[file_path] = await self._aextract_metadata_for_file(item, client)
         return metadata
 
     def _download_files_from_sharepoint(
@@ -480,6 +854,48 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         return self._download_files_and_extract_metadata(
             sharepoint_folder_id,
             download_dir,
+            recursive,
+        )
+
+    async def _adownload_files_from_sharepoint(
+        self,
+        download_dir: str,
+        sharepoint_site_name: Optional[str],
+        sharepoint_folder_path: Optional[str],
+        sharepoint_folder_id: Optional[str],
+        recursive: bool,
+        client: httpx.AsyncClient,
+    ) -> Dict[str, str]:
+        """
+        Downloads files from the specified folder and returns the metadata for the downloaded files.
+
+        Args:
+            download_dir (str): The directory where the files should be downloaded.
+            sharepoint_site_name (str): The name of the SharePoint site.
+            sharepoint_folder_path (str): The path of the folder in the SharePoint site.
+            recursive (bool): If True, files from all subfolders are downloaded.
+
+        Returns:
+            Dict[str, str]: A dictionary containing the metadata of the downloaded files.
+
+        """
+        access_token = await self._aget_access_token(client)
+
+        self._site_id_with_host_name = await self._aget_site_id_with_host_name(
+            access_token, sharepoint_site_name, client
+        )
+
+        self._drive_id = await self._aget_drive_id(client)
+
+        if not sharepoint_folder_id and sharepoint_folder_path:
+            sharepoint_folder_id = await self._aget_sharepoint_folder_id(
+                sharepoint_folder_path, client
+            )
+
+        return await self._adownload_files_and_extract_metadata(
+            sharepoint_folder_id,
+            download_dir,
+            client,
             recursive,
         )
 
@@ -537,6 +953,38 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             docs = self._exclude_access_control_metadata(docs)
         return docs
 
+    async def _aload_documents_with_metadata(
+        self,
+        files_metadata: Dict[str, Any],
+        download_dir: str,
+        recursive: bool,
+    ) -> List[Document]:
+        """
+        Loads the documents from the downloaded files.
+
+        Args:
+            files_metadata (Dict[str,Any]): A dictionary containing the metadata of the downloaded files.
+            download_dir (str): The directory where the files should be downloaded.
+            recursive (bool): If True, files from all subfolders are downloaded.
+
+        Returns:
+            List[Document]: A list containing the documents with metadata.
+        """
+
+        def get_metadata(filename: str) -> Any:
+            return files_metadata[filename]
+
+        simple_loader = SimpleDirectoryReader(
+            download_dir,
+            file_extractor=self.file_extractor,
+            file_metadata=get_metadata,
+            recursive=recursive,
+        )
+        docs = await simple_loader.aload_data()
+        if self.attach_permission_metadata:
+            docs = self._exclude_access_control_metadata(docs)
+        return docs
+
     def load_data(
         self,
         sharepoint_site_name: Optional[str] = None,
@@ -590,6 +1038,61 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         except Exception as exp:
             logger.error("An error occurred while accessing SharePoint: %s", exp)
 
+    async def aload_data(
+        self,
+        sharepoint_site_name: Optional[str] = None,
+        sharepoint_folder_path: Optional[str] = None,
+        sharepoint_folder_id: Optional[str] = None,
+        recursive: bool = True,
+    ) -> List[Document]:
+        """
+        Loads the files from the specified folder in the SharePoint site asynchronously.
+
+        Args:
+            sharepoint_site_name (Optional[str]): The name of the SharePoint site.
+            sharepoint_folder_path (Optional[str]): The path of the folder in the SharePoint site.
+            recursive (bool): If True, files from all subfolders are downloaded.
+
+        Returns:
+            List[Document]: A list containing the documents with metadata.
+
+        Raises:
+            Exception: If an error occurs while accessing SharePoint site.
+        """
+        # If no arguments are provided to load_data, default to the object attributes
+        if not sharepoint_site_name:
+            sharepoint_site_name = self.sharepoint_site_name
+
+        if not sharepoint_folder_path:
+            sharepoint_folder_path = self.sharepoint_folder_path
+
+        if not sharepoint_folder_id:
+            sharepoint_folder_id = self.sharepoint_folder_id
+
+        # TODO: make both of these values optional — and just default to the client ID defaults
+        if not (sharepoint_site_name or self.sharepoint_site_id):
+            raise ValueError("sharepoint_site_name must be provided.")
+
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                async with httpx.AsyncClient() as client:
+                    files_metadata = await self._adownload_files_from_sharepoint(
+                        temp_dir,
+                        sharepoint_site_name,
+                        sharepoint_folder_path,
+                        sharepoint_folder_id,
+                        recursive,
+                        client,
+                    )
+
+                # return self.files_metadata
+                return await self._aload_documents_with_metadata(
+                    files_metadata, temp_dir, recursive
+                )
+
+        except Exception as exp:
+            logger.error("An error occurred while accessing SharePoint: %s", exp)
+
     def _list_folder_contents(
         self, folder_id: str, recursive: bool, current_path: str
     ) -> List[Path]:
@@ -627,6 +1130,56 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         return file_paths
 
+    async def _alist_folder_contents(
+        self,
+        folder_id: str,
+        recursive: bool,
+        current_path: str,
+        client: httpx.AsyncClient,
+    ) -> List[Path]:
+        """
+        Helper method to fetch the contents of a folder.
+
+        Args:
+            folder_id (str): ID of the folder whose contents are to be listed.
+            recursive (bool): Whether to include subfolders recursively.
+
+        Returns:
+            List[Path]: List of file paths.
+        """
+        folder_contents_endpoint = (
+            f"{self._drive_id_endpoint}/{self._drive_id}/items/{folder_id}/children"
+        )
+        response = await client.get(
+            url=folder_contents_endpoint,
+            headers=self._authorization_headers,
+        )
+        items = response.json().get("value", [])
+        file_paths = []
+        subfolder_tasks = []
+        for item in items:
+            if "folder" in item and recursive:
+                # Recursive call for subfolder
+                subfolder_id = item["id"]
+                subfolder_task = self._alist_folder_contents(
+                    subfolder_id,
+                    recursive,
+                    os.path.join(current_path, item["name"]),
+                    client,
+                )
+                subfolder_tasks.append(subfolder_task)
+            elif "file" in item:
+                # Append file path
+                file_path = Path(os.path.join(current_path, item["name"]))
+                file_paths.append(file_path)
+
+        if subfolder_tasks:
+            subfolder_results = await asyncio.gather(*subfolder_tasks)
+            for subfolder_result in subfolder_results:
+                file_paths.extend(subfolder_result)
+
+        return file_paths
+
     def _list_drive_contents(self) -> List[Path]:
         """
         Helper method to fetch the contents of the drive.
@@ -655,6 +1208,46 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 # Append file path
                 file_path = Path(item["name"])
                 file_paths.append(file_path)
+
+        return file_paths
+
+    async def _alist_drive_contents(self, client: httpx.AsyncClient) -> List[Path]:
+        """
+        Helper method to fetch the contents of the drive.
+
+        Returns:
+            List[Path]: List of file paths.
+        """
+        drive_contents_endpoint = (
+            f"{self._drive_id_endpoint}/{self._drive_id}/root/children"
+        )
+        response = await client.get(
+            url=drive_contents_endpoint,
+            headers=self._authorization_headers,
+        )
+        items = response.json().get("value", [])
+
+        file_paths = []
+        subfolder_tasks = []
+        for item in items:
+            if "folder" in item:
+                # Append folder path
+                subfolder_task = self._alist_folder_contents(
+                    item["id"],
+                    recursive=True,
+                    current_path=item["name"],
+                    client=client,
+                )
+                subfolder_tasks.append(subfolder_task)
+            elif "file" in item:
+                # Append file path
+                file_path = Path(item["name"])
+                file_paths.append(file_path)
+
+        if subfolder_tasks:
+            subfolder_results = await asyncio.gather(*subfolder_tasks)
+            for subfolder_result in subfolder_results:
+                file_paths.extend(subfolder_result)
 
         return file_paths
 
@@ -726,6 +1319,79 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         return file_paths
 
+    async def alist_resources(
+        self,
+        sharepoint_site_name: Optional[str] = None,
+        sharepoint_folder_path: Optional[str] = None,
+        sharepoint_folder_id: Optional[str] = None,
+        sharepoint_site_id: Optional[str] = None,
+        recursive: bool = True,
+        client: Optional[httpx.AsyncClient] = None,
+    ) -> List[Path]:
+        """
+        Lists the files in the specified folder in the SharePoint site.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Path]: A list of paths of the files in the specified folder.
+
+        Raises:
+            Exception: If an error occurs while accessing SharePoint site.
+        """
+        # If no arguments are provided to load_data, default to the object attributes
+        if not sharepoint_site_name:
+            sharepoint_site_name = self.sharepoint_site_name
+
+        if not sharepoint_folder_path:
+            sharepoint_folder_path = self.sharepoint_folder_path
+
+        if not sharepoint_folder_id:
+            sharepoint_folder_id = self.sharepoint_folder_id
+
+        if not sharepoint_site_id:
+            sharepoint_site_id = self.sharepoint_site_id
+
+        if not (sharepoint_site_name or sharepoint_site_id):
+            raise ValueError(
+                "sharepoint_site_name or sharepoint_site_id must be provided."
+            )
+
+        file_paths = []
+        try:
+            async with (
+                httpx.AsyncClient() if client is None else nullcontext(client)
+            ) as client:
+                access_token = await self._aget_access_token(client)
+                self._site_id_with_host_name = await self._aget_site_id_with_host_name(
+                    access_token, sharepoint_site_name, client
+                )
+                self._drive_id = await self._aget_drive_id(client)
+
+                if sharepoint_folder_path:
+                    if not sharepoint_folder_id:
+                        sharepoint_folder_id = await self._aget_sharepoint_folder_id(
+                            sharepoint_folder_path, client
+                        )
+                    # Fetch folder contents
+                    folder_contents = await self._alist_folder_contents(
+                        sharepoint_folder_id,
+                        recursive,
+                        os.path.join(sharepoint_site_name, sharepoint_folder_path),
+                        client=client,
+                    )
+                    file_paths.extend(folder_contents)
+                else:
+                    # Fetch drive contents
+                    drive_contents = await self._alist_drive_contents(client)
+                    file_paths.extend(drive_contents)
+        except Exception as exp:
+            logger.error("An error occurred while listing files in SharePoint: %s", exp)
+            raise
+
+        return file_paths
+
     def _get_item_from_path(self, input_file: Path) -> Dict[str, Any]:
         """
         Retrieves the item details for a specified file in SharePoint.
@@ -744,6 +1410,32 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         endpoint = f"{self._drive_id_endpoint}/{self._drive_id}/root:/{file_path}"
 
         response = requests.get(
+            url=endpoint,
+            headers=self._authorization_headers,
+        )
+
+        return response.json()
+
+    async def _aget_item_from_path(
+        self, input_file: Path, client: httpx.AsyncClient
+    ) -> Dict[str, Any]:
+        """
+        Retrieves the item details for a specified file in SharePoint asynchronously.
+
+        Args:
+            input_file (Path): The path of the file in SharePoint.
+                Should include the SharePoint site name and the folder path. e.g. "site_name/folder_path/file_name".
+
+        Returns:
+            Dict[str, Any]: Dictionary containing the item details.
+        """
+        # Get the file ID
+        # remove the site_name prefix
+        parts = [part for part in input_file.parts if part != self.sharepoint_site_name]
+        file_path = "/".join(parts)
+        endpoint = f"{self._drive_id_endpoint}/{self._drive_id}/root:/{file_path}"
+
+        response = await client.get(
             url=endpoint,
             headers=self._authorization_headers,
         )
@@ -788,6 +1480,45 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             )
             raise
 
+    async def aget_resource_info(self, resource_id: str, **kwargs) -> Dict:
+        """
+        Retrieves metadata for a specified file in SharePoint without downloading it.
+
+        Args:
+            input_file (Path): The path of the file in SharePoint. The path should include
+                                the SharePoint site name and the folder path. e.g. "site_name/folder_path/file_name".
+        """
+        try:
+            async with httpx.AsyncClient() as client:
+                item = await self._aget_item_from_path(Path(resource_id), client)
+
+                info_dict = {
+                    "file_path": resource_id,
+                    "size": item.get("size"),
+                    "created_at": item.get("createdDateTime"),
+                    "modified_at": item.get("lastModifiedDateTime"),
+                    "etag": item.get("eTag"),
+                }
+
+                if (
+                    self.attach_permission_metadata
+                ):  # changes in access control should trigger a reingestion of the file
+                    permissions = await self._aget_permissions_info(item, client)
+                    info_dict.update(permissions)
+
+            return {
+                meta_key: meta_value
+                for meta_key, meta_value in info_dict.items()
+                if meta_value is not None
+            }
+
+        except Exception as exp:
+            logger.error(
+                "An error occurred while fetching file information from SharePoint: %s",
+                exp,
+            )
+            raise
+
     def load_resource(self, resource_id: str, **kwargs) -> List[Document]:
         try:
             access_token = self._get_access_token()
@@ -812,6 +1543,31 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             )
             raise
 
+    async def aload_resource(self, resource_id: str, **kwargs) -> List[Document]:
+        try:
+            async with httpx.AsyncClient() as client:
+                access_token = await self._aget_access_token(client)
+                self._site_id_with_host_name = await self._aget_site_id_with_host_name(
+                    access_token, self.sharepoint_site_name, client
+                )
+                self._drive_id = await self._aget_drive_id(client)
+
+                path = Path(resource_id)
+
+                item = await self._aget_item_from_path(path, client)
+
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    metadata = await self._adownload_file(item, temp_dir, client)
+                    return await self._aload_documents_with_metadata(
+                        metadata, temp_dir, recursive=False
+                    )
+
+        except Exception as exp:
+            logger.error(
+                "An error occurred while reading file from SharePoint: %s", exp
+            )
+            raise
+
     def read_file_content(self, input_file: Path, **kwargs) -> bytes:
         try:
             access_token = self._get_access_token()
@@ -822,6 +1578,24 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
             item = self._get_item_from_path(input_file)
             return self._get_file_content_by_url(item)
+
+        except Exception as exp:
+            logger.error(
+                "An error occurred while reading file content from SharePoint: %s", exp
+            )
+            raise
+
+    async def aread_file_content(self, input_file: Path, **kwargs) -> bytes:
+        try:
+            async with httpx.AsyncClient() as client:
+                access_token = await self._aget_access_token(client)
+                self._site_id_with_host_name = await self._aget_site_id_with_host_name(
+                    access_token, self.sharepoint_site_name, client
+                )
+                self._drive_id = await self._aget_drive_id(client)
+
+                item = await self._aget_item_from_path(input_file, client)
+                return await self._aget_file_content_by_url(item, client)
 
         except Exception as exp:
             logger.error(
