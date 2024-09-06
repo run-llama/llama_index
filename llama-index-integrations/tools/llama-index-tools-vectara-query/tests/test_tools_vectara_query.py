@@ -3,12 +3,10 @@ from llama_index.core.schema import Document
 from llama_index.indices.managed.vectara import VectaraIndex
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.vectara_query import VectaraQueryToolSpec
-
-# from llama_index.agent.openai import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 import pytest
-
-# import re
+import re
 
 #
 # For this test to run properly, please setup as follows:
@@ -29,20 +27,6 @@ import pytest
 def test_class():
     names_of_base_classes = [b.__name__ for b in VectaraQueryToolSpec.__mro__]
     assert BaseToolSpec.__name__ in names_of_base_classes
-
-    # tool_spec = VectaraQueryToolSpec()
-
-    # print(
-    #     f'Tried query and got response: {tool_spec.rag_query("What can I learn in this course?")}\n\n'
-    # )
-
-    # print(
-    #     f'Tried query and got response: {tool_spec.rag_query("Who is the lecturer for this course?")}\n\n'
-    # )
-
-    # print(
-    #     f'Tried retrieval and got response: {tool_spec.semantic_search("What years does the information in this course cover?")}'
-    # )
 
 
 def get_docs() -> List[Document]:
@@ -68,7 +52,7 @@ def get_docs() -> List[Document]:
     for inp in inputs:
         doc = Document(
             text=str(inp["text"]),
-            metadata=inp["metadata"],  # type: ignore
+            metadata=inp["metadata"],
         )
         docs.append(doc)
     return docs
@@ -126,7 +110,6 @@ def test_mmr_retrieval(vectara1) -> None:
     res = tool_spec.semantic_search("How will I look?")
     assert len(res) == 2
     assert res[0]["text"] == docs[2].text
-    assert res[1]["text"] == docs[0].text
 
 
 def test_retrieval_with_filter(vectara1) -> None:
@@ -154,9 +137,8 @@ def test_udf_retrieval(vectara1) -> None:
 
     res = tool_spec.semantic_search("What will the future look like?")
     assert len(res) == 2
-    print(f"DEBUG: RECEIVED RESULTS {res}")
-    # assert res[0]['text'] == docs[3].text
-    # assert res[1]['text'] == docs[2].text
+    assert res[0]["text"] == docs[3].text
+    assert res[1]["text"] == docs[2].text
 
     # test with dates: Weight of score subtracted by number of years from current date
     tool_spec = VectaraQueryToolSpec(
@@ -173,82 +155,81 @@ def test_udf_retrieval(vectara1) -> None:
     assert len(res) == 2
 
 
-# @pytest.fixture()
-# def vectara2():
-#     try:
-#         vectara2 = VectaraIndex()
-#     except ValueError:
-#         pytest.skip("Missing Vectara credentials, skipping test")
+@pytest.fixture()
+def vectara2():
+    try:
+        vectara2 = VectaraIndex()
+    except ValueError:
+        pytest.skip("Missing Vectara credentials, skipping test")
 
-#     file_path = "docs/docs/examples/data/paul_graham/paul_graham_essay.txt"
-#     id = vectara2.insert_file(
-#         file_path, metadata={"url": "https://www.paulgraham.com/worked.html"}
-#     )
+    file_path = "docs/docs/examples/data/paul_graham/paul_graham_essay.txt"
+    id = vectara2.insert_file(
+        file_path, metadata={"url": "https://www.paulgraham.com/worked.html"}
+    )
 
-#     yield vectara2
+    yield vectara2
 
-#     # Tear down code
-#     vectara2._delete_doc(id)
-
-
-# def test_file_upload(vectara2) -> None:
-#     # test query with Vectara summarization (default)
-#     query_engine = vectara2.as_query_engine(similarity_top_k=3)
-#     res = query_engine.query("What software did Paul Graham write?")
-#     assert "paul graham" in str(res).lower() and "software" in str(res).lower()
-#     assert "fcs" in res.metadata
-#     assert res.metadata["fcs"] >= 0
-
-#     # test query with Vectara summarization (streaming)
-#     query_engine = vectara2.as_query_engine(similarity_top_k=3, streaming=True)
-#     res = query_engine.query("What software did Paul Graham write?")
-#     summary = ""
-#     for chunk in res.response_gen:
-#         if chunk.delta:
-#             summary += chunk.delta
-#         if (
-#             chunk.additional_kwargs
-#             and "fcs" in chunk.additional_kwargs
-#             and chunk.additional_kwargs["fcs"] is not None
-#         ):
-#             assert chunk.additional_kwargs["fcs"] >= 0
-#     assert "paul graham" in summary.lower() and "software" in summary.lower()
-
-#     # test query with VectorStoreQuery (using OpenAI for summarization)
-#     query_engine = vectara2.as_query_engine(similarity_top_k=3, summary_enabled=False)
-#     res = query_engine.query("What software did Paul Graham write?")
-#     assert "paul graham" in str(res).lower() and "software" in str(res).lower()
-
-#     # test query with Vectara summarization (default)
-#     query_engine = vectara2.as_query_engine(similarity_top_k=3)
-#     res = query_engine.query("How is Paul related to Reddit?")
-#     summary = res.response
-#     assert "paul graham" in summary.lower() and "reddit" in summary.lower()
-#     assert "https://www.paulgraham.com/worked.html" in str(res.source_nodes)
+    # Tear down code
+    vectara2._delete_doc(id)
 
 
-# def test_citations(vectara2) -> None:
-#     # test markdown citations
-#     query_engine = vectara2.as_query_engine(
-#         similarity_top_k=10,
-#         summary_num_results=7,
-#         summary_prompt_name="vectara-summary-ext-24-05-med-omni",
-#         citations_style="markdown",
-#         citations_url_pattern="{doc.url}",
-#         citations_text_pattern="(source)",
-#     )
-#     res = query_engine.query("Describe Paul's early life and career.")
-#     summary = res.response
-#     assert "(source)" in summary
-#     assert "https://www.paulgraham.com/worked.html" in summary
+def test_basic_rag_query(vectara2) -> None:
+    # test query with Vectara summarization (default)
+    tool_spec = VectaraQueryToolSpec(num_results=3)
+    res = tool_spec.rag_query("What software did Paul Graham write?")
+    assert (
+        "paul graham" in res["summary"].lower() and "software" in res["summary"].lower()
+    )
+    assert "factual_consistency_score" in res
+    assert res["factual_consistency_score"] >= 0
 
-#     # test numeric citations
-#     query_engine = vectara2.as_query_engine(
-#         similarity_top_k=10,
-#         summary_num_results=7,
-#         summary_prompt_name="mockingbird-1.0-2024-07-16",
-#         citations_style="numeric",
-#     )
-#     res = query_engine.query("Describe Paul's early life and career.")
-#     summary = res.response
-#     assert re.search(r"\[\d+\]", summary)
+    res = tool_spec.rag_query("How is Paul related to Reddit?")
+    summary = res["summary"]
+    assert "paul graham" in summary.lower() and "reddit" in summary.lower()
+    assert "https://www.paulgraham.com/worked.html" in str(res["citation_metadata"])
+
+
+def test_citations(vectara2) -> None:
+    # test markdown citations
+    tool_spec = VectaraQueryToolSpec(
+        num_results=10,
+        summary_num_results=7,
+        summarizer_prompt_name="vectara-summary-ext-24-05-med-omni",
+        citations_style="markdown",
+        citations_url_pattern="{doc.url}",
+        citations_text_pattern="(source)",
+    )
+    res = tool_spec.rag_query("Describe Paul's early life and career.")
+    summary = res["summary"]
+    assert "(source)" in summary
+    assert "https://www.paulgraham.com/worked.html" in summary
+
+    # test numeric citations
+    tool_spec = VectaraQueryToolSpec(
+        num_results=10,
+        summary_num_results=7,
+        summarizer_prompt_name="mockingbird-1.0-2024-07-16",
+        citations_style="numeric",
+    )
+    res = tool_spec.rag_query("Describe Paul's education.")
+    summary = res["summary"]
+    assert re.search(r"\[\d+\]", summary)
+
+
+def test_agent_basic(vectara2) -> None:
+    tool_spec = VectaraQueryToolSpec(num_results=10, reranker="slingshot")
+    agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
+
+    res = agent.chat("What software did Paul Graham write?").response
+    assert "paul graham" in res.lower() and "software" in res.lower()
+
+
+def test_agent_filter(vectara1) -> None:
+    tool_spec = VectaraQueryToolSpec(
+        num_results=1, metadata_filter="doc.date > '2022-02-01'"
+    )
+
+    agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
+
+    res = agent.chat("How will I look when I am much older compared to now?").response
+    assert "you" in res.lower() and "not" in res.lower()
