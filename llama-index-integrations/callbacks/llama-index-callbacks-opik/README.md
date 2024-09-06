@@ -29,5 +29,3 @@ from opik.integrations.llama_index import LlamaIndexCallbackHandler
 opik_callback_handler = LlamaIndexCallbackHandler()
 Settings.callback_manager = CallbackManager([opik_callback_handler])
 ```
-
-
