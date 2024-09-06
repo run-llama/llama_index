@@ -1,5 +1,9 @@
 # CHANGELOG — llama-index-vector-stores-opensearch
 
+## [0.2.1]
+
+- Refresh Opensearch index after delete operation to reflect the change for future searches
+
 ## [0.1.14]
 
 - Adds support for full MetadataFilters (all operators and nested filters)
