@@ -28,9 +28,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
     VectorStoreQueryMode,
 )
-from llama_index.core.vector_stores.utils import (
-    node_to_metadata_dict,
-)
+from llama_index.core.vector_stores.utils import node_to_metadata_dict
 from llama_index.core.schema import TextNode, BaseNode
 from llama_index.core.bridge.pydantic import PrivateAttr
 
