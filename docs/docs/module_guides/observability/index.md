@@ -164,6 +164,33 @@ set_global_handler("literalai")
 
 ![](../../_static/integrations/literal_ai.gif)
 
+### Opik
+
+[Opik by Comet](https://www.comet.com/docs/opik/?utm_source=llama-index&utm_medium=github&utm_campaign=opik&utm_content=home_page) is an open-source end to end LLM Evaluation Platform built by Comet.
+
+To get started, simply sign up for an account on [Comet](https://www.comet.com/signup?from=llm&utm_medium=github&utm_source=llama-index&utm_campaign=opik) and grab your API key.
+
+#### Usage Pattern
+
+- Install the Opik Python SDK with `pip install opik`
+- In Opik, get your API key from the user menu.
+- If you are using a self-hosted instance of Opik, also make note of its base URL.
+
+You can now use the Opik integration with LlamaIndex as follows:
+
+```python
+from llama_index.core import set_global_handler
+
+# You should provide your OPIK API key and Workspace using the following environment variables:
+# OPIK_API_KEY, OPIK_WORKSPACE
+set_global_handler("opik")
+```
+
+#### Example Guides
+
+- [Llama-index + Opik documentation page](https://www.comet.com/docs/opik/tracing/integrations/llama_index?utm_source=llama-index&utm_medium=github&utm_campaign=opik&utm_content=llama-index-docs-page)
+- [Llama-index integration cookbook](https://www.comet.com/docs/opik/cookbook/llama-index?utm_source=llama-index&utm_medium=github&utm_campaign=opik&utm_content=llama-index-cookbook)
+
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.
