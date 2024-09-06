@@ -466,7 +466,9 @@ class OpensearchVectorClient:
         search_query = {
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
         }
-        await self._os_client.delete_by_query(index=self._index, body=search_query)
+        await self._os_client.delete_by_query(
+            index=self._index, body=search_query, refresh=True
+        )
 
     async def delete_nodes(
         self,
@@ -490,12 +492,16 @@ class OpensearchVectorClient:
         if filters:
             query["query"]["bool"]["filter"].extend(self._parse_filters(filters))
 
-        await self._os_client.delete_by_query(index=self._index, body=query)
+        await self._os_client.delete_by_query(
+            index=self._index, body=query, refresh=True
+        )
 
     async def clear(self) -> None:
         """Clears index."""
         query = {"query": {"bool": {"filter": []}}}
-        await self._os_client.delete_by_query(index=self._index, body=query)
+        await self._os_client.delete_by_query(
+            index=self._index, body=query, refresh=True
+        )
 
     async def aquery(
         self,
