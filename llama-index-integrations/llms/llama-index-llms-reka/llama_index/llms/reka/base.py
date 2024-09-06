@@ -119,9 +119,6 @@ class RekaLLM(CustomLLM):
                 "Reka API key is required. Please provide it as an argument or set the REKA_API_KEY environment variable."
             )
 
-        self._client = Reka(api_key=api_key)
-        self._aclient = AsyncReka(api_key=api_key)
-
         super().__init__(
             model=model,
             temperature=temperature,
@@ -129,6 +126,8 @@ class RekaLLM(CustomLLM):
             additional_kwargs=additional_kwargs,
             callback_manager=callback_manager,
         )
+        self._client = Reka(api_key=api_key)
+        self._aclient = AsyncReka(api_key=api_key)
 
     @property
     def metadata(self) -> LLMMetadata:
