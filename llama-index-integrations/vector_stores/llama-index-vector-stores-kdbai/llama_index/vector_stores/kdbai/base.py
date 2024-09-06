@@ -137,6 +137,13 @@ class KDBAIVectorStore(BasePydanticVectorStore):
             elif isinstance(self._table, kdbai.TablePyKx):
                 schema = [item for item in schema if item != "sparseVectors"]
 
+            # For handling the double columns issue from backend (occurs only when schema has sparseVectors).
+            updated_schema = {}
+            for column in schema:
+                if column["name"] not in updated_schema:
+                    updated_schema[column["name"]] = column
+            schema = list(updated_schema.values())
+
         try:
             for node in nodes:
                 doc = {

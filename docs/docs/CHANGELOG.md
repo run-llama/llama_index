@@ -1,5 +1,28 @@
 # ChangeLog
 
+## [2024-09-05]
+
+### `llama-index-core` [0.11.6]
+
+- add llama-deploy docs to docs builds (#15794)
+- Add oreilly course cookbooks (#15845)
+
+### `llama-index-readers-box` [0.2.1]
+
+- Various bug fixes (#15836)
+
+### `llama-index-readers-file` [0.2.1]
+
+- Update ImageReader file loading logic (#15848)
+
+### `llama-index-tools-box` [0.2.1]
+
+- Various bug fixes (#15836)
+
+### `llama-index-vector-stores-opensearch` [0.2.1]
+
+- Refresh Opensearch index after delete operation (#15854)
+
 ## [2024-09-04]
 
 ### `llama-index-core` [0.11.5]
