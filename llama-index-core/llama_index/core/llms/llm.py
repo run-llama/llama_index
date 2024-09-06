@@ -332,7 +332,7 @@ class LLM(BaseLLM):
 
         Examples:
             ```python
-            from pydantic.v1 import BaseModel
+            from pydantic import BaseModel
 
             class Test(BaseModel):
                 \"\"\"My test class.\"\"\"
@@ -385,7 +385,7 @@ class LLM(BaseLLM):
 
         Examples:
             ```python
-            from pydantic.v1 import BaseModel
+            from pydantic import BaseModel
 
             class Test(BaseModel):
                 \"\"\"My test class.\"\"\"
@@ -439,7 +439,7 @@ class LLM(BaseLLM):
 
         Examples:
             ```python
-            from pydantic.v1 import BaseModel
+            from pydantic import BaseModel
 
             class Test(BaseModel):
                 \"\"\"My test class.\"\"\"
@@ -497,7 +497,7 @@ class LLM(BaseLLM):
 
         Examples:
             ```python
-            from pydantic.v1 import BaseModel
+            from pydantic import BaseModel
 
             class Test(BaseModel):
                 \"\"\"My test class.\"\"\"
