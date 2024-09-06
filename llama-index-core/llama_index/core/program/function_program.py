@@ -189,8 +189,8 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
 
     def __call__(
         self,
-        llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
@@ -213,8 +213,8 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
 
     async def acall(
         self,
-        llm_kwargs: Optional[Dict[str, Any]] = None,
         *args: Any,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}

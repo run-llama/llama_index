@@ -315,6 +315,7 @@ class LLM(BaseLLM):
         self,
         output_cls: BaseModel,
         prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> BaseModel:
         r"""Structured predict.
@@ -359,7 +360,7 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        result = program(**prompt_args)
+        result = program(llm_kwargs=llm_kwargs, **prompt_args)
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
@@ -422,6 +423,7 @@ class LLM(BaseLLM):
         self,
         output_cls: BaseModel,
         prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> Generator[Union[Model, List[Model]], None, None]:
         r"""Stream Structured predict.
@@ -468,7 +470,7 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        result = program.stream_call(**prompt_args)
+        result = program.stream_call(llm_kwargs=llm_kwargs, **prompt_args)
         for r in result:
             dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
             yield r
@@ -480,6 +482,7 @@ class LLM(BaseLLM):
         self,
         output_cls: BaseModel,
         prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> AsyncGenerator[Union[Model, List[Model]], None]:
         r"""Async Stream Structured predict.
@@ -528,7 +531,7 @@ class LLM(BaseLLM):
                 pydantic_program_mode=self.pydantic_program_mode,
             )
 
-            result = await program.astream_call(**prompt_args)
+            result = await program.astream_call(llm_kwargs=llm_kwargs, **prompt_args)
             async for r in result:
                 dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
                 yield r
