@@ -638,6 +638,7 @@ nav:
           - ./examples/vector_stores/SimpleIndexDemoMMR.ipynb
           - ./examples/vector_stores/SimpleIndexOnS3.ipynb
           - ./examples/vector_stores/SupabaseVectorIndexDemo.ipynb
+          - ./examples/vector_stores/TablestoreDemo.ipynb
           - ./examples/vector_stores/TairIndexDemo.ipynb
           - ./examples/vector_stores/TencentVectorDBIndexDemo.ipynb
           - ./examples/vector_stores/TiDBVector.ipynb
@@ -1498,6 +1499,7 @@ nav:
               - ./api_reference/storage/vector_store/simple.md
               - ./api_reference/storage/vector_store/singlestoredb.md
               - ./api_reference/storage/vector_store/supabase.md
+              - ./api_reference/storage/vector_store/tablestore.md
               - ./api_reference/storage/vector_store/tair.md
               - ./api_reference/storage/vector_store/tencentvectordb.md
               - ./api_reference/storage/vector_store/tidbvector.md
@@ -2163,6 +2165,7 @@ plugins:
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-xinference-rerank
             - ../llama-index-integrations/selectors/llama-index-selectors-notdiamond
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-mariadb
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-tablestore
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
