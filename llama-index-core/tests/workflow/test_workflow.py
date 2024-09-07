@@ -12,6 +12,7 @@ from llama_index.core.workflow.workflow import (
     WorkflowTimeoutError,
     WorkflowValidationError,
     WorkflowRuntimeError,
+    WorkflowStepTimeoutError,
 )
 
 from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
@@ -65,6 +66,19 @@ async def test_workflow_timeout():
 
     workflow = SlowWorkflow(timeout=1)
     with pytest.raises(WorkflowTimeoutError):
+        await workflow.run()
+
+
+@pytest.mark.asyncio()
+async def test_workflow_step_timeout():
+    class WorkflowWithSlowStep(Workflow):
+        @step(timeout=1)
+        async def slow_step(self, ev: StartEvent) -> StopEvent:
+            await asyncio.sleep(5.0)
+            return StopEvent(result="Done")
+
+    workflow = WorkflowWithSlowStep()
+    with pytest.raises(WorkflowStepTimeoutError):
         await workflow.run()
 
 

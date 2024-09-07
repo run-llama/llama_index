@@ -6,6 +6,10 @@ class WorkflowTimeoutError(Exception):
     pass
 
 
+class WorkflowStepTimeoutError(Exception):
+    pass
+
+
 class WorkflowRuntimeError(Exception):
     pass
 

@@ -158,7 +158,13 @@ class Workflow(metaclass=WorkflowMeta):
                         new_ev_fut = asyncio.get_event_loop().run_in_executor(
                             None, run_task
                         )
-                    new_ev = await asyncio.wait_for(new_ev_fut, timeout=config.timeout)
+                    try:
+                        new_ev = await asyncio.wait_for(
+                            new_ev_fut, timeout=config.timeout
+                        )
+                    except asyncio.TimeoutError as e:
+                        msg = f"Step timed out after {config.timeout} seconds"
+                        raise WorkflowStepTimeoutError(msg) from e
 
                     if self._verbose and name != "_done":
                         if new_ev is not None:
