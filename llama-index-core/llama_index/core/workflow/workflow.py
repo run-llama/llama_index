@@ -152,12 +152,13 @@ class Workflow(metaclass=WorkflowMeta):
                     instrumented_step = dispatcher.span(step)
 
                     if asyncio.iscoroutinefunction(step):
-                        new_ev = await instrumented_step(**kwargs)
+                        new_ev_fut = instrumented_step(**kwargs)
                     else:
                         run_task = functools.partial(instrumented_step, **kwargs)
-                        new_ev = await asyncio.get_event_loop().run_in_executor(
+                        new_ev_fut = asyncio.get_event_loop().run_in_executor(
                             None, run_task
                         )
+                    new_ev = await asyncio.wait_for(new_ev_fut, timeout=config.timeout)
 
                     if self._verbose and name != "_done":
                         if new_ev is not None:

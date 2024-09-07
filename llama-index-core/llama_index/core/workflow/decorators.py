@@ -21,6 +21,7 @@ class StepConfig(BaseModel):
     context_parameter: Optional[str]
     num_workers: int
     requested_services: List[ServiceDefinition]
+    timeout: Optional[float] = None
 
 
 def step(
