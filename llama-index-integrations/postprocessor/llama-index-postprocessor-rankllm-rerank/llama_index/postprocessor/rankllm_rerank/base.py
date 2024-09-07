@@ -1,5 +1,4 @@
 from typing import Any, List, Optional
-from enum import Enum
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.instrumentation import get_dispatcher
@@ -60,7 +59,6 @@ class RankLLMRerank(BaseNodePostprocessor):
             top_n=top_n,
             window_size=window_size,
             batch_size=batch_size,
-            window_size=window_size,
         )
 
         self._model = Reranker.create_agent(
