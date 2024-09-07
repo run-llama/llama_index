@@ -24,7 +24,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["Ryan Nguyen ryan.nguyen@uwaterloo.ca"]
 description = "llama-index postprocessor rankllm-rerank integration"
 exclude = ["**/BUILD"]
 license = "MIT"
@@ -35,6 +35,7 @@ version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
+rank-llm = ">=0.20.1"
 llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
