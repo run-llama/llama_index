@@ -29,6 +29,7 @@ def step(
     workflow: Optional[Type["Workflow"]] = None,
     pass_context: bool = False,
     num_workers: int = 1,
+    timeout: Optional[float] = None,
 ) -> Callable:
     """Decorator used to mark methods and functions as workflow steps.
 
@@ -57,6 +58,7 @@ def step(
             context_parameter=spec.context_parameter,
             num_workers=num_workers,
             requested_services=spec.requested_services or [],
+            timeout=timeout,
         )
 
         # If this is a free function, call add_step() explicitly.
