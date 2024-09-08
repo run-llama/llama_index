@@ -1,4 +1,5 @@
 import asyncio
+import json
 from logging import getLogger
 from typing import Any, List, Dict, Optional
 
@@ -232,7 +233,10 @@ class WordliftVectorStore(BasePydanticVectorStore):
                     vector_search_query_request=request,
                 )
             except ApiException as e:
-                log.error(f"Error querying for entities: {e}", exc_info=True)
+                log.error(
+                    f"Error querying for entities with the following request: {json.dumps(request)}",
+                    exc_info=True,
+                )
 
         nodes: List[TextNode] = []
         similarities: List[float] = []
