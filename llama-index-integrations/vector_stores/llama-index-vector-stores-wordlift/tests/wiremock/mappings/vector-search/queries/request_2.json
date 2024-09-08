@@ -17,7 +17,13 @@
       {
         "equalToJson": {
           "fields": ["schema:url", "schema:headline", "schema:text"],
-          "filters": [],
+          "filters": [
+            {
+              "key": "rdf:type",
+              "operator": "EQ",
+              "value": "http://schema.org/Webpage"
+            }
+          ],
           "query_embedding": [
             -0.02409953996539116, 0.007545656058937311, -0.010837538167834282,
             -0.015247111208736897, 0.020510902628302574, 0.02260207198560238,

@@ -19,6 +19,8 @@ from wordlift_client import NodeRequest, VectorSearchQueryRequest, Configuration
 from wordlift_client.exceptions import ApiException
 from wordlift_client.models import AccountInfo, NodeRequestMetadataValue
 
+from .metadata_filters_to_filters import MetadataFiltersToFilters
+
 log = getLogger(__name__)
 
 
@@ -212,17 +214,22 @@ class WordliftVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
+        filters = MetadataFiltersToFilters.metadata_filters_to_filters(
+            query.filters if query.filters else []
+        )
         if query.query_str:
             request = VectorSearchQueryRequest(
                 query_string=query.query_str,
                 similarity_top_k=query.similarity_top_k,
                 fields=self._fields,
+                filters=filters,
             )
         else:
             request = VectorSearchQueryRequest(
                 query_embedding=query.query_embedding,
                 similarity_top_k=query.similarity_top_k,
                 fields=self._fields,
+                filters=filters,
             )
 
         async with wordlift_client.ApiClient(self._configuration) as api_client:
