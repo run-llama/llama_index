@@ -70,7 +70,7 @@ class OpensearchVectorClient:
         text_field: str = "content",
         method: Optional[dict] = None,
         engine: Optional[str] = "nmslib",
-        space_type: Optional['str'] = "l2",
+        space_type: Optional[str] = "l2",
         max_chunk_bytes: int = 1 * 1024 * 1024,
         search_pipeline: Optional[str] = None,
         os_client: Optional[OSClient] = None,
@@ -313,8 +313,8 @@ class OpensearchVectorClient:
         If there are no filters do approx-knn search.
         If there are (pre)-filters, do an exhaustive exact knn search using 'painless
             scripting' if the version of Opensearch supports it, otherwise uses knn_score scripting score.
-        
-        Note: 
+
+        Note:
             -AWS Opensearch Serverless does not support the painless scripting functionality at this time according to AWS.
             -Also note that approximate knn search does not support pre-filtering.
 
@@ -328,19 +328,21 @@ class OpensearchVectorClient:
         Returns:
             Up to k docs closest to query_embedding
         """
-
         pre_filter = self._parse_filters(filters)
         if not pre_filter:
             search_query = self._default_approximate_search_query(
                 query_embedding, k, vector_field=embedding_field
             )
         elif self.is_aoss:
-            search_query = self._default_scoring_script_query(                
+            # if is_aoss is set we are using Opensearch Serverless AWS offering which cannot use
+            # painless scripting so default scoring script returned will be just normal knn_score script
+            search_query = self._default_scoring_script_query(
                 query_embedding,
                 k,
                 space_type=self.space_type,
                 pre_filter={"bool": {"filter": pre_filter}},
-                vector_field=embedding_field,)
+                vector_field=embedding_field,
+            )
         else:
             # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
             search_query = self._default_scoring_script_query(
@@ -394,8 +396,9 @@ class OpensearchVectorClient:
     def __get_painless_scripting_source(
         self, space_type: str, vector_field: str = "embedding"
     ) -> str:
-        """For Painless Scripting, it returns the script source based on space type. 
-        This does not work with Opensearch Serverless currently."""
+        """For Painless Scripting, it returns the script source based on space type.
+        This does not work with Opensearch Serverless currently.
+        """
         source_value = (
             f"(1.0 + {space_type}(params.query_value, doc['{vector_field}']))"
         )
@@ -404,28 +407,28 @@ class OpensearchVectorClient:
         else:
             return f"1/{source_value}"
 
-    def _get_knn_scoring_script(self, space_type, vector_field, query_vector):  
-        """Default scoring script that will work with AWS Opensearch Serverless"""
+    def _get_knn_scoring_script(self, space_type, vector_field, query_vector):
+        """Default scoring script that will work with AWS Opensearch Serverless."""
         return {
-                    "source": "knn_score",
-                    "lang": "knn",
-                    "params": {
-                        "field": vector_field,
-                        "query_value": query_vector,
-                        "space_type": space_type
-                    }
-                }
-    
+            "source": "knn_score",
+            "lang": "knn",
+            "params": {
+                "field": vector_field,
+                "query_value": query_vector,
+                "space_type": space_type,
+            },
+        }
+
     def _get_painless_scoring_script(self, space_type, vector_field, query_vector):
         source = self.__get_painless_scripting_source(space_type, vector_field)
         return {
-                    "source": source,
-                    "params": {
-                        "field": vector_field,
-                        "query_value": query_vector,
-                    },
-                }
-    
+            "source": source,
+            "params": {
+                "field": vector_field,
+                "query_value": query_vector,
+            },
+        }
+
     def _default_scoring_script_query(
         self,
         query_vector: List[float],
@@ -434,19 +437,25 @@ class OpensearchVectorClient:
         pre_filter: Optional[Union[Dict, List]] = None,
         vector_field: str = "embedding",
     ) -> Dict:
-        """For Scoring Script Search, this is the default query. Has to account for Opensearch Service 
-        Serverless which does not support painless scripting functions so defaults to knn_score."""
-
+        """For Scoring Script Search, this is the default query. Has to account for Opensearch Service
+        Serverless which does not support painless scripting functions so defaults to knn_score.
+        """
         if not pre_filter:
             pre_filter = MATCH_ALL_QUERY
 
         # check if we can use painless scripting or have to use default knn_score script
         if self.is_aoss:
             if space_type == "l2Squared":
-                raise ValueError("Unsupported space type for aoss. Can only use l1, l2, cosinesimil.")
-            script = self._get_knn_scoring_script(space_type, vector_field, query_vector)
+                raise ValueError(
+                    "Unsupported space type for aoss. Can only use l1, l2, cosinesimil."
+                )
+            script = self._get_knn_scoring_script(
+                space_type, vector_field, query_vector
+            )
         else:
-            script = self._get_painless_scoring_script(space_type, vector_field, query_vector)
+            script = self._get_painless_scoring_script(
+                space_type, vector_field, query_vector
+            )
         return {
             "size": k,
             "query": {
@@ -503,9 +512,7 @@ class OpensearchVectorClient:
         search_query = {
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
         }
-        await self._os_client.delete_by_query(
-            index=self._index, body=search_query, refresh=True
-        )
+        await self._os_client.delete_by_query(index=self._index, body=search_query)
 
     async def delete_nodes(
         self,
@@ -529,16 +536,12 @@ class OpensearchVectorClient:
         if filters:
             query["query"]["bool"]["filter"].extend(self._parse_filters(filters))
 
-        await self._os_client.delete_by_query(
-            index=self._index, body=query, refresh=True
-        )
+        await self._os_client.delete_by_query(index=self._index, body=query)
 
     async def clear(self) -> None:
         """Clears index."""
         query = {"query": {"bool": {"filter": []}}}
-        await self._os_client.delete_by_query(
-            index=self._index, body=query, refresh=True
-        )
+        await self._os_client.delete_by_query(index=self._index, body=query)
 
     async def aquery(
         self,
