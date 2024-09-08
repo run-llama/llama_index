@@ -250,7 +250,9 @@ class WordliftVectorStore(BasePydanticVectorStore):
         ids: List[str] = []
 
         for item in page.items:
-            metadata = {**item.metadata, **item.fields}
+            metadata = item.metadata if item.metadata else {}
+            fields = item.fields if item.fields else {}
+            metadata = {**metadata, **fields}
 
             nodes.append(
                 TextNode(
