@@ -30,6 +30,13 @@ def test_embed():
     assert response[0].embedding
 
 
+@pytest.mark.skipif(
+    not {
+        "AZURE_INFERENCE_ENDPOINT",
+        "AZURE_INFERENCE_CREDENTIAL",
+    }.issubset(set(os.environ)),
+    reason="Azure AI endpoint and/or credential are not set.",
+)
 def test_get_metadata(caplog):
     """Tests if we can get model metadata back from the endpoint. If so,
     model_name should not be 'unknown'. Some endpoints may not support this
