@@ -12,7 +12,7 @@ from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 dispatcher = get_dispatcher(__name__)
 
 try:
-    from rank_llm.rerank import Reranker
+    from rank_llm.rerank.reranker import Reranker
     from rank_llm.data import Request, Query, Candidate
 except ImportError:
     raise ImportError("RankLLM requires `pip install rank-llm`")
