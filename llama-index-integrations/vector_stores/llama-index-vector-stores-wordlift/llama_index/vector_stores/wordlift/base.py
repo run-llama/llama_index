@@ -256,8 +256,8 @@ class WordliftVectorStore(BasePydanticVectorStore):
 
             nodes.append(
                 TextNode(
-                    text=item.text,
-                    id_=item.node_id,
+                    text=item.text if item.text else None,
+                    id_=item.node_id if item.node_id else None,
                     embedding=(item.embeddings if "embeddings" in item else None),
                     metadata=metadata,
                 )
