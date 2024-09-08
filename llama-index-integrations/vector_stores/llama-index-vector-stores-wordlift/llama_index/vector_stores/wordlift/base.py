@@ -234,7 +234,7 @@ class WordliftVectorStore(BasePydanticVectorStore):
                 )
             except ApiException as e:
                 log.error(
-                    f"Error querying for entities with the following request: {json.dumps(request)}",
+                    f"Error querying for entities with the following request: {json.dumps(api_client.sanitize_for_serialization(request))}",
                     exc_info=True,
                 )
 
