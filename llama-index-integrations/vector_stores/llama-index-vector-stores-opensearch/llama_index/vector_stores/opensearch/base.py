@@ -312,9 +312,11 @@ class OpensearchVectorClient:
 
         If there are no filters do approx-knn search.
         If there are (pre)-filters, do an exhaustive exact knn search using 'painless
-            scripting'.
-
-        Note that approximate knn search does not support pre-filtering.
+            scripting' if the version of Opensearch supports it, otherwise uses knn_score scripting score.
+        
+        Note: 
+            -AWS Opensearch Serverless does not support the painless scripting functionality at this time according to AWS.
+            -Also note that approximate knn search does not support pre-filtering.
 
         Args:
             query_embedding: Vector embedding to query.
