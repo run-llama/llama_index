@@ -55,34 +55,32 @@ class MetadataFiltersToFilters:
     @staticmethod
     def metadata_filter_operator_to_filter_operator(filter_operator: FilterOperator):
         # 'EQ', 'GT', 'LT', 'NE', 'GTE', 'LTE', 'IN', 'NIN', 'AND', 'OR'
-        match filter_operator:
-            case FilterOperator.EQ:
-                return "EQ"  # default operator (string, int, float)
-            case FilterOperator.GT:
-                return "GT"  # greater than (int, float)
-            case FilterOperator.LT:
-                return "LT"  # less than (int, float)
-            case FilterOperator.NE:
-                return "NE"  # not equal to (string, int, float)
-            case FilterOperator.GTE:
-                return "GTE"  # greater than or equal to (int, float)
-            case FilterOperator.LTE:
-                return "LTE"  # less than or equal to (int, float)
-            case FilterOperator.IN:
-                return "IN"  # In array (string or number)
-            case FilterOperator.NIN:
-                return "NIN"  # Not in array (string or number)
-            case _:
-                raise ValueError(f"Invalid filter operator: {filter_operator}")
+        if filter_operator == FilterOperator.EQ:
+            return "EQ"  # default operator (string, int, float)
+        elif filter_operator == FilterOperator.GT:
+            return "GT"  # greater than (int, float)
+        elif filter_operator == FilterOperator.LT:
+            return "LT"  # less than (int, float)
+        elif filter_operator == FilterOperator.NE:
+            return "NE"  # not equal to (string, int, float)
+        elif filter_operator == FilterOperator.GTE:
+            return "GTE"  # greater than or equal to (int, float)
+        elif filter_operator == FilterOperator.LTE:
+            return "LTE"  # less than or equal to (int, float)
+        elif filter_operator == FilterOperator.IN:
+            return "IN"  # In array (string or number)
+        elif filter_operator == FilterOperator.NIN:
+            return "NIN"  # Not in array (string or number)
+        else:
+            raise ValueError(f"Invalid filter operator: {filter_operator}")
 
     @staticmethod
     def metadata_filter_condition_to_filter_operators(
         filter_condition: FilterCondition,
     ):
-        match filter_condition:
-            case FilterCondition.AND:
-                return "AND"
-            case FilterCondition.OR:
-                return "OR"
-            case _:
-                raise ValueError(f"Invalid filter condition: {filter_condition}")
+        if filter_condition == FilterCondition.AND:
+            return "AND"
+        elif filter_condition == FilterCondition.OR:
+            return "OR"
+        else:
+            raise ValueError(f"Invalid filter condition: {filter_condition}")
