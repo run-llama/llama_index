@@ -5,7 +5,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     Optional,
     Tuple,
 )
@@ -16,7 +15,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.callbacks import (
     CallbackManager,
     trace_method,
@@ -25,8 +24,6 @@ from llama_index.core.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
 )
-from llama_index.core.tools import adapt_to_async_tool
-from llama_index.core.tools.types import AsyncBaseTool
 from llama_index.core.query_pipeline.components.function import get_parameters
 
 
@@ -44,6 +41,7 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     fn: Callable = Field(..., description="Function to run.")
     async_fn: Optional[Callable] = Field(
         None, description="Async function to run. If not provided, will run `fn`."
@@ -55,9 +53,6 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
     output_key: str = Field(default="__output__", description="output")
 
     verbose: bool = Field(False, description="Verbose mode.")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(
         self,
@@ -89,10 +84,6 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
             input=task.input,
             step_state=step_state,
         )
-
-    def get_tools(self, input: str) -> List[AsyncBaseTool]:
-        """Get tools."""
-        return [adapt_to_async_tool(t) for t in self._get_tools(input)]
 
     def _get_task_step_response(
         self, agent_response: AGENT_CHAT_RESPONSE_TYPE, step: TaskStep, is_done: bool

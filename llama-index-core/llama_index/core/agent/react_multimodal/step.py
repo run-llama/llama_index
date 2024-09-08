@@ -134,7 +134,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
 
             self._add_user_step_to_reasoning = partial(
                 add_user_step_to_reasoning,
-                generate_chat_message_fn=generate_openai_multi_modal_chat_message,
+                generate_chat_message_fn=generate_openai_multi_modal_chat_message,  # type: ignore
             )
         except ImportError:
             raise ImportError(

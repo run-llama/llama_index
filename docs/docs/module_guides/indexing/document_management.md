@@ -44,13 +44,8 @@ If a Document is already present within an index, you can "update" a Document wi
 ```python
 # NOTE: the document has a `doc_id` specified
 doc_chunks[0].text = "Brand new document text"
-index.update_ref_doc(
-    doc_chunks[0],
-    update_kwargs={"delete_kwargs": {"delete_from_docstore": True}},
-)
+index.update_ref_doc(doc_chunks[0])
 ```
-
-Here, we passed some extra kwargs to ensure the document is deleted from the docstore. This is of course optional.
 
 ## Refresh
 
@@ -73,9 +68,7 @@ doc_chunks.append(
 )
 
 # refresh the index
-refreshed_docs = index.refresh_ref_docs(
-    doc_chunks, update_kwargs={"delete_kwargs": {"delete_from_docstore": True}}
-)
+refreshed_docs = index.refresh_ref_docs(doc_chunks)
 
 # refreshed_docs[0] and refreshed_docs[-1] should be true
 ```

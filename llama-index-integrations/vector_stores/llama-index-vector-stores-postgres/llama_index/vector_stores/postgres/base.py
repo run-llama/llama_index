@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, List, NamedTuple, Optional, Type, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, TYPE_CHECKING
 
 import asyncpg  # noqa
 import pgvector  # noqa
@@ -22,6 +22,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.sql.selectable import Select
 
 
 class DBEmbeddingRow(NamedTuple):
@@ -131,13 +134,11 @@ class PGVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    from sqlalchemy.sql.selectable import Select
-
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
 
     connection_string: str
-    async_connection_string: Union[str, sqlalchemy.engine.URL]
+    async_connection_string: str
     table_name: str
     schema_name: str
     embed_dim: int
@@ -202,6 +203,21 @@ class PGVectorStore(BasePydanticVectorStore):
 
         from sqlalchemy.orm import declarative_base
 
+        super().__init__(
+            connection_string=str(connection_string),
+            async_connection_string=str(async_connection_string),
+            table_name=table_name,
+            schema_name=schema_name,
+            hybrid_search=hybrid_search,
+            text_search_config=text_search_config,
+            embed_dim=embed_dim,
+            cache_ok=cache_ok,
+            perform_setup=perform_setup,
+            debug=debug,
+            use_jsonb=use_jsonb,
+            hnsw_kwargs=hnsw_kwargs,
+        )
+
         # sqlalchemy model
         self._base = declarative_base()
         self._table_class = get_data_model(
@@ -213,21 +229,6 @@ class PGVectorStore(BasePydanticVectorStore):
             cache_ok,
             embed_dim=embed_dim,
             use_jsonb=use_jsonb,
-        )
-
-        super().__init__(
-            connection_string=connection_string,
-            async_connection_string=async_connection_string,
-            table_name=table_name,
-            schema_name=schema_name,
-            hybrid_search=hybrid_search,
-            text_search_config=text_search_config,
-            embed_dim=embed_dim,
-            cache_ok=cache_ok,
-            perform_setup=perform_setup,
-            debug=debug,
-            use_jsonb=use_jsonb,
-            hnsw_kwargs=hnsw_kwargs,
         )
 
     async def close(self) -> None:
@@ -377,9 +378,11 @@ class PGVectorStore(BasePydanticVectorStore):
         hnsw_m = self.hnsw_kwargs.pop("hnsw_m")
         hnsw_dist_method = self.hnsw_kwargs.pop("hnsw_dist_method", "vector_cosine_ops")
 
+        index_name = f"{self._table_class.__tablename__}_embedding_idx"
+
         with self._session() as session, session.begin():
             statement = sqlalchemy.text(
-                f"CREATE INDEX ON {self.schema_name}.{self._table_class.__tablename__} USING hnsw (embedding {hnsw_dist_method}) WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
+                f"CREATE INDEX IF NOT EXISTS {index_name} ON {self.schema_name}.{self._table_class.__tablename__} USING hnsw (embedding {hnsw_dist_method}) WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
             )
             session.execute(statement)
             session.commit()
@@ -521,7 +524,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def _apply_filters_and_limit(
         self,
-        stmt: Select,
+        stmt: "Select",
         limit: int,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:

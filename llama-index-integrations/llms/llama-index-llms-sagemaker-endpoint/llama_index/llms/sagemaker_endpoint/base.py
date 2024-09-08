@@ -155,6 +155,26 @@ class SageMakerLLM(LLM):
         model_kwargs = model_kwargs or {}
         model_kwargs["temperature"] = temperature
         content_handler = content_handler
+        callback_manager = callback_manager or CallbackManager([])
+
+        super().__init__(
+            endpoint_name=endpoint_name,
+            endpoint_kwargs=endpoint_kwargs,
+            model_kwargs=model_kwargs,
+            content_handler=content_handler,
+            profile_name=profile_name,
+            region_name=region_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+            timeout=timeout,
+            max_retries=max_retries,
+            callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+        )
         self._completion_to_prompt = completion_to_prompt
         self._client = get_aws_service_client(
             service_name="sagemaker-runtime",
@@ -165,22 +185,6 @@ class SageMakerLLM(LLM):
             aws_session_token=aws_session_token,
             max_retries=max_retries,
             timeout=timeout,
-        )
-        callback_manager = callback_manager or CallbackManager([])
-
-        super().__init__(
-            endpoint_name=endpoint_name,
-            endpoint_kwargs=endpoint_kwargs,
-            model_kwargs=model_kwargs,
-            content_handler=content_handler,
-            profile_name=profile_name,
-            timeout=timeout,
-            max_retries=max_retries,
-            callback_manager=callback_manager,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-            output_parser=output_parser,
         )
 
     @llm_completion_callback()

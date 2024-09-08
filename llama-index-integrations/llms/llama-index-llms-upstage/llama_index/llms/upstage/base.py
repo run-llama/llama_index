@@ -14,6 +14,7 @@ from llama_index.llms.upstage.utils import (
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.bridge.pydantic import ConfigDict
 from tokenizers import Tokenizer
 from pydantic import Field, PrivateAttr
 from openai import OpenAI as SyncOpenAI
@@ -43,6 +44,7 @@ class Upstage(OpenAI):
         ```
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
     model: str = Field(
         default=DEFAULT_UPSTAGE_MODEL, description="The Upstage model to use."
     )

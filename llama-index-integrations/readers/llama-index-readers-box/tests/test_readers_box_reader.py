@@ -1,3 +1,4 @@
+import datetime
 import pytest
 from pathlib import Path
 from llama_index.core.readers.base import BaseReader
@@ -47,6 +48,17 @@ def test_box_reader_csv(box_client_ccg_integration_testing: BoxClient):
     assert len(docs) == 1
 
 
+def test_box_reader_metadata(box_client_ccg_integration_testing: BoxClient):
+    test_data = get_testing_data()
+    reader = BoxReader(box_client=box_client_ccg_integration_testing)
+    docs = reader.load_data(file_ids=[test_data["test_csv_id"]])
+    assert len(docs) == 1
+    doc = docs[0]
+    # check if metadata dictionary does not contain any datetime objects
+    for v in doc.metadata.values():
+        assert not isinstance(v, (datetime.datetime, datetime.date, datetime.time))
+
+
 def test_box_reader_folder(box_client_ccg_integration_testing):
     # Very slow test
     test_data = get_testing_data()
@@ -83,7 +95,7 @@ def test_box_reader_load_resource(box_client_ccg_integration_testing: BoxClient)
     doc = reader.load_resource(resource_id)
     assert doc is not None
     assert len(doc) == 1
-    assert doc[0].extra_info["id"] == resource_id
+    assert doc[0].metadata["box_file_id"] == resource_id
 
 
 def test_box_reader_file_content(box_client_ccg_integration_testing):

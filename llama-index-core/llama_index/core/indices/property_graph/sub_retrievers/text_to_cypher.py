@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 from llama_index.core.graph_stores.types import PropertyGraphStore
 from llama_index.core.indices.property_graph.sub_retrievers.base import BasePGRetriever
@@ -39,7 +39,7 @@ class TextToCypherRetriever(BasePGRetriever):
         llm: Optional[LLM] = None,
         text_to_cypher_template: Optional[Union[PromptTemplate, str]] = None,
         response_template: Optional[str] = None,
-        cypher_validator: Optional[callable] = None,
+        cypher_validator: Optional[Callable] = None,
         allowed_output_fields: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
@@ -61,7 +61,7 @@ class TextToCypherRetriever(BasePGRetriever):
         self.allowed_output_fields = allowed_output_fields
         super().__init__(graph_store=graph_store, include_text=False)
 
-    def _parse_generated_cyher(self, cypher_query: str) -> str:
+    def _parse_generated_cypher(self, cypher_query: str) -> str:
         if self.cypher_validator is not None:
             return self.cypher_validator(cypher_query)
         return cypher_query
@@ -69,25 +69,25 @@ class TextToCypherRetriever(BasePGRetriever):
     def _clean_query_output(self, query_output: Any) -> Any:
         """Iterate the cypher response, looking for the allowed fields."""
         if isinstance(query_output, dict):
-            filtered = {}
+            filtered_dict = {}
             for key, value in query_output.items():
                 if (
                     self.allowed_output_fields is None
                     or key in self.allowed_output_fields
                 ):
-                    filtered[key] = value
+                    filtered_dict[key] = value
                 elif isinstance(value, (dict, list)):
                     filtered_value = self._clean_query_output(value)
                     if filtered_value:
-                        filtered[key] = filtered_value
-            return filtered
+                        filtered_dict[key] = filtered_value
+            return filtered_dict
         elif isinstance(query_output, list):
-            filtered = []
+            filtered_list = []
             for item in query_output:
                 filtered_item = self._clean_query_output(item)
                 if filtered_item:
-                    filtered.append(filtered_item)
-            return filtered
+                    filtered_list.append(filtered_item)
+            return filtered_list
 
         return None
 
@@ -101,9 +101,7 @@ class TextToCypherRetriever(BasePGRetriever):
             question=question,
         )
 
-        parsed_cypher_query = response
-        if self.allowed_output_fields is not None:
-            parsed_cypher_query = self._parse_generated_cyher(response)
+        parsed_cypher_query = self._parse_generated_cypher(response)
 
         query_output = self._graph_store.structured_query(parsed_cypher_query)
 
@@ -135,9 +133,7 @@ class TextToCypherRetriever(BasePGRetriever):
             question=question,
         )
 
-        parsed_cypher_query = response
-        if self.allowed_output_fields is not None:
-            parsed_cypher_query = self._parse_generated_cyher(response)
+        parsed_cypher_query = self._parse_generated_cypher(response)
 
         query_output = await self._graph_store.astructured_query(parsed_cypher_query)
 

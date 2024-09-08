@@ -3,10 +3,14 @@
 import asyncio
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Callable, Coroutine, List, Optional, Tuple
+from typing import Any, Callable, Coroutine, List, Optional, Sequence, Tuple
 
 import numpy as np
-from llama_index.core.bridge.pydantic import Field, validator
+from llama_index.core.bridge.pydantic import (
+    Field,
+    ConfigDict,
+    field_validator,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.constants import (
@@ -63,6 +67,9 @@ def similarity(
 class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     """Base class for embeddings."""
 
+    model_config = ConfigDict(
+        protected_namespaces=("pydantic_model_",), arbitrary_types_allowed=True
+    )
     model_name: str = Field(
         default="unknown", description="The name of the embedding model."
     )
@@ -70,7 +77,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         default=DEFAULT_EMBED_BATCH_SIZE,
         description="The batch size for embedding calls.",
         gt=0,
-        lte=2048,
+        le=2048,
     )
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
@@ -80,13 +87,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         description="The number of workers to use for async embedding calls.",
     )
 
-    class Config:
-        arbitrary_types_allowed = True
-
-    @validator("callback_manager", pre=True)
-    def _validate_callback_manager(
-        cls, v: Optional[CallbackManager]
-    ) -> CallbackManager:
+    @field_validator("callback_manager")
+    @classmethod
+    def check_callback_manager(cls, v: CallbackManager) -> CallbackManager:
         if v is None:
             return CallbackManager([])
         return v
@@ -436,7 +439,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         """Get embedding similarity."""
         return similarity(embedding1=embedding1, embedding2=embedding2, mode=mode)
 
-    def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
         embeddings = self.get_text_embedding_batch(
             [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
             **kwargs,
@@ -447,7 +450,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
 
         return nodes
 
-    async def acall(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+    async def acall(
+        self, nodes: Sequence[BaseNode], **kwargs: Any
+    ) -> Sequence[BaseNode]:
         embeddings = await self.aget_text_embedding_batch(
             [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
             **kwargs,

@@ -32,6 +32,28 @@ API_CATALOG_MODELS: Dict[str, int] = {
     "upstage/solar-10.7b-instruct": 4096,
 }
 
+NVIDIA_FUNTION_CALLING_MODELS = (
+    "nv-mistralai/mistral-nemo-12b-instruct",
+    "meta/llama-3.1-8b-instruct",
+    "meta/llama-3.1-70b-instruct",
+    "meta/llama-3.1-405b-instruct",
+    "mistralai/mistral-large-2-instruct",
+)
+
+COMPLETION_MODELS = (
+    "bigcode/starcoder2-7b",
+    "bigcode/starcoder2-15b",
+    "nvidia/mistral-nemo-minitron-8b-base",
+)
+
+
+def is_chat_model(modelname: str):
+    return modelname not in COMPLETION_MODELS
+
+
+def is_nvidia_function_calling_model(modelname: str) -> bool:
+    return modelname in NVIDIA_FUNTION_CALLING_MODELS
+
 
 def catalog_modelname_to_contextsize(modelname: str) -> Optional[int]:
     return API_CATALOG_MODELS.get(modelname, None)

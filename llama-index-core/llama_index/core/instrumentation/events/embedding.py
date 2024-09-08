@@ -1,6 +1,7 @@
 from typing import List
 
 from llama_index.core.instrumentation.events.base import BaseEvent
+from llama_index.core.bridge.pydantic import ConfigDict
 
 
 class EmbeddingStartEvent(BaseEvent):
@@ -10,10 +11,11 @@ class EmbeddingStartEvent(BaseEvent):
         model_dict (dict): Model dictionary containing details about the embedding model.
     """
 
+    model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
     model_dict: dict
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "EmbeddingStartEvent"
 
@@ -31,6 +33,6 @@ class EmbeddingEndEvent(BaseEvent):
     embeddings: List[List[float]]
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "EmbeddingEndEvent"

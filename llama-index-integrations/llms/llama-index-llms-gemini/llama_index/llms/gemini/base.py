@@ -96,6 +96,7 @@ class Gemini(CustomLLM):
         api_base: Optional[str] = None,
         transport: Optional[str] = None,
         model_name: Optional[str] = None,
+        default_headers: Optional[Dict[str, str]] = None,
         **generate_kwargs: Any,
     ):
         """Creates a new Gemini model interface."""
@@ -123,6 +124,13 @@ class Gemini(CustomLLM):
             config_params["client_options"] = {"api_endpoint": api_base}
         if transport:
             config_params["transport"] = transport
+        if default_headers:
+            default_metadata: Sequence[Dict[str, str]] = []
+            for key, value in default_headers.items():
+                default_metadata.append((key, value))
+            # `default_metadata` contains (key, value) pairs that will be sent with every request.
+            # When using `transport="rest"`, these will be sent as HTTP headers.
+            config_params["default_metadata"] = default_metadata
         # transport: A string, one of: [`rest`, `grpc`, `grpc_asyncio`].
         genai.configure(**config_params)
 
@@ -130,15 +138,15 @@ class Gemini(CustomLLM):
         # Explicitly passed args take precedence over the generation_config.
         final_gen_config = {"temperature": temperature, **base_gen_config}
 
-        self._model = genai.GenerativeModel(
+        model_meta = genai.get_model(model)
+
+        genai_model = genai.GenerativeModel(
             model_name=model,
             generation_config=final_gen_config,
             safety_settings=safety_settings,
         )
 
-        self._model_meta = genai.get_model(model)
-
-        supported_methods = self._model_meta.supported_generation_methods
+        supported_methods = model_meta.supported_generation_methods
         if "generateContent" not in supported_methods:
             raise ValueError(
                 f"Model {model} does not support content generation, only "
@@ -146,9 +154,9 @@ class Gemini(CustomLLM):
             )
 
         if not max_tokens:
-            max_tokens = self._model_meta.output_token_limit
+            max_tokens = model_meta.output_token_limit
         else:
-            max_tokens = min(max_tokens, self._model_meta.output_token_limit)
+            max_tokens = min(max_tokens, model_meta.output_token_limit)
 
         super().__init__(
             model=model,
@@ -157,6 +165,9 @@ class Gemini(CustomLLM):
             generate_kwargs=generate_kwargs,
             callback_manager=callback_manager,
         )
+
+        self._model_meta = model_meta
+        self._model = genai_model
 
     @classmethod
     def class_name(cls) -> str:

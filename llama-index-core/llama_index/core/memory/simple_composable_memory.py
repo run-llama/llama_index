@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, SerializeAsAny
 from llama_index.core.memory.types import (
     BaseMemory,
 )
@@ -25,10 +25,10 @@ class SimpleComposableMemory(BaseMemory):
             Retrieved messages from these sources get added to the system prompt message.
     """
 
-    primary_memory: BaseMemory = Field(
+    primary_memory: SerializeAsAny[BaseMemory] = Field(
         description="Primary memory source for chat agent.",
     )
-    secondary_memory_sources: List[BaseMemory] = Field(
+    secondary_memory_sources: List[SerializeAsAny[BaseMemory]] = Field(
         default_factory=list, description="Secondary memory sources."
     )
 
@@ -42,8 +42,12 @@ class SimpleComposableMemory(BaseMemory):
         cls,
         primary_memory: Optional[BaseMemory] = None,
         secondary_memory_sources: Optional[List[BaseMemory]] = None,
+        **kwargs: Any,
     ) -> "SimpleComposableMemory":
         """Create a simple composable memory from an LLM."""
+        if kwargs:
+            raise ValueError(f"Unexpected kwargs: {kwargs}")
+
         primary_memory = primary_memory or ChatMemoryBuffer.from_defaults()
         secondary_memory_sources = secondary_memory_sources or []
 
@@ -100,6 +104,7 @@ class SimpleComposableMemory(BaseMemory):
 
             # add single_secondary_memory_str to chat_history
             if len(messages) > 0 and messages[0].role == MessageRole.SYSTEM:
+                assert messages[0].content is not None
                 system_message = messages[0].content.split(
                     DEFAULT_INTRO_HISTORY_MESSAGE
                 )[0]
