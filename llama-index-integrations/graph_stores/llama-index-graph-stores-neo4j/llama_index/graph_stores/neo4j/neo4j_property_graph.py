@@ -1,4 +1,5 @@
 from typing import Any, List, Dict, Optional, Tuple
+import time
 from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
@@ -579,17 +580,31 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         return triples
 
     def structured_query(
-        self, query: str, param_map: Optional[Dict[str, Any]] = None
+        self,
+        query: str,
+        param_map: Optional[Dict[str, Any]] = None,
+        max_retries: int = 3,
+        initial_delay: float = 0.1,
     ) -> Any:
         param_map = param_map or {}
+        retries = 0
+        delay = initial_delay
+        while True:
+            try:
+                with self._driver.session(database=self._database) as session:
+                    result = session.run(query, param_map)
+                    full_result = [d.data() for d in result]
 
-        with self._driver.session(database=self._database) as session:
-            result = session.run(query, param_map)
-            full_result = [d.data() for d in result]
+                if self.sanitize_query_output:
+                    return [value_sanitize(el) for el in full_result]
+                return full_result
+            except (neo4j.exceptions.DriverError, neo4j.exceptions.Neo4jError) as e:
+                if not e.is_retryable() or retries >= max_retries:
+                    raise
 
-        if self.sanitize_query_output:
-            return [value_sanitize(el) for el in full_result]
-        return full_result
+                retries += 1
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any

@@ -1,4 +1,5 @@
 """Neo4j graph store index."""
+import time
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -249,7 +250,25 @@ class Neo4jGraphStore(GraphStore):
         logger.debug(f"get_schema() schema:\n{self.schema}")
         return self.schema
 
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
-        with self._driver.session(database=self._database) as session:
-            result = session.run(query, param_map)
-            return [d.data() for d in result]
+    def query(
+        self,
+        query: str,
+        param_map: Optional[Dict[str, Any]] = None,
+        max_retries: int = 3,
+        initial_delay: float = 0.1,
+    ) -> Any:
+        param_map = param_map or {}
+        retries = 0
+        delay = initial_delay
+        while True:
+            try:
+                with self._driver.session(database=self._database) as session:
+                    result = session.run(query, param_map)
+                    return [d.data() for d in result]
+            except (neo4j.exceptions.DriverError, neo4j.exceptions.Neo4jError) as e:
+                if not e.is_retryable() or retries >= max_retries:
+                    raise
+
+                retries += 1
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff
