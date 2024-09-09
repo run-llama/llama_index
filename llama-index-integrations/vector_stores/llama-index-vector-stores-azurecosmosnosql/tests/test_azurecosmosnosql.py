@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from time import sleep
 from typing import List
 
@@ -11,8 +10,8 @@ import pytest
 try:
     from azure.cosmos import CosmosClient, PartitionKey
 
-    URL = 'AZURE_COSMOSDB_URI'
-    KEY = 'AZURE_COSMOSDB_KEY'
+    URL = "AZURE_COSMOSDB_URI"
+    KEY = "AZURE_COSMOSDB_KEY"
     database_name = "test_database"
     container_name = "test_container"
     test_client = CosmosClient(URL, credential=KEY)
@@ -40,9 +39,12 @@ try:
     cosmos_database_properties_test = {}
 
     test_database = test_client.create_database_if_not_exists(id=database_name)
-    test_container = test_database.create_container_if_not_exists(id=container_name, partition_key=partition_key,
-                                                                  indexing_policy=indexing_policy,
-                                                                  vector_embedding_policy=vector_embedding_policy)
+    test_container = test_database.create_container_if_not_exists(
+        id=container_name,
+        partition_key=partition_key,
+        indexing_policy=indexing_policy,
+        vector_embedding_policy=vector_embedding_policy,
+    )
 
     cosmosnosql_available = True
 except (ImportError, Exception):
@@ -51,6 +53,7 @@ except (ImportError, Exception):
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import VectorStoreQuery
 from llama_index.vector_stores.azurecosmosnosql import AzureCosmosDBNoSqlVectorSearch
+
 
 @pytest.fixture(scope="session")
 def node_embeddings() -> list[TextNode]:
@@ -93,29 +96,32 @@ class TestAzureCosmosNoSqlVectorSearch:
     def setup_class(cls) -> None:
         # insure the test container is empty
         items_list = test_container.read_all_items()
-        first_item = next(iter(items_list),None)  # type: ignore[index]
+        first_item = next(iter(items_list), None)  # type: ignore[index]
         assert first_item is None
 
     @classmethod
     def teardown_class(cls) -> None:
         # delete all the items in the container
-        for item in test_container.query_items(query='SELECT * FROM c',enable_cross_partition_query=True):
-            test_container.delete_item(item, partition_key=item['id'])
-
+        for item in test_container.query_items(
+            query="SELECT * FROM c", enable_cross_partition_query=True
+        ):
+            test_container.delete_item(item, partition_key=item["id"])
 
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # delete all the items in the container
-        for item in test_container.query_items(query='SELECT * FROM c',enable_cross_partition_query=True):
-            test_container.delete_item(item, partition_key=item['id'])
+        for item in test_container.query_items(
+            query="SELECT * FROM c", enable_cross_partition_query=True
+        ):
+            test_container.delete_item(item, partition_key=item["id"])
 
     def test_add_and_delete(self) -> None:
         vector_store = AzureCosmosDBNoSqlVectorSearch(
             cosmos_client=test_client,
             vector_embedding_policy=vector_embedding_policy,
             indexing_policy=indexing_policy,
-            database_name = database_name,
-            container_name = container_name,
+            database_name=database_name,
+            container_name=container_name,
             cosmos_database_properties=cosmos_database_properties_test,
             cosmos_container_properties=cosmos_container_properties_test,
         )

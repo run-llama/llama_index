@@ -8,7 +8,7 @@ from typing import Any, Optional, Dict, cast, List
 
 from azure.cosmos import CosmosClient
 from llama_index.core.bridge.pydantic import PrivateAttr
-from llama_index.core.schema import BaseNode, MetadataMode, TextNode
+from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
@@ -29,6 +29,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
     -the ``azure-cosmos`` python package installed
     -from llama_index.vector_stores.azurecosmosnosql import AzureCosmosDBNoSqlVectorSearch
     """
+
     stores_text: bool = True
     flat_metadata: bool = True
 
@@ -48,19 +49,19 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
     _metadata_key: Any = PrivateAttr()
 
     def __init__(
-            self,
-            cosmos_client: CosmosClient,
-            vector_embedding_policy: Dict[str, Any],
-            indexing_policy: Dict[str, Any],
-            cosmos_container_properties: Dict[str, Any],
-            cosmos_database_properties: Optional[Dict[str, Any]] = None,
-            database_name: str = "vectorSearchDB",
-            container_name: str = "vectorSearchContainer",
-            create_container: bool = True,
-            id_key: str = "id",
-            text_key: str = "text",
-            metadata_key: str = "metadata",
-            **kwargs: Any,
+        self,
+        cosmos_client: CosmosClient,
+        vector_embedding_policy: Dict[str, Any],
+        indexing_policy: Dict[str, Any],
+        cosmos_container_properties: Dict[str, Any],
+        cosmos_database_properties: Optional[Dict[str, Any]] = None,
+        database_name: str = "vectorSearchDB",
+        container_name: str = "vectorSearchContainer",
+        create_container: bool = True,
+        id_key: str = "id",
+        text_key: str = "text",
+        metadata_key: str = "metadata",
+        **kwargs: Any,
     ) -> None:
         """Initialize the vector store.
 
@@ -81,26 +82,26 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
 
         if create_container:
             if (
-                    indexing_policy["vectorIndexes"] is None
-                    or len(indexing_policy["vectorIndexes"]) == 0
+                indexing_policy["vectorIndexes"] is None
+                or len(indexing_policy["vectorIndexes"]) == 0
             ):
                 raise ValueError(
                     "vectorIndexes cannot be null or empty in the indexing_policy."
                 )
             if (
-                    vector_embedding_policy is None
-                    or len(vector_embedding_policy["vectorEmbeddings"]) == 0
+                vector_embedding_policy is None
+                or len(vector_embedding_policy["vectorEmbeddings"]) == 0
             ):
                 raise ValueError(
                     "vectorEmbeddings cannot be null "
                     "or empty in the vector_embedding_policy."
                 )
             if (
-                    cosmos_container_properties is None or cosmos_container_properties["partition_key"] is None
+                cosmos_container_properties is None
+                or cosmos_container_properties["partition_key"] is None
             ):
                 raise ValueError(
-                    "partition_key cannot be null "
-                    "or empty for a container."
+                    "partition_key cannot be null " "or empty for a container."
                 )
 
         self._database_name = database_name
@@ -112,7 +113,9 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         self._id_key = id_key
         self._text_key = text_key
         self._metadata_key = metadata_key
-        self._embedding_key = self._vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]
+        self._embedding_key = self._vector_embedding_policy["vectorEmbeddings"][0][
+            "path"
+        ][1:]
 
         self._database = self._cosmos_client.create_database_if_not_exists(
             id=self._database_name,
@@ -130,10 +133,18 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             indexing_policy=self._indexing_policy,
             default_ttl=self._cosmos_container_properties.get("default_ttl"),
             offer_throughput=self._cosmos_container_properties.get("offer_throughput"),
-            unique_key_policy=self._cosmos_container_properties.get("unique_key_policy"),
-            conflict_resolution_policy=self._cosmos_container_properties.get("conflict_resolution_policy"),
-            analytical_storage_ttl=self._cosmos_container_properties.get("analytical_storage_ttl"),
-            computed_properties=self._cosmos_container_properties.get("computed_properties"),
+            unique_key_policy=self._cosmos_container_properties.get(
+                "unique_key_policy"
+            ),
+            conflict_resolution_policy=self._cosmos_container_properties.get(
+                "conflict_resolution_policy"
+            ),
+            analytical_storage_ttl=self._cosmos_container_properties.get(
+                "analytical_storage_ttl"
+            ),
+            computed_properties=self._cosmos_container_properties.get(
+                "computed_properties"
+            ),
             etag=self._cosmos_container_properties.get("etag"),
             match_condition=self._cosmos_container_properties.get("match_condition"),
             session_token=self._cosmos_container_properties.get("session_token"),
@@ -142,9 +153,9 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         )
 
     def add(
-            self,
-            nodes: List[BaseNode],
-            **add_kwargs: Any,
+        self,
+        nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index.
 
@@ -188,7 +199,6 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-
         self._container.delete_item(ref_doc_id, partition_key=ref_doc_id)
 
     @property
@@ -208,25 +218,26 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         top_k_scores = []
 
         for item in self._container.query_items(
-                query='SELECT TOP @k c.id, c.embedding, c.text, c.metadata, VectorDistance(c.embedding,@embedding) AS SimilarityScore FROM c ORDER BY VectorDistance(c.embedding,@embedding)',
-                parameters=[{"name": "@k", "value": params['k']},
-                            {"name": "@embedding", "value": params["vector"]}],
-                enable_cross_partition_query=True):
+            query="SELECT TOP @k c.id, c.embedding, c.text, c.metadata, VectorDistance(c.embedding,@embedding) AS SimilarityScore FROM c ORDER BY VectorDistance(c.embedding,@embedding)",
+            parameters=[
+                {"name": "@k", "value": params["k"]},
+                {"name": "@embedding", "value": params["vector"]},
+            ],
+            enable_cross_partition_query=True,
+        ):
             node = metadata_dict_to_node(item[self._metadata_key])
             node.set_content(item[self._text_key])
 
             node_id = item[self._id_key]
-            node_score = item['SimilarityScore']
+            node_score = item["SimilarityScore"]
 
             top_k_ids.append(node_id)
             top_k_nodes.append(node)
             top_k_scores.append(node_score)
 
-        result = VectorStoreQueryResult(
+        return VectorStoreQueryResult(
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )
-
-        return result
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.

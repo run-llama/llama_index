@@ -3,7 +3,5 @@ from llama_index.vector_stores.azurecosmosnosql import AzureCosmosDBNoSqlVectorS
 
 
 def test_class():
-    names_of_base_classes = [
-        b.__name__ for b in AzureCosmosDBNoSqlVectorSearch.__mro__
-    ]
+    names_of_base_classes = [b.__name__ for b in AzureCosmosDBNoSqlVectorSearch.__mro__]
     assert BasePydanticVectorStore.__name__ in names_of_base_classes
