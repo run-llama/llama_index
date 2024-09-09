@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.vertex"
+import_path = "llama_index.vector_stores.azurecosmosnosql"
 
 [tool.llamahub.class_authors]
-Vertex = "llama-index"
+AzureCosmosDBMongoDBVectorSearch = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,18 +22,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index llms vertex integration"
+description = "llama-index vector_stores azurecosmosnosql integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-llms-vertex"
+name = "llama-index-vector-stores-azurecosmosnosql"
 readme = "README.md"
-version = "0.3.4"
+version = "1.0.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-google-cloud-aiplatform = "^1.39.0"
-pyarrow = "^15.0.2"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.10.1"
+azure-cosmos = "^4.7.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
