@@ -249,7 +249,7 @@ class DynamoDBChatStore(BaseChatStore):
             return message_to_delete
         except IndexError:
             logger.error(
-                IndexError(f"No message exists at index, {idx}, for session {key}")
+                IndexError(f"No message exists at index, {idx}, for key {key}")
             )
             return None
 
