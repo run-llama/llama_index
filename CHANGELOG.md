@@ -1,5 +1,30 @@
 # ChangeLog
 
+## [2024-09-06]
+
+### `llama-index-core` [0.11.7]
+
+- Make SentenceSplitter's secondary_chunking_regex optional (#15882)
+- force openai structured output (#15706)
+- fix assert error, add type ignore for streaming agents (#15887)
+- Fix image document deserialization issue (#15857)
+
+### `llama-index-graph-stores-kuzu` [0.3.2]
+
+- Bug fix for KuzuPropertyGraphStore: Allow upserting relations even when chunks are absent (#15889)
+
+### `llama-index-llms-bedrock-converse` [0.3.0]
+
+- Removed unused llama-index-llms-anthropic dependency from Bedrock Converse (#15869)
+
+### `llama-index-vector-stores-postgres` [0.2.2]
+
+- Fix PGVectorStore with latest pydantic, update pydantic imports (#15886)
+
+### `llama-index-vector-stores-tablestore` [0.1.0]
+
+- Add TablestoreVectorStore (#15657)
+
 ## [2024-09-05]
 
 ### `llama-index-core` [0.11.6]

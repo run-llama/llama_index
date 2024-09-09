@@ -107,7 +107,7 @@ class StructuredLLM(LLM):
         chat_prompt = ChatPromptTemplate(message_templates=_escape_json(messages))
 
         output = self.llm.structured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt
+            output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
         return ChatResponse(
             message=ChatMessage(
@@ -123,7 +123,7 @@ class StructuredLLM(LLM):
         chat_prompt = ChatPromptTemplate(message_templates=_escape_json(messages))
 
         stream_output = self.llm.stream_structured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt, **kwargs
+            output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
         for partial_output in stream_output:
             yield ChatResponse(
@@ -161,7 +161,7 @@ class StructuredLLM(LLM):
         chat_prompt = ChatPromptTemplate(message_templates=_escape_json(messages))
 
         output = await self.llm.astructured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt
+            output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
         return ChatResponse(
             message=ChatMessage(
@@ -182,7 +182,7 @@ class StructuredLLM(LLM):
             chat_prompt = ChatPromptTemplate(message_templates=_escape_json(messages))
 
             stream_output = await self.llm.astream_structured_predict(
-                output_cls=self.output_cls, prompt=chat_prompt, **kwargs
+                output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
             )
             async for partial_output in stream_output:
                 yield ChatResponse(

@@ -8,7 +8,7 @@ def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, di
 
     If tool_choice is a function name string, return the appropriate dict.
     """
-    if isinstance(tool_choice, str) and tool_choice not in ["none", "auto"]:
+    if isinstance(tool_choice, str) and tool_choice not in ["none", "auto", "required"]:
         return {"type": "function", "function": {"name": tool_choice}}
 
     return tool_choice

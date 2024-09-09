@@ -40,7 +40,11 @@ NVIDIA_FUNTION_CALLING_MODELS = (
     "mistralai/mistral-large-2-instruct",
 )
 
-COMPLETION_MODELS = ("bigcode/starcoder2-7b", "bigcode/starcoder2-15b")
+COMPLETION_MODELS = (
+    "bigcode/starcoder2-7b",
+    "bigcode/starcoder2-15b",
+    "nvidia/mistral-nemo-minitron-8b-base",
+)
 
 
 def is_chat_model(modelname: str):
