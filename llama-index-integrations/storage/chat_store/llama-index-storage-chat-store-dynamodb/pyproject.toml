@@ -21,7 +21,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Bryce Freshcorn <26725654+brycecf@users.noreply.github.com>"]
+authors = ["brycecf <26725654+brycecf@users.noreply.github.com>"]
 description = "llama-index storage-chat-store aws dynamodb integration"
 exclude = ["**/BUILD"]
 license = "MIT"
