@@ -26,7 +26,7 @@ class ConstantDelayRetryPolicy:
     def next(
         self, elapsed_time: float, attempts: int, error: Exception
     ) -> Optional[float]:
-        if attempts == self.maximum_attempts:
+        if attempts >= self.maximum_attempts:
             return None
 
         return self.delay
