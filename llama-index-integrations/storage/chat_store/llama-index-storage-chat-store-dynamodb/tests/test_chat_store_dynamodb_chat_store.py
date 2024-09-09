@@ -30,7 +30,7 @@ def chat_store(dynamo_db):
         AttributeDefinitions=[{"AttributeName": "SessionId", "AttributeType": "S"}],
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
     )
-    return DynamoDBChatStore(table_name="TestTable")
+    return DynamoDBChatStore(table_name="TestTable", region_name="us-east-1")
 
 
 def test_set_get_messages(chat_store):
