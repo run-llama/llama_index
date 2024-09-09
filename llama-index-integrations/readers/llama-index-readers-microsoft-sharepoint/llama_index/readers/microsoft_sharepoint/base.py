@@ -125,8 +125,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             error_message = json_response.get("error_description") or json_response.get(
                 "error"
             )
-            logger.error(json_response["error"])
-            raise ValueError(error_message)
+            logger.error("Error retrieving access token: %s", json_response["error"])
+            raise ValueError(f"Error retrieving access token: {error_message}")
 
     def _get_site_id_with_host_name(
         self, access_token, sharepoint_site_name: Optional[str]
@@ -186,8 +186,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 error_message = json_response.get(
                     "error_description"
                 ) or json_response.get("error")
-                logger.error(json_response["error"])
-                raise ValueError(error_message)
+                logger.error("Error retrieving site ID: %s", json_response["error"])
+                raise ValueError(f"Error retrieving site ID: {error_message}")
 
         raise ValueError(
             f"The specified sharepoint site {sharepoint_site_name} is not found."
@@ -234,8 +234,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             error_message = json_response.get("error_description") or json_response.get(
                 "error"
             )
-            logger.error(json_response["error"])
-            raise ValueError(error_message)
+            logger.error("Error retrieving drive ID: %s", json_response["error"])
+            raise ValueError(f"Error retrieving drive ID: {error_message}")
 
     def _get_sharepoint_folder_id(self, folder_path: str) -> str:
         """
@@ -259,7 +259,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         if response.status_code == 200 and "id" in response.json():
             return response.json()["id"]
         else:
-            raise ValueError(response.json()["error"])
+            error_message = response.json().get("error", "Unknown error")
+            logger.error("Error retrieving folder ID: %s", error_message)
+            raise ValueError(f"Error retrieving folder ID: {error_message}")
 
     def _download_files_and_extract_metadata(
         self,
@@ -313,8 +315,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             error_message = json_response.get("error_description") or json_response.get(
                 "error"
             )
-            logger.error(json_response["error"])
-            raise ValueError(error_message)
+            logger.error("Error downloading file content: %s", json_response["error"])
+            raise ValueError(f"Error downloading file content: {error_message}")
 
         return response.content
 
