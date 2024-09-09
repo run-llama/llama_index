@@ -715,11 +715,13 @@ class Document(TextNode):
         from llama_index.core.bridge.langchain import Document as LCDocument
 
         metadata = self.metadata or {}
-        return LCDocument(page_content=self.text, metadata=metadata)
+        return LCDocument(page_content=self.text, metadata=metadata, id=self.id_)
 
     @classmethod
     def from_langchain_format(cls, doc: "LCDocument") -> "Document":
         """Convert struct from LangChain document format."""
+        if doc.id:
+            return cls(text=doc.page_content, metadata=doc.metadata, id_=doc.id)
         return cls(text=doc.page_content, metadata=doc.metadata)
 
     def to_haystack_format(self) -> "HaystackDocument":
