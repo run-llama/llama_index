@@ -210,9 +210,10 @@ class Workflow(metaclass=WorkflowMeta):
                                     raise e from None
 
                                 attempts += 1
-                                print(
-                                    f"Step {name} produced an error, retry in {delay} seconds"
-                                )
+                                if self._verbose:
+                                    print(
+                                        f"Step {name} produced an error, retry in {delay} seconds"
+                                    )
                                 await asyncio.sleep(delay)
 
                     else:
