@@ -136,9 +136,11 @@ class BaseComponent(BaseModel):
     # TODO: return type here not supported by current mypy version
     @classmethod
     def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
+        # In SimpleKVStore we rely on shallow coping. Hence, the data will be modified in the store directly.
+        # And it is the same when the user is passing a dictionary to create a component. We can't modify the passed down dictionary.
+        data = dict(data)
         if isinstance(kwargs, dict):
             data.update(kwargs)
-
         data.pop("class_name", None)
         return cls(**data)
 
