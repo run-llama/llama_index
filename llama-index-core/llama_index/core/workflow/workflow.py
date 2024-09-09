@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import time
 import warnings
 from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set, Tuple
 
@@ -185,12 +186,36 @@ class Workflow(metaclass=WorkflowMeta):
                         kwargs[service_definition.name] = service
                     kwargs[config.event_name] = ev
 
-                    # - check if its async or not
-                    # - if not async, run it in an executor
+                    # wrap the step with instrumentation
                     instrumented_step = dispatcher.span(step)
 
+                    # - check if its async or not
+                    # - if not async, run it in an executor
                     if asyncio.iscoroutinefunction(step):
-                        new_ev = await instrumented_step(**kwargs)
+                        retry_start_at = time.time()
+                        attempts = 0
+                        while True:
+                            try:
+                                new_ev = await instrumented_step(**kwargs)
+                                break  # exit the retrying loop
+                            except Exception as e:
+                                if config.retry_policy is None:
+                                    raise e from None
+
+                                delay = config.retry_policy.next(
+                                    retry_start_at + time.time(), attempts, e
+                                )
+                                if delay is None:
+                                    # We're done retrying
+                                    raise e from None
+
+                                attempts += 1
+                                if self._verbose:
+                                    print(
+                                        f"Step {name} produced an error, retry in {delay} seconds"
+                                    )
+                                await asyncio.sleep(delay)
+
                     else:
                         run_task = functools.partial(instrumented_step, **kwargs)
                         new_ev = await asyncio.get_event_loop().run_in_executor(
