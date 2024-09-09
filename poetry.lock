@@ -1617,13 +1617,13 @@ files = [
 
 [[package]]
 name = "llama-cloud"
-version = "0.0.15"
+version = "0.0.17"
 description = ""
 optional = false
 python-versions = "<4,>=3.8"
 files = [
-    {file = "llama_cloud-0.0.15-py3-none-any.whl", hash = "sha256:52f18a3870e23c4a9b5f66827a58dc87d5a1c3034d1ce6ab513ca7eb09ae8b36"},
-    {file = "llama_cloud-0.0.15.tar.gz", hash = "sha256:be06fd888e889623796b9c2aa0fc0d09ef039ed5145ff267d8408ccbea70c048"},
+    {file = "llama_cloud-0.0.17-py3-none-any.whl", hash = "sha256:da898dcc98de84f29886f979b1ccae1e96d9f73d1b0e07146a51d315b161e45c"},
+    {file = "llama_cloud-0.0.17.tar.gz", hash = "sha256:7fd6857bbbb91937535572ccb48daa38189f55cdd7411185d8083dab29ba1299"},
 ]
 
 [package.dependencies]
@@ -1632,13 +1632,13 @@ pydantic = ">=1.10"
 
 [[package]]
 name = "llama-index-agent-openai"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index agent openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_agent_openai-0.3.0-py3-none-any.whl", hash = "sha256:2b7d0e3d0e95271e5244e75a0366248c48d733497d93ae5bb09f548afe24ec98"},
-    {file = "llama_index_agent_openai-0.3.0.tar.gz", hash = "sha256:dade70e8b987194d7afb6925f723060e9f4953eb134400da2fcd4ceedf2c3dff"},
+    {file = "llama_index_agent_openai-0.3.1-py3-none-any.whl", hash = "sha256:21886081ae74574d8cad1ec4886f2d4b082284b9364adb46fff87aba1a25e9b9"},
+    {file = "llama_index_agent_openai-0.3.1.tar.gz", hash = "sha256:41c9aa5b7cebc5043adddb3442e3167e97971589466e36448e04e0a767f5b9aa"},
 ]
 
 [package.dependencies]
@@ -1664,13 +1664,13 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.11.6"
+version = "0.11.7"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.11.6-py3-none-any.whl", hash = "sha256:8eecb9f2ea4d7d44bf1cb84661f5f23523b9460427116a919c240318e73411a6"},
-    {file = "llama_index_core-0.11.6.tar.gz", hash = "sha256:853e8f188fe1e2d8430de838cf7fd76b1643886a3ac9f2278f7f1863116eb8cb"},
+    {file = "llama_index_core-0.11.7-py3-none-any.whl", hash = "sha256:4a656d650b44e800ad9fe40c685cc1ee51075e1f5bb8c445231b0872fe2501cd"},
+    {file = "llama_index_core-0.11.7.tar.gz", hash = "sha256:66bcd18939d45cac35aa53d4560f0d1e82f191ea8b65b33914d490a2ae3291fd"},
 ]
 
 [package.dependencies]
@@ -1767,18 +1767,18 @@ query-tools = ["guidance (>=0.0.64,<0.0.65)", "jsonpath-ng (>=1.6.0,<2.0.0)", "l
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.2.2"
+version = "0.2.3"
 description = "llama-index llms openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_llms_openai-0.2.2-py3-none-any.whl", hash = "sha256:c42d4dbf4ea81355a45d8132ee4cbe0fd89e6e3ad6688d2e592204d194919b2d"},
-    {file = "llama_index_llms_openai-0.2.2.tar.gz", hash = "sha256:5d8d77cd7dcb839aded9bd5da37c5806d680eb20fd04cc26891551fc17e4d1e0"},
+    {file = "llama_index_llms_openai-0.2.3-py3-none-any.whl", hash = "sha256:dbcf8636bca57b0c063621a9981bbf2fdfaedd96c8e4906b8ddf0a139cb74d2f"},
+    {file = "llama_index_llms_openai-0.2.3.tar.gz", hash = "sha256:e9173b430331791c6a5a9df16796437ae4a3ae247fd4e0f281f7cbe59258b07a"},
 ]
 
 [package.dependencies]
-llama-index-agent-openai = ">=0.3.0,<0.4.0"
-llama-index-core = ">=0.11.0,<0.12.0"
+llama-index-agent-openai = ">=0.3.1,<0.4.0"
+llama-index-core = ">=0.11.7,<0.12.0"
 openai = ">=1.40.0,<2.0.0"
 
 [[package]]
@@ -2630,13 +2630,13 @@ files = [
 
 [[package]]
 name = "openai"
-version = "1.43.0"
+version = "1.44.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.43.0-py3-none-any.whl", hash = "sha256:1a748c2728edd3a738a72a0212ba866f4fdbe39c9ae03813508b267d45104abe"},
-    {file = "openai-1.43.0.tar.gz", hash = "sha256:e607aff9fc3e28eade107e5edd8ca95a910a4b12589336d3cbb6bfe2ac306b3c"},
+    {file = "openai-1.44.0-py3-none-any.whl", hash = "sha256:99a12bbda15f9c632ee911851e101669a82ee34992fbfd658a9db27d90dc0a9c"},
+    {file = "openai-1.44.0.tar.gz", hash = "sha256:acde74598976ec85bc477e9abb94eeb17f6efd998914d5685eeb46a69116894a"},
 ]
 
 [package.dependencies]
@@ -4582,4 +4582,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "6706170138167fad8e02710e062824ef3e6bd23a9544af2d66efc0fd8fe68f51"
+content-hash = "bfb06980f6aa44b93808d897273ad03f284a0aa491b26eefaff31c57f6245f24"

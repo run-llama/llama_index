@@ -138,7 +138,7 @@ class PGVectorStore(BasePydanticVectorStore):
     flat_metadata: bool = False
 
     connection_string: str
-    async_connection_string: Union[str, sqlalchemy.engine.URL]
+    async_connection_string: str
     table_name: str
     schema_name: str
     embed_dim: int
@@ -204,8 +204,8 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy.orm import declarative_base
 
         super().__init__(
-            connection_string=connection_string,
-            async_connection_string=async_connection_string,
+            connection_string=str(connection_string),
+            async_connection_string=str(async_connection_string),
             table_name=table_name,
             schema_name=schema_name,
             hybrid_search=hybrid_search,
