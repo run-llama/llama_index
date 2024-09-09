@@ -219,9 +219,29 @@ def test_citations(vectara2) -> None:
 def test_agent_basic(vectara2) -> None:
     tool_spec = VectaraQueryToolSpec(num_results=10, reranker="slingshot")
     agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
-
     res = agent.chat("What software did Paul Graham write?").response
+    agent_tasks = agent.get_completed_tasks()
+    tool_called = (
+        agent_tasks[0]
+        .memory.chat_store.store["chat_history"][1]
+        .additional_kwargs["tool_calls"][0]
+        .function.name
+    )
+    assert tool_called in ["semantic_search", "rag_query"]
     assert "paul graham" in res.lower() and "software" in res.lower()
+
+    tool_spec = VectaraQueryToolSpec(num_results=10, reranker="mmr")
+    agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
+    res = agent.chat("Please summarize Paul Graham's work").response
+    agent_tasks = agent.get_completed_tasks()
+    tool_called = (
+        agent_tasks[0]
+        .memory.chat_store.store["chat_history"][1]
+        .additional_kwargs["tool_calls"][0]
+        .function.name
+    )
+    assert tool_called == "rag_query"
+    assert "bel" in res.lower() and "lisp" in res.lower()
 
 
 def test_agent_filter(vectara1) -> None:
@@ -232,4 +252,12 @@ def test_agent_filter(vectara1) -> None:
     agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
 
     res = agent.chat("How will I look when I am much older compared to now?").response
-    assert "you" in res.lower() and "not" in res.lower()
+    agent_tasks = agent.get_completed_tasks()
+    tool_called = (
+        agent_tasks[0]
+        .memory.chat_store.store["chat_history"][1]
+        .additional_kwargs["tool_calls"][0]
+        .function.name
+    )
+    assert tool_called in ["semantic_search", "rag_query"]
+    assert "you" in res.lower()

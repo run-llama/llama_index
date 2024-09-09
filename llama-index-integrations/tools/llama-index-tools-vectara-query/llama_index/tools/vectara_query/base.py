@@ -124,7 +124,10 @@ class VectaraQueryToolSpec(BaseToolSpec):
         Makes a query to a Vectara corpus and returns the top search results from the retrieved documents.
 
         Parameters:
-        - query (str): The input query from the user.
+            query (str): The input query from the user.
+
+        Returns:
+            List[Dict]: A list of retrieved documents with their associated metadata
         """
         response = self.retriever._retrieve(query_bundle=QueryBundle(query_str=query))
 
@@ -147,7 +150,10 @@ class VectaraQueryToolSpec(BaseToolSpec):
         Makes a query to a Vectara corpus and returns the generated summary, the citation metadata, and the factual consistency score.
 
         Parameters:
-        - query (str): The input query from the user.
+            query (str): The input query from the user.
+
+        Returns:
+            Dict: A dictionary containing the generated summary, citation metadata, and the factual consistency score.
         """
         response = self.query_engine._query(query_bundle=QueryBundle(query_str=query))
 
