@@ -8,10 +8,11 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-# [tool.llamahub.class_authors]
-RekaAI = "findalexli"
 contains_example = true
 import_path = "llama_index.llms.reka"
+
+[tool.llamahub.class_authors]
+RekaAI = "findalexli"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -31,7 +32,7 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.0"
+llama-index-core = "^0.11.0"
 reka-api = "^3.0.8"
 
 [tool.poetry.group.dev.dependencies]

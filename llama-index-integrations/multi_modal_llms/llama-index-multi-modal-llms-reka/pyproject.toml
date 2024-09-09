@@ -5,9 +5,14 @@ requires = ["poetry-core"]
 [tool.codespell]
 check-filenames = true
 check-hidden = true
-# Feel free to un-skip examples, and experimental, you will just need to
-# work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.multi-modal-llms.reka"
+
+[tool.llamahub.class_authors]
+RekaMultiModalLLM = "findalexli"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -17,7 +22,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["Alex Li <alexli@reka.ai>"]
 description = "llama-index multi_modal_llms reka integration"
 license = "MIT"
 name = "llama-index-multi-modal-llms-reka"
@@ -27,9 +32,8 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.0"
+llama-index-core = "^0.11.0"
 reka-api = "^3.0.8"
-pytest = "^8.3.2"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
