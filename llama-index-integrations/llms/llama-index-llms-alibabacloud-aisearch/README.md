@@ -1,6 +1,7 @@
 # LlamaIndex Llms Integration: Alibabacloud_Aisearch
 
 ## Installation
+
 ```
 pip install llama-index-llms-alibabacloud-aisearch
 ```

@@ -63,7 +63,7 @@ def aretry_decorator(func, wait_seconds: int = 1):
 
 class AlibabaCloudAISearchLLM(CustomLLM):
     """
-    For further details, please visit `https://help.aliyun.com/zh/open-search/search-platform/developer-reference/text-generation-api-details`
+    For further details, please visit `https://help.aliyun.com/zh/open-search/search-platform/developer-reference/text-generation-api-details`.
     """
 
     _client: Client = PrivateAttr()
