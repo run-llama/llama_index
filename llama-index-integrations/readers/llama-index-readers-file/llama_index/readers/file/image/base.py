@@ -82,7 +82,7 @@ class ImageReader(BaseReader):
         # load document image
         if fs:
             with fs.open(path=file) as f:
-                image = Image.open(f.read())
+                image = Image.open(BytesIO(f.read()))
         else:
             image = Image.open(file)
 

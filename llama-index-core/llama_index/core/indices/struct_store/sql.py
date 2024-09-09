@@ -102,7 +102,9 @@ class SQLStructStoreIndex(BaseStructStoreIndex[SQLStructTable]):
     def ref_doc_id_column(self) -> Optional[str]:
         return self._ref_doc_id_column
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> SQLStructTable:
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **build_kwargs: Any
+    ) -> SQLStructTable:
         """Build index from nodes."""
         index_struct = self.index_struct_cls()
         if len(nodes) == 0:

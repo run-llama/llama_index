@@ -13,6 +13,7 @@ import_path = "llama_index.graph_stores.falkordb"
 
 [tool.llamahub.class_authors]
 FalkorDBGraphStore = "llama-index"
+FalkorDBPropertyGraphStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -27,7 +28,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-graph-stores-falkordb"
 readme = "README.md"
-version = "0.2.0"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

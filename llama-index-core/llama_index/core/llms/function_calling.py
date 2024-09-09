@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Union, TYPE_CHECKING, Dict
+from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
 from abc import abstractmethod
 import asyncio
 
@@ -29,7 +29,7 @@ class FunctionCallingLLM(LLM):
 
     def chat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -55,7 +55,7 @@ class FunctionCallingLLM(LLM):
 
     async def achat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -81,7 +81,7 @@ class FunctionCallingLLM(LLM):
 
     def stream_chat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -102,7 +102,7 @@ class FunctionCallingLLM(LLM):
 
     async def astream_chat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -124,7 +124,7 @@ class FunctionCallingLLM(LLM):
     @abstractmethod
     def _prepare_chat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -136,7 +136,7 @@ class FunctionCallingLLM(LLM):
     def _validate_chat_with_tools_response(
         self,
         response: ChatResponse,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
@@ -156,7 +156,7 @@ class FunctionCallingLLM(LLM):
 
     def predict_and_call(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -204,7 +204,7 @@ class FunctionCallingLLM(LLM):
                 raise ValueError("Invalid")
             elif len(tool_outputs) == 0:
                 return AgentChatResponse(
-                    response=response.message.content, sources=tool_outputs
+                    response=response.message.content or "", sources=tool_outputs
                 )
 
             return AgentChatResponse(
@@ -213,7 +213,7 @@ class FunctionCallingLLM(LLM):
 
     async def apredict_and_call(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -262,7 +262,7 @@ class FunctionCallingLLM(LLM):
                 raise ValueError("Invalid")
             elif len(tool_outputs) == 0:
                 return AgentChatResponse(
-                    response=response.message.content, sources=tool_outputs
+                    response=response.message.content or "", sources=tool_outputs
                 )
 
             return AgentChatResponse(

@@ -402,7 +402,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 return cast(StreamingResponse, response)
             return cast(Response, response)
         else:
-            response_str = "\n".join([node.node.text for node in retrieved_nodes])
+            response_str = "\n".join([node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
@@ -434,7 +434,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 return cast(AsyncStreamingResponse, response)
             return cast(Response, response)
         else:
-            response_str = "\n".join([node.node.text for node in retrieved_nodes])
+            response_str = "\n".join([node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
 

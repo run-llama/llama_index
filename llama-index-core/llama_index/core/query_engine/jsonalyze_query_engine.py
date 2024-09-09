@@ -74,7 +74,7 @@ def default_jsonalyzer(
     db = sqlite_utils.Database(memory=True)
     try:
         # Load list of dictionaries into SQLite database
-        db[table_name].insert_all(list_of_dict)
+        db[table_name].insert_all(list_of_dict)  # type: ignore
     except sqlite_utils.utils.sqlite3.IntegrityError as exc:
         print_text(f"Error inserting into table {table_name}, expected format:")
         print_text("[{col1: val1, col2: val2, ...}, ...]")
@@ -142,7 +142,7 @@ async def async_default_jsonalyzer(
     db = sqlite_utils.Database(memory=True)
     try:
         # Load list of dictionaries into SQLite database
-        db[table_name].insert_all(list_of_dict)
+        db[table_name].insert_all(list_of_dict)  # type: ignore
     except sqlite_utils.utils.sqlite3.IntegrityError as exc:
         print_text(f"Error inserting into table {table_name}, expected format:")
         print_text("[{col1: val1, col2: val2, ...}, ...]")

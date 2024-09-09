@@ -21,7 +21,7 @@ from llama_index.core.multi_modal_llms import (
     MultiModalLLM,
     MultiModalLLMMetadata,
 )
-from llama_index.core.schema import ImageDocument
+from llama_index.core.schema import ImageNode
 from llama_index.llms.gemini.utils import (
     ROLES_FROM_GEMINI,
     chat_from_gemini_response,
@@ -158,14 +158,14 @@ class GeminiMultiModal(MultiModalLLM):
         )
 
     def complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         images = [PIL.Image.open(doc.resolve_image()) for doc in image_documents]
         result = self._model.generate_content([prompt, *images], **kwargs)
         return completion_from_gemini_response(result)
 
     def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
         images = [PIL.Image.open(doc.resolve_image()) for doc in image_documents]
         result = self._model.generate_content([prompt, *images], stream=True, **kwargs)
@@ -206,14 +206,14 @@ class GeminiMultiModal(MultiModalLLM):
         return gen()
 
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         images = [PIL.Image.open(doc.resolve_image()) for doc in image_documents]
         result = await self._model.generate_content_async([prompt, *images], **kwargs)
         return completion_from_gemini_response(result)
 
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         images = [PIL.Image.open(doc.resolve_image()) for doc in image_documents]
         ait = await self._model.generate_content_async(

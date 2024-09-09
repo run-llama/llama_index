@@ -57,7 +57,7 @@ nav:
           - Subclassing workflows: ./understanding/workflows/subclass.md
           - Nested workflows: ./understanding/workflows/nested.md
           - Observability: ./understanding/workflows/observability.md
-          - Unbound syntax: ./understanding/workflows/unbound.md
+          - Unbound syntax: ./understanding/workflows/unbound_functions.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
@@ -145,6 +145,15 @@ nav:
           - ./examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
           - ./examples/cookbooks/mistralai.ipynb
           - ./examples/cookbooks/mixedbread_reranker.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-2/Components_Of_LlamaIndex.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-3/Evaluating_RAG_Systems.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-4/Ingestion_Pipeline.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-4/Metadata_Extraction.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-5/Observability.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-6/Agents.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-6/Router_And_SubQuestion_QueryEngine.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-7/Multi_Modal_RAG_System.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-8/Advanced_RAG_with_LlamaParse.ipynb
           - ./examples/cookbooks/prometheus2_cookbook.ipynb
       - Customization:
           - ./examples/customization/llms/AzureOpenAI.ipynb
@@ -338,6 +347,7 @@ nav:
           - ./examples/llm/nvidia.ipynb
           - ./examples/llm/nvidia_nim.ipynb
           - ./examples/llm/nvidia_tensorrt.ipynb
+          - ./examples/llm/nvidia_text_completion.ipynb
           - ./examples/llm/nvidia_triton.ipynb
           - ./examples/llm/oci_genai.ipynb
           - ./examples/llm/octoai.ipynb
@@ -475,6 +485,7 @@ nav:
           - ./examples/output_parsing/llm_program.ipynb
           - ./examples/output_parsing/lmformatenforcer_pydantic_program.ipynb
           - ./examples/output_parsing/lmformatenforcer_regular_expressions.ipynb
+          - ./examples/output_parsing/nvidia_output_parsing.ipynb
           - ./examples/output_parsing/openai_pydantic_program.ipynb
           - ./examples/output_parsing/openai_sub_question.ipynb
       - Param Optimizer:
@@ -627,6 +638,7 @@ nav:
           - ./examples/vector_stores/SimpleIndexDemoMMR.ipynb
           - ./examples/vector_stores/SimpleIndexOnS3.ipynb
           - ./examples/vector_stores/SupabaseVectorIndexDemo.ipynb
+          - ./examples/vector_stores/TablestoreDemo.ipynb
           - ./examples/vector_stores/TairIndexDemo.ipynb
           - ./examples/vector_stores/TencentVectorDBIndexDemo.ipynb
           - ./examples/vector_stores/TiDBVector.ipynb
@@ -655,6 +667,7 @@ nav:
           - ./examples/vector_stores/qdrant_hybrid.ipynb
       - Workflow:
           - ./examples/workflow/JSONalyze_query_engine.ipynb
+          - ./examples/workflow/advanced_text_to_sql.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
           - ./examples/workflow/function_calling_agent.ipynb
@@ -1468,6 +1481,7 @@ nav:
               - ./api_reference/storage/vector_store/lancedb.md
               - ./api_reference/storage/vector_store/lantern.md
               - ./api_reference/storage/vector_store/lindorm.md
+              - ./api_reference/storage/vector_store/mariadb.md
               - ./api_reference/storage/vector_store/metal.md
               - ./api_reference/storage/vector_store/milvus.md
               - ./api_reference/storage/vector_store/mongodb.md
@@ -1485,6 +1499,7 @@ nav:
               - ./api_reference/storage/vector_store/simple.md
               - ./api_reference/storage/vector_store/singlestoredb.md
               - ./api_reference/storage/vector_store/supabase.md
+              - ./api_reference/storage/vector_store/tablestore.md
               - ./api_reference/storage/vector_store/tair.md
               - ./api_reference/storage/vector_store/tencentvectordb.md
               - ./api_reference/storage/vector_store/tidbvector.md
@@ -2149,6 +2164,8 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-xinference
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-xinference-rerank
             - ../llama-index-integrations/selectors/llama-index-selectors-notdiamond
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-mariadb
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-tablestore
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

@@ -42,7 +42,7 @@ class CustomPGRetriever(BasePGRetriever):
         return self._graph_store
 
     @abstractmethod
-    def init(self, **kwargs: Any):
+    def init(self, **kwargs: Any) -> None:
         """Initialize the retriever.
 
         Has access to all keyword arguments passed to the retriever, as well as:
@@ -100,7 +100,7 @@ class CustomPGRetriever(BasePGRetriever):
             elif all(isinstance(item, TextNode) for item in result):
                 return [NodeWithScore(node=item, score=1.0) for item in result]
             elif all(isinstance(item, NodeWithScore) for item in result):
-                return result
+                return result  # type: ignore
             else:
                 raise ValueError(
                     "Invalid return type. All items in the list must be of the same type."
