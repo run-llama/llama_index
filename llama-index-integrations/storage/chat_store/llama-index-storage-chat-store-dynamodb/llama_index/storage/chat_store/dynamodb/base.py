@@ -271,12 +271,12 @@ class DynamoDBChatStore(BaseChatStore):
         Returns:
             List[str]: The keys in the table.
         """
-        response = self._table.scan(ProjectionExpression="SessionId")
-        keys = [item["SessionId"] for item in response["Items"]]
+        response = self._table.scan(ProjectionExpression=self.primary_key)
+        keys = [item[self.primary_key] for item in response["Items"]]
         while "LastEvaluatedKey" in response:
             response = self._table.scan(
-                ProjectionExpression="SessionId",
+                ProjectionExpression=self.primary_key,
                 ExclusiveStartKey=response["LastEvaluatedKey"],
             )
-            keys.extend([item["SessionId"] for item in response["Items"]])
+            keys.extend([item[self.primary_key] for item in response["Items"]])
         return keys
