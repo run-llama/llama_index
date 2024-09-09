@@ -146,3 +146,4 @@ def test_get_metadata(caplog):
         response.model_name != "unknown"
         or "does not support model metadata retrieval" in caplog.text
     )
+    assert not model_name or response.model_name == model_name
