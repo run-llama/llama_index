@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.storage.chat_store.dynamodb"
 
 [tool.llamahub.class_authors]
-DynamoDBChatStore = "Bryce Freshcorn"
+DynamoDBChatStore = "brycecf"
 
 [tool.mypy]
 disallow_untyped_defs = true
