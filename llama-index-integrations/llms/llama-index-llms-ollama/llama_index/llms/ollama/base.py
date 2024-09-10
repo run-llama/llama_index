@@ -184,6 +184,20 @@ class Ollama(FunctionCallingLLM):
             for message in messages
         ]
 
+    def _get_response_token_counts(self, raw_response: dict) -> dict:
+        """Get the token usage reported by the response."""
+        try:
+            prompt_tokens = raw_response["prompt_eval_count"]
+            completion_tokens = raw_response["eval_count"]
+            total_tokens = prompt_tokens + completion_tokens
+        except KeyError:
+            return {}
+        return {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": total_tokens,
+        }
+
     def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
@@ -268,6 +282,9 @@ class Ollama(FunctionCallingLLM):
         )
 
         tool_calls = response["message"].get("tool_calls", [])
+        token_counts = self._get_response_token_counts(response)
+        if token_counts:
+            response["usage"] = token_counts
 
         return ChatResponse(
             message=ChatMessage(
@@ -305,6 +322,9 @@ class Ollama(FunctionCallingLLM):
                 response_txt += r["message"]["content"]
 
                 tool_calls = r["message"].get("tool_calls", [])
+                token_counts = self._get_response_token_counts(r)
+                if token_counts:
+                    r["usage"] = token_counts
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -345,6 +365,9 @@ class Ollama(FunctionCallingLLM):
                 response_txt += r["message"]["content"]
 
                 tool_calls = r["message"].get("tool_calls", [])
+                token_counts = self._get_response_token_counts(r)
+                if token_counts:
+                    r["usage"] = token_counts
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -376,6 +399,9 @@ class Ollama(FunctionCallingLLM):
         )
 
         tool_calls = response["message"].get("tool_calls", [])
+        token_counts = self._get_response_token_counts(response)
+        if token_counts:
+            response["usage"] = token_counts
 
         return ChatResponse(
             message=ChatMessage(

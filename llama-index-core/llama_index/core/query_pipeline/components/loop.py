@@ -28,7 +28,7 @@ class LoopComponent(QueryComponent):
         ...,
         description="Add output to input function. If not provided, will reuse the original input for the next iteration. If provided, will call the function to combine the output into the input for the next iteration.",
     )
-    max_iterations: Optional[int] = Field(5, description="Max iterations")
+    max_iterations: int = Field(default=5, description="Max iterations")
 
     def __init__(
         self,
@@ -55,7 +55,7 @@ class LoopComponent(QueryComponent):
     def _run_component(self, **kwargs: Any) -> Dict:
         """Run component."""
         current_input = kwargs
-        for i in range(self.max_iterations):
+        for _ in range(self.max_iterations):
             output = self.pipeline.run_component(**current_input)
             if self.should_exit_fn:
                 should_exit = self.should_exit_fn(output)
@@ -70,7 +70,7 @@ class LoopComponent(QueryComponent):
     async def _arun_component(self, **kwargs: Any) -> Any:
         """Run component (async)."""
         current_input = kwargs
-        for i in range(self.max_iterations):
+        for _ in range(self.max_iterations):
             output = await self.pipeline.arun_component(**current_input)
             if self.should_exit_fn:
                 should_exit = self.should_exit_fn(output)

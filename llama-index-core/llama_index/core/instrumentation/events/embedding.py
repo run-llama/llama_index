@@ -15,7 +15,7 @@ class EmbeddingStartEvent(BaseEvent):
     model_dict: dict
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "EmbeddingStartEvent"
 
@@ -33,6 +33,6 @@ class EmbeddingEndEvent(BaseEvent):
     embeddings: List[List[float]]
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "EmbeddingEndEvent"

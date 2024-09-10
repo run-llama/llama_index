@@ -29,11 +29,11 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-azure-openai"
 readme = "README.md"
-version = "0.2.0"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-llms-openai = "^0.2.0"
+llama-index-llms-openai = "^0.2.1"
 azure-identity = "^1.15.0"
 httpx = "*"
 llama-index-core = "^0.11.0"

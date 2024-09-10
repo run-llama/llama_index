@@ -48,7 +48,7 @@ from mistralai.models import (
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
-DEFAULT_MISTRALAI_MODEL = "mistral-tiny"
+DEFAULT_MISTRALAI_MODEL = "mistral-large-latest"
 DEFAULT_MISTRALAI_ENDPOINT = "https://api.mistral.ai"
 DEFAULT_MISTRALAI_MAX_TOKENS = 512
 
