@@ -331,10 +331,14 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
 
-        self._engine = create_engine(self.connection_string, echo=self.debug, **self.engine_params)
+        self._engine = create_engine(
+            self.connection_string, echo=self.debug, **self.engine_params
+        )
         self._session = sessionmaker(self._engine)
 
-        self._async_engine = create_async_engine(self.async_connection_string, **self.engine_params)
+        self._async_engine = create_async_engine(
+            self.async_connection_string, **self.engine_params
+        )
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
     def _create_schema_if_not_exists(self) -> None:
