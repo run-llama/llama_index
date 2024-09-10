@@ -179,7 +179,7 @@ from llama_index.core.tools import FunctionTool
 
 
 def multiply(a: int, b: int) -> int:
-    """Multiple two integers and returns the result integer"""
+    """Multiply two integers and returns the result integer"""
     return a * b
 
 def subtract(a: int, b: int) -> int:
@@ -211,6 +211,6 @@ agent_worker = FunctionCallingAgentWorker.from_tools(
 )
 agent = agent_worker.as_agent()
 
-response = agent.chat("My friend moses had 10 apples. He ate 5 apples in the morning. Then he found a box with 25 apples."
-                      "he divided all his apples between his 5 friends. How many apples did each friend got?")
+response = agent.chat("My friend Moses had 10 apples. He ate 5 apples in the morning. Then he found a box with 25 apples."
+                      "He divided all his apples between his 5 friends. How many apples did each friend get?")
 ```
