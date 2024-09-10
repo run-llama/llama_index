@@ -182,17 +182,21 @@ def multiply(a: int, b: int) -> int:
     """Multiply two integers and returns the result integer"""
     return a * b
 
+
 def subtract(a: int, b: int) -> int:
     """Subtract two integers and returns the result integer"""
     return a - b
+
 
 def divide(a: int, b: int) -> float:
     """Divide two integers and returns the result float"""
     return a - b
 
+
 def add(a: int, b: int) -> int:
     """Add two integers and returns the result integer"""
     return a + b
+
 
 multiply_tool = FunctionTool.from_defaults(fn=multiply)
 add_tool = FunctionTool.from_defaults(fn=add)
@@ -211,6 +215,8 @@ agent_worker = FunctionCallingAgentWorker.from_tools(
 )
 agent = agent_worker.as_agent()
 
-response = agent.chat("My friend Moses had 10 apples. He ate 5 apples in the morning. Then he found a box with 25 apples."
-                      "He divided all his apples between his 5 friends. How many apples did each friend get?")
+response = agent.chat(
+    "My friend Moses had 10 apples. He ate 5 apples in the morning. Then he found a box with 25 apples."
+    "He divided all his apples between his 5 friends. How many apples did each friend get?"
+)
 ```
