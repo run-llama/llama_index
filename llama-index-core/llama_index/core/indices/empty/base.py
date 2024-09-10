@@ -58,7 +58,9 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
 
         return super().as_query_engine(llm=llm, **kwargs)
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> EmptyIndexStruct:
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **build_kwargs: Any
+    ) -> EmptyIndexStruct:
         """Build the index from documents.
 
         Args:

@@ -13,7 +13,7 @@ from itertools import repeat
 from pathlib import Path, PurePosixPath
 import fsspec
 from fsspec.implementations.local import LocalFileSystem
-from typing import Any, Callable, Dict, Generator, List, Optional, Type
+from typing import Any, Callable, Dict, Generator, List, Optional, Type, Set
 
 from llama_index.core.readers.base import BaseReader, ResourcesReaderMixin
 from llama_index.core.async_utils import run_jobs, get_asyncio_module
@@ -23,7 +23,7 @@ from tqdm import tqdm
 
 class FileSystemReaderMixin(ABC):
     @abstractmethod
-    def read_file_content(self, input_file: Path, **kwargs) -> bytes:
+    def read_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
         """
         Read the bytes content of a file.
 
@@ -34,7 +34,7 @@ class FileSystemReaderMixin(ABC):
             bytes: File content.
         """
 
-    async def aread_file_content(self, input_file: Path, **kwargs) -> bytes:
+    async def aread_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
         """
         Read the bytes content of a file asynchronously.
 
@@ -277,9 +277,9 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
-        all_files = set()
-        rejected_files = set()
-        rejected_dirs = set()
+        all_files: Set[Path] = set()
+        rejected_files: Set[Path] = set()
+        rejected_dirs: Set[Path] = set()
         # Default to POSIX paths for non-default file systems (e.g. S3)
         _Path = Path if is_default_fs(self.fs) else PurePosixPath
 
@@ -303,10 +303,10 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         else:
             file_refs = self.fs.glob(str(input_dir) + "/*")
 
-        for ref in file_refs:
+        for _ref in file_refs:
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
-            ref = _Path(ref)
+            ref = _Path(_ref)
             is_dir = self.fs.isdir(ref)
             skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
             skip_because_bad_ext = (
@@ -389,9 +389,9 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         return documents
 
-    def list_resources(self, *args: Any, **kwargs: Any) -> List[Path]:
+    def list_resources(self, *args: Any, **kwargs: Any) -> List[str]:
         """List files in the given filesystem."""
-        return self.input_files
+        return [str(x) for x in self.input_files]
 
     def get_resource_info(self, resource_id: str, *args: Any, **kwargs: Any) -> Dict:
         info_result = self.fs.info(resource_id)
@@ -465,7 +465,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             **kwargs,
         )
 
-    def read_file_content(self, input_file: Path, **kwargs) -> bytes:
+    def read_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
         """Read file content."""
         fs: fsspec.AbstractFileSystem = kwargs.get("fs", self.fs)
         with fs.open(input_file, errors=self.errors, encoding=self.encoding) as f:
@@ -572,7 +572,17 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         return documents
 
-    async def aload_file(self, input_file: Path) -> List[Document]:
+    @staticmethod
+    async def aload_file(
+        input_file: Path,
+        file_metadata: Callable[[str], Dict],
+        file_extractor: Dict[str, BaseReader],
+        filename_as_id: bool = False,
+        encoding: str = "utf-8",
+        errors: str = "ignore",
+        raise_on_error: bool = False,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> List[Document]:
         """Load file asynchronously."""
         # TODO: make this less redundant
         default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
@@ -580,33 +590,30 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         metadata: Optional[dict] = None
         documents: List[Document] = []
 
-        if self.file_metadata is not None:
-            metadata = self.file_metadata(str(input_file))
+        if file_metadata is not None:
+            metadata = file_metadata(str(input_file))
 
         file_suffix = input_file.suffix.lower()
-        if (
-            file_suffix in default_file_reader_suffix
-            or file_suffix in self.file_extractor
-        ):
+        if file_suffix in default_file_reader_suffix or file_suffix in file_extractor:
             # use file readers
-            if file_suffix not in self.file_extractor:
+            if file_suffix not in file_extractor:
                 # instantiate file reader if not already
                 reader_cls = default_file_reader_cls[file_suffix]
-                self.file_extractor[file_suffix] = reader_cls()
-            reader = self.file_extractor[file_suffix]
+                file_extractor[file_suffix] = reader_cls()
+            reader = file_extractor[file_suffix]
 
             # load data -- catch all errors except for ImportError
             try:
                 kwargs = {"extra_info": metadata}
-                if self.fs and not is_default_fs(self.fs):
-                    kwargs["fs"] = self.fs
+                if fs and not is_default_fs(fs):
+                    kwargs["fs"] = fs
                 docs = await reader.aload_data(input_file, **kwargs)
             except ImportError as e:
                 # ensure that ImportError is raised so user knows
                 # about missing dependencies
                 raise ImportError(str(e))
             except Exception as e:
-                if self.raise_on_error:
+                if raise_on_error:
                     raise
                 # otherwise, just skip the file and report the error
                 print(
@@ -616,19 +623,19 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 return []
 
             # iterate over docs if needed
-            if self.filename_as_id:
+            if filename_as_id:
                 for i, doc in enumerate(docs):
                     doc.id_ = f"{input_file!s}_part_{i}"
 
             documents.extend(docs)
         else:
             # do standard read
-            fs = self.fs or get_default_fs()
-            with fs.open(input_file, errors=self.errors, encoding=self.encoding) as f:
-                data = f.read().decode(self.encoding, errors=self.errors)
+            fs = fs or get_default_fs()
+            with fs.open(input_file, errors=errors, encoding=encoding) as f:
+                data = f.read().decode(encoding, errors=errors)
 
             doc = Document(text=data, metadata=metadata or {})
-            if self.filename_as_id:
+            if filename_as_id:
                 doc.id_ = str(input_file)
 
             documents.append(doc)
@@ -722,7 +729,20 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         files_to_process = self.input_files
         fs = fs or self.fs
 
-        coroutines = [self.aload_file(input_file) for input_file in files_to_process]
+        coroutines = [
+            SimpleDirectoryReader.aload_file(
+                input_file,
+                self.file_metadata,
+                self.file_extractor,
+                self.filename_as_id,
+                self.encoding,
+                self.errors,
+                self.raise_on_error,
+                fs,
+            )
+            for input_file in files_to_process
+        ]
+
         if num_workers:
             document_lists = await run_jobs(
                 coroutines, show_progress=show_progress, workers=num_workers

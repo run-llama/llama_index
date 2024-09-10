@@ -131,6 +131,12 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
         if len(self.index_struct.embedding_dict) > 0 and retriever_mode is None:
             retriever_mode = KGRetrieverMode.HYBRID
+        elif retriever_mode is None:
+            retriever_mode = KGRetrieverMode.KEYWORD
+        elif isinstance(retriever_mode, str):
+            retriever_mode = KGRetrieverMode(retriever_mode)
+        else:
+            retriever_mode = retriever_mode
 
         return KGTableRetriever(
             self,
@@ -193,7 +199,9 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             results.append((subj, pred, obj))
         return results
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> KG:
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **build_kwargs: Any
+    ) -> KG:
         """Build the index from nodes."""
         # do simple concatenation
         index_struct = self.index_struct_cls()

@@ -75,7 +75,7 @@ class BaseIndex(Generic[IS], ABC):
             if index_struct is None:
                 nodes = nodes or []
                 index_struct = self.build_index_from_nodes(
-                    nodes + objects,
+                    nodes + objects,  # type: ignore
                     **kwargs,  # type: ignore
                 )
             self._index_struct = index_struct

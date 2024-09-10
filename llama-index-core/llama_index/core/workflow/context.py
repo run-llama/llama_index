@@ -77,7 +77,7 @@ class Context:
         raise ValueError(msg)
 
     @property
-    def data(self):
+    def data(self) -> Dict[str, Any]:
         """This property is provided for backward compatibility.
 
         Use `get` and `set` instead.
