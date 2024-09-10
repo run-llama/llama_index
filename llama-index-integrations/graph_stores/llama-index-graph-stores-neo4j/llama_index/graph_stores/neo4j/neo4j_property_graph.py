@@ -10,6 +10,7 @@ from llama_index.core.graph_stores.types import (
 )
 from llama_index.core.graph_stores.utils import (
     clean_string_values,
+    value_sanitize,
     LIST_LIMIT,
 )
 from llama_index.core.prompts import PromptTemplate
@@ -587,7 +588,11 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             data, _, _ = self._driver.execute_query(
                 query, database=self._database, parameters_=param_map
             )
-            return [r.data() for r in data]
+            full_result = [d.data() for d in data]
+
+            if self.sanitize_query_output:
+                return [value_sanitize(el) for el in full_result]
+            return full_result
         except neo4j.exceptions.Neo4jError as e:
             if not (
                 (
@@ -610,7 +615,11 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         # Fallback to allow implicit transactions
         with self._driver.session() as session:
             data = session.run(neo4j.Query(text=query), param_map)
-            return [r.data() for r in data]
+            full_result = [d.data() for d in data]
+
+            if self.sanitize_query_output:
+                return [value_sanitize(el) for el in full_result]
+            return full_result
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
