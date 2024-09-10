@@ -600,7 +600,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         )
 
         idf_modifier = self.fastembed_sparse_model and any(
-            lambda x: x in self.fastembed_sparse_model, ["bm42", "bm25"]
+            x in self.fastembed_sparse_model for x in ["bm42", "bm25"]
         )
         sparse_config = self._sparse_config or rest.SparseVectorParams(
             index=rest.SparseIndexParams(),
@@ -654,7 +654,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         )
 
         idf_modifier = self.fastembed_sparse_model and any(
-            lambda x: x in self.fastembed_sparse_model, ["bm42", "bm25"]
+            x in self.fastembed_sparse_model for x in ["bm42", "bm25"]
         )
         sparse_config = self._sparse_config or rest.SparseVectorParams(
             index=rest.SparseIndexParams(),
