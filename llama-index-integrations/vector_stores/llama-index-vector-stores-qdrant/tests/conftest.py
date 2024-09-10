@@ -8,7 +8,9 @@ import pytest_asyncio
 async def vector_store() -> QdrantVectorStore:
     client = qdrant_client.QdrantClient(":memory:")
     aclient = qdrant_client.AsyncQdrantClient(":memory:")
-    vector_store = QdrantVectorStore("test", client=client, aclient=aclient)
+    vector_store = QdrantVectorStore(
+        "test", client=client, aclient=aclient, enable_hybrid=True
+    )
 
     nodes = [
         TextNode(

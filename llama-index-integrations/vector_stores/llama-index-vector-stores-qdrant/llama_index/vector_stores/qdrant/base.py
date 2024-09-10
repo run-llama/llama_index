@@ -53,6 +53,7 @@ import_err_msg = (
     "`qdrant-client` package not found, please run `pip install qdrant-client`"
 )
 
+DENSE_VECTOR_NAME_OLD = ""
 DENSE_VECTOR_NAME = "text-dense"
 SPARSE_VECTOR_NAME_OLD = "text-sparse"
 SPARSE_VECTOR_NAME = "text-sparse-new"
@@ -231,6 +232,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def _build_points(
         self, nodes: List[BaseNode], sparse_vector_name: str
     ) -> Tuple[List[Any], List[str]]:
+        dense_vector_name = self.dense_vector_name()
+        if dense_vector_name == DENSE_VECTOR_NAME_OLD:
+            raise ValueError(
+                """The default dense vector name "" is deprecated. Please migrate dense vectors to name 'text-dense'."""
+            )
         ids = []
         points = []
         for node_batch in iter_batch(nodes, self.batch_size):
@@ -593,13 +599,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
             distance=rest.Distance.COSINE,
         )
 
+        idf_modifier = self.fastembed_sparse_model and any(
+            lambda x: x in self.fastembed_sparse_model, ["bm42", "bm25"]
+        )
         sparse_config = self._sparse_config or rest.SparseVectorParams(
             index=rest.SparseIndexParams(),
-            modifier=(
-                rest.Modifier.IDF
-                if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
-                else rest.Modifier.NONE
-            ),
+            modifier=(rest.Modifier.IDF if idf_modifier else rest.Modifier.NONE),
         )
 
         try:
@@ -648,13 +653,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
             distance=rest.Distance.COSINE,
         )
 
+        idf_modifier = self.fastembed_sparse_model and any(
+            lambda x: x in self.fastembed_sparse_model, ["bm42", "bm25"]
+        )
         sparse_config = self._sparse_config or rest.SparseVectorParams(
             index=rest.SparseIndexParams(),
-            modifier=(
-                rest.Modifier.IDF
-                if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
-                else rest.Modifier.NONE
-            ),
+            modifier=rest.Modifier.IDF if idf_modifier else rest.Modifier.NONE,
         )
 
         try:
@@ -708,6 +712,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             query (VectorStoreQuery): query
         """
+        dense_vector_name = self.dense_vector_name()
+        if dense_vector_name == DENSE_VECTOR_NAME_OLD:
+            raise ValueError(
+                """The default dense vector name "" is deprecated. Please migrate dense vectors to name 'text-dense'."""
+            )
+
         query_embedding = cast(List[float], query.query_embedding)
         #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
         qdrant_filters = kwargs.get("qdrant_filters")
@@ -715,7 +725,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
             query_filter = qdrant_filters
         else:
             query_filter = cast(Filter, self._build_query_filter(query))
-
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
             raise ValueError(
                 "Hybrid search is not enabled. Please build the query with "
@@ -829,6 +838,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             query (VectorStoreQuery): query
         """
+        dense_vector_name = await self.adense_vector_name()
+        if dense_vector_name == DENSE_VECTOR_NAME_OLD:
+            raise ValueError(
+                """The default dense vector name "" is deprecated. Please migrate dense vectors to name 'text-dense'."""
+            )
+
         query_embedding = cast(List[float], query.query_embedding)
 
         #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
@@ -1112,6 +1127,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         return Filter(must=must_conditions)
 
+    # TODO: deprecate this
     def use_old_sparse_encoder(self, collection_name: str) -> bool:
         collection_exists = self._collection_exists(collection_name)
         if collection_exists:
@@ -1119,9 +1135,17 @@ class QdrantVectorStore(BasePydanticVectorStore):
             return SPARSE_VECTOR_NAME_OLD in (
                 cur_collection.config.params.sparse_vectors or {}
             )
-
         return False
 
+    # TODO: deprecate this
+    def use_old_dense_encoder(self, collection_name: str) -> bool:
+        collection_exists = self._collection_exists(collection_name)
+        if collection_exists:
+            cur_collection = self.client.get_collection(collection_name)
+            return DENSE_VECTOR_NAME_OLD in (cur_collection.config.params.vectors or {})
+        return False
+
+    # TODO: deprecate this
     def sparse_vector_name(self) -> str:
         return (
             SPARSE_VECTOR_NAME_OLD
@@ -1129,6 +1153,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
             else SPARSE_VECTOR_NAME
         )
 
+    # TODO: deprecate this
+    def dense_vector_name(self) -> str:
+        return (
+            DENSE_VECTOR_NAME_OLD
+            if self.use_old_dense_encoder(self.collection_name)
+            else DENSE_VECTOR_NAME
+        )
+
+    # TODO: deprecate this
     async def ause_old_sparse_encoder(self, collection_name: str) -> bool:
         collection_exists = await self._acollection_exists(collection_name)
         if collection_exists:
@@ -1139,6 +1172,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         return False
 
+    # TODO: deprecate this
+    async def ause_old_dense_encoder(self, collection_name: str) -> bool:
+        collection_exists = await self._acollection_exists(collection_name)
+        if collection_exists:
+            cur_collection = await self._aclient.get_collection(collection_name)
+            return DENSE_VECTOR_NAME_OLD in (cur_collection.config.params.vectors or {})
+        return False
+
+    # TODO: deprecate this
     async def asparse_vector_name(self) -> str:
         return (
             SPARSE_VECTOR_NAME_OLD
@@ -1146,24 +1188,45 @@ class QdrantVectorStore(BasePydanticVectorStore):
             else SPARSE_VECTOR_NAME
         )
 
+    # TODO: deprecate this
+    async def adense_vector_name(self) -> str:
+        return (
+            DENSE_VECTOR_NAME_OLD
+            if await self.ause_old_dense_encoder(self.collection_name)
+            else DENSE_VECTOR_NAME
+        )
+
     def get_default_sparse_doc_encoder(
         self, collection_name: str, fastembed_sparse_model: Optional[str] = None
     ) -> SparseEncoderCallable:
         if self.use_old_sparse_encoder(collection_name):
+            logger.warning(
+                "Using old sparse encoder for collection %s. Migrate to new sparse encoder or explicitly set the sparse encoder.",
+                collection_name,
+            )
             return default_sparse_encoder("naver/efficient-splade-VI-BT-large-doc")
 
         if fastembed_sparse_model is not None:
             return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
 
+        logger.warning(
+            """Default sparse encoder has been migrated to "Qdrant/bm25". Please migrate to new sparse encoder or explicitly set the old sparse encoder (e.g. "prithvida/Splade_PP_en_v1")."""
+        )
         return fastembed_sparse_encoder()
 
     def get_default_sparse_query_encoder(
         self, collection_name: str, fastembed_sparse_model: Optional[str] = None
     ) -> SparseEncoderCallable:
         if self.use_old_sparse_encoder(collection_name):
+            logger.warning(
+                "Using old sparse encoder for collection %s. Migrate to new sparse encoder or explicitly set the sparse encoder.",
+                collection_name,
+            )
             return default_sparse_encoder("naver/efficient-splade-VI-BT-large-query")
 
         if fastembed_sparse_model is not None:
             return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
-
+        logger.warning(
+            """Default sparse encoder has been migrated to "Qdrant/bm25". Please migrate to new sparse encoder or explicitly set the old sparse encoder (e.g. "prithvida/Splade_PP_en_v1")."""
+        )
         return fastembed_sparse_encoder()
