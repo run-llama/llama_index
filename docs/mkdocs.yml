@@ -587,6 +587,7 @@ nav:
           - ./examples/vector_stores/AwadbDemo.ipynb
           - ./examples/vector_stores/AzureAISearchIndexDemo.ipynb
           - ./examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb
+          - ./examples/vector_stores/AzureCosmosDBNoSqlDemo.ipynb
           - ./examples/vector_stores/BagelAutoRetriever.ipynb
           - ./examples/vector_stores/BagelIndexDemo.ipynb
           - ./examples/vector_stores/BaiduVectorDBIndexDemo.ipynb
@@ -1456,6 +1457,7 @@ nav:
               - ./api_reference/storage/vector_store/awsdocdb.md
               - ./api_reference/storage/vector_store/azureaisearch.md
               - ./api_reference/storage/vector_store/azurecosmosmongo.md
+              - ./api_reference/storage/vector_store/azurecosmosnosql.md
               - ./api_reference/storage/vector_store/bagel.md
               - ./api_reference/storage/vector_store/baiduvectordb.md
               - ./api_reference/storage/vector_store/cassandra.md
@@ -2166,6 +2168,7 @@ plugins:
             - ../llama-index-integrations/selectors/llama-index-selectors-notdiamond
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-mariadb
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-tablestore
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-azurecosmosnosql
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
