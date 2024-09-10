@@ -1,5 +1,52 @@
 # ChangeLog
 
+## [2024-09-09]
+
+### `llama-index-core` [0.11.8]
+
+- feat: Add a retry policy config to workflow steps (#15757)
+- Add doc id to Langchain format conversions (#15928)
+
+### `llama-index-chat-store-dynamodb` [0.1.0]
+
+- Add DynamoDBChatStore (#15917)
+
+### `llama-index-cli` [0.3.1]
+
+- Fix RagCLI pydantic error (#15931)
+
+### `llama-index-llms-alibabacloud-aisearch` [0.1.0]
+
+- add llama-index llms alibabacloud_aisearch integration (#15850)
+
+### `llama-index-llms-mistralai` [0.2.3]
+
+- Make default mistral model support function calling with `large-latest` (#15906)
+
+### `llama-index-llms-vertex` [0.3.4]
+
+- Add InternalServerError to retry decorator (#15921)
+
+### `llama-index-postprocessor-rankllm-rerank` [0.3.0]
+
+- Update RankLLM with new rerankers (#15892)
+
+### `llama-index-vector-stores-azurecosmosnosql` [1.0.0]
+
+- Adding vector store for Azure Cosmos DB NoSql (#14158)
+
+### `llama-index-readers-microsoft-sharepoint` [0.3.1]
+
+- Fix error handling in sharepoint reader, fix error with download file (#15868)
+
+### `llama-index-vector-stores-wordlift` [0.4.4]
+
+- Adding support for MetadataFilters to WordLift Vector Store (#15905)
+
+### `llama-index-vector-stores-opensearch` [0.2.2]
+
+- Opensearch Serverless filtered query support using knn_score script (#15899)
+
 ## [2024-09-06]
 
 ### `llama-index-core` [0.11.7]
