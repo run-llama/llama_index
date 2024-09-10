@@ -1,5 +1,4 @@
 from typing import Any, List, Dict, Optional, Tuple
-import time
 from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
@@ -11,7 +10,6 @@ from llama_index.core.graph_stores.types import (
 )
 from llama_index.core.graph_stores.utils import (
     clean_string_values,
-    value_sanitize,
     LIST_LIMIT,
 )
 from llama_index.core.prompts import PromptTemplate
@@ -583,28 +581,36 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         self,
         query: str,
         param_map: Optional[Dict[str, Any]] = None,
-        max_retries: int = 3,
-        initial_delay: float = 0.1,
     ) -> Any:
         param_map = param_map or {}
-        retries = 0
-        delay = initial_delay
-        while True:
-            try:
-                with self._driver.session(database=self._database) as session:
-                    result = session.run(query, param_map)
-                    full_result = [d.data() for d in result]
-
-                if self.sanitize_query_output:
-                    return [value_sanitize(el) for el in full_result]
-                return full_result
-            except (neo4j.exceptions.DriverError, neo4j.exceptions.Neo4jError) as e:
-                if not e.is_retryable() or retries >= max_retries:
-                    raise
-
-                retries += 1
-                time.sleep(delay)
-                delay *= 2  # Exponential backoff
+        try:
+            data, _, _ = self._driver.execute_query(
+                query, database=self._database, parameters_=param_map
+            )
+            return [r.data() for r in data]
+        except neo4j.exceptions.Neo4jError as e:
+            if not (
+                (
+                    (  # isCallInTransactionError
+                        e.code == "Neo.DatabaseError.Statement.ExecutionFailed"
+                        or e.code
+                        == "Neo.DatabaseError.Transaction.TransactionStartFailed"
+                    )
+                    and "in an implicit transaction" in e.message
+                )
+                or (  # isPeriodicCommitError
+                    e.code == "Neo.ClientError.Statement.SemanticError"
+                    and (
+                        "in an open transaction is not possible" in e.message
+                        or "tried to execute in an explicit transaction" in e.message
+                    )
+                )
+            ):
+                raise
+        # Fallback to allow implicit transactions
+        with self._driver.session() as session:
+            data = session.run(neo4j.Query(text=query), param_map)
+            return [r.data() for r in data]
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any

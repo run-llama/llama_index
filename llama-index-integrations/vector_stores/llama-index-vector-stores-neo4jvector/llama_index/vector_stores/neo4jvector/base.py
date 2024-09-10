@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Optional, Tuple
 import logging
-import time
 
 import neo4j
 
@@ -435,28 +434,40 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         )
         self.database_query(fts_index_query)
 
-    def query(
+    def database_query(
         self,
         query: str,
         params: Optional[Dict[str, Any]] = None,
-        max_retries: int = 3,
-        initial_delay: float = 0.1,
     ) -> Any:
         params = params or {}
-        retries = 0
-        delay = initial_delay
-        while True:
-            try:
-                with self._driver.session(database=self._database) as session:
-                    result = session.run(query, params)
-                    return [d.data() for d in result]
-            except (neo4j.exceptions.DriverError, neo4j.exceptions.Neo4jError) as e:
-                if not e.is_retryable() or retries >= max_retries:
-                    raise
-
-                retries += 1
-                time.sleep(delay)
-                delay *= 2  # Exponential backoff
+        try:
+            data, _, _ = self._driver.execute_query(
+                query, database=self._database, parameters_=params
+            )
+            return [r.data() for r in data]
+        except neo4j.exceptions.Neo4jError as e:
+            if not (
+                (
+                    (  # isCallInTransactionError
+                        e.code == "Neo.DatabaseError.Statement.ExecutionFailed"
+                        or e.code
+                        == "Neo.DatabaseError.Transaction.TransactionStartFailed"
+                    )
+                    and "in an implicit transaction" in e.message
+                )
+                or (  # isPeriodicCommitError
+                    e.code == "Neo.ClientError.Statement.SemanticError"
+                    and (
+                        "in an open transaction is not possible" in e.message
+                        or "tried to execute in an explicit transaction" in e.message
+                    )
+                )
+            ):
+                raise
+        # Fallback to allow implicit transactions
+        with self._driver.session() as session:
+            data = session.run(neo4j.Query(text=query), params)
+            return [r.data() for r in data]
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         ids = [r.node_id for r in nodes]
