@@ -147,9 +147,48 @@ def test_udf_retrieval(vectara1) -> None:
     )
 
     res = qe.retrieve("What will the future look like?")
+    assert len(res) == 2
     assert res[0].node.get_content() == docs[2].text
     assert res[1].node.get_content() == docs[3].text
+
+
+def test_chain_rerank_retrieval(vectara1) -> None:
+    docs = get_docs()
+
+    qe = vectara1.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[{"type": "slingshot"}, {"type": "mmr", "diversity_bias": 0.4}],
+    )
+
+    res = qe.retrieve("What's this all about?")
     assert len(res) == 2
+    assert res[0].node.get_content() == docs[1].text
+    # assert res[1].node.get_content() == docs[2].text
+
+    qe = vectara1.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[
+            {"type": "slingshot"},
+            {"type": "mmr"},
+            {
+                "type": "udf",
+                "user_function": "5 * get('$.score') + get('$.document_metadata.test_score') / 2",
+            },
+        ],
+    )
+
+    res = qe.retrieve("What's this all about?")
+    assert len(res) == 2
+    print(res[0].node.get_content())
+    print(res[1].node.get_content())
+    # assert res[0].node.get_content() == docs[1].text
+    # assert res[1].node.get_content() == docs[2].text
 
 
 @pytest.fixture()

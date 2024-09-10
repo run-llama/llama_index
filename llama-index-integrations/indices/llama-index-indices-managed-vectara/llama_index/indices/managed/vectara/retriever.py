@@ -41,10 +41,18 @@ UDF_RERANKER_ID = 272725722
 class VectaraReranker(str, Enum):
     NONE = "none"
     MMR = "mmr"
-    SLINGSHOT_ALT_NAME = "slingshot"
     SLINGSHOT = "multilingual_reranker_v1"
+    SLINGSHOT_ALT_NAME = "slingshot"
     UDF = "udf"
     CHAIN = "chain"
+
+
+CHAIN_RERANKER_NAMES = {
+    VectaraReranker.MMR: "Maximum Marginal Relevance Reranker",
+    VectaraReranker.SLINGSHOT: "Rerank_Multilingual_v1",
+    VectaraReranker.SLINGSHOT_ALT_NAME: "Rerank_Multilingual_v1",
+    VectaraReranker.UDF: "User_Defined_Function_Reranker",
+}
 
 
 class VectaraRetriever(BaseRetriever):
@@ -74,8 +82,9 @@ class VectaraRetriever(BaseRetriever):
             See (https://docs.vectara.com/docs/learn/user-defined-function-reranker)
             for more details about syntax for udf reranker expressions.
         rerank_chain: a list of rerankers to be applied in a sequence and their associated parameters
-            for the chain reranker.
-            If using slingshot/multilingual_reranker_v1, it must be first in the chain.
+            for the chain reranker. Each element should specify the "type" of reranker (mmr, slingshot, udf)
+            and any other parameters needed for that reranker type ("diversity_bias" for mmr or "user_function" for udf).
+            If using slingshot/multilingual_reranker_v1, it must be first in the list.
         summary_enabled: whether to generate summaries or not. Defaults to False.
         summary_response_lang: language to use for summary generation.
         summary_num_results: number of results to use for summary generation.
@@ -145,6 +154,15 @@ class VectaraRetriever(BaseRetriever):
             self._rerank_k = rerank_k
             self._udf_expression = udf_expression
             self._reranker_id = UDF_RERANKER_ID
+        elif (
+            reranker == VectaraReranker.CHAIN
+            and rerank_chain is not None
+            and len(rerank_chain) > 0
+        ):
+            self._rerank = True
+            self._rerank_k = rerank_k
+            self._rerank_chain = rerank_chain
+            self._reranker_id = None
         else:
             self._rerank = False
 
@@ -224,7 +242,7 @@ class VectaraRetriever(BaseRetriever):
                 }
             ]
         }
-        if self._rerank:
+        if self._rerank and self._reranker_id is not None:
             reranking_config = {
                 "rerankerId": self._reranker_id,
             }
@@ -234,6 +252,28 @@ class VectaraRetriever(BaseRetriever):
                 }
             elif self._reranker_id == UDF_RERANKER_ID:
                 reranking_config["userFunction"] = self._udf_expression
+
+            data["query"][0]["rerankingConfig"] = reranking_config
+
+        elif self._rerank:
+            reranking_config = current_config = {}
+
+            for i, rerank_info in enumerate(self._rerank_chain):
+                current_config["reranker_name"] = CHAIN_RERANKER_NAMES[
+                    rerank_info["type"]
+                ]
+                if rerank_info["type"] == "mmr":
+                    current_config["diversity_bias"] = rerank_info.get(
+                        "diversity_bias", 0.3
+                    )
+                elif rerank_info["type"] == "udf":
+                    current_config["user_function"] = rerank_info.get(
+                        "user_function", "get('$.score')"
+                    )
+
+                if i < len(self._rerank_chain) - 1:
+                    current_config["next_reranking_config"] = {}
+                    current_config = current_config["next_reranking_config"]
 
             data["query"][0]["rerankingConfig"] = reranking_config
 
