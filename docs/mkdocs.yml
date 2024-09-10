@@ -788,6 +788,7 @@ nav:
           - ./module_guides/observability/index.md
           - ./module_guides/observability/instrumentation.md
       - Settings: ./module_guides/supporting_modules/settings.md
+      - Workflows: ./module_guides/workflow/index.md
   - Advanced Topics:
       - ./optimizing/production_rag.md
       - ./optimizing/basic_strategies/basic_strategies.md
@@ -1571,6 +1572,7 @@ nav:
           - ./api_reference/workflow/context.md
           - ./api_reference/workflow/events.md
           - ./api_reference/workflow/workflow.md
+          - ./api_reference/workflow/retry_policy.md
   - Open-Source Community:
       - Integrations: ./community/integrations.md
       - Full Stack Projects: ./community/full_stack_projects.md
