@@ -53,6 +53,8 @@ class OpensearchVectorClient:
             This includes engine, metric, and other config params. Defaults to:
             {"name": "hnsw", "space_type": "l2", "engine": "nmslib",
             "parameters": {"ef_construction": 256, "m": 48}}
+        settings: Optional[dict]: Settings for the Opensearch index creation. Defaults to:
+            {"index": {"knn": True, "knn.algo_param.ef_search": 100}}
         space_type (Optional[str]): space type for distance metric calculation. Defaults to: l2
         **kwargs: Optional arguments passed to the OpenSearch client from opensearch-py.
 
@@ -66,6 +68,7 @@ class OpensearchVectorClient:
         embedding_field: str = "embedding",
         text_field: str = "content",
         method: Optional[dict] = None,
+        settings: Optional[dict] = None,
         engine: Optional[str] = "nmslib",
         space_type: Optional[str] = "l2",
         max_chunk_bytes: int = 1 * 1024 * 1024,
@@ -81,6 +84,8 @@ class OpensearchVectorClient:
                 "engine": engine,
                 "parameters": {"ef_construction": 256, "m": 48},
             }
+        if settings is None:
+            settings = {"index": {"knn": True, "knn.algo_param.ef_search": 100}}
         if embedding_field is None:
             embedding_field = "embedding"
         self._embedding_field = embedding_field
@@ -97,7 +102,7 @@ class OpensearchVectorClient:
         self.is_aoss = self._is_aoss_enabled(http_auth=http_auth)
         # initialize mapping
         idx_conf = {
-            "settings": {"index": {"knn": True, "knn.algo_param.ef_search": 100}},
+            "settings": settings,
             "mappings": {
                 "properties": {
                     embedding_field: {
