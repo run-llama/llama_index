@@ -25,7 +25,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel, ConfigDict
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import (
@@ -179,6 +179,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         ```
     """
 
+    model_config = ConfigDict(protected_namespaces=())
     model_name: Optional[str] = Field(
         default=None,
         description="The model id to use. Optional for endpoints running a single model.",
@@ -186,8 +187,8 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: Optional[int] = Field(
         default=None,
@@ -196,7 +197,8 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     )
     seed: str = Field(default=None, description="The random seed to use for sampling.")
     model_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional kwargs model parameters."
+        default_factory=dict,
+        description="Additional kwargs model parameters.",
     )
 
     _client: ChatCompletionsClient = PrivateAttr()
@@ -283,22 +285,25 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         if not self._model_name:
+            model_info = None
             try:
                 # Get model info from the endpoint. This method may not be supported by all
                 # endpoints.
                 model_info = self._client.get_model_info()
-                if model_info:
-                    self._model_name = model_info.get("model_name", None)
-                    self._model_type = model_info.get("model_type", None)
-                    self._model_provider = model_info.get("model_provider_name", None)
             except HttpResponseError:
                 logger.warning(
                     f"Endpoint '{self._client._config.endpoint}' does not support model metadata retrieval. "
                     "Failed to get model info for method `metadata()`."
                 )
-                self._model_name = "unknown"
-                self._model_provider = "unknown"
-                self._model_type = "chat-completions"
+            finally:
+                if model_info:
+                    self._model_name = model_info.get("model_name", None)
+                    self._model_type = model_info.get("model_type", None)
+                    self._model_provider = model_info.get("model_provider_name", None)
+                else:
+                    self._model_name = self.model_name or "unknown"
+                    self._model_type = "unknown"
+                    self._model_provider = "unknown"
 
         return LLMMetadata(
             is_chat_model=self._model_type == "chat-completions",
