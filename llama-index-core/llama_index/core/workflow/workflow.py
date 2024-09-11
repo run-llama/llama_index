@@ -2,6 +2,7 @@ import asyncio
 import functools
 import time
 import warnings
+import uuid
 from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set, Tuple
 
 from llama_index.core.instrumentation import get_dispatcher
@@ -65,7 +66,7 @@ class Workflow(metaclass=WorkflowMeta):
         self._verbose = verbose
         self._disable_validation = disable_validation
         # Broker machinery
-        self._contexts: Set[Context] = set()
+        self._contexts: Dict[str, Context] = {}
         self._stepwise_context: Optional[Context] = None
         # Services management
         self._service_manager = service_manager or ServiceManager()
@@ -98,7 +99,7 @@ class Workflow(metaclass=WorkflowMeta):
             raise WorkflowRuntimeError(msg)
 
         # Enter the dequeuing loop.
-        ctx = next(iter(self._contexts))
+        ctx = next(iter(self._contexts.values()))
         while True:
             ev = await ctx.streaming_queue.get()
             if type(ev) is StopEvent:
@@ -107,7 +108,7 @@ class Workflow(metaclass=WorkflowMeta):
             yield ev
 
         # remove context to free up room for the next stream_events call
-        self._contexts.remove(ctx)
+        self._contexts.pop(ctx.session_id, None)
 
     @classmethod
     def add_step(cls, func: Callable) -> None:
@@ -139,13 +140,18 @@ class Workflow(metaclass=WorkflowMeta):
         """Returns all the steps, whether defined as methods or free functions."""
         return {**get_steps_from_instance(self), **self._step_functions}  # type: ignore[attr-defined]
 
-    def _start(self, stepwise: bool = False) -> Context:
+    def _start(
+        self, session_id: Optional[str] = None, stepwise: bool = False
+    ) -> Context:
         """Sets up the queues and tasks for each declared step.
 
         This method also launches each step as an async task.
         """
-        ctx = Context(self)
-        self._contexts.add(ctx)
+        if session_id is None:
+            session_id = str(uuid.uuid4())
+
+        ctx = Context(self, session_id)
+        self._contexts[session_id] = ctx
 
         for name, step_func in self._get_steps().items():
             ctx._queues[name] = asyncio.Queue()
@@ -264,11 +270,11 @@ class Workflow(metaclass=WorkflowMeta):
 
         # Emit a warning as this won't work for multiple run()s.
         warnings.warn(msg)
-        ctx = next(iter(self._contexts))
+        ctx = next(iter(self._contexts.values()))
         ctx.send_event(message=message, step=step)
 
     @dispatcher.span
-    async def run(self, **kwargs: Any) -> str:
+    async def run(self, **kwargs: Any) -> Any:
         """Runs the workflow until completion.
 
         Works by
@@ -277,12 +283,24 @@ class Workflow(metaclass=WorkflowMeta):
             3. sending a StartEvent to kick things off
             4. waiting for all tasks to finish or be cancelled
         """
+        ctx = self.create_session_context()
+
+        return await self.run_with_session_context(ctx, **kwargs)
+
+    def create_session_context(
+        self, session_id: Optional[str] = None, context: Optional[Context] = None
+    ) -> Context:
         # Validate the workflow if needed
         self._validate()
 
-        # Start the machinery in a new Context
-        ctx = self._start()
+        # Start the machinery in a new Context if needed
+        if context is None:
+            context = self._start(session_id=session_id)
 
+        # return the context
+        return context
+
+    async def run_with_session_context(self, ctx: Context, **kwargs: Any) -> Any:
         # Send the first event
         ctx.send_event(StartEvent(**kwargs))
 
@@ -323,6 +341,25 @@ class Workflow(metaclass=WorkflowMeta):
             raise WorkflowTimeoutError(msg)
 
         return ctx._retval
+
+    async def run_with_streaming_session_context(
+        self, ctx: Context, **kwargs: Any
+    ) -> AsyncGenerator:
+        running_task = asyncio.create_task(self.run_with_session_context(ctx, **kwargs))
+
+        # sleep to prevent busy-wait
+        await asyncio.sleep(0)
+
+        # Enter the dequeuing loop.
+        while True:
+            ev = await ctx.streaming_queue.get()
+            if type(ev) is StopEvent:
+                break
+
+            yield ev
+
+        # Return the final result
+        yield await running_task
 
     @dispatcher.span
     async def run_step(self, **kwargs: Any) -> Optional[str]:

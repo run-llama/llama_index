@@ -1,5 +1,6 @@
 import asyncio
 import warnings
+import uuid
 from collections import defaultdict
 from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING, Set, Tuple
 
@@ -22,7 +23,9 @@ class Context:
     Both `set` and `get` operations on global data are governed by a lock, and considered coroutine-safe.
     """
 
-    def __init__(self, workflow: "Workflow") -> None:
+    def __init__(self, workflow: "Workflow", session_id: Optional[str] = None) -> None:
+        self.session_id = session_id or str(uuid.uuid4())
+
         self._workflow = workflow
         # Broker machinery
         self._queues: Dict[str, asyncio.Queue] = {}

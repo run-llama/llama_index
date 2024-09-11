@@ -223,7 +223,7 @@ async def test_workflow_step_send_event():
     result = await workflow.run()
     assert result == "step2"
     assert workflow.is_done()
-    ctx = workflow._contexts.pop()
+    ctx = next(iter(workflow._contexts.values()))
     assert ("step2", "OneTestEvent") in ctx._accepted_events
     assert ("step3", "OneTestEvent") not in ctx._accepted_events
 
@@ -243,7 +243,9 @@ async def test_workflow_step_send_event_to_None():
     workflow = StepSendEventToNoneWorkflow(verbose=True)
     await workflow.run()
     assert workflow.is_done()
-    assert ("step2", "OneTestEvent") in workflow._contexts.pop()._accepted_events
+    assert ("step2", "OneTestEvent") in next(
+        iter(workflow._contexts.values())
+    )._accepted_events
 
 
 @pytest.mark.asyncio()
@@ -305,14 +307,14 @@ def test_deprecated_send_event():
     ctx = mock.MagicMock()
 
     # One context, assert step emits a warning
-    wf._contexts.add(ctx)
+    wf._contexts["one"] = ctx
     with pytest.warns(UserWarning):
         wf.send_event(message=ev)
     ctx.send_event.assert_called_with(message=ev, step=None)
 
     # Second context, assert step raises an exception
     ctx = mock.MagicMock()
-    wf._contexts.add(ctx)
+    wf._contexts["two"] = ctx
     with pytest.raises(WorkflowRuntimeError):
         wf.send_event(message=ev)
     ctx.send_event.assert_not_called()
