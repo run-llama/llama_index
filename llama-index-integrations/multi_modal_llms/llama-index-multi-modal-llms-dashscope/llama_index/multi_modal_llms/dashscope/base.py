@@ -17,7 +17,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
-from llama_index.core.schema import ImageDocument
+from llama_index.core.schema import ImageNode
 from llama_index.multi_modal_llms.dashscope.utils import (
     chat_message_to_dashscope_multi_modal_messages,
     dashscope_response_to_chat_response,
@@ -137,7 +137,7 @@ class DashScopeMultiModal(MultiModalLLM):
         return params
 
     def _get_input_parameters(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> Tuple[ChatMessage, Dict]:
         parameters = self._get_default_parameters()
         parameters.update(kwargs)
@@ -155,7 +155,7 @@ class DashScopeMultiModal(MultiModalLLM):
         return message, parameters
 
     def complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         message, parameters = self._get_input_parameters(
             prompt, image_documents, **kwargs
@@ -172,7 +172,7 @@ class DashScopeMultiModal(MultiModalLLM):
         return dashscope_response_to_completion_response(response)
 
     def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
         message, parameters = self._get_input_parameters(
             prompt, image_documents, **kwargs
@@ -260,12 +260,12 @@ class DashScopeMultiModal(MultiModalLLM):
 
     # TODO: use proper async methods
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         return self.complete(prompt, image_documents, **kwargs)
 
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise Exception("Not supported")
 

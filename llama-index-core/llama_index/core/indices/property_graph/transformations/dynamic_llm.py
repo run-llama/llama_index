@@ -1,9 +1,8 @@
 import asyncio
-from typing import Any, Callable, List, Optional, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
 import re
 import json
 from llama_index.core.async_utils import run_jobs
-from llama_index.core.schema import TransformComponent, BaseNode
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.llms.llm import LLM
 from llama_index.core.graph_stores.types import (
@@ -12,11 +11,11 @@ from llama_index.core.graph_stores.types import (
     KG_NODES_KEY,
     KG_RELATIONS_KEY,
 )
-
 from llama_index.core.prompts.default_prompts import (
     DEFAULT_DYNAMIC_EXTRACT_PROMPT,
     DEFAULT_DYNAMIC_EXTRACT_PROPS_PROMPT,
 )
+from llama_index.core.schema import TransformComponent, BaseNode, MetadataMode
 
 
 def default_parse_dynamic_triplets(
@@ -132,7 +131,7 @@ def default_parse_dynamic_triplets_with_props(
             ) = match
 
             # Use more robust parsing for properties
-            def parse_props(props_str):
+            def parse_props(props_str: str) -> Dict[str, Any]:
                 try:
                     # Handle mixed quotes and convert to a proper dictionary
                     props_str = props_str.replace("'", '"')
@@ -247,15 +246,15 @@ class DynamicLLMPathExtractor(TransformComponent):
 
         # convert props to name -> description format if needed
         if allowed_entity_props and isinstance(allowed_entity_props[0], tuple):
-            allowed_entity_props = [
+            allowed_entity_props = [  # type: ignore
                 f"Property `{k}` with description ({v})"
-                for k, v in allowed_entity_props
+                for k, v in allowed_entity_props  # type: ignore
             ]
 
         if allowed_relation_props and isinstance(allowed_relation_props[0], tuple):
-            allowed_relation_props = [
+            allowed_relation_props = [  # type: ignore
                 f"Property `{k}` with description ({v})"
-                for k, v in allowed_relation_props
+                for k, v in allowed_relation_props  # type: ignore
             ]
 
         super().__init__(
@@ -276,7 +275,7 @@ class DynamicLLMPathExtractor(TransformComponent):
         return "DynamicLLMPathExtractor"
 
     def __call__(
-        self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
+        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
     ) -> List[BaseNode]:
         """
         Extract triples from nodes.
@@ -306,10 +305,10 @@ class DynamicLLMPathExtractor(TransformComponent):
             text=text,
             max_knowledge_triplets=self.max_triplets_per_chunk,
             allowed_entity_types=", ".join(self.allowed_entity_types)
-            if len(self.allowed_entity_types) > 0
+            if len(self.allowed_entity_types or []) > 0
             else "No entity types provided, You are free to define them.",
-            allowed_relation_types=", ".join(self.allowed_relation_types)
-            if len(self.allowed_relation_types) > 0
+            allowed_relation_types=", ".join(self.allowed_relation_types or [])
+            if len(self.allowed_relation_types or []) > 0
             else "No relation types provided, You are free to define them.",
         )
 
@@ -328,10 +327,10 @@ class DynamicLLMPathExtractor(TransformComponent):
             text=text,
             max_knowledge_triplets=self.max_triplets_per_chunk,
             allowed_entity_types=", ".join(self.allowed_entity_types)
-            if len(self.allowed_entity_types) > 0
+            if len(self.allowed_entity_types or []) > 0
             else "No entity types provided, You are free to define them.",
-            allowed_relation_types=", ".join(self.allowed_relation_types)
-            if len(self.allowed_relation_types) > 0
+            allowed_relation_types=", ".join(self.allowed_relation_types or [])
+            if len(self.allowed_relation_types or []) > 0
             else "No relation types provided, You are free to define them.",
             allowed_entity_properties=", ".join(self.allowed_entity_props)
             if self.allowed_entity_props
@@ -351,7 +350,7 @@ class DynamicLLMPathExtractor(TransformComponent):
         Returns:
             BaseNode: The processed node with extracted information.
         """
-        text = node.get_content(metadata_mode="llm")
+        text = node.get_content(metadata_mode=MetadataMode.LLM)
         try:
             if (
                 self.allowed_entity_props is not None
@@ -384,7 +383,7 @@ class DynamicLLMPathExtractor(TransformComponent):
         return node
 
     async def acall(
-        self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
+        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
     ) -> List[BaseNode]:
         """
         Asynchronously extract triples from multiple nodes.

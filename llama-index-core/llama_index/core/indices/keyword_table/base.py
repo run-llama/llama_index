@@ -165,7 +165,9 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
             )
             index_struct.add_node(list(keywords), n)
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> KeywordTable:
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **build_kwargs: Any
+    ) -> KeywordTable:
         """Build the index from nodes."""
         # do simple concatenation
         index_struct = KeywordTable(table={})

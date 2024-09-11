@@ -51,7 +51,7 @@ license = "MIT"
 maintainers = ["FarisHijazi", "Haowjy", "ephe-meral", "hursh-desai", "iamarunbrahma", "jon-chuang", "mmaatouk", "ravi03071991", "sangwongenip", "thejessezhang"]
 name = "llama-index-readers-file"
 readme = "README.md"
-version = "0.2.0"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

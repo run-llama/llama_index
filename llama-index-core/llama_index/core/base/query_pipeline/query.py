@@ -81,7 +81,7 @@ class InputKeys(BaseModel):
         """Create InputKeys from tuple."""
         return cls(required_keys=required_keys, optional_keys=optional_keys or set())
 
-    def validate(self, input_keys: Set[str]) -> None:
+    def validate_keys(self, input_keys: Set[str]) -> None:
         """Validate input keys."""
         # check if required keys are present, and that keys all are in required or optional
         if not self.required_keys.issubset(input_keys):
@@ -115,7 +115,7 @@ class OutputKeys(BaseModel):
         """Create OutputKeys from tuple."""
         return cls(required_keys=required_keys)
 
-    def validate(self, input_keys: Set[str]) -> None:
+    def validate_keys(self, input_keys: Set[str]) -> None:
         """Validate input keys."""
         # validate that input keys exactly match required keys
         if input_keys != self.required_keys:
@@ -187,13 +187,13 @@ class QueryComponent(BaseModel):
     def validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs."""
         # make sure set of input keys == self.input_keys
-        self.input_keys.validate(set(input.keys()))
+        self.input_keys.validate_keys(set(input.keys()))
         return self._validate_component_inputs(input)
 
     def validate_component_outputs(self, output: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component outputs."""
         # make sure set of output keys == self.output_keys
-        self.output_keys.validate(set(output.keys()))
+        self.output_keys.validate_keys(set(output.keys()))
         return self._validate_component_outputs(output)
 
     def run_component(self, **kwargs: Any) -> Dict[str, Any]:
