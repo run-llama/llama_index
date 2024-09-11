@@ -173,6 +173,7 @@ class PGVectorStore(BasePydanticVectorStore):
         debug: bool = False,
         use_jsonb: bool = False,
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Constructor.
 
@@ -191,6 +192,7 @@ class PGVectorStore(BasePydanticVectorStore):
             hnsw_kwargs (Optional[Dict[str, Any]], optional): HNSW kwargs, a dict that
                 contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
                 which turns off HNSW search.
+            create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
         """
         table_name = table_name.lower()
         schema_name = schema_name.lower()
@@ -231,6 +233,8 @@ class PGVectorStore(BasePydanticVectorStore):
             use_jsonb=use_jsonb,
         )
 
+        self.create_engine_kwargs = create_engine_kwargs or {}
+
     async def close(self) -> None:
         if not self._is_initialized:
             return
@@ -264,6 +268,7 @@ class PGVectorStore(BasePydanticVectorStore):
         debug: bool = False,
         use_jsonb: bool = False,
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "PGVectorStore":
         """Construct from params.
 
@@ -287,6 +292,7 @@ class PGVectorStore(BasePydanticVectorStore):
             hnsw_kwargs (Optional[Dict[str, Any]], optional): HNSW kwargs, a dict that
                 contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
                 which turns off HNSW search.
+            create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
 
         Returns:
             PGVectorStore: Instance of PGVectorStore constructed from params.
@@ -311,6 +317,7 @@ class PGVectorStore(BasePydanticVectorStore):
             debug=debug,
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
+            create_engine_kwargs=create_engine_kwargs,
         )
 
     @property
@@ -324,10 +331,14 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
 
-        self._engine = create_engine(self.connection_string, echo=self.debug)
+        self._engine = create_engine(
+            self.connection_string, echo=self.debug, **self.create_engine_kwargs
+        )
         self._session = sessionmaker(self._engine)
 
-        self._async_engine = create_async_engine(self.async_connection_string)
+        self._async_engine = create_async_engine(
+            self.async_connection_string, **self.create_engine_kwargs
+        )
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
     def _create_schema_if_not_exists(self) -> None:
