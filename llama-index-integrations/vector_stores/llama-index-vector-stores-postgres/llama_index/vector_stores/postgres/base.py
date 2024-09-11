@@ -173,7 +173,7 @@ class PGVectorStore(BasePydanticVectorStore):
         debug: bool = False,
         use_jsonb: bool = False,
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
-        engine_params: Optional[Dict[str, Any]] = None,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Constructor.
 
@@ -233,7 +233,7 @@ class PGVectorStore(BasePydanticVectorStore):
             use_jsonb=use_jsonb,
         )
 
-        self.engine_params = engine_params or {}  # Initialize engine_params
+        self.engine_params = create_engine_kwargs or {}
 
     async def close(self) -> None:
         if not self._is_initialized:
