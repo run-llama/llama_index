@@ -130,6 +130,20 @@ Action Input: {"a": 1, "b": 1}
     assert action_input == '{"a": 1, "b": 1}'
 
 
+def test_extract_tool_use_with_Chinese_characters() -> None:
+    mock_input_text = """\
+Thought: I need to use a tool to help me answer the question.
+
+Action: 加法
+
+Action Input: {"a": 1, "b": 1}
+"""
+    thought, action, action_input = extract_tool_use(mock_input_text)
+    assert thought == "I need to use a tool to help me answer the question."
+    assert action == "加法"
+    assert action_input == '{"a": 1, "b": 1}'
+
+
 def test_extract_final_response() -> None:
     mock_input_text = """\
 Thought: I have enough information to answer the question without using any more tools.
