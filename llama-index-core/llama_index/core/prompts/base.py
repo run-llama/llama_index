@@ -246,6 +246,7 @@ class ChatPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
 
         template_vars = []
         for message_template in message_templates:
+            assert isinstance(message_template.content, (type(None), str))
             template_vars.extend(get_template_vars(message_template.content or ""))
 
         super().__init__(
@@ -304,11 +305,15 @@ class ChatPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
 
         messages: List[ChatMessage] = []
         for message_template in self.message_templates:
-            template_vars = get_template_vars(message_template.content or "")
+            message_content = message_template.content or ""
+            assert isinstance(message_content, str)
+
+            template_vars = get_template_vars(message_content)
             relevant_kwargs = {
                 k: v for k, v in mapped_all_kwargs.items() if k in template_vars
             }
             content_template = message_template.content or ""
+            assert isinstance(content_template, str)
 
             # if there's mappings specified, make sure those are used
             content = content_template.format(**relevant_kwargs)

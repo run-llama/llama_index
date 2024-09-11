@@ -1,8 +1,12 @@
+import base64
+import requests
 from enum import Enum
+from io import BytesIO
 from typing import Any, AsyncGenerator, Dict, Generator, Optional, Union, List, Any
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.core.schema import ImageType
 
 try:
     from pydantic import BaseModel as V2BaseModel
@@ -26,11 +30,52 @@ class MessageRole(str, Enum):
 
 
 # ===== Generic Model Input - Chat =====
+class TextBlock(BaseModel):
+    type: str = "text"
+
+    content: str
+
+
+class ImageBlock(BaseModel):
+    type: str = "image"
+
+    image: Optional[str] = None
+    image_path: Optional[str] = None
+    image_url: Optional[str] = None
+    image_mimetype: Optional[str] = None
+
+    @property
+    def content(self) -> str:
+        """Get the image represented as a bytes string, path, or URL."""
+        if self.image is not None:
+            return self.image
+        elif self.image_path is not None:
+            return self.image_path
+        elif self.image_url is not None:
+            # load image from URL
+            return self.image_url
+        else:
+            raise ValueError("No image found in the chat message!")
+
+    def resolve_image(self) -> ImageType:
+        """Resolve an image such that PIL can read it."""
+        if self.image is not None:
+            return BytesIO(base64.b64decode(self.image))
+        elif self.image_path is not None:
+            return self.image_path
+        elif self.image_url is not None:
+            # load image from URL
+            response = requests.get(self.image_url)
+            return BytesIO(response.content)
+        else:
+            raise ValueError("No image found in the chat message!")
+
+
 class ChatMessage(BaseModel):
     """Chat message."""
 
     role: MessageRole = MessageRole.USER
-    content: Optional[Any] = ""
+    content: Optional[Union[str, List[Union[TextBlock, ImageBlock]]]] = ""
     additional_kwargs: dict = Field(default_factory=dict)
 
     def __str__(self) -> str:

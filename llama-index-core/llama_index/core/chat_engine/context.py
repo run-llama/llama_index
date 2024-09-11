@@ -178,7 +178,13 @@ class ContextChatEngine(BaseChatEngine):
         if hasattr(self._memory, "tokenizer_fn"):
             prefix_messages_token_count = len(
                 self._memory.tokenizer_fn(
-                    " ".join([(m.content or "") for m in prefix_messages])
+                    " ".join(
+                        [
+                            (m.content or "")
+                            for m in prefix_messages
+                            if isinstance(m.content, str)
+                        ]
+                    )
                 )
             )
         else:
@@ -237,7 +243,13 @@ class ContextChatEngine(BaseChatEngine):
         if hasattr(self._memory, "tokenizer_fn"):
             initial_token_count = len(
                 self._memory.tokenizer_fn(
-                    " ".join([(m.content or "") for m in prefix_messages])
+                    " ".join(
+                        [
+                            (m.content or "")
+                            for m in prefix_messages
+                            if isinstance(m.content, str)
+                        ]
+                    )
                 )
             )
         else:
@@ -298,7 +310,13 @@ class ContextChatEngine(BaseChatEngine):
         if hasattr(self._memory, "tokenizer_fn"):
             initial_token_count = len(
                 self._memory.tokenizer_fn(
-                    " ".join([(m.content or "") for m in prefix_messages])
+                    " ".join(
+                        [
+                            (m.content or "")
+                            for m in prefix_messages
+                            if isinstance(m.content, str)
+                        ]
+                    )
                 )
             )
         else:
@@ -357,7 +375,13 @@ class ContextChatEngine(BaseChatEngine):
         if hasattr(self._memory, "tokenizer_fn"):
             initial_token_count = len(
                 self._memory.tokenizer_fn(
-                    " ".join([(m.content or "") for m in prefix_messages])
+                    " ".join(
+                        [
+                            (m.content or "")
+                            for m in prefix_messages
+                            if isinstance(m.content, str)
+                        ]
+                    )
                 )
             )
         else:

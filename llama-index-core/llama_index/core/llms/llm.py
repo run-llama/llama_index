@@ -577,6 +577,7 @@ class LLM(BaseLLM):
             messages = self._get_messages(prompt, **prompt_args)
             chat_response = self.chat(messages)
             output = chat_response.message.content or ""
+            assert isinstance(output, str)
         else:
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
             response = self.complete(formatted_prompt, formatted=True)
@@ -666,6 +667,7 @@ class LLM(BaseLLM):
             messages = self._get_messages(prompt, **prompt_args)
             chat_response = await self.achat(messages)
             output = chat_response.message.content or ""
+            assert isinstance(output, str)
         else:
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
             response = await self.acomplete(formatted_prompt, formatted=True)
@@ -755,11 +757,16 @@ class LLM(BaseLLM):
             handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
-        if isinstance(user_msg, ChatMessage):
+        if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
             user_msg = user_msg.content
         elif isinstance(user_msg, str):
             pass
-        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+        elif (
+            not user_msg
+            and chat_history is not None
+            and len(chat_history) > 0
+            and isinstance(chat_history[-1].content, str)
+        ):
             user_msg = chat_history[-1].content
         else:
             raise ValueError("No user message provided or found in chat history.")
@@ -813,11 +820,16 @@ class LLM(BaseLLM):
             handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
-        if isinstance(user_msg, ChatMessage):
+        if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
             user_msg = user_msg.content
         elif isinstance(user_msg, str):
             pass
-        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+        elif (
+            not user_msg
+            and chat_history is not None
+            and len(chat_history) > 0
+            and isinstance(chat_history[-1].content, str)
+        ):
             user_msg = chat_history[-1].content
         else:
             raise ValueError("No user message provided or found in chat history.")

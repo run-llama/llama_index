@@ -199,10 +199,8 @@ class PromptHelper(BaseComponent):
                         used_vars[var_name] = val
 
                 # format partial message
-                if partial_message.content is not None:
-                    partial_message.content = partial_message.content.format(
-                        **used_vars
-                    )
+                assert isinstance(partial_message.content, str)
+                partial_message.content = partial_message.content.format(**used_vars)
 
                 # add to list of partial messages
                 partial_messages.append(partial_message)

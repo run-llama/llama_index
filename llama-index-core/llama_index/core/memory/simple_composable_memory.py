@@ -104,7 +104,7 @@ class SimpleComposableMemory(BaseMemory):
 
             # add single_secondary_memory_str to chat_history
             if len(messages) > 0 and messages[0].role == MessageRole.SYSTEM:
-                assert messages[0].content is not None
+                assert isinstance(messages[0].content, str)
                 system_message = messages[0].content.split(
                     DEFAULT_INTRO_HISTORY_MESSAGE
                 )[0]
