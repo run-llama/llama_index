@@ -19,7 +19,7 @@ FalkorDBPropertyGraphStore = "llama-index"
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.9"
+python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
