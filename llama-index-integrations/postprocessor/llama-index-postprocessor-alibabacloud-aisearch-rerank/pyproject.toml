@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.neo4jvector"
+import_path = "llama_index.postprocessor.alibabacloud_aisearch_rerank"
 
 [tool.llamahub.class_authors]
-Neo4jVectorStore = "llama-index"
+AlibabaCloudAISearchRerank = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,17 +21,17 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index vector_stores neo4jvector integration"
+authors = ["llama-index"]
+description = "llama-index postprocessor alibabacloud_aisearch_rerank integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-vector-stores-neo4jvector"
+name = "llama-index-postprocessor-alibabacloud-aisearch-rerank"
 readme = "README.md"
-version = "0.2.2"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-neo4j = "^5.16.0"
+alibabacloud-searchplat20240529 = "^1.1.0"
 llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]

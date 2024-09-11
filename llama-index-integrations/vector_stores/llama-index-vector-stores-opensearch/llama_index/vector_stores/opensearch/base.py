@@ -1,6 +1,5 @@
 """Elasticsearch/Opensearch vector store."""
 
-import asyncio
 import uuid
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
@@ -22,14 +21,12 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-from opensearchpy import AsyncOpenSearch
 from opensearchpy.client import Client as OSClient
-from opensearchpy.exceptions import NotFoundError
-from opensearchpy.helpers import async_bulk
 
 IMPORT_OPENSEARCH_PY_ERROR = (
     "Could not import OpenSearch. Please install it with `pip install opensearch-py`."
 )
+IMPORT_ASYNC_OPENSEARCH_PY_ERROR = "Could not import AsyncOpenSearch. Please install it with `pip install opensearch-py`."
 INVALID_HYBRID_QUERY_ERROR = (
     "Please specify the lexical_query and search_pipeline for hybrid search."
 )
@@ -54,8 +51,10 @@ class OpensearchVectorClient:
         method (Optional[dict]): Opensearch "method" JSON obj for configuring
             the KNN index.
             This includes engine, metric, and other config params. Defaults to:
-            {"name": "hnsw", "space_type": "l2", "engine": "faiss",
+            {"name": "hnsw", "space_type": "l2", "engine": "nmslib",
             "parameters": {"ef_construction": 256, "m": 48}}
+        settings: Optional[dict]: Settings for the Opensearch index creation. Defaults to:
+            {"index": {"knn": True, "knn.algo_param.ef_search": 100}}
         space_type (Optional[str]): space type for distance metric calculation. Defaults to: l2
         **kwargs: Optional arguments passed to the OpenSearch client from opensearch-py.
 
@@ -69,6 +68,7 @@ class OpensearchVectorClient:
         embedding_field: str = "embedding",
         text_field: str = "content",
         method: Optional[dict] = None,
+        settings: Optional[dict] = None,
         engine: Optional[str] = "nmslib",
         space_type: Optional[str] = "l2",
         max_chunk_bytes: int = 1 * 1024 * 1024,
@@ -84,6 +84,8 @@ class OpensearchVectorClient:
                 "engine": engine,
                 "parameters": {"ef_construction": 256, "m": 48},
             }
+        if settings is None:
+            settings = {"index": {"knn": True, "knn.algo_param.ef_search": 100}}
         if embedding_field is None:
             embedding_field = "embedding"
         self._embedding_field = embedding_field
@@ -100,7 +102,7 @@ class OpensearchVectorClient:
         self.is_aoss = self._is_aoss_enabled(http_auth=http_auth)
         # initialize mapping
         idx_conf = {
-            "settings": {"index": {"knn": True, "knn.algo_param.ef_search": 100}},
+            "settings": settings,
             "mappings": {
                 "properties": {
                     embedding_field: {
@@ -111,35 +113,71 @@ class OpensearchVectorClient:
                 }
             },
         }
-        self._os_client = os_client or self._get_async_opensearch_client(
+        self._os_client = os_client or self._get_opensearch_client(
+            self._endpoint, **kwargs
+        )
+        self._os_async_client = self._get_async_opensearch_client(
             self._endpoint, **kwargs
         )
         not_found_error = self._import_not_found_error()
 
-        event_loop = asyncio.get_event_loop()
         try:
-            event_loop.run_until_complete(
-                self._os_client.indices.get(index=self._index)
-            )
+            self._os_client.indices.get(index=self._index)
         except not_found_error:
-            event_loop.run_until_complete(
-                self._os_client.indices.create(index=self._index, body=idx_conf)
-            )
-            event_loop.run_until_complete(
-                self._os_client.indices.refresh(index=self._index)
-            )
+            self._os_client.indices.create(index=self._index, body=idx_conf)
+            self._os_client.indices.refresh(index=self._index)
+
+    def _import_opensearch(self) -> Any:
+        """Import OpenSearch if available, otherwise raise error."""
+        try:
+            from opensearchpy import OpenSearch
+        except ImportError:
+            raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
+        return OpenSearch
 
     def _import_async_opensearch(self) -> Any:
-        """Import OpenSearch if available, otherwise raise error."""
+        """Import AsyncOpenSearch if available, otherwise raise error."""
+        try:
+            from opensearchpy import AsyncOpenSearch
+        except ImportError:
+            raise ImportError(IMPORT_ASYNC_OPENSEARCH_PY_ERROR)
         return AsyncOpenSearch
 
-    def _import_async_bulk(self) -> Any:
+    def _import_bulk(self) -> Any:
         """Import bulk if available, otherwise raise error."""
+        try:
+            from opensearchpy.helpers import bulk
+        except ImportError:
+            raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
+        return bulk
+
+    def _import_async_bulk(self) -> Any:
+        """Import async_bulk if available, otherwise raise error."""
+        try:
+            from opensearchpy.helpers import async_bulk
+        except ImportError:
+            raise ImportError(IMPORT_ASYNC_OPENSEARCH_PY_ERROR)
         return async_bulk
 
     def _import_not_found_error(self) -> Any:
         """Import not found error if available, otherwise raise error."""
+        try:
+            from opensearchpy.exceptions import NotFoundError
+        except ImportError:
+            raise ImportError(IMPORT_OPENSEARCH_PY_ERROR)
         return NotFoundError
+
+    def _get_opensearch_client(self, opensearch_url: str, **kwargs: Any) -> Any:
+        """Get OpenSearch client from the opensearch_url, otherwise raise error."""
+        try:
+            opensearch = self._import_opensearch()
+            client = opensearch(opensearch_url, **kwargs)
+        except ValueError as e:
+            raise ImportError(
+                f"OpenSearch client string provided is not in proper format. "
+                f"Got error: {e} "
+            )
+        return client
 
     def _get_async_opensearch_client(self, opensearch_url: str, **kwargs: Any) -> Any:
         """Get AsyncOpenSearch client from the opensearch_url, otherwise raise error."""
@@ -154,7 +192,58 @@ class OpensearchVectorClient:
             )
         return client
 
-    async def _bulk_ingest_embeddings(
+    def _bulk_ingest_embeddings(
+        self,
+        client: Any,
+        index_name: str,
+        embeddings: List[List[float]],
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        vector_field: str = "embedding",
+        text_field: str = "content",
+        mapping: Optional[Dict] = None,
+        max_chunk_bytes: Optional[int] = 1 * 1024 * 1024,
+        is_aoss: bool = False,
+    ) -> List[str]:
+        """Bulk Ingest Embeddings into given index."""
+        if not mapping:
+            mapping = {}
+
+        bulk = self._import_bulk()
+        not_found_error = self._import_not_found_error()
+        requests = []
+        return_ids = []
+
+        try:
+            client.indices.get(index=index_name)
+        except not_found_error:
+            client.indices.create(index=index_name, body=mapping)
+
+        for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
+            _id = ids[i] if ids else str(uuid.uuid4())
+            request = {
+                "_op_type": "index",
+                "_index": index_name,
+                vector_field: embeddings[i],
+                text_field: text,
+                "metadata": metadata,
+            }
+            if is_aoss:
+                request["id"] = _id
+            else:
+                request["_id"] = _id
+            requests.append(request)
+            return_ids.append(_id)
+
+        bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
+        if not is_aoss:
+            client.indices.refresh(index=index_name)
+
+        return return_ids
+
+    async def _abulk_ingest_embeddings(
         self,
         client: Any,
         index_name: str,
@@ -176,7 +265,6 @@ class OpensearchVectorClient:
         not_found_error = self._import_not_found_error()
         requests = []
         return_ids = []
-        mapping = mapping
 
         try:
             await client.indices.get(index=index_name)
@@ -199,9 +287,11 @@ class OpensearchVectorClient:
                 request["_id"] = _id
             requests.append(request)
             return_ids.append(_id)
+
         await async_bulk(client, requests, max_chunk_bytes=max_chunk_bytes)
         if not is_aoss:
             await client.indices.refresh(index=index_name)
+
         return return_ids
 
     def _default_approximate_search_query(
@@ -476,7 +566,7 @@ class OpensearchVectorClient:
             return True
         return False
 
-    async def index_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
+    def index_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """Store results in the index."""
         embeddings: List[List[float]] = []
         texts: List[str] = []
@@ -488,7 +578,7 @@ class OpensearchVectorClient:
             texts.append(node.get_content(metadata_mode=MetadataMode.NONE))
             metadatas.append(node_to_metadata_dict(node, remove_text=True))
 
-        return await self._bulk_ingest_embeddings(
+        return self._bulk_ingest_embeddings(
             self._os_client,
             self._index,
             embeddings,
@@ -502,7 +592,33 @@ class OpensearchVectorClient:
             is_aoss=self.is_aoss,
         )
 
-    async def delete_by_doc_id(self, doc_id: str) -> None:
+    async def aindex_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
+        """Store results in the index."""
+        embeddings: List[List[float]] = []
+        texts: List[str] = []
+        metadatas: List[dict] = []
+        ids: List[str] = []
+        for node in nodes:
+            ids.append(node.node_id)
+            embeddings.append(node.get_embedding())
+            texts.append(node.get_content(metadata_mode=MetadataMode.NONE))
+            metadatas.append(node_to_metadata_dict(node, remove_text=True))
+
+        return await self._abulk_ingest_embeddings(
+            self._os_async_client,
+            self._index,
+            embeddings,
+            texts,
+            metadatas=metadatas,
+            ids=ids,
+            vector_field=self._embedding_field,
+            text_field=self._text_field,
+            mapping=None,
+            max_chunk_bytes=self._max_chunk_bytes,
+            is_aoss=self.is_aoss,
+        )
+
+    def delete_by_doc_id(self, doc_id: str) -> None:
         """
         Deletes all OpenSearch documents corresponding to the given LlamaIndex `Document` ID.
 
@@ -512,11 +628,25 @@ class OpensearchVectorClient:
         search_query = {
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
         }
-        await self._os_client.delete_by_query(
+        self._os_client.delete_by_query(
             index=self._index, body=search_query, refresh=True
         )
 
-    async def delete_nodes(
+    async def adelete_by_doc_id(self, doc_id: str) -> None:
+        """
+        Deletes all OpenSearch documents corresponding to the given LlamaIndex `Document` ID.
+
+        Args:
+            doc_id (str): a LlamaIndex `Document` id
+        """
+        search_query = {
+            "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
+        }
+        await self._os_async_client.delete_by_query(
+            index=self._index, body=search_query, refresh=True
+        )
+
+    def delete_nodes(
         self,
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
@@ -538,16 +668,84 @@ class OpensearchVectorClient:
         if filters:
             query["query"]["bool"]["filter"].extend(self._parse_filters(filters))
 
-        await self._os_client.delete_by_query(
+        self._os_client.delete_by_query(index=self._index, body=query, refresh=True)
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        if not node_ids and not filters:
+            return
+
+        query = {"query": {"bool": {"filter": []}}}
+        if node_ids:
+            query["query"]["bool"]["filter"].append({"terms": {"_id": node_ids or []}})
+
+        if filters:
+            query["query"]["bool"]["filter"].extend(self._parse_filters(filters))
+
+        await self._os_async_client.delete_by_query(
             index=self._index, body=query, refresh=True
         )
 
-    async def clear(self) -> None:
+    def clear(self) -> None:
         """Clears index."""
         query = {"query": {"bool": {"filter": []}}}
-        await self._os_client.delete_by_query(
+        self._os_client.delete_by_query(index=self._index, body=query, refresh=True)
+
+    async def aclear(self) -> None:
+        """Clears index."""
+        query = {"query": {"bool": {"filter": []}}}
+        await self._os_async_client.delete_by_query(
             index=self._index, body=query, refresh=True
         )
+
+    def query(
+        self,
+        query_mode: VectorStoreQueryMode,
+        query_str: Optional[str],
+        query_embedding: List[float],
+        k: int,
+        filters: Optional[MetadataFilters] = None,
+    ) -> VectorStoreQueryResult:
+        if query_mode == VectorStoreQueryMode.HYBRID:
+            if query_str is None or self._search_pipeline is None:
+                raise ValueError(INVALID_HYBRID_QUERY_ERROR)
+            search_query = self._hybrid_search_query(
+                self._text_field,
+                query_str,
+                self._embedding_field,
+                query_embedding,
+                k,
+                filters=filters,
+            )
+            params = {
+                "search_pipeline": self._search_pipeline,
+            }
+        elif query_mode == VectorStoreQueryMode.TEXT_SEARCH:
+            search_query = self._lexical_search_query(
+                self._text_field, query_str, k, filters=filters
+            )
+            params = None
+        else:
+            search_query = self._knn_search_query(
+                self._embedding_field, query_embedding, k, filters=filters
+            )
+            params = None
+
+        res = self._os_client.search(
+            index=self._index, body=search_query, params=params
+        )
+
+        return self._to_query_result(res)
 
     async def aquery(
         self,
@@ -582,7 +780,7 @@ class OpensearchVectorClient:
             )
             params = None
 
-        res = await self._os_client.search(
+        res = await self._os_async_client.search(
             index=self._index, body=search_query, params=params
         )
 
@@ -693,9 +891,8 @@ class OpensearchVectorStore(BasePydanticVectorStore):
             nodes: List[BaseNode]: list of nodes with embeddings.
 
         """
-        return asyncio.get_event_loop().run_until_complete(
-            self.async_add(nodes, **add_kwargs)
-        )
+        self._client.index_results(nodes)
+        return [result.node_id for result in nodes]
 
     async def async_add(
         self,
@@ -709,32 +906,30 @@ class OpensearchVectorStore(BasePydanticVectorStore):
             nodes: List[BaseNode]: list of nodes with embeddings.
 
         """
-        await self._client.index_results(nodes)
+        await self._client.aindex_results(nodes)
         return [result.node_id for result in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Delete nodes using a ref_doc_id.
+        Delete nodes using with ref_doc_id.
 
         Args:
-            ref_doc_id (str): The doc_id of the document whose nodes should be deleted.
+            ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        asyncio.get_event_loop().run_until_complete(
-            self.adelete(ref_doc_id, **delete_kwargs)
-        )
+        self._client.delete_by_doc_id(ref_doc_id)
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Async delete nodes using a ref_doc_id.
+        Async delete nodes using with ref_doc_id.
 
         Args:
-            ref_doc_id (str): The doc_id of the document whose nodes should be deleted.
+            ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        await self._client.delete_by_doc_id(ref_doc_id)
+        await self._client.adelete_by_doc_id(ref_doc_id)
 
-    async def adelete_nodes(
+    def delete_nodes(
         self,
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
@@ -746,31 +941,29 @@ class OpensearchVectorStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
         """
-        await self._client.delete_nodes(node_ids, filters, **delete_kwargs)
+        self._client.delete_nodes(node_ids, filters, **delete_kwargs)
 
-    def delete_nodes(
+    async def adelete_nodes(
         self,
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """Async deletes nodes async.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
         """
-        asyncio.get_event_loop().run_until_complete(
-            self.adelete_nodes(node_ids, filters, **delete_kwargs)
-        )
-
-    async def aclear(self) -> None:
-        """Clears index."""
-        await self._client.clear()
+        await self._client.adelete_nodes(node_ids, filters, **delete_kwargs)
 
     def clear(self) -> None:
         """Clears index."""
-        asyncio.get_event_loop().run_until_complete(self.aclear())
+        self._client.clear()
+
+    async def aclear(self) -> None:
+        """Async clears index."""
+        await self._client.aclear()
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
@@ -780,7 +973,15 @@ class OpensearchVectorStore(BasePydanticVectorStore):
             query (VectorStoreQuery): Store query object.
 
         """
-        return asyncio.get_event_loop().run_until_complete(self.aquery(query, **kwargs))
+        query_embedding = cast(List[float], query.query_embedding)
+
+        return self._client.query(
+            query.mode,
+            query.query_str,
+            query_embedding,
+            query.similarity_top_k,
+            filters=query.filters,
+        )
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
