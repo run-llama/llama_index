@@ -148,6 +148,7 @@ class PGVectorStore(BasePydanticVectorStore):
     perform_setup: bool
     debug: bool
     use_jsonb: bool
+    create_engine_kwargs: Dict
 
     hnsw_kwargs: Optional[Dict[str, Any]]
 
@@ -218,6 +219,7 @@ class PGVectorStore(BasePydanticVectorStore):
             debug=debug,
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
+            create_engine_kwargs=create_engine_kwargs or {},
         )
 
         # sqlalchemy model
@@ -232,8 +234,6 @@ class PGVectorStore(BasePydanticVectorStore):
             embed_dim=embed_dim,
             use_jsonb=use_jsonb,
         )
-
-        self.create_engine_kwargs = create_engine_kwargs or {}
 
     async def close(self) -> None:
         if not self._is_initialized:
