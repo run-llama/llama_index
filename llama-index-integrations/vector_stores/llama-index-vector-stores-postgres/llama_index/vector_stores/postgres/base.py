@@ -317,7 +317,7 @@ class PGVectorStore(BasePydanticVectorStore):
             debug=debug,
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
-            engine_params=create_engine_kwargs,
+            create_engine_kwargs=create_engine_kwargs,
         )
 
     @property
