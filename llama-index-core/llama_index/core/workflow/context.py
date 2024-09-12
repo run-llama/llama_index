@@ -39,20 +39,6 @@ class Context:
         # Step-specific instance
         self._events_buffer: Dict[Type[Event], List[Event]] = defaultdict(list)
 
-    def soft_reset(self) -> None:
-        self._queues: Dict[str, asyncio.Queue] = {}
-        self._tasks: Set[asyncio.Task] = set()
-        self._broker_log: List[Event] = []
-        self._step_flags: Dict[str, asyncio.Event] = {}
-        self._accepted_events: List[Tuple[str, str]] = []
-        self._retval: Any = None
-        # Streaming machinery
-        self._streaming_queue: asyncio.Queue = asyncio.Queue()
-        # Global data storage
-        self._lock = asyncio.Lock()
-        # Step-specific instance
-        self._events_buffer: Dict[Type[Event], List[Event]] = defaultdict(list)
-
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:
         """Store `value` into the Context under `key`.
 

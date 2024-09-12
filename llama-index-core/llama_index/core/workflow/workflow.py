@@ -148,8 +148,6 @@ class Workflow(metaclass=WorkflowMeta):
         if ctx is None:
             ctx = Context(self)
             self._contexts.add(ctx)
-        else:
-            ctx.soft_reset()
 
         for name, step_func in self._get_steps().items():
             ctx._queues[name] = asyncio.Queue()
@@ -386,7 +384,7 @@ class Workflow(metaclass=WorkflowMeta):
             stepwise_context.send_event(StartEvent(**kwargs))
         elif ctx is not None:
             stepwise_context = ctx
-        else:
+        elif self._stepwise_context is not None:
             stepwise_context = self._stepwise_context
 
         # Unblock all pending steps
