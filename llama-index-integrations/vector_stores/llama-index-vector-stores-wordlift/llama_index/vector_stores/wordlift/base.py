@@ -3,7 +3,6 @@ import json
 from logging import getLogger
 from typing import Any, List, Dict, Optional
 
-import nest_asyncio
 import wordlift_client
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -78,7 +77,6 @@ class WordliftVectorStore(BasePydanticVectorStore):
         fields: Optional[List[str]] = None,
     ):
         super().__init__(use_async=True)
-        nest_asyncio.apply()
 
         if configuration is None:
             self._configuration = _make_configuration(key=key)

@@ -29,6 +29,10 @@ except Exception:
 
 KEY = "key43245932904328493223"
 
+import nest_asyncio
+
+nest_asyncio.apply()
+
 
 @pytest.fixture(scope="session")
 def random_port() -> int:
