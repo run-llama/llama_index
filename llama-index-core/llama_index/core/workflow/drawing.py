@@ -85,7 +85,7 @@ def draw_most_recent_execution(
     net = Network(directed=True, height="750px", width="100%")
 
     # Add nodes and edges based on execution history
-    existing_context = next(iter(workflow._contexts), None)
+    existing_context = next(iter(workflow._contexts.values()), None)
     if existing_context is None:
         raise ValueError("No runs found in workflow")
 
