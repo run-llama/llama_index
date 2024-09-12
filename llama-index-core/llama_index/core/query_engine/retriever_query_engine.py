@@ -82,6 +82,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             retriever (BaseRetriever): A retriever object.
             node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
                 node postprocessors.
+            callback_manager (Optional[CallbackManager]): A callback manager.
             verbose (bool): Whether to print out debug info.
             response_mode (ResponseMode): A ResponseMode object.
             text_qa_template (Optional[BasePromptTemplate]): A BasePromptTemplate
