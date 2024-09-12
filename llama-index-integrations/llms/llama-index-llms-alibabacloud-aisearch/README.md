@@ -8,7 +8,7 @@ pip install llama-index-llms-alibabacloud-aisearch
 
 ## Usage
 
-For further details, please visit `https://help.aliyun.com/zh/open-search/search-platform/developer-reference/text-generation-api-details`
+For further details, please visit [text-generation-api-details](https://help.aliyun.com/zh/open-search/search-platform/developer-reference/text-generation-api-details).
 
 You can specify the `endpoint` and `aisearch_api_key` in the constructor, or set the environment variables `AISEARCH_ENDPOINT` and `AISEARCH_API_KEY`.
 

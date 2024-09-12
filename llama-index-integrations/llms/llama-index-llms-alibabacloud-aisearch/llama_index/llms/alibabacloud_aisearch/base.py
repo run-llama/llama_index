@@ -29,7 +29,7 @@ try:
 except ImportError:
     raise ImportError(
         "Could not import alibabacloud_searchplat20240529 python package. "
-        "Please install it with `pip install alibabacloud_searchplat20240529`."
+        "Please install it with `pip install alibabacloud-searchplat20240529`."
     )
 
 

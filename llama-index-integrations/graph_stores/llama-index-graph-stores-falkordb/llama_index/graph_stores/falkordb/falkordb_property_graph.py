@@ -144,14 +144,14 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
             param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
         )
         node_properties = (
-            [el[b"output"] for el in node_query_results] if node_query_results else []
+            [el["output"] for el in node_query_results] if node_query_results else []
         )
 
         rels_query_result = self.structured_query(
             rel_properties_query, param_map={"EXCLUDED_LABELS": EXCLUDED_RELS}
         )
         rel_properties = (
-            [el[b"output"] for el in rels_query_result] if rels_query_result else []
+            [el["output"] for el in rels_query_result] if rels_query_result else []
         )
 
         rel_objs_query_result = self.structured_query(
@@ -159,7 +159,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
             param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
         )
         relationships = (
-            [el[b"output"] for el in rel_objs_query_result]
+            [el["output"] for el in rel_objs_query_result]
             if rel_objs_query_result
             else []
         )
@@ -296,21 +296,21 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         for record in response:
             # text indicates a chunk node
             # none on the type indicates an implicit node, likely a chunk node
-            if "text" in record[b"properties"] or record[b"type"] is None:
-                text = record[b"properties"].pop("text", "")
+            if "text" in record["properties"] or record["type"] is None:
+                text = record["properties"].pop("text", "")
                 nodes.append(
                     ChunkNode(
-                        id_=record[b"name"],
+                        id_=record["name"],
                         text=text,
-                        properties=remove_empty_values(record[b"properties"]),
+                        properties=remove_empty_values(record["properties"]),
                     )
                 )
             else:
                 nodes.append(
                     EntityNode(
-                        name=record[b"name"],
-                        label=record[b"type"],
-                        properties=remove_empty_values(record[b"properties"]),
+                        name=record["name"],
+                        label=record["type"],
+                        properties=remove_empty_values(record["properties"]),
                     )
                 )
 
@@ -373,19 +373,19 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         triples = []
         for record in data:
             source = EntityNode(
-                name=record[b"source_id"],
-                label=record[b"source_type"],
-                properties=remove_empty_values(record[b"source_properties"]),
+                name=record["source_id"],
+                label=record["source_type"],
+                properties=remove_empty_values(record["source_properties"]),
             )
             target = EntityNode(
-                name=record[b"target_id"],
-                label=record[b"target_type"],
-                properties=remove_empty_values(record[b"target_properties"]),
+                name=record["target_id"],
+                label=record["target_type"],
+                properties=remove_empty_values(record["target_properties"]),
             )
             rel = Relation(
-                source_id=record[b"source_id"],
-                target_id=record[b"target_id"],
-                label=record[b"type"],
+                source_id=record["source_id"],
+                target_id=record["target_id"],
+                label=record["type"],
             )
             triples.append([source, rel, target])
         return triples
@@ -432,23 +432,23 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
 
         ignore_rels = ignore_rels or []
         for record in response:
-            if record[b"type"] in ignore_rels:
+            if record["type"] in ignore_rels:
                 continue
 
             source = EntityNode(
-                name=record[b"source_id"],
-                label=record[b"source_type"],
-                properties=remove_empty_values(record[b"source_properties"]),
+                name=record["source_id"],
+                label=record["source_type"],
+                properties=remove_empty_values(record["source_properties"]),
             )
             target = EntityNode(
-                name=record[b"target_id"],
-                label=record[b"target_type"],
-                properties=remove_empty_values(record[b"target_properties"]),
+                name=record["target_id"],
+                label=record["target_type"],
+                properties=remove_empty_values(record["target_properties"]),
             )
             rel = Relation(
-                source_id=record[b"source_id"],
-                target_id=record[b"target_id"],
-                label=record[b"type"],
+                source_id=record["source_id"],
+                target_id=record["target_id"],
+                label=record["type"],
             )
             triples.append([source, rel, target])
 
@@ -505,12 +505,12 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         scores = []
         for record in data:
             node = EntityNode(
-                name=record[b"name"],
-                label=record[b"type"],
-                properties=remove_empty_values(record[b"properties"]),
+                name=record["name"],
+                label=record["type"],
+                properties=remove_empty_values(record["properties"]),
             )
             nodes.append(node)
-            scores.append(record[b"score"])
+            scores.append(record["score"])
 
         return (nodes, scores)
 
