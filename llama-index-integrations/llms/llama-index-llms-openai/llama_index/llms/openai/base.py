@@ -254,9 +254,9 @@ class OpenAI(FunctionCallingLLM):
             api_version=api_version,
         )
 
-        # TODO: Temp forced to 0 for o1
+        # TODO: Temp forced to 1.0 for o1
         if model in O1_MODELS:
-            temperature = 0.0
+            temperature = 1.0
 
         super().__init__(
             model=model,
