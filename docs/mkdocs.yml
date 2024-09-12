@@ -277,6 +277,7 @@ nav:
           - ./examples/evaluation/semantic_similarity_eval.ipynb
       - Finetuning:
           - ./examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning.ipynb
+          - ./examples/finetuning/embeddings/finetune_corpus_embedding.ipynb
           - ./examples/finetuning/embeddings/finetune_embedding.ipynb
           - ./examples/finetuning/embeddings/finetune_embedding_adapter.ipynb
           - ./examples/finetuning/gradient/gradient_fine_tuning.ipynb
@@ -654,6 +655,7 @@ nav:
           - ./examples/vector_stores/WeaviateIndexDemo.ipynb
           - ./examples/vector_stores/WeaviateIndex_auto_retriever.ipynb
           - ./examples/vector_stores/WeaviateIndex_metadata_filter.ipynb
+          - ./examples/vector_stores/WordLiftDemo.ipynb
           - ./examples/vector_stores/ZepIndexDemo.ipynb
           - ./examples/vector_stores/chroma_auto_retriever.ipynb
           - ./examples/vector_stores/chroma_metadata_filter.ipynb
@@ -837,6 +839,7 @@ nav:
       - Embeddings:
           - ./api_reference/embeddings/adapter.md
           - ./api_reference/embeddings/alephalpha.md
+          - ./api_reference/embeddings/alibabacloud_aisearch.md
           - ./api_reference/embeddings/anyscale.md
           - ./api_reference/embeddings/azure_inference.md
           - ./api_reference/embeddings/azure_openai.md
@@ -934,6 +937,7 @@ nav:
           - ./api_reference/llms/OptimumIntelLLM.md
           - ./api_reference/llms/ai21.md
           - ./api_reference/llms/alephalpha.md
+          - ./api_reference/llms/alibabacloud_aisearch.md
           - ./api_reference/llms/anthropic.md
           - ./api_reference/llms/anyscale.md
           - ./api_reference/llms/azure_inference.md
@@ -1107,6 +1111,7 @@ nav:
           - ./api_reference/multi_modal_llms/openai.md
           - ./api_reference/multi_modal_llms/replicate.md
       - Node Parsers & Text Splitters:
+          - ./api_reference/node_parser/alibabacloud_aisearch.md
           - ./api_reference/node_parser/dashscope.md
           - ./api_reference/node_parsers/code.md
           - ./api_reference/node_parsers/hierarchical.md
@@ -1124,6 +1129,7 @@ nav:
       - Node Postprocessors:
           - ./api_reference/postprocessor/NER_PII.md
           - ./api_reference/postprocessor/PII.md
+          - ./api_reference/postprocessor/alibabacloud_aisearch_rerank.md
           - ./api_reference/postprocessor/auto_prev_next.md
           - ./api_reference/postprocessor/cohere_rerank.md
           - ./api_reference/postprocessor/colbert_rerank.md
@@ -1227,6 +1233,7 @@ nav:
           - ./api_reference/readers/airbyte_typeform.md
           - ./api_reference/readers/airbyte_zendesk_support.md
           - ./api_reference/readers/airtable.md
+          - ./api_reference/readers/alibabacloud_aisearch.md
           - ./api_reference/readers/apify.md
           - ./api_reference/readers/arango_db.md
           - ./api_reference/readers/arxiv.md
@@ -1405,6 +1412,7 @@ nav:
       - Storage:
           - Chat Store:
               - ./api_reference/storage/chat_store/azure.md
+              - ./api_reference/storage/chat_store/dynamodb.md
               - ./api_reference/storage/chat_store/index.md
               - ./api_reference/storage/chat_store/redis.md
               - ./api_reference/storage/chat_store/simple.md
@@ -2171,6 +2179,12 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-mariadb
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-tablestore
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-azurecosmosnosql
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-alibabacloud-aisearch
+            - ../llama-index-integrations/node_parser/llama-index-node-parser-alibabacloud-aisearch
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-alibabacloud-aisearch-rerank
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-dynamodb
+            - ../llama-index-integrations/readers/llama-index-readers-alibabacloud-aisearch
+            - ../llama-index-integrations/llms/llama-index-llms-alibabacloud-aisearch
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
