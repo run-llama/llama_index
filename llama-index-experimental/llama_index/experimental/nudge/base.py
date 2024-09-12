@@ -1,10 +1,6 @@
 import logging
 from typing import Any, Optional
 
-import torch
-from torch import nn, Tensor
-from torch.nn import functional as F
-from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
 from llama_index.core.utils import print_text
@@ -14,15 +10,16 @@ from llama_index.finetuning.embeddings.common import EmbeddingQAFinetuneDataset
 
 logger = logging.getLogger(__name__)
 
+IMPORT_ERROR_MSG = "PyTorch is not installed. Please install it with 'pip install torch' to use this functionality."
+
 
 def multiclass_nll_loss(output, targets):
     return (-1 * output * targets).sum(axis=-1).mean()
 
 
-class EmbeddingFinetuneEngine:
-    """Embedding finetune engine. If a validation dataset is provided, the best model is evaluated
-    and saved based on the validation loss at the end of every epoch. The algorithm implemented
-    here and the current state of the art is called [NUDGE](https://www.arxiv.org/abs/2409.02343).
+class Nudge:
+    """The algorithm implemented here and the current state of the art is called [NUDGE](https://www.arxiv.org/abs/2409.02343).
+    If a validation dataset is provided, the best model is evaluated and saved based on the validation loss at the end of every epoch.
 
     Args:
         train_dataset (EmbeddingQAFinetuneDataset): Dataset to finetune on.
@@ -52,6 +49,11 @@ class EmbeddingFinetuneEngine:
         verbose: bool = False,
     ) -> None:
         """Init params."""
+        try:
+            import torch
+        except ImportError:
+            raise ImportError(IMPORT_ERROR_MSG)
+
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
         self.embed_model = embed_model
@@ -81,6 +83,12 @@ class EmbeddingFinetuneEngine:
         self, dataset: EmbeddingQAFinetuneDataset, batch_size: int
     ) -> Any:
         """Get data loader."""
+        try:
+            import torch
+            from torch.utils.data import DataLoader
+        except ImportError:
+            raise ImportError(IMPORT_ERROR_MSG)
+
         examples: Any = []
 
         for query_id, query in dataset.queries.items():
@@ -94,8 +102,13 @@ class EmbeddingFinetuneEngine:
 
         return DataLoader(examples, batch_size=batch_size)
 
-    def _get_corpus_embeddings(self, dataset: EmbeddingQAFinetuneDataset) -> Tensor:
+    def _get_corpus_embeddings(self, dataset: EmbeddingQAFinetuneDataset):
         """Get corpus embeddings."""
+        try:
+            import torch
+        except ImportError:
+            raise ImportError(IMPORT_ERROR_MSG)
+
         text_embeddings = [
             self.embed_model.get_text_embedding(text)
             for text in dataset.corpus.values()
@@ -104,6 +117,11 @@ class EmbeddingFinetuneEngine:
 
     def _evaluate_acc(self, model, loader):
         """Evaluate model."""
+        try:
+            import torch
+        except ImportError:
+            raise ImportError(IMPORT_ERROR_MSG)
+
         model.eval()
         total_acc = 0
         total_records = 0
@@ -121,6 +139,13 @@ class EmbeddingFinetuneEngine:
         return total_acc / total_records
 
     def finetune(self):
+        try:
+            import torch
+            from torch import nn
+            from torch.nn import functional as F
+        except ImportError:
+            raise ImportError(IMPORT_ERROR_MSG)
+
         # initialize the weights of a linear model with the normalized corpus embeddings
         w_init = F.normalize(self.corpus_embeddings)
         model = nn.Linear(w_init.shape[1], w_init.shape[0], bias=False)
@@ -168,5 +193,5 @@ class EmbeddingFinetuneEngine:
             else:
                 self.corpus_embeddings = model.weight.data.clone()
 
-    def get_finetuned_corpus_embeddings(self) -> Tensor:
+    def get_finetuned_corpus_embeddings(self):
         return self.corpus_embeddings
