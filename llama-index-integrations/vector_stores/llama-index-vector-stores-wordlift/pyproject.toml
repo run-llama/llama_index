@@ -27,7 +27,7 @@ license = "MIT"
 name = "llama-index-vector-stores-wordlift"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.4.4"
+version = "0.4.5"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
