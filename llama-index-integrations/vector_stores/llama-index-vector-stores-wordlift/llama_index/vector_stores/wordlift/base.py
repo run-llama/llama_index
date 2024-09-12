@@ -78,7 +78,12 @@ class WordliftVectorStore(BasePydanticVectorStore):
         fields: Optional[List[str]] = None,
     ):
         super().__init__(use_async=True)
-        nest_asyncio.apply()
+
+        try:
+            nest_asyncio.apply()
+        except ValueError:
+            # We may not be in asyncio
+            pass
 
         if configuration is None:
             self._configuration = _make_configuration(key=key)
