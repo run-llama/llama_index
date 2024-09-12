@@ -337,9 +337,9 @@ class OpenAI(FunctionCallingLLM):
             ),
             model_name=self.model,
             # TODO: Temp for O1 beta
-            system_role=(
-                MessageRole.USER if self.model in O1_MODELS else MessageRole.SYSTEM
-            ),
+            system_role=MessageRole.USER
+            if self.model in O1_MODELS
+            else MessageRole.SYSTEM,
         )
 
     @llm_chat_callback()
