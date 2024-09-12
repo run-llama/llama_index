@@ -64,6 +64,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         llm: Optional[LLM] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        callback_manager: Optional[CallbackManager] = None,
         # response synthesizer args
         response_mode: ResponseMode = ResponseMode.COMPACT,
         text_qa_template: Optional[BasePromptTemplate] = None,
@@ -108,7 +109,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             streaming=streaming,
         )
 
-        callback_manager = Settings.callback_manager
+        callback_manager = callback_manager or Settings.callback_manager
 
         return cls(
             retriever=retriever,
