@@ -234,13 +234,18 @@ def is_function_calling_model(model: str) -> bool:
 
 
 def to_openai_message_dict(
-    message: ChatMessage, drop_none: bool = False
+    message: ChatMessage, drop_none: bool = False, model: Optional[str] = None
 ) -> ChatCompletionMessageParam:
     """Convert generic message to OpenAI message dict."""
     message_dict = {
         "role": message.role.value,
         "content": message.content,
     }
+
+    # TODO: O1 models do not support system prompts
+    if model is not None and model in O1_MODELS:
+        if message_dict["role"] == "system":
+            message_dict["role"] = "user"
 
     # NOTE: openai messages have additional arguments:
     # - function messages have `name`
@@ -257,11 +262,14 @@ def to_openai_message_dict(
 
 
 def to_openai_message_dicts(
-    messages: Sequence[ChatMessage], drop_none: bool = False
+    messages: Sequence[ChatMessage],
+    drop_none: bool = False,
+    model: Optional[str] = None,
 ) -> List[ChatCompletionMessageParam]:
     """Convert generic messages to OpenAI message dicts."""
     return [
-        to_openai_message_dict(message, drop_none=drop_none) for message in messages
+        to_openai_message_dict(message, drop_none=drop_none, model=model)
+        for message in messages
     ]
 
 
