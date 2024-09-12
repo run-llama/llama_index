@@ -19,7 +19,7 @@ MAX_BATCH_SIZE = 2048
 DEFAULT_JINA_AI_API_URL = "https://api.jina.ai/v1"
 
 VALID_ENCODING = ["float", "ubinary", "binary"]
-
+VALID_TASK_TYPE = ["retrieval.passage", "retrieval.query", "clustering", "classificatoin", "text-matching"]
 
 class _JinaAPICaller:
     def __init__(
@@ -37,12 +37,18 @@ class _JinaAPICaller:
             {"Authorization": f"Bearer {api_key}", "Accept-Encoding": "identity"}
         )
 
-    def get_embeddings(self, input, encoding_type: str = "float") -> List[List[float]]:
+    def get_embeddings(
+        self, input, encoding_type: str = "float", task_type: Optional[str] = None
+    ) -> List[List[float]]:
         """Get embeddings."""
         # Call Jina AI Embedding API
+        json = {"input": input, "model": self.model, "encoding_type": encoding_type}
+        if task_type:
+            json["task_type"] = task_type
+
         resp = self._session.post(  # type: ignore
             self.api_url,
-            json={"input": input, "model": self.model, "encoding_type": encoding_type},
+            json=json,
         ).json()
         if "data" not in resp:
             raise RuntimeError(resp["detail"])
@@ -68,7 +74,7 @@ class _JinaAPICaller:
         return [result["embedding"] for result in sorted_embeddings]
 
     async def aget_embeddings(
-        self, input, encoding_type: str = "float"
+        self, input, encoding_type: str = "float", task_type: Optional[str] = None
     ) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         import aiohttp
@@ -78,13 +84,17 @@ class _JinaAPICaller:
                 "Authorization": f"Bearer {self.api_key}",
                 "Accept-Encoding": "identity",
             }
+            json = {
+                "input": input,
+                "model": self.model,
+                "encoding_type": encoding_type,
+            }
+            if task_type:
+                json["task_type"] = task_type
+
             async with session.post(
                 self.api_url,
-                json={
-                    "input": input,
-                    "model": self.model,
-                    "encoding_type": encoding_type,
-                },
+                json=json,
                 headers=headers,
             ) as response:
                 resp = await response.json()
@@ -141,6 +151,7 @@ class JinaEmbedding(MultiModalEmbedding):
 
     _encoding_queries: str = PrivateAttr()
     _encoding_documents: str = PrivateAttr()
+    _task_type: str = PrivateAttr()
     _api: Any = PrivateAttr()
 
     def __init__(
@@ -151,6 +162,7 @@ class JinaEmbedding(MultiModalEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         encoding_queries: Optional[str] = None,
         encoding_documents: Optional[str] = None,
+        task_type: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -162,6 +174,7 @@ class JinaEmbedding(MultiModalEmbedding):
         )
         self._encoding_queries = encoding_queries or "float"
         self._encoding_documents = encoding_documents or "float"
+        self._task_type = task_type
 
         assert (
             self._encoding_documents in VALID_ENCODING
@@ -169,6 +182,11 @@ class JinaEmbedding(MultiModalEmbedding):
         assert (
             self._encoding_queries in VALID_ENCODING
         ), f"Encoding Queries parameter {self._encoding_documents} not supported. Please choose one of {VALID_ENCODING}"
+
+        if self._task_type:
+            assert (
+                self._task_type in VALID_TASK_TYPE
+            ), f"Task Type parameter {self._task_type} not supported. Please choose one of {VALID_TASK_TYPE}"
 
         self._api = _JinaAPICaller(model=model, api_key=api_key)
 
@@ -179,13 +197,13 @@ class JinaEmbedding(MultiModalEmbedding):
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return self._api.get_embeddings(
-            input=[query], encoding_type=self._encoding_queries
+            input=[query], encoding_type=self._encoding_queries, task_type=self._task_type
         )[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
         result = await self._api.aget_embeddings(
-            input=[query], encoding_type=self._encoding_queries
+            input=[query], encoding_type=self._encoding_queries, task_type=self._task_type
         )
         return result[0]
 
@@ -200,7 +218,7 @@ class JinaEmbedding(MultiModalEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         return self._api.get_embeddings(
-            input=texts, encoding_type=self._encoding_documents
+            input=texts, encoding_type=self._encoding_documents, task_type=self._task_type
         )
 
     async def _aget_text_embeddings(
@@ -208,7 +226,7 @@ class JinaEmbedding(MultiModalEmbedding):
         texts: List[str],
     ) -> List[List[float]]:
         return await self._api.aget_embeddings(
-            input=texts, encoding_type=self._encoding_documents
+            input=texts, encoding_type=self._encoding_documents, task_type=self._task_type
         )
 
     def _get_image_embedding(self, img_file_path: ImageType) -> List[float]:
