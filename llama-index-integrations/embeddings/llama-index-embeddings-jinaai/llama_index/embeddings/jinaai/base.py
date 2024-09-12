@@ -19,7 +19,7 @@ MAX_BATCH_SIZE = 2048
 DEFAULT_JINA_AI_API_URL = "https://api.jina.ai/v1"
 
 VALID_ENCODING = ["float", "ubinary", "binary"]
-VALID_TASK_TYPE = ["retrieval.passage", "retrieval.query", "clustering", "classificatoin", "text-matching"]
+VALID_TASK_TYPE = ["retrieval.query", "retrieval.passage", "text-matching", "classification", "separation"]
 
 class _JinaAPICaller:
     def __init__(
