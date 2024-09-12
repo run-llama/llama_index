@@ -10,6 +10,7 @@ from .decorators import StepConfig, step
 from .context import Context
 from .events import Event, StartEvent, StopEvent
 from .errors import *
+from .result import WorkflowResult
 from .service import ServiceManager
 from .utils import (
     get_steps_from_class,
@@ -139,13 +140,16 @@ class Workflow(metaclass=WorkflowMeta):
         """Returns all the steps, whether defined as methods or free functions."""
         return {**get_steps_from_instance(self), **self._step_functions}  # type: ignore[attr-defined]
 
-    def _start(self, stepwise: bool = False) -> Context:
+    def _start(self, ctx: Optional[Context] = None, stepwise: bool = False) -> Context:
         """Sets up the queues and tasks for each declared step.
 
         This method also launches each step as an async task.
         """
-        ctx = Context(self)
-        self._contexts.add(ctx)
+        if ctx is None:
+            ctx = Context(self)
+            self._contexts.add(ctx)
+        else:
+            ctx.soft_reset()
 
         for name, step_func in self._get_steps().items():
             ctx._queues[name] = asyncio.Queue()
@@ -249,6 +253,7 @@ class Workflow(metaclass=WorkflowMeta):
                         name=name,
                     )
                 )
+
         return ctx
 
     def send_event(self, message: Event, step: Optional[str] = None) -> None:
@@ -268,7 +273,7 @@ class Workflow(metaclass=WorkflowMeta):
         ctx.send_event(message=message, step=step)
 
     @dispatcher.span
-    async def run(self, **kwargs: Any) -> str:
+    async def run(self, ctx: Optional[Context] = None, **kwargs: Any) -> WorkflowResult:
         """Runs the workflow until completion.
 
         Works by
@@ -280,8 +285,8 @@ class Workflow(metaclass=WorkflowMeta):
         # Validate the workflow if needed
         self._validate()
 
-        # Start the machinery in a new Context
-        ctx = self._start()
+        # Start the machinery, possibly reusing an existing context
+        ctx = self._start(ctx=ctx)
 
         # Send the first event
         ctx.send_event(StartEvent(**kwargs))
@@ -322,10 +327,34 @@ class Workflow(metaclass=WorkflowMeta):
             msg = f"Operation timed out after {self._timeout} seconds"
             raise WorkflowTimeoutError(msg)
 
-        return ctx._retval
+        return WorkflowResult(ctx=ctx, result=ctx._retval)
+
+    async def stream_run(
+        self, ctx: Optional[Context] = None, **kwargs: Any
+    ) -> AsyncGenerator:
+        # kick off run
+        if ctx is None:
+            ctx = self._start()
+
+        workflow_task = asyncio.create_task(self.run(ctx=ctx, **kwargs))
+
+        # sleep to prevent busy-wait
+        await asyncio.sleep(0.0)
+
+        # iterate over events
+        while True:
+            ev = await ctx.streaming_queue.get()
+            if type(ev) is StopEvent:
+                break
+
+            yield ev
+
+        yield await workflow_task
 
     @dispatcher.span
-    async def run_step(self, **kwargs: Any) -> Optional[str]:
+    async def run_step(
+        self, ctx: Optional[Context] = None, **kwargs: Any
+    ) -> Optional[WorkflowResult]:
         """Runs the workflow stepwise until completion.
 
         Works by
@@ -336,14 +365,32 @@ class Workflow(metaclass=WorkflowMeta):
             5. Returning the result if the workflow is done
         """
         # Check if we need to start a new session
-        if self._stepwise_context is None:
+        if self._stepwise_context is None and ctx is None:
             self._validate()
-            self._stepwise_context = self._start(stepwise=True)
+            stepwise_context = self._start(ctx=ctx, stepwise=True)
+
+            # TODO: Only needed for backwards compatibility
+            self._stepwise_context = stepwise_context
+
             # Run the first step
-            self._stepwise_context.send_event(StartEvent(**kwargs))
+            stepwise_context.send_event(StartEvent(**kwargs))
+        elif ctx is not None and ctx.get_result() is None:
+            # start machinery for passed in context
+            self._validate()
+            stepwise_context = self._start(ctx=ctx, stepwise=True)
+
+            # TODO: Only needed for backwards compatibility
+            self._stepwise_context = stepwise_context
+
+            # Run the first step
+            stepwise_context.send_event(StartEvent(**kwargs))
+        elif ctx is not None:
+            stepwise_context = ctx
+        else:
+            stepwise_context = self._stepwise_context
 
         # Unblock all pending steps
-        for flag in self._stepwise_context._step_flags.values():
+        for flag in stepwise_context._step_flags.values():
             flag.set()
 
         # Yield back control to the event loop to give an unblocked step
@@ -353,7 +400,7 @@ class Workflow(metaclass=WorkflowMeta):
         # See if we're done, or if a step raised any error
         we_done = False
         exception_raised = None
-        for t in self._stepwise_context._tasks:
+        for t in stepwise_context._tasks:
             # Check if we're done
             if not t.done():
                 continue
@@ -366,19 +413,25 @@ class Workflow(metaclass=WorkflowMeta):
         retval = None
         if we_done:
             # Remove any reference to the tasks
-            for t in self._stepwise_context._tasks:
+            for t in stepwise_context._tasks:
                 t.cancel()
                 await asyncio.sleep(0)
-            retval = self._stepwise_context._retval
+            retval = stepwise_context.get_result()
+            # TODO: only needed for backwards compatibility
             self._stepwise_context = None
 
         if exception_raised:
             raise exception_raised
 
-        return retval
+        return WorkflowResult(ctx=stepwise_context, result=retval, is_done=we_done)
 
     def is_done(self) -> bool:
         """Checks if the workflow is done."""
+        warnings.warn(
+            "`workflow.is_done()` is deprecated. "
+            "Use the `result.is_done` attribute on the returned result "
+            "object from `run_step()`."
+        )
         return self._stepwise_context is None
 
     @step

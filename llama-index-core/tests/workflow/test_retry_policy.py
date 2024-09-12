@@ -28,7 +28,7 @@ async def test_retry_e2e():
             await ctx.set("counter", count + 1)
 
     workflow = DummyWorkflow(disable_validation=True)
-    assert await workflow.run() == "All good!"
+    assert str(await workflow.run()) == "All good!"
 
 
 def test_ConstantDelayRetryPolicy_init():

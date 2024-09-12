@@ -41,8 +41,8 @@ class DummyWorkflow(Workflow):
         ctx: Context,
         service_workflow: ServiceWorkflow = ServiceWorkflow(),
     ) -> NumGenerated:
-        res = await service_workflow.run()
-        return NumGenerated(num=int(res))
+        workflow_result = await service_workflow.run()
+        return NumGenerated(num=int(workflow_result.result))
 
     @step
     async def multiply(self, ev: NumGenerated) -> StopEvent:
@@ -55,16 +55,16 @@ async def test_e2e():
     # We are responsible for passing the ServiceWorkflow instances to the dummy workflow
     # and give it a name, in this case "service_workflow"
     wf.add_workflows(service_workflow=ServiceWorkflow(the_answer=1337))
-    res = await wf.run()
-    assert res == 2674
+    workflow_result = await wf.run()
+    assert workflow_result.result == 2674
 
 
 @pytest.mark.asyncio()
 async def test_default_value_for_service():
     wf = DummyWorkflow()
     # We don't add any workflow to leverage the default value defined by the user
-    res = await wf.run()
-    assert res == 84
+    workflow_result = await wf.run()
+    assert workflow_result.result == 84
 
 
 def test_service_manager_add():

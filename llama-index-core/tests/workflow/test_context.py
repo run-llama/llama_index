@@ -38,8 +38,8 @@ async def test_collect_events():
             return StopEvent(result=events)
 
     workflow = TestWorkflow()
-    result = await workflow.run()
-    assert result == [ev1, ev2]
+    workflow_result = await workflow.run()
+    assert workflow_result.result == [ev1, ev2]
 
 
 @pytest.mark.asyncio()

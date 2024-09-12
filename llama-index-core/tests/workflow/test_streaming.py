@@ -10,17 +10,18 @@ from llama_index.core.workflow.errors import WorkflowRuntimeError
 
 from .conftest import OneTestEvent
 
+TEXT = "Paul Graham is a British-American computer scientist, entrepreneur, vc, and writer."
+
 
 class StreamingWorkflow(Workflow):
     @step
     async def chat(self, ctx: Context, ev: StartEvent) -> StopEvent:
         async def stream_messages():
-            resp = "Paul Graham is a British-American computer scientist, entrepreneur, vc, and writer."
-            for word in resp.split():
+            for word in TEXT.split():
                 yield word
 
         async for w in stream_messages():
-            ctx.session.write_event_to_stream(Event(msg=w))
+            ctx.write_event_to_stream(Event(msg=w))
 
         return StopEvent(result=None)
 
@@ -84,3 +85,48 @@ async def test_multiple_streams():
     async for _ in wf.stream_events():
         pass
     await r
+
+
+@pytest.mark.asyncio()
+async def test_multiple_streams_at_the_same_time():
+    wf = StreamingWorkflow()
+
+    stream_1 = wf.stream_run()
+
+    expected_stream_1_iters = len(TEXT.split()) + 1
+
+    # running multiple streams should work, since they are separated by context
+
+    stream_1_iters = 0
+    stream_2_iters = 0
+    async for _ in stream_1:
+        stream_1_iters += 1
+        async for _ in wf.stream_run():
+            stream_2_iters += 1
+
+    assert stream_1_iters == expected_stream_1_iters
+    assert stream_2_iters == stream_1_iters * stream_1_iters
+
+
+@pytest.mark.asyncio()
+async def test_resume_streams():
+    class CounterWorkflow(Workflow):
+        @step
+        async def count(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            ctx.write_event_to_stream(Event(msg="hello!"))
+
+            cur_count = await ctx.get("cur_count", default=0)
+            await ctx.set("cur_count", cur_count + 1)
+            return StopEvent(result="done")
+
+    wf = CounterWorkflow()
+    stream_1 = wf.stream_run()
+
+    async for item in stream_1:
+        pass
+
+    stream_2 = wf.stream_run(ctx=item.ctx)
+    async for item in stream_2:
+        pass
+
+    assert await item.ctx.get("cur_count") == 2

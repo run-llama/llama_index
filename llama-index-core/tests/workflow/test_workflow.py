@@ -27,7 +27,7 @@ async def test_workflow_initialization(workflow):
 @pytest.mark.asyncio()
 async def test_workflow_run(workflow):
     result = await workflow.run()
-    assert result == "Workflow completed"
+    assert str(result) == "Workflow completed"
 
 
 @pytest.mark.asyncio()
@@ -35,24 +35,24 @@ async def test_workflow_run_step(workflow):
     workflow._verbose = True
 
     # First step
-    result = await workflow.run_step()
-    assert result is None
-    assert not workflow.is_done()
+    workflow_result = await workflow.run_step()
+    assert workflow_result.result is None
+    assert not workflow_result.is_done
 
     # Second step
-    result = await workflow.run_step()
-    assert result is None
-    assert not workflow.is_done()
+    workflow_result = await workflow.run_step()
+    assert workflow_result.result is None
+    assert not workflow_result.is_done
 
     # Final step
-    result = await workflow.run_step()
-    assert not workflow.is_done()
-    assert result is None
+    workflow_result = await workflow.run_step()
+    assert workflow_result.result is None
+    assert not workflow_result.is_done
 
     # Cleanup step
-    result = await workflow.run_step()
-    assert result == "Workflow completed"
-    assert workflow.is_done()
+    workflow_result = await workflow.run_step()
+    assert workflow_result.is_done
+    assert workflow_result.result == "Workflow completed"
 
 
 @pytest.mark.asyncio()
@@ -153,8 +153,8 @@ async def test_workflow_sync_async_steps():
             return StopEvent(result="Done")
 
     workflow = SyncAsyncWorkflow()
-    await workflow.run()
-    assert workflow.is_done()
+    result = await workflow.run()
+    assert result.is_done
 
 
 @pytest.mark.asyncio()
@@ -164,10 +164,10 @@ async def test_workflow_num_workers():
         async def original_step(
             self, ctx: Context, ev: StartEvent
         ) -> OneTestEvent | LastEvent:
-            ctx.data["num_to_collect"] = 3
-            ctx.session.send_event(OneTestEvent(test_param="test1"))
-            ctx.session.send_event(OneTestEvent(test_param="test2"))
-            ctx.session.send_event(OneTestEvent(test_param="test3"))
+            await ctx.set("num_to_collect", 3)
+            ctx.send_event(OneTestEvent(test_param="test1"))
+            ctx.send_event(OneTestEvent(test_param="test2"))
+            ctx.send_event(OneTestEvent(test_param="test3"))
 
             return LastEvent()
 
@@ -180,9 +180,8 @@ async def test_workflow_num_workers():
         async def final_step(
             self, ctx: Context, ev: AnotherTestEvent | LastEvent
         ) -> StopEvent:
-            events = ctx.collect_events(
-                ev, [AnotherTestEvent] * ctx.data["num_to_collect"]
-            )
+            num_to_collect = await ctx.get("num_to_collect")
+            events = ctx.collect_events(ev, [AnotherTestEvent] * num_to_collect)
             if events is None:
                 return None  # type: ignore
             return StopEvent(result=[ev.another_test_param for ev in events])
@@ -190,11 +189,11 @@ async def test_workflow_num_workers():
     workflow = NumWorkersWorkflow()
 
     start_time = time.time()
-    result = await workflow.run()
+    workflow_result = await workflow.run()
     end_time = time.time()
 
-    assert workflow.is_done()
-    assert set(result) == {"test1", "test2", "test3"}
+    assert workflow_result.is_done
+    assert set(workflow_result.result) == {"test1", "test2", "test3"}
 
     # Check if the execution time is close to 1 second (with some tolerance)
     execution_time = end_time - start_time
@@ -208,7 +207,7 @@ async def test_workflow_step_send_event():
     class StepSendEventWorkflow(Workflow):
         @step
         async def step1(self, ctx: Context, ev: StartEvent) -> OneTestEvent:
-            ctx.session.send_event(OneTestEvent(), step="step2")
+            ctx.send_event(OneTestEvent(), step="step2")
             return None  # type: ignore
 
         @step
@@ -220,10 +219,10 @@ async def test_workflow_step_send_event():
             return StopEvent(result="step3")
 
     workflow = StepSendEventWorkflow()
-    result = await workflow.run()
-    assert result == "step2"
-    assert workflow.is_done()
-    ctx = workflow._contexts.pop()
+    workflow_result = await workflow.run()
+    assert workflow_result.result == "step2"
+    assert workflow_result.is_done
+    ctx = workflow_result.ctx
     assert ("step2", "OneTestEvent") in ctx._accepted_events
     assert ("step3", "OneTestEvent") not in ctx._accepted_events
 
@@ -241,9 +240,9 @@ async def test_workflow_step_send_event_to_None():
             return StopEvent(result="step2")
 
     workflow = StepSendEventToNoneWorkflow(verbose=True)
-    await workflow.run()
-    assert workflow.is_done()
-    assert ("step2", "OneTestEvent") in workflow._contexts.pop()._accepted_events
+    result = await workflow.run()
+    assert result.is_done
+    assert ("step2", "OneTestEvent") in result.ctx._accepted_events
 
 
 @pytest.mark.asyncio()
@@ -293,9 +292,10 @@ async def test_workflow_multiple_runs():
             return StopEvent(result=ev.number * 2)
 
     workflow = DummyWorkflow()
-    results = await asyncio.gather(
+    workflow_results = await asyncio.gather(
         workflow.run(number=3), workflow.run(number=42), workflow.run(number=-99)
     )
+    results = [w.result for w in workflow_results]
     assert set(results) == {6, 84, -198}
 
 
@@ -379,3 +379,24 @@ def test_workflow_disable_validation():
     w._get_steps = mock.MagicMock()
     w._validate()
     w._get_steps.assert_not_called()
+
+
+@pytest.mark.asyncio()
+async def test_context_resume():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            cur_count = await ctx.get("counter", default=0)
+            await ctx.set("counter", cur_count + 1)
+
+            return StopEvent(result="Done")
+
+    w = DummyWorkflow()
+
+    workflow_result = await w.run()
+    count = await workflow_result.ctx.get("counter")
+    assert count == 1
+
+    workflow_result = await w.run(ctx=workflow_result.ctx)
+    count = await workflow_result.ctx.get("counter")
+    assert count == 2
