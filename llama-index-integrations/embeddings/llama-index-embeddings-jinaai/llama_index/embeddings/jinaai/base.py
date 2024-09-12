@@ -24,7 +24,7 @@ VALID_TASK_TYPE = ["retrieval.passage", "retrieval.query", "clustering", "classi
 class _JinaAPICaller:
     def __init__(
         self,
-        model: str = "jina-embeddings-v2-base-en",
+        model: str = "jina-embeddings-v3",
         base_url: str = DEFAULT_JINA_AI_API_URL,
         api_key: Optional[str] = None,
         **kwargs: Any,
@@ -139,13 +139,13 @@ class JinaEmbedding(MultiModalEmbedding):
     JinaAI class for embeddings.
 
     Args:
-        model (str): Model for embedding.
-            Defaults to `jina-embeddings-v2-base-en`
+        model (str): Model for embedding. When it is `jina-embeddings-v3`, `task_type` is required.
+            Defaults to `jina-embeddings-v3`
     """
 
     api_key: Optional[str] = Field(default=None, description="The JinaAI API key.")
     model: str = Field(
-        default="jina-embeddings-v2-base-en",
+        default="jina-embeddings-v3",
         description="The model to use when calling Jina AI API",
     )
 
@@ -156,7 +156,7 @@ class JinaEmbedding(MultiModalEmbedding):
 
     def __init__(
         self,
-        model: str = "jina-embeddings-v2-base-en",
+        model: str = "jina-embeddings-v3",
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
