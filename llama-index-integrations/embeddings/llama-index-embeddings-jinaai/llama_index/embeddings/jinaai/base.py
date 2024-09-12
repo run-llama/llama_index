@@ -42,13 +42,13 @@ class _JinaAPICaller:
     ) -> List[List[float]]:
         """Get embeddings."""
         # Call Jina AI Embedding API
-        json = {"input": input, "model": self.model, "encoding_type": encoding_type}
+        input_json = {"input": input, "model": self.model, "encoding_type": encoding_type}
         if task_type:
-            json["task_type"] = task_type
+            input_json["task_type"] = task_type
 
         resp = self._session.post(  # type: ignore
             self.api_url,
-            json=json,
+            json=input_json,
         ).json()
         if "data" not in resp:
             raise RuntimeError(resp["detail"])
@@ -84,17 +84,17 @@ class _JinaAPICaller:
                 "Authorization": f"Bearer {self.api_key}",
                 "Accept-Encoding": "identity",
             }
-            json = {
+            input_json = {
                 "input": input,
                 "model": self.model,
                 "encoding_type": encoding_type,
             }
             if task_type:
-                json["task_type"] = task_type
+                input_json["task_type"] = task_type
 
             async with session.post(
                 self.api_url,
-                json=json,
+                json=input_json,
                 headers=headers,
             ) as response:
                 resp = await response.json()
