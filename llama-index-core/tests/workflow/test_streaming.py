@@ -84,3 +84,16 @@ async def test_multiple_streams():
     async for _ in wf.stream_events():
         pass
     await r
+
+
+@pytest.mark.asyncio()
+async def test_multiple_streams_at_the_same_time():
+    wf = StreamingWorkflow()
+
+    session_context_1 = wf.init_session_context()
+    session_context_2 = wf.init_session_context()
+
+    # running multiple streams should work, since they are separated by context
+    async for _ in wf.run_with_streaming_session_context(session_context_1):
+        async for _ in wf.run_with_streaming_session_context(session_context_2):
+            pass

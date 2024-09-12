@@ -381,3 +381,19 @@ def test_workflow_disable_validation():
     w._get_steps = mock.MagicMock()
     w._validate()
     w._get_steps.assert_not_called()
+
+
+@pytest.mark.asyncio()
+async def test_session_context_api():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ev: StartEvent) -> StopEvent:
+            return StopEvent(result=ev.number * 2)
+
+    w = DummyWorkflow()
+
+    context = w.init_session_context("test_id")
+    assert context.session_id == "test_id"
+
+    result = await w.run_with_session_context(context, number=2)
+    assert result == 4

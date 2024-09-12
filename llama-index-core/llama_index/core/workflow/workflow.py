@@ -2,7 +2,6 @@ import asyncio
 import functools
 import time
 import warnings
-import uuid
 from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set, Tuple
 
 from llama_index.core.instrumentation import get_dispatcher
@@ -140,19 +139,15 @@ class Workflow(metaclass=WorkflowMeta):
         """Returns all the steps, whether defined as methods or free functions."""
         return {**get_steps_from_instance(self), **self._step_functions}  # type: ignore[attr-defined]
 
-    def _start(
-        self, session_id: Optional[str] = None, stepwise: bool = False
-    ) -> Context:
+    def _start(self, ctx: Context, stepwise: bool = False) -> None:
         """Sets up the queues and tasks for each declared step.
 
         This method also launches each step as an async task.
         """
-        if session_id is None:
-            session_id = str(uuid.uuid4())
+        # clear tasks
+        ctx._tasks = set()
 
-        ctx = Context(self, session_id)
-        self._contexts[session_id] = ctx
-
+        # setup new tasks
         for name, step_func in self._get_steps().items():
             ctx._queues[name] = asyncio.Queue()
             ctx._step_flags[name] = asyncio.Event()
@@ -255,7 +250,6 @@ class Workflow(metaclass=WorkflowMeta):
                         name=name,
                     )
                 )
-        return ctx
 
     def send_event(self, message: Event, step: Optional[str] = None) -> None:
         msg = (
@@ -283,24 +277,29 @@ class Workflow(metaclass=WorkflowMeta):
             3. sending a StartEvent to kick things off
             4. waiting for all tasks to finish or be cancelled
         """
-        ctx = self.create_session_context()
+        ctx = self.init_session_context()
 
         return await self.run_with_session_context(ctx, **kwargs)
 
-    def create_session_context(
+    def init_session_context(
         self, session_id: Optional[str] = None, context: Optional[Context] = None
     ) -> Context:
         # Validate the workflow if needed
         self._validate()
 
-        # Start the machinery in a new Context if needed
+        # Create and record the context
         if context is None:
-            context = self._start(session_id=session_id)
+            context = Context(self, session_id=session_id)
+
+        self._contexts[context.session_id] = context
 
         # return the context
         return context
 
     async def run_with_session_context(self, ctx: Context, **kwargs: Any) -> Any:
+        # Start the machinery
+        self._start(ctx)
+
         # Send the first event
         ctx.send_event(StartEvent(**kwargs))
 
@@ -375,7 +374,10 @@ class Workflow(metaclass=WorkflowMeta):
         # Check if we need to start a new session
         if self._stepwise_context is None:
             self._validate()
-            self._stepwise_context = self._start(stepwise=True)
+
+            self._stepwise_context = self.init_session_context()
+            self._start(self._stepwise_context, stepwise=True)
+
             # Run the first step
             self._stepwise_context.send_event(StartEvent(**kwargs))
 
