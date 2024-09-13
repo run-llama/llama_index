@@ -6,6 +6,8 @@ from llama_index.core.utils import print_text
 from llama_index.core.retrievers import BaseRetriever
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.core.prompts import BasePromptTemplate
+from llama_index.core.prompts.base import PromptTemplate
+from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_TO_SQL_PROMPT
 from typing import List, Optional
 
@@ -17,6 +19,39 @@ import re
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_OWL_GENERATOR_PROMPT_TMPL = """\
+given the schema:{schema}\
+generate the owl representation of the schema.\
+make sure to take into account types as described in schema.org\
+Each row would be an instance of the schema and each column would be a property of the schema.\
+Some properties could be entities and others could be literals.\
+For entities, make sure to use or extend the schema.org vocabulary.\
+When are group of columns are related to each other, make sure to use the schema.org vocabulary to represent the relationship.\
+Soe column group might identifie other entities, some might be a description of the entity, some might be a location, etc.\
+Try to use the most specific schema.org vocabulary possible.\
+Do not introduce new labels when possible, for example, if a column is a date, use the schema.org vocabulary for date.\
+If a column is called first name, use the schema.org vocabulary for givenName.\
+
+if the table name is table_data or it is too generic do not name the schema after the table name, instead name it after the domain of the table.\
+
+Emit the owl representation of the schema only.\
+"""
+
+DEFAULT_OWL_GENERATOR_PROMPT = PromptTemplate(
+    DEFAULT_OWL_GENERATOR_PROMPT_TMPL,
+    prompt_type=PromptType.CUSTOM,
+)
+
+DEFAULT_USE_DECTECTION_TMPL = """\
+given the schema:{schema}\
+describe what this retriever is useful for. What kind of information  can the retriever provide and the type of data it can access.\
+"""
+
+DEFAULT_USE_DECTECTION_PROMPT = PromptTemplate(
+    DEFAULT_USE_DECTECTION_TMPL,
+    prompt_type=PromptType.CUSTOM,
+)
+
 
 class NLDataframeRetriever(BaseRetriever):
     def __init__(
@@ -25,6 +60,8 @@ class NLDataframeRetriever(BaseRetriever):
         llm: llm,
         name: Optional[str] = None,
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
+        schema_to_owl_prompt: Optional[BasePromptTemplate] = None,
+        schema_use_detection_prompt: Optional[BasePromptTemplate] = None,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
@@ -32,6 +69,12 @@ class NLDataframeRetriever(BaseRetriever):
         self._llm = resolve_llm(llm)
         self._similarity_top_k = similarity_top_k
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
+        self._schema_to_owl_prompt = (
+            schema_to_owl_prompt or DEFAULT_OWL_GENERATOR_PROMPT
+        )
+        self._schema_use_detection_prompt = (
+            schema_use_detection_prompt or DEFAULT_USE_DECTECTION_PROMPT
+        )
         data_source = df.copy(deep=True)
         data_source.rename(columns=lambda x: re.sub(r"\s+", "_", x), inplace=True)
         table_name = name or "data_table"
@@ -50,24 +93,7 @@ class NLDataframeRetriever(BaseRetriever):
     def get_owl(self) -> str:
         if self._owl is None:
             response = self._llm.complete(
-                f"""
-    given the schema:{self._schema_str}
-    generate the owl representation of the schema.
-    make sure to take into account types as described in schema.org
-    Each row would be an instance of the schema and each column would be a property of the schema.
-    Some properties could be entities and others could be literals.
-    For entities, make sure to use or extend the schema.org vocabulary.
-    When are group of columns are related to each other, make sure to use the schema.org vocabulary to represent the relationship.
-    Soe column group might identifie other entities, some might be a description of the entity, some might be a location, etc.
-    Try to use the most specific schema.org vocabulary possible.
-    Do not introduce new labels when possible, for example, if a column is a date, use the schema.org vocabulary for date.
-    If a column is called first name, use the schema.org vocabulary for givenName.
-
-    if the table name is table_data or it is too generic do not name the schema after the table name, instead name it after the domain of the table.
-
-    Emit the owl representation of the schema only.
-
-                            """
+                self._schema_to_owl_prompt, schema=self._schema_str
             )
 
             logger.info(f"Schema Description: {response.text}")
@@ -78,10 +104,7 @@ class NLDataframeRetriever(BaseRetriever):
     def get_description(self) -> str:
         if self._description is None:
             response = self._llm.complete(
-                f"""
-given the schema:{self._schema_str}
-describe what this retriever is useful for. What kind of information  can the retriever provide and the type of data it can access.
-                           """
+                self._schema_use_detection_prompt, schema=self._schema_str
             )
 
             logger.info(f"Schema Description: {response.text}")
