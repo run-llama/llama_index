@@ -1,5 +1,9 @@
 # CHANGELOG — llama-index-vector-stores-opensearch
 
+## [0.2.2]
+
+- Fixed issue where Opensearch Serverless does not support painless scripting so handling the case where is_aoss is set and using knn_score script instead.
+
 ## [0.2.1]
 
 - Refresh Opensearch index after delete operation to reflect the change for future searches

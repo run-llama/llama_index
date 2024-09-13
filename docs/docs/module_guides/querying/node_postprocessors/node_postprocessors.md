@@ -300,10 +300,11 @@ Full notebook guide is available [here](../../../examples/node_postprocessor/Col
 Uses models from [rankLLM](https://github.com/castorini/rank_llm) to rerank documents. Returns the top N ranked nodes.
 
 ```python
-from llama_index.postprocessor import RankLLMRerank
+from llama_index.postprocessor.rankllm_rerank import RankLLMRerank
 
-postprocessor = RankLLMRerank(top_n=5, model="zephyr")
-postprocessor.postprocess_nodes(nodes)
+# RankZephyr reranker, return top 5 candidates
+reranker = RankLLMRerank(model="rank_zephyr", top_n=5)
+reranker.postprocess_nodes(nodes)
 ```
 
 A full [notebook example is available](../../../examples/node_postprocessor/rankLLM.ipynb).

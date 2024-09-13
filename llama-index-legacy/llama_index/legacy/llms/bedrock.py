@@ -109,7 +109,7 @@ class Bedrock(LLM):
         if context_size is None and model not in BEDROCK_FOUNDATION_LLMS:
             raise ValueError(
                 "`context_size` argument not provided and"
-                "model provided refers to a non-foundation model."
+                " model provided refers to a non-foundation model."
                 " Please specify the context_size"
             )
 
