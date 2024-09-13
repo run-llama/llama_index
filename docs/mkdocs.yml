@@ -669,11 +669,13 @@ nav:
           - ./examples/vector_stores/qdrant_bm42.ipynb
           - ./examples/vector_stores/qdrant_hybrid.ipynb
       - Workflow:
+          - ./examples/workflow/.ipynb_checkpoints/human_in_the_loop_story_crafting-checkpoint.ipynb
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
           - ./examples/workflow/function_calling_agent.ipynb
+          - ./examples/workflow/human_in_the_loop_story_crafting.ipynb
           - ./examples/workflow/long_rag_pack.ipynb
           - ./examples/workflow/multi_step_query_engine.ipynb
           - ./examples/workflow/multi_strategy_workflow.ipynb
@@ -1335,6 +1337,7 @@ nav:
           - ./api_reference/readers/preprocess.md
           - ./api_reference/readers/psychic.md
           - ./api_reference/readers/qdrant.md
+          - ./api_reference/readers/quip.md
           - ./api_reference/readers/rayyan.md
           - ./api_reference/readers/readme.md
           - ./api_reference/readers/readwise.md
@@ -2185,6 +2188,7 @@ plugins:
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-dynamodb
             - ../llama-index-integrations/readers/llama-index-readers-alibabacloud-aisearch
             - ../llama-index-integrations/llms/llama-index-llms-alibabacloud-aisearch
+            - ../llama-index-integrations/readers/llama-index-readers-quip
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
