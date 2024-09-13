@@ -24,7 +24,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Chirag Agrawal <chirag.agrawal93@gmail.com>"]
+authors = ["Chirag Agrawal <you@example.com>"]
 description = "llama-index readers quip integration"
 license = "MIT"
 name = "llama-index-readers-quip"
