@@ -37,7 +37,7 @@ from llama_index.llms.octoai.utils import (
     to_octoai_messages,
 )
 
-from octoai.client import OctoAI
+from octoai.client import OctoAI as Client
 
 DEFAULT_OCTOAI_MODEL = "mistral-7b-instruct"
 
@@ -62,7 +62,7 @@ class OctoAI(LLM):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OctoAI SDK."
     )
-    _client: Optional[OctoAI] = PrivateAttr()
+    _client: Optional[Client] = PrivateAttr()
 
     def __init__(
         self,
@@ -107,7 +107,7 @@ class OctoAI(LLM):
             )
 
         try:
-            self._client = OctoAI(token=token, timeout=timeout)
+            self._client = Client(api_key=token, timeout=timeout)
         except ImportError as err:
             raise ImportError(
                 "Could not import OctoAI python package. "
