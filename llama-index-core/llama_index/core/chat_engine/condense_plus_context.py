@@ -213,9 +213,8 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         self, chat_history: List[ChatMessage]
     ) -> List[ChatMessage]:
         """Get the prefix messages with context."""
-        context_str_w_sys_prompt = (
-            self._context_prompt_template + self._system_prompt.strip()
-        )
+        system_prompt = self._system_prompt or ""
+        context_str_w_sys_prompt = self._context_prompt_template + system_prompt.strip()
         return [
             ChatMessage(
                 content=context_str_w_sys_prompt, role=self._llm.metadata.system_role
@@ -228,9 +227,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         self, chat_history: List[ChatMessage]
     ) -> List[ChatMessage]:
         """Get the prefix messages with context."""
-        # ensure we grab the user-configured system prompt
+        system_prompt = self._system_prompt or ""
         context_str_w_sys_prompt = (
-            self._context_refine_prompt_template + self._system_prompt.strip()
+            self._context_refine_prompt_template + system_prompt.strip()
         )
 
         return [

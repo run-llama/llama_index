@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.llms.types import (
@@ -324,7 +324,7 @@ class ContextChatEngine(BaseChatEngine):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        prev_chunks: Optional[Sequence[NodeWithScore]] = None,
+        prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
@@ -363,7 +363,7 @@ class ContextChatEngine(BaseChatEngine):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        prev_chunks: Optional[Sequence[NodeWithScore]] = None,
+        prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)

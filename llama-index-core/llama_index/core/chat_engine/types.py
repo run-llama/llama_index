@@ -279,6 +279,9 @@ class StreamingAgentChatResponse:
                     # Queue is empty, but we're not done yet. Sleep for 0 secs to release the GIL and allow other threads to run.
                     time.sleep(0)
         else:
+            if self.chat_stream is None:
+                raise ValueError("chat_stream is None!")
+
             for chat_response in self.chat_stream:
                 self.unformatted_response += chat_response.delta or ""
                 yield chat_response.delta or ""
@@ -306,6 +309,9 @@ class StreamingAgentChatResponse:
                 else:
                     break
         else:
+            if self.achat_stream is None:
+                raise ValueError("achat_stream is None!")
+
             async for chat_response in self.achat_stream:
                 self.unformatted_response += chat_response.delta or ""
                 yield chat_response.delta or ""
