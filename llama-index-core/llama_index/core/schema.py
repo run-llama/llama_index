@@ -533,7 +533,7 @@ class ImageNode(TextNode):
         image_str = self.image or "None"
         image_path_str = self.image_path or "None"
         image_url_str = self.image_url or "None"
-        return "-".join([image_str, image_path_str, image_url_str])
+        return f"{image_str}-{image_path_str}-{image_url_str}"
 
 
 class IndexNode(TextNode):
