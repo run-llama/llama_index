@@ -6,7 +6,7 @@ This is a quick guide to the high-level concepts you'll encounter frequently whe
 
 There are endless use cases for data-backed LLM applications but they can be roughly grouped into four categories:
 
-[**Structured Data Extraction**](../use_cases/extraction/)
+[**Structured Data Extraction**](../use_cases/extraction.md/)
 Pydantic extractors allow you to specify a precise data structure to extract from your data and use LLMs to fill in the missing pieces in a type-safe way. This is useful for extracting structured data from unstructured sources like PDFs, websites, and more, and is key to automating workflows.
 
 [**Query Engines**](../module_guides/deploying/query_engine/index.md):

@@ -15,7 +15,7 @@ pip install llama-index-readers-mongodb
 ### Usage
 
 ```python
-from llama_index.readers.mongo import SimpleMongoReader
+from llama_index.readers.mongodb import SimpleMongoReader
 
 # Initialize SimpleMongoReader
 reader = SimpleMongoReader(

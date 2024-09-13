@@ -52,6 +52,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Model
 from llama_index.llms.openai.utils import (
+    O1_MODELS,
     OpenAIToolCall,
     create_retry_decorator,
     from_openai_completion_logprobs,
@@ -253,6 +254,10 @@ class OpenAI(FunctionCallingLLM):
             api_version=api_version,
         )
 
+        # TODO: Temp forced to 1.0 for o1
+        if model in O1_MODELS:
+            temperature = 1.0
+
         super().__init__(
             model=model,
             temperature=temperature,
@@ -331,6 +336,10 @@ class OpenAI(FunctionCallingLLM):
                 model=self._get_model_name()
             ),
             model_name=self.model,
+            # TODO: Temp for O1 beta
+            system_role=MessageRole.USER
+            if self.model in O1_MODELS
+            else MessageRole.SYSTEM,
         )
 
     @llm_chat_callback()
@@ -410,7 +419,7 @@ class OpenAI(FunctionCallingLLM):
     @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         if self.reuse_client:
             response = client.chat.completions.create(
@@ -492,7 +501,7 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -698,7 +707,7 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         aclient = self._get_aclient()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         if self.reuse_client:
             response = await aclient.chat.completions.create(
@@ -731,7 +740,7 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         aclient = self._get_aclient()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
