@@ -185,13 +185,13 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                         oci_config=client_kwargs["config"]
                     )
                 elif auth_type == OCIAuthType(3).name:
-                    client_kwargs[
-                        "signer"
-                    ] = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+                    client_kwargs["signer"] = (
+                        oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+                    )
                 elif auth_type == OCIAuthType(4).name:
-                    client_kwargs[
-                        "signer"
-                    ] = oci.auth.signers.get_resource_principals_signer()
+                    client_kwargs["signer"] = (
+                        oci.auth.signers.get_resource_principals_signer()
+                    )
                 else:
                     raise ValueError(
                         f"Please provide valid value to auth_type, {auth_type} is not valid."
