@@ -526,6 +526,15 @@ class ImageNode(TextNode):
         else:
             raise ValueError("No image found in node.")
 
+    @property
+    def hash(self) -> str:
+        """Get hash of node."""
+        # doc identity depends on if image, image_path, or image_url is set
+        image_str = self.image or "None"
+        image_path_str = self.image_path or "None"
+        image_url_str = self.image_url or "None"
+        return "-".join([image_str, image_path_str, image_url_str])
+
 
 class IndexNode(TextNode):
     """Node with reference to any object.
