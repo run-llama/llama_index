@@ -18,9 +18,20 @@ class QuipReader(BasePydanticReader):
         default=None, description="Headers to be sent with the request"
     )
 
-    def __init__(self, **data) -> None:
-        super().__init__(**data)
-        self.headers = {"Authorization": "Bearer " + self.access_token}
+    def __init__(
+        self,
+        access_token: str,
+        request_timeout: Optional[float] = None,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> None:
+        headers = headers or {}
+        if "Authorization" not in headers:
+            headers["Authorization"] = "Bearer " + access_token
+        super().__init__(
+            access_token=access_token,
+            request_timeout=request_timeout,
+            headers=headers,
+        )
 
     @classmethod
     def class_name(cls) -> str:
