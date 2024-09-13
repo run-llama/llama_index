@@ -164,9 +164,9 @@ set_global_handler("literalai")
 
 ![](../../_static/integrations/literal_ai.gif)
 
-### Opik
+### Comet Opik
 
-[Opik by Comet](https://www.comet.com/docs/opik/?utm_source=llama-index&utm_medium=github&utm_campaign=opik&utm_content=home_page) is an open-source end to end LLM Evaluation Platform built by Comet.
+[Opik](https://www.comet.com/docs/opik/?utm_source=llama-index&utm_medium=docs&utm_campaign=opik&utm_content=home_page) is an open-source end to end LLM Evaluation Platform built by Comet.
 
 To get started, simply sign up for an account on [Comet](https://www.comet.com/signup?from=llm&utm_medium=github&utm_source=llama-index&utm_campaign=opik) and grab your API key.
 
@@ -188,8 +188,8 @@ set_global_handler("opik")
 
 #### Example Guides
 
-- [Llama-index + Opik documentation page](https://www.comet.com/docs/opik/tracing/integrations/llama_index?utm_source=llama-index&utm_medium=github&utm_campaign=opik&utm_content=llama-index-docs-page)
-- [Llama-index integration cookbook](https://www.comet.com/docs/opik/cookbook/llama-index?utm_source=llama-index&utm_medium=github&utm_campaign=opik&utm_content=llama-index-cookbook)
+- [Llama-index + Opik documentation page](https://www.comet.com/docs/opik/tracing/integrations/llama_index?utm_source=llamaindex&utm_medium=docs&utm_campaign=opik)
+- [Llama-index integration cookbook](https://www.comet.com/docs/opik/cookbook/llama-index?utm_source=llama-index&utm_medium=docs&utm_campaign=opik)
 
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 

@@ -4,9 +4,9 @@
 pip install llama-index-callbacks-opik
 ```
 
-This integration allows you to get one-click observability of your LlamaIndex RAG pipelines on [Opik](https://comet.com/site/products/opik/).
+This integration allows you to get one-click observability of your LlamaIndex RAG pipelines on [Opik](https://comet.com/site/products/opik/?utm_medium=docs&utm_source=llamaindex&utm_campaign=opik).
 
-The simplest way to get started and try out Opik is to signup on our [cloud instance](https://comet.com/signup?from=llm).
+The simplest way to get started and try out Opik is to signup on our [cloud instance](https://comet.com/signup?from=llm?utm_medium=docs&utm_source=llamaindex&utm_campaign=opik).
 You can then get you API key from the quickstart page or the user menu and start logging !
 
 You can initialize globally using
