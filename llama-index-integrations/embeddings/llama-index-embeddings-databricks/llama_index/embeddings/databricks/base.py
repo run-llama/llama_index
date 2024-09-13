@@ -60,9 +60,9 @@ class DatabricksEmbedding(BaseEmbedding):
     endpoint: str = Field(description="The Databricks API endpoint.")
 
     max_retries: int = Field(
-        default=10, description="Maximum number of retries.", gte=0
+        default=10, description="Maximum number of retries.", ge=0
     )
-    timeout: float = Field(default=60.0, description="Timeout for each request.", gte=0)
+    timeout: float = Field(default=60.0, description="Timeout for each request.", ge=0)
     default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
     )

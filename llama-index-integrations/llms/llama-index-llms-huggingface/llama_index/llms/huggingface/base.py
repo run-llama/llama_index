@@ -708,8 +708,8 @@ class TextGenerationInference(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description=("The temperature to use for sampling."),
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
@@ -724,10 +724,10 @@ class TextGenerationInference(FunctionCallingLLM):
         ),
     )
     timeout: float = Field(
-        default=120, description=("The timeout to use in seconds."), gte=0
+        default=120, description=("The timeout to use in seconds."), ge=0
     )
     max_retries: int = Field(
-        default=5, description=("The maximum number of API retries."), gte=0
+        default=5, description=("The maximum number of API retries."), ge=0
     )
     headers: Optional[Dict[str, str]] = Field(
         default=None,
