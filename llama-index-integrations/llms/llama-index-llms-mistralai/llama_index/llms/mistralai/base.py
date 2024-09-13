@@ -48,7 +48,7 @@ from mistralai.models import (
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
-DEFAULT_MISTRALAI_MODEL = "mistral-tiny"
+DEFAULT_MISTRALAI_MODEL = "mistral-large-latest"
 DEFAULT_MISTRALAI_ENDPOINT = "https://api.mistral.ai"
 DEFAULT_MISTRALAI_MAX_TOKENS = 512
 
@@ -123,7 +123,7 @@ class MistralAI(FunctionCallingLLM):
     max_retries: int = Field(
         default=5, description="The maximum number of API retries.", gte=0
     )
-    random_seed: str = Field(
+    random_seed: Optional[int] = Field(
         default=None, description="The random seed to use for sampling."
     )
     additional_kwargs: Dict[str, Any] = Field(

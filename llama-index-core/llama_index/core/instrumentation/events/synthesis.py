@@ -15,7 +15,7 @@ class SynthesizeStartEvent(BaseEvent):
     query: QueryType
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "SynthesizeStartEvent"
 
@@ -32,7 +32,7 @@ class SynthesizeEndEvent(BaseEvent):
     response: RESPONSE_TYPE
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "SynthesizeEndEvent"
 
@@ -49,7 +49,7 @@ class GetResponseStartEvent(BaseEvent):
     text_chunks: List[str]
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "GetResponseStartEvent"
 
@@ -61,6 +61,6 @@ class GetResponseEndEvent(BaseEvent):
     # response: RESPONSE_TEXT_TYPE
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "GetResponseEndEvent"

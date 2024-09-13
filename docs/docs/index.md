@@ -2,7 +2,7 @@
 
 # Welcome to LlamaIndex 🦙 !
 
-LlamaIndex is a framework for building context-augmented generative AI applications with [LLMs](https://en.wikipedia.org/wiki/Large_language_model) including [agents](./understanding/agent/basic_agent/) and workflows.
+LlamaIndex is a framework for building context-augmented generative AI applications with [LLMs](https://en.wikipedia.org/wiki/Large_language_model) including [agents](./understanding/agent/basic_agent/) and [workflows](./understanding/workflows/).
 
 <div class="grid cards" markdown>
 
@@ -44,13 +44,13 @@ The most popular example of context-augmentation is [Retrieval-Augmented Generat
 
 ### What are agents?
 
-Agents are LLM-powered knowledge assistants that use tools to perform tasks like research, data extraction, and more. Agents range from simple question-answering to being able to sense, decide and take actions in order to complete tasks.
+[Agents](./understanding/agent/basic_agent/) are LLM-powered knowledge assistants that use tools to perform tasks like research, data extraction, and more. Agents range from simple question-answering to being able to sense, decide and take actions in order to complete tasks.
 
 LlamaIndex provides a framework for building agents including the ability to use RAG pipelines as one of many tools to complete a task.
 
 ### What are workflows?
 
-Workflows are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications.
+[Workflows](./understanding/workflows/) are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications.
 
 ### LlamaIndex is the framework for Context-Augmented LLM Applications
 

@@ -86,6 +86,11 @@ class SageMakerEmbedding(BaseEmbedding):
             model_kwargs=model_kwargs,
             content_handler=content_handler,
             embed_batch_size=embed_batch_size,
+            profile_name=profile_name,
+            region_name=region_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
             pydantic_program_mode=pydantic_program_mode,
             callback_manager=callback_manager,
         )

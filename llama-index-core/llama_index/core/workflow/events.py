@@ -1,4 +1,5 @@
 from typing import Any, Dict, Type
+from _collections_abc import dict_keys, dict_items, dict_values
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
 
@@ -71,7 +72,7 @@ class Event(BaseModel):
 
     def __getattr__(self, __name: str) -> Any:
         if __name in self.__private_attributes__ or __name in self.model_fields:
-            return super().__getattr__(__name)
+            return super().__getattr__(__name)  # type: ignore
         else:
             try:
                 return self._data[__name]
@@ -80,7 +81,7 @@ class Event(BaseModel):
                     f"'{self.__class__.__name__}' object has no attribute '{__name}'"
                 )
 
-    def __setattr__(self, name, value) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         if name in self.__private_attributes__ or name in self.model_fields:
             super().__setattr__(name, value)
         else:
@@ -98,13 +99,13 @@ class Event(BaseModel):
     def __contains__(self, key: str) -> bool:
         return key in self._data
 
-    def keys(self) -> Dict[str, Any].keys:
+    def keys(self) -> "dict_keys[str, Any]":
         return self._data.keys()
 
-    def values(self) -> Dict[str, Any].values:
+    def values(self) -> "dict_values[str, Any]":
         return self._data.values()
 
-    def items(self) -> Dict[str, Any].items:
+    def items(self) -> "dict_items[str, Any]":
         return self._data.items()
 
     def __len__(self) -> int:

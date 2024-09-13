@@ -181,7 +181,10 @@ class MetadataFilters(BaseModel):
         """Convert MetadataFilters to legacy ExactMatchFilters."""
         filters = []
         for filter in self.filters:
-            if filter.operator != FilterOperator.EQ:
+            if (
+                isinstance(filter, MetadataFilters)
+                or filter.operator != FilterOperator.EQ
+            ):
                 raise ValueError(
                     "Vector Store only supports exact match filters. "
                     "Please use ExactMatchFilter or FilterOperator.EQ instead."
@@ -349,14 +352,14 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     @abstractmethod
     def add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         **kwargs: Any,
     ) -> List[str]:
         """Add nodes to vector store."""
 
     async def async_add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         **kwargs: Any,
     ) -> List[str]:
         """

@@ -52,10 +52,12 @@ nav:
           - A basic workflow: ./understanding/workflows/basic_flow.md
           - Branches and loops: ./understanding/workflows/branches_and_loops.md
           - Maintaining state: ./understanding/workflows/state.md
+          - Streaming events: ./understanding/workflows/stream.md
           - Concurrent execution: ./understanding/workflows/concurrent_execution.md
           - Subclassing workflows: ./understanding/workflows/subclass.md
           - Nested workflows: ./understanding/workflows/nested.md
           - Observability: ./understanding/workflows/observability.md
+          - Unbound syntax: ./understanding/workflows/unbound_functions.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
@@ -102,6 +104,7 @@ nav:
           - ./examples/agent/mistral_agent.ipynb
           - ./examples/agent/multi_document_agents-v1.ipynb
           - ./examples/agent/multi_document_agents.ipynb
+          - ./examples/agent/nvidia_agent.ipynb
           - ./examples/agent/openai_agent.ipynb
           - ./examples/agent/openai_agent_context_retrieval.ipynb
           - ./examples/agent/openai_agent_lengthy_tools.ipynb
@@ -119,6 +122,7 @@ nav:
           - ./examples/agent/react_agent_with_query_engine.ipynb
           - ./examples/agent/return_direct_agent.ipynb
           - ./examples/agent/structured_planner.ipynb
+          - ./examples/agents/nvidia_agent.ipynb
       - Chat Engines:
           - ./examples/chat_engine/chat_engine_best.ipynb
           - ./examples/chat_engine/chat_engine_condense_plus_context.ipynb
@@ -141,6 +145,15 @@ nav:
           - ./examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
           - ./examples/cookbooks/mistralai.ipynb
           - ./examples/cookbooks/mixedbread_reranker.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-2/Components_Of_LlamaIndex.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-3/Evaluating_RAG_Systems.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-4/Ingestion_Pipeline.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-4/Metadata_Extraction.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-5/Observability.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-6/Agents.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-6/Router_And_SubQuestion_QueryEngine.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-7/Multi_Modal_RAG_System.ipynb
+          - ./examples/cookbooks/oreilly_course_cookbooks/Module-8/Advanced_RAG_with_LlamaParse.ipynb
           - ./examples/cookbooks/prometheus2_cookbook.ipynb
       - Customization:
           - ./examples/customization/llms/AzureOpenAI.ipynb
@@ -264,6 +277,7 @@ nav:
           - ./examples/evaluation/semantic_similarity_eval.ipynb
       - Finetuning:
           - ./examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning.ipynb
+          - ./examples/finetuning/embeddings/finetune_corpus_embedding.ipynb
           - ./examples/finetuning/embeddings/finetune_embedding.ipynb
           - ./examples/finetuning/embeddings/finetune_embedding_adapter.ipynb
           - ./examples/finetuning/gradient/gradient_fine_tuning.ipynb
@@ -334,6 +348,7 @@ nav:
           - ./examples/llm/nvidia.ipynb
           - ./examples/llm/nvidia_nim.ipynb
           - ./examples/llm/nvidia_tensorrt.ipynb
+          - ./examples/llm/nvidia_text_completion.ipynb
           - ./examples/llm/nvidia_triton.ipynb
           - ./examples/llm/oci_genai.ipynb
           - ./examples/llm/octoai.ipynb
@@ -472,6 +487,7 @@ nav:
           - ./examples/output_parsing/llm_program.ipynb
           - ./examples/output_parsing/lmformatenforcer_pydantic_program.ipynb
           - ./examples/output_parsing/lmformatenforcer_regular_expressions.ipynb
+          - ./examples/output_parsing/nvidia_output_parsing.ipynb
           - ./examples/output_parsing/openai_pydantic_program.ipynb
           - ./examples/output_parsing/openai_sub_question.ipynb
       - Param Optimizer:
@@ -573,6 +589,7 @@ nav:
           - ./examples/vector_stores/AwadbDemo.ipynb
           - ./examples/vector_stores/AzureAISearchIndexDemo.ipynb
           - ./examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb
+          - ./examples/vector_stores/AzureCosmosDBNoSqlDemo.ipynb
           - ./examples/vector_stores/BagelAutoRetriever.ipynb
           - ./examples/vector_stores/BagelIndexDemo.ipynb
           - ./examples/vector_stores/BaiduVectorDBIndexDemo.ipynb
@@ -624,6 +641,7 @@ nav:
           - ./examples/vector_stores/SimpleIndexDemoMMR.ipynb
           - ./examples/vector_stores/SimpleIndexOnS3.ipynb
           - ./examples/vector_stores/SupabaseVectorIndexDemo.ipynb
+          - ./examples/vector_stores/TablestoreDemo.ipynb
           - ./examples/vector_stores/TairIndexDemo.ipynb
           - ./examples/vector_stores/TencentVectorDBIndexDemo.ipynb
           - ./examples/vector_stores/TiDBVector.ipynb
@@ -638,6 +656,7 @@ nav:
           - ./examples/vector_stores/WeaviateIndexDemo.ipynb
           - ./examples/vector_stores/WeaviateIndex_auto_retriever.ipynb
           - ./examples/vector_stores/WeaviateIndex_metadata_filter.ipynb
+          - ./examples/vector_stores/WordLiftDemo.ipynb
           - ./examples/vector_stores/ZepIndexDemo.ipynb
           - ./examples/vector_stores/chroma_auto_retriever.ipynb
           - ./examples/vector_stores/chroma_metadata_filter.ipynb
@@ -652,15 +671,18 @@ nav:
           - ./examples/vector_stores/qdrant_hybrid.ipynb
       - Workflow:
           - ./examples/workflow/JSONalyze_query_engine.ipynb
+          - ./examples/workflow/advanced_text_to_sql.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
           - ./examples/workflow/function_calling_agent.ipynb
           - ./examples/workflow/long_rag_pack.ipynb
+          - ./examples/workflow/multi_step_query_engine.ipynb
           - ./examples/workflow/multi_strategy_workflow.ipynb
           - ./examples/workflow/parallel_execution.ipynb
           - ./examples/workflow/rag.ipynb
           - ./examples/workflow/react_agent.ipynb
           - ./examples/workflow/reflection.ipynb
+          - ./examples/workflow/router_query_engine.ipynb
           - ./examples/workflow/self_discover_workflow.ipynb
           - ./examples/workflow/sub_question_query_engine.ipynb
           - ./examples/workflow/workflows_cookbook.ipynb
@@ -769,6 +791,7 @@ nav:
           - ./module_guides/observability/index.md
           - ./module_guides/observability/instrumentation.md
       - Settings: ./module_guides/supporting_modules/settings.md
+      - Workflows: ./module_guides/workflow/index.md
   - Advanced Topics:
       - ./optimizing/production_rag.md
       - ./optimizing/basic_strategies/basic_strategies.md
@@ -818,6 +841,7 @@ nav:
       - Embeddings:
           - ./api_reference/embeddings/adapter.md
           - ./api_reference/embeddings/alephalpha.md
+          - ./api_reference/embeddings/alibabacloud_aisearch.md
           - ./api_reference/embeddings/anyscale.md
           - ./api_reference/embeddings/azure_inference.md
           - ./api_reference/embeddings/azure_openai.md
@@ -867,6 +891,7 @@ nav:
           - ./api_reference/embeddings/upstage.md
           - ./api_reference/embeddings/vertex.md
           - ./api_reference/embeddings/voyageai.md
+          - ./api_reference/embeddings/xinference.md
           - ./api_reference/embeddings/yandexgpt.md
       - Evaluation:
           - ./api_reference/evaluation/answer_relevancy.md
@@ -914,6 +939,7 @@ nav:
           - ./api_reference/llms/OptimumIntelLLM.md
           - ./api_reference/llms/ai21.md
           - ./api_reference/llms/alephalpha.md
+          - ./api_reference/llms/alibabacloud_aisearch.md
           - ./api_reference/llms/anthropic.md
           - ./api_reference/llms/anyscale.md
           - ./api_reference/llms/azure_inference.md
@@ -1087,6 +1113,7 @@ nav:
           - ./api_reference/multi_modal_llms/openai.md
           - ./api_reference/multi_modal_llms/replicate.md
       - Node Parsers & Text Splitters:
+          - ./api_reference/node_parser/alibabacloud_aisearch.md
           - ./api_reference/node_parser/dashscope.md
           - ./api_reference/node_parsers/code.md
           - ./api_reference/node_parsers/hierarchical.md
@@ -1104,6 +1131,7 @@ nav:
       - Node Postprocessors:
           - ./api_reference/postprocessor/NER_PII.md
           - ./api_reference/postprocessor/PII.md
+          - ./api_reference/postprocessor/alibabacloud_aisearch_rerank.md
           - ./api_reference/postprocessor/auto_prev_next.md
           - ./api_reference/postprocessor/cohere_rerank.md
           - ./api_reference/postprocessor/colbert_rerank.md
@@ -1131,6 +1159,7 @@ nav:
           - ./api_reference/postprocessor/tei_rerank.md
           - ./api_reference/postprocessor/time_weighted.md
           - ./api_reference/postprocessor/voyageai_rerank.md
+          - ./api_reference/postprocessor/xinference_rerank.md
       - Object Stores:
           - ./api_reference/objects/index.md
       - Output Parsers:
@@ -1206,6 +1235,7 @@ nav:
           - ./api_reference/readers/airbyte_typeform.md
           - ./api_reference/readers/airbyte_zendesk_support.md
           - ./api_reference/readers/airtable.md
+          - ./api_reference/readers/alibabacloud_aisearch.md
           - ./api_reference/readers/apify.md
           - ./api_reference/readers/arango_db.md
           - ./api_reference/readers/arxiv.md
@@ -1379,9 +1409,12 @@ nav:
           - ./api_reference/retrievers/you.md
       - Schema:
           - ./api_reference/schema/index.md
+      - Selectors:
+          - ./api_reference/selectors/notdiamond.md
       - Storage:
           - Chat Store:
               - ./api_reference/storage/chat_store/azure.md
+              - ./api_reference/storage/chat_store/dynamodb.md
               - ./api_reference/storage/chat_store/index.md
               - ./api_reference/storage/chat_store/redis.md
               - ./api_reference/storage/chat_store/simple.md
@@ -1435,6 +1468,7 @@ nav:
               - ./api_reference/storage/vector_store/awsdocdb.md
               - ./api_reference/storage/vector_store/azureaisearch.md
               - ./api_reference/storage/vector_store/azurecosmosmongo.md
+              - ./api_reference/storage/vector_store/azurecosmosnosql.md
               - ./api_reference/storage/vector_store/bagel.md
               - ./api_reference/storage/vector_store/baiduvectordb.md
               - ./api_reference/storage/vector_store/cassandra.md
@@ -1460,6 +1494,7 @@ nav:
               - ./api_reference/storage/vector_store/lancedb.md
               - ./api_reference/storage/vector_store/lantern.md
               - ./api_reference/storage/vector_store/lindorm.md
+              - ./api_reference/storage/vector_store/mariadb.md
               - ./api_reference/storage/vector_store/metal.md
               - ./api_reference/storage/vector_store/milvus.md
               - ./api_reference/storage/vector_store/mongodb.md
@@ -1477,6 +1512,7 @@ nav:
               - ./api_reference/storage/vector_store/simple.md
               - ./api_reference/storage/vector_store/singlestoredb.md
               - ./api_reference/storage/vector_store/supabase.md
+              - ./api_reference/storage/vector_store/tablestore.md
               - ./api_reference/storage/vector_store/tair.md
               - ./api_reference/storage/vector_store/tencentvectordb.md
               - ./api_reference/storage/vector_store/tidbvector.md
@@ -1546,6 +1582,7 @@ nav:
           - ./api_reference/workflow/context.md
           - ./api_reference/workflow/events.md
           - ./api_reference/workflow/workflow.md
+          - ./api_reference/workflow/retry_policy.md
   - Open-Source Community:
       - Integrations: ./community/integrations.md
       - Full Stack Projects: ./community/full_stack_projects.md
@@ -2139,6 +2176,18 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-gigachat
             - ../llama-index-integrations/llms/llama-index-llms-gigachat
             - ../llama-index-integrations/callbacks/llama-index-callbacks-opik
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-xinference
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-xinference-rerank
+            - ../llama-index-integrations/selectors/llama-index-selectors-notdiamond
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-mariadb
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-tablestore
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-azurecosmosnosql
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-alibabacloud-aisearch
+            - ../llama-index-integrations/node_parser/llama-index-node-parser-alibabacloud-aisearch
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-alibabacloud-aisearch-rerank
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-dynamodb
+            - ../llama-index-integrations/readers/llama-index-readers-alibabacloud-aisearch
+            - ../llama-index-integrations/llms/llama-index-llms-alibabacloud-aisearch
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

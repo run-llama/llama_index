@@ -28,7 +28,7 @@ def create_global_handler(
                 "Please install it using `pip install llama-index-callbacks-wandb`"
             )
 
-        handler: BaseCallbackHandler = WandbCallbackHandler(**eval_params)
+        handler = WandbCallbackHandler(**eval_params)
     elif eval_mode == "openinference":
         try:
             from llama_index.callbacks.openinference import (

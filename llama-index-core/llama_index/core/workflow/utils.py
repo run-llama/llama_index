@@ -13,13 +13,12 @@ from typing import (
 
 # handle python version compatibility
 try:
-    from types import UnionType
-except ImportError:
-    UnionType = Union
+    from types import UnionType  # type: ignore[attr-defined]
+except ImportError:  # pragma: no cover
+    from typing import Union as UnionType
 
 from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
-from .context import Context
 from .events import Event, EventType
 from .errors import WorkflowValidationError
 
@@ -57,7 +56,7 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
             continue
 
         # Get name and type of the Context param
-        if t.annotation == Context:
+        if hasattr(t.annotation, "__name__") and t.annotation.__name__ == "Context":
             context_parameter = name
             continue
 
@@ -156,7 +155,7 @@ def _get_return_types(func: Callable) -> List[Any]:
         return [return_hint]
 
 
-def is_free_function(qualname: str):
+def is_free_function(qualname: str) -> bool:
     """Determines whether a certain qualified name points to a free function.
 
     The strategy should be able to spot nested functions, for details see PEP-3155.

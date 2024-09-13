@@ -93,6 +93,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "response_synthesizers": "Response Synthesizers",
     "retrievers": "Retrievers",
     "schema": "Schema",
+    "selectors": "Selectors",
     "storage": "Storage",
     "tools": "Tools",
     "workflow": "Workflow",

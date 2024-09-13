@@ -75,7 +75,7 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
         """
         elements: List[Element] = []
         currentElement = None
-        page_number = node_metadata.get("page")
+        page_number = node_metadata.get("page") if node_metadata is not None else 0
 
         if mode == "json" and node_metadata is not None:
             json_items = node_metadata.get("items") or []
@@ -202,6 +202,8 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
 
         for idx, element in enumerate(elements):
             if element.type == "table":
+                assert element.markdown is not None
+
                 should_keep = True
                 perfect_table = True
 
@@ -224,6 +226,7 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
                 # if the element is a table, convert it to a dataframe
                 if should_keep:
                     if perfect_table:
+                        assert element.markdown is not None
                         table = md_to_df(element.markdown)
 
                         elements[idx] = Element(
