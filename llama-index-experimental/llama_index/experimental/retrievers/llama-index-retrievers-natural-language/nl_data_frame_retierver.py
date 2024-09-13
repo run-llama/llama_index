@@ -52,6 +52,21 @@ DEFAULT_USE_DECTECTION_PROMPT = PromptTemplate(
     prompt_type=PromptType.CUSTOM,
 )
 
+DEFAULT_RESULT_RANKING_TMPL = """\
+given the schema:{schema}\
+and the query: {query}\
+how relevant is the schema?\
+the relevance must be a number between 0 and 1 where 1 indicates that the schema is able to model the domain of the query and 0 indicates that the schema is not able to model the domain of the query.\
+
+produce only the numeric value and nothing else.\
+relevance:
+"""
+
+DEFAULT_RESULT_RANKING_PROMPTROMPT = PromptTemplate(
+    DEFAULT_RESULT_RANKING_TMPL,
+    prompt_type=PromptType.CUSTOM,
+)
+
 
 class NLDataframeRetriever(BaseRetriever):
     def __init__(
@@ -62,6 +77,7 @@ class NLDataframeRetriever(BaseRetriever):
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         schema_to_owl_prompt: Optional[BasePromptTemplate] = None,
         schema_use_detection_prompt: Optional[BasePromptTemplate] = None,
+        result_ranking_prompt: Optional[BasePromptTemplate] = None,
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
@@ -69,6 +85,9 @@ class NLDataframeRetriever(BaseRetriever):
         self._llm = resolve_llm(llm)
         self._similarity_top_k = similarity_top_k
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
+        self._result_ranking_prompt = (
+            result_ranking_prompt or DEFAULT_RESULT_RANKING_PROMPTROMPT
+        )
         self._schema_to_owl_prompt = (
             schema_to_owl_prompt or DEFAULT_OWL_GENERATOR_PROMPT
         )
@@ -142,16 +161,9 @@ class NLDataframeRetriever(BaseRetriever):
         )
 
         rank = self._llm.complete(
-            f"""
-given the schema:{tables_desc_str}
-and the query: {query_bundle.query_str}
-how relevant is the schema?
-the relevance must be a number between 0 and 1 where 1 indicates that the schema is able to model the domain of the query and 0 indicates that the schema is not able to model the domain of the query.
-
-produce only the numeric value and nothing else.
-relevance:
-
-        """
+            self._result_ranking_prompt,
+            query=query_bundle.query_str,
+            schema=tables_desc_str,
         )
 
         score = 1.0
