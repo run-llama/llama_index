@@ -1,8 +1,17 @@
-import asyncio
 import logging
 from typing import Any, List, Optional, Tuple
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    MessageRole,
+)
+from llama_index.core.base.response.schema import (
+    AsyncStreamingResponse,
+    StreamingResponse,
+)
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
@@ -16,10 +25,10 @@ from llama_index.core.base.llms.generic_utils import messages_to_history_str
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.prompts.base import PromptTemplate
+from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate
+from llama_index.core.response_synthesizers import CompactAndRefine
 from llama_index.core.schema import MetadataMode, NodeWithScore
 from llama_index.core.settings import Settings
-from llama_index.core.types import Thread
 from llama_index.core.utilities.token_counting import TokenCounter
 
 logger = logging.getLogger(__name__)
@@ -35,6 +44,23 @@ DEFAULT_CONTEXT_PROMPT_TEMPLATE = """
   {context_str}
 
   Instruction: Based on the above documents, provide a detailed answer for the user question below.
+  Answer "don't know" if not present in the document.
+  """
+
+DEFAULT_CONTEXT_REFINE_PROMPT_TEMPLATE = """
+  The following is a friendly conversation between a user and an AI assistant.
+  The assistant is talkative and provides lots of specific details from its context.
+  If the assistant does not know the answer to a question, it truthfully says it
+  does not know.
+
+  Here are the relevant documents for the context:
+
+  {context_str}
+
+  Existing Answer:
+  {existing_answer}
+
+  Instruction: Refine the existing answer using the provided context to assist the user.
   Answer "don't know" if not present in the document.
   """
 
@@ -63,6 +89,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         llm: LLM,
         memory: BaseMemory,
         context_prompt: Optional[str] = None,
+        context_refine_prompt: Optional[str] = None,
         condense_prompt: Optional[str] = None,
         system_prompt: Optional[str] = None,
         skip_condense: bool = False,
@@ -76,6 +103,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         self._context_prompt_template = (
             context_prompt or DEFAULT_CONTEXT_PROMPT_TEMPLATE
         )
+        self._context_refine_prompt_template = (
+            context_refine_prompt or DEFAULT_CONTEXT_REFINE_PROMPT_TEMPLATE
+        )
         condense_prompt_str = condense_prompt or DEFAULT_CONDENSE_PROMPT_TEMPLATE
         self._condense_prompt_template = PromptTemplate(condense_prompt_str)
         self._system_prompt = system_prompt
@@ -87,6 +117,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
 
         self._token_counter = TokenCounter()
         self._verbose = verbose
+        self._synthesizer_cls = CompactAndRefine
 
     @classmethod
     def from_defaults(
@@ -97,6 +128,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         memory: Optional[BaseMemory] = None,
         system_prompt: Optional[str] = None,
         context_prompt: Optional[str] = None,
+        context_refine_prompt: Optional[str] = None,
         condense_prompt: Optional[str] = None,
         skip_condense: bool = False,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
@@ -116,6 +148,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             llm=llm,
             memory=memory,
             context_prompt=context_prompt,
+            context_refine_prompt=context_refine_prompt,
             condense_prompt=condense_prompt,
             skip_condense=skip_condense,
             callback_manager=Settings.callback_manager,
@@ -134,11 +167,11 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
-        return self._llm.predict(
-            self._condense_prompt_template,
-            question=latest_message,
-            chat_history=chat_history_str,
+        llm_input = self._condense_prompt_template.format(
+            chat_history=chat_history_str, question=latest_message
         )
+
+        return str(self._llm.complete(llm_input))
 
     async def _acondense_question(
         self, chat_history: List[ChatMessage], latest_message: str
@@ -150,41 +183,105 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
 
-        return await self._llm.apredict(
-            self._condense_prompt_template,
-            question=latest_message,
-            chat_history=chat_history_str,
+        llm_input = self._condense_prompt_template.format(
+            chat_history=chat_history_str, question=latest_message
         )
 
-    def _retrieve_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
-        """Build context for a message from retriever."""
+        return str(await self._llm.acomplete(llm_input))
+
+    def _get_nodes(self, message: str) -> List[NodeWithScore]:
+        """Generate context information from a message."""
         nodes = self._retriever.retrieve(message)
         for postprocessor in self._node_postprocessors:
             nodes = postprocessor.postprocess_nodes(
                 nodes, query_bundle=QueryBundle(message)
             )
 
-        context_str = "\n\n".join(
-            [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
-        )
-        return context_str, nodes
+        return nodes
 
-    async def _aretrieve_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
-        """Build context for a message from retriever."""
+    async def _aget_nodes(self, message: str) -> List[NodeWithScore]:
+        """Generate context information from a message."""
         nodes = await self._retriever.aretrieve(message)
         for postprocessor in self._node_postprocessors:
             nodes = postprocessor.postprocess_nodes(
                 nodes, query_bundle=QueryBundle(message)
             )
 
-        context_str = "\n\n".join(
-            [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
+        return nodes
+
+    def _get_prefix_qa_messages_with_context(
+        self, chat_history: List[ChatMessage]
+    ) -> List[ChatMessage]:
+        """Get the prefix messages with context."""
+        context_str_w_sys_prompt = (
+            self._context_prompt_template + self._system_prompt.strip()
         )
-        return context_str, nodes
+        return [
+            ChatMessage(
+                content=context_str_w_sys_prompt, role=self._llm.metadata.system_role
+            ),
+            *chat_history,
+            ChatMessage(content="{query_str}", role=MessageRole.USER),
+        ]
+
+    def _get_prefix_refine_messages_with_context(
+        self, chat_history: List[ChatMessage]
+    ) -> List[ChatMessage]:
+        """Get the prefix messages with context."""
+        # ensure we grab the user-configured system prompt
+        context_str_w_sys_prompt = (
+            self._context_refine_prompt_template + self._system_prompt.strip()
+        )
+
+        return [
+            ChatMessage(
+                content=context_str_w_sys_prompt, role=self._llm.metadata.system_role
+            ),
+            *chat_history,
+            ChatMessage(content="{query_str}", role=MessageRole.USER),
+        ]
+
+    def _get_response_synthesizer(
+        self, chat_history: List[ChatMessage], streaming: bool = False
+    ) -> CompactAndRefine:
+        qa_messages = self._get_prefix_qa_messages_with_context(chat_history)
+        refine_messages = self._get_prefix_refine_messages_with_context(chat_history)
+        return self._synthesizer_cls(
+            llm=self._llm,
+            callback_manager=self.callback_manager,
+            text_qa_template=ChatPromptTemplate.from_messages(qa_messages),
+            refine_template=ChatPromptTemplate.from_messages(refine_messages),
+            streaming=streaming,
+        )
+
+    def _get_current_chat_history(
+        self, input_msg: str, nodes: List[NodeWithScore]
+    ) -> List[ChatMessage]:
+        # get the current memory buffer safely
+        if hasattr(self._memory, "tokenizer_fn"):
+            prefix_messages_token_count = len(
+                self._memory.tokenizer_fn(
+                    " ".join(
+                        [
+                            (node.get_content(metadata_mode=MetadataMode.LLM))
+                            for node in nodes
+                        ]
+                    )
+                )
+            )
+        else:
+            prefix_messages_token_count = 0
+
+        return self._memory.get(
+            input=input_msg, initial_token_count=prefix_messages_token_count
+        )
 
     def _run_c3(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> Tuple[List[ChatMessage], ToolOutput, List[NodeWithScore]]:
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        streaming: bool = False,
+    ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore]]:
         if chat_history is not None:
             self._memory.set(chat_history)
 
@@ -196,42 +293,29 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         if self._verbose:
             print(f"Condensed question: {condensed_question}")
 
-        # Build context for the standalone question from a retriever
-        context_str, context_nodes = self._retrieve_context(condensed_question)
+        # get the context nodes using the condensed question
+        context_nodes = self._get_nodes(condensed_question)
         context_source = ToolOutput(
             tool_name="retriever",
-            content=context_str,
+            content=str(context_nodes),
             raw_input={"message": condensed_question},
-            raw_output=context_str,
-        )
-        logger.debug(f"Context: {context_str}")
-        if self._verbose:
-            print(f"Context: {context_str}")
-
-        system_message_content = self._context_prompt_template.format(
-            context_str=context_str
-        )
-        if self._system_prompt:
-            system_message_content = self._system_prompt + "\n" + system_message_content
-
-        system_message = ChatMessage(
-            content=system_message_content, role=self._llm.metadata.system_role
+            raw_output=context_nodes,
         )
 
-        initial_token_count = self._token_counter.estimate_tokens_in_messages(
-            [system_message]
+        # build the response synthesizer
+        chat_history = self._get_current_chat_history(condensed_question, context_nodes)
+        response_synthesizer = self._get_response_synthesizer(
+            chat_history, streaming=streaming
         )
 
-        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
-        chat_messages = [
-            system_message,
-            *self._memory.get(initial_token_count=initial_token_count),
-        ]
-        return chat_messages, context_source, context_nodes
+        return response_synthesizer, context_source, context_nodes
 
     async def _arun_c3(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> Tuple[List[ChatMessage], ToolOutput, List[NodeWithScore]]:
+        self,
+        message: str,
+        chat_history: Optional[List[ChatMessage]] = None,
+        streaming: bool = False,
+    ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore]]:
         if chat_history is not None:
             self._memory.set(chat_history)
 
@@ -243,55 +327,40 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         if self._verbose:
             print(f"Condensed question: {condensed_question}")
 
-        # Build context for the standalone question from a retriever
-        context_str, context_nodes = await self._aretrieve_context(condensed_question)
+        # get the context nodes using the condensed question
+        context_nodes = await self._aget_nodes(condensed_question)
         context_source = ToolOutput(
             tool_name="retriever",
-            content=context_str,
+            content=str(context_nodes),
             raw_input={"message": condensed_question},
-            raw_output=context_str,
-        )
-        logger.debug(f"Context: {context_str}")
-        if self._verbose:
-            print(f"Context: {context_str}")
-
-        system_message_content = self._context_prompt_template.format(
-            context_str=context_str
-        )
-        if self._system_prompt:
-            system_message_content = self._system_prompt + "\n" + system_message_content
-
-        system_message = ChatMessage(
-            content=system_message_content, role=self._llm.metadata.system_role
+            raw_output=context_nodes,
         )
 
-        initial_token_count = self._token_counter.estimate_tokens_in_messages(
-            [system_message]
+        # build the response synthesizer
+        chat_history = self._get_current_chat_history(condensed_question, context_nodes)
+        response_synthesizer = self._get_response_synthesizer(
+            chat_history, streaming=streaming
         )
 
-        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
-        chat_messages = [
-            system_message,
-            *self._memory.get(initial_token_count=initial_token_count),
-        ]
-
-        return chat_messages, context_source, context_nodes
+        return response_synthesizer, context_source, context_nodes
 
     @trace_method("chat")
     def chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_messages, context_source, context_nodes = self._run_c3(
-            message, chat_history
-        )
+        synthesizer, context_source, context_nodes = self._run_c3(message, chat_history)
 
-        # pass the context, system prompt and user message as chat to LLM to generate a response
-        chat_response = self._llm.chat(chat_messages)
-        assistant_message = chat_response.message
+        response = synthesizer.synthesize(message, context_nodes)
+
+        user_message = ChatMessage(content=message, role=MessageRole.USER)
+        assistant_message = ChatMessage(
+            content=str(response), role=MessageRole.ASSISTANT
+        )
+        self._memory.put(user_message)
         self._memory.put(assistant_message)
 
         return AgentChatResponse(
-            response=str(assistant_message.content),
+            response=str(response),
             sources=[context_source],
             source_nodes=context_nodes,
         )
@@ -300,38 +369,56 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     def stream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_messages, context_source, context_nodes = self._run_c3(
-            message, chat_history
+        synthesizer, context_source, context_nodes = self._run_c3(
+            message, chat_history, streaming=True
         )
 
-        # pass the context, system prompt and user message as chat to LLM to generate a response
-        chat_response = StreamingAgentChatResponse(
-            chat_stream=self._llm.stream_chat(chat_messages),
+        response = synthesizer.synthesize(message, context_nodes)
+
+        def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
+            full_response = ""
+            for token in response.response_gen:
+                full_response += token
+                yield ChatResponse(
+                    message=ChatMessage(
+                        content=full_response, role=MessageRole.ASSISTANT
+                    ),
+                    delta=token,
+                )
+
+            user_message = ChatMessage(content=message, role=MessageRole.USER)
+            assistant_message = ChatMessage(
+                content=full_response, role=MessageRole.ASSISTANT
+            )
+            self._memory.put(user_message)
+            self._memory.put(assistant_message)
+
+        return StreamingAgentChatResponse(
+            chat_stream=wrapped_gen(response),
             sources=[context_source],
             source_nodes=context_nodes,
+            is_writing_to_memory=False,
         )
-        thread = Thread(
-            target=chat_response.write_response_to_history, args=(self._memory,)
-        )
-        thread.start()
-
-        return chat_response
 
     @trace_method("chat")
     async def achat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> AgentChatResponse:
-        chat_messages, context_source, context_nodes = await self._arun_c3(
+        synthesizer, context_source, context_nodes = await self._arun_c3(
             message, chat_history
         )
 
-        # pass the context, system prompt and user message as chat to LLM to generate a response
-        chat_response = await self._llm.achat(chat_messages)
-        assistant_message = chat_response.message
+        response = await synthesizer.asynthesize(message, context_nodes)
+
+        user_message = ChatMessage(content=message, role=MessageRole.USER)
+        assistant_message = ChatMessage(
+            content=str(response), role=MessageRole.ASSISTANT
+        )
+        self._memory.put(user_message)
         self._memory.put(assistant_message)
 
         return AgentChatResponse(
-            response=str(assistant_message.content),
+            response=str(response),
             sources=[context_source],
             source_nodes=context_nodes,
         )
@@ -340,18 +427,36 @@ class CondensePlusContextChatEngine(BaseChatEngine):
     async def astream_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
     ) -> StreamingAgentChatResponse:
-        chat_messages, context_source, context_nodes = await self._arun_c3(
-            message, chat_history
+        synthesizer, context_source, context_nodes = await self._arun_c3(
+            message, chat_history, streaming=True
         )
 
-        # pass the context, system prompt and user message as chat to LLM to generate a response
-        chat_response = StreamingAgentChatResponse(
-            achat_stream=await self._llm.astream_chat(chat_messages),
+        response = await synthesizer.asynthesize(message, context_nodes)
+
+        async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
+            full_response = ""
+            async for token in response.async_response_gen():
+                full_response += token
+                yield ChatResponse(
+                    message=ChatMessage(
+                        content=full_response, role=MessageRole.ASSISTANT
+                    ),
+                    delta=token,
+                )
+
+            user_message = ChatMessage(content=message, role=MessageRole.USER)
+            assistant_message = ChatMessage(
+                content=full_response, role=MessageRole.ASSISTANT
+            )
+            self._memory.put(user_message)
+            self._memory.put(assistant_message)
+
+        return StreamingAgentChatResponse(
+            achat_stream=wrapped_gen(response),
             sources=[context_source],
             source_nodes=context_nodes,
+            is_writing_to_memory=False,
         )
-        asyncio.create_task(chat_response.awrite_response_to_history(self._memory))
-        return chat_response
 
     def reset(self) -> None:
         # Clear chat history
