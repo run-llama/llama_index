@@ -60,4 +60,3 @@ def test_image_node_hash() -> None:
     node3 = ImageNode(image_url="base64", id_="id")
     node4 = ImageNode(image_url="base64", id_="id2")
     assert node3.hash == node4.hash
-    
