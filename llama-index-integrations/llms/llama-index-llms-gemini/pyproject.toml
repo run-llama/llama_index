@@ -27,7 +27,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-gemini"
 readme = "README.md"
-version = "0.3.4"
+version = "0.3.5"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
