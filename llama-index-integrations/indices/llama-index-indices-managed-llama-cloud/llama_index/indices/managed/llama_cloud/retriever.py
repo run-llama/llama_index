@@ -15,14 +15,16 @@ import urllib.parse
 import base64
 
 
-
-def _get_page_screenshot(client: LlamaCloud, file_id: str, page_index: int, project_id: str) -> str:
+def _get_page_screenshot(
+    client: LlamaCloud, file_id: str, page_index: int, project_id: str
+) -> str:
     """Get the page screenshot."""
     # TODO: this currently uses requests, should be replaced with the client
     _response = client._client_wrapper.httpx_client.request(
         "GET",
         urllib.parse.urljoin(
-            f"{client._client_wrapper.get_base_url()}/", f"api/v1/files/{file_id}/page_screenshots/{page_index}"
+            f"{client._client_wrapper.get_base_url()}/",
+            f"api/v1/files/{file_id}/page_screenshots/{page_index}",
         ),
         params=remove_none_from_dict({"project_id": project_id}),
         headers=client._client_wrapper.get_headers(),
@@ -32,7 +34,6 @@ def _get_page_screenshot(client: LlamaCloud, file_id: str, page_index: int, proj
         return _response.content
     else:
         raise ApiError(status_code=_response.status_code, body=_response.text)
-
 
 
 class LlamaCloudRetriever(BaseRetriever):
@@ -84,7 +85,9 @@ class LlamaCloudRetriever(BaseRetriever):
         self._filters = filters if filters is not None else OMIT
         self._retrieval_mode = retrieval_mode if retrieval_mode is not None else OMIT
         self._files_top_k = files_top_k if files_top_k is not None else OMIT
-        self._retrieve_image_nodes = retrieve_image_nodes if retrieve_image_nodes is not None else OMIT
+        self._retrieve_image_nodes = (
+            retrieve_image_nodes if retrieve_image_nodes is not None else OMIT
+        )
 
         super().__init__(
             callback_manager=kwargs.get("callback_manager", None),
@@ -110,12 +113,12 @@ class LlamaCloudRetriever(BaseRetriever):
                 # TODO: this is a hack to use requests, should be replaced with the client
                 image_bytes = _get_page_screenshot(
                     client=self._client,
-                    file_id=raw_image_node.node.file_id, 
+                    file_id=raw_image_node.node.file_id,
                     page_index=raw_image_node.node.page_index,
-                    project_id=self.project_id
+                    project_id=self.project_id,
                 )
                 # Convert image bytes to base64 encoded string
-                image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+                image_base64 = base64.b64encode(image_bytes).decode("utf-8")
                 image_node_with_score = NodeWithScore(
                     node=ImageNode(image=image_base64), score=raw_image_node.score
                 )
@@ -126,7 +129,6 @@ class LlamaCloudRetriever(BaseRetriever):
                     "Image nodes were retrieved but `retrieve_image_nodes` was set to False."
                 )
         return image_nodes
-
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve from the platform."""
@@ -168,7 +170,7 @@ class LlamaCloudRetriever(BaseRetriever):
 
         result_nodes = self._result_nodes_to_node_with_score(results.retrieval_nodes)
         result_nodes.extend(self._image_nodes_to_node_with_score(results.image_nodes))
-        
+
         return result_nodes
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
