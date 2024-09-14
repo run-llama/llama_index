@@ -51,7 +51,7 @@ class SparseEmbeddingStartEvent(BaseEvent):
     @classmethod
     def class_name(cls) -> str:
         """Class name."""
-        return "EmbeddingStartEvent"
+        return "SparseEmbeddingStartEvent"
 
 
 class SparseEmbeddingEndEvent(BaseEvent):
@@ -69,4 +69,4 @@ class SparseEmbeddingEndEvent(BaseEvent):
     @classmethod
     def class_name(cls) -> str:
         """Class name."""
-        return "EmbeddingEndEvent"
+        return "SparseEmbeddingEndEvent"

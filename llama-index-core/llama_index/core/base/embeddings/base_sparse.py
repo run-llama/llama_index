@@ -1,4 +1,4 @@
-"""Base embeddings file."""
+"""Base sparse embeddings file."""
 
 import asyncio
 import math
@@ -10,6 +10,7 @@ from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
     ConfigDict,
+    model_serializer,
 )
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -31,7 +32,7 @@ def sparse_similarity(
     embedding1: SparseEmbedding,
     embedding2: SparseEmbedding,
 ) -> float:
-    """Get embedding similarity."""
+    """Get sparse embedding similarity."""
     if not embedding1 or not embedding2:
         return 0.0
 
@@ -90,37 +91,27 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
         description="The number of workers to use for async embedding calls.",
     )
 
+    @model_serializer(mode="wrap")
+    def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
+        data = handler(self)
+        # add class name
+        data["class_name"] = self.class_name()
+        # del api_key if it exists
+        data.pop("api_key", None)
+        return data
+
     @abstractmethod
     def _get_query_embedding(self, query: str) -> SparseEmbedding:
-        """
-        Embed the input query synchronously.
-
-        Subclasses should implement this method. Reference get_query_embedding's
-        docstring for more information.
-        """
+        """Embed the input query synchronously."""
 
     @abstractmethod
     async def _aget_query_embedding(self, query: str) -> SparseEmbedding:
-        """
-        Embed the input query asynchronously.
-
-        Subclasses should implement this method. Reference get_query_embedding's
-        docstring for more information.
-        """
+        """Embed the input query asynchronously."""
 
     @dispatcher.span
     def get_query_embedding(self, query: str) -> SparseEmbedding:
-        """
-        Embed the input query.
-
-        When embedding a query, depending on the model, a special instruction
-        can be prepended to the raw query string. For example, "Represent the
-        question for retrieving supporting documents: ". If you're curious,
-        other examples of predefined instructions can be found in
-        embeddings/huggingface_utils.py.
-        """
+        """Embed the input query."""
         model_dict = self.model_dump()
-        model_dict.pop("api_key", None)
         dispatcher.event(
             SparseEmbeddingStartEvent(
                 model_dict=model_dict,
@@ -141,7 +132,6 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
     async def aget_query_embedding(self, query: str) -> SparseEmbedding:
         """Get query embedding."""
         model_dict = self.model_dump()
-        model_dict.pop("api_key", None)
         dispatcher.event(
             SparseEmbeddingStartEvent(
                 model_dict=model_dict,
@@ -180,22 +170,11 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
 
     @abstractmethod
     def _get_text_embedding(self, text: str) -> SparseEmbedding:
-        """
-        Embed the input text synchronously.
-
-        Subclasses should implement this method. Reference get_text_embedding's
-        docstring for more information.
-        """
+        """Embed the input text synchronously."""
 
     @abstractmethod
     async def _aget_text_embedding(self, text: str) -> SparseEmbedding:
-        """
-        Embed the input text asynchronously.
-
-        Subclasses can implement this method if there is a true async
-        implementation. Reference get_text_embedding's docstring for more
-        information.
-        """
+        """Embed the input text asynchronously."""
 
     def _get_text_embeddings(self, texts: List[str]) -> List[SparseEmbedding]:
         """
@@ -218,16 +197,8 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
 
     @dispatcher.span
     def get_text_embedding(self, text: str) -> SparseEmbedding:
-        """
-        Embed the input text.
-
-        When embedding text, depending on the model, a special instruction
-        can be prepended to the raw text string. For example, "Represent the
-        document for retrieval: ". If you're curious, other examples of
-        predefined instructions can be found in embeddings/huggingface_utils.py.
-        """
+        """Embed the input text."""
         model_dict = self.model_dump()
-        model_dict.pop("api_key", None)
         dispatcher.event(
             SparseEmbeddingStartEvent(
                 model_dict=model_dict,
@@ -248,7 +219,6 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
     async def aget_text_embedding(self, text: str) -> SparseEmbedding:
         """Async get text embedding."""
         model_dict = self.model_dump()
-        model_dict.pop("api_key", None)
         dispatcher.event(
             SparseEmbeddingStartEvent(
                 model_dict=model_dict,
@@ -281,7 +251,6 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
         )
 
         model_dict = self.model_dump()
-        model_dict.pop("api_key", None)
         for idx, text in queue_with_progress:
             cur_batch.append(text)
             if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
@@ -313,7 +282,6 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
         num_workers = self.num_workers
 
         model_dict = self.model_dump()
-        model_dict.pop("api_key", None)
 
         cur_batch: List[str] = []
         callback_payloads: List[List[str]] = []
@@ -377,5 +345,5 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
         embedding1: SparseEmbedding,
         embedding2: SparseEmbedding,
     ) -> float:
-        """Get embedding similarity."""
+        """Get sparse embedding similarity."""
         return sparse_similarity(embedding1, embedding2)
