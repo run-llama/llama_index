@@ -533,7 +533,9 @@ class ImageNode(TextNode):
         image_str = self.image or "None"
         image_path_str = self.image_path or "None"
         image_url_str = self.image_url or "None"
-        return f"{image_str}-{image_path_str}-{image_url_str}"
+        image_text = self.text or "None"
+        doc_identity = f"{image_str}-{image_path_str}-{image_url_str}-{image_text}"
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
 
 
 class IndexNode(TextNode):
