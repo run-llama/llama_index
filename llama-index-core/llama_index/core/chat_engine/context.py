@@ -22,10 +22,13 @@ from llama_index.core.chat_engine.types import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.prompts import ChatPromptTemplate
 from llama_index.core.response_synthesizers import CompactAndRefine
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
+from llama_index.core.chat_engine.utils import (
+    get_prefix_messages_with_context,
+    get_response_synthesizer,
+)
 
 
 DEFAULT_CONTEXT_TEMPLATE = (
@@ -39,7 +42,7 @@ DEFAULT_REFINE_TEMPLATE = (
     "Using the context below, refine the following existing answer using the provided context to assist the user.\n"
     "If the context isn't helpful, just repeat the existing answer and nothing more.\n"
     "\n--------------------\n"
-    "{context_str}"
+    "{context_msg}"
     "\n--------------------\n"
     "Existing Answer:\n"
     "{existing_answer}"
@@ -75,7 +78,6 @@ class ContextChatEngine(BaseChatEngine):
         self._context_refine_template = (
             context_refine_template or DEFAULT_REFINE_TEMPLATE
         )
-        self._synthesizer_cls = CompactAndRefine
 
         self.callback_manager = callback_manager or CallbackManager([])
         for node_postprocessor in self._node_postprocessors:
@@ -146,65 +148,38 @@ class ContextChatEngine(BaseChatEngine):
 
         return nodes
 
-    def _get_prefix_qa_messages_with_context(
-        self, chat_history: List[ChatMessage]
-    ) -> List[ChatMessage]:
-        """Get the prefix messages with context."""
-        # ensure we grab the user-configured system prompt
-        system_prompt = ""
-        prefix_messages = self._prefix_messages
-        if (
-            len(self._prefix_messages) != 0
-            and self._prefix_messages[0].role == MessageRole.SYSTEM
-        ):
-            system_prompt = str(self._prefix_messages[0].content)
-            prefix_messages = self._prefix_messages[1:]
-
-        context_str_w_sys_prompt = self._context_template + system_prompt.strip()
-        return [
-            ChatMessage(
-                content=context_str_w_sys_prompt, role=self._llm.metadata.system_role
-            ),
-            *prefix_messages,
-            *chat_history,
-            ChatMessage(content="{query_str}", role=MessageRole.USER),
-        ]
-
-    def _get_prefix_refine_messages_with_context(
-        self, chat_history: List[ChatMessage]
-    ) -> List[ChatMessage]:
-        """Get the prefix messages with context."""
-        # ensure we grab the user-configured system prompt
-        system_prompt = ""
-        prefix_messages = self._prefix_messages
-        if (
-            len(self._prefix_messages) != 0
-            and self._prefix_messages[0].role == MessageRole.SYSTEM
-        ):
-            system_prompt = str(self._prefix_messages[0].content)
-            prefix_messages = self._prefix_messages[1:]
-
-        context_str_w_sys_prompt = self._context_refine_template + system_prompt.strip()
-        return [
-            ChatMessage(
-                content=context_str_w_sys_prompt, role=self._llm.metadata.system_role
-            ),
-            *prefix_messages,
-            *chat_history,
-            ChatMessage(content="{query_str}", role=MessageRole.USER),
-        ]
-
     def _get_response_synthesizer(
         self, chat_history: List[ChatMessage], streaming: bool = False
     ) -> CompactAndRefine:
-        qa_messages = self._get_prefix_qa_messages_with_context(chat_history)
-        refine_messages = self._get_prefix_refine_messages_with_context(chat_history)
-        return self._synthesizer_cls(
-            llm=self._llm,
-            callback_manager=self.callback_manager,
-            text_qa_template=ChatPromptTemplate.from_messages(qa_messages),
-            refine_template=ChatPromptTemplate.from_messages(refine_messages),
-            streaming=streaming,
+        # Pull the system prompt from the prefix messages
+        system_prompt = ""
+        prefix_messages = self._prefix_messages
+        if (
+            len(self._prefix_messages) != 0
+            and self._prefix_messages[0].role == MessageRole.SYSTEM
+        ):
+            system_prompt = str(self._prefix_messages[0].content)
+            prefix_messages = self._prefix_messages[1:]
+
+        # Get the messages for the QA and refine prompts
+        qa_messages = get_prefix_messages_with_context(
+            self._context_template,
+            system_prompt,
+            prefix_messages,
+            chat_history,
+            self._llm.metadata.system_role,
+        )
+        refine_messages = get_prefix_messages_with_context(
+            self._context_refine_template,
+            system_prompt,
+            prefix_messages,
+            chat_history,
+            self._llm.metadata.system_role,
+        )
+
+        # Get the response synthesizer
+        return get_response_synthesizer(
+            self._llm, self.callback_manager, qa_messages, refine_messages, streaming
         )
 
     def _get_current_chat_history(
