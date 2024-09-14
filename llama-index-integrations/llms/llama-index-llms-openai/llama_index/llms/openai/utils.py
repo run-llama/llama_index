@@ -31,7 +31,9 @@ DEFAULT_OPENAI_API_VERSION = ""
 
 O1_MODELS: Dict[str, int] = {
     "o1-preview": 128000,
+    "o1-preview-2024-09-12": 128000,
     "o1-mini": 128000,
+    "o1-mini-2024-09-12": 128000,
 }
 
 GPT4_MODELS: Dict[str, int] = {
