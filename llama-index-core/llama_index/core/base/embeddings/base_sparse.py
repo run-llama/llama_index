@@ -91,6 +91,10 @@ class BaseSparseEmbedding(BaseModel, DispatcherSpanMixin):
         description="The number of workers to use for async embedding calls.",
     )
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "BaseSparseEmbedding"
+
     @model_serializer(mode="wrap")
     def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
         data = handler(self)
