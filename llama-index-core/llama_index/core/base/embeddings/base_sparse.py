@@ -62,7 +62,7 @@ def mean_agg(embeddings: List[SparseEmbedding]) -> SparseEmbedding:
     if not embeddings:
         return {}
 
-    sum_dict = defaultdict(float)
+    sum_dict: Dict[int, float] = defaultdict(float)
     for embedding in embeddings:
         for idx, value in embedding.items():
             sum_dict[idx] += value
