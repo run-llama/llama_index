@@ -13,7 +13,7 @@ import_path = "llama_index.graph_stores.neo4j"
 
 [tool.llamahub.class_authors]
 Neo4jGraphStore = "llama-index"
-Neo4jPGStore = "llama-index"
+Neo4jPropertyGraphStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -28,12 +28,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-graph-stores-neo4j"
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.40"
 neo4j = "^5.16.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

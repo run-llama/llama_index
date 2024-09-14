@@ -27,11 +27,11 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-nvidia"
 readme = "README.md"
-version = "0.1.3"
+version = "0.2.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.9"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -59,6 +59,10 @@ version = "<=23.9.1,>=23.7.0"
 [tool.poetry.group.dev.dependencies.codespell]
 extras = ["toml"]
 version = ">=v2.2.6"
+
+[tool.poetry.group.test_integration.dependencies]
+pytest-httpx = "*"
+requests-mock = "^1.12.1"
 
 [[tool.poetry.packages]]
 include = "llama_index/"

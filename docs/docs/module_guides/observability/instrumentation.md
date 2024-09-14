@@ -20,6 +20,14 @@ Listed below are the core classes as well as their brief description of the
 - `SpanHandler` — is responsible for the entering, exiting, and dropping (i.e., early exiting due to error) of `Span`'s.
 - `Dispatcher` — emits `Event`'s as well as signals to enter/exit/drop a `Span` to the appropriate handlers.
 
+
+## Using the Instrumentation Module for Observability
+
+A core use case for instrumentation is observability. Our native instrumentation integrations with third-party partners allow you to get detailed traces across the entire call stack.
+
+Check out our [observability guide](index.md) for more details on supported partners.
+
+
 ## Usage
 
 Using the new `instrumentation` module involves 3 high-level steps.
@@ -165,7 +173,8 @@ defined when subclass this base class, namely: `new_span()`, `prepare_to_exit_sp
 and `prepare_to_drop_span()`.
 
 ```python
-from typing import Any, Optional
+import inspect
+from typing import Any, Dict, Optional
 from llama_index.core.instrumentation.span.base import BaseSpan
 from llama_index.core.instrumentation.span_handlers import BaseSpanHandler
 
@@ -177,20 +186,36 @@ class MyCustomSpanHandler(BaseSpanHandler[MyCustomSpan]):
         return "MyCustomSpanHandler"
 
     def new_span(
-        self, id: str, parent_span_id: Optional[str], **kwargs
+        self,
+        id_: str,
+        bound_args: inspect.BoundArguments,
+        instance: Optional[Any] = None,
+        parent_span_id: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> Optional[MyCustomSpan]:
         """Create a span."""
         # logic for creating a new MyCustomSpan
         pass
 
     def prepare_to_exit_span(
-        self, id: str, result: Optional[Any] = None, **kwargs
+        self,
+        id_: str,
+        bound_args: inspect.BoundArguments,
+        instance: Optional[Any] = None,
+        result: Optional[Any] = None,
+        **kwargs: Any,
     ) -> Any:
         """Logic for preparing to exit a span."""
         pass
 
     def prepare_to_drop_span(
-        self, id: str, err: Optional[Exception], **kwargs
+        self,
+        id_: str,
+        bound_args: inspect.BoundArguments,
+        instance: Optional[Any] = None,
+        err: Optional[BaseException] = None,
+        **kwargs: Any,
     ) -> Any:
         """Logic for preparing to drop a span."""
         pass

@@ -5,12 +5,19 @@ import json
 import logging
 from enum import auto
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+
+from azure.search.documents import SearchClient
+from azure.search.documents.aio import SearchClient as AsyncSearchClient
+from azure.search.documents.indexes import SearchIndexClient
+from azure.search.documents.indexes.aio import (
+    SearchIndexClient as AsyncSearchIndexClient,
+)
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
-
 from llama_index.core.vector_stores.types import (
-    ExactMatchFilter,
     BasePydanticVectorStore,
+    FilterCondition,
+    FilterOperator,
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -22,9 +29,6 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
-from azure.search.documents.indexes import SearchIndexClient
-from azure.search.documents import SearchClient
-
 logger = logging.getLogger(__name__)
 
 
@@ -35,11 +39,12 @@ class MetadataIndexFieldType(int, enum.Enum):
     metadata dictionary.
     """
 
-    STRING = auto()  # "Edm.String"
-    BOOLEAN = auto()  # "Edm.Boolean"
-    INT32 = auto()  # "Edm.Int32"
-    INT64 = auto()  # "Edm.Int64"
-    DOUBLE = auto()  # "Edm.Double"
+    STRING = auto()
+    BOOLEAN = auto()
+    INT32 = auto()
+    INT64 = auto()
+    DOUBLE = auto()
+    COLLECTION = auto()
 
 
 class IndexManagement(int, enum.Enum):
@@ -48,6 +53,10 @@ class IndexManagement(int, enum.Enum):
     NO_VALIDATION = auto()
     VALIDATE_INDEX = auto()
     CREATE_IF_NOT_EXISTS = auto()
+
+
+DEFAULT_MAX_BATCH_SIZE = 700
+DEFAULT_MAX_MB_SIZE = 14 * 1024 * 1024  # 14MB in bytes
 
 
 class AzureAISearchVectorStore(BasePydanticVectorStore):
@@ -67,7 +76,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # Azure AI Search setup
         search_service_api_key = "YOUR-AZURE-SEARCH-SERVICE-ADMIN-KEY"
         search_service_endpoint = "YOUR-AZURE-SEARCH-SERVICE-ENDPOINT"
-        search_service_api_version = "2023-11-01"
+        search_service_api_version = "2024-07-01"
         credential = AzureKeyCredential(search_service_api_key)
 
         # Index name to use
@@ -104,10 +113,13 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     """
 
     stores_text: bool = True
-    flat_metadata: bool = True
+    flat_metadata: bool = False
 
     _index_client: SearchIndexClient = PrivateAttr()
+    _index_name: Optional[str] = PrivateAttr()
+    _async_index_client: AsyncSearchIndexClient = PrivateAttr()
     _search_client: SearchClient = PrivateAttr()
+    _async_search_client: AsyncSearchClient = PrivateAttr()
     _embedding_dimensionality: int = PrivateAttr()
     _language_analyzer: str = PrivateAttr()
     _field_mapping: Dict[str, str] = PrivateAttr()
@@ -119,6 +131,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         str, Tuple[str, MetadataIndexFieldType]
     ] = PrivateAttr()
     _vector_profile_name: str = PrivateAttr()
+    _compression_type: str = PrivateAttr()
 
     def _normalise_metadata_to_index_fields(
         self,
@@ -137,12 +150,23 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 # Use String as the default index field type
                 index_field_spec[field] = (field, MetadataIndexFieldType.STRING)
 
-        elif isinstance(filterable_metadata_field_keys, Dict):
+        elif isinstance(filterable_metadata_field_keys, dict):
             for k, v in filterable_metadata_field_keys.items():
                 if isinstance(v, tuple):
                     # Index field name and metadata field name may differ
                     # The index field type used is as supplied
                     index_field_spec[k] = v
+                elif isinstance(v, list):
+                    # Handle list types as COLLECTION
+                    index_field_spec[k] = (k, MetadataIndexFieldType.COLLECTION)
+                elif isinstance(v, bool):
+                    index_field_spec[k] = (k, MetadataIndexFieldType.BOOLEAN)
+                elif isinstance(v, int):
+                    index_field_spec[k] = (k, MetadataIndexFieldType.INT32)
+                elif isinstance(v, float):
+                    index_field_spec[k] = (k, MetadataIndexFieldType.DOUBLE)
+                elif isinstance(v, str):
+                    index_field_spec[k] = (k, MetadataIndexFieldType.STRING)
                 else:
                     # Index field name and metadata field name may differ
                     # Use String as the default index field type
@@ -150,12 +174,27 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         return index_field_spec
 
+    def _index_exists(self, index_name: str) -> bool:
+        return index_name in self._index_client.list_index_names()
+
+    async def _aindex_exists(self, index_name: str) -> bool:
+        return index_name in [
+            name async for name in self._async_index_client.list_index_names()
+        ]
+
     def _create_index_if_not_exists(self, index_name: str) -> None:
-        if index_name not in self._index_client.list_index_names():
+        if not self._index_exists(index_name):
             logger.info(
                 f"Index {index_name} does not exist in Azure AI Search, creating index"
             )
             self._create_index(index_name)
+
+    async def _acreate_index_if_not_exists(self, index_name: str) -> None:
+        if not await self._aindex_exists(index_name):
+            logger.info(
+                f"Index {index_name} does not exist in Azure AI Search, creating index"
+            )
+            await self._acreate_index(index_name)
 
     def _create_metadata_index_fields(self) -> List[Any]:
         """Create a list of index fields for storing metadata values."""
@@ -167,6 +206,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         for v in self._metadata_to_index_field_map.values():
             field_name, field_type = v
 
+            # Skip if the field is already mapped
+            if field_name in self._field_mapping.values():
+                continue
+
             if field_type == MetadataIndexFieldType.STRING:
                 index_field_type = "Edm.String"
             elif field_type == MetadataIndexFieldType.INT32:
@@ -177,11 +220,31 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 index_field_type = "Edm.Double"
             elif field_type == MetadataIndexFieldType.BOOLEAN:
                 index_field_type = "Edm.Boolean"
+            elif field_type == MetadataIndexFieldType.COLLECTION:
+                index_field_type = "Collection(Edm.String)"
 
             field = SimpleField(name=field_name, type=index_field_type, filterable=True)
             index_fields.append(field)
 
         return index_fields
+
+    def _get_compressions(self) -> List[Any]:
+        """Get the compressions for the vector search."""
+        from azure.search.documents.indexes.models import (
+            BinaryQuantizationCompression,
+            ScalarQuantizationCompression,
+        )
+
+        compressions = []
+        if self._compression_type == "binary":
+            compressions.append(
+                BinaryQuantizationCompression(compression_name="myBinaryCompression")
+            )
+        elif self._compression_type == "scalar":
+            compressions.append(
+                ScalarQuantizationCompression(compression_name="myScalarCompression")
+            )
+        return compressions
 
     def _create_index(self, index_name: Optional[str]) -> None:
         """
@@ -232,6 +295,124 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         metadata_index_fields = self._create_metadata_index_fields()
         fields.extend(metadata_index_fields)
         logger.info(f"Configuring {index_name} vector search")
+        # Determine the compression type
+        compressions = self._get_compressions()
+
+        logger.info(
+            f"Configuring {index_name} vector search with {self._compression_type} compression"
+        )
+        # Configure the vector search algorithms and profiles
+        vector_search = VectorSearch(
+            algorithms=[
+                HnswAlgorithmConfiguration(
+                    name="myHnsw",
+                    kind=VectorSearchAlgorithmKind.HNSW,
+                    parameters=HnswParameters(
+                        m=4,
+                        ef_construction=400,
+                        ef_search=500,
+                        metric=VectorSearchAlgorithmMetric.COSINE,
+                    ),
+                ),
+                ExhaustiveKnnAlgorithmConfiguration(
+                    name="myExhaustiveKnn",
+                    kind=VectorSearchAlgorithmKind.EXHAUSTIVE_KNN,
+                    parameters=ExhaustiveKnnParameters(
+                        metric=VectorSearchAlgorithmMetric.COSINE,
+                    ),
+                ),
+            ],
+            compressions=compressions,
+            profiles=[
+                VectorSearchProfile(
+                    name="myHnswProfile",
+                    algorithm_configuration_name="myHnsw",
+                    compression_name=(
+                        compressions[0].compression_name if compressions else None
+                    ),
+                ),
+                VectorSearchProfile(
+                    name="myExhaustiveKnnProfile",
+                    algorithm_configuration_name="myExhaustiveKnn",
+                    compression_name=None,  # Exhaustive KNN doesn't support compression at the moment
+                ),
+            ],
+        )
+        logger.info(f"Configuring {index_name} semantic search")
+        semantic_config = SemanticConfiguration(
+            name="mySemanticConfig",
+            prioritized_fields=SemanticPrioritizedFields(
+                content_fields=[SemanticField(field_name=self._field_mapping["chunk"])],
+            ),
+        )
+
+        semantic_search = SemanticSearch(configurations=[semantic_config])
+
+        index = SearchIndex(
+            name=index_name,
+            fields=fields,
+            vector_search=vector_search,
+            semantic_search=semantic_search,
+        )
+
+        logger.debug(f"Creating {index_name} search index")
+        self._index_client.create_index(index)
+
+    async def _acreate_index(self, index_name: Optional[str]) -> None:
+        """
+        Asynchronous version of index creation with optional compression.
+
+            Creates a default index based on the supplied index name, key field names, and metadata filtering keys.
+        """
+        from azure.search.documents.indexes.models import (
+            ExhaustiveKnnAlgorithmConfiguration,
+            ExhaustiveKnnParameters,
+            HnswAlgorithmConfiguration,
+            HnswParameters,
+            SearchField,
+            SearchFieldDataType,
+            SearchIndex,
+            SearchableField,
+            SemanticConfiguration,
+            SemanticField,
+            SemanticPrioritizedFields,
+            SemanticSearch,
+            SimpleField,
+            VectorSearch,
+            VectorSearchAlgorithmKind,
+            VectorSearchAlgorithmMetric,
+            VectorSearchProfile,
+        )
+
+        logger.info(f"Configuring {index_name} fields for Azure AI Search")
+        fields = [
+            SimpleField(name=self._field_mapping["id"], type="Edm.String", key=True),
+            SearchableField(
+                name=self._field_mapping["chunk"],
+                type="Edm.String",
+                analyzer_name=self._language_analyzer,
+            ),
+            SearchField(
+                name=self._field_mapping["embedding"],
+                type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+                searchable=True,
+                vector_search_dimensions=self._embedding_dimensionality,
+                vector_search_profile_name=self._vector_profile_name,
+            ),
+            SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
+            SimpleField(
+                name=self._field_mapping["doc_id"], type="Edm.String", filterable=True
+            ),
+        ]
+        logger.info(f"Configuring {index_name} metadata fields")
+        metadata_index_fields = self._create_metadata_index_fields()
+        fields.extend(metadata_index_fields)
+        # Determine the compression type
+        compressions = self._get_compressions()
+
+        logger.info(
+            f"Configuring {index_name} vector search with {self._compression_type} compression"
+        )
         # Configure the vector search algorithms and profiles
         vector_search = VectorSearch(
             algorithms=[
@@ -254,17 +435,20 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     ),
                 ),
             ],
+            compressions=compressions,
             profiles=[
                 VectorSearchProfile(
                     name="myHnswProfile",
                     algorithm_configuration_name="myHnsw",
+                    compression_name=(
+                        compressions[0].compression_name if compressions else None
+                    ),
                 ),
-                # Add more profiles if needed
                 VectorSearchProfile(
                     name="myExhaustiveKnnProfile",
                     algorithm_configuration_name="myExhaustiveKnn",
+                    compression_name=None,  # Exhaustive KNN doesn't support compression at the moment
                 ),
-                # Add more profiles if needed
             ],
         )
         logger.info(f"Configuring {index_name} semantic search")
@@ -284,14 +468,19 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             semantic_search=semantic_search,
         )
         logger.debug(f"Creating {index_name} search index")
-        self._index_client.create_index(index)
+        await self._async_index_client.create_index(index)
 
     def _validate_index(self, index_name: Optional[str]) -> None:
-        if self._index_client and index_name:
-            if index_name not in self._index_client.list_index_names():
-                raise ValueError(
-                    f"Validation failed, index {index_name} does not exist."
-                )
+        if self._index_client and index_name and not self._index_exists(index_name):
+            raise ValueError(f"Validation failed, index {index_name} does not exist.")
+
+    async def _avalidate_index(self, index_name: Optional[str]) -> None:
+        if (
+            self._async_index_client
+            and index_name
+            and not await self._aindex_exists(index_name)
+        ):
+            raise ValueError(f"Validation failed, index {index_name} does not exist.")
 
     def __init__(
         self,
@@ -318,6 +507,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # If we have content in other languages, it is better to enable the language analyzer to be adjusted in searchable fields.
         # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
         language_analyzer: str = "en.lucene",
+        compression_type: str = "none",
         **kwargs: Any,
     ) -> None:
         # ruff: noqa: E501
@@ -377,9 +567,16 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
+        super().__init__()
+
         self._index_client: SearchIndexClient = cast(SearchIndexClient, None)
+        self._async_index_client: AsyncSearchIndexClient = cast(
+            AsyncSearchIndexClient, None
+        )
         self._search_client: SearchClient = cast(SearchClient, None)
+        self._async_search_client: AsyncSearchClient = cast(AsyncSearchClient, None)
         self._embedding_dimensionality = embedding_dimensionality
+        self._index_name = index_name
 
         if vector_algorithm_type == "exhaustiveKnn":
             self._vector_profile_name = "myExhaustiveKnnProfile"
@@ -391,6 +588,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             )
 
         self._language_analyzer = language_analyzer
+        self._compression_type = compression_type.lower()
 
         # Validate search_or_index_client
         if search_or_index_client is not None:
@@ -408,6 +606,22 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     index_name=index_name
                 )
 
+            elif isinstance(search_or_index_client, AsyncSearchIndexClient):
+                # If SearchIndexClient is supplied so must index_name
+                self._async_index_client = cast(
+                    AsyncSearchIndexClient, search_or_index_client
+                )
+
+                if not index_name:
+                    raise ValueError(
+                        "index_name must be supplied if search_or_index_client is of "
+                        "type azure.search.documents.aio.SearchIndexClient"
+                    )
+
+                self._async_search_client = self._async_index_client.get_search_client(
+                    index_name=index_name
+                )
+
             elif isinstance(search_or_index_client, SearchClient):
                 self._search_client = cast(SearchClient, search_or_index_client)
 
@@ -418,23 +632,43 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                         "is of type azure.search.documents.SearchClient"
                     )
 
-            if not self._index_client and not self._search_client:
-                raise ValueError(
-                    "search_or_index_client must be of type "
-                    "azure.search.documents.SearchClient or "
-                    "azure.search.documents.SearchIndexClient"
+            elif isinstance(search_or_index_client, AsyncSearchClient):
+                self._async_search_client = cast(
+                    AsyncSearchClient, search_or_index_client
                 )
+
+                # Validate index_name
+                if index_name:
+                    raise ValueError(
+                        "index_name cannot be supplied if search_or_index_client "
+                        "is of type azure.search.documents.SearchClient"
+                    )
+
+            if isinstance(search_or_index_client, AsyncSearchIndexClient):
+                if not self._async_index_client and not self._async_search_client:
+                    raise ValueError(
+                        "search_or_index_client must be of type "
+                        "azure.search.documents.SearchIndexClient or "
+                        "azure.search.documents.SearchClient"
+                    )
+
+            if isinstance(search_or_index_client, SearchIndexClient):
+                if not self._index_client and not self._search_client:
+                    raise ValueError(
+                        "search_or_index_client must be of type "
+                        "azure.search.documents.SearchIndexClient or "
+                        "azure.search.documents.SearchClient"
+                    )
         else:
             raise ValueError("search_or_index_client not specified")
 
-        if (
-            index_management == IndexManagement.CREATE_IF_NOT_EXISTS
-            and not self._index_client
+        if index_management == IndexManagement.CREATE_IF_NOT_EXISTS and not (
+            self._index_client or self._async_index_client
         ):
             raise ValueError(
                 "index_management has value of IndexManagement.CREATE_IF_NOT_EXISTS "
                 "but search_or_index_client is not of type "
-                "azure.search.documents.SearchIndexClient"
+                "azure.search.documents.SearchIndexClient or azure.search.documents.aio.SearchIndexClient "
             )
 
         self._index_management = index_management
@@ -459,19 +693,24 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             filterable_metadata_field_keys
         )
 
-        if self._index_management == IndexManagement.CREATE_IF_NOT_EXISTS:
-            if index_name:
-                self._create_index_if_not_exists(index_name)
+        # need to do lazy init for async client
+        if not isinstance(search_or_index_client, AsyncSearchIndexClient):
+            if self._index_management == IndexManagement.CREATE_IF_NOT_EXISTS:
+                if index_name:
+                    self._create_index_if_not_exists(index_name)
 
-        if self._index_management == IndexManagement.VALIDATE_INDEX:
-            self._validate_index(index_name)
-
-        super().__init__()
+            if self._index_management == IndexManagement.VALIDATE_INDEX:
+                self._validate_index(index_name)
 
     @property
     def client(self) -> Any:
         """Get client."""
         return self._search_client
+
+    @property
+    def aclient(self) -> Any:
+        """Get async client."""
+        return self._async_search_client
 
     def _default_index_mapping(
         self, enriched_doc: Dict[str, str], metadata: Dict[str, Any]
@@ -503,36 +742,115 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             nodes: List[BaseNode]: nodes with embeddings
 
         """
+        from azure.search.documents import IndexDocumentsBatch
+
         if not self._search_client:
             raise ValueError("Search client not initialized")
 
+        accumulator = IndexDocumentsBatch()
         documents = []
+
         ids = []
+        accumulated_size = 0
+        max_size = DEFAULT_MAX_MB_SIZE  # 16MB in bytes
+        max_docs = DEFAULT_MAX_BATCH_SIZE
 
         for node in nodes:
             logger.debug(f"Processing embedding: {node.node_id}")
             ids.append(node.node_id)
 
             index_document = self._create_index_document(node)
-
+            document_size = len(json.dumps(index_document).encode("utf-8"))
             documents.append(index_document)
+            accumulated_size += document_size
 
-            if len(documents) >= 10:
+            accumulator.add_upload_actions(index_document)
+
+            if len(documents) >= max_docs or accumulated_size >= max_size:
                 logger.info(
                     f"Uploading batch of size {len(documents)}, "
-                    f"current progress {len(ids)} of {len(nodes)}"
+                    f"current progress {len(ids)} of {len(nodes)}, "
+                    f"accumulated size {accumulated_size / (1024 * 1024):.2f} MB"
                 )
-                self._search_client.merge_or_upload_documents(documents)
+                self._search_client.index_documents(accumulator)
+                accumulator.dequeue_actions()
                 documents = []
+                accumulated_size = 0
 
-        # Upload remaining batch of less than 10 documents
-        if len(documents) > 0:
+        # Upload remaining batch
+        if documents:
             logger.info(
                 f"Uploading remaining batch of size {len(documents)}, "
-                f"current progress {len(ids)} of {len(nodes)}"
+                f"current progress {len(ids)} of {len(nodes)}, "
+                f"accumulated size {accumulated_size / (1024 * 1024):.2f} MB"
             )
-            self._search_client.merge_or_upload_documents(documents)
-            documents = []
+            self._search_client.index_documents(accumulator)
+
+        return ids
+
+    async def async_add(
+        self,
+        nodes: List[BaseNode],
+        **add_kwargs: Any,
+    ) -> List[str]:
+        """
+        Add nodes to index associated with the configured search client.
+
+        Args:
+            nodes: List[BaseNode]: nodes with embeddings
+
+        """
+        from azure.search.documents import IndexDocumentsBatch
+
+        if not self._async_search_client:
+            raise ValueError("Async Search client not initialized")
+
+        if len(nodes) > 0:
+            if self._index_management == IndexManagement.CREATE_IF_NOT_EXISTS:
+                if self._index_name:
+                    await self._acreate_index_if_not_exists(self._index_name)
+
+            if self._index_management == IndexManagement.VALIDATE_INDEX:
+                await self._avalidate_index(self._index_name)
+
+        accumulator = IndexDocumentsBatch()
+        documents = []
+
+        ids = []
+        accumulated_size = 0
+        max_size = DEFAULT_MAX_MB_SIZE  # 16MB in bytes
+        max_docs = DEFAULT_MAX_BATCH_SIZE
+
+        for node in nodes:
+            logger.debug(f"Processing embedding: {node.node_id}")
+            ids.append(node.node_id)
+
+            index_document = self._create_index_document(node)
+            document_size = len(json.dumps(index_document).encode("utf-8"))
+            documents.append(index_document)
+            accumulated_size += document_size
+
+            accumulator.add_upload_actions(index_document)
+
+            if len(documents) >= max_docs or accumulated_size >= max_size:
+                logger.info(
+                    f"Uploading batch of size {len(documents)}, "
+                    f"current progress {len(ids)} of {len(nodes)}, "
+                    f"accumulated size {accumulated_size / (1024 * 1024):.2f} MB"
+                )
+                await self._async_search_client.index_documents(accumulator)
+                accumulator.dequeue_actions()
+                documents = []
+                accumulated_size = 0
+
+        # Upload remaining batch
+        if documents:
+            logger.info(
+                f"Uploading remaining batch of size {len(documents)}, "
+                f"current progress {len(ids)} of {len(nodes)}, "
+                f"accumulated size {accumulated_size / (1024 * 1024):.2f} MB"
+            )
+            await self._async_search_client.index_documents(accumulator)
 
         return ids
 
@@ -559,54 +877,214 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         Delete documents from the AI Search Index
         with doc_id_field_key field equal to ref_doc_id.
         """
+        if not self._index_exists(self._index_name):
+            return
+
         # Locate documents to delete
         filter = f'{self._field_mapping["doc_id"]} eq \'{ref_doc_id}\''
-        results = self._search_client.search(search_text="*", filter=filter)
+        batch_size = 1000
 
-        logger.debug(f"Searching with filter {filter}")
+        while True:
+            results = self._search_client.search(
+                search_text="*",
+                filter=filter,
+                top=batch_size,
+            )
 
-        docs_to_delete = []
-        for result in results:
-            doc = {}
-            doc["id"] = result[self._field_mapping["id"]]
-            logger.debug(f"Found document to delete: {doc}")
-            docs_to_delete.append(doc)
+            logger.debug(f"Searching with filter {filter}")
 
-        if len(docs_to_delete) > 0:
-            logger.debug(f"Deleting {len(docs_to_delete)} documents")
-            self._search_client.delete_documents(docs_to_delete)
+            docs_to_delete = [
+                {"id": result[self._field_mapping["id"]]} for result in results
+            ]
+
+            if docs_to_delete:
+                logger.debug(f"Deleting {len(docs_to_delete)} documents")
+                self._search_client.delete_documents(docs_to_delete)
+            else:
+                break
+
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete documents from the AI Search Index
+        with doc_id_field_key field equal to ref_doc_id.
+        """
+        if not await self._aindex_exists(self._index_name):
+            return
+
+        # Locate documents to delete
+        filter = f'{self._field_mapping["doc_id"]} eq \'{ref_doc_id}\''
+        batch_size = 1000
+
+        while True:
+            results = await self._async_search_client.search(
+                search_text="*",
+                filter=filter,
+                top=batch_size,
+            )
+
+            logger.debug(f"Searching with filter {filter}")
+
+            docs_to_delete = [
+                {"id": result[self._field_mapping["id"]]} async for result in results
+            ]
+
+            if docs_to_delete:
+                logger.debug(f"Deleting {len(docs_to_delete)} documents")
+                await self._async_search_client.delete_documents(docs_to_delete)
+            else:
+                break
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Delete documents from the AI Search Index.
+        """
+        if node_ids is None and filters is None:
+            raise ValueError("Either node_ids or filters must be provided")
+
+        filter = self._build_filter_delete_query(node_ids, filters)
+
+        batch_size = 1000
+
+        while True:
+            results = self._search_client.search(
+                search_text="*",
+                filter=filter,
+                top=batch_size,
+            )
+
+            logger.debug(f"Searching with filter {filter}")
+
+            docs_to_delete = [
+                {"id": result[self._field_mapping["id"]]} for result in results
+            ]
+
+            if docs_to_delete:
+                logger.debug(f"Deleting {len(docs_to_delete)} documents")
+                self._search_client.delete_documents(docs_to_delete)
+            else:
+                break
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Delete documents from the AI Search Index.
+        """
+        if node_ids is None and filters is None:
+            raise ValueError("Either node_ids or filters must be provided")
+
+        filter = self._build_filter_delete_query(node_ids, filters)
+
+        batch_size = 1000
+
+        while True:
+            results = await self._async_search_client.search(
+                search_text="*",
+                filter=filter,
+                top=batch_size,
+            )
+
+            logger.debug(f"Searching with filter {filter}")
+
+            docs_to_delete = [
+                {"id": result[self._field_mapping["id"]]} async for result in results
+            ]
+
+            if docs_to_delete:
+                logger.debug(f"Deleting {len(docs_to_delete)} documents")
+                await self._async_search_client.delete_documents(docs_to_delete)
+            else:
+                break
+
+    def _build_filter_delete_query(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> str:
+        """Build the OData filter query for the deletion process."""
+        if node_ids:
+            return " or ".join(
+                [
+                    f'{self._field_mapping["id"]} eq \'{node_id}\''
+                    for node_id in node_ids
+                ]
+            )
+
+        if filters and filters.filters:
+            # Find the filter with key doc_ids
+            doc_ids_filter = next(
+                (f for f in filters.filters if f.key == "doc_id"), None
+            )
+            if doc_ids_filter and doc_ids_filter.operator == FilterOperator.IN:
+                # use search.in to filter on multiple values
+                doc_ids_str = ",".join(doc_ids_filter.value)
+                return (
+                    f"search.in({self._field_mapping['doc_id']}, '{doc_ids_str}', ',')"
+                )
+
+            return self._create_odata_filter(filters)
+
+        raise ValueError("Invalid filter configuration")
 
     def _create_odata_filter(self, metadata_filters: MetadataFilters) -> str:
         """Generate an OData filter string using supplied metadata filters."""
         odata_filter: List[str] = []
-        for f in metadata_filters.legacy_filters():
-            if not isinstance(f, ExactMatchFilter):
-                raise NotImplementedError(
-                    "Only `ExactMatchFilter` filters are supported"
-                )
 
-            # Raise error if filtering on a metadata field that lacks a mapping to
-            # an index field
-            metadata_mapping = self._metadata_to_index_field_map.get(f.key)
+        for subfilter in metadata_filters.filters:
+            if isinstance(subfilter, MetadataFilters):
+                nested_filter = self._create_odata_filter(subfilter)
+                odata_filter.append(f"({nested_filter})")
+                continue
+
+            # Join values with ' or ' to create an OR condition inside the any function
+            metadata_mapping = self._metadata_to_index_field_map.get(subfilter.key)
+
+            index_field = metadata_mapping[0]
 
             if not metadata_mapping:
                 raise ValueError(
-                    f"Metadata field '{f.key}' is missing a mapping to an index field, "
+                    f"Metadata field '{subfilter.key}' is missing a mapping to an index field, "
                     "provide entry in 'filterable_metadata_field_keys' for this "
                     "vector store"
                 )
 
-            index_field = metadata_mapping[0]
+            if subfilter.operator == FilterOperator.IN:
+                value_str = " or ".join(
+                    [
+                        f"t eq '{value}'" if isinstance(value, str) else f"t eq {value}"
+                        for value in subfilter.value
+                    ]
+                )
+                odata_filter.append(f"{index_field}/any(t: {value_str})")
 
-            if len(odata_filter) > 0:
-                odata_filter.append(f" {metadata_filters.condition.value} ")
-            if isinstance(f.value, str):
-                escaped_value = "".join([("''" if s == "'" else s) for s in f.value])
-                odata_filter.append(f"{index_field} eq '{escaped_value}'")
+            elif subfilter.operator == FilterOperator.EQ:
+                if isinstance(subfilter.value, str):
+                    escaped_value = "".join(
+                        [("''" if s == "'" else s) for s in subfilter.value]
+                    )
+                    odata_filter.append(f"{index_field} eq '{escaped_value}'")
+                else:
+                    odata_filter.append(f"{index_field} eq {subfilter.value}")
+
             else:
-                odata_filter.append(f"{index_field} eq {f.value}")
+                raise ValueError(f"Unsupported filter operator {subfilter.operator}")
 
-        odata_expr = "".join(odata_filter)
+        if metadata_filters.condition == FilterCondition.AND:
+            odata_expr = " and ".join(odata_filter)
+        elif metadata_filters.condition == FilterCondition.OR:
+            odata_expr = " or ".join(odata_filter)
+        else:
+            raise ValueError(
+                f"Unsupported filter condition {metadata_filters.condition}"
+            )
 
         logger.info(f"Odata filter: {odata_expr}")
 
@@ -634,6 +1112,38 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 query, self._field_mapping, odata_filter, self._search_client
             )
         return azure_query_result_search.search()
+
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
+        odata_filter = None
+
+        # NOTE: users can provide odata_filters directly to the query
+        odata_filters = kwargs.get("odata_filters")
+        if odata_filters is not None:
+            odata_filter = odata_filter
+        else:
+            if query.filters is not None:
+                odata_filter = self._create_odata_filter(query.filters)
+
+        azure_query_result_search: AzureQueryResultSearchBase = (
+            AzureQueryResultSearchDefault(
+                query, self._field_mapping, odata_filter, self._async_search_client
+            )
+        )
+        if query.mode == VectorStoreQueryMode.SPARSE:
+            azure_query_result_search = AzureQueryResultSearchSparse(
+                query, self._field_mapping, odata_filter, self._async_search_client
+            )
+        elif query.mode == VectorStoreQueryMode.HYBRID:
+            azure_query_result_search = AzureQueryResultSearchHybrid(
+                query, self._field_mapping, odata_filter, self._async_search_client
+            )
+        elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
+            azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
+                query, self._field_mapping, odata_filter, self._async_search_client
+            )
+        return await azure_query_result_search.asearch()
 
 
 class AzureQueryResultSearchBase:
@@ -717,10 +1227,69 @@ class AzureQueryResultSearchBase:
             nodes=node_result, similarities=score_result, ids=id_result
         )
 
+    async def _acreate_query_result(
+        self, search_query: str, vectors: Optional[List[Any]]
+    ) -> VectorStoreQueryResult:
+        results = await self._search_client.search(
+            search_text=search_query,
+            vector_queries=vectors,
+            top=self._query.similarity_top_k,
+            select=self._select_fields,
+            filter=self._odata_filter,
+        )
+
+        id_result = []
+        node_result = []
+        score_result = []
+
+        async for result in results:
+            node_id = result[self._field_mapping["id"]]
+            metadata_str = result[self._field_mapping["metadata"]]
+            metadata = json.loads(metadata_str) if metadata_str else {}
+            score = result["@search.score"]
+            chunk = result[self._field_mapping["chunk"]]
+
+            try:
+                node = metadata_dict_to_node(metadata)
+                node.set_content(chunk)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    metadata
+                )
+
+                node = TextNode(
+                    text=chunk,
+                    id_=node_id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
+            logger.debug(f"Retrieved node id {node_id} with node data of {node}")
+
+            id_result.append(node_id)
+            node_result.append(node)
+            score_result.append(score)
+
+        logger.debug(
+            f"Search query '{search_query}' returned {len(id_result)} results."
+        )
+
+        return VectorStoreQueryResult(
+            nodes=node_result, similarities=score_result, ids=id_result
+        )
+
     def search(self) -> VectorStoreQueryResult:
         search_query = self._create_search_query()
         vectors = self._create_query_vector()
         return self._create_query_result(search_query, vectors)
+
+    async def asearch(self) -> VectorStoreQueryResult:
+        search_query = self._create_search_query()
+        vectors = self._create_query_vector()
+        return await self._acreate_query_result(search_query, vectors)
 
 
 class AzureQueryResultSearchDefault(AzureQueryResultSearchBase):

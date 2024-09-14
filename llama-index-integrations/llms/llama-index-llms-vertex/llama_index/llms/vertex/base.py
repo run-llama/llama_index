@@ -1,5 +1,15 @@
-from typing import Any, Callable, Dict, Optional, Sequence
-
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Tuple,
+    Optional,
+    Sequence,
+    Union,
+)
+from google.protobuf.json_format import MessageToDict
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -14,8 +24,8 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
-from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.utilities.gemini_utils import merge_neighboring_same_role_messages
 from llama_index.llms.vertex.gemini_utils import create_gemini_client, is_gemini_model
 from llama_index.llms.vertex.utils import (
@@ -29,18 +39,22 @@ from llama_index.llms.vertex.utils import (
     acompletion_with_retry,
     completion_with_retry,
     init_vertexai,
+    force_single_tool_call,
 )
 from vertexai.generative_models._generative_models import SafetySettingsType
 
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
 
-class Vertex(LLM):
+
+class Vertex(FunctionCallingLLM):
     """Vertext LLM.
 
     Examples:
         `pip install llama-index-llms-vertex`
 
         ```python
-        from llama_index.llms.openai import Vertex
+        from llama_index.llms.vertex import Vertex
 
         # Set up necessary variables
         credentials = {
@@ -105,6 +119,22 @@ class Vertex(LLM):
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
+        super().__init__(
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
+            max_retries=max_retries,
+            model=model,
+            examples=examples,
+            iscode=iscode,
+            callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+        )
+
         self._is_gemini = False
         self._is_chat_model = False
         if model in CHAT_MODELS:
@@ -135,22 +165,6 @@ class Vertex(LLM):
         else:
             raise (ValueError(f"Model {model} not found, please verify the model name"))
 
-        super().__init__(
-            temperature=temperature,
-            max_tokens=max_tokens,
-            additional_kwargs=additional_kwargs,
-            max_retries=max_retries,
-            model=model,
-            examples=examples,
-            iscode=iscode,
-            callback_manager=callback_manager,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-            output_parser=output_parser,
-        )
-
     @classmethod
     def class_name(cls) -> str:
         return "Vertex"
@@ -159,6 +173,7 @@ class Vertex(LLM):
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
             is_chat_model=self._is_chat_model,
+            is_function_calling_model=self._is_gemini,
             model_name=self.model,
             system_role=(
                 MessageRole.USER if self._is_gemini else MessageRole.SYSTEM
@@ -182,6 +197,17 @@ class Vertex(LLM):
             **kwargs,
         }
 
+    def _get_content_and_tool_calls(self, response: Any) -> Tuple[str, List]:
+        tool_calls = []
+        if response.candidates[0].function_calls:
+            for tool_call in response.candidates[0].function_calls:
+                tool_calls.append(tool_call)
+        try:
+            content = response.text
+        except Exception:
+            content = ""
+        return content, tool_calls
+
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         merged_messages = (
@@ -191,6 +217,7 @@ class Vertex(LLM):
         )
         question = _parse_message(merged_messages[-1], self._is_gemini)
         chat_history = _parse_chat_history(merged_messages[:-1], self._is_gemini)
+
         chat_params = {**chat_history}
 
         kwargs = kwargs if kwargs else {}
@@ -219,8 +246,14 @@ class Vertex(LLM):
             **params,
         )
 
+        content, tool_calls = self._get_content_and_tool_calls(generation)
+
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=generation.text),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=content,
+                additional_kwargs={"tool_calls": tool_calls},
+            ),
             raw=generation.__dict__,
         )
 
@@ -357,8 +390,14 @@ class Vertex(LLM):
         ##this is due to a bug in vertex AI we have to await twice
         if self.iscode:
             generation = await generation
+
+        content, tool_calls = self._get_content_and_tool_calls(generation)
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=generation.text),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=content,
+                additional_kwargs={"tool_calls": tool_calls},
+            ),
             raw=generation.__dict__,
         )
 
@@ -390,3 +429,81 @@ class Vertex(LLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise (ValueError("Not Implemented"))
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Prepare the arguments needed to let the LLM chat with tools."""
+        chat_history = chat_history or []
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+            chat_history.append(user_msg)
+
+        tool_dicts = []
+        for tool in tools:
+            tool_dicts.append(
+                {
+                    "name": tool.metadata.name,
+                    "description": tool.metadata.description,
+                    "parameters": tool.metadata.get_parameters_dict(),
+                }
+            )
+
+        return {
+            "messages": chat_history,
+            "tools": tool_dicts or None,
+            **kwargs,
+        }
+
+    def _validate_chat_with_tools_response(
+        self,
+        response: ChatResponse,
+        tools: List["BaseTool"],
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Validate the response from chat_with_tools."""
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
+
+    def get_tool_calls_from_response(
+        self,
+        response: "ChatResponse",
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        """Predict and call the tool."""
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            response_dict = MessageToDict(tool_call._pb)
+            if "args" not in response_dict or "name" not in response_dict:
+                raise ValueError("Invalid tool call.")
+            argument_dict = response_dict["args"]
+
+            tool_selections.append(
+                ToolSelection(
+                    tool_id="None",
+                    tool_name=tool_call.name,
+                    tool_kwargs=argument_dict,
+                )
+            )
+
+        return tool_selections

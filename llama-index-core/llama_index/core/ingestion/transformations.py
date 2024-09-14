@@ -8,8 +8,8 @@ from typing import Generic, Sequence, Type, TypeVar
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
-    GenericModel,
     ValidationError,
+    SerializeAsAny,
 )
 from llama_index.core.node_parser import (
     CodeSplitter,
@@ -90,38 +90,36 @@ class ConfigurableTransformation(BaseModel):
     )
 
 
-def build_configurable_transformation_enum():
+class ConfigurableComponent(Enum):
+    @classmethod
+    def from_component(cls, component: BaseComponent) -> "ConfigurableComponent":
+        component_class = type(component)
+        for component_type in cls:
+            if component_type.value.component_type == component_class:
+                return component_type
+        raise ValueError(
+            f"Component {component} is not a supported transformation component."
+        )
+
+    def build_configured_transformation(
+        self, component: BaseComponent
+    ) -> "ConfiguredTransformation":
+        component_type = self.value.component_type
+        if not isinstance(component, component_type):
+            raise ValueError(
+                f"The enum value {self} is not compatible with component of "
+                f"type {type(component)}"
+            )
+        return ConfiguredTransformation[component_type](  # type: ignore
+            component=component, name=self.value.name
+        )
+
+
+def build_configurable_transformation_enum() -> ConfigurableComponent:
     """
     Build an enum of configurable transformations.
     But conditional on if the corresponding component is available.
     """
-
-    class ConfigurableComponent(Enum):
-        @classmethod
-        def from_component(
-            cls, component: BaseComponent
-        ) -> "ConfigurableTransformations":
-            component_class = type(component)
-            for component_type in cls:
-                if component_type.value.component_type == component_class:
-                    return component_type
-            raise ValueError(
-                f"Component {component} is not a supported transformation component."
-            )
-
-        def build_configured_transformation(
-            self, component: BaseComponent
-        ) -> "ConfiguredTransformation":
-            component_type = self.value.component_type
-            if not isinstance(component, component_type):
-                raise ValueError(
-                    f"The enum value {self} is not compatible with component of "
-                    f"type {type(component)}"
-                )
-            return ConfiguredTransformation[component_type](  # type: ignore
-                component=component, name=self.value.name
-            )
-
     enum_members = []
 
     # Node parsers
@@ -249,7 +247,43 @@ def build_configurable_transformation_enum():
         pass
 
     try:
-        from llama_index.embeddings.huggingface import (
+        from llama_index.embeddings.cohere import (
+            CohereEmbedding,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "COHERE_EMBEDDING",
+                ConfigurableTransformation(
+                    name="Cohere Embedding",
+                    transformation_category=TransformationCategories.EMBEDDING,
+                    component_type=CohereEmbedding,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.embeddings.bedrock import (
+            BedrockEmbedding,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "BEDROCK_EMBEDDING",
+                ConfigurableTransformation(
+                    name="Bedrock Embedding",
+                    transformation_category=TransformationCategories.EMBEDDING,
+                    component_type=BedrockEmbedding,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.embeddings.huggingface_api import (
             HuggingFaceInferenceAPIEmbedding,
         )  # pants: no-infer-dep
 
@@ -266,7 +300,43 @@ def build_configurable_transformation_enum():
     except (ImportError, ValidationError):
         pass
 
-    return ConfigurableComponent("ConfigurableTransformations", enum_members)
+    try:
+        from llama_index.embeddings.gemini import (
+            GeminiEmbedding,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "GEMINI_EMBEDDING",
+                ConfigurableTransformation(
+                    name="Gemini Embedding",
+                    transformation_category=TransformationCategories.EMBEDDING,
+                    component_type=GeminiEmbedding,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    try:
+        from llama_index.embeddings.mistralai import (
+            MistralAIEmbedding,
+        )  # pants: no-infer-dep
+
+        enum_members.append(
+            (
+                "MISTRALAI_EMBEDDING",
+                ConfigurableTransformation(
+                    name="MistralAI Embedding",
+                    transformation_category=TransformationCategories.EMBEDDING,
+                    component_type=MistralAIEmbedding,
+                ),
+            )
+        )
+    except (ImportError, ValidationError):
+        pass
+
+    return ConfigurableComponent("ConfigurableTransformations", enum_members)  # type: ignore
 
 
 ConfigurableTransformations = build_configurable_transformation_enum()
@@ -274,13 +344,15 @@ ConfigurableTransformations = build_configurable_transformation_enum()
 T = TypeVar("T", bound=BaseComponent)
 
 
-class ConfiguredTransformation(GenericModel, Generic[T]):
+class ConfiguredTransformation(BaseModel, Generic[T]):
     """
     A class containing metadata & implementation for a transformation in a pipeline.
     """
 
     name: str
-    component: T = Field(description="Component that implements the transformation")
+    component: SerializeAsAny[T] = Field(
+        description="Component that implements the transformation"
+    )
 
     @classmethod
     def from_component(cls, component: BaseComponent) -> "ConfiguredTransformation":
@@ -302,5 +374,5 @@ class ConfiguredTransformation(GenericModel, Generic[T]):
         ).build_configured_transformation(component)
 
     @property
-    def configurable_transformation_type(self) -> ConfigurableTransformations:
+    def configurable_transformation_type(self) -> ConfigurableComponent:
         return ConfigurableTransformations.from_component(self.component)

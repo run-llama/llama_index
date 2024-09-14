@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from llama_index.graph_stores.neo4j import Neo4jPGStore
+from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
 from llama_index.core.graph_stores.types import Relation, EntityNode
 from llama_index.core.schema import TextNode
 
@@ -16,15 +16,17 @@ else:
 
 
 @pytest.fixture()
-def pg_store() -> Neo4jPGStore:
+def pg_store() -> Neo4jPropertyGraphStore:
     if not neo4j_available:
         pytest.skip("No Neo4j credentials provided")
-    pg_store = Neo4jPGStore(username=neo4j_user, password=neo4j_password, url=neo4j_url)
+    pg_store = Neo4jPropertyGraphStore(
+        username=neo4j_user, password=neo4j_password, url=neo4j_url
+    )
     pg_store.structured_query("MATCH (n) DETACH DELETE n")
     return pg_store
 
 
-def test_neo4j_pg_store(pg_store: Neo4jPGStore) -> None:
+def test_neo4j_pg_store(pg_store: Neo4jPropertyGraphStore) -> None:
     # Create a two entity nodes
     entity1 = EntityNode(label="PERSON", name="Logan", properties={"age": 28})
     entity2 = EntityNode(label="ORGANIZATION", name="LlamaIndex")

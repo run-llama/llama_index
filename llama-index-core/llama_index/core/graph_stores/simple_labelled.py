@@ -1,7 +1,7 @@
 import fsspec
 import json
 import os
-from typing import Any, List, Dict, Tuple, Optional
+from typing import Any, List, Dict, Sequence, Tuple, Optional
 
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
@@ -121,14 +121,14 @@ class SimplePropertyGraphStore(PropertyGraphStore):
             )
             graph_triplets = [t for t in graph_triplets if str(t) not in seen_triplets]
             seen_triplets.update([str(t) for t in graph_triplets])
-            depth += 1
+            cur_depth += 1
 
         ignore_rels = ignore_rels or []
         triplets = [t for t in triplets if t[1].id not in ignore_rels]
 
         return triplets[:limit]
 
-    def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
+    def upsert_nodes(self, nodes: Sequence[LabelledNode]) -> None:
         """Add nodes."""
         for node in nodes:
             self.graph.add_node(node)
@@ -166,7 +166,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         if fs is None:
             fs = fsspec.filesystem("file")
         with fs.open(persist_path, "w") as f:
-            f.write(self.graph.json())
+            f.write(self.graph.model_dump_json())
 
     @classmethod
     def from_persist_path(
@@ -202,12 +202,12 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         # need to load nodes manually
         node_dicts = data["nodes"]
 
-        kg_nodes = {}
+        kg_nodes: Dict[str, LabelledNode] = {}
         for id, node_dict in node_dicts.items():
             if "name" in node_dict:
-                kg_nodes[id] = EntityNode.parse_obj(node_dict)
+                kg_nodes[id] = EntityNode.model_validate(node_dict)
             elif "text" in node_dict:
-                kg_nodes[id] = ChunkNode.parse_obj(node_dict)
+                kg_nodes[id] = ChunkNode.model_validate(node_dict)
             else:
                 raise ValueError(f"Could not infer node type for data: {node_dict!s}")
 
@@ -215,7 +215,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         data["nodes"] = {}
 
         # load the graph
-        graph = LabelledPropertyGraph.parse_obj(data)
+        graph = LabelledPropertyGraph.model_validate(data)
 
         # add the node back
         graph.nodes = kg_nodes
@@ -224,7 +224,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
 
     def to_dict(self) -> dict:
         """Convert to dict."""
-        return self.graph.dict()
+        return self.graph.model_dump()
 
     # NOTE: Unimplemented methods for SimplePropertyGraphStore
 
@@ -273,3 +273,35 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         net = Network(notebook=False, directed=True)
         net.from_nx(G)
         net.write_html(name)
+
+    def show_jupyter_graph(self) -> None:
+        """Visualizes the graph structure of the graph store.
+
+        NOTE: This function requires yfiles_jupyter_graphs to be installed.
+        NOTE: This method exclusively works in jupyter environments.
+
+        """
+        try:
+            from yfiles_jupyter_graphs import GraphWidget
+        except ImportError:
+            raise ImportError(
+                "Please install yfiles_jupyter_graphs to visualize the graph: `pip install yfiles_jupyter_graphs`"
+            )
+
+        w = GraphWidget()
+        nodes = []
+        edges = []
+        for node in self.graph.nodes.values():
+            node_dict = {"id": node.id, "properties": {"label": node.id}}
+            nodes.append(node_dict)
+        for triplet in self.graph.triplets:
+            edge = {
+                "id": triplet[1],
+                "start": triplet[0],
+                "end": triplet[2],
+                "properties": {"label": triplet[1]},
+            }
+            edges.append(edge)
+        w.nodes = nodes
+        w.edges = edges
+        display(w)  # type: ignore[name-defined]

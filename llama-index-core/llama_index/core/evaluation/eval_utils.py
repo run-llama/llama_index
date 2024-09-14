@@ -10,10 +10,6 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
-
-from llama_index_client import ProjectCreate
-from llama_index_client.types.eval_question_create import EvalQuestionCreate
 
 from llama_index.core.async_utils import asyncio_module, asyncio_run
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -49,12 +45,14 @@ def get_responses(
 
 
 def get_results_df(
-    eval_results_list: List[EvaluationResult], names: List[str], metric_keys: List[str]
-) -> pd.DataFrame:
+    eval_results_list: List[Dict[str, List[EvaluationResult]]],
+    names: List[str],
+    metric_keys: List[str],
+) -> Any:
     """Get results df.
 
     Args:
-        eval_results_list (List[EvaluationResult]):
+        eval_results_list (List[Dict[str, List[EvaluationResult]]]):
             List of evaluation results.
         names (List[str]):
             Names of the evaluation results.
@@ -62,11 +60,20 @@ def get_results_df(
             List of metric keys to get.
 
     """
+    try:
+        import pandas as pd
+    except ImportError:
+        raise ImportError(
+            "Pandas is required to get results dataframes. Please install it with `pip install pandas`."
+        )
+
     metric_dict = defaultdict(list)
     metric_dict["names"] = names
     for metric_key in metric_keys:
         for eval_results in eval_results_list:
-            mean_score = np.array([r.score for r in eval_results[metric_key]]).mean()
+            mean_score = np.array(
+                [r.score or 0.0 for r in eval_results[metric_key]]
+            ).mean()
             metric_dict[metric_key].append(mean_score)
     return pd.DataFrame(metric_dict)
 
@@ -86,7 +93,7 @@ def _download_llama_dataset_from_hub(llama_dataset_id: str) -> "LabelledRagDatas
                     f"{tmp}",
                 ]
             )
-            return LabelledRagDataset.from_json(f"{tmp}/rag_dataset.json")
+            return LabelledRagDataset.from_json(f"{tmp}/rag_dataset.json")  # type: ignore
         except FileNotFoundError as err:
             raise ValueError(
                 "No dataset associated with the supplied `llama_dataset_id`"
@@ -104,6 +111,9 @@ def upload_eval_dataset(
     append: bool = False,
 ) -> str:
     """Upload questions to platform dataset."""
+    from llama_cloud import ProjectCreate
+    from llama_cloud.types.eval_question_create import EvalQuestionCreate
+
     if questions is None and llama_dataset_id is None:
         raise ValueError(
             "Must supply either a list of `questions`, or a `llama_dataset_id` to import from llama-hub."
@@ -111,10 +121,10 @@ def upload_eval_dataset(
 
     client = get_client(base_url=base_url, api_key=api_key)
 
-    project = client.project.upsert_project(request=ProjectCreate(name=project_name))
+    project = client.projects.upsert_project(request=ProjectCreate(name=project_name))
     assert project.id is not None
 
-    existing_datasets = client.project.get_datasets_for_project(project_id=project.id)
+    existing_datasets = client.projects.get_datasets_for_project(project_id=project.id)
 
     # check if dataset already exists
     cur_dataset = None
@@ -122,7 +132,7 @@ def upload_eval_dataset(
         if dataset.name == dataset_name:
             if overwrite:
                 assert dataset.id is not None
-                client.eval.delete_dataset(dataset_id=dataset.id)
+                client.evals.delete_dataset(dataset_id=dataset.id)
                 break
             elif not append:
                 raise ValueError(
@@ -135,7 +145,7 @@ def upload_eval_dataset(
 
     # either create new dataset or use existing one
     if cur_dataset is None:
-        eval_dataset = client.project.create_eval_dataset_for_project(
+        eval_dataset = client.projects.create_eval_dataset_for_project(
             project_id=project.id, name=dataset_name
         )
     else:
@@ -150,9 +160,9 @@ def upload_eval_dataset(
         # download `LabelledRagDataset` from llama-hub
         assert llama_dataset_id is not None
         rag_dataset = _download_llama_dataset_from_hub(llama_dataset_id)
-        questions = [example.query for example in rag_dataset[:]]
+        questions = [example.query for example in rag_dataset[:]]  # type: ignore
 
-    eval_questions = client.eval.create_questions(
+    eval_questions = client.evals.create_questions(
         dataset_id=eval_dataset.id,
         request=[EvalQuestionCreate(content=q) for q in questions],
     )
@@ -185,12 +195,14 @@ def upload_eval_results(
         )
         ```
     """
+    from llama_cloud import ProjectCreate
+
     client = get_client()
 
-    project = client.project.upsert_project(request=ProjectCreate(name=project_name))
+    project = client.projects.upsert_project(request=ProjectCreate(name=project_name))
     assert project.id is not None
 
-    client.project.create_local_eval_set_for_project(
+    client.projects.create_local_eval_set_for_project(
         project_id=project.id,
         app_name=app_name,
         results=results,

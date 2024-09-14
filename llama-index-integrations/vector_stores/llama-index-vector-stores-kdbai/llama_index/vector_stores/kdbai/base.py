@@ -16,7 +16,11 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.vector_stores.kdbai.utils import default_sparse_encoder
+from llama_index.vector_stores.kdbai.utils import (
+    default_sparse_encoder,
+    convert_metadata_col_v1,
+    convert_metadata_col_v2,
+)
 
 DEFAULT_COLUMN_NAMES = ["document_id", "text", "embedding"]
 
@@ -25,24 +29,6 @@ DEFAULT_BATCH_SIZE = 100
 
 # INITIALISE LOGGER AND SET FORMAT
 logger = logging.getLogger(__name__)
-
-
-# MATCH THE METADATA COLUMN DATA TYPE TO ITS PYTYPE
-def convert_metadata_col(column, value):
-    try:
-        if column["pytype"] == "str":
-            return str(value)
-        elif column["pytype"] == "bytes":
-            return value.encode("utf-8")
-        elif column["pytype"] == "datetime64[ns]":
-            return pd.to_datetime(value)
-        elif column["pytype"] == "timedelta64[ns]":
-            return pd.to_timedelta(value)
-        return value.astype(column["pytype"])
-    except Exception as e:
-        logger.error(
-            f"Failed to convert column {column['name']} to type {column['pytype']}: {e}"
-        )
 
 
 class KDBAIVectorStore(BasePydanticVectorStore):
@@ -90,6 +76,8 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 "Please add it to the dependencies."
             )
 
+        super().__init__(batch_size=batch_size, hybrid_search=hybrid_search)
+
         if table is None:
             raise ValueError("Must provide an existing KDB.AI table.")
         else:
@@ -100,8 +88,6 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 self._sparse_encoder = default_sparse_encoder
             else:
                 self._sparse_encoder = sparse_encoder
-
-        super().__init__(batch_size=batch_size, hybrid_search=hybrid_search)
 
     @property
     def client(self) -> Any:
@@ -125,11 +111,38 @@ class KDBAIVectorStore(BasePydanticVectorStore):
         Returns:
             List[str]: List of document IDs that were added.
         """
+        try:
+            import kdbai_client as kdbai
+
+            logger.info("KDBAI client version: " + kdbai.__version__)
+
+        except ImportError:
+            raise ValueError(
+                "Could not import kdbai_client package."
+                "Please add it to the dependencies."
+            )
+
         df = pd.DataFrame()
         docs = []
-        schema = self._table.schema()["columns"]
+
+        if isinstance(self._table, kdbai.Table):
+            schema = self._table.schema()["columns"]
+        elif isinstance(self._table, kdbai.TablePyKx):
+            schema = self._table.schema["schema"]["c"]
+            types = self._table.schema["schema"]["t"].decode("utf-8")
+
         if self.hybrid_search:
-            schema = [item for item in schema if item["name"] != "sparseVectors"]
+            if isinstance(self._table, kdbai.Table):
+                schema = [item for item in schema if item["name"] != "sparseVectors"]
+            elif isinstance(self._table, kdbai.TablePyKx):
+                schema = [item for item in schema if item != "sparseVectors"]
+
+            # For handling the double columns issue from backend (occurs only when schema has sparseVectors).
+            updated_schema = {}
+            for column in schema:
+                if column["name"] not in updated_schema:
+                    updated_schema[column["name"]] = column
+            schema = list(updated_schema.values())
 
         try:
             for node in nodes:
@@ -140,19 +153,33 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 }
 
                 if self.hybrid_search:
-                    doc["sparseVectors"] = self._sparse_encoder([node.get_content()])
+                    doc["sparseVectors"] = self._sparse_encoder(node.get_content())
 
                 # handle extra columns
                 if len(schema) > len(DEFAULT_COLUMN_NAMES):
-                    for column in schema[len(DEFAULT_COLUMN_NAMES) :]:
-                        try:
-                            doc[column["name"]] = convert_metadata_col(
-                                column, node.metadata[column["name"]]
-                            )
-                        except Exception as e:
-                            logger.error(
-                                f"Error writing column {column['name']} as type {column['pytype']}: {e}."
-                            )
+                    if isinstance(self._table, kdbai.Table):
+                        for column in schema[len(DEFAULT_COLUMN_NAMES) :]:
+                            try:
+                                doc[column["name"]] = convert_metadata_col_v1(
+                                    column, node.metadata[column["name"]]
+                                )
+                            except Exception as e:
+                                logger.error(
+                                    f"Error writing column {column['name']} as type {column['pytype']}: {e}."
+                                )
+                    elif isinstance(self._table, kdbai.TablePyKx):
+                        for column_name, column_type in zip(
+                            schema[len(DEFAULT_COLUMN_NAMES) :],
+                            types[len(DEFAULT_COLUMN_NAMES) :],
+                        ):
+                            try:
+                                doc[column_name] = convert_metadata_col_v2(
+                                    column_name, column_type, node.metadata[column_name]
+                                )
+                            except Exception as e:
+                                logger.error(
+                                    f"Error writing column {column_name} as qtype {column_type}: {e}."
+                                )
 
                 docs.append(doc)
 
@@ -173,6 +200,17 @@ class KDBAIVectorStore(BasePydanticVectorStore):
             logger.error(f"Error preparing data for KDB.AI: {e}.")
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        try:
+            import kdbai_client as kdbai
+
+            logger.info("KDBAI client version: " + kdbai.__version__)
+
+        except ImportError:
+            raise ValueError(
+                "Could not import kdbai_client package."
+                "Please add it to the dependencies."
+            )
+
         if query.filters is None:
             filter = []
         else:
@@ -180,7 +218,9 @@ class KDBAIVectorStore(BasePydanticVectorStore):
 
         if self.hybrid_search:
             alpha = query.alpha if query.alpha is not None else 0.5
-            sparse_vectors = self._sparse_encoder([query.query_str])
+
+            sparse_vectors = [self._sparse_encoder(query.query_str)]
+
             results = self._table.hybrid_search(
                 dense_vectors=[query.query_embedding],
                 sparse_vectors=sparse_vectors,

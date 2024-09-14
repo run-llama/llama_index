@@ -2,4 +2,4 @@
     options:
       members:
         - Neo4jGraphStore
-        - Neo4jPGStore
+        - Neo4jPropertyGraphStore

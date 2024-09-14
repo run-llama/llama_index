@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Any, AsyncGenerator, Generator, Optional, Union, List
+from typing import Any, AsyncGenerator, Dict, Generator, Optional, Union, List, Any
 
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 
 try:
@@ -10,7 +10,7 @@ try:
 except ImportError:
     from pydantic import BaseModel as V2BaseModel
 
-    V1BaseModel = V2BaseModel
+    V1BaseModel = V2BaseModel  # type: ignore
 
 
 class MessageRole(str, Enum):
@@ -49,7 +49,7 @@ class ChatMessage(BaseModel):
 
     def _recursive_serialization(self, value: Any) -> Any:
         if isinstance(value, (V1BaseModel, V2BaseModel)):
-            return value.dict()
+            return value.model_dump()  # type: ignore
         if isinstance(value, dict):
             return {
                 key: self._recursive_serialization(value)
@@ -59,9 +59,12 @@ class ChatMessage(BaseModel):
             return [self._recursive_serialization(item) for item in value]
         return value
 
-    def dict(self, **kwargs: Any) -> dict:
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        return self.model_dump(**kwargs)
+
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
         # ensure all additional_kwargs are serializable
-        msg = super().dict(**kwargs)
+        msg = super().model_dump(**kwargs)
 
         for key, value in msg.get("additional_kwargs", {}).items():
             value = self._recursive_serialization(value)
@@ -87,7 +90,7 @@ class ChatResponse(BaseModel):
     """Chat response."""
 
     message: ChatMessage
-    raw: Optional[dict] = None
+    raw: Optional[Any] = None
     delta: Optional[str] = None
     logprobs: Optional[List[List[LogProb]]] = None
     additional_kwargs: dict = Field(default_factory=dict)
@@ -116,7 +119,7 @@ class CompletionResponse(BaseModel):
 
     text: str
     additional_kwargs: dict = Field(default_factory=dict)
-    raw: Optional[dict] = None
+    raw: Optional[Any] = None
     logprobs: Optional[List[List[LogProb]]] = None
     delta: Optional[str] = None
 
@@ -129,6 +132,9 @@ CompletionResponseAsyncGen = AsyncGenerator[CompletionResponse, None]
 
 
 class LLMMetadata(BaseModel):
+    model_config = ConfigDict(
+        protected_namespaces=("pydantic_model_",), arbitrary_types_allowed=True
+    )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description=(

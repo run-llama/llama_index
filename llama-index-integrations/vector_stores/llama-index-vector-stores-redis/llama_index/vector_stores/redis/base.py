@@ -103,9 +103,9 @@ class RedisVectorStore(BasePydanticVectorStore):
         )
     """
 
-    stores_text = True
-    stores_node = True
-    flat_metadata = False
+    stores_text: bool = True
+    stores_node: bool = True
+    flat_metadata: bool = False
 
     _index: SearchIndex = PrivateAttr()
     _overwrite: bool = PrivateAttr()
@@ -120,6 +120,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         return_fields: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
+        super().__init__()
         # check for indicators of old schema
         self._flag_old_kwargs(**kwargs)
 
@@ -150,8 +151,6 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         # Create index
         self.create_index()
-
-        super().__init__()
 
     def _flag_old_kwargs(self, **kwargs):
         old_kwargs = [
@@ -345,15 +344,20 @@ class RedisVectorStore(BasePydanticVectorStore):
         if metadata_filters:
             if metadata_filters.filters:
                 for filter in metadata_filters.filters:
-                    # Index must be created with the metadata field in the index schema
-                    field = self._index.schema.fields.get(filter.key)
-                    if not field:
-                        logger.warning(
-                            f"{filter.key} field was not included as part of the index schema, and thus cannot be used as a filter condition."
-                        )
-                        continue
-                    # Extract redis filter
-                    redis_filter = self._to_redis_filter(field, filter)
+                    # Handle nested MetadataFilters recursively
+                    if isinstance(filter, MetadataFilters):
+                        redis_filter = self._create_redis_filter_expression(filter)
+                    else:
+                        # Index must be created with the metadata field in the index schema
+                        field = self._index.schema.fields.get(filter.key)
+                        if not field:
+                            logger.warning(
+                                f"{filter.key} field was not included as part of the index schema, and thus cannot be used as a filter condition."
+                            )
+                            continue
+                        # Extract redis filter
+                        redis_filter = self._to_redis_filter(field, filter)
+
                     # Combine with conditional
                     if metadata_filters.condition == "and":
                         filter_expression = filter_expression & redis_filter
@@ -426,9 +430,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             raise ValueError("Query embedding is required for querying.")
 
         redis_query = self._to_redis_query(query)
-        logger.info(
-            f"Querying index {self._index.name} with filters {redis_query.get_filter()}"
-        )
+        logger.info(f"Querying index {self._index.name} with query {redis_query!s}")
 
         try:
             results = self._index.query(redis_query)

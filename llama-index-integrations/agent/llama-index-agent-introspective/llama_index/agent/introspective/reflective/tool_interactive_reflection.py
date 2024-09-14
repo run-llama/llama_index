@@ -130,17 +130,16 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         **kwargs: Any,
     ) -> None:
         """__init__."""
-        self._critique_agent_worker = critique_agent_worker
-        self._critique_template = critique_template
-        self._verbose = verbose
-        self._correction_llm = correction_llm
-
         super().__init__(
             callback_manager=callback_manager,
             max_iterations=max_iterations,
             stopping_callable=stopping_callable,
             **kwargs,
         )
+        self._critique_agent_worker = critique_agent_worker
+        self._critique_template = critique_template
+        self._verbose = verbose
+        self._correction_llm = correction_llm
 
     @classmethod
     def from_defaults(
@@ -184,6 +183,8 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         messages = task.memory.get()
         for message in messages:
             new_memory.put(message)
+        # inject new input into memory
+        new_memory.put(ChatMessage(content=task.input, role=MessageRole.USER))
 
         # initialize task state
         task_state = {

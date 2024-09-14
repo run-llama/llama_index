@@ -1,7 +1,8 @@
-from typing import Any, List, Optional, Literal, Generator
+from typing import Any, List, Optional, Generator, Literal
 
-from urllib.parse import urlparse
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel
+
+from urllib.parse import urlparse, urljoin
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel, ConfigDict
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.instrumentation.events.rerank import (
@@ -12,34 +13,29 @@ from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 import requests
 import warnings
-from deprecated import deprecated
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 
-DEFAULT_MODEL = "nv-rerank-qa-mistral-4b:1"
-BASE_URL = "https://ai.api.nvidia.com/v1"
+DEFAULT_MODEL = "nvidia/nv-rerankqa-mistral-4b-v3"
 
 MODEL_ENDPOINT_MAP = {
-    DEFAULT_MODEL: BASE_URL,
+    "nvidia/nv-rerankqa-mistral-4b-v3": "https://ai.api.nvidia.com/v1/retrieval/nvidia/nv-rerankqa-mistral-4b-v3/reranking",
+    "nv-rerank-qa-mistral-4b:1": "https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking",
 }
-
-KNOWN_URLS = list(MODEL_ENDPOINT_MAP.values())
 
 dispatcher = get_dispatcher(__name__)
 
 
 class Model(BaseModel):
     id: str
+    base_model: Optional[str] = None
 
 
 class NVIDIARerank(BaseNodePostprocessor):
     """NVIDIA's API Catalog Reranker Connector."""
 
-    class Config:
-        validate_assignment = True
-
+    model_config = ConfigDict(validate_assignment=True)
     model: Optional[str] = Field(
-        default=DEFAULT_MODEL,
         description="The NVIDIA API Catalog reranker to use.",
     )
     top_n: Optional[int] = Field(
@@ -52,10 +48,19 @@ class NVIDIARerank(BaseNodePostprocessor):
         ge=1,
         description="The maximum batch size supported by the inference server.",
     )
+    truncate: Optional[Literal["NONE", "END"]] = Field(
+        description=(
+            "Truncate input text if it exceeds the model's maximum token length. "
+            "Default is model dependent and is likely to raise error if an "
+            "input is too long."
+        ),
+        default=None,
+    )
     _api_key: str = PrivateAttr("NO_API_KEY_PROVIDED")  # TODO: should be SecretStr
     _mode: str = PrivateAttr("nvidia")
     _is_hosted: bool = PrivateAttr(True)
-    _base_url: str = PrivateAttr(BASE_URL)
+    _base_url: str = PrivateAttr(MODEL_ENDPOINT_MAP.get(DEFAULT_MODEL))
+    _inference_url: Optional[str] = PrivateAttr(None)
 
     def _set_api_key(self, nvidia_api_key: str = None, api_key: str = None) -> None:
         self._api_key = get_from_param_or_env(
@@ -67,7 +72,7 @@ class NVIDIARerank(BaseNodePostprocessor):
 
     def __init__(
         self,
-        model: str = DEFAULT_MODEL,
+        model: Optional[str] = None,
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
@@ -83,14 +88,23 @@ class NVIDIARerank(BaseNodePostprocessor):
             nvidia_api_key (str, optional): The NVIDIA API key. Defaults to None.
             api_key (str, optional): The API key. Defaults to None.
             base_url (str, optional): The base URL of the on-premises NIM. Defaults to None.
+            truncate (str): "NONE", "END", truncate input text if it exceeds
+                            the model's context length. Default is model dependent and
+                            is likely to raise an error if an input is too long.
             **kwargs: Additional keyword arguments.
 
         API Key:
         - The recommended way to provide the API key is through the `NVIDIA_API_KEY` environment variable.
         """
+        if not base_url or (base_url in MODEL_ENDPOINT_MAP.values() and not model):
+            model = model or DEFAULT_MODEL
         super().__init__(model=model, **kwargs)
 
-        self._base_url = base_url or MODEL_ENDPOINT_MAP.get(model, BASE_URL)
+        base_url = base_url or MODEL_ENDPOINT_MAP.get(DEFAULT_MODEL)
+        self._is_hosted = base_url in MODEL_ENDPOINT_MAP.values()
+
+        if not self._is_hosted and base_url:
+            self._base_url = base_url.rstrip("/") + "/"
 
         self._api_key = get_from_param_or_env(
             "api_key",
@@ -99,72 +113,116 @@ class NVIDIARerank(BaseNodePostprocessor):
             "NO_API_KEY_PROVIDED",
         )
 
-        self._is_hosted = self._base_url in KNOWN_URLS
+        if not self._is_hosted:  # on-premises mode
+            # in this case we trust the model name and base_url
+            self._inference_url = self._validate_url(base_url) + "/ranking"
+        else:  # hosted mode
+            if not model:
+                model = MODEL_ENDPOINT_MAP.get(base_url)
+            if model not in MODEL_ENDPOINT_MAP:
+                raise ValueError(
+                    f"Model '{model}' not found. "
+                    f"Available models are: {', '.join(MODEL_ENDPOINT_MAP.keys())}"
+                )
+            if self._api_key == "NO_API_KEY_PROVIDED":
+                raise ValueError("An API key is required for hosted NIM.")
+            self._inference_url = MODEL_ENDPOINT_MAP[model]
 
-        if self._is_hosted and self._api_key == "NO_API_KEY_PROVIDED":
-            warnings.warn(
-                "An API key is required for hosted NIM. This will become an error in 0.2.0."
+        if not model:
+            self.__set_default_model()
+
+    def __set_default_model(self):
+        """Set default model."""
+        if not self._is_hosted:
+            valid_models = [
+                model.id
+                for model in self.available_models
+                if not model.base_model or model.base_model == model.id
+            ]
+            self.model = next(iter(valid_models), None)
+            if self.model:
+                warnings.warn(
+                    f"Default model is set as: {self.model}. \n"
+                    "Set model using model parameter. \n"
+                    "To get available models use available_models property.",
+                    UserWarning,
+                )
+            else:
+                raise ValueError("No locally hosted model was found.")
+        else:
+            self.model = DEFAULT_MODEL
+
+    def _get_models(self) -> List[Model]:
+        session = requests.Session()
+
+        if self._is_hosted:
+            _headers = {
+                "Authorization": f"Bearer {self._api_key}",
+                "Accept": "application/json",
+            }
+        else:
+            _headers = {
+                "Accept": "application/json",
+            }
+        url = (
+            "https://integrate.api.nvidia.com/v1/models"
+            if self._is_hosted
+            else urljoin(self._base_url, "models")
+        )
+        response = session.get(url, headers=_headers)
+        response.raise_for_status()
+
+        assert (
+            "data" in response.json()
+        ), "Response does not contain expected 'data' key"
+        assert isinstance(
+            response.json()["data"], list
+        ), "Response 'data' is not a list"
+        assert all(
+            isinstance(result, dict) for result in response.json()["data"]
+        ), "Response 'data' is not a list of dictionaries"
+        assert all(
+            "id" in result for result in response.json()["data"]
+        ), "Response 'rankings' is not a list of dictionaries with 'id'"
+
+        return [
+            Model(
+                id=model["id"],
+                base_model=getattr(model, "params", {}).get("root", None),
             )
+            for model in response.json()["data"]
+        ]
+
+    def _validate_url(self, base_url):
+        """
+        Base URL Validation.
+        ValueError : url which do not have valid scheme and netloc.
+        Warning : v1/rankings routes.
+        ValueError : Any other routes other than above.
+        """
+        expected_format = "Expected format is 'http://host:port'."
+        result = urlparse(base_url)
+        if not (result.scheme and result.netloc):
+            raise ValueError(f"Invalid base_url, {expected_format}")
+        if result.path:
+            normalized_path = result.path.strip("/")
+            if normalized_path == "v1":
+                pass
+            elif normalized_path == "v1/rankings":
+                warnings.warn(f"{expected_format} Rest is Ignored.")
+            else:
+                raise ValueError(f"Invalid base_url, {expected_format}")
+        return base_url
 
     @property
     def available_models(self) -> List[Model]:
         """Get available models."""
         # all available models are in the map
         ids = MODEL_ENDPOINT_MAP.keys()
-        return [Model(id=id) for id in ids]
-
-    @deprecated(
-        version="0.1.2",
-        reason="Will be removed in 0.2. Construct with `base_url` instead.",
-    )
-    def mode(
-        self,
-        mode: Literal["nvidia", "nim"] = "nvidia",
-        *,
-        base_url: Optional[str] = None,
-        model: Optional[str] = None,
-        api_key: Optional[str] = None,
-    ) -> "NVIDIARerank":
-        """
-        Deprecated: use NVIDIARerank(base_url=...) instead.
-        """
-        if isinstance(self, str):
-            raise ValueError("Please construct the model before calling mode()")
-
-        self._is_hosted = mode == "nvidia"
-
         if not self._is_hosted:
-            if not base_url:
-                raise ValueError("base_url is required for nim mode")
+            return self._get_models()
         else:
-            api_key = get_from_param_or_env("api_key", api_key, "NVIDIA_API_KEY")
-        if not base_url:
-            base_url = BASE_URL
-
-        self._mode = mode
-        if base_url:
-            # TODO: change this to not require /v1 at the end. the current
-            #       implementation is for consistency, but really this code
-            #       should dictate which version it works with
-            components = urlparse(base_url)
-            if not components.scheme or not components.netloc:
-                raise ValueError(
-                    f"Incorrect url format, use https://host:port/v1, given '{base_url}'"
-                )
-            last_nonempty_path_component = [x for x in components.path.split("/") if x][
-                -1
-            ]
-            if last_nonempty_path_component != "v1":
-                raise ValueError(
-                    f"Incorrect url format, use https://host:post/v1 ending with /v1, given '{base_url}'"
-                )
-            self._base_url = base_url
-        if model:
-            self.model = model
-        if api_key:
-            self._api_key = api_key
-
-        return self
+            return [Model(id=id) for id in ids]
 
     @classmethod
     def class_name(cls) -> str:
@@ -216,19 +274,16 @@ class NVIDIARerank(BaseNodePostprocessor):
             for batch in batched(nodes, self.max_batch_size):
                 payloads = {
                     "model": self.model,
+                    **({"truncate": self.truncate} if self.truncate else {}),
                     "query": {"text": query_bundle.query_str},
                     "passages": [
                         {"text": n.get_content(metadata_mode=MetadataMode.EMBED)}
                         for n in batch
                     ],
                 }
-                # the hosted NIM path is different from the local NIM path
-                url = self._base_url
-                if self._is_hosted:
-                    url += "/retrieval/nvidia/reranking"
-                else:
-                    url += "/ranking"
-                response = session.post(url, headers=_headers, json=payloads)
+                response = session.post(
+                    self._inference_url, headers=_headers, json=payloads
+                )
                 response.raise_for_status()
                 # expected response format:
                 # {

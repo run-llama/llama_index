@@ -123,6 +123,22 @@ from llama_index.core.indices.property_graph import ImplicitPathExtractor
 kg_extractor = ImplicitPathExtractor()
 ```
 
+### `DynamicLLMPathExtractor`
+
+Will extract paths (including entity types!) according to optional list of allowed entity types and relation types. If none are provided, then the LLM will assign types as it sees fit. If they are provided, it will help guide the LLM, but will not enforce exactly those types.
+
+```python
+from llama_index.core.indices.property_graph import DynamicLLMPathExtractor
+
+kg_extractor = DynamicLLMPathExtractor(
+    llm=llm,
+    max_triplets_per_chunk=20,
+    num_workers=4,
+    allowed_entity_types=["POLITICIAN", "POLITICAL_PARTY"],
+    allowed_relation_types=["PRESIDENT_OF", "MEMBER_OF"],
+)
+```
+
 #### `SchemaLLMPathExtractor`
 
 Extract paths following a strict schema of allowed entities, relationships, and which entities can be connected to which relationships.
@@ -214,7 +230,7 @@ Explicitly declaring the retriever allows you to customize several options. Here
 ```python
 from llama_index.core.indices.property_graph import LLMSynonymRetriever
 
-DEFAULT_SYNONYM_EXPAND_TEMPLATE = (
+prompt = (
     "Given some initial query, generate synonyms or related keywords up to {max_keywords} in total, "
     "considering possible cases of capitalization, pluralization, common expressions, etc.\n"
     "Provide all synonyms/keywords separated by '^' symbols: 'keyword1^keyword2^...'\n"
@@ -305,7 +321,7 @@ cypher_retriever = TextToCypherRetriever(
     text_to_cypher_template=DEFAULT_TEXT_TO_CYPHER_TEMPLATE,
     # customize how the cypher result is inserted into
     # a text node. Requires `query` and `response` template args
-    response_template=DEFAULT_RESPONSE_TEMPLAT,
+    response_template=DEFAULT_RESPONSE_TEMPLATE,
     # an optional callable that can clean/verify generated cypher
     cypher_validator=None,
     # allowed fields in the resulting
@@ -323,7 +339,7 @@ To illustrate how this works, here is a small example:
 
 ```python
 # NOTE: current v1 is needed
-from pydantic.v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from llama_index.core.indices.property_graph import CypherTemplateRetriever
 
 # write a query with template params
@@ -353,10 +369,13 @@ template_retriever = CypherTemplateRetriever(
 
 Currently, supported graph stores for property graphs include:
 
-|                     | In-Memory | Native Embedding Support | Async | Server or disk based? |
-|---------------------|-----------|--------------------------|-------|-----------------------|
-| SimplePropertyGraphStore | ✅         | ❌                        | ❌     | Disk                  |
-| Neo4jPropertyGraphStore  | ❌         | ✅                        | ❌     | Server                |
+|                              | In-Memory  | Native Embedding Support | Async | Server or disk based? |
+|------------------------------|------------|--------------------------|-------|-----------------------|
+| SimplePropertyGraphStore     | ✅         | ❌                       | ❌    | Disk                  |
+| Neo4jPropertyGraphStore      | ❌         | ✅                       | ❌    | Server                |
+| NebulaPropertyGraphStore     | ❌         | ❌                       | ❌    | Server                |
+| TiDBPropertyGraphStore       | ❌         | ✅                       | ❌    | Server                |
+| FalkorDBPropertyGraphStore   | ❌         | ✅                       | ❌    | Server                |
 
 ### Saving to/from disk
 
@@ -392,7 +411,7 @@ This example shows how you might save/load a property graph index using Neo4j an
 ```python
 from llama_index.core import StorageContext, load_index_from_storage
 from llama_index.core.indices import PropertyGraphIndex
-from llama_index.graph_stores.neo4j import Neo4jPGStore
+from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient, AsyncQdrantClient
 
@@ -402,7 +421,7 @@ vector_store = QdrantVectorStore(
     aclient=AsyncQdrantClient(...),
 )
 
-graph_store = Neo4jPGStore(
+graph_store = Neo4jPropertyGraphStore(
     username="neo4j",
     password="<password>",
     url="bolt://localhost:7687",
@@ -605,6 +624,8 @@ Below, you can find some example notebooks showcasing the `PropertyGraphIndex`
 
 - [Basic Usage](../../examples/property_graph/property_graph_basic.ipynb)
 - [Using Neo4j](../../examples/property_graph/property_graph_neo4j.ipynb)
+- [Using Nebula](../../examples/property_graph/property_graph_nebula.ipynb)
 - [Advanced Usage with Neo4j and local models](../../examples/property_graph/property_graph_advanced.ipynb)
 - [Using a Property Graph Store](../../examples/property_graph/graph_store.ipynb)
 - [Creating a Custom Graph Retriever](../../examples/property_graph/property_graph_custom_retriever.ipynb)
+- [Comparing KG Extractors](../../examples/property_graph/Dynamic_KG_Extraction.ipynb)

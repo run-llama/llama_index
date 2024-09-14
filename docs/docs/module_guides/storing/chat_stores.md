@@ -97,3 +97,67 @@ chat_engine = SimpleChatEngine(
 
 response = chat_engine.chat("Hello.")
 ```
+
+## DynamoDBChatStore
+
+Using `DynamoDBChatStore`, you can store your chat history in AWS DynamoDB.
+
+### Installation
+```bash
+pip install llama-index-storage-chat-store-dynamodb
+```
+
+### Usage
+Ensure you have a DynamoDB table created with the appropriate schema. By default, here is an example:
+```python
+import boto3
+
+# Get the service resource.
+dynamodb = boto3.resource("dynamodb")
+
+# Create the DynamoDB table.
+table = dynamodb.create_table(
+    TableName="EXAMPLE_TABLE",
+    KeySchema=[{"AttributeName": "SessionId", "KeyType": "HASH"}],
+    AttributeDefinitions=[
+        {"AttributeName": "SessionId", "AttributeType": "S"}
+    ],
+    BillingMode="PAY_PER_REQUEST",
+)
+```
+
+You can then use the `DynamoDBChatStore` class to persist and retrieve chat histories:
+```python
+import os
+from llama_index.core.llms import ChatMessage, MessageRole
+from llama_index.storage.chat_store.dynamodb.base import DynamoDBChatStore
+
+# Initialize DynamoDB chat store
+chat_store = DynamoDBChatStore(
+    table_name="EXAMPLE_TABLE", profile_name=os.getenv("AWS_PROFILE")
+)
+
+# A chat history, which doesn't exist yet, returns an empty array.
+print(chat_store.get_messages("123"))
+# >>> []
+
+# Initializing a chat history with a key of "SessionID = 123"
+messages = [
+    ChatMessage(role=MessageRole.USER, content="Who are you?"),
+    ChatMessage(
+        role=MessageRole.ASSISTANT, content="I am your helpful AI assistant."
+    ),
+]
+chat_store.set_messages(key="123", messages=messages)
+print(chat_store.get_messages("123"))
+# >>> [ChatMessage(role=<MessageRole.USER: 'user'>, content='Who are you?', additional_kwargs={}),
+#      ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, content='I am your helpful AI assistant.', additional_kwargs={})]]
+
+# Appending a message to an existing chat history
+message = ChatMessage(role=MessageRole.USER, content="What can you do?")
+chat_store.add_message(key="123", message=message)
+print(chat_store.get_messages("123"))
+# >>> [ChatMessage(role=<MessageRole.USER: 'user'>, content='Who are you?', additional_kwargs={}),
+#      ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, content='I am your helpful AI assistant.', additional_kwargs={})],
+#      ChatMessage(role=<MessageRole.USER: 'user'>, content='What can you do?', additional_kwargs={})]
+```

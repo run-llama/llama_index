@@ -7,12 +7,18 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    SerializeAsAny,
+    ConfigDict,
+)
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixin, PromptMixinType
 from llama_index.core.schema import QueryBundle
@@ -79,11 +85,11 @@ class TaskStep(BaseModel):
 
     """
 
-    task_id: str = Field(..., diescription="Task ID")
+    task_id: str = Field(..., description="Task ID")
     step_id: str = Field(..., description="Step ID")
     input: Optional[str] = Field(default=None, description="User input")
     # memory: BaseMemory = Field(
-    #     ..., type=BaseMemory, description="Conversational Memory"
+    #     ..., description="Conversational Memory"
     # )
     step_state: Dict[str, Any] = Field(
         default_factory=dict, description="Additional state for a given step."
@@ -154,25 +160,22 @@ class Task(BaseModel):
 
     """
 
-    class Config:
-        arbitrary_types_allowed = True
-
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     task_id: str = Field(
-        default_factory=lambda: str(uuid.uuid4()), type=str, description="Task ID"
+        default_factory=lambda: str(uuid.uuid4()), description="Task ID"
     )
-    input: str = Field(..., type=str, description="User input")
+    input: str = Field(..., description="User input")
 
     # NOTE: this is state that may be modified throughout the course of execution of the task
-    memory: BaseMemory = Field(
+    memory: SerializeAsAny[BaseMemory] = Field(
         ...,
-        type=BaseMemory,
         description=(
             "Conversational Memory. Maintains state before execution of this task."
         ),
     )
 
     callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager,
+        default_factory=lambda: CallbackManager([]),
         exclude=True,
         description="Callback manager for the task.",
     )
@@ -186,11 +189,8 @@ class Task(BaseModel):
     )
 
 
-class BaseAgentWorker(PromptMixin):
+class BaseAgentWorker(PromptMixin, DispatcherSpanMixin):
     """Base agent worker."""
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""

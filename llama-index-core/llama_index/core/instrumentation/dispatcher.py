@@ -1,8 +1,10 @@
-from contextvars import Token
-from typing import Any, List, Optional, Dict
+from contextlib import contextmanager
+from contextvars import ContextVar, Token
+from typing import Any, Callable, Generator, List, Optional, Dict, Protocol
 import inspect
 import uuid
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from deprecated import deprecated
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.span import active_span_id
 from llama_index.core.instrumentation.span_handlers import (
@@ -12,6 +14,29 @@ from llama_index.core.instrumentation.span_handlers import (
 from llama_index.core.instrumentation.events.base import BaseEvent
 from llama_index.core.instrumentation.events.span import SpanDropEvent
 import wrapt
+
+DISPATCHER_SPAN_DECORATED_ATTR = "__dispatcher_span_decorated__"
+
+
+# ContextVar for managing active instrument tags
+active_instrument_tags: ContextVar[Dict[str, Any]] = ContextVar(
+    "instrument_tags", default={}
+)
+
+
+@contextmanager
+def instrument_tags(new_tags: Dict[str, Any]) -> Generator[None, None, None]:
+    token = active_instrument_tags.set(new_tags)
+    try:
+        yield
+    finally:
+        active_instrument_tags.reset(token)
+
+
+# Keep for backwards compatibility
+class EventDispatcher(Protocol):
+    def __call__(self, event: BaseEvent, **kwargs: Any) -> None:
+        ...
 
 
 class Dispatcher(BaseModel):
@@ -29,6 +54,7 @@ class Dispatcher(BaseModel):
         hierarchy.
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str = Field(default_factory=str, description="Name of dispatcher")
     event_handlers: List[BaseEventHandler] = Field(
         default=[], description="List of attached handlers"
@@ -74,10 +100,12 @@ class Dispatcher(BaseModel):
 
     @property
     def parent(self) -> "Dispatcher":
+        assert self.manager is not None
         return self.manager.dispatchers[self.parent_name]
 
     @property
     def root(self) -> "Dispatcher":
+        assert self.manager is not None
         return self.manager.dispatchers[self.root_name]
 
     def add_event_handler(self, handler: BaseEventHandler) -> None:
@@ -88,16 +116,41 @@ class Dispatcher(BaseModel):
         """Add handler to set of handlers."""
         self.span_handlers += [handler]
 
-    def event(self, event: BaseEvent, **kwargs) -> None:
+    def event(self, event: BaseEvent, **kwargs: Any) -> None:
         """Dispatch event to all registered handlers."""
-        c = self
+        c: Optional["Dispatcher"] = self
+
+        # Attach tags from the active context
+        event.tags.update(active_instrument_tags.get())
+
         while c:
             for h in c.event_handlers:
-                h.handle(event, **kwargs)
+                try:
+                    h.handle(event, **kwargs)
+                except BaseException:
+                    pass
             if not c.propagate:
                 c = None
             else:
                 c = c.parent
+
+    @deprecated(
+        version="0.10.41",
+        reason=(
+            "`get_dispatch_event()` has been deprecated in favor of using `event()` directly."
+            " If running into this warning through an integration package, then please "
+            "update your integration to the latest version."
+        ),
+    )
+    def get_dispatch_event(self) -> EventDispatcher:
+        """Keep for backwards compatibility.
+
+        In llama-index-core v0.10.41, we removed this method and made changes to
+        integrations or packs that relied on this method. Adding back this method
+        in case any integrations or apps have not been upgraded. That is, they
+        still rely on this method.
+        """
+        return self.event
 
     def span_enter(
         self,
@@ -105,19 +158,24 @@ class Dispatcher(BaseModel):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         parent_id: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ has started."""
-        c = self
+        c: Optional["Dispatcher"] = self
         while c:
             for h in c.span_handlers:
-                h.span_enter(
-                    id_=id_,
-                    bound_args=bound_args,
-                    instance=instance,
-                    parent_id=parent_id,
-                    **kwargs,
-                )
+                try:
+                    h.span_enter(
+                        id_=id_,
+                        bound_args=bound_args,
+                        instance=instance,
+                        parent_id=parent_id,
+                        tags=tags,
+                        **kwargs,
+                    )
+                except BaseException:
+                    pass
             if not c.propagate:
                 c = None
             else:
@@ -132,16 +190,19 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ is being dropped."""
-        c = self
+        c: Optional["Dispatcher"] = self
         while c:
             for h in c.span_handlers:
-                h.span_drop(
-                    id_=id_,
-                    bound_args=bound_args,
-                    instance=instance,
-                    err=err,
-                    **kwargs,
-                )
+                try:
+                    h.span_drop(
+                        id_=id_,
+                        bound_args=bound_args,
+                        instance=instance,
+                        err=err,
+                        **kwargs,
+                    )
+                except BaseException:
+                    pass
             if not c.propagate:
                 c = None
             else:
@@ -156,31 +217,49 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ is exiting."""
-        c = self
+        c: Optional["Dispatcher"] = self
         while c:
             for h in c.span_handlers:
-                h.span_exit(
-                    id_=id_,
-                    bound_args=bound_args,
-                    instance=instance,
-                    result=result,
-                    **kwargs,
-                )
+                try:
+                    h.span_exit(
+                        id_=id_,
+                        bound_args=bound_args,
+                        instance=instance,
+                        result=result,
+                        **kwargs,
+                    )
+                except BaseException:
+                    pass
             if not c.propagate:
                 c = None
             else:
                 c = c.parent
 
-    def span(self, func):
+    def span(self, func: Callable) -> Any:
+        # The `span` decorator should be idempotent.
+        try:
+            if hasattr(func, DISPATCHER_SPAN_DECORATED_ATTR):
+                return func
+            setattr(func, DISPATCHER_SPAN_DECORATED_ATTR, True)
+        except AttributeError:
+            # instance methods can fail with:
+            # AttributeError: 'method' object has no attribute '__dispatcher_span_decorated__'
+            pass
+
         @wrapt.decorator
-        def wrapper(func, instance, args, kwargs):
+        def wrapper(func: Callable, instance: Any, args: list, kwargs: dict) -> Any:
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+            tags = active_instrument_tags.get()
 
             token = active_span_id.set(id_)
             parent_id = None if token.old_value is Token.MISSING else token.old_value
             self.span_enter(
-                id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
+                id_=id_,
+                bound_args=bound_args,
+                instance=instance,
+                parent_id=parent_id,
+                tags=tags,
             )
             try:
                 result = func(*args, **kwargs)
@@ -198,14 +277,21 @@ class Dispatcher(BaseModel):
                 active_span_id.reset(token)
 
         @wrapt.decorator
-        async def async_wrapper(func, instance, args, kwargs):
+        async def async_wrapper(
+            func: Callable, instance: Any, args: list, kwargs: dict
+        ) -> Any:
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+            tags = active_instrument_tags.get()
 
             token = active_span_id.set(id_)
             parent_id = None if token.old_value is Token.MISSING else token.old_value
             self.span_enter(
-                id_=id_, bound_args=bound_args, instance=instance, parent_id=parent_id
+                id_=id_,
+                bound_args=bound_args,
+                instance=instance,
+                parent_id=parent_id,
+                tags=tags,
             )
             try:
                 result = await func(*args, **kwargs)
@@ -235,9 +321,6 @@ class Dispatcher(BaseModel):
         else:
             return self.name
 
-    class Config:
-        arbitrary_types_allowed = True
-
 
 class Manager:
     def __init__(self, root: Dispatcher) -> None:
@@ -250,4 +333,4 @@ class Manager:
             self.dispatchers[d.name] = d
 
 
-Dispatcher.update_forward_refs()
+Dispatcher.model_rebuild()

@@ -5,10 +5,15 @@ import json
 import logging
 import uuid
 from functools import partial
-from typing import Any, Dict, List, Callable, Optional, Tuple, Union, cast, get_args
+from typing import Any, Dict, List, Callable, Optional, Union, cast, get_args
 import re
 
 from llama_index.agent.openai.utils import resolve_tool_choice
+from llama_index.core.agent.function_calling.step import (
+    build_error_tool_output,
+    build_missing_tool_message,
+    get_function_by_name,
+)
 from llama_index.core.agent.types import (
     BaseAgentWorker,
     Task,
@@ -30,27 +35,23 @@ from llama_index.core.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.agent import AgentToolCallEvent
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.core.tools.types import ToolMetadata
 from llama_index.core.types import Thread
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import OpenAIToolCall
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
+dispatcher = get_dispatcher(__name__)
 
 DEFAULT_MAX_FUNCTION_CALLS = 5
-
-
-def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
-    """Get function by name."""
-    name_to_tool = {tool.metadata.name: tool for tool in tools}
-    if name not in name_to_tool:
-        raise ValueError(f"Tool with name {name} not found")
-    return name_to_tool[name]
 
 
 def call_tool_with_error_handling(
@@ -119,135 +120,6 @@ def advanced_tool_call_parser(tool_call: OpenAIToolCall) -> Dict:
         raise ValueError(
             f"Error in calling tool {tool_call.function.name}: The input json block is malformed:\n```json\n{tool_call.function.arguments}\n```"
         )
-
-
-def call_function(
-    tools: List[BaseTool],
-    tool_call: OpenAIToolCall,
-    verbose: bool = False,
-    tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
-) -> Tuple[ChatMessage, ToolOutput]:
-    """Call a function and return the output as a string."""
-    # validations to get passed mypy
-    assert tool_call.id is not None
-    assert tool_call.function is not None
-    assert tool_call.function.name is not None
-    assert tool_call.function.arguments is not None
-    tool_call_parser = tool_call_parser or default_tool_call_parser
-
-    id_ = tool_call.id
-    _function_call = tool_call.function
-    name = tool_call.function.name
-    arguments_str = tool_call.function.arguments
-    if verbose:
-        print("=== Calling Function ===")
-        print(f"Calling function: {name} with args: {arguments_str}")
-    tool = get_function_by_name(tools, name)
-    error_message: Optional[str] = None
-    try:
-        argument_dict = tool_call_parser(tool_call)
-    except ValueError as e:
-        error_message = str(e)
-        return (
-            ChatMessage(
-                content=error_message,
-                role=MessageRole.TOOL,
-                additional_kwargs={
-                    "name": name,
-                    "tool_call_id": id_,
-                },
-            ),
-            ToolOutput(
-                content=error_message,
-                tool_name=name,
-                raw_input={"args": arguments_str},
-                raw_output=error_message,
-                is_error=True,
-            ),
-        )
-
-    # Call tool
-    # Use default error message except if json parsing fails
-    output = call_tool_with_error_handling(
-        tool, argument_dict, error_message=error_message
-    )
-    if verbose:
-        print(f"Got output: {output!s}")
-        print("========================\n")
-    return (
-        ChatMessage(
-            content=str(output),
-            role=MessageRole.TOOL,
-            additional_kwargs={
-                "name": name,
-                "tool_call_id": id_,
-            },
-        ),
-        output,
-    )
-
-
-async def acall_function(
-    tools: List[BaseTool],
-    tool_call: OpenAIToolCall,
-    verbose: bool = False,
-    tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
-) -> Tuple[ChatMessage, ToolOutput]:
-    """Call a function and return the output as a string."""
-    # validations to get passed mypy
-    assert tool_call.id is not None
-    assert tool_call.function is not None
-    assert tool_call.function.name is not None
-    assert tool_call.function.arguments is not None
-    tool_call_parser = tool_call_parser or default_tool_call_parser
-
-    id_ = tool_call.id
-    _function_call = tool_call.function
-    name = tool_call.function.name
-    arguments_str = tool_call.function.arguments
-    if verbose:
-        print("=== Calling Function ===")
-        print(f"Calling function: {name} with args: {arguments_str}")
-    tool = get_function_by_name(tools, name)
-    async_tool = adapt_to_async_tool(tool)
-    error_message: Optional[str] = None
-    try:
-        argument_dict = tool_call_parser(tool_call)
-    except ValueError as e:
-        error_message = str(e)
-        return (
-            ChatMessage(
-                content=error_message,
-                role=MessageRole.TOOL,
-                additional_kwargs={
-                    "name": name,
-                    "tool_call_id": id_,
-                },
-            ),
-            ToolOutput(
-                content=error_message,
-                tool_name=name,
-                raw_input={"args": arguments_str},
-                raw_output=error_message,
-                is_error=True,
-            ),
-        )
-
-    output = await async_tool.acall(**argument_dict)
-    if verbose:
-        print(f"Got output: {output!s}")
-        print("========================\n")
-    return (
-        ChatMessage(
-            content=str(output),
-            role=MessageRole.TOOL,
-            additional_kwargs={
-                "name": name,
-                "tool_call_id": id_,
-            },
-        ),
-        output,
-    )
 
 
 class OpenAIAgentWorker(BaseAgentWorker):
@@ -448,32 +320,104 @@ class OpenAIAgentWorker(BaseAgentWorker):
         memory: BaseMemory,
         sources: List[ToolOutput],
     ) -> bool:
-        function_call = tool_call.function
-        # validations to get passed mypy
-        assert function_call is not None
-        assert function_call.name is not None
-        assert function_call.arguments is not None
+        # validations to get past mypy
+        assert tool_call.id is not None
+        assert tool_call.function is not None
+        assert tool_call.function.name is not None
+        assert tool_call.function.arguments is not None
 
-        tool = get_function_by_name(tools, function_call.name)
+        function_id = tool_call.id
+        function_name = tool_call.function.name
+        function_args_str = tool_call.function.arguments
 
+        tool = get_function_by_name(tools, function_name)
+
+        dispatcher.event(
+            AgentToolCallEvent(
+                arguments=function_args_str,
+                tool=(
+                    tool.metadata
+                    if tool
+                    else ToolMetadata(description="unknown", name=function_name)
+                ),
+            )
+        )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: function_call.arguments,
-                EventPayload.TOOL: tool.metadata,
+                EventPayload.FUNCTION_CALL: function_args_str,
+                EventPayload.TOOL: (
+                    tool.metadata
+                    if tool is not None
+                    else ToolMetadata(description="", name=function_name)
+                ),
             },
         ) as event:
-            function_message, tool_output = call_function(
-                tools,
-                tool_call,
-                verbose=self._verbose,
-                tool_call_parser=self.tool_call_parser,
-            )
+            """Call a function and return the output as a string."""
+            tool_call_parser = self.tool_call_parser or default_tool_call_parser
+
+            if self._verbose:
+                print("=== Calling Function ===")
+                print(
+                    f"Calling function: {function_name} with args: {function_args_str}"
+                )
+
+            error_message: Optional[str] = None
+
+            # Verify that tool arguments can be parsed into dict
+            try:
+                argument_dict = tool_call_parser(tool_call)
+            except ValueError as e:
+                error_message = str(e)
+
+            # Verify that the requested tool actually exists
+            if tool is None:
+                error_message = build_missing_tool_message(function_name)
+
+            # Call tool, or wrap error into output objects
+            if error_message is not None:
+                if self._verbose:
+                    print(error_message)
+                    print("========================\n")
+
+                function_message = ChatMessage(
+                    content=error_message,
+                    role=MessageRole.TOOL,
+                    additional_kwargs={
+                        "name": function_name,
+                        "tool_call_id": function_id,
+                    },
+                )
+                tool_output = build_error_tool_output(
+                    function_name, function_args_str, error_message
+                )
+            else:
+                tool_output = call_tool_with_error_handling(
+                    tool, argument_dict, error_message=error_message
+                )
+
+                if self._verbose:
+                    print(f"Got output: {tool_output!s}")
+                    print("========================\n")
+
+                function_message = ChatMessage(
+                    content=str(tool_output),
+                    role=MessageRole.TOOL,
+                    additional_kwargs={
+                        "name": function_name,
+                        "tool_call_id": function_id,
+                    },
+                )
+
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         sources.append(tool_output)
         memory.put(function_message)
 
-        return tool.metadata.return_direct and not tool_output.is_error
+        return (
+            tool.metadata.return_direct and not tool_output.is_error
+            if tool is not None
+            else False
+        )
 
     async def _acall_function(
         self,
@@ -482,32 +426,103 @@ class OpenAIAgentWorker(BaseAgentWorker):
         memory: BaseMemory,
         sources: List[ToolOutput],
     ) -> bool:
-        function_call = tool_call.function
-        # validations to get passed mypy
-        assert function_call is not None
-        assert function_call.name is not None
-        assert function_call.arguments is not None
+        # validations to get past mypy
+        assert tool_call.id is not None
+        assert tool_call.function is not None
+        assert tool_call.function.name is not None
+        assert tool_call.function.arguments is not None
 
-        tool = get_function_by_name(tools, function_call.name)
+        function_id = tool_call.id
+        function_name = tool_call.function.name
+        function_args_str = tool_call.function.arguments
 
+        tool = get_function_by_name(tools, function_name)
+
+        dispatcher.event(
+            AgentToolCallEvent(
+                arguments=function_args_str,
+                tool=(
+                    tool.metadata
+                    if tool
+                    else ToolMetadata(description="unknown", name=function_name)
+                ),
+            )
+        )
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
-                EventPayload.FUNCTION_CALL: function_call.arguments,
-                EventPayload.TOOL: tool.metadata,
+                EventPayload.FUNCTION_CALL: function_args_str,
+                EventPayload.TOOL: (
+                    tool.metadata
+                    if tool is not None
+                    else ToolMetadata(description="", name=function_name)
+                ),
             },
         ) as event:
-            function_message, tool_output = await acall_function(
-                tools,
-                tool_call,
-                verbose=self._verbose,
-                tool_call_parser=self.tool_call_parser,
-            )
+            """Call a function and return the output as a string."""
+            tool_call_parser = self.tool_call_parser or default_tool_call_parser
+
+            if self._verbose:
+                print("=== Calling Function ===")
+                print(
+                    f"Calling function: {function_name} with args: {function_args_str}"
+                )
+
+            error_message: Optional[str] = None
+
+            # Verify that tool arguments can be parsed into dict
+            try:
+                argument_dict = tool_call_parser(tool_call)
+            except ValueError as e:
+                error_message = str(e)
+
+            # Verify that the requested tool actually exists
+            if tool is None:
+                error_message = build_missing_tool_message(function_name)
+
+            # Call tool, or wrap error into output objects
+            if error_message is not None:
+                if self._verbose:
+                    print(error_message)
+                    print("========================\n")
+
+                function_message = ChatMessage(
+                    content=error_message,
+                    role=MessageRole.TOOL,
+                    additional_kwargs={
+                        "name": function_name,
+                        "tool_call_id": function_id,
+                    },
+                )
+                tool_output = build_error_tool_output(
+                    function_name, function_args_str, error_message
+                )
+            else:
+                async_tool = adapt_to_async_tool(tool)
+                tool_output = await async_tool.acall(**argument_dict)
+
+                if self._verbose:
+                    print(f"Got output: {tool_output!s}")
+                    print("========================\n")
+
+                function_message = ChatMessage(
+                    content=str(tool_output),
+                    role=MessageRole.TOOL,
+                    additional_kwargs={
+                        "name": function_name,
+                        "tool_call_id": function_id,
+                    },
+                )
+
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         sources.append(tool_output)
         memory.put(function_message)
 
-        return tool.metadata.return_direct and not tool_output.is_error
+        return (
+            tool.metadata.return_direct and not tool_output.is_error
+            if tool is not None
+            else False
+        )
 
     def initialize_step(self, task: Task, **kwargs: Any) -> TaskStep:
         """Initialize step from task."""
@@ -564,6 +579,8 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
         # TODO: implement _should_continue
         latest_tool_calls = self.get_latest_tool_calls(task) or []
+        latest_tool_outputs: List[ToolOutput] = []
+
         if not self._should_continue(
             latest_tool_calls, task.extra_state["n_function_calls"]
         ):
@@ -579,13 +596,16 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if tool_call.type != "function":
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
+
                 # TODO: maybe execute this with multi-threading
                 return_direct = self._call_function(
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
-                    task.extra_state["sources"],
+                    latest_tool_outputs,
                 )
+                task.extra_state["sources"].append(latest_tool_outputs[-1])
+
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
                 if tool_choice not in ("auto", "none"):
@@ -594,7 +614,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if return_direct and len(latest_tool_calls) == 1:
                     is_done = True
-                    response_str = task.extra_state["sources"][-1].content
+                    response_str = latest_tool_outputs[-1].content
                     chat_response = ChatResponse(
                         message=ChatMessage(
                             role=MessageRole.ASSISTANT, content=response_str
@@ -618,7 +638,8 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 else []
             )
 
-        # attach next step to task
+        # Attach all tool outputs from this step as sources
+        agent_chat_response.sources = latest_tool_outputs
 
         return TaskStepOutput(
             output=agent_chat_response,
@@ -651,6 +672,8 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
         # TODO: implement _should_continue
         latest_tool_calls = self.get_latest_tool_calls(task) or []
+        latest_tool_outputs: List[ToolOutput] = []
+
         if not self._should_continue(
             latest_tool_calls, task.extra_state["n_function_calls"]
         ):
@@ -665,13 +688,16 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if tool_call.type != "function":
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
+
                 # TODO: maybe execute this with multi-threading
                 return_direct = await self._acall_function(
                     tools,
                     tool_call,
                     task.extra_state["new_memory"],
-                    task.extra_state["sources"],
+                    latest_tool_outputs,
                 )
+                task.extra_state["sources"].append(latest_tool_outputs[-1])
+
                 # change function call to the default value, if a custom function was given
                 # as an argument (none and auto are predefined by OpenAI)
                 if tool_choice not in ("auto", "none"):
@@ -680,7 +706,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
                 if return_direct and len(latest_tool_calls) == 1:
                     is_done = True
-                    response_str = task.extra_state["sources"][-1].content
+                    response_str = latest_tool_outputs[-1].content
                     chat_response = ChatResponse(
                         message=ChatMessage(
                             role=MessageRole.ASSISTANT, content=response_str
@@ -704,6 +730,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
             if not is_done
             else []
         )
+
+        # Attach all tool outputs from this step as sources
+        agent_chat_response.sources = latest_tool_outputs
 
         return TaskStepOutput(
             output=agent_chat_response,

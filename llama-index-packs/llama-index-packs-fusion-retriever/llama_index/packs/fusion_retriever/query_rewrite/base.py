@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List
 
-from llama_index.core.indices.service_context import ServiceContext
+from llama_index.core import Settings
 from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.query_engine import RetrieverQueryEngine
@@ -31,8 +31,8 @@ class QueryRewritingRetrieverPack(BaseLlamaPack):
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        service_context = ServiceContext.from_defaults(chunk_size=chunk_size)
-        index = VectorStoreIndex(nodes, service_context=service_context)
+        Settings.chunk_size = chunk_size
+        index = VectorStoreIndex(nodes)
         self.vector_retriever = index.as_retriever(
             similarity_top_k=vector_similarity_top_k
         )

@@ -30,14 +30,15 @@ license = "MIT"
 name = "llama-index-packs-searchain"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.0"
 torch = "^2.1.2"
 transformers = "^4.38.1"
 sentence_transformers = "^2.5.1"
+llama-index-llms-openai = "^0.2.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

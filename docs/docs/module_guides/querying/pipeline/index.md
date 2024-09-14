@@ -1,5 +1,8 @@
 # Query Pipeline
 
+!!! warning
+    Query Pipelines have recently gone into a feature-freeze/deprecation phase. If you want to orchestrate modules, we suggest checking out [workflows](../../workflow/index.md).
+
 ## Concept
 
 LlamaIndex provides a declarative query API that allows you to chain together different modules in order to orchestrate simple-to-advanced workflows over your data.

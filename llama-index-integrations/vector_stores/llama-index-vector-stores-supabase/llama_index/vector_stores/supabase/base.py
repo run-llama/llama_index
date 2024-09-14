@@ -55,8 +55,8 @@ class SupabaseVectorStore(BasePydanticVectorStore):
 
     """
 
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
     _client: Optional[Any] = PrivateAttr()
     _collection: Optional[Collection] = PrivateAttr()
 

@@ -2,6 +2,7 @@ import asyncio
 import inspect
 import threading
 import time
+from abc import abstractmethod
 from asyncio import (
     CancelledError,
     get_event_loop,
@@ -11,12 +12,17 @@ from asyncio import (
     AbstractEventLoop,
 )
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
+from random import random
 from threading import Lock
 from typing import Callable, Optional, Any, Dict, List
 
 import pytest
+import wrapt
+
 import llama_index.core.instrumentation as instrument
-from llama_index.core.instrumentation.dispatcher import Dispatcher
+from llama_index.core.instrumentation import DispatcherSpanMixin
+from llama_index.core.instrumentation.dispatcher import Dispatcher, instrument_tags
 from llama_index.core.instrumentation.events import BaseEvent
 from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 from llama_index.core.instrumentation.span import BaseSpan
@@ -43,7 +49,7 @@ class _TestEndEvent(BaseEvent):
 
 
 class _TestEventHandler(BaseEventHandler):
-    events = []
+    events: List[BaseEvent] = []
 
     @classmethod
     def class_name(cls):
@@ -85,6 +91,13 @@ async def async_func_with_event(a, b=3, **kwargs):
     dispatcher.event(_TestEndEvent())
 
 
+# Can remove this test once dispatcher.get_dispatch_event is safely dopped.
+@dispatcher.span
+def func_with_event_backwards_compat(a, b=3, **kwargs):
+    dispatch_event = dispatcher.get_dispatch_event()
+    dispatch_event(_TestStartEvent())
+
+
 class _TestObject:
     @dispatcher.span
     def func(self, a, b=3, **kwargs):
@@ -114,6 +127,12 @@ class _TestObject:
         # that is fine because we have dispatch_event
         dispatcher.event(_TestEndEvent())
 
+    # Can remove this test once dispatcher.get_dispatch_event is safely dopped.
+    @dispatcher.span
+    def func_with_event_backwards_compat(self, a, b=3, **kwargs):
+        dispatch_event = dispatcher.get_dispatch_event()
+        dispatch_event(_TestStartEvent())
+
 
 @patch.object(Dispatcher, "span_exit")
 @patch.object(Dispatcher, "span_enter")
@@ -137,6 +156,7 @@ def test_dispatcher_span_args(mock_uuid, mock_span_enter, mock_span_exit):
         "bound_args": bound_args,
         "instance": None,
         "parent_id": None,
+        "tags": {},
     }
 
     # span_exit
@@ -173,6 +193,7 @@ def test_dispatcher_span_args_with_instance(mock_uuid, mock_span_enter, mock_spa
         "bound_args": bound_args,
         "instance": instance,
         "parent_id": None,
+        "tags": {},
     }
 
     # span_exit
@@ -286,6 +307,7 @@ async def test_dispatcher_async_span_args(mock_uuid, mock_span_enter, mock_span_
         "bound_args": bound_args,
         "instance": None,
         "parent_id": None,
+        "tags": {},
     }
 
     # span_exit
@@ -325,6 +347,7 @@ async def test_dispatcher_async_span_args_with_instance(
         "bound_args": bound_args,
         "instance": instance,
         "parent_id": None,
+        "tags": {},
     }
 
     # span_exit
@@ -485,6 +508,64 @@ async def test_dispatcher_async_fire_event(
     mock_span_exit.call_count == 3
 
 
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+@patch.object(Dispatcher, "span_enter")
+async def test_dispatcher_attaches_tags_to_events_and_spans(
+    mock_span_enter: MagicMock,
+    use_async: bool,
+):
+    event_handler = _TestEventHandler()
+    dispatcher.add_event_handler(event_handler)
+    test_tags = {"test_tag_key": "test_tag_value"}
+
+    # Check that tags are set when using context manager
+    with instrument_tags(test_tags):
+        if use_async:
+            await async_func_with_event(a=3, c=5)
+        else:
+            func_with_event(a=3, c=5)
+
+    mock_span_enter.assert_called_once()
+    assert mock_span_enter.call_args[1]["tags"] == test_tags
+    assert all(e.tags == test_tags for e in event_handler.events)
+
+
+@patch.object(Dispatcher, "span_enter")
+def test_dispatcher_attaches_tags_to_concurrent_events(
+    mock_span_enter: MagicMock,
+):
+    event_handler = _TestEventHandler()
+    dispatcher.add_event_handler(event_handler)
+
+    num_functions = 5
+    test_tags = [{"test_tag_key": num} for num in range(num_functions)]
+    test_tags_set = {str(tag) for tag in test_tags}
+
+    def run_func_with_tags(tag):
+        with instrument_tags(tag):
+            func_with_event(3, c=5)
+
+    # Run functions concurrently
+    futures = []
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        for tag in test_tags:
+            futures.append(executor.submit(run_func_with_tags, tag))
+
+    for future in futures:
+        future.result()
+
+    # Ensure that each function recorded a span and event with the tags
+    assert len(mock_span_enter.call_args_list) == num_functions
+    assert len(event_handler.events) == num_functions
+    actual_span_tags = {
+        str(call_kwargs["tags"]) for _, call_kwargs in mock_span_enter.call_args_list
+    }
+    actual_event_tags = {str(e.tags) for e in event_handler.events}
+    assert actual_span_tags == test_tags_set
+    assert actual_event_tags == test_tags_set
+
+
 @patch.object(Dispatcher, "span_exit")
 @patch.object(Dispatcher, "span_drop")
 @patch.object(Dispatcher, "span_enter")
@@ -590,6 +671,7 @@ def test_context_nesting():
             bound_args: inspect.BoundArguments,
             instance: Optional[Any] = None,
             parent_span_id: Optional[str] = None,
+            tags: Optional[Dict[str, Any]] = None,
             **kwargs: Any,
         ) -> None:
             r, n = bound_args.args[:2]
@@ -652,9 +734,11 @@ def test_context_nesting():
     # act
     # Use regular thread to ensure that `Token.MISSING` is being handled.
     regular_threads = [
-        threading.Thread(target=asyncio.run, args=(foo(r, 1),))
-        if r % 2
-        else threading.Thread(target=bar, args=(r, 1))
+        (
+            threading.Thread(target=asyncio.run, args=(foo(r, 1),))
+            if r % 2
+            else threading.Thread(target=bar, args=(r, 1))
+        )
         for r in range(runs)
     ]
     [t.start() for t in regular_threads]
@@ -675,3 +759,104 @@ def test_context_nesting():
     for event in events:
         assert event.r == spans[event.span_id].r  # same tree
         assert event.n == spans[event.span_id].n  # same span
+
+
+@patch.object(Dispatcher, "span_exit")
+@patch.object(Dispatcher, "span_drop")
+@patch.object(Dispatcher, "span_enter")
+@patch("llama_index.core.instrumentation.dispatcher.uuid")
+def test_dispatcher_fire_event_backwards_compat(
+    mock_uuid: MagicMock,
+    mock_span_enter: MagicMock,
+    mock_span_drop: MagicMock,
+    mock_span_exit: MagicMock,
+):
+    # arrange
+    mock_uuid.uuid4.return_value = "mock"
+    event_handler = _TestEventHandler()
+    dispatcher.add_event_handler(event_handler)
+
+    # act
+    _ = func_with_event_backwards_compat(3, c=5)
+
+    # assert
+    span_id = f"{func_with_event_backwards_compat.__qualname__}-mock"
+    assert all(e.span_id == span_id for e in event_handler.events)
+
+    # span_enter
+    mock_span_enter.assert_called_once()
+
+    # span
+    mock_span_drop.assert_not_called()
+
+    # span_exit
+    mock_span_exit.assert_called_once()
+
+
+@patch.object(Dispatcher, "span_exit")
+@patch.object(Dispatcher, "span_drop")
+@patch.object(Dispatcher, "span_enter")
+@patch("llama_index.core.instrumentation.dispatcher.uuid")
+def test_dispatcher_fire_event_with_instance_backwards_compat(
+    mock_uuid, mock_span_enter, mock_span_drop, mock_span_exit
+):
+    # arrange
+    mock_uuid.uuid4.return_value = "mock"
+    event_handler = _TestEventHandler()
+    dispatcher.add_event_handler(event_handler)
+
+    # act
+    instance = _TestObject()
+    _ = instance.func_with_event_backwards_compat(a=3, c=5)
+
+    # assert
+    span_id = f"{instance.func_with_event_backwards_compat.__qualname__}-mock"
+    assert all(e.span_id == span_id for e in event_handler.events)
+
+    # span_enter
+    mock_span_enter.assert_called_once()
+
+    # span
+    mock_span_drop.assert_not_called()
+
+    # span_exit
+    mock_span_exit.assert_called_once()
+
+
+@patch.object(Dispatcher, "span_enter")
+def test_span_decorator_is_idempotent(mock_span_enter):
+    x, z = random(), dispatcher.span
+    assert z(z(z(lambda: x)))() == x
+    mock_span_enter.assert_called_once()
+
+
+@patch.object(Dispatcher, "span_enter")
+def test_span_decorator_is_idempotent_with_pass_through(mock_span_enter):
+    x, z = random(), dispatcher.span
+    a, b, c, d = (wrapt.decorator(lambda f, *_: f()) for _ in range(4))
+    assert z(a(b(z(c(d(z(lambda: x)))))))() == x
+    mock_span_enter.assert_called_once()
+
+
+@patch.object(Dispatcher, "span_enter")
+def test_mixin_decorates_abstract_method(mock_span_enter):
+    x, z = random(), abstractmethod
+    A = type("A", (DispatcherSpanMixin,), {"f": z(lambda _: ...)})
+    B = type("B", (A,), {"f": lambda _: x + 0})
+    C = type("C", (B,), {"f": lambda _: x + 1})
+    D = type("D", (C, B), {"f": lambda _: x + 2})
+    for i, T in enumerate((B, C, D)):
+        assert T().f() - i == pytest.approx(x)
+        assert mock_span_enter.call_count - i == 1
+
+
+@patch.object(Dispatcher, "span_enter")
+def test_mixin_decorates_overridden_method(mock_span_enter):
+    x, z = random(), dispatcher.span
+    A = type("A", (DispatcherSpanMixin,), {"f": z(lambda _: x)})
+    B = type("B", (A,), {"f": lambda _: x + 1})
+    C = type("C", (B,), {"f": lambda _: x + 2})
+    D = type("D", (C, B), {"f": lambda _: x + 3})
+    for i, T in enumerate((A, B, C, D)):
+        assert T().f() - i == pytest.approx(x)
+        assert mock_span_enter.call_count - i == 1

@@ -15,8 +15,9 @@ from tenacity import (
 )
 from vertexai.language_models import ChatMessage as VertexChatMessage
 from vertexai.language_models import InputOutputTextPair
+from vertexai.generative_models import FunctionDeclaration, Tool
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 
 CHAT_MODELS = ["chat-bison", "chat-bison-32k", "chat-bison@001"]
 TEXT_MODELS = [
@@ -46,9 +47,26 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
             | retry_if_exception_type(google.api_core.exceptions.ResourceExhausted)
             | retry_if_exception_type(google.api_core.exceptions.Aborted)
             | retry_if_exception_type(google.api_core.exceptions.DeadlineExceeded)
+            | retry_if_exception_type(google.api_core.exceptions.InternalServerError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
+
+
+def to_gemini_tools(tools) -> Any:
+    func_list = []
+    for i, tool in enumerate(tools):
+        func_name = f"func_{i}"
+        func_name = FunctionDeclaration(
+            name=tool["name"],
+            description=tool["description"],
+            parameters=tool["parameters"],
+        )
+        func_list.append(func_name)
+    gemini_tools = Tool(
+        function_declarations=func_list,
+    )
+    return [gemini_tools]
 
 
 def completion_with_retry(
@@ -68,11 +86,14 @@ def completion_with_retry(
     def _completion_with_retry(**kwargs: Any) -> Any:
         if is_gemini:
             history = params["message_history"] if "message_history" in params else []
-
             generation = client.start_chat(history=history)
-            generation_config = dict(kwargs)
+            kwargs = dict(kwargs)
+            tools = kwargs.pop("tools", None) if "tools" in kwargs else []
+            tools = to_gemini_tools(tools) if tools else []
+            generation_config = kwargs if kwargs else {}
+
             return generation.send_message(
-                prompt, stream=stream, generation_config=generation_config
+                prompt, stream=stream, tools=tools, generation_config=generation_config
             )
         elif chat:
             generation = client.start_chat(**params)
@@ -105,11 +126,13 @@ async def acompletion_with_retry(
     async def _completion_with_retry(**kwargs: Any) -> Any:
         if is_gemini:
             history = params["message_history"] if "message_history" in params else []
-
             generation = client.start_chat(history=history)
-            generation_config = dict(kwargs)
+            kwargs = dict(kwargs)
+            tools = kwargs.pop("tools", None) if "tools" in kwargs else []
+            tools = to_gemini_tools(tools) if tools else []
+            generation_config = kwargs if kwargs else {}
             return await generation.send_message_async(
-                prompt, generation_config=generation_config
+                prompt, tools=tools, generation_config=generation_config
             )
         elif chat:
             generation = client.start_chat(**params)
@@ -176,7 +199,6 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
             context = message.content
         elif message.role in (
             MessageRole.MODEL,
-            MessageRole.ASSISTANT,
             MessageRole.USER,
         ):
             if is_gemini:
@@ -184,6 +206,7 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
                     convert_chat_message_to_gemini_content,
                 )
 
+                context = message.content
                 vertex_messages.append(
                     convert_chat_message_to_gemini_content(
                         message=message, is_history=True
@@ -200,9 +223,12 @@ def _parse_chat_history(history: Any, is_gemini: bool) -> Any:
                 )
                 vertex_messages.append(vertex_message)
         else:
+            # Roles are consolidated to two roles in merge_neighboring_same_role_messages
+            # Other roles will cause error
             raise ValueError(
                 f"Unexpected message with role {message.role} at the position {i}."
             )
+
     if len(vertex_messages) % 2 != 0:
         raise ValueError("total no of messages should be even")
 
@@ -225,7 +251,7 @@ def _parse_examples(examples: Any) -> Any:
                 )
             input_text = example.content
         if i % 2 == 1:
-            if not example.role == MessageRole.ASSISTANT:
+            if example.role not in (MessageRole.ASSISTANT, MessageRole.MODEL):
                 raise ValueError(
                     f"Expected the second message in a part to be from AI, got "
                     f"{type(example)} for the {i}th message."
@@ -235,3 +261,9 @@ def _parse_examples(examples: Any) -> Any:
             )
             example_pairs.append(pair)
     return example_pairs
+
+
+def force_single_tool_call(response: ChatResponse) -> None:
+    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    if len(tool_calls) > 1:
+        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]

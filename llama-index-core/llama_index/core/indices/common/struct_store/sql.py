@@ -7,10 +7,8 @@ from llama_index.core.indices.common.struct_store.base import (
     OUTPUT_PARSER_TYPE,
     BaseStructDatapointExtractor,
 )
+from llama_index.core.llms import LLM
 from llama_index.core.prompts import BasePromptTemplate
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
-)
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Table
 
@@ -20,7 +18,7 @@ class SQLStructDatapointExtractor(BaseStructDatapointExtractor):
 
     def __init__(
         self,
-        llm: LLMPredictorType,
+        llm: LLM,
         schema_extract_prompt: BasePromptTemplate,
         output_parser: OUTPUT_PARSER_TYPE,
         sql_database: SQLDatabase,

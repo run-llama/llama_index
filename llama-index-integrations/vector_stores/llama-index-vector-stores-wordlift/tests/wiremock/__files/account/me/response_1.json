@@ -1,0 +1,20 @@
+{
+  "accountId": 432535324,
+  "subscriptionId": 4325324,
+  "datasetUri": "https://data.example.org/dataset/",
+  "language": "en",
+  "datasetId": "9238923043204023",
+  "url": null,
+  "wpJson": null,
+  "wpAdmin": null,
+  "googleSearchConsoleSiteUrl": null,
+  "key": "key43245932904328493223",
+  "features": {
+    "analysis-ng": true,
+    "dataset-ng": true,
+    "entity-types-business": true,
+    "linked-data": true
+  },
+  "networks": [],
+  "ngDatasetId": "9238923043204023"
+}

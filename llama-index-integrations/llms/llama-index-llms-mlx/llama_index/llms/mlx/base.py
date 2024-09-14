@@ -78,7 +78,6 @@ class MLXLLM(CustomLLM):
 
         llm = MLXLLM(
             model_name="microsoft/phi-2",
-            tokenizer_name="microsoft/phi-2",
             context_window=3900,
             max_new_tokens=256,
 
@@ -171,10 +170,10 @@ class MLXLLM(CustomLLM):
         """Initialize params."""
         model_kwargs = model_kwargs or {}
         if model is None:
-            self._model, self._tokenizer = load(model_name, **model_kwargs)
+            model, tokenizer = load(model_name, **model_kwargs)
         else:
-            self._model = model
-            self._tokenizer = tokenizer
+            model = model
+            tokenizer = tokenizer
         # check context_window
 
         tokenizer_kwargs = tokenizer_kwargs or {}
@@ -203,6 +202,8 @@ class MLXLLM(CustomLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        self._model = model
+        self._tokenizer = tokenizer
 
     @classmethod
     def class_name(cls) -> str:

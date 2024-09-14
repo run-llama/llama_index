@@ -3,13 +3,14 @@ import threading
 from abc import abstractmethod
 from typing import Any, Dict, List, Generic, Optional, TypeVar
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
 from llama_index.core.instrumentation.span.base import BaseSpan
 
 T = TypeVar("T", bound=BaseSpan)
 
 
 class BaseSpanHandler(BaseModel, Generic[T]):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     open_spans: Dict[str, T] = Field(
         default_factory=dict, description="Dictionary of open spans."
     )
@@ -24,9 +25,6 @@ class BaseSpanHandler(BaseModel, Generic[T]):
     )
     _lock: Optional[threading.Lock] = PrivateAttr()
 
-    class Config:
-        arbitrary_types_allowed = True
-
     def __init__(
         self,
         open_spans: Dict[str, T] = {},
@@ -34,13 +32,13 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         dropped_spans: List[T] = [],
         current_span_ids: Dict[Any, str] = {},
     ):
-        self._lock = None
         super().__init__(
             open_spans=open_spans,
             completed_spans=completed_spans,
             dropped_spans=dropped_spans,
             current_span_ids=current_span_ids,
         )
+        self._lock = None
 
     def class_name(cls) -> str:
         """Class name."""
@@ -58,6 +56,7 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         parent_id: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Logic for entering a span."""
@@ -69,6 +68,7 @@ class BaseSpanHandler(BaseModel, Generic[T]):
                 bound_args=bound_args,
                 instance=instance,
                 parent_span_id=parent_id,
+                tags=tags,
             )
             if span:
                 with self.lock:
@@ -113,6 +113,7 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         parent_span_id: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Optional[T]:
         """Create a span.
