@@ -61,7 +61,7 @@ DEFAULT_CONTEXT_REFINE_PROMPT_TEMPLATE = """
   {existing_answer}
 
   Instruction: Refine the existing answer using the provided context to assist the user.
-  Answer "don't know" if not present in the document.
+  "If the context isn't helpful, just repeat the existing answer and nothing more."
   """
 
 DEFAULT_CONDENSE_PROMPT_TEMPLATE = """

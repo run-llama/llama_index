@@ -36,7 +36,8 @@ DEFAULT_CONTEXT_TEMPLATE = (
 )
 
 DEFAULT_REFINE_TEMPLATE = (
-    "Using the context below, refine the following existing answer using the provided context to assist the user."
+    "Using the context below, refine the following existing answer using the provided context to assist the user.\n"
+    "If the context isn't helpful, just repeat the existing answer and nothing more.\n"
     "\n--------------------\n"
     "{context_str}"
     "\n--------------------\n"
