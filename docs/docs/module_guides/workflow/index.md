@@ -410,6 +410,7 @@ You can find many useful examples of using workflows in the notebooks below:
 - [Common Workflow Patterns](../../examples/workflow/workflows_cookbook.ipynb)
 - [Corrective RAG](../../examples/workflow/corrective_rag_pack.ipynb)
 - [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb)
+- [Human In The Loop: Story Crafting](../../examples/workflow/human_in_the_loop_story_crafting.ipynb)
 - [JSON Query Engine](../../examples/workflow/JSONalyze_query_engine.ipynb)
 - [Long RAG](../../examples/workflow/long_rag_pack.ipynb)
 - [Multi-Step Query Engine](../../examples/workflow/multi_step_query_engine.ipynb)

@@ -471,6 +471,7 @@ nav:
           - ./examples/observability/MLflow.ipynb
           - ./examples/observability/OpenInferenceCallback.ipynb
           - ./examples/observability/OpenLLMetry.ipynb
+          - ./examples/observability/OpikCallback.ipynb
           - ./examples/observability/PromptLayerHandler.ipynb
           - ./examples/observability/TokenCountingHandler.ipynb
           - ./examples/observability/UpTrainCallback.ipynb
@@ -669,11 +670,13 @@ nav:
           - ./examples/vector_stores/qdrant_bm42.ipynb
           - ./examples/vector_stores/qdrant_hybrid.ipynb
       - Workflow:
+          - ./examples/workflow/.ipynb_checkpoints/human_in_the_loop_story_crafting-checkpoint.ipynb
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
           - ./examples/workflow/function_calling_agent.ipynb
+          - ./examples/workflow/human_in_the_loop_story_crafting.ipynb
           - ./examples/workflow/long_rag_pack.ipynb
           - ./examples/workflow/multi_step_query_engine.ipynb
           - ./examples/workflow/multi_strategy_workflow.ipynb
@@ -826,6 +829,7 @@ nav:
           - ./api_reference/callbacks/literalai.md
           - ./api_reference/callbacks/llama_debug.md
           - ./api_reference/callbacks/openinference.md
+          - ./api_reference/callbacks/opik.md
           - ./api_reference/callbacks/promptlayer.md
           - ./api_reference/callbacks/token_counter.md
           - ./api_reference/callbacks/uptrain.md
@@ -1335,6 +1339,7 @@ nav:
           - ./api_reference/readers/preprocess.md
           - ./api_reference/readers/psychic.md
           - ./api_reference/readers/qdrant.md
+          - ./api_reference/readers/quip.md
           - ./api_reference/readers/rayyan.md
           - ./api_reference/readers/readme.md
           - ./api_reference/readers/readwise.md
@@ -2173,6 +2178,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-sambanova
             - ../llama-index-integrations/embeddings/llama-index-embeddings-gigachat
             - ../llama-index-integrations/llms/llama-index-llms-gigachat
+            - ../llama-index-integrations/callbacks/llama-index-callbacks-opik
             - ../llama-index-integrations/embeddings/llama-index-embeddings-xinference
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-xinference-rerank
             - ../llama-index-integrations/selectors/llama-index-selectors-notdiamond
@@ -2185,6 +2191,7 @@ plugins:
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-dynamodb
             - ../llama-index-integrations/readers/llama-index-readers-alibabacloud-aisearch
             - ../llama-index-integrations/llms/llama-index-llms-alibabacloud-aisearch
+            - ../llama-index-integrations/readers/llama-index-readers-quip
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2283,6 +2290,7 @@ plugins:
         ./examples/callbacks/UpTrainCallback.md: https://docs.llamaindex.ai/en/stable/examples/observability/UpTrainCallback/
         ./examples/callbacks/WandbCallbackHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/WandbCallbackHandler/
         ./examples/callbacks/WandbCallbackHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/WandbCallbackHandler/
+        ./examples/callbacks/OpikCallbackHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/OpikCallbackHandler/
         ./examples/chat_engine/chat_engine_best.html: https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_best/
         ./examples/chat_engine/chat_engine_condense_plus_context.html: https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_condense_plus_context/
         ./examples/chat_engine/chat_engine_condense_question.html: https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_condense_question/

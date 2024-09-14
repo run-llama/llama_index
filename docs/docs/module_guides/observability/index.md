@@ -164,6 +164,64 @@ set_global_handler("literalai")
 
 ![](../../_static/integrations/literal_ai.gif)
 
+### Comet Opik
+
+[Opik](https://www.comet.com/docs/opik/?utm_source=llama-index&utm_medium=docs&utm_campaign=opik&utm_content=home_page) is an open-source end to end LLM Evaluation Platform built by Comet.
+
+To get started, simply sign up for an account on [Comet](https://www.comet.com/signup?from=llm&utm_medium=github&utm_source=llama-index&utm_campaign=opik) and grab your API key.
+
+#### Usage Pattern
+
+- Install the Opik Python SDK with `pip install opik`
+- In Opik, get your API key from the user menu.
+- If you are using a self-hosted instance of Opik, also make note of its base URL.
+
+You can configure Opik using the environment variables `OPIK_API_KEY`, `OPIK_WORKSPACE` and `OPIK_URL_OVERRIDE` if you are using a [self-hosted instance](https://www.comet.com/docs/opik/self-host/self_hosting_opik). You can set these by calling:
+
+```bash
+export OPIK_API_KEY="<OPIK_API_KEY>"
+export OPIK_WORKSPACE="<OPIK_WORKSPACE - Often the same as your API key>"
+
+# Optional
+#export OPIK_URL_OVERRIDE="<OPIK_URL_OVERRIDE>"
+```
+
+You can now use the Opik integration with LlamaIndex by setting the global handler:
+
+```python
+from llama_index.core import Document, VectorStoreIndex, set_global_handler
+
+# You should provide your OPIK API key and Workspace using the following environment variables:
+# OPIK_API_KEY, OPIK_WORKSPACE
+set_global_handler(
+    "opik",
+)
+
+# This example uses OpenAI by default so don't forget to set an OPENAI_API_KEY
+index = VectorStoreIndex.from_documents([Document.example()])
+query_engine = index.as_query_engine()
+
+questions = [
+    "Tell me about LLMs",
+    "How do you fine-tune a neural network ?",
+    "What is RAG ?",
+]
+
+for question in questions:
+    print(f"> \033[92m{question}\033[0m")
+    response = query_engine.query(question)
+    print(response)
+```
+
+You will see the following traces in Opik:
+
+![Opik integration with LlamaIndex](../../_static/integrations/opik.png)
+
+#### Example Guides
+
+- [Llama-index + Opik documentation page](https://www.comet.com/docs/opik/tracing/integrations/llama_index?utm_source=llamaindex&utm_medium=docs&utm_campaign=opik)
+- [Llama-index integration cookbook](https://www.comet.com/docs/opik/cookbook/llama-index?utm_source=llama-index&utm_medium=docs&utm_campaign=opik)
+
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.

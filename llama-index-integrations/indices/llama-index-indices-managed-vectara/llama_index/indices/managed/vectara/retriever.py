@@ -85,7 +85,7 @@ class VectaraRetriever(BaseRetriever):
                  #citation-format-in-summary) for more details.
             This is a Vectara Scale only feature. Defaults to None.
         citations_text_pattern: The displayed text for citations.
-            Must be specified for html and markdown citations.
+            If not specified, numeric citations are displayed for text.
     """
 
     def __init__(
@@ -250,7 +250,8 @@ class VectaraRetriever(BaseRetriever):
                     data["query"][0]["summary"][0]["citationParams"] = {
                         "style": self._citations_style,
                     }
-                elif self._citations_url_pattern and self._citations_text_pattern:
+
+                elif self._citations_url_pattern:
                     data["query"][0]["summary"][0]["citationParams"] = {
                         "style": self._citations_style,
                         "urlPattern": self._citations_url_pattern,
