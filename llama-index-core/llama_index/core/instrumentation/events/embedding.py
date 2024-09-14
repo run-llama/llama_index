@@ -60,7 +60,6 @@ class SparseEmbeddingEndEvent(BaseEvent):
     Args:
         chunks (List[str]): List of chunks.
         embeddings (List[List[float]]): List of embeddings.
-
     """
 
     chunks: List[str]
