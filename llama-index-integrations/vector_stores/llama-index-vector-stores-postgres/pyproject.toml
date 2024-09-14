@@ -27,7 +27,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-postgres"
 readme = "README.md"
-version = "0.2.4"
+version = "0.2.5"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -70,9 +70,5 @@ include = "llama_index/"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-filterwarnings = [
-    "ignore::DeprecationWarning:",
-]
-markers = [
-    "asyncio",
-]
+filterwarnings = ["ignore::DeprecationWarning:"]
+markers = ["asyncio"]
