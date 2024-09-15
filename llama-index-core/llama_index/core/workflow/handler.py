@@ -1,8 +1,8 @@
 import asyncio
-from typing import Any, Optional
+from typing import Any, AsyncGenerator, Optional
 
 from llama_index.core.workflow.context import Context
-from llama_index.core.workflow.events import StopEvent
+from llama_index.core.workflow.events import Event, StopEvent
 from llama_index.core.workflow.errors import WorkflowDone
 
 
@@ -19,7 +19,10 @@ class WorkflowHandler(asyncio.Future):
     def is_done(self) -> bool:
         return self.done()
 
-    async def stream_events(self):
+    async def stream_events(self) -> AsyncGenerator[Event, None]:
+        if not self.ctx:
+            raise ValueError("Context is not set!")
+
         while True:
             ev = await self.ctx.streaming_queue.get()
             if type(ev) is StopEvent:

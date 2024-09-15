@@ -290,7 +290,7 @@ class Workflow(metaclass=WorkflowMeta):
 
         result = WorkflowHandler(ctx=ctx)
 
-        async def _run_workflow():
+        async def _run_workflow() -> None:
             try:
                 # Send the first event
                 ctx.send_event(StartEvent(**kwargs))
