@@ -151,3 +151,7 @@ Pipfile.lock
 
 # pyright
 pyrightconfig.json
+
+# ObjectBox specific files
+llama_index/vector_stores/objectbox/objectbox-model.json
+objectbox
