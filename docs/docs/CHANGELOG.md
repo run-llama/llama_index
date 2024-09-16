@@ -33,11 +33,9 @@
 
 - Add four alibabacloud-aisearch llama-index integrations: rerank, node_parser, readers, embeddings (#15934)
 
-
 ### `llama-index-readers-alibabacloud-aisearch` [0.1.0]
 
 - Add four alibabacloud-aisearch llama-index integrations: rerank, node_parser, readers, embeddings (#15934)
-
 
 ### `llama-index-vector-stores-opensearch` [0.3.0]
 
