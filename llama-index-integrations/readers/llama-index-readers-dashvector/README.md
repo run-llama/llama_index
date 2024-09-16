@@ -33,7 +33,7 @@ documents = reader.load_data(
     separate_documents=True,  # Whether to return separate documents
     filter=None,  # Optional: Filter conditions
     include_vector=True,  # Whether to include the embedding in the response
-    output_fields=None #Optional: Fields Filter
+    output_fields=None,  # Optional: Fields Filter
 )
 ```
 

@@ -5,6 +5,7 @@ import json
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
+
 class DashVectorReader(BaseReader):
     """DashVector reader.
 
@@ -22,7 +23,9 @@ class DashVectorReader(BaseReader):
                 "`dashvector` package not found, please run `pip install dashvector`"
             )
 
-        self._client: dashvector.Client = dashvector.Client(api_key=api_key, endpoint=endpoint)
+        self._client: dashvector.Client = dashvector.Client(
+            api_key=api_key, endpoint=endpoint
+        )
 
     def load_data(
         self,
@@ -41,14 +44,14 @@ class DashVectorReader(BaseReader):
             collection_name (str): Name of the collection.
             vector (List[float]): Query vector.
             topk (int): Number of results to return.
-            filter (Optional[str]): doc fields filter 
+            filter (Optional[str]): doc fields filter
                 conditions that meet the SQL where clause specification.detail in https://help.aliyun.com/document_detail/2513006.html?spm=a2c4g.2510250.0.0.40d25637QMI4eV
             include_vector (bool): Whether to include the embedding in the response.Defaults to True.
-            partition (Optional[str]): The partition name 
+            partition (Optional[str]): The partition name
                 to query. Defaults to None.
-            output_fields (Optional[List[str]]): The fields 
+            output_fields (Optional[List[str]]): The fields
                 to return. Defaults to None, meaning all fields
-            sparse_vector (Optional[Dict[int, float]]): The 
+            sparse_vector (Optional[Dict[int, float]]): The
                 sparse vector to query.Defaults to None.
 
         Returns:
@@ -59,11 +62,11 @@ class DashVectorReader(BaseReader):
             raise ValueError(
                 f"Failed to get collection: {collection_name}," f"Error: {collection}"
             )
-        import dashvector
+
         ret = collection.query(
             vector=vector,
             topk=topk,
-            filter= filter,
+            filter=filter,
             include_vector=include_vector,
             partition=partition,
             output_fields=output_fields,
