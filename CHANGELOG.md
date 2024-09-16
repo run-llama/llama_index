@@ -33,6 +33,10 @@
 
 - add quip reader (#16000)
 
+### `llama-index-sparse-embeddings-fastembed` [0.1.0]
+
+- add fastembed sparse embeddings (#16018)
+
 ### `llama-index-vector-stores-elasticsearch` [0.2.1]
 
 - Fix: get all documents from Elasticsearch KVStore (#16006)
