@@ -237,7 +237,6 @@ class ReActAgentWorker(BaseAgentWorker):
         if output.message.content is None:
             raise ValueError("Got empty message.")
         message_content = output.message.content
-        assert isinstance(message_content, (type(None), str))
 
         current_reasoning = []
         try:
@@ -488,7 +487,6 @@ class ReActAgentWorker(BaseAgentWorker):
             bool: Boolean on whether the chunk is the start of the final response
         """
         latest_content = chunk.message.content
-        assert isinstance(latest_content, (type(None), str))
         if latest_content:
             # doesn't follow thought-action format
             # keep first chunks

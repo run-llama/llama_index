@@ -244,7 +244,6 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         if output.message.content is None:
             raise ValueError("Got empty message.")
         message_content = output.message.content
-        assert isinstance(message_content, (type(None), str))
 
         current_reasoning = []
         try:

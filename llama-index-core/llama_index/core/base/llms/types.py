@@ -75,7 +75,7 @@ class ChatMessage(BaseModel):
     """Chat message."""
 
     role: MessageRole = MessageRole.USER
-    content: Optional[Union[str, List[Union[TextBlock, ImageBlock]]]] = ""
+    content: Optional[Any] = ""
     additional_kwargs: dict = Field(default_factory=dict)
 
     def __str__(self) -> str:

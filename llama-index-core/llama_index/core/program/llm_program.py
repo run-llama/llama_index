@@ -93,7 +93,6 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
             chat_response = self._llm.chat(messages, **llm_kwargs)
 
             raw_output = chat_response.message.content or ""
-            assert isinstance(raw_output, str)
         else:
             formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
 
@@ -121,7 +120,6 @@ class LLMTextCompletionProgram(BasePydanticProgram[BaseModel]):
             chat_response = await self._llm.achat(messages, **llm_kwargs)
 
             raw_output = chat_response.message.content or ""
-            assert isinstance(raw_output, str)
         else:
             formatted_prompt = self._prompt.format(llm=self._llm, **kwargs)
 

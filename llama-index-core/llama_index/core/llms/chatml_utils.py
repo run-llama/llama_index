@@ -34,7 +34,6 @@ def messages_to_prompt(
     if messages[0].role == MessageRole.SYSTEM:
         # pull out the system message (if it exists in messages)
         system_message_str = messages[0].content or ""
-        assert isinstance(system_message_str, str)
         messages = messages[1:]
     else:
         system_message_str = system_prompt or DEFAULT_SYSTEM_PROMPT

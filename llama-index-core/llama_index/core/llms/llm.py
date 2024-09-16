@@ -577,7 +577,6 @@ class LLM(BaseLLM):
             messages = self._get_messages(prompt, **prompt_args)
             chat_response = self.chat(messages)
             output = chat_response.message.content or ""
-            assert isinstance(output, str)
         else:
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
             response = self.complete(formatted_prompt, formatted=True)
@@ -667,7 +666,6 @@ class LLM(BaseLLM):
             messages = self._get_messages(prompt, **prompt_args)
             chat_response = await self.achat(messages)
             output = chat_response.message.content or ""
-            assert isinstance(output, str)
         else:
             formatted_prompt = self._get_prompt(prompt, **prompt_args)
             response = await self.acomplete(formatted_prompt, formatted=True)

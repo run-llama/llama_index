@@ -54,11 +54,9 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
         if messages:
             if messages[0].role == MessageRole.SYSTEM:
                 message_content = messages[0].content or ""
-                assert isinstance(message_content, str)
                 messages[0].content = self.format(message_content)
             else:
                 message_content = messages[-1].content or ""
-                assert isinstance(message_content, str)
                 messages[-1].content = self.format(message_content)
 
         return messages
