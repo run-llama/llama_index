@@ -112,7 +112,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         doc_id_field (str, optional): The name of the doc_id field for the collection,
             defaults to DEFAULT_DOC_ID_KEY.
         similarity_metric (str, optional): The similarity metric to use,
-            currently supports IP and L2.
+            currently supports IP, COSINE and L2.
         consistency_level (str, optional): Which consistency level to use for a newly
             created collection. Defaults to "Session".
         overwrite (bool, optional): Whether to overwrite existing collection with same
