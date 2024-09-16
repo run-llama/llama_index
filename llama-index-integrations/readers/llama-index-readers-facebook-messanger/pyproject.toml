@@ -11,10 +11,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 # [tool.llamahub]
 # contains_example = false
-# import_path = "<import-path>"
+# import_path = "llama_index.readers.facebook_messanger"
 
 # [tool.llamahub.class_authors]
-# CLASS = "github-username"
+# FacebookMessengerLoader = "Shailesh-05"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -30,6 +30,7 @@ description = "llama-index readers facebook_messanger integration"
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
 readme = "README.md"
+maintainers = ["Shailesh-05"]
 packages = [{include = "llama_index/"}]
 
 [tool.poetry.dependencies]
