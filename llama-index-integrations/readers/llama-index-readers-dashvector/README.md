@@ -28,12 +28,12 @@ reader = DashVectorReader(
 # Load data from DashVector
 documents = reader.load_data(
     collection_name="<Collection Name>",
-    id_to_text_map={"id1": "text1", "id2": "text2"},  # Map from IDs to text
     vector=[0.1, 0.2, 0.3],  # Query vector
-    top_k=10,  # Number of results to return
+    topk=10,  # Number of results to return
     separate_documents=True,  # Whether to return separate documents
     filter=None,  # Optional: Filter conditions
     include_vector=True,  # Whether to include the embedding in the response
+    output_fields=None,  # Optional: Fields Filter
 )
 ```
 
