@@ -1,3 +1,3 @@
 python_tests(
-    interpreter_constraints=["==3.9.*", "==3.10.*","==3.11.*"],
+    interpreter_constraints=["==3.8.*","==3.9.*", "==3.10.*","==3.11.*"],
 )
