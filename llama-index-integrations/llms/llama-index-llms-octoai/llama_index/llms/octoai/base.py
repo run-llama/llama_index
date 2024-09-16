@@ -59,9 +59,6 @@ class OctoAI(LLM):
         description="The maximum number of tokens to generate.",
         gt=0,
     )
-    timeout: float = Field(
-        default=120, description="The timeout to use in seconds.", ge=0
-    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OctoAI SDK."
     )
@@ -92,6 +89,10 @@ class OctoAI(LLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
         )
 
         token = get_from_param_or_env("token", token, "OCTOAI_TOKEN", "")
