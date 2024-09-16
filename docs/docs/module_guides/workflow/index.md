@@ -418,6 +418,21 @@ async def critique_joke(ev: JokeEvent) -> StopEvent:
     return StopEvent(result=str(response))
 ```
 
+## Maintaining Context Across Runs
+
+As you have seen, workflows have a `Context` object that can be used to maintain state across steps.
+
+If you want to maintain state across multiple runs of a workflow, you can pass a previous context into the `.run()` method.
+
+```python
+handler = w.run()
+result = await handler
+
+# continue with next run
+handler = w.run(context=handler.context)
+result = await handler
+```
+
 ## Examples
 
 You can find many useful examples of using workflows in the notebooks below:
