@@ -336,6 +336,14 @@ class Workflow(metaclass=WorkflowMeta):
     @dispatcher.span
     async def run_step(self, **kwargs: Any) -> Optional[Any]:
         """Runs the workflow stepwise until completion."""
+        warnings.warn(
+            "run_step() is deprecated, use `workflow.run(stepwise=True)` instead.\n"
+            "handler = workflow.run(stepwise=True)\n"
+            "while not handler.is_done():\n"
+            "    result = await handler.run_step()\n"
+            "    print(result)\n"
+        )
+
         # Check if we need to start a new session
         if self._stepwise_context is None:
             self._validate()
