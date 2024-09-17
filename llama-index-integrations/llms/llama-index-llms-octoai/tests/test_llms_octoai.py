@@ -14,8 +14,5 @@ def test_embedding_class():
     os.environ.get("OCTOAI_TOKEN") is None, reason="OCTOAI_TOKEN env var not set"
 )
 def test_completion():
-    octoai = OctoAI(
-        token=os.getenv("OCTOAI_TOKEN"),
-        max_tokens=32000,
-    )
+    octoai = OctoAI(token=os.getenv("OCTOAI_TOKEN"))
     assert octoai.complete("Who is Paul Graham?") != ""

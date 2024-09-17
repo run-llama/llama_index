@@ -127,8 +127,10 @@ class OctoAI(LLM):
         base_kwargs = {
             "model": self.model,
             "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
         }
+        if self.max_tokens:
+            base_kwargs["max_tokens"] = self.max_tokens
+
         return {
             **base_kwargs,
             **self.additional_kwargs,
