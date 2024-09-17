@@ -57,7 +57,7 @@ def default_output_processor(
             if "max_rows" in output_kwargs:
                 pd.set_option("display.max_rows", output_kwargs["max_rows"])
             if "max_columns" in output_kwargs:
-                pd.set_option("display.max_columns", output_kwargs["max_columns"])  
+                pd.set_option("display.max_columns", output_kwargs["max_columns"])
             output_str = str(safe_eval(module_end_str, global_vars, local_vars))
             pd.set_option("display.max_colwidth", current_max_colwidth)
             pd.set_option("display.max_rows", current_max_rows)
