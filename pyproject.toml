@@ -45,7 +45,7 @@ name = "llama-index"
 packages = [{from = "_llama-index", include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.11.9"
+version = "0.11.10"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -58,7 +58,7 @@ llama-index-agent-openai = "^0.3.1"
 llama-index-readers-file = "^0.2.0"
 llama-index-readers-llama-parse = ">=0.3.0"
 llama-index-indices-managed-llama-cloud = ">=0.3.0"
-llama-index-core = "^0.11.9"
+llama-index-core = "^0.11.10"
 llama-index-multi-modal-llms-openai = "^0.2.0"
 llama-index-cli = "^0.3.1"
 nltk = ">3.8.1"  # avoids a CVE, temp until next release, should be in llama-index-core
