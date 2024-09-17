@@ -61,6 +61,6 @@ def octoai_modelname_to_contextsize(modelname: str) -> int:
 
 def to_octoai_messages(messages: Sequence[ChatMessage]) -> Sequence[OctoAIChatMessage]:
     return [
-        OctoAIChatMessage(message=message.content, role=message.role.value)
+        OctoAIChatMessage(content=message.content, role=message.role.value)
         for message in messages
     ]
