@@ -17,7 +17,7 @@ dispatcher = get_dispatcher(__name__)
 class CohereRerank(BaseNodePostprocessor):
     model: str = Field(description="Cohere model name.")
     top_n: int = Field(description="Top N nodes to return.")
-    base_url: Optional[str] = Field(description="Cohere base url.")
+    base_url: Optional[str] = Field(description="Cohere base url.", default=None)
 
     _client: Any = PrivateAttr()
 
