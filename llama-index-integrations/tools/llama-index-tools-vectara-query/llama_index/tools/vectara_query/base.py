@@ -68,7 +68,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
             See (https://docs.vectara.com/docs/api-reference/search-apis/search#citation-format-in-summary) for more details.
             This is a Vectara Scale only feature. Defaults to None.
         - citations_text_pattern (str): The displayed text for citations.
-            Must be specified for html and markdown citations.
+            If not specified, numeric citations are displayed.
         """
         self.index = VectaraIndex(
             vectara_customer_id=vectara_customer_id,
