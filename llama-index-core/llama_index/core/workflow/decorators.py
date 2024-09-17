@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type
 
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
 from .errors import WorkflowValidationError
 from .utils import (
@@ -12,15 +12,19 @@ from .utils import (
 
 if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
+from .retry_policy import RetryPolicy
 
 
 class StepConfig(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     accepted_events: List[Any]
     event_name: str
     return_types: List[Any]
     context_parameter: Optional[str]
     num_workers: int
     requested_services: List[ServiceDefinition]
+    retry_policy: Optional[RetryPolicy]
 
 
 def step(
@@ -28,6 +32,7 @@ def step(
     workflow: Optional[Type["Workflow"]] = None,
     pass_context: bool = False,
     num_workers: int = 1,
+    retry_policy: Optional[RetryPolicy] = None,
 ) -> Callable:
     """Decorator used to mark methods and functions as workflow steps.
 
@@ -56,6 +61,7 @@ def step(
             context_parameter=spec.context_parameter,
             num_workers=num_workers,
             requested_services=spec.requested_services or [],
+            retry_policy=retry_policy,
         )
 
         # If this is a free function, call add_step() explicitly.

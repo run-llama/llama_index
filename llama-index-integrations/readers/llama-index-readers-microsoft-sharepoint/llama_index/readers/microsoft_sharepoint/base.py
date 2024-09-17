@@ -116,12 +116,17 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             data=payload,
         )
 
-        if response.status_code == 200 and "access_token" in response.json():
-            return response.json()["access_token"]
+        json_response = response.json()
+
+        if response.status_code == 200 and "access_token" in json_response:
+            return json_response["access_token"]
 
         else:
-            logger.error(response.json()["error"])
-            raise ValueError(response.json()["error_description"])
+            error_message = json_response.get("error_description") or json_response.get(
+                "error"
+            )
+            logger.error("Error retrieving access token: %s", json_response["error"])
+            raise ValueError(f"Error retrieving access token: {error_message}")
 
     def _get_site_id_with_host_name(
         self, access_token, sharepoint_site_name: Optional[str]
@@ -178,10 +183,11 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                         f"The specified sharepoint site {sharepoint_site_name} is not found."
                     )
             else:
-                if "error_description" in json_response:
-                    logger.error(json_response["error"])
-                    raise ValueError(json_response["error_description"])
-                raise ValueError(json_response["error"])
+                error_message = json_response.get(
+                    "error_description"
+                ) or json_response.get("error")
+                logger.error("Error retrieving site ID: %s", json_response["error"])
+                raise ValueError(f"Error retrieving site ID: {error_message}")
 
         raise ValueError(
             f"The specified sharepoint site {sharepoint_site_name} is not found."
@@ -209,26 +215,27 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             url=self._drive_id_endpoint,
             headers=self._authorization_headers,
         )
+        json_response = response.json()
 
-        if response.status_code == 200 and "value" in response.json():
-            if len(response.json()["value"]) > 0 and self.drive_name is not None:
-                for drive in response.json()["value"]:
+        if response.status_code == 200 and "value" in json_response:
+            if len(json_response["value"]) > 0 and self.drive_name is not None:
+                for drive in json_response["value"]:
                     if drive["name"].lower() == self.drive_name.lower():
                         return drive["id"]
                 raise ValueError(f"The specified drive {self.drive_name} is not found.")
 
-            if (
-                len(response.json()["value"]) > 0
-                and "id" in response.json()["value"][0]
-            ):
-                return response.json()["value"][0]["id"]
+            if len(json_response["value"]) > 0 and "id" in json_response["value"][0]:
+                return json_response["value"][0]["id"]
             else:
                 raise ValueError(
                     "Error occurred while fetching the drives for the sharepoint site."
                 )
         else:
-            logger.error(response.json()["error"])
-            raise ValueError(response.json()["error_description"])
+            error_message = json_response.get("error_description") or json_response.get(
+                "error"
+            )
+            logger.error("Error retrieving drive ID: %s", json_response["error"])
+            raise ValueError(f"Error retrieving drive ID: {error_message}")
 
     def _get_sharepoint_folder_id(self, folder_path: str) -> str:
         """
@@ -252,7 +259,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         if response.status_code == 200 and "id" in response.json():
             return response.json()["id"]
         else:
-            raise ValueError(response.json()["error"])
+            error_message = response.json().get("error", "Unknown error")
+            logger.error("Error retrieving folder ID: %s", error_message)
+            raise ValueError(f"Error retrieving folder ID: {error_message}")
 
     def _download_files_and_extract_metadata(
         self,
@@ -300,9 +309,14 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         """
         file_download_url = item["@microsoft.graph.downloadUrl"]
         response = requests.get(file_download_url)
+
         if response.status_code != 200:
-            logger.error(response.json()["error"])
-            raise ValueError(response.json()["error_description"])
+            json_response = response.json()
+            error_message = json_response.get("error_description") or json_response.get(
+                "error"
+            )
+            logger.error("Error downloading file content: %s", json_response["error"])
+            raise ValueError(f"Error downloading file content: {error_message}")
 
         return response.content
 
@@ -788,10 +802,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
             item = self._get_item_from_path(path)
 
-            input_file_dir = path.parent
-
             with tempfile.TemporaryDirectory() as temp_dir:
-                metadata = self._download_file(item, temp_dir, input_file_dir)
+                metadata = self._download_file(item, temp_dir)
                 return self._load_documents_with_metadata(
                     metadata, temp_dir, recursive=False
                 )

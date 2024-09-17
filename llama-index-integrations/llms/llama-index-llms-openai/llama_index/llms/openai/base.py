@@ -52,6 +52,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Model
 from llama_index.llms.openai.utils import (
+    O1_MODELS,
     OpenAIToolCall,
     create_retry_decorator,
     from_openai_completion_logprobs,
@@ -166,8 +167,8 @@ class OpenAI(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate.",
@@ -180,8 +181,8 @@ class OpenAI(FunctionCallingLLM):
     top_logprobs: int = Field(
         description="The number of top token log probs to return.",
         default=0,
-        gte=0,
-        lte=20,
+        ge=0,
+        le=20,
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
@@ -189,12 +190,12 @@ class OpenAI(FunctionCallingLLM):
     max_retries: int = Field(
         default=3,
         description="The maximum number of API retries.",
-        gte=0,
+        ge=0,
     )
     timeout: float = Field(
         default=60.0,
         description="The timeout, in seconds, for API requests.",
-        gte=0,
+        ge=0,
     )
     default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
@@ -252,6 +253,10 @@ class OpenAI(FunctionCallingLLM):
             api_base=api_base,
             api_version=api_version,
         )
+
+        # TODO: Temp forced to 1.0 for o1
+        if model in O1_MODELS:
+            temperature = 1.0
 
         super().__init__(
             model=model,
@@ -331,6 +336,10 @@ class OpenAI(FunctionCallingLLM):
                 model=self._get_model_name()
             ),
             model_name=self.model,
+            # TODO: Temp for O1 beta
+            system_role=MessageRole.USER
+            if self.model in O1_MODELS
+            else MessageRole.SYSTEM,
         )
 
     @llm_chat_callback()
@@ -410,7 +419,7 @@ class OpenAI(FunctionCallingLLM):
     @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         if self.reuse_client:
             response = client.chat.completions.create(
@@ -492,7 +501,7 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -698,7 +707,7 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         aclient = self._get_aclient()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         if self.reuse_client:
             response = await aclient.chat.completions.create(
@@ -731,7 +740,7 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         aclient = self._get_aclient()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""

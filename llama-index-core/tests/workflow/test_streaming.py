@@ -28,9 +28,9 @@ class StreamingWorkflow(Workflow):
 @pytest.mark.asyncio()
 async def test_e2e():
     wf = StreamingWorkflow()
-    r = asyncio.create_task(wf.run())
+    r = wf.run()
 
-    async for ev in wf.stream_events():
+    async for ev in r.stream_events():
         assert "msg" in ev
 
     await r
@@ -58,10 +58,10 @@ async def test_task_raised():
             raise ValueError("The step raised an error!")
 
     wf = DummyWorkflow()
-    r = asyncio.create_task(wf.run())
+    r = wf.run()
 
     # Make sure we don't block indefinitely here because the step raised
-    async for ev in wf.stream_events():
+    async for ev in r.stream_events():
         assert ev.test_param == "foo"
 
     # Make sure the await actually caught the exception
@@ -70,17 +70,56 @@ async def test_task_raised():
 
 
 @pytest.mark.asyncio()
-async def test_multiple_streams():
+async def test_multiple_sequential_streams():
     wf = StreamingWorkflow()
-    r = asyncio.create_task(wf.run())
+    r = wf.run()
 
     # stream 1
-    async for _ in wf.stream_events():
+    async for _ in r.stream_events():
         pass
     await r
 
     # stream 2 -- should not raise an error
-    r = asyncio.create_task(wf.run())
-    async for _ in wf.stream_events():
+    r = wf.run()
+    async for _ in r.stream_events():
         pass
     await r
+
+
+@pytest.mark.asyncio()
+async def test_multiple_ongoing_streams():
+    wf = StreamingWorkflow()
+    stream_1 = wf.run()
+    stream_2 = wf.run()
+
+    async for ev in stream_1.stream_events():
+        assert "msg" in ev
+
+    async for ev in stream_2.stream_events():
+        assert "msg" in ev
+
+
+@pytest.mark.asyncio()
+async def test_resume_streams():
+    class CounterWorkflow(Workflow):
+        @step
+        async def count(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            ctx.write_event_to_stream(Event(msg="hello!"))
+
+            cur_count = await ctx.get("cur_count", default=0)
+            await ctx.set("cur_count", cur_count + 1)
+            return StopEvent(result="done")
+
+    wf = CounterWorkflow()
+    handler_1 = wf.run()
+
+    async for _ in handler_1.stream_events():
+        pass
+    await handler_1
+
+    handler_2 = wf.run(ctx=handler_1.ctx)
+    async for _ in handler_2.stream_events():
+        pass
+    await handler_2
+
+    assert await handler_2.ctx.get("cur_count") == 2

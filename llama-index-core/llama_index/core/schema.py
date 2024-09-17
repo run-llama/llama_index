@@ -526,6 +526,17 @@ class ImageNode(TextNode):
         else:
             raise ValueError("No image found in node.")
 
+    @property
+    def hash(self) -> str:
+        """Get hash of node."""
+        # doc identity depends on if image, image_path, or image_url is set
+        image_str = self.image or "None"
+        image_path_str = self.image_path or "None"
+        image_url_str = self.image_url or "None"
+        image_text = self.text or "None"
+        doc_identity = f"{image_str}-{image_path_str}-{image_url_str}-{image_text}"
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
+
 
 class IndexNode(TextNode):
     """Node with reference to any object.
@@ -715,11 +726,13 @@ class Document(TextNode):
         from llama_index.core.bridge.langchain import Document as LCDocument
 
         metadata = self.metadata or {}
-        return LCDocument(page_content=self.text, metadata=metadata)
+        return LCDocument(page_content=self.text, metadata=metadata, id=self.id_)
 
     @classmethod
     def from_langchain_format(cls, doc: "LCDocument") -> "Document":
         """Convert struct from LangChain document format."""
+        if doc.id:
+            return cls(text=doc.page_content, metadata=doc.metadata, id_=doc.id)
         return cls(text=doc.page_content, metadata=doc.metadata)
 
     def to_haystack_format(self) -> "HaystackDocument":

@@ -61,12 +61,12 @@ class OpenAIMultiModal(MultiModalLLM):
     max_retries: int = Field(
         default=3,
         description="Maximum number of retries.",
-        gte=0,
+        ge=0,
     )
     timeout: float = Field(
         default=60.0,
         description="The timeout, in seconds, for API requests.",
-        gte=0,
+        ge=0,
     )
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
     api_base: str = Field(default=None, description="The base URL for OpenAI API.")

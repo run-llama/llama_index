@@ -22,7 +22,8 @@ class Context:
     Both `set` and `get` operations on global data are governed by a lock, and considered coroutine-safe.
     """
 
-    def __init__(self, workflow: "Workflow") -> None:
+    def __init__(self, workflow: "Workflow", stepwise: bool = False) -> None:
+        self.stepwise = stepwise
         self._workflow = workflow
         # Broker machinery
         self._queues: Dict[str, asyncio.Queue] = {}

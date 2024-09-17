@@ -48,7 +48,7 @@ from mistralai.models import (
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
-DEFAULT_MISTRALAI_MODEL = "mistral-tiny"
+DEFAULT_MISTRALAI_MODEL = "mistral-large-latest"
 DEFAULT_MISTRALAI_ENDPOINT = "https://api.mistral.ai"
 DEFAULT_MISTRALAI_MAX_TOKENS = 512
 
@@ -108,8 +108,8 @@ class MistralAI(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: int = Field(
         default=DEFAULT_MISTRALAI_MAX_TOKENS,
@@ -118,10 +118,10 @@ class MistralAI(FunctionCallingLLM):
     )
 
     timeout: float = Field(
-        default=120, description="The timeout to use in seconds.", gte=0
+        default=120, description="The timeout to use in seconds.", ge=0
     )
     max_retries: int = Field(
-        default=5, description="The maximum number of API retries.", gte=0
+        default=5, description="The maximum number of API retries.", ge=0
     )
     random_seed: Optional[int] = Field(
         default=None, description="The random seed to use for sampling."
