@@ -8,13 +8,8 @@ check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
-contains_example = false
-import_path = "llama_index.llms.openai"
 
 [tool.llamahub.class_authors]
-AsyncOpenAI = "llama-index"
-OpenAI = "llama-index"
-SyncOpenAI = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -23,19 +18,18 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["llama-index"]
-description = "llama-index llms openai integration"
+authors = ["Logan Markewich"]
+description = "llama-index utils openai"
 exclude = ["**/BUILD"]
+keywords = ["openai", "utils"]
 license = "MIT"
-name = "llama-index-llms-openai"
+maintainers = ["logan-markewich"]
+name = "llama-index-utils-openai"
 readme = "README.md"
-version = "0.2.8"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-openai = "^1.40.0"
-llama-index-core = "^0.11.7"
-llama-index-utils-openai = "^0.1.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

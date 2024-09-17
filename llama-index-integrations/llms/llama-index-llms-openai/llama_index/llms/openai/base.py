@@ -76,6 +76,7 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCall,
 )
 from llama_index.core.llms.utils import parse_partial_json
+from llama_index.utils.openai import resolve_tool_choice
 
 import llama_index.core.instrumentation as instrument
 
@@ -873,9 +874,6 @@ class OpenAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
-        from llama_index.agent.openai.utils import resolve_tool_choice
-
-        # misralai uses the same openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
         # if strict is passed in, use, else default to the class-level attribute, else default to True`
