@@ -92,21 +92,24 @@ def _get_embedding_request(
 
 
 class VertexTextEmbedding(BaseEmbedding):
-    embed_mode: VertexEmbeddingMode = Field(description="The embedding mode to use.")
+    embed_mode: VertexEmbeddingMode = Field(
+        default=VertexEmbeddingMode.RETRIEVAL_MODE,
+        description="The embedding mode to use.",
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Vertex."
     )
     client_email: Optional[str] = Field(
-        description="The client email for the VertexAI credentials."
+        default=None, description="The client email for the VertexAI credentials."
     )
     token_uri: Optional[str] = Field(
-        description="The token URI for the VertexAI credentials."
+        default=None, description="The token URI for the VertexAI credentials."
     )
     private_key_id: Optional[str] = Field(
-        description="The private key ID for the VertexAI credentials."
+        default=None, description="The private key ID for the VertexAI credentials."
     )
     private_key: Optional[str] = Field(
-        description="The private key for the VertexAI credentials."
+        default=None, description="The private key for the VertexAI credentials."
     )
 
     _model: TextEmbeddingModel = PrivateAttr()
