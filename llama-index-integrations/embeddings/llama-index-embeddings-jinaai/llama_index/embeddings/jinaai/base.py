@@ -19,7 +19,7 @@ MAX_BATCH_SIZE = 2048
 DEFAULT_JINA_AI_API_URL = "https://api.jina.ai/v1"
 
 VALID_ENCODING = ["float", "ubinary", "binary"]
-VALID_TASK_TYPE = [
+VALID_TASK = [
     "retrieval.query",
     "retrieval.passage",
     "text-matching",
@@ -47,7 +47,7 @@ class _JinaAPICaller:
         self,
         input,
         encoding_type: str = "float",
-        task_type: Optional[str] = None,
+        task: Optional[str] = None,
         dimensions: Optional[int] = None,
     ) -> List[List[float]]:
         """Get embeddings."""
@@ -57,8 +57,8 @@ class _JinaAPICaller:
             "model": self.model,
             "encoding_type": encoding_type,
         }
-        if task_type:
-            input_json["task_type"] = task_type
+        if task:
+            input_json["task"] = task
         if dimensions:
             input_json["dimensions"] = dimensions
 
@@ -93,7 +93,7 @@ class _JinaAPICaller:
         self,
         input,
         encoding_type: str = "float",
-        task_type: Optional[str] = None,
+        task: Optional[str] = None,
         dimensions: Optional[int] = None,
     ) -> List[List[float]]:
         """Asynchronously get text embeddings."""
@@ -109,8 +109,8 @@ class _JinaAPICaller:
                 "model": self.model,
                 "encoding_type": encoding_type,
             }
-            if task_type:
-                input_json["task_type"] = task_type
+            if task:
+                input_json["task"] = task
             if dimensions:
                 input_json["dimensions"] = dimensions
 
@@ -173,7 +173,7 @@ class JinaEmbedding(MultiModalEmbedding):
 
     _encoding_queries: str = PrivateAttr()
     _encoding_documents: str = PrivateAttr()
-    _task_type: str = PrivateAttr()
+    _task: str = PrivateAttr()
     _api: Any = PrivateAttr()
 
     def __init__(
@@ -184,7 +184,7 @@ class JinaEmbedding(MultiModalEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         encoding_queries: Optional[str] = None,
         encoding_documents: Optional[str] = None,
-        task_type: Optional[str] = None,
+        task: Optional[str] = None,
         dimensions: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
@@ -197,7 +197,7 @@ class JinaEmbedding(MultiModalEmbedding):
         )
         self._encoding_queries = encoding_queries or "float"
         self._encoding_documents = encoding_documents or "float"
-        self._task_type = task_type
+        self._task = task
         self._dimensions = dimensions
 
         assert (
@@ -207,10 +207,10 @@ class JinaEmbedding(MultiModalEmbedding):
             self._encoding_queries in VALID_ENCODING
         ), f"Encoding Queries parameter {self._encoding_documents} not supported. Please choose one of {VALID_ENCODING}"
 
-        if self._task_type:
+        if self._task:
             assert (
-                self._task_type in VALID_TASK_TYPE
-            ), f"Task Type parameter {self._task_type} not supported. Please choose one of {VALID_TASK_TYPE}"
+                self._task in VALID_TASK
+            ), f"Task Type parameter {self._task} not supported. Please choose one of {VALID_TASK}"
 
         self._api = _JinaAPICaller(model=model, api_key=api_key)
 
@@ -223,7 +223,7 @@ class JinaEmbedding(MultiModalEmbedding):
         return self._api.get_embeddings(
             input=[query],
             encoding_type=self._encoding_queries,
-            task_type=self._task_type,
+            task=self._task,
             dimensions=self._dimensions,
         )[0]
 
@@ -232,7 +232,7 @@ class JinaEmbedding(MultiModalEmbedding):
         result = await self._api.aget_embeddings(
             input=[query],
             encoding_type=self._encoding_queries,
-            task_type=self._task_type,
+            task=self._task,
             dimensions=self._dimensions,
         )
         return result[0]
@@ -250,7 +250,7 @@ class JinaEmbedding(MultiModalEmbedding):
         return self._api.get_embeddings(
             input=texts,
             encoding_type=self._encoding_documents,
-            task_type=self._task_type,
+            task=self._task,
             dimensions=self._dimensions,
         )
 
@@ -261,7 +261,7 @@ class JinaEmbedding(MultiModalEmbedding):
         return await self._api.aget_embeddings(
             input=texts,
             encoding_type=self._encoding_documents,
-            task_type=self._task_type,
+            task=self._task,
             dimensions=self._dimensions,
         )
 
