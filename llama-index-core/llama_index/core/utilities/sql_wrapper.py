@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from sqlalchemy import MetaData, create_engine, insert, inspect, text
+from sqlalchemy import MetaData, create_engine, insert, inspect, text, Connection
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncConnection
@@ -174,11 +174,12 @@ class SQLDatabase:
         """Get table columns."""
         return self._inspector.get_columns(table_name)
 
-    def get_single_table_info_async(self, conn: AsyncConnection, table) -> str:
+    @classmethod
+    def get_single_table_info_wrapper(cls, conn: Connection, table) -> str:
         """Use this when using an Async Engine. Get table info for a single table."""
         # reload the inspector
-        self._inspector = inspect(conn)
-        table_info = self.get_single_table_info(table)
+        cls._inspector = inspect(conn)
+        table_info = cls.get_single_table_info(table=table, inspector=cls._inspector)
         if table.context_str:
             table_opt_context = " The table description is: "
             table_opt_context += table.context_str
@@ -187,7 +188,8 @@ class SQLDatabase:
      
         return table
 
-    def get_single_table_info(self, table) -> str:
+    @staticmethod
+    def get_single_table_info(table, inspector) -> str:
         """Get table info for a single table."""
         # same logic as table_info, but with specific table names
 
@@ -195,18 +197,18 @@ class SQLDatabase:
         template = "Table '{full_table_name}' has columns: {columns}, "
         try:
             # try to retrieve table comment
-            table_comment = self._inspector.get_table_comment(
+            table_comment = inspector.get_table_comment(
                 table_name=table.table_name, schema=table.table_schema
             )["text"]
             if table_comment:
-                template += f"with comment: ({table_comment}) "
+                template += f", and comment: ({table_comment}) "
         except NotImplementedError:
             # get_table_comment raises NotImplementedError for a dialect that does not support comments.
             pass
 
-        template += "and foreign keys: {foreign_keys}."
+        template += "and foreign keys: {foreign_keys}"
         columns = []
-        for column in self._inspector.get_columns(
+        for column in inspector.get_columns(
             table_name=table.table_name, schema=table.table_schema
         ):
             if column.get("comment"):
@@ -219,7 +221,7 @@ class SQLDatabase:
 
         column_str = ", ".join(columns)
         foreign_keys = []
-        for foreign_key in self._inspector.get_foreign_keys(
+        for foreign_key in inspector.get_foreign_keys(
             table_name=table.table_name, schema=table.table_schema
         ):
             foreign_keys.append(
@@ -227,6 +229,10 @@ class SQLDatabase:
                 f"{foreign_key['referred_table']}.{foreign_key['referred_columns']}"
             )
         foreign_key_str = ", ".join(foreign_keys)
+        if not foreign_key_str:
+            foreign_key_str = "no foreign key metadata available."
+        else:
+            foreign_key_str += "."
         return template.format(
             full_table_name=full_table_name,
             columns=column_str,

@@ -192,7 +192,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
 
     def __init__(
         self,
-        sql_database: SQLDatabase,
+        sql_database: Optional[SQLDatabase],
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
@@ -215,6 +215,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         self._get_tables = self._load_get_tables_fn(
             sql_database, tables, context_query_kwargs, table_retriever
         )
+        self.table_retriever = table_retriever
         self._context_str_prefix = context_str_prefix
         self._llm = llm or llm_from_settings_or_context(Settings, service_context)
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
@@ -390,27 +391,6 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         retrieved_nodes, _ = await self.aretrieve_with_metadata(query_bundle)
         return retrieved_nodes
 
-    async def _aget_table_context(self, query_bundle: QueryBundle) -> str:
-        """
-        Get table context.
-
-        Get tables schema + optional context as a single string.
-
-        """
-        table_schema_objs = self._get_tables(query_bundle.query_str)
-
-        context_strs = []
-        if self._context_str_prefix is not None:
-            context_strs = [self._context_str_prefix]
-
-        for table_schema_obj in table_schema_objs:
-            if table_schema_obj.table_info:
-                context_strs.append(table_schema_obj.table_info)
-            else:
-                logger.warn("Missing table info")
-
-        return "\n\n".join(context_strs)
-
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
         """
         Get table context.
@@ -430,10 +410,41 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
             )
 
             if table_schema_obj.context_str:
-                table_opt_context = " The table description is: "
+                table_opt_context = ", and table description is: "
                 table_opt_context += table_schema_obj.context_str
                 table_info += table_opt_context
 
             context_strs.append(table_info)
+
+        return "\n\n".join(context_strs)
+
+class SQLTableRetriever:
+    """A light-weight class to retrieve table context that is not reliant on a database connection
+    since it's focused on just retrieving nodes from the vector index
+    """
+
+    def __init__(self, table_retriever: ObjectRetriever[SQLTableSchema], context_str_prefix: Optional[str] = None,):
+        self.table_retriever = table_retriever
+        self._context_str_prefix = context_str_prefix
+        
+    
+    async def _aget_table_context(self, query_bundle: QueryBundle) -> str:
+        """
+        Get table context.
+
+        Get tables schema + optional context as a single string.
+
+        """
+        table_schema_objs = await self.table_retriever.aretrieve(query_bundle.query_str)
+
+        context_strs = []
+        if self._context_str_prefix is not None:
+            context_strs = [self._context_str_prefix]
+
+        for table_schema_obj in table_schema_objs:
+            if table_schema_obj.table_info:
+                context_strs.append(table_schema_obj.table_info)
+            else:
+                logger.warn("Missing table info")
 
         return "\n\n".join(context_strs)

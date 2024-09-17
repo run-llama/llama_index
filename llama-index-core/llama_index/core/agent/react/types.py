@@ -46,7 +46,7 @@ class ObservationReasoningStep(BaseReasoningStep):
 
     def get_content(self) -> str:
         """Get content."""
-        return f"Observation xyz: {self.observation}"
+        return f"Observation: {self.observation}"
 
     @property
     def is_done(self) -> bool:

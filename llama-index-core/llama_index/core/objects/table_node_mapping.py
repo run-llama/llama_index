@@ -25,7 +25,7 @@ class SQLTableSchema(BaseModel):
 class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
     """SQL Table node mapping."""
 
-    def __init__(self, sql_database: SQLDatabase) -> None:
+    def __init__(self, sql_database: Optional[SQLDatabase] = None) -> None:
         self._sql_database = sql_database
 
     @classmethod
@@ -48,6 +48,8 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
     def to_node(self, obj: SQLTableSchema) -> TextNode:
         """To node."""
         # taken from existing schema logic
+        if not self._sql_database:
+            raise ValueError('A sql database connection is required for converting to nodes')
         table_text = (
             f"Schema of table {obj.full_table_name}:\n"
             f"{self._sql_database.get_single_table_info(table=obj)}\n"
