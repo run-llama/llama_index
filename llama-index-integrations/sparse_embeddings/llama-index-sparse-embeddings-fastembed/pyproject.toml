@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.readers.dashvector"
+import_path = "llama_index.sparse_embeddings.fastembed"
 
 [tool.llamahub.class_authors]
-DashVectorReader = "llama-index"
+FastEmbedEmbedding = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,17 +22,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index readers dashvector integration"
+description = "llama-index sparse embeddings fastembed integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-readers-dashvector"
+name = "llama-index-sparse-embeddings-fastembed"
 readme = "README.md"
-version = "0.3.0"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-dashvector = "^1.0.17"
-llama-index-core = "^0.11.0"
+python = ">=3.9,<3.13"
+fastembed = ">=0.2.2"
+llama-index-core = "^0.11.10"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

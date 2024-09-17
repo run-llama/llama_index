@@ -280,6 +280,21 @@ class MyWorkflow(Workflow):
         return StopEvent(result=events)
 ```
 
+## Streaming Events
+
+You can also iterate over events as they come in. This is useful for streaming purposes, showing progress, or for debugging.
+
+```python
+w = MyWorkflow(...)
+
+handler = w.run(topic="Pirates")
+
+async for event in handler.stream_events():
+    print(event)
+
+result = await handler
+```
+
 ## Retry steps execution in case of failures
 
 A step that fails its execution might result in the failure of the entire workflow, but oftentimes errors are
@@ -345,14 +360,16 @@ Workflows have built-in utilities for stepwise execution, allowing you to contro
 w = JokeFlow(...)
 
 # Kick off the workflow
-w.run_step(topic="Pirates")
+handler = w.run(topic="Pirates")
 
 # Iterate until done
-while not w.is_done():
-    w.run_step()
+async for _ in handler:
+    # inspect context
+    # val = await handler.context.get("key")
+    continue
 
 # Get the final result
-result = w.get_result()
+result = await handler
 ```
 
 ## Decorating non-class Functions
@@ -399,6 +416,21 @@ async def critique_joke(ev: JokeEvent) -> StopEvent:
     )
     response = await llm.acomplete(prompt)
     return StopEvent(result=str(response))
+```
+
+## Maintaining Context Across Runs
+
+As you have seen, workflows have a `Context` object that can be used to maintain state across steps.
+
+If you want to maintain state across multiple runs of a workflow, you can pass a previous context into the `.run()` method.
+
+```python
+handler = w.run()
+result = await handler
+
+# continue with next run
+handler = w.run(context=handler.context)
+result = await handler
 ```
 
 ## Examples
