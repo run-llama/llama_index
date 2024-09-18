@@ -94,6 +94,10 @@ class MistralAI(FunctionCallingLLM):
         # otherwise it will lookup MISTRAL_API_KEY from your env variable
         # llm = MistralAI(api_key="<api_key>")
 
+        # You can specify a custom endpoint by passing the `endpoint` variable or setting
+        # MISTRAL_ENDPOINT in your environment
+        # llm = MistralAI(endpoint="<endpoint>")
+
         llm = MistralAI()
 
         resp = llm.complete("Paul Graham is ")
