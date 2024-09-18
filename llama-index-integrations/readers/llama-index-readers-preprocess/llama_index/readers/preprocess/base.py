@@ -14,12 +14,63 @@ from llama_index.core.schema import (
 
 
 class PreprocessReader(BaseReader):
-    def __init__(self, api_key: str, *args, **kwargs):
-        if api_key is None or api_key == "":
-            raise ValueError(
-                "Please provide an api key to be used while doing the auth with the system."
-            )
+    """
+    Preprocess is an API service that splits any kind of document into optimal chunks of text for use in language model tasks.
+    Preprocess splits the documents into chunks of text that respect the layout and semantics of the original document.
+    Learn more at https://preprocess.co/.
 
+    Args:
+        api_key (str):
+            [Required] The Preprocess API Key.
+            If you don't have one yet, please request it at support@preprocess.co.
+            Default: `None`
+
+        file_path (str):
+            [Required] The path to the document to be preprocessed (convertend and split into chunks).
+            Default: `None`
+
+        table_output_format (str):
+            The output format for tables within the document.
+            Accepted values are [text, markdown, html].
+            Default: `text`
+
+        repeat_table_header (bool):
+            If `True`, when tables are split across multiple chunks, each chunk will include the table's row header.
+            Default: `False`
+
+        merge (bool):
+            If `True`, short chunks will be merged with others to maximize chunk length.
+            Default: `False`
+
+        repeat_title (bool):
+            If `True`, each chunk will include the title of the parent paragraph or section.
+            Default: `False`
+
+        keep_header (bool):
+            If `True`, the content of each page's header will be included in the chunks.
+            Default: `True`
+
+        smart_header (bool):
+            If `True`, only relevant headers will be included in the chunks, while irrelevant information will be removed.
+            Relevant headers are those that serve as section or paragraph titles.
+            If set to `False`, only the `keep_header` parameter will be considered. If `keep_header` is `False`, this parameter will be ignored.
+            Default: `True`
+
+        keep_footer (bool):
+            If `True`, the content of each page's footer will be included in the chunks.
+            Default: `False`
+
+        image_text (bool):
+            If `True`, the text contained in images will be added to the chunks.
+            Default: `False`
+
+
+    Examples:
+        >>> loader = PreprocessReader(api_key="your-api-key", file_path="valid/path/to/file")
+    """
+
+    def __init__(self, api_key: str, *args, **kwargs):
+        """Initialise with parameters."""
         try:
             from pypreprocess import Preprocess
         except ImportError:
@@ -28,6 +79,10 @@ class PreprocessReader(BaseReader):
                 " pypreprocess`"
             )
 
+        if api_key is None or api_key == "":
+            raise ValueError(
+                "Please provide an api key to be used while doing the auth with the system."
+            )
         _info = {}
         self._preprocess = Preprocess(api_key)
         self._filepath = None
@@ -69,6 +124,21 @@ class PreprocessReader(BaseReader):
         self._chunks = None
 
     def load_data(self, return_whole_document=False) -> List[Document]:
+        """Load data from Preprocess.
+
+        Args:
+            return_whole_document (bool):
+                Returning a list of one element, that element containing the full document.
+                Default: `false`
+
+        Examples:
+            >>> documents = loader.load_data()
+            >>> documents = loader.load_data(return_whole_document=True)
+
+        Returns:
+            List[Document]:
+                A list of documents each document containing a chunk from the original document.
+        """
         if self._chunks is None:
             if self._process_id is not None:
                 self._get_data_by_process()
@@ -114,9 +184,27 @@ class PreprocessReader(BaseReader):
                 ]
 
     def get_process_id(self):
+        """Get process's hash id from Preprocess.
+
+        Examples:
+            >>> process_id = loader.get_process_id()
+
+        Returns:
+            str:
+                Process's hash id.
+        """
         return self._process_id
 
     def get_nodes(self) -> List[TextNode]:
+        """Get nodes from Preprocess's chunks.
+
+        Examples:
+            >>> nodes = loader.get_nodes()
+
+        Returns:
+            List[TextNode]:
+                List of nodes, each node will contains a chunk from the original document.
+        """
         if self._chunks is None:
             self.load_data()
 
