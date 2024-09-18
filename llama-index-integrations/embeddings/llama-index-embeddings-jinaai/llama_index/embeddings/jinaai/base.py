@@ -49,6 +49,7 @@ class _JinaAPICaller:
         encoding_type: str = "float",
         task: Optional[str] = None,
         dimensions: Optional[int] = None,
+        late_chunking: Optional[bool] = None,
     ) -> List[List[float]]:
         """Get embeddings."""
         # Call Jina AI Embedding API
@@ -61,6 +62,8 @@ class _JinaAPICaller:
             input_json["task"] = task
         if dimensions:
             input_json["dimensions"] = dimensions
+        if late_chunking:
+            input_json["late_chunking"] = late_chunking
 
         resp = self._session.post(  # type: ignore
             self.api_url,
@@ -95,6 +98,7 @@ class _JinaAPICaller:
         encoding_type: str = "float",
         task: Optional[str] = None,
         dimensions: Optional[int] = None,
+        late_chunking: Optional[bool] = None,
     ) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         import aiohttp
@@ -113,6 +117,8 @@ class _JinaAPICaller:
                 input_json["task"] = task
             if dimensions:
                 input_json["dimensions"] = dimensions
+            if late_chunking:
+                input_json["late_chunking"] = late_chunking
 
             async with session.post(
                 self.api_url,
@@ -186,6 +192,7 @@ class JinaEmbedding(MultiModalEmbedding):
         encoding_documents: Optional[str] = None,
         task: Optional[str] = None,
         dimensions: Optional[int] = None,
+        late_chunking: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -199,6 +206,7 @@ class JinaEmbedding(MultiModalEmbedding):
         self._encoding_documents = encoding_documents or "float"
         self._task = task
         self._dimensions = dimensions
+        self._late_chunking = late_chunking
 
         assert (
             self._encoding_documents in VALID_ENCODING
@@ -225,6 +233,7 @@ class JinaEmbedding(MultiModalEmbedding):
             encoding_type=self._encoding_queries,
             task=self._task,
             dimensions=self._dimensions,
+            late_chunking=self._late_chunking,
         )[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
@@ -234,6 +243,7 @@ class JinaEmbedding(MultiModalEmbedding):
             encoding_type=self._encoding_queries,
             task=self._task,
             dimensions=self._dimensions,
+            late_chunking=self._late_chunking,
         )
         return result[0]
 
@@ -252,6 +262,7 @@ class JinaEmbedding(MultiModalEmbedding):
             encoding_type=self._encoding_documents,
             task=self._task,
             dimensions=self._dimensions,
+            late_chunking=self._late_chunking,
         )
 
     async def _aget_text_embeddings(
@@ -263,6 +274,7 @@ class JinaEmbedding(MultiModalEmbedding):
             encoding_type=self._encoding_documents,
             task=self._task,
             dimensions=self._dimensions,
+            late_chunking=self._late_chunking,
         )
 
     def _get_image_embedding(self, img_file_path: ImageType) -> List[float]:
