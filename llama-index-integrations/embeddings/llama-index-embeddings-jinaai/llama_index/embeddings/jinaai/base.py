@@ -161,7 +161,7 @@ class JinaEmbedding(MultiModalEmbedding):
     JinaAI class for embeddings.
 
     Args:
-        model (str): Model for embedding. When it is `jina-embeddings-v3`, `task_type` is required.
+        model (str): Model for embedding. When it is `jina-embeddings-v3`, `task` is required.
             Defaults to `jina-embeddings-v3`
     """
 
