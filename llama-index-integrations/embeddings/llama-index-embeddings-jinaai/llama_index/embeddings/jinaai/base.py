@@ -19,13 +19,6 @@ MAX_BATCH_SIZE = 2048
 DEFAULT_JINA_AI_API_URL = "https://api.jina.ai/v1"
 
 VALID_ENCODING = ["float", "ubinary", "binary"]
-VALID_TASK = [
-    "retrieval.query",
-    "retrieval.passage",
-    "text-matching",
-    "classification",
-    "separation",
-]
 
 
 class _JinaAPICaller:
@@ -168,7 +161,7 @@ class JinaEmbedding(MultiModalEmbedding):
     JinaAI class for embeddings.
 
     Args:
-        model (str): Model for embedding. When it is `jina-embeddings-v3`, `task` is required.
+        model (str): Model for embedding.
             Defaults to `jina-embeddings-v3`
     """
 
@@ -215,11 +208,6 @@ class JinaEmbedding(MultiModalEmbedding):
         assert (
             self._encoding_queries in VALID_ENCODING
         ), f"Encoding Queries parameter {self._encoding_documents} not supported. Please choose one of {VALID_ENCODING}"
-
-        if self._task:
-            assert (
-                self._task in VALID_TASK
-            ), f"Task Type parameter {self._task} not supported. Please choose one of {VALID_TASK}"
 
         self._api = _JinaAPICaller(model=model, api_key=api_key)
 
