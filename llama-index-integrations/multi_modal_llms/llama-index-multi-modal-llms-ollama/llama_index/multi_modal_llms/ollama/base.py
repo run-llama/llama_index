@@ -80,8 +80,7 @@ class OllamaMultiModal(MultiModalLLM):
         """Init params and ollama client."""
         super().__init__(**kwargs)
         self._client = Client(host=self.base_url, timeout=self.request_timeout)
-        self._aclient = AsyncClient(
-            host=self.base_url, timeout=self.request_timeout)
+        self._aclient = AsyncClient(host=self.base_url, timeout=self.request_timeout)
 
     @classmethod
     def class_name(cls) -> str:
@@ -118,8 +117,7 @@ class OllamaMultiModal(MultiModalLLM):
             message=ChatMessage(
                 content=response["message"]["content"],
                 role=MessageRole(response["message"]["role"]),
-                additional_kwargs=get_additional_kwargs(
-                    response, ("message",)),
+                additional_kwargs=get_additional_kwargs(response, ("message",)),
             ),
             raw=response["message"],
             additional_kwargs=get_additional_kwargs(response, ("message",)),
@@ -241,8 +239,7 @@ class OllamaMultiModal(MultiModalLLM):
             message=ChatMessage(
                 content=response["message"]["content"],
                 role=MessageRole(response["message"]["role"]),
-                additional_kwargs=get_additional_kwargs(
-                    response, ("message",)),
+                additional_kwargs=get_additional_kwargs(response, ("message",)),
             ),
             raw=response["message"],
             additional_kwargs=get_additional_kwargs(response, ("message",)),
