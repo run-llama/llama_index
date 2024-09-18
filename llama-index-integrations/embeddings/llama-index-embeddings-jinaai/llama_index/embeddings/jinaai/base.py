@@ -52,9 +52,9 @@ class _JinaAPICaller:
             "model": self.model,
             "encoding_type": encoding_type,
         }
-        if task:
+        if task is not None:
             input_json["task"] = task
-        if dimensions:
+        if dimensions is not None:
             input_json["dimensions"] = dimensions
         if late_chunking is not None:
             input_json["late_chunking"] = late_chunking
@@ -107,9 +107,9 @@ class _JinaAPICaller:
                 "model": self.model,
                 "encoding_type": encoding_type,
             }
-            if task:
+            if task is not None:
                 input_json["task"] = task
-            if dimensions:
+            if dimensions is not None:
                 input_json["dimensions"] = dimensions
             if late_chunking is not None:
                 input_json["late_chunking"] = late_chunking
