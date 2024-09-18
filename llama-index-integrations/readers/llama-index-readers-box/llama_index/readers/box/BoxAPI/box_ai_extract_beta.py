@@ -84,7 +84,7 @@ class AiExtractManager:
         **Note**: Box AI handles documents with text representations up to 1MB in size, or a maximum of 25 files, whichever comes first.
         If the file size exceeds 1MB, the first 1MB of text representation will be processed.
         If you set `mode` parameter to `single_item_qa`, the `items` array can have one element only.
-                :type items: List[CreateAiAskItems]
+                :type items: List[CreateAiTextGenItems]
                 :param extra_headers: Extra headers that will be included in the HTTP request., defaults to None
                 :type extra_headers: Optional[Dict[str, Optional[str]]], optional
         """

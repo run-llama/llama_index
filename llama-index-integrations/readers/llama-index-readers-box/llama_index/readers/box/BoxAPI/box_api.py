@@ -16,7 +16,7 @@ from box_sdk_gen.managers.search import (
     SearchForContentType,
     SearchResults,
 )
-from box_sdk_gen.managers.ai import CreateAiAskMode, CreateAiAskItems
+from box_sdk_gen.managers.ai import CreateAiAskMode, CreateAiTextGenItems
 
 from llama_index.readers.box.BoxAPI.box_ai_extract_beta import (
     AiExtractManager,
@@ -201,7 +201,7 @@ def get_ai_response_from_box_files(
     if individual_document_prompt:
         mode = CreateAiAskMode.SINGLE_ITEM_QA
         for file in box_files:
-            ask_item = CreateAiAskItems(file.id)
+            ask_item = CreateAiTextGenItems(file.id)
             logger.info(f"Getting AI prompt for file: {file.id} {file.name}")
 
             # get the AI prompt for the file
@@ -220,7 +220,7 @@ def get_ai_response_from_box_files(
 
     else:
         mode = CreateAiAskMode.MULTIPLE_ITEM_QA
-        file_ids = [CreateAiAskItems(file.id) for file in box_files]
+        file_ids = [CreateAiTextGenItems(file.id) for file in box_files]
 
         # get the AI prompt for the file
         ai_response = box_client.ai.create_ai_ask(
