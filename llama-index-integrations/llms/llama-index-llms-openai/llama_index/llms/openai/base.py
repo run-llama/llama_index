@@ -63,6 +63,7 @@ from llama_index.llms.openai.utils import (
     openai_modelname_to_contextsize,
     resolve_openai_credentials,
     to_openai_message_dicts,
+    resolve_tool_choice,
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
@@ -76,7 +77,6 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCall,
 )
 from llama_index.core.llms.utils import parse_partial_json
-from llama_index.utils.openai import resolve_tool_choice
 
 import llama_index.core.instrumentation as instrument
 
