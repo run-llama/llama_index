@@ -13,7 +13,7 @@ class WordpressReader(BaseReader):
         wordpress_subdomain (str): Wordpress subdomain
     """
 
-    def __init__(self, url: str, password: str, username: str) -> None:
+    def __init__(self, url: str, password: str = None, username: str = None) -> None:
         """Initialize Wordpress reader."""
         self.url = url
         self.username = username
