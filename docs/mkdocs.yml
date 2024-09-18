@@ -1584,10 +1584,11 @@ nav:
           - ./api_reference/tools/yelp.md
           - ./api_reference/tools/zapier.md
       - Workflow:
+          - ./api_reference/workflow/decorators.md
           - ./api_reference/workflow/context.md
           - ./api_reference/workflow/events.md
-          - ./api_reference/workflow/workflow.md
           - ./api_reference/workflow/retry_policy.md
+          - ./api_reference/workflow/workflow.md
   - Open-Source Community:
       - Integrations: ./community/integrations.md
       - Full Stack Projects: ./community/full_stack_projects.md
