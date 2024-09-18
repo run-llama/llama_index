@@ -62,7 +62,7 @@ class _JinaAPICaller:
             input_json["task"] = task
         if dimensions:
             input_json["dimensions"] = dimensions
-        if late_chunking:
+        if late_chunking is not None:
             input_json["late_chunking"] = late_chunking
 
         resp = self._session.post(  # type: ignore
@@ -117,7 +117,7 @@ class _JinaAPICaller:
                 input_json["task"] = task
             if dimensions:
                 input_json["dimensions"] = dimensions
-            if late_chunking:
+            if late_chunking is not None:
                 input_json["late_chunking"] = late_chunking
 
             async with session.post(
