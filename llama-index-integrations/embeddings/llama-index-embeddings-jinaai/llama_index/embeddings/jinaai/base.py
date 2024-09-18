@@ -27,6 +27,7 @@ VALID_TASK = [
     "separation",
 ]
 
+
 class _JinaAPICaller:
     def __init__(
         self,
