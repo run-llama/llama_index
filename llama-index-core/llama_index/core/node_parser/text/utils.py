@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, List
+from typing import Any, Callable, List
 
 from llama_index.core.node_parser.interface import TextSplitter
 
@@ -32,7 +32,7 @@ def split_by_char() -> Callable[[str], List[str]]:
     return lambda text: list(text)
 
 
-def split_by_sentence_tokenizer_internal(text: str, tokenizer) -> List[str]:
+def split_by_sentence_tokenizer_internal(text: str, tokenizer: Any) -> List[str]:
     """Get the spans and then return the sentences.
 
     Using the start index of each span

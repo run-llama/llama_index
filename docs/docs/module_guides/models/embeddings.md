@@ -167,9 +167,9 @@ class InstructorEmbeddings(BaseEmbedding):
         instruction: str = "Represent the Computer Science documentation or question:",
         **kwargs: Any,
     ) -> None:
+        super().__init__(**kwargs)
         self._model = INSTRUCTOR(instructor_model_name)
         self._instruction = instruction
-        super().__init__(**kwargs)
 
         def _get_query_embedding(self, query: str) -> List[float]:
             embeddings = self._model.encode([[self._instruction, query]])

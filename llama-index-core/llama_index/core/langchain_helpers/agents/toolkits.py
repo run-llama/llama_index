@@ -3,7 +3,7 @@
 from typing import List
 
 from llama_index.core.bridge.langchain import BaseTool, BaseToolkit
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import ConfigDict, Field
 from llama_index.core.langchain_helpers.agents.tools import (
     IndexToolConfig,
     LlamaIndexTool,

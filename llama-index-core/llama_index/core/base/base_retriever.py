@@ -214,8 +214,8 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
             for n in retrieved_nodes
             if not (
                 (n.node.hash, n.node.ref_doc_id) in seen
-                or seen.add((n.node.hash, n.node.ref_doc_id))
-            )  # type: ignore[func-returns-value]
+                or seen.add((n.node.hash, n.node.ref_doc_id))  # type: ignore[func-returns-value]
+            )
         ]
 
     @dispatcher.span

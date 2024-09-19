@@ -94,6 +94,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "retrievers": "Retrievers",
     "schema": "Schema",
     "selectors": "Selectors",
+    "sparse_embeddings": "Sparse Embeddings",
     "storage": "Storage",
     "tools": "Tools",
     "workflow": "Workflow",

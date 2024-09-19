@@ -81,7 +81,7 @@ class Event(BaseModel):
                     f"'{self.__class__.__name__}' object has no attribute '{__name}'"
                 )
 
-    def __setattr__(self, name, value) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         if name in self.__private_attributes__ or name in self.model_fields:
             super().__setattr__(name, value)
         else:

@@ -98,8 +98,8 @@ def get_source_files_list(source_tree_url: str, path: str) -> List[str]:
 
 
 def recursive_tree_traverse(
-    tree_urls: List[Tuple[str, str]], acc: List[str], source_tree_url: str
-):
+    tree_urls: List[str], acc: List[str], source_tree_url: str
+) -> List[str]:
     """Recursively traversge Github trees to get all file paths in a folder."""
     if not tree_urls:
         return acc
@@ -148,5 +148,5 @@ class ChangeDirectory:
         self.saved_path = os.getcwd()
         os.chdir(self.new_path)
 
-    def __exit__(self, etype, value, traceback) -> None:
+    def __exit__(self, etype: object, value: object, traceback: object) -> None:
         os.chdir(self.saved_path)

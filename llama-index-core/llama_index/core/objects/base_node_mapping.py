@@ -57,10 +57,10 @@ class BaseObjectNodeMapping(Generic[OT]):
         """
 
     @abstractmethod
-    def to_node(self, obj: OT) -> TextNode:
+    def to_node(self, obj: OT) -> BaseNode:
         """To node."""
 
-    def to_nodes(self, objs: Sequence[OT]) -> Sequence[TextNode]:
+    def to_nodes(self, objs: Sequence[OT]) -> Sequence[BaseNode]:
         return [self.to_node(obj) for obj in objs]
 
     def from_node(self, node: BaseNode) -> OT:
@@ -90,7 +90,7 @@ class BaseObjectNodeMapping(Generic[OT]):
         """Load from serialization."""
         obj_node_mapping = None
         errors = []
-        for cls in BaseObjectNodeMapping.__subclasses__():  # type: ignore[misc]
+        for cls in BaseObjectNodeMapping.__subclasses__():  # type: ignore
             try:
                 obj_node_mapping = cls.from_persist_dir(
                     persist_dir=persist_dir,

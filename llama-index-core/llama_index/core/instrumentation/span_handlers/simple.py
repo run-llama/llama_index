@@ -53,7 +53,7 @@ class SimpleSpanHandler(BaseSpanHandler[SimpleSpan]):
         instance: Optional[Any] = None,
         err: Optional[BaseException] = None,
         **kwargs: Any,
-    ) -> SimpleSpan:
+    ) -> Optional[SimpleSpan]:
         """Logic for droppping a span."""
         if id_ in self.open_spans:
             with self.lock:

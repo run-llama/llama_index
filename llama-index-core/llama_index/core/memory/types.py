@@ -25,8 +25,7 @@ class BaseMemory(BaseComponent):
     @abstractmethod
     def from_defaults(
         cls,
-        chat_history: Optional[List[ChatMessage]] = None,
-        llm: Optional[LLM] = None,
+        **kwargs: Any,
     ) -> "BaseMemory":
         """Create a chat memory from defaults."""
 
@@ -66,7 +65,7 @@ class BaseChatStoreMemory(BaseMemory):
     chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
 
     @field_serializer("chat_store")
-    def serialize_courses_in_order(chat_store: BaseChatStore):
+    def serialize_courses_in_order(self, chat_store: BaseChatStore) -> dict:
         res = chat_store.model_dump()
         res.update({"class_name": chat_store.class_name()})
         return res
@@ -82,6 +81,7 @@ class BaseChatStoreMemory(BaseMemory):
         cls,
         chat_history: Optional[List[ChatMessage]] = None,
         llm: Optional[LLM] = None,
+        **kwargs: Any,
     ) -> "BaseChatStoreMemory":
         """Create a chat memory from defaults."""
 
