@@ -229,6 +229,10 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         return self._mongodb_client
 
     def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+        hybrid_top_k = query.hybrid_top_k or query.similarity_top_k
+        sparse_top_k = query.sparse_top_k or query.similarity_top_k
+        dense_top_k = query.similarity_top_k
+
         if query.mode == VectorStoreQueryMode.DEFAULT:
             if not query.query_embedding:
                 raise ValueError("query_embedding in VectorStoreQueryMode.DEFAULT")
@@ -240,7 +244,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                     query_vector=query.query_embedding,
                     search_field=self._embedding_key,
                     index_name=self._vector_index_name,
-                    limit=query.similarity_top_k,
+                    limit=dense_top_k,
                     filter=filter,
                     oversampling_factor=self._oversampling_factor,
                 ),
@@ -259,15 +263,11 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 index_name=self._fulltext_index_name,
                 operator="text",
                 filter=filter,
-                limit=query.similarity_top_k,
+                limit=sparse_top_k,
             )
             pipeline.append({"$set": {"score": {"$meta": "searchScore"}}})
 
         elif query.mode == VectorStoreQueryMode.HYBRID:
-            hybrid_top_k = query.hybrid_top_k or query.similarity_top_k
-            sparse_top_k = query.sparse_top_k or query.similarity_top_k
-            dense_top_k = query.similarity_top_k
-
             # Combines Vector and Full-Text searches with Reciprocal Rank Fusion weighting
             logger.debug(f"Running {query.mode} mode query pipeline")
             scores_fields = ["vector_score", "fulltext_score"]
