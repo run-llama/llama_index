@@ -59,7 +59,9 @@ class TextToCypherRetriever(BasePGRetriever):
         )
         self.cypher_validator = cypher_validator
         self.allowed_output_fields = allowed_output_fields
-        super().__init__(graph_store=graph_store, include_text=False)
+        super().__init__(
+            graph_store=graph_store, include_text=False, include_properties=False
+        )
 
     def _parse_generated_cypher(self, cypher_query: str) -> str:
         if self.cypher_validator is not None:
