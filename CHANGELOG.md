@@ -1,5 +1,104 @@
 # ChangeLog
 
+## [2024-09-16]
+
+### `llama-index-core` [0.11.10]
+
+- context/result refactor for workflows (#16036)
+- add sparse embedding abstraction (#16018)
+- Fix Pydantic models numeric validation (#16008)
+- Human in loop workflow example (#16011)
+
+### `llama-index-callbacks-opik` [0.1.0]
+
+- opik integration (#16007)
+
+### `llama-index-indices-managed-llama-cloud` [0.3.1]
+
+- update llamacloud index with image nodes (#15996)
+
+### `llama-index-indices-managed-vectara` [0.2.2]
+
+- Hotfix: Fix Citations Text (#16015)
+
+### `llama-index-llms-huggingface` [0.3.4]
+
+- Fix: unnecessary warning issue in HuggingFace LLM when tokenizer is provided as argument (#16037)
+
+### `llama-index-readers-dashvector` [0.3.0]
+
+- fix: new Data Connector adaption for DashVector (#16028)
+
+### `llama-index-readers-quip` [0.1.0]
+
+- add quip reader (#16000)
+
+### `llama-index-sparse-embeddings-fastembed` [0.1.0]
+
+- add fastembed sparse embeddings (#16018)
+
+### `llama-index-vector-stores-elasticsearch` [0.2.1]
+
+- Fix: get all documents from Elasticsearch KVStore (#16006)
+
+### `llama-index-vector-stores-lancedb` [0.2.3]
+
+- temporarily limit lancedb version (#16045)
+
+### `llama-index-vector-stores-postgres` [0.2.5]
+
+- Implement `get_nodes()` on PGVectorStore (#16026)
+
+## [2024-09-12]
+
+### `llama-index-core` [0.11.9]
+
+- Add callback manager to retriever query engine from args (#15990)
+- Do not pass system prompt from fn calling runner to fn calling worker (#15986)
+- fix: Error when parsing react output if tool name contains non-English characters (#15956)
+
+### `llama-index-embeddings-alibabacloud-aisearch` [0.1.0]
+
+- Add four alibabacloud-aisearch llama-index integrations: rerank, node_parser, readers, embeddings (#15934)
+
+### `llama-index-experimental` [0.3.1]
+
+- Add NUDGE Finetuning (#15954)
+
+### `llama-index-graph-stores-falkordb` [0.2.2]
+
+- update falkordb client (#15940)
+
+### `llama-index-llms-openai` [0.2.5]
+
+- Add support for o1 openai models (#15979)
+- force temp to 1.0 for o1 (#15983)
+
+### `llama-index-node-parser-alibabacloud-aisearch` [0.1.0]
+
+- Add four alibabacloud-aisearch llama-index integrations: rerank, node_parser, readers, embeddings (#15934)
+
+### `llama-index-postprocessor-alibabacloud-aisearch-rerank` [0.1.0]
+
+- Add four alibabacloud-aisearch llama-index integrations: rerank, node_parser, readers, embeddings (#15934)
+
+### `llama-index-readers-alibabacloud-aisearch` [0.1.0]
+
+- Add four alibabacloud-aisearch llama-index integrations: rerank, node_parser, readers, embeddings (#15934)
+
+### `llama-index-vector-stores-opensearch` [0.3.0]
+
+- Differentiate sync and async calls in OpenSearchVectorClient (#15945)
+
+### `llama-index-vector-stores-postgres` [0.2.4]
+
+- fix attribute error in PGVectorStore (#15961)
+- add support for engine parameters (#15951)
+
+### `llama-index-vector-stores-wordlift` [0.4.5]
+
+- Catch nest_asyncio errors (#15975)
+
 ## [2024-09-09]
 
 ### `llama-index-core` [0.11.8]

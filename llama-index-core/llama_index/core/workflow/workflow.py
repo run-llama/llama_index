@@ -16,6 +16,7 @@ from .utils import (
     get_steps_from_instance,
     ServiceDefinition,
 )
+from .handler import WorkflowHandler
 
 
 dispatcher = get_dispatcher(__name__)
@@ -139,17 +140,25 @@ class Workflow(metaclass=WorkflowMeta):
         """Returns all the steps, whether defined as methods or free functions."""
         return {**get_steps_from_instance(self), **self._step_functions}  # type: ignore[attr-defined]
 
-    def _start(self, stepwise: bool = False) -> Context:
+    def _start(self, stepwise: bool = False, ctx: Optional[Context] = None) -> Context:
         """Sets up the queues and tasks for each declared step.
 
         This method also launches each step as an async task.
         """
-        ctx = Context(self)
-        self._contexts.add(ctx)
+        if ctx is None:
+            ctx = Context(self, stepwise=stepwise)
+            self._contexts.add(ctx)
+        else:
+            # clean up the context from the previous run
+            ctx._tasks = set()
+            ctx._queues = {}
+            ctx._step_flags = {}
+            ctx._retval = None
 
         for name, step_func in self._get_steps().items():
             ctx._queues[name] = asyncio.Queue()
             ctx._step_flags[name] = asyncio.Event()
+
             # At this point, step_func is guaranteed to have the `__step_config` attribute
             step_config: StepConfig = getattr(step_func, "__step_config")
 
@@ -249,6 +258,7 @@ class Workflow(metaclass=WorkflowMeta):
                         name=name,
                     )
                 )
+
         return ctx
 
     def send_event(self, message: Event, step: Optional[str] = None) -> None:
@@ -268,73 +278,72 @@ class Workflow(metaclass=WorkflowMeta):
         ctx.send_event(message=message, step=step)
 
     @dispatcher.span
-    async def run(self, **kwargs: Any) -> str:
-        """Runs the workflow until completion.
-
-        Works by
-            1. validating the workflow
-            2. starting the workflow by setting up the queues and tasks
-            3. sending a StartEvent to kick things off
-            4. waiting for all tasks to finish or be cancelled
-        """
+    def run(
+        self, ctx: Optional[Context] = None, stepwise: bool = False, **kwargs: Any
+    ) -> WorkflowHandler:
+        """Runs the workflow until completion."""
         # Validate the workflow if needed
         self._validate()
 
-        # Start the machinery in a new Context
-        ctx = self._start()
+        # Start the machinery in a new Context or use the provided one
+        ctx = self._start(ctx=ctx, stepwise=stepwise)
 
-        # Send the first event
-        ctx.send_event(StartEvent(**kwargs))
+        result = WorkflowHandler(ctx=ctx)
 
-        done, unfinished = await asyncio.wait(
-            ctx._tasks, timeout=self._timeout, return_when=asyncio.FIRST_EXCEPTION
-        )
+        async def _run_workflow() -> None:
+            try:
+                # Send the first event
+                ctx.send_event(StartEvent(**kwargs))
 
-        we_done = False
-        exception_raised = None
-        # A task that raised an exception will be returned in the `done` set
-        for task in done:
-            # Check if any exception was raised from a step function
-            e = task.exception()
-            # If the error was of type WorkflowDone, the _done step run successfully
-            if type(e) == WorkflowDone:
-                we_done = True
-            # In any other case, we will re-raise after cleaning up.
-            # Since wait() is called with return_when=asyncio.FIRST_EXCEPTION,
-            # we can assume exception_raised will be only one.
-            elif e is not None:
-                exception_raised = e
-                break
+                done, unfinished = await asyncio.wait(
+                    ctx._tasks,
+                    timeout=self._timeout,
+                    return_when=asyncio.FIRST_EXCEPTION,
+                )
 
-        # Cancel any pending tasks
-        for t in unfinished:
-            t.cancel()
-            await asyncio.sleep(0)
+                we_done = False
+                exception_raised = None
+                for task in done:
+                    e = task.exception()
+                    if type(e) == WorkflowDone:
+                        we_done = True
+                    elif e is not None:
+                        exception_raised = e
+                        break
 
-        # Bubble up the error if any step raised an exception
-        if exception_raised:
-            # Make sure to stop streaming, in case the workflow terminated abnormally
-            ctx.write_event_to_stream(StopEvent())
-            raise exception_raised
+                # Cancel any pending tasks
+                for t in unfinished:
+                    t.cancel()
+                    await asyncio.sleep(0)
 
-        # Raise WorkflowTimeoutError if the workflow timed out
-        if not we_done:
-            msg = f"Operation timed out after {self._timeout} seconds"
-            raise WorkflowTimeoutError(msg)
+                if exception_raised:
+                    ctx.write_event_to_stream(StopEvent())
+                    raise exception_raised
 
-        return ctx._retval
+                if not we_done:
+                    msg = f"Operation timed out after {self._timeout} seconds"
+                    raise WorkflowTimeoutError(msg)
+
+                result.set_result(ctx._retval)
+            except Exception as e:
+                result.set_exception(e)
+            finally:
+                ctx.write_event_to_stream(StopEvent())
+
+        asyncio.create_task(_run_workflow())
+        return result
 
     @dispatcher.span
-    async def run_step(self, **kwargs: Any) -> Optional[str]:
-        """Runs the workflow stepwise until completion.
+    async def run_step(self, **kwargs: Any) -> Optional[Any]:
+        """Runs the workflow stepwise until completion."""
+        warnings.warn(
+            "run_step() is deprecated, use `workflow.run(stepwise=True)` instead.\n"
+            "handler = workflow.run(stepwise=True)\n"
+            "while not handler.is_done():\n"
+            "    result = await handler.run_step()\n"
+            "    print(result)\n"
+        )
 
-        Works by
-            1. Validating and setting up the queues and tasks if the first step hasn't been started
-            2. Sending a StartEvent to kick things off
-            3. Sets the flag for all steps to run once (if they can run)
-            4. Waiting for the next step(s) to finish
-            5. Returning the result if the workflow is done
-        """
         # Check if we need to start a new session
         if self._stepwise_context is None:
             self._validate()

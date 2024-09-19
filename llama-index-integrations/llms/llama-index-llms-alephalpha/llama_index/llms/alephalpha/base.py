@@ -40,8 +40,8 @@ class AlephAlpha(LLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: int = Field(
         default=DEFAULT_ALEPHALPHA_MAX_TOKENS,
@@ -52,10 +52,10 @@ class AlephAlpha(LLM):
         default=DEFAULT_ALEPHALPHA_HOST, description="The hostname of the API base_url."
     )
     timeout: Optional[float] = Field(
-        default=None, description="The timeout to use in seconds.", gte=0
+        default=None, description="The timeout to use in seconds.", ge=0
     )
     max_retries: int = Field(
-        default=10, description="The maximum number of API retries.", gte=0
+        default=10, description="The maximum number of API retries.", ge=0
     )
     hosting: Optional[str] = Field(default=None, description="The hosting to use.")
     nice: bool = Field(default=False, description="Whether to be nice to the API.")
@@ -74,13 +74,13 @@ class AlephAlpha(LLM):
     sequence_penalty: float = Field(
         default=0.7,
         description="The sequence penalty to use. Increasing the sequence penalty reduces the likelihood of reproducing token sequences that already appear in the prompt",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     sequence_penalty_min_length: int = Field(
         default=3,
         description="Minimal number of tokens to be considered as sequence. Must be greater or equal 2.",
-        gte=2,
+        ge=2,
     )
     stop_sequences: List[str] = Field(
         default=["\n\n"], description="The stop sequences to use."
