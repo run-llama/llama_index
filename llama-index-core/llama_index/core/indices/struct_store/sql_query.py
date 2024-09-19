@@ -378,22 +378,25 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
     def _format_result_markdown(self, retrieved_nodes):
         """Format the result in markdown."""
-        all_data = [eval(node.node.text) for node in retrieved_nodes]
+        tables = []
+        for node_with_score in retrieved_nodes:
+            node = node_with_score.node
+            metadata = node.metadata
 
-        if not all_data:
-            return "| | |\n|---|---|\n| No data available | |"
+            col_keys = metadata.get('col_keys', [])
+            results = metadata.get('result', [])
+            table_header = "| " + " | ".join(col_keys) + " |\n"
+            table_separator = "|" + "|".join(["---"] * len(col_keys)) + "|\n"
 
-        columns = retrieved_nodes[0].node.metadata.get("col_keys", [])
+            table_rows = ""
+            for row in results:
+                table_rows += "| " + " | ".join(str(item) for item in row) + " |\n"
 
-        data = [item for sublist in all_data for item in sublist]
-
-        markdown = "| " + " | ".join(columns) + " |\n"
-        markdown += "|" + "|".join(["---" for _ in columns]) + "|\n"
-
-        for row in data:
-            markdown += "| " + " | ".join(str(item) for item in row) + " |\n"
-
-        return markdown
+            markdown_table = table_header + table_separator + table_rows
+            tables.append(markdown_table)
+            print(markdown_table)
+        
+        return "\n\n".join(tables).strip()
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""

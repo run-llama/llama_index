@@ -83,7 +83,7 @@ def test_sql_index_query(
     assert str(response) == """| user_id | foo |
 |---|---|
 | 2 | bar |
-| 8 | hello |\n"""
+| 8 | hello |"""
 
 def test_sql_index_async_query(
     allow_networking: Any,
