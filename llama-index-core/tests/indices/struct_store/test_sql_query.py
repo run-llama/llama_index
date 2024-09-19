@@ -48,7 +48,7 @@ def test_sql_index_query(
     sql_query_engine = SQLStructStoreQueryEngine(index, **query_kwargs)
     response = sql_query_engine.query(sql_to_test)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
-
+        
     # query the index with natural language
     nl_query_engine = NLStructStoreQueryEngine(index, **query_kwargs)
     response = nl_query_engine.query("test_table:user_id,foo")
@@ -77,6 +77,13 @@ def test_sql_index_query(
     response = nl_table_engine.query("test_table:user_id,foo")
     assert str(response) == sql_to_test
 
+    # query with markdown return
+    nl_table_engine = NLSQLTableQueryEngine(index.sql_database, synthesize_response=False, markdown_response=True)
+    response = nl_table_engine.query("test_table:user_id,foo")
+    assert str(response) == """| user_id | foo |
+|---|---|
+| 2 | bar |
+| 8 | hello |\n"""
 
 def test_sql_index_async_query(
     allow_networking: Any,

@@ -379,22 +379,22 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
     def _format_result_markdown(self, retrieved_nodes):
         """Format the result in markdown."""
         all_data = [eval(node.node.text) for node in retrieved_nodes]
-        
+
         if not all_data:
             return "| | |\n|---|---|\n| No data available | |"
-        
-        columns = retrieved_nodes[0].node.metadata.get('col_keys', [])
-        
+
+        columns = retrieved_nodes[0].node.metadata.get("col_keys", [])
+
         data = [item for sublist in all_data for item in sublist]
-        
+
         markdown = "| " + " | ".join(columns) + " |\n"
         markdown += "|" + "|".join(["---" for _ in columns]) + "|\n"
-        
+
         for row in data:
             markdown += "| " + " | ".join(str(item) for item in row) + " |\n"
-            
+
         return markdown
-    
+
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         retrieved_nodes, metadata = self.sql_retriever.retrieve_with_metadata(
@@ -481,6 +481,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
+        markdown_response: bool = False,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
@@ -507,6 +508,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         )
         super().__init__(
             synthesize_response=synthesize_response,
+            markdown_response=markdown_response,
             response_synthesis_prompt=response_synthesis_prompt,
             refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
