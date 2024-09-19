@@ -365,7 +365,7 @@ handler = w.run(topic="Pirates")
 # Iterate until done
 async for _ in handler:
     # inspect context
-    # val = await handler.context.get("key")
+    # val = await handler.ctx.get("key")
     continue
 
 # Get the final result
@@ -429,7 +429,7 @@ handler = w.run()
 result = await handler
 
 # continue with next run
-handler = w.run(context=handler.context)
+handler = w.run(ctx=handler.ctx)
 result = await handler
 ```
 

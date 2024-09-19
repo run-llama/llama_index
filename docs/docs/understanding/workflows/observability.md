@@ -109,7 +109,7 @@ handler = w.run()
 
 async for _ in handler.run_step():
     # inspect context
-    # val = await handler.context.get("key")
+    # val = await handler.ctx.get("key")
     continue
 
 # get the result
