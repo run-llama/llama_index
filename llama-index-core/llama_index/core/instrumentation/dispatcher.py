@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from contextvars import ContextVar, Token
-from typing import Any, List, Optional, Dict, Protocol
+from typing import Any, Callable, Generator, List, Optional, Dict, Protocol
 import inspect
 import uuid
 from deprecated import deprecated
@@ -19,11 +19,13 @@ DISPATCHER_SPAN_DECORATED_ATTR = "__dispatcher_span_decorated__"
 
 
 # ContextVar for managing active instrument tags
-active_instrument_tags = ContextVar("instrument_tags", default={})
+active_instrument_tags: ContextVar[Dict[str, Any]] = ContextVar(
+    "instrument_tags", default={}
+)
 
 
 @contextmanager
-def instrument_tags(new_tags):
+def instrument_tags(new_tags: Dict[str, Any]) -> Generator[None, None, None]:
     token = active_instrument_tags.set(new_tags)
     try:
         yield
@@ -33,7 +35,7 @@ def instrument_tags(new_tags):
 
 # Keep for backwards compatibility
 class EventDispatcher(Protocol):
-    def __call__(self, event: BaseEvent, **kwargs) -> None:
+    def __call__(self, event: BaseEvent, **kwargs: Any) -> None:
         ...
 
 
@@ -98,10 +100,12 @@ class Dispatcher(BaseModel):
 
     @property
     def parent(self) -> "Dispatcher":
+        assert self.manager is not None
         return self.manager.dispatchers[self.parent_name]
 
     @property
     def root(self) -> "Dispatcher":
+        assert self.manager is not None
         return self.manager.dispatchers[self.root_name]
 
     def add_event_handler(self, handler: BaseEventHandler) -> None:
@@ -112,9 +116,9 @@ class Dispatcher(BaseModel):
         """Add handler to set of handlers."""
         self.span_handlers += [handler]
 
-    def event(self, event: BaseEvent, **kwargs) -> None:
+    def event(self, event: BaseEvent, **kwargs: Any) -> None:
         """Dispatch event to all registered handlers."""
-        c = self
+        c: Optional["Dispatcher"] = self
 
         # Attach tags from the active context
         event.tags.update(active_instrument_tags.get())
@@ -158,7 +162,7 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ has started."""
-        c = self
+        c: Optional["Dispatcher"] = self
         while c:
             for h in c.span_handlers:
                 try:
@@ -186,7 +190,7 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ is being dropped."""
-        c = self
+        c: Optional["Dispatcher"] = self
         while c:
             for h in c.span_handlers:
                 try:
@@ -213,7 +217,7 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ is exiting."""
-        c = self
+        c: Optional["Dispatcher"] = self
         while c:
             for h in c.span_handlers:
                 try:
@@ -231,7 +235,7 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
-    def span(self, func):
+    def span(self, func: Callable) -> Any:
         # The `span` decorator should be idempotent.
         try:
             if hasattr(func, DISPATCHER_SPAN_DECORATED_ATTR):
@@ -243,7 +247,7 @@ class Dispatcher(BaseModel):
             pass
 
         @wrapt.decorator
-        def wrapper(func, instance, args, kwargs):
+        def wrapper(func: Callable, instance: Any, args: list, kwargs: dict) -> Any:
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
             tags = active_instrument_tags.get()
@@ -273,7 +277,9 @@ class Dispatcher(BaseModel):
                 active_span_id.reset(token)
 
         @wrapt.decorator
-        async def async_wrapper(func, instance, args, kwargs):
+        async def async_wrapper(
+            func: Callable, instance: Any, args: list, kwargs: dict
+        ) -> Any:
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
             tags = active_instrument_tags.get()

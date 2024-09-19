@@ -31,7 +31,7 @@ async def test_workflow_run(workflow):
 
 
 @pytest.mark.asyncio()
-async def test_workflow_run_step(workflow):
+async def test_deprecated_workflow_run_step(workflow):
     workflow._verbose = True
 
     # First step
@@ -53,6 +53,41 @@ async def test_workflow_run_step(workflow):
     result = await workflow.run_step()
     assert result == "Workflow completed"
     assert workflow.is_done()
+
+
+@pytest.mark.asyncio()
+async def test_workflow_run_step(workflow):
+    handler = workflow.run(stepwise=True)
+
+    result = await handler.run_step()
+    assert result is None
+    assert not handler.is_done()
+
+    result = await handler.run_step()
+    assert result is None
+    assert not handler.is_done()
+
+    result = await handler.run_step()
+    assert result is None
+    assert not handler.is_done()
+
+    result = await handler.run_step()
+    assert result is None
+    assert not handler.is_done()
+
+    result = await handler.run_step()
+    assert result == "Workflow completed"
+    assert handler.is_done()
+
+
+@pytest.mark.asyncio()
+async def test_workflow_run_step_continue_context():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            cur_number = await ctx.get("number", default=0)
+            await ctx.set("number", cur_number + 1)
+            return StopEvent(result="Done")
 
 
 @pytest.mark.asyncio()
@@ -184,7 +219,7 @@ async def test_workflow_num_workers():
                 ev, [AnotherTestEvent] * ctx.data["num_to_collect"]
             )
             if events is None:
-                return None
+                return None  # type: ignore
             return StopEvent(result=[ev.another_test_param for ev in events])
 
     workflow = NumWorkersWorkflow()
@@ -209,7 +244,7 @@ async def test_workflow_step_send_event():
         @step
         async def step1(self, ctx: Context, ev: StartEvent) -> OneTestEvent:
             ctx.session.send_event(OneTestEvent(), step="step2")
-            return None
+            return None  # type: ignore
 
         @step
         async def step2(self, ev: OneTestEvent) -> StopEvent:
@@ -223,9 +258,9 @@ async def test_workflow_step_send_event():
     result = await workflow.run()
     assert result == "step2"
     assert workflow.is_done()
-    session = workflow._sessions.pop()
-    assert ("step2", "OneTestEvent") in session._accepted_events
-    assert ("step3", "OneTestEvent") not in session._accepted_events
+    ctx = workflow._contexts.pop()
+    assert ("step2", "OneTestEvent") in ctx._accepted_events
+    assert ("step3", "OneTestEvent") not in ctx._accepted_events
 
 
 @pytest.mark.asyncio()
@@ -233,7 +268,7 @@ async def test_workflow_step_send_event_to_None():
     class StepSendEventToNoneWorkflow(Workflow):
         @step
         async def step1(self, ctx: Context, ev: StartEvent) -> OneTestEvent:
-            ctx.session.send_event(OneTestEvent(), step=None)
+            ctx.send_event(OneTestEvent(), step=None)
             return  # type:ignore
 
         @step
@@ -243,7 +278,7 @@ async def test_workflow_step_send_event_to_None():
     workflow = StepSendEventToNoneWorkflow(verbose=True)
     await workflow.run()
     assert workflow.is_done()
-    assert ("step2", "OneTestEvent") in workflow._sessions.pop()._accepted_events
+    assert ("step2", "OneTestEvent") in workflow._contexts.pop()._accepted_events
 
 
 @pytest.mark.asyncio()
@@ -302,20 +337,20 @@ async def test_workflow_multiple_runs():
 def test_deprecated_send_event():
     ev = StartEvent()
     wf = Workflow()
-    session1 = mock.MagicMock()
+    ctx = mock.MagicMock()
 
-    # One session, assert step emits a warning
-    wf._sessions.add(session1)
+    # One context, assert step emits a warning
+    wf._contexts.add(ctx)
     with pytest.warns(UserWarning):
         wf.send_event(message=ev)
-    session1.send_event.assert_called_with(message=ev, step=None)
+    ctx.send_event.assert_called_with(message=ev, step=None)
 
-    # Second session, assert step raises an exception
-    session2 = mock.MagicMock()
-    wf._sessions.add(session2)
+    # Second context, assert step raises an exception
+    ctx = mock.MagicMock()
+    wf._contexts.add(ctx)
     with pytest.raises(WorkflowRuntimeError):
         wf.send_event(message=ev)
-    session2.send_event.assert_not_called()
+    ctx.send_event.assert_not_called()
 
 
 def test_add_step():
@@ -379,3 +414,33 @@ def test_workflow_disable_validation():
     w._get_steps = mock.MagicMock()
     w._validate()
     w._get_steps.assert_not_called()
+
+
+@pytest.mark.asyncio()
+async def test_workflow_continue_context():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            cur_number = await ctx.get("number", default=0)
+            await ctx.set("number", cur_number + 1)
+            return StopEvent(result="Done")
+
+    wf = DummyWorkflow()
+
+    # first run
+    r = wf.run()
+    result = await r
+    assert result == "Done"
+    assert await r.ctx.get("number") == 1
+
+    # second run -- independent from the first
+    r = wf.run()
+    result = await r
+    assert result == "Done"
+    assert await r.ctx.get("number") == 1
+
+    # third run -- continue from the second run
+    r = wf.run(ctx=r.ctx)
+    result = await r
+    assert result == "Done"
+    assert await r.ctx.get("number") == 2

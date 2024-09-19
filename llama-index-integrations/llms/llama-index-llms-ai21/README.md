@@ -20,7 +20,7 @@ You need to initialize the AI21 client with the appropriate model and API key.
 from llama_index.llms.ai21 import AI21
 
 api_key = "your_api_key"
-llm = AI21(model="jamba-instruct", api_key=api_key)
+llm = AI21(model="jamba-1.5-mini", api_key=api_key)
 ```
 
 ### Chat Completions
@@ -30,7 +30,7 @@ from llama_index.llms.ai21 import AI21
 from llama_index.core.base.llms.types import ChatMessage
 
 api_key = "your_api_key"
-llm = AI21(model="jamba-instruct", api_key=api_key)
+llm = AI21(model="jamba-1.5-mini", api_key=api_key)
 
 messages = [ChatMessage(role="user", content="What is the meaning of life?")]
 response = llm.chat(messages)
@@ -44,7 +44,7 @@ from llama_index.llms.ai21 import AI21
 from llama_index.core.base.llms.types import ChatMessage
 
 api_key = "your_api_key"
-llm = AI21(model="jamba-instruct", api_key=api_key)
+llm = AI21(model="jamba-1.5-mini", api_key=api_key)
 
 messages = [ChatMessage(role="user", content="What is the meaning of life?")]
 
@@ -58,7 +58,7 @@ for chunk in llm.stream_chat(messages):
 from llama_index.llms.ai21 import AI21
 
 api_key = "your_api_key"
-llm = AI21(model="jamba-instruct", api_key=api_key)
+llm = AI21(model="jamba-1.5-mini", api_key=api_key)
 
 response = llm.complete(prompt="What is the meaning of life?")
 print(response.text)
@@ -70,7 +70,7 @@ print(response.text)
 from llama_index.llms.ai21 import AI21
 
 api_key = "your_api_key"
-llm = AI21(model="jamba-instruct", api_key=api_key)
+llm = AI21(model="jamba-1.5-mini", api_key=api_key)
 
 response = llm.stream_complete(prompt="What is the meaning of life?")
 
@@ -118,7 +118,7 @@ The type of the tokenizer is determined by the name of the model
 from llama_index.llms.ai21 import AI21
 
 api_key = "your_api_key"
-llm = AI21(model="jamba-instruct", api_key=api_key)
+llm = AI21(model="jamba-1.5-mini", api_key=api_key)
 tokenizer = llm.tokenizer
 
 tokens = tokenizer.encode("What is the meaning of life?")
@@ -141,7 +141,7 @@ from llama_index.core.base.llms.types import ChatMessage
 
 async def main():
     api_key = "your_api_key"
-    llm = AI21(model="jamba-instruct", api_key=api_key)
+    llm = AI21(model="jamba-1.5-mini", api_key=api_key)
 
     messages = [
         ChatMessage(role="user", content="What is the meaning of life?")
@@ -159,7 +159,7 @@ from llama_index.core.base.llms.types import ChatMessage
 
 async def main():
     api_key = "your_api_key"
-    llm = AI21(model="jamba-instruct", api_key=api_key)
+    llm = AI21(model="jamba-1.5-mini", api_key=api_key)
 
     messages = [
         ChatMessage(role="user", content="What is the meaning of life?")
@@ -168,4 +168,55 @@ async def main():
 
     async for chunk in response:
         print(chunk.message.content)
+```
+
+## Tool Calling
+
+```python
+from llama_index.core.agent import FunctionCallingAgentWorker
+from llama_index.llms.ai21 import AI21
+from llama_index.core.tools import FunctionTool
+
+
+def multiply(a: int, b: int) -> int:
+    """Multiply two integers and returns the result integer"""
+    return a * b
+
+
+def subtract(a: int, b: int) -> int:
+    """Subtract two integers and returns the result integer"""
+    return a - b
+
+
+def divide(a: int, b: int) -> float:
+    """Divide two integers and returns the result float"""
+    return a - b
+
+
+def add(a: int, b: int) -> int:
+    """Add two integers and returns the result integer"""
+    return a + b
+
+
+multiply_tool = FunctionTool.from_defaults(fn=multiply)
+add_tool = FunctionTool.from_defaults(fn=add)
+subtract_tool = FunctionTool.from_defaults(fn=subtract)
+divide_tool = FunctionTool.from_defaults(fn=divide)
+
+api_key = "your_api_key"
+
+llm = AI21(model="jamba-1.5-mini", api_key=api_key)
+
+agent_worker = FunctionCallingAgentWorker.from_tools(
+    [multiply_tool, add_tool, subtract_tool, divide_tool],
+    llm=llm,
+    verbose=True,
+    allow_parallel_tool_calls=True,
+)
+agent = agent_worker.as_agent()
+
+response = agent.chat(
+    "My friend Moses had 10 apples. He ate 5 apples in the morning. Then he found a box with 25 apples."
+    "He divided all his apples between his 5 friends. How many apples did each friend get?"
+)
 ```

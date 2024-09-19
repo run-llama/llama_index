@@ -110,12 +110,12 @@ class SageMakerLLM(LLM):
     max_retries: Optional[int] = Field(
         default=3,
         description="The maximum number of API retries.",
-        gte=0,
+        ge=0,
     )
     timeout: Optional[float] = Field(
         default=60.0,
         description="The timeout, in seconds, for API requests.",
-        gte=0,
+        ge=0,
     )
     _client: Any = PrivateAttr()
     _completion_to_prompt: Callable[[str, Optional[str]], str] = PrivateAttr()
@@ -163,6 +163,10 @@ class SageMakerLLM(LLM):
             model_kwargs=model_kwargs,
             content_handler=content_handler,
             profile_name=profile_name,
+            region_name=region_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
             timeout=timeout,
             max_retries=max_retries,
             callback_manager=callback_manager,

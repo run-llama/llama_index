@@ -94,7 +94,7 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
                     "Please install it using `pip install llama-index-multi-modal-llms-openai`"
                 )
 
-            self._multi_modal_llm = OpenAIMultiModal(
+            self._multi_modal_llm: MultiModalLLM = OpenAIMultiModal(
                 model="gpt-4-vision-preview", max_new_tokens=1000
             )
         else:

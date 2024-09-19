@@ -4,11 +4,12 @@ import json
 import re
 import uuid
 import warnings
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.llms.utils import LLM
 from llama_index.core.schema import MetadataMode, TextNode
+from llama_index.core.settings import Settings
 from tqdm import tqdm
 
 
@@ -69,11 +70,12 @@ context information provided."
 # generate queries as a convenience function
 def generate_qa_embedding_pairs(
     nodes: List[TextNode],
-    llm: LLM,
+    llm: Optional[LLM] = None,
     qa_generate_prompt_tmpl: str = DEFAULT_QA_GENERATE_PROMPT_TMPL,
     num_questions_per_chunk: int = 2,
 ) -> EmbeddingQAFinetuneDataset:
     """Generate examples given a set of nodes."""
+    llm = llm or Settings.llm
     node_dict = {
         node.node_id: node.get_content(metadata_mode=MetadataMode.NONE)
         for node in nodes

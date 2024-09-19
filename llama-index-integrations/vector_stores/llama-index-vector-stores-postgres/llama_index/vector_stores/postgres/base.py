@@ -138,7 +138,7 @@ class PGVectorStore(BasePydanticVectorStore):
     flat_metadata: bool = False
 
     connection_string: str
-    async_connection_string: Union[str, sqlalchemy.engine.URL]
+    async_connection_string: str
     table_name: str
     schema_name: str
     embed_dim: int
@@ -148,6 +148,7 @@ class PGVectorStore(BasePydanticVectorStore):
     perform_setup: bool
     debug: bool
     use_jsonb: bool
+    create_engine_kwargs: Dict
 
     hnsw_kwargs: Optional[Dict[str, Any]]
 
@@ -173,6 +174,7 @@ class PGVectorStore(BasePydanticVectorStore):
         debug: bool = False,
         use_jsonb: bool = False,
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Constructor.
 
@@ -191,6 +193,7 @@ class PGVectorStore(BasePydanticVectorStore):
             hnsw_kwargs (Optional[Dict[str, Any]], optional): HNSW kwargs, a dict that
                 contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
                 which turns off HNSW search.
+            create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
         """
         table_name = table_name.lower()
         schema_name = schema_name.lower()
@@ -204,8 +207,8 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy.orm import declarative_base
 
         super().__init__(
-            connection_string=connection_string,
-            async_connection_string=async_connection_string,
+            connection_string=str(connection_string),
+            async_connection_string=str(async_connection_string),
             table_name=table_name,
             schema_name=schema_name,
             hybrid_search=hybrid_search,
@@ -216,6 +219,7 @@ class PGVectorStore(BasePydanticVectorStore):
             debug=debug,
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
+            create_engine_kwargs=create_engine_kwargs or {},
         )
 
         # sqlalchemy model
@@ -264,6 +268,7 @@ class PGVectorStore(BasePydanticVectorStore):
         debug: bool = False,
         use_jsonb: bool = False,
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "PGVectorStore":
         """Construct from params.
 
@@ -287,6 +292,7 @@ class PGVectorStore(BasePydanticVectorStore):
             hnsw_kwargs (Optional[Dict[str, Any]], optional): HNSW kwargs, a dict that
                 contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
                 which turns off HNSW search.
+            create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
 
         Returns:
             PGVectorStore: Instance of PGVectorStore constructed from params.
@@ -311,6 +317,7 @@ class PGVectorStore(BasePydanticVectorStore):
             debug=debug,
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
+            create_engine_kwargs=create_engine_kwargs,
         )
 
     @property
@@ -324,10 +331,14 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
 
-        self._engine = create_engine(self.connection_string, echo=self.debug)
+        self._engine = create_engine(
+            self.connection_string, echo=self.debug, **self.create_engine_kwargs
+        )
         self._session = sessionmaker(self._engine)
 
-        self._async_engine = create_async_engine(self.async_connection_string)
+        self._async_engine = create_async_engine(
+            self.async_connection_string, **self.create_engine_kwargs
+        )
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
     def _create_schema_if_not_exists(self) -> None:
@@ -932,6 +943,58 @@ class PGVectorStore(BasePydanticVectorStore):
 
             await async_session.execute(stmt)
             await async_session.commit()
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from vector store."""
+        assert (
+            node_ids is not None or filters is not None
+        ), "Either node_ids or filters must be provided"
+
+        self._initialize()
+        from sqlalchemy import select
+
+        stmt = select(
+            self._table_class.node_id,
+            self._table_class.text,
+            self._table_class.metadata_,
+            self._table_class.embedding,
+        )
+
+        if node_ids:
+            stmt = stmt.where(self._table_class.node_id.in_(node_ids))
+
+        if filters:
+            filter_clause = self._recursively_apply_filters(filters)
+            stmt = stmt.where(filter_clause)
+
+        nodes: List[BaseNode] = []
+
+        with self._session() as session, session.begin():
+            res = session.execute(stmt).fetchall()
+            for item in res:
+                node_id = item.node_id
+                text = item.text
+                metadata = item.metadata_
+                embedding = item.embedding
+
+                try:
+                    node = metadata_dict_to_node(metadata)
+                    node.set_content(str(text))
+                    node.embedding = embedding
+                except Exception:
+                    node = TextNode(
+                        id_=node_id,
+                        text=text,
+                        metadata=metadata,
+                        embedding=embedding,
+                    )
+                nodes.append(node)
+
+        return nodes
 
 
 def _dedup_results(results: List[DBEmbeddingRow]) -> List[DBEmbeddingRow]:

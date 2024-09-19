@@ -44,7 +44,7 @@ def llm_chat_callback() -> Callable:
             if not isinstance(callback_manager, CallbackManager):
                 _self.callback_manager = CallbackManager()
 
-            yield callback_manager
+            yield _self.callback_manager  # type: ignore
 
         async def wrapped_async_llm_chat(
             _self: Any, messages: Sequence[ChatMessage], **kwargs: Any

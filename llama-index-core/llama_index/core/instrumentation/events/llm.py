@@ -21,7 +21,7 @@ class LLMPredictStartEvent(BaseEvent):
     template_args: Optional[dict]
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "LLMPredictStartEvent"
 
@@ -38,7 +38,7 @@ class LLMPredictEndEvent(BaseEvent):
     output: str
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "LLMPredictEndEvent"
 
@@ -57,7 +57,7 @@ class LLMStructuredPredictStartEvent(BaseEvent):
     template_args: Optional[dict]
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "LLMStructuredPredictStartEvent"
 
@@ -72,7 +72,7 @@ class LLMStructuredPredictEndEvent(BaseEvent):
     output: SerializeAsAny[BaseModel]
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "LLMStructuredPredictEndEvent"
 
@@ -87,7 +87,7 @@ class LLMStructuredPredictInProgressEvent(BaseEvent):
     output: SerializeAsAny[BaseModel]
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "LLMStructuredPredictInProgressEvent"
 
@@ -107,7 +107,7 @@ class LLMCompletionStartEvent(BaseEvent):
     model_dict: dict
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "LLMCompletionStartEvent"
 
@@ -124,7 +124,7 @@ class LLMCompletionInProgressEvent(BaseEvent):
     response: CompletionResponse
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "LLMCompletionInProgressEvent"
 
@@ -141,7 +141,7 @@ class LLMCompletionEndEvent(BaseEvent):
     response: CompletionResponse
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "LLMCompletionEndEvent"
 
@@ -161,7 +161,7 @@ class LLMChatStartEvent(BaseEvent):
     model_dict: dict
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "LLMChatStartEvent"
 
@@ -178,7 +178,7 @@ class LLMChatInProgressEvent(BaseEvent):
     response: ChatResponse
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "LLMChatInProgressEvent"
 
@@ -195,6 +195,6 @@ class LLMChatEndEvent(BaseEvent):
     response: Optional[ChatResponse]
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "LLMChatEndEvent"

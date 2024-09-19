@@ -26,9 +26,9 @@ class ConcurrentFlow(Workflow):
     async def start(
         self, ctx: Context, ev: StartEvent
     ) -> StepAEvent | StepBEvent | StepCEvent:
-        ctx.session.send_event(StepAEvent(query="Query 1"))
-        ctx.session.send_event(StepBEvent(query="Query 2"))
-        ctx.session.send_event(StepCEvent(query="Query 3"))
+        ctx.send_event(StepAEvent(query="Query 1"))
+        ctx.send_event(StepBEvent(query="Query 2"))
+        ctx.send_event(StepCEvent(query="Query 3"))
 
     @step
     async def step_a(self, ctx: Context, ev: StepAEvent) -> StepACompleteEvent:
@@ -101,11 +101,19 @@ Step step_three produced event StopEvent
 
 ## Stepwise execution
 
-In a notebook environment it can be helpful to run a workflow step by step. You can do this by calling `run_step` on the workflow object:
+In a notebook environment it can be helpful to run a workflow step by step. You can do this by calling `run_step` on the handler object:
 
 ```python
 w = ConcurrentFlow(timeout=10, verbose=True)
-await w.run_step()
+handler = w.run()
+
+async for _ in handler.run_step():
+    # inspect context
+    # val = await handler.ctx.get("key")
+    continue
+
+# get the result
+result = await handler
 ```
 
 You can call `run_step` multiple times to step through the workflow one step at a time.

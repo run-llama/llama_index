@@ -278,7 +278,7 @@ class TencentVectorDB(BasePydanticVectorStore):
         collection_name: str = self._compute_collection_name(
             database_name, collection_params
         )
-        collection_description = collection_params.collection_description
+        collection_description = collection_params._collection_description
 
         if collection_params is None:
             raise ValueError(VALUE_NONE_ERROR.format("collection_params"))
@@ -300,9 +300,9 @@ class TencentVectorDB(BasePydanticVectorStore):
         database_name: str, collection_params: CollectionParams
     ) -> str:
         if database_name == DEFAULT_DATABASE_NAME:
-            return collection_params.collection_name
-        if collection_params.collection_name != DEFAULT_COLLECTION_NAME:
-            return collection_params.collection_name
+            return collection_params._collection_name
+        if collection_params._collection_name != DEFAULT_COLLECTION_NAME:
+            return collection_params._collection_name
         else:
             return database_name + "_" + DEFAULT_COLLECTION_NAME
 
