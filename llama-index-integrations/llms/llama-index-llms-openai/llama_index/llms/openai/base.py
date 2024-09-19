@@ -85,7 +85,7 @@ dispatcher = instrument.get_dispatcher(__name__)
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
-DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
+DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 
 
 def llm_retry_decorator(f: Callable[[Any], Any]) -> Callable[[Any], Any]:
