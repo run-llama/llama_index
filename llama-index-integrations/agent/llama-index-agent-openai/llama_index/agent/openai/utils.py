@@ -1,14 +1,5 @@
 """Utils for OpenAI agent."""
 
-from typing import Union
+from llama_index.llms.openai.utils import resolve_tool_choice
 
-
-def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
-    """Resolve tool choice.
-
-    If tool_choice is a function name string, return the appropriate dict.
-    """
-    if isinstance(tool_choice, str) and tool_choice not in ["none", "auto", "required"]:
-        return {"type": "function", "function": {"name": tool_choice}}
-
-    return tool_choice
+__all__ = ["resolve_tool_choice"]

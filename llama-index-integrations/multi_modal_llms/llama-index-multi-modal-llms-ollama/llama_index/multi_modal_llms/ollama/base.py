@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Sequence, Tuple
 
-from ollama import Client
+from ollama import Client, AsyncClient
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -74,11 +74,13 @@ class OllamaMultiModal(MultiModalLLM):
         description="Additional model parameters for the Ollama API.",
     )
     _client: Client = PrivateAttr()
+    _aclient: AsyncClient = PrivateAttr()
 
     def __init__(self, **kwargs: Any) -> None:
         """Init params and ollama client."""
         super().__init__(**kwargs)
         self._client = Client(host=self.base_url, timeout=self.request_timeout)
+        self._aclient = AsyncClient(host=self.base_url, timeout=self.request_timeout)
 
     @classmethod
     def class_name(cls) -> str:
@@ -122,7 +124,9 @@ class OllamaMultiModal(MultiModalLLM):
         )
 
     def stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
     ) -> ChatResponseGen:
         """Stream chat."""
         ollama_messages = _messages_to_dicts(messages)
@@ -201,21 +205,94 @@ class OllamaMultiModal(MultiModalLLM):
             )
 
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[ImageNode],
+        **kwargs: Any,
     ) -> CompletionResponse:
-        raise NotImplementedError("Ollama does not support async completion.")
+        """Async complete."""
+        response = await self._aclient.generate(
+            model=self.model,
+            prompt=prompt,
+            images=image_documents_to_base64(image_documents),
+            stream=False,
+            options=self._model_kwargs,
+            **kwargs,
+        )
+        return CompletionResponse(
+            text=response["response"],
+            raw=response,
+            additional_kwargs=get_additional_kwargs(response, ("response",)),
+        )
 
     async def achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
     ) -> ChatResponse:
-        raise NotImplementedError("Ollama does not support async chat.")
+        """Async chat."""
+        ollama_messages = _messages_to_dicts(messages)
+        response = await self._aclient.chat(
+            model=self.model, messages=ollama_messages, stream=False, **kwargs
+        )
+        return ChatResponse(
+            message=ChatMessage(
+                content=response["message"]["content"],
+                role=MessageRole(response["message"]["role"]),
+                additional_kwargs=get_additional_kwargs(response, ("message",)),
+            ),
+            raw=response["message"],
+            additional_kwargs=get_additional_kwargs(response, ("message",)),
+        )
 
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[ImageNode],
+        **kwargs: Any,
     ) -> CompletionResponseAsyncGen:
-        raise NotImplementedError("Ollama does not support async streaming completion.")
+        """Async stream complete."""
+        async for chunk in self._aclient.generate(
+            model=self.model,
+            prompt=prompt,
+            images=image_documents_to_base64(image_documents),
+            stream=True,
+            options=self._model_kwargs,
+            **kwargs,
+        ):
+            if "done" in chunk and chunk["done"]:
+                break
+            delta = chunk.get("response")
+            yield CompletionResponse(
+                text=str(chunk["response"]),
+                delta=delta,
+                raw=chunk,
+                additional_kwargs=get_additional_kwargs(chunk, ("response",)),
+            )
 
     async def astream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
     ) -> ChatResponseAsyncGen:
-        raise NotImplementedError("Ollama does not support async streaming chat.")
+        """Async stream chat."""
+        ollama_messages = _messages_to_dicts(messages)
+        async for chunk in self._aclient.chat(
+            model=self.model, messages=ollama_messages, stream=True, **kwargs
+        ):
+            if "done" in chunk and chunk["done"]:
+                break
+            message = chunk["message"]
+            delta = message.get("content")
+            yield ChatResponse(
+                message=ChatMessage(
+                    content=message["content"],
+                    role=MessageRole(message["role"]),
+                    additional_kwargs=get_additional_kwargs(
+                        message, ("content", "role")
+                    ),
+                ),
+                delta=delta,
+                raw=message,
+                additional_kwargs=get_additional_kwargs(chunk, ("message",)),
+            )

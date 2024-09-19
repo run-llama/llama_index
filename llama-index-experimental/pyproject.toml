@@ -25,10 +25,10 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-experimental"
 readme = "README.md"
-version = "0.3.1"
+version = "0.3.2"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.10,<4.0"
 llama-index-core = "^0.11.0"
 llama-index-finetuning = "^0.2.0"
 pandas = "*"
