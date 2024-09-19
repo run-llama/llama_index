@@ -328,6 +328,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         self,
         llm: Optional[LLM] = None,
         synthesize_response: bool = True,
+        markdown_response: bool = False,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         callback_manager: Optional[CallbackManager] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
@@ -352,6 +353,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         _validate_prompt(self._refine_synthesis_prompt, DEFAULT_REFINE_PROMPT)
 
         self._synthesize_response = synthesize_response
+        self._markdown_response = markdown_response
         self._verbose = verbose
         self._streaming = streaming
         super().__init__(callback_manager=callback_manager or Settings.callback_manager)
@@ -374,6 +376,25 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
     def sql_retriever(self) -> NLSQLRetriever:
         """Get SQL retriever."""
 
+    def _format_result_markdown(self, retrieved_nodes):
+        """Format the result in markdown."""
+        all_data = [eval(node.node.text) for node in retrieved_nodes]
+        
+        if not all_data:
+            return "| | |\n|---|---|\n| No data available | |"
+        
+        columns = retrieved_nodes[0].node.metadata.get('col_keys', [])
+        
+        data = [item for sublist in all_data for item in sublist]
+        
+        markdown = "| " + " | ".join(columns) + " |\n"
+        markdown += "|" + "|".join(["---" for _ in columns]) + "|\n"
+        
+        for row in data:
+            markdown += "| " + " | ".join(str(item) for item in row) + " |\n"
+            
+        return markdown
+    
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         retrieved_nodes, metadata = self.sql_retriever.retrieve_with_metadata(
@@ -402,7 +423,10 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 return cast(StreamingResponse, response)
             return cast(Response, response)
         else:
-            response_str = "\n".join([node.text for node in retrieved_nodes])
+            if self._markdown_response:
+                response_str = self._format_result_markdown(retrieved_nodes)
+            else:
+                response_str = "\n".join([node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
