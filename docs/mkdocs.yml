@@ -764,7 +764,7 @@ nav:
               - ./module_guides/querying/response_synthesizers/response_synthesizers.md
           - Routing: ./module_guides/querying/router/index.md
           - Workflows: ./module_guides/workflow/index.md
-          - Query Pipelines:
+          - Query Pipelines (Deprecated):
               - ./module_guides/querying/pipeline/index.md
               - ./module_guides/querying/pipeline/usage_pattern.md
               - ./module_guides/querying/pipeline/modules.md
@@ -780,6 +780,8 @@ nav:
           - ./module_guides/deploying/agents/agent_runner.md
           - ./module_guides/deploying/agents/modules.md
           - ./module_guides/deploying/agents/tools.md
+      - Workflows: ./module_guides/workflow/index.md
+          - ./module_guides/workflow/deployment.md
       - Evaluation:
           - ./module_guides/evaluating/index.md
           - ./module_guides/evaluating/usage_pattern.md
@@ -793,7 +795,6 @@ nav:
           - ./module_guides/observability/index.md
           - ./module_guides/observability/instrumentation.md
       - Settings: ./module_guides/supporting_modules/settings.md
-      - Workflows: ./module_guides/workflow/index.md
   - Advanced Topics:
       - ./optimizing/production_rag.md
       - ./optimizing/basic_strategies/basic_strategies.md
@@ -1414,6 +1415,8 @@ nav:
           - ./api_reference/schema/index.md
       - Selectors:
           - ./api_reference/selectors/notdiamond.md
+      - Sparse Embeddings:
+          - ./api_reference/sparse_embeddings/fastembed.md
       - Storage:
           - Chat Store:
               - ./api_reference/storage/chat_store/azure.md
@@ -1582,10 +1585,11 @@ nav:
           - ./api_reference/tools/yelp.md
           - ./api_reference/tools/zapier.md
       - Workflow:
+          - ./api_reference/workflow/decorators.md
           - ./api_reference/workflow/context.md
           - ./api_reference/workflow/events.md
-          - ./api_reference/workflow/workflow.md
           - ./api_reference/workflow/retry_policy.md
+          - ./api_reference/workflow/workflow.md
   - Open-Source Community:
       - Integrations: ./community/integrations.md
       - Full Stack Projects: ./community/full_stack_projects.md
@@ -2192,6 +2196,7 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-alibabacloud-aisearch
             - ../llama-index-integrations/llms/llama-index-llms-alibabacloud-aisearch
             - ../llama-index-integrations/readers/llama-index-readers-quip
+            - ../llama-index-integrations/sparse_embeddings/llama-index-sparse-embeddings-fastembed
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2282,6 +2287,7 @@ plugins:
         ./examples/callbacks/OpenInferenceCallback.md: https://docs.llamaindex.ai/en/stable/examples/observability/OpenInferenceCallback/
         ./examples/callbacks/OpenLLMetry.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/OpenLLMetry/
         ./examples/callbacks/OpenLLMetry.md: https://docs.llamaindex.ai/en/stable/examples/observability/OpenLLMetry/
+        ./examples/callbacks/OpikCallbackHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/OpikCallbackHandler/
         ./examples/callbacks/PromptLayerHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/PromptLayerHandler/
         ./examples/callbacks/PromptLayerHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/PromptLayerHandler/
         ./examples/callbacks/TokenCountingHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/TokenCountingHandler/
@@ -2290,7 +2296,6 @@ plugins:
         ./examples/callbacks/UpTrainCallback.md: https://docs.llamaindex.ai/en/stable/examples/observability/UpTrainCallback/
         ./examples/callbacks/WandbCallbackHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/WandbCallbackHandler/
         ./examples/callbacks/WandbCallbackHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/WandbCallbackHandler/
-        ./examples/callbacks/OpikCallbackHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/OpikCallbackHandler/
         ./examples/chat_engine/chat_engine_best.html: https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_best/
         ./examples/chat_engine/chat_engine_condense_plus_context.html: https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_condense_plus_context/
         ./examples/chat_engine/chat_engine_condense_question.html: https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_condense_question/

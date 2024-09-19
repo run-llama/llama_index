@@ -2,9 +2,8 @@
 
 One of the most common use-cases for LLMs is to answer questions over a set of data. This data is oftentimes in the form of unstructured documents (e.g. PDFs, HTML), but can also be semi-structured or structured.
 
-The predominant framework for enabling QA with LLMs is Retrieval Augmented Generation (RAG). LlamaIndex offers simple-to-advanced RAG techniques to tackle simple-to-advanced questions over different volumes and types of data.
+The predominant framework for enabling QA with LLMs is Retrieval Augmented Generation (RAG). LlamaIndex offers simple-to-advanced RAG techniques to tackle simple-to-advanced questions over different volumes and types of data. You can choose to use either our prebuilt RAG abstractions (e.g. [query engines](../../module_guides/deploying/query_engine/index.md)) or build custom RAG [workflows](../../module_guides/workflow/index.md)(example [guide](../../examples/workflow/rag.ipynb)).
 
-There are different subtypes of question-answering.
 
 ## RAG over Unstructured Documents
 LlamaIndex can pull in unstructured text, PDFs, Notion and Slack documents and more and index the data within them.
@@ -43,6 +42,8 @@ LlamaIndex has a lot of resources around QA / RAG. Here are some core resource g
 **I'm a RAG beginner and want to learn the basics**: Take a look at our ["Learn" series of guides](../../understanding/index.md).
 
 **I've built RAG, and now I want to optimize it**: Take a look at our ["Advanced Topics" Guides](../../optimizing/production_rag.md).
+
+**I'm more advanced and want to build a custom RAG workflow**: Use LlamaIndex [workflows](../../module_guides/workflow/index.md) to compose advanced, agentic RAG pipelines, like this [Corrective RAG](../../examples/workflow/corrective_rag_pack.ipynb) workflow.
 
 **I want to learn all about a particular module**: Here are the core module guides to help build simple-to-advanced QA/RAG systems:
 
