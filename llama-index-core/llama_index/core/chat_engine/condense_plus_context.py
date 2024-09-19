@@ -27,7 +27,7 @@ from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.response_synthesizers import CompactAndRefine
-from llama_index.core.schema import MetadataMode, NodeWithScore
+from llama_index.core.schema import NodeWithScore
 from llama_index.core.settings import Settings
 from llama_index.core.utilities.token_counting import TokenCounter
 from llama_index.core.chat_engine.utils import (
@@ -235,28 +235,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             self._llm, self.callback_manager, qa_messages, refine_messages, streaming
         )
 
-    def _get_current_chat_history(
-        self, input_msg: str, nodes: List[NodeWithScore]
-    ) -> List[ChatMessage]:
-        # get the current memory buffer safely
-        if hasattr(self._memory, "tokenizer_fn"):
-            prefix_messages_token_count = len(
-                self._memory.tokenizer_fn(
-                    " ".join(
-                        [
-                            (node.get_content(metadata_mode=MetadataMode.LLM))
-                            for node in nodes
-                        ]
-                    )
-                )
-            )
-        else:
-            prefix_messages_token_count = 0
-
-        return self._memory.get(
-            input=input_msg, initial_token_count=prefix_messages_token_count
-        )
-
     def _run_c3(
         self,
         message: str,
@@ -284,7 +262,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         )
 
         # build the response synthesizer
-        chat_history = self._get_current_chat_history(condensed_question, context_nodes)
         response_synthesizer = self._get_response_synthesizer(
             chat_history, streaming=streaming
         )
@@ -318,7 +295,6 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         )
 
         # build the response synthesizer
-        chat_history = self._get_current_chat_history(condensed_question, context_nodes)
         response_synthesizer = self._get_response_synthesizer(
             chat_history, streaming=streaming
         )

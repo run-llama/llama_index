@@ -23,7 +23,7 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.response_synthesizers import CompactAndRefine
-from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
+from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
 from llama_index.core.chat_engine.utils import (
     get_prefix_messages_with_context,
@@ -182,28 +182,6 @@ class ContextChatEngine(BaseChatEngine):
             self._llm, self.callback_manager, qa_messages, refine_messages, streaming
         )
 
-    def _get_current_chat_history(
-        self, input_msg: str, nodes: List[NodeWithScore]
-    ) -> List[ChatMessage]:
-        # get the current memory buffer safely
-        if hasattr(self._memory, "tokenizer_fn"):
-            prefix_messages_token_count = len(
-                self._memory.tokenizer_fn(
-                    " ".join(
-                        [
-                            (node.get_content(metadata_mode=MetadataMode.LLM))
-                            for node in nodes
-                        ]
-                    )
-                )
-            )
-        else:
-            prefix_messages_token_count = 0
-
-        return self._memory.get(
-            input=input_msg, initial_token_count=prefix_messages_token_count
-        )
-
     @trace_method("chat")
     def chat(
         self,
@@ -220,7 +198,9 @@ class ContextChatEngine(BaseChatEngine):
             nodes = prev_chunks
 
         # Get the response synthesizer with dynamic prompts
-        chat_history = self._get_current_chat_history(message, nodes)
+        chat_history = self._memory.get(
+            input=message,
+        )
         synthesizer = self._get_response_synthesizer(chat_history)
 
         response = synthesizer.synthesize(message, nodes)
@@ -259,7 +239,9 @@ class ContextChatEngine(BaseChatEngine):
             nodes = prev_chunks
 
         # Get the response synthesizer with dynamic prompts
-        chat_history = self._get_current_chat_history(message, nodes)
+        chat_history = self._memory.get(
+            input=message,
+        )
         synthesizer = self._get_response_synthesizer(chat_history, streaming=True)
 
         response = synthesizer.synthesize(message, nodes)
@@ -311,7 +293,9 @@ class ContextChatEngine(BaseChatEngine):
             nodes = prev_chunks
 
         # Get the response synthesizer with dynamic prompts
-        chat_history = self._get_current_chat_history(message, nodes)
+        chat_history = self._memory.get(
+            input=message,
+        )
         synthesizer = self._get_response_synthesizer(chat_history)
 
         response = await synthesizer.asynthesize(message, nodes)
@@ -349,7 +333,9 @@ class ContextChatEngine(BaseChatEngine):
             nodes = prev_chunks
 
         # Get the response synthesizer with dynamic prompts
-        chat_history = self._get_current_chat_history(message, nodes)
+        chat_history = self._memory.get(
+            input=message,
+        )
         synthesizer = self._get_response_synthesizer(chat_history, streaming=True)
 
         response = await synthesizer.asynthesize(message, nodes)
