@@ -27,7 +27,7 @@ The scope of possible use cases for agents is vast and ever-expanding. That said
 
 - **SQL Agent**: A "text-to-SQL assistant" that can interact with a structured database. Check out [this guide](https://docs.llamaindex.ai/en/stable/examples/agent/agent_runner/query_pipeline_agent/?h=sql+agent#setup-simple-retry-agent-pipeline-for-text-to-sql) to see how to build an agent from scratch.
 
-Others: 
+Others:
 - **Productivity Assistant**: Build an agent that can operate over common workflow tools like email, calendar. Check out our [GSuite agent tutorial](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-google/examples/advanced_tools_usage.ipynb).
 
 - **Coding Assistant**: Build an agent that can operate over code. Check out our [code interpreter tutorial](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-code-interpreter/examples/code_interpreter.ipynb).

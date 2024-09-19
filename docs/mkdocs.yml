@@ -781,7 +781,7 @@ nav:
           - ./module_guides/deploying/agents/modules.md
           - ./module_guides/deploying/agents/tools.md
       - Workflows: ./module_guides/workflow/index.md
-          - Workflows: ./module_guides/workflow/deployment.md
+          - ./module_guides/workflow/deployment.md
       - Evaluation:
           - ./module_guides/evaluating/index.md
           - ./module_guides/evaluating/usage_pattern.md
