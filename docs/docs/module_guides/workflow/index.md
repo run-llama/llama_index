@@ -433,6 +433,10 @@ handler = w.run(ctx=handler.ctx)
 result = await handler
 ```
 
+## Deploying a Workflow
+
+You can deploy a workflow as a multi-agent service with [llama_deploy](../../module_guides/workflow/deployment.md) ([repo](https://github.com/run-llama/llama_deploy)). Each agent service is orchestrated via a control plane and communicates via a message queue. Deploy locally or on Kubernetes.
+
 ## Examples
 
 You can find many useful examples of using workflows in the notebooks below:
