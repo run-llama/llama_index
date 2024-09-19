@@ -764,7 +764,7 @@ nav:
               - ./module_guides/querying/response_synthesizers/response_synthesizers.md
           - Routing: ./module_guides/querying/router/index.md
           - Workflows: ./module_guides/workflow/index.md
-          - Query Pipelines:
+          - Query Pipelines (Deprecated):
               - ./module_guides/querying/pipeline/index.md
               - ./module_guides/querying/pipeline/usage_pattern.md
               - ./module_guides/querying/pipeline/modules.md
@@ -780,6 +780,8 @@ nav:
           - ./module_guides/deploying/agents/agent_runner.md
           - ./module_guides/deploying/agents/modules.md
           - ./module_guides/deploying/agents/tools.md
+      - Workflows: ./module_guides/workflow/index.md
+          - ./module_guides/workflow/deployment.md
       - Evaluation:
           - ./module_guides/evaluating/index.md
           - ./module_guides/evaluating/usage_pattern.md
@@ -793,7 +795,6 @@ nav:
           - ./module_guides/observability/index.md
           - ./module_guides/observability/instrumentation.md
       - Settings: ./module_guides/supporting_modules/settings.md
-      - Workflows: ./module_guides/workflow/index.md
   - Advanced Topics:
       - ./optimizing/production_rag.md
       - ./optimizing/basic_strategies/basic_strategies.md
