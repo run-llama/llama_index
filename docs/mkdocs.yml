@@ -439,6 +439,7 @@ nav:
       - Node Parsers & Text Splitters:
           - ./examples/node_parsers/semantic_chunking.ipynb
           - ./examples/node_parsers/semantic_double_merging_chunking.ipynb
+          - ./examples/node_parsers/topic_parser.ipynb
       - Node Postprocessors:
           - ./examples/node_postprocessor/CohereRerank.ipynb
           - ./examples/node_postprocessor/ColbertRerank.ipynb
@@ -1119,6 +1120,7 @@ nav:
       - Node Parsers & Text Splitters:
           - ./api_reference/node_parser/alibabacloud_aisearch.md
           - ./api_reference/node_parser/dashscope.md
+          - ./api_reference/node_parser/topic.md
           - ./api_reference/node_parsers/code.md
           - ./api_reference/node_parsers/hierarchical.md
           - ./api_reference/node_parsers/html.md
@@ -2198,6 +2200,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-alibabacloud-aisearch
             - ../llama-index-integrations/readers/llama-index-readers-quip
             - ../llama-index-integrations/sparse_embeddings/llama-index-sparse-embeddings-fastembed
+            - ../llama-index-integrations/node_parser/llama-index-node-parser-topic
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
