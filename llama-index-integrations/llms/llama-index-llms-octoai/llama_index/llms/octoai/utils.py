@@ -1,6 +1,10 @@
 import logging
 from typing import Dict, Sequence
+
+from octoai.text_gen import ChatMessage as OctoAIChatMessage
+
 from llama_index.core.base.llms.types import ChatMessage
+
 
 TEXT_MODELS: Dict[str, int] = {
     "codellama-13b-instruct": 16384,
@@ -55,7 +59,8 @@ def octoai_modelname_to_contextsize(modelname: str) -> int:
     return ALL_AVAILABLE_MODELS[modelname]
 
 
-def to_octoai_messages(messages: Sequence[ChatMessage]) -> Sequence[Dict]:
+def to_octoai_messages(messages: Sequence[ChatMessage]) -> Sequence[OctoAIChatMessage]:
     return [
-        {"role": message.role.value, "content": message.content} for message in messages
+        OctoAIChatMessage(content=message.content, role=message.role.value)
+        for message in messages
     ]

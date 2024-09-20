@@ -1,6 +1,5 @@
 from typing import (
     Any,
-    Callable,
     Dict,
     Optional,
     Sequence,
@@ -22,10 +21,14 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
-from llama_index.core.llms.llm import LLM
+from llama_index.core.llms.llm import (
+    LLM,
+    MessagesToPromptCallable,
+    CompletionToPromptCallable,
+)
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
@@ -37,7 +40,7 @@ from llama_index.llms.octoai.utils import (
     to_octoai_messages,
 )
 
-from octoai.client import OctoAI
+from octoai.client import OctoAI as Client
 
 DEFAULT_OCTOAI_MODEL = "mistral-7b-instruct"
 
@@ -56,13 +59,9 @@ class OctoAI(LLM):
         description="The maximum number of tokens to generate.",
         gt=0,
     )
-    timeout: float = Field(
-        default=120, description="The timeout to use in seconds.", ge=0
-    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OctoAI SDK."
     )
-    _client: Optional[OctoAI] = PrivateAttr()
 
     def __init__(
         self,
@@ -75,8 +74,8 @@ class OctoAI(LLM):
         callback_manager: Optional[CallbackManager] = None,
         # base class
         system_prompt: Optional[str] = None,
-        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
-        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        messages_to_prompt: Optional[MessagesToPromptCallable] = None,
+        completion_to_prompt: Optional[CompletionToPromptCallable] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
@@ -84,17 +83,16 @@ class OctoAI(LLM):
         callback_manager = callback_manager or CallbackManager([])
 
         super().__init__(
-            additional_kwargs=additional_kwargs,
-            max_tokens=max_tokens,
-            model=model,
             callback_manager=callback_manager,
-            temperature=temperature,
-            timeout=timeout,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
         )
 
         token = get_from_param_or_env("token", token, "OCTOAI_TOKEN", "")
@@ -107,7 +105,7 @@ class OctoAI(LLM):
             )
 
         try:
-            self._client = OctoAI(token=token, timeout=timeout)
+            self._client = Client(api_key=token, timeout=timeout)
         except ImportError as err:
             raise ImportError(
                 "Could not import OctoAI python package. "
@@ -129,8 +127,10 @@ class OctoAI(LLM):
         base_kwargs = {
             "model": self.model,
             "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
         }
+        if self.max_tokens:
+            base_kwargs["max_tokens"] = self.max_tokens
+
         return {
             **base_kwargs,
             **self.additional_kwargs,
@@ -144,7 +144,7 @@ class OctoAI(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        response = self._client.chat.completions.create(
+        response = self._client.text_gen.create_chat_completion(
             messages=to_octoai_messages(messages), **self._get_all_kwargs(**kwargs)
         )
 
@@ -159,9 +159,8 @@ class OctoAI(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        streaming_response = self._client.chat.completions.create(
+        streaming_response = self._client.text_gen.create_chat_completion_stream(
             messages=to_octoai_messages(messages),
-            stream=True,
             **self._get_all_kwargs(**kwargs),
         )
 

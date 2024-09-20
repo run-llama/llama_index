@@ -61,7 +61,7 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
             " Defaults to None, meaning it will loop until the server is available."
         ),
     )
-    headers: Dict[str, str] = Field(
+    headers: Optional[Dict[str, str]] = Field(
         default=None,
         description=(
             "Additional headers to send to the server. By default only the"
@@ -69,7 +69,7 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
             " will override the default values."
         ),
     )
-    cookies: Dict[str, str] = Field(
+    cookies: Optional[Dict[str, str]] = Field(
         default=None, description="Additional cookies to send to the server."
     )
     task: Optional[str] = Field(

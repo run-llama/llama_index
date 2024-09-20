@@ -1,8 +1,8 @@
 import pytest
 
 from llama_index.core import MockEmbedding
-from llama_index.core.chat_engine.condense_plus_context import (
-    CondensePlusContextChatEngine,
+from llama_index.core.chat_engine.context import (
+    ContextChatEngine,
 )
 from llama_index.core.indices import VectorStoreIndex
 from llama_index.core.llms.mock import MockLLM
@@ -12,17 +12,17 @@ SYSTEM_PROMPT = "Talk like a pirate."
 
 
 @pytest.fixture()
-def chat_engine() -> CondensePlusContextChatEngine:
+def chat_engine() -> ContextChatEngine:
     index = VectorStoreIndex.from_documents(
         [Document.example()], embed_model=MockEmbedding(embed_dim=3)
     )
     retriever = index.as_retriever()
-    return CondensePlusContextChatEngine.from_defaults(
+    return ContextChatEngine.from_defaults(
         retriever, llm=MockLLM(), system_prompt=SYSTEM_PROMPT
     )
 
 
-def test_chat(chat_engine: CondensePlusContextChatEngine):
+def test_chat(chat_engine: ContextChatEngine):
     response = chat_engine.chat("Hello World!")
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
@@ -35,7 +35,7 @@ def test_chat(chat_engine: CondensePlusContextChatEngine):
     assert len(chat_engine.chat_history) == 4
 
 
-def test_chat_stream(chat_engine: CondensePlusContextChatEngine):
+def test_chat_stream(chat_engine: ContextChatEngine):
     response = chat_engine.stream_chat("Hello World!")
 
     num_iters = 0
@@ -61,7 +61,7 @@ def test_chat_stream(chat_engine: CondensePlusContextChatEngine):
 
 
 @pytest.mark.asyncio()
-async def test_achat(chat_engine: CondensePlusContextChatEngine):
+async def test_achat(chat_engine: ContextChatEngine):
     response = await chat_engine.achat("Hello World!")
     assert SYSTEM_PROMPT in str(response)
     assert "Hello World!" in str(response)
@@ -75,7 +75,7 @@ async def test_achat(chat_engine: CondensePlusContextChatEngine):
 
 
 @pytest.mark.asyncio()
-async def test_chat_astream(chat_engine: CondensePlusContextChatEngine):
+async def test_chat_astream(chat_engine: ContextChatEngine):
     response = await chat_engine.astream_chat("Hello World!")
 
     num_iters = 0

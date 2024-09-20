@@ -69,12 +69,12 @@ To actually get this output, we need to run the workflow asynchronously and list
 ```python
 async def main():
     w = MyWorkflow(timeout=30, verbose=True)
-    task = asyncio.create_task(w.run(first_input="Start the workflow."))
+    handler = w.run(first_input="Start the workflow.")
 
-    async for ev in w.stream_events():
+    async for ev in handler.stream_events():
         print(ev.msg)
 
-    final_result = await task
+    final_result = await handler
     print("Final result", final_result)
 
     draw_all_possible_flows(MyWorkflow, filename="streaming_workflow.html")
