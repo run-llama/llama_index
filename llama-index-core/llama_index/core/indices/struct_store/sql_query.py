@@ -383,8 +383,8 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
             node = node_with_score.node
             metadata = node.metadata
 
-            col_keys = metadata.get('col_keys', [])
-            results = metadata.get('result', [])
+            col_keys = metadata.get("col_keys", [])
+            results = metadata.get("result", [])
             table_header = "| " + " | ".join(col_keys) + " |\n"
             table_separator = "|" + "|".join(["---"] * len(col_keys)) + "|\n"
 
@@ -394,8 +394,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
 
             markdown_table = table_header + table_separator + table_rows
             tables.append(markdown_table)
-            print(markdown_table)
-        
+
         return "\n\n".join(tables).strip()
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
