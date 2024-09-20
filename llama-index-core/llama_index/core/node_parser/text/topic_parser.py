@@ -1,6 +1,6 @@
 """Topic Based node parser."""
 
-from typing import Any, Callable, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence, Dict
 
 from llama_index.core.bridge.pydantic import Field, SerializeAsAny
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -180,7 +180,7 @@ class TopicNodeParser(NodeParser):
         similarity_score = similarity(current_text_embedding, new_proposition_embedding)
         return similarity_score > self.similarity_threshold
 
-    def semantic_chunking(self, paragraphs: List[str]) -> List[List[str]]:
+    def semantic_chunking(self, paragraphs: List[str]) -> List[str]:
         """
         Perform semantic chunking on the given paragraphs.
         max_chunk_size: It is based on hard threshold of 1000 characters.
