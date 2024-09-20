@@ -95,7 +95,11 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
 
     def set_messages(self, key: str, messages: List[ChatMessage]) -> None:
         """Set messages for a key."""
-        self._collection.updateOne({"_id": key}, {"$set": {"messages": _messages_to_dict(messages)}}, upsert=True)
+        self._collection.updateOne(
+            {"_id": key},
+            {"$set": {"messages": _messages_to_dict(messages)}},
+            upsert=True,
+        )
 
     def get_messages(self, key: str) -> List[ChatMessage]:
         """Get messages for a key."""

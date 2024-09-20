@@ -1,5 +1,7 @@
 from llama_index.core.storage.chat_store.base import BaseChatStore
-from llama_index.storage.chat_store.azurecosmosmongovcore import AzureCosmosMongoVCoreChatStore
+from llama_index.storage.chat_store.azurecosmosmongovcore import (
+    AzureCosmosMongoVCoreChatStore,
+)
 
 
 def test_class():

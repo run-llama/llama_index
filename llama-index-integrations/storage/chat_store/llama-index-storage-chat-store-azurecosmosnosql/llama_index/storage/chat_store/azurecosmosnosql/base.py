@@ -72,18 +72,14 @@ class AzureCosmosNoSqlChatStore(BaseChatStore, ABC):
             indexing_policy=cosmos_container_properties.get("indexing_policy"),
             default_ttl=cosmos_container_properties.get("default_ttl"),
             offer_throughput=cosmos_container_properties.get("offer_throughput"),
-            unique_key_policy=cosmos_container_properties.get(
-                "unique_key_policy"
-            ),
+            unique_key_policy=cosmos_container_properties.get("unique_key_policy"),
             conflict_resolution_policy=cosmos_container_properties.get(
                 "conflict_resolution_policy"
             ),
             analytical_storage_ttl=cosmos_container_properties.get(
                 "analytical_storage_ttl"
             ),
-            computed_properties=cosmos_container_properties.get(
-                "computed_properties"
-            ),
+            computed_properties=cosmos_container_properties.get("computed_properties"),
             etag=cosmos_container_properties.get("etag"),
             match_condition=cosmos_container_properties.get("match_condition"),
             session_token=cosmos_container_properties.get("session_token"),
@@ -230,13 +226,11 @@ class AzureCosmosNoSqlChatStore(BaseChatStore, ABC):
         cosmos_database_properties: Dict[str, Any] = None,
     ) -> "AzureCosmosNoSqlChatStore":
         """Create cosmos db service clients."""
-        cosmos_client = CosmosClient(
-            url=endpoint, credential=credential
-        )
+        cosmos_client = CosmosClient(url=endpoint, credential=credential)
         return cls(
             cosmos_client,
             chat_db_name,
             chat_container_name,
             cosmos_container_properties,
-            cosmos_database_properties
+            cosmos_database_properties,
         )

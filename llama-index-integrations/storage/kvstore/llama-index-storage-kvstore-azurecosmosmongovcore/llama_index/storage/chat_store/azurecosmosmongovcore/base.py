@@ -36,10 +36,10 @@ class AzureCosmosMongoVCoreKVStore(BaseKVStore, ABC):
 
     @classmethod
     def from_connection_string(
-            cls,
-            connection_string: str,
-            db_name: Optional[str] = None,
-            collection_name: Optional[str] = None,
+        cls,
+        connection_string: str,
+        db_name: Optional[str] = None,
+        collection_name: Optional[str] = None,
     ) -> "AzureCosmosMongoVCoreKVStore":
         """Creates an instance of AzureCosmosMongoVCoreKVStore using a connection string"""
         mongo_client = MongoClient(connection_string, appname=APP_NAME)
@@ -77,18 +77,20 @@ class AzureCosmosMongoVCoreKVStore(BaseKVStore, ABC):
             val (dict): value
             collection (str): collection name
         """
-        self._collection.updateOne({"_id": key}, {"$set": {"messages": val}}, upsert=True)
+        self._collection.updateOne(
+            {"_id": key}, {"$set": {"messages": val}}, upsert=True
+        )
 
     async def aput(
         self, key: str, val: dict, collection: str = DEFAULT_COLLECTION
     ) -> None:
         """Put a key-value pair into the store.
 
-                Args:
-                    key (str): key
-                    val (dict): value
-                    collection (str): collection name
-                """
+        Args:
+            key (str): key
+            val (dict): value
+            collection (str): collection name
+        """
         raise NotImplementedError
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:

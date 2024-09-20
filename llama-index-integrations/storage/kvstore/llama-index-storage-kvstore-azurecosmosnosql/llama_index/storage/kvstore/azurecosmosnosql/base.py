@@ -6,7 +6,11 @@ from azure.cosmos import CosmosClient, DatabaseProxy, ContainerProxy
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store import BaseChatStore
-from llama_index.core.storage.kvstore.types import BaseKVStore, DEFAULT_BATCH_SIZE, DEFAULT_COLLECTION
+from llama_index.core.storage.kvstore.types import (
+    BaseKVStore,
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_COLLECTION,
+)
 
 DEFAULT_CHAT_DATABASE = "KVStoreDB"
 DEFAULT_CHAT_CONTAINER = "KVStoreContainer"
@@ -50,18 +54,14 @@ class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
             indexing_policy=cosmos_container_properties.get("indexing_policy"),
             default_ttl=cosmos_container_properties.get("default_ttl"),
             offer_throughput=cosmos_container_properties.get("offer_throughput"),
-            unique_key_policy=cosmos_container_properties.get(
-                "unique_key_policy"
-            ),
+            unique_key_policy=cosmos_container_properties.get("unique_key_policy"),
             conflict_resolution_policy=cosmos_container_properties.get(
                 "conflict_resolution_policy"
             ),
             analytical_storage_ttl=cosmos_container_properties.get(
                 "analytical_storage_ttl"
             ),
-            computed_properties=cosmos_container_properties.get(
-                "computed_properties"
-            ),
+            computed_properties=cosmos_container_properties.get("computed_properties"),
             etag=cosmos_container_properties.get("etag"),
             match_condition=cosmos_container_properties.get("match_condition"),
             session_token=cosmos_container_properties.get("session_token"),
@@ -150,11 +150,11 @@ class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
     ) -> None:
         """Put a key-value pair into the store.
 
-                Args:
-                    key (str): key
-                    val (dict): value
-                    collection (str): collection name
-                """
+        Args:
+            key (str): key
+            val (dict): value
+            collection (str): collection name
+        """
         raise NotImplementedError
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
@@ -236,13 +236,11 @@ class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
         cosmos_database_properties: Dict[str, Any] = None,
     ) -> "AzureCosmosNoSqlKVStore":
         """Create cosmos db service clients."""
-        cosmos_client = CosmosClient(
-            url=endpoint, credential=credential
-        )
+        cosmos_client = CosmosClient(url=endpoint, credential=credential)
         return cls(
             cosmos_client,
             chat_db_name,
             chat_container_name,
             cosmos_container_properties,
-            cosmos_database_properties
+            cosmos_database_properties,
         )

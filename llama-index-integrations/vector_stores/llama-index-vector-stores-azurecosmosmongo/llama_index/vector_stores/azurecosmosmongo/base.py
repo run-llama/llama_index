@@ -110,7 +110,8 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
                     "if not directly passing in client."
                 )
             self._mongodb_client = pymongo.MongoClient(
-                os.environ["AZURE_COSMOSDB_MONGODB_URI"], appname="LlamaIndex-CDBMongoVCore-VectorStore-Python"
+                os.environ["AZURE_COSMOSDB_MONGODB_URI"],
+                appname="LlamaIndex-CDBMongoVCore-VectorStore-Python",
             )
 
         self._collection = self._mongodb_client[db_name][collection_name]
@@ -138,8 +139,8 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         db.command(create_index_commands)
 
     def _get_vector_index_ivf(
-            self,
-            kind: str,
+        self,
+        kind: str,
     ) -> Dict[str, Any]:
         command = {
             "createIndexes": self._collection_name,
@@ -163,8 +164,8 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         return command
 
     def _get_vector_index_hnsw(
-            self,
-            kind: str,
+        self,
+        kind: str,
     ) -> Dict[str, Any]:
         command = {
             "createIndexes": self._collection_name,
@@ -175,7 +176,9 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
                     "cosmosSearchOptions": {
                         "kind": kind,
                         "m": self._cosmos_search_kwargs.get("m", 2),
-                        "efConstruction": self._cosmos_search_kwargs.get("efConstruction", 64),
+                        "efConstruction": self._cosmos_search_kwargs.get(
+                            "efConstruction", 64
+                        ),
                         "similarity": self._cosmos_search_kwargs.get(
                             "similarity", "COS"
                         ),
@@ -189,9 +192,9 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         return command
 
     def create_filter_index(
-            self,
-            property_to_filter: str,
-            index_name: str,
+        self,
+        property_to_filter: str,
+        index_name: str,
     ) -> dict[str, Any]:
         db = self._mongodb_client[self._db_name]
         command = {
@@ -266,7 +269,9 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         pipeline: List[dict[str, Any]] = []
         kind = self._cosmos_search_kwargs.get("kind", "vector-hnsw")
         if kind == "vector-ivf":
-            pipeline = self._get_pipeline_vector_ivf(query, kwargs.get("pre_filter", {}))
+            pipeline = self._get_pipeline_vector_ivf(
+                query, kwargs.get("pre_filter", {})
+            )
         elif kind == "vector-hnsw":
             pipeline = self._get_pipeline_vector_hnsw(
                 query, kwargs.get("ef_search", 40), kwargs.get("pre_filter", {})
