@@ -3,8 +3,9 @@
 from multiprocessing import cpu_count
 import os
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Type, Union
 import hashlib
+from pathlib import Path
 
 import pytest
 from llama_index.core.readers.file.base import SimpleDirectoryReader
@@ -16,11 +17,13 @@ except ImportError:
     PDFReader = None  # type: ignore
 
 
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_recursive() -> None:
+def test_recursive(tmp_dir_type: Type[Union[Path, str]]) -> None:
     """Test simple directory reader in recursive mode."""
     # test recursive
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
         with TemporaryDirectory(dir=tmp_dir) as tmp_sub_dir:
@@ -44,6 +47,7 @@ def test_recursive() -> None:
 
     # test that recursive=False works
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
         with TemporaryDirectory(dir=tmp_dir) as tmp_sub_dir:
@@ -65,6 +69,7 @@ def test_recursive() -> None:
 
     # test recursive with .md files
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.md", "w") as f:
             f.write("test1")
         with TemporaryDirectory(dir=tmp_dir) as tmp_sub_dir:
@@ -87,11 +92,13 @@ def test_recursive() -> None:
                     }
 
 
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_nonrecursive() -> None:
+def test_nonrecursive(tmp_dir_type: Type[Union[Path, str]]) -> None:
     """Test simple non-recursive directory reader."""
     # test nonrecursive
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
         with open(f"{tmp_dir}/test2.txt", "w") as f:
@@ -122,11 +129,13 @@ def test_nonrecursive() -> None:
         ]
 
 
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_required_exts() -> None:
+def test_required_exts(tmp_dir_type: Type[Union[Path, str]]) -> None:
     """Test extension filter."""
     # test nonrecursive
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
         with open(f"{tmp_dir}/test2.md", "w") as f:
@@ -145,11 +154,13 @@ def test_required_exts() -> None:
         assert input_file_names == ["test4.json", "test5.json"]
 
 
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_num_files_limit() -> None:
+def test_num_files_limit(tmp_dir_type: Type[Union[Path, str]]) -> None:
     """Test num files limit."""
     # test num_files_limit (with recursion)
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
         with TemporaryDirectory(dir=tmp_dir) as tmp_sub_dir:
@@ -195,11 +206,13 @@ def test_num_files_limit() -> None:
                     }
 
 
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_file_metadata() -> None:
+def test_file_metadata(tmp_dir_type: Type[Union[Path, str]]) -> None:
     """Test if file metadata is added to Document."""
     # test file_metadata
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
         with open(f"{tmp_dir}/test2.txt", "w") as f:
@@ -229,11 +242,13 @@ def test_file_metadata() -> None:
             assert doc.metadata is not None and doc.metadata["author"] == test_author
 
 
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_excluded_files() -> None:
+def test_excluded_files(tmp_dir_type: Type[Union[Path, str]]) -> None:
     """Tests if files are excluded properly."""
     # test recursive
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
         with TemporaryDirectory(dir=tmp_dir) as tmp_sub_dir:
@@ -258,6 +273,7 @@ def test_excluded_files() -> None:
 
     # test nonrecursive exclude *.py
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.py", "w") as f:
             f.write("test1.py")
         with open(f"{tmp_dir}/test2.txt", "w") as f:
@@ -276,6 +292,7 @@ def test_excluded_files() -> None:
 
     # test recursive exclude *.md
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.md", "w") as f:
             f.write("test1")
         with TemporaryDirectory(dir=tmp_dir) as tmp_sub_dir:
@@ -298,11 +315,13 @@ def test_excluded_files() -> None:
                     }
 
 
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_exclude_hidden() -> None:
+def test_exclude_hidden(tmp_dir_type: Type[Union[Path, str]]) -> None:
     """Test if exclude_hidden flag excludes hidden files and files in hidden directories."""
     # test recursive exclude hidden
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
         with TemporaryDirectory(dir=tmp_dir) as tmp_sub_dir:
@@ -330,6 +349,7 @@ def test_exclude_hidden() -> None:
 
     # test non-recursive exclude hidden files
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.py", "w") as f:
             f.write("test1.py")
         with open(f"{tmp_dir}/test2.txt", "w") as f:
@@ -349,6 +369,7 @@ def test_exclude_hidden() -> None:
     # test non-recursive exclude hidden directory
     # - i.e., user passes hidden root directory and tries to use exclude_hidden
     with TemporaryDirectory(prefix=".") as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.py", "w") as f:
             f.write("test1.py")
         with open(f"{tmp_dir}/test2.txt", "w") as f:
@@ -369,11 +390,13 @@ def test_exclude_hidden() -> None:
             assert e.args[0] == f"No files found in {tmp_dir}."
 
 
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_filename_as_doc_id() -> None:
+def test_filename_as_doc_id(tmp_dir_type: Type[Union[Path, str]]) -> None:
     """Test if file metadata is added to Document."""
     # test file_metadata
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
         with open(f"{tmp_dir}/test2.txt", "w") as f:
@@ -402,11 +425,13 @@ def test_filename_as_doc_id() -> None:
             assert str(doc.node_id).split("_part")[0] in doc_paths
 
 
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_specifying_encoding() -> None:
+def test_specifying_encoding(tmp_dir_type: Type[Union[Path, str]]) -> None:
     """Test if file metadata is added to Document."""
     # test file_metadata
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w", encoding="latin-1") as f:
             f.write("test1á")
         with open(f"{tmp_dir}/test2.txt", "w", encoding="latin-1") as f:
@@ -444,11 +469,13 @@ def test_error_if_not_dir_or_file() -> None:
         SimpleDirectoryReader(tmp_dir)
 
 
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_parallel_load() -> None:
+def test_parallel_load(tmp_dir_type: Type[Union[Path, str]]) -> None:
     """Test parallel load."""
     # test nonrecursive
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
         with open(f"{tmp_dir}/test2.md", "w") as f:
@@ -486,9 +513,11 @@ def _compare_document_lists(
     assert hashes_1 == hashes_2
 
 
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_list_and_read_file_workflow() -> None:
+def test_list_and_read_file_workflow(tmp_dir_type: Type[Union[Path, str]]) -> None:
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
         with open(f"{tmp_dir}/test2.txt", "w") as f:
@@ -514,9 +543,11 @@ def test_list_and_read_file_workflow() -> None:
         _compare_document_lists(original_docs, new_docs)
 
 
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
 @pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
-def test_read_file_content() -> None:
+def test_read_file_content(tmp_dir_type: Type[Union[Path, str]]) -> None:
     with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
         with open(f"{tmp_dir}/test1.txt", "w") as f:
             f.write("test1")
         with open(f"{tmp_dir}/test2.txt", "w") as f:

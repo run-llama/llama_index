@@ -9,31 +9,32 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.agent.openai"
+import_path = "llama_index.node_parser.topic"
 
 [tool.llamahub.class_authors]
-OpenAIAgent = "llama-index"
-OpenAIAssistantAgent = "llama-index"
+TopicNodeParser = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
+# Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
+explicit_package_bases = true
 ignore_missing_imports = true
+namespace_packages = true
+plugins = "pydantic.mypy"
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index agent openai integration"
+authors = ["llama-index"]
+description = "llama-index node_parser topic node parser integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-agent-openai"
+name = "llama-index-node-parser-topic"
 readme = "README.md"
-version = "0.3.4"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-openai = ">=1.14.0"
-llama-index-llms-openai = "^0.2.9"
 llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -45,7 +46,7 @@ pylint = "2.15.10"
 pytest = "7.2.1"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
-tree-sitter-languages = "~1.9.0"
+tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
 types-protobuf = "^4.24.0.4"

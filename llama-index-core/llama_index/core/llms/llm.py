@@ -755,11 +755,16 @@ class LLM(BaseLLM):
             handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
-        if isinstance(user_msg, ChatMessage):
+        if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
             user_msg = user_msg.content
         elif isinstance(user_msg, str):
             pass
-        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+        elif (
+            not user_msg
+            and chat_history is not None
+            and len(chat_history) > 0
+            and isinstance(chat_history[-1].content, str)
+        ):
             user_msg = chat_history[-1].content
         else:
             raise ValueError("No user message provided or found in chat history.")
@@ -813,11 +818,16 @@ class LLM(BaseLLM):
             handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
-        if isinstance(user_msg, ChatMessage):
+        if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
             user_msg = user_msg.content
         elif isinstance(user_msg, str):
             pass
-        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+        elif (
+            not user_msg
+            and chat_history is not None
+            and len(chat_history) > 0
+            and isinstance(chat_history[-1].content, str)
+        ):
             user_msg = chat_history[-1].content
         else:
             raise ValueError("No user message provided or found in chat history.")
