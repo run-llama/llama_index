@@ -205,7 +205,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
 
     async def aput(self, message: ChatMessage) -> None:
         """Put chat history."""
-        await self.chat_store.aadd_message(self.chat_store_key, message)
+        await self.chat_store.async_add_message(self.chat_store_key, message)
 
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
