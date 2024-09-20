@@ -21,6 +21,8 @@ We expect the output to be in one of the following formats:
     Action: <action>
     Action Input: <action_input>
     ```
+NOTE: Action Input should be a dictionary with the key as the function parameter name \
+and the value as the argument to pass to the function parameter. 
 2. If the agent can answer the question without any tools:
     ```
     Thought: <thought>
