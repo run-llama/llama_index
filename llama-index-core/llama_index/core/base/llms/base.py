@@ -58,7 +58,7 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
                 content_string = ""
                 for block in message.content:
                     if isinstance(block, TextBlock):
-                        content_string += block.content
+                        content_string += block.text
                     else:
                         raise ValueError("LLM only supports text inputs")
                 message.content = content_string
