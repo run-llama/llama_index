@@ -49,6 +49,7 @@ response = model.complete(prompt, image_documents=[image_document])
 
 print(response.text)
 ```
+You can also refer to this [Colab notebook](examples\huggingface_multimodal.ipynb)
 
 ## Supported Models
 
