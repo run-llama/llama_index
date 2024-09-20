@@ -42,28 +42,11 @@ class SimpleChatStore(BaseChatStore):
         """Set messages for a key."""
         self.store[key] = messages
 
-    async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
-        """Set messages for a key."""
-        self.store[key] = messages
-
     def get_messages(self, key: str) -> List[ChatMessage]:
         """Get messages for a key."""
         return self.store.get(key, [])
 
-    async def aget_messages(self, key: str) -> List[ChatMessage]:
-        """Get messages for a key."""
-        return self.store.get(key, [])
-
     def add_message(
-        self, key: str, message: ChatMessage, idx: Optional[int] = None
-    ) -> None:
-        """Add a message for a key."""
-        if idx is None:
-            self.store.setdefault(key, []).append(message)
-        else:
-            self.store.setdefault(key, []).insert(idx, message)
-
-    async def aadd_message(
         self, key: str, message: ChatMessage, idx: Optional[int] = None
     ) -> None:
         """Add a message for a key."""
@@ -78,21 +61,7 @@ class SimpleChatStore(BaseChatStore):
             return None
         return self.store.pop(key)
 
-    async def adelete_messages(self, key: str) -> Optional[List[ChatMessage]]:
-        """Delete messages for a key."""
-        if key not in self.store:
-            return None
-        return self.store.pop(key)
-
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
-        """Delete specific message for a key."""
-        if key not in self.store:
-            return None
-        if idx >= len(self.store[key]):
-            return None
-        return self.store[key].pop(idx)
-
-    async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete specific message for a key."""
         if key not in self.store:
             return None
@@ -106,17 +75,7 @@ class SimpleChatStore(BaseChatStore):
             return None
         return self.store[key].pop()
 
-    async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
-        """Delete last message for a key."""
-        if key not in self.store:
-            return None
-        return self.store[key].pop()
-
     def get_keys(self) -> List[str]:
-        """Get all keys."""
-        return list(self.store.keys())
-
-    async def aget_keys(self) -> List[str]:
         """Get all keys."""
         return list(self.store.keys())
 

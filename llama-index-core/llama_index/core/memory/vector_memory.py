@@ -187,10 +187,6 @@ class VectorMemory(BaseMemory):
         self.cur_batch_textnode.metadata["sub_dicts"].append(sub_dict)
         self._commit_node(override_last=True)
 
-    async def aput(self, message: ChatMessage) -> None:
-        """Put chat history. Currently the same as sync version."""
-        self.put(message)
-
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
         self.reset()

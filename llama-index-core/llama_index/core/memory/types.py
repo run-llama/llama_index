@@ -41,9 +41,9 @@ class BaseMemory(BaseComponent):
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
 
-    @abstractmethod
     async def aput(self, message: ChatMessage) -> None:
         """Put chat history."""
+        self.put(message)
 
     def put_messages(self, messages: List[ChatMessage]) -> None:
         """Put chat history."""
