@@ -286,6 +286,9 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         # TODO: This probably works better when question/answers are considered together.
         prompt = '"Transcript so far: '
         for msg in chat_history_to_be_summarized:
+            if not isinstance(msg.content, str):
+                continue
+
             prompt += msg.role + ": "
             if msg.content:
                 prompt += msg.content + "\n\n"
