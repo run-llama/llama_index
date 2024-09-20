@@ -2,7 +2,7 @@ import os
 from abc import abstractmethod
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Union, cast
-import time 
+import time
 
 from llama_index.core.agent.types import (
     BaseAgent,
@@ -411,6 +411,7 @@ class AgentRunner(BaseAgentRunner):
         task = self.state.get_task(task_id)
         step_queue = self.state.get_step_queue(task_id)
         step = step or step_queue.popleft()
+        self.current_step = step
         if input is not None:
             step.input = input
 
@@ -558,23 +559,27 @@ class AgentRunner(BaseAgentRunner):
         chat_history: Optional[List[ChatMessage]] = None,
         tool_choice: Union[str, dict] = "auto",
         mode: ChatResponseMode = ChatResponseMode.WAIT,
+        task: Optional[Task] = None,
+        step: Optional[TaskStep] = None,
+        input: Optional[str] = None,
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
-        print("!!!====> HERE <++++++++=========!!!!!")
         if chat_history is not None:
             self.memory.set(chat_history)
-        task = self.create_task(message)
+        if not task:
+            task = self.create_task(message)
+            self.current_task = task
 
         result_output = None
         while True:
             start_time = time.time()
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = await self._arun_step(
-                task.task_id, mode=mode, tool_choice=tool_choice
+                task.task_id, mode=mode, tool_choice=tool_choice, input=input, step=step
             )
             end_time = time.time()
             elapsed_time = end_time - start_time
-            print(f'TOOL CHOICE: {tool_choice} took {elapsed_time} seconds.')
+            print(f"TOOL CHOICE: {tool_choice} took {elapsed_time} seconds.")
 
             if cur_step_output.is_last:
                 result_output = cur_step_output
@@ -618,6 +623,9 @@ class AgentRunner(BaseAgentRunner):
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
         tool_choice: Optional[Union[str, dict]] = None,
+        task: Optional[Task] = None,
+        step: Optional[TaskStep] = None,
+        input: Optional[str] = None,
     ) -> AgentChatResponse:
         # override tool choice is provided as input.
         if tool_choice is None:
@@ -631,6 +639,9 @@ class AgentRunner(BaseAgentRunner):
                 chat_history=chat_history,
                 tool_choice=tool_choice,
                 mode=ChatResponseMode.WAIT,
+                task=task,
+                step=step,
+                input=input,
             )
             assert isinstance(chat_response, AgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})

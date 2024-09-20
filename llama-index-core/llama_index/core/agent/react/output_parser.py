@@ -12,7 +12,20 @@ from llama_index.core.agent.react.types import (
 from llama_index.core.output_parsers.utils import extract_json_str
 from llama_index.core.types import BaseOutputParser
 
-
+COULD_NOT_PARSE_TXT = "Could not parse output:"
+EXPECTED_OUTPUT_INSTRUCTIONS = """\
+We expect the output to be in one of the following formats:
+1. If the agent need to use a tool to answer the question:
+    ```
+    Thought: <thought>
+    Action: <action>
+    Action Input: <action_input>
+    ```
+2. If the agent can answer the question without any tools:
+    ```
+    Thought: <thought>
+    Answer: <answer>
+    ```"""
 def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
     pattern = (
         r"\s*Thought: (.*?)\nAction: ([a-zA-Z0-9_]+).*?\nAction Input: .*?(\{.*\})"
@@ -73,20 +86,9 @@ class ReActOutputParser(BaseOutputParser):
     """ReAct Output parser."""
 
     def parse(self, output: str, is_streaming: bool = False) -> BaseReasoningStep:
-        """Parse output from ReAct agent.
+        f"""Parse output from ReAct agent.
 
-        We expect the output to be in one of the following formats:
-        1. If the agent need to use a tool to answer the question:
-            ```
-            Thought: <thought>
-            Action: <action>
-            Action Input: <action_input>
-            ```
-        2. If the agent can answer the question without any tools:
-            ```
-            Thought: <thought>
-            Answer: <answer>
-            ```
+        {EXPECTED_OUTPUT_INSTRUCTIONS}
         """
         if "Thought:" not in output:
             # NOTE: handle the case where the agent directly outputs the answer
@@ -96,7 +98,6 @@ class ReActOutputParser(BaseOutputParser):
                 response=output,
                 is_streaming=is_streaming,
             )
-
         if "Answer:" in output:
             thought, answer = extract_final_response(output)
             return ResponseReasoningStep(
@@ -105,8 +106,8 @@ class ReActOutputParser(BaseOutputParser):
 
         if "Action:" in output:
             return parse_action_reasoning_step(output)
-
-        raise ValueError(f"Could not parse output: {output}")
+        
+        raise ValueError(f"{COULD_NOT_PARSE_TXT} {output}")
 
     def format(self, output: str) -> str:
         """Format a query with structured output formatting instructions."""

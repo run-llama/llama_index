@@ -19,7 +19,7 @@ from typing import (
 )
 
 from llama_index.core.agent.react.formatter import ReActChatFormatter
-from llama_index.core.agent.react.output_parser import ReActOutputParser
+from llama_index.core.agent.react.output_parser import ReActOutputParser, COULD_NOT_PARSE_TXT
 from llama_index.core.agent.react.types import (
     ActionReasoningStep,
     BaseReasoningStep,
@@ -205,7 +205,7 @@ class ReActAgentWorker(BaseAgentWorker):
         try:
             reasoning_step = self._output_parser.parse(message_content, is_streaming)
         except BaseException as exc:
-            raise ValueError(f"Could not parse output: {message_content}") from exc
+            raise ValueError(f"{COULD_NOT_PARSE_TXT} {message_content}") from exc
         background_tasks = set()
         if self._verbose:
             task = asyncio.create_task(
