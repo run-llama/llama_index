@@ -328,7 +328,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         # pass the context, system prompt and user message as chat to LLM to generate a response
         chat_response = await self._llm.achat(chat_messages)
         assistant_message = chat_response.message
-        self._memory.put(assistant_message)
+        await self._memory.aput(assistant_message)
 
         return AgentChatResponse(
             response=str(assistant_message.content),

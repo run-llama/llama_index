@@ -41,6 +41,10 @@ class BaseMemory(BaseComponent):
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
 
+    @abstractmethod
+    async def aput(self, message: ChatMessage) -> None:
+        """Put chat history."""
+
     def put_messages(self, messages: List[ChatMessage]) -> None:
         """Put chat history."""
         for message in messages:
@@ -93,6 +97,11 @@ class BaseChatStoreMemory(BaseMemory):
         """Put chat history."""
         # ensure everything is serialized
         self.chat_store.add_message(self.chat_store_key, message)
+
+    async def aput(self, message: ChatMessage) -> None:
+        """Put chat history."""
+        # ensure everything is serialized
+        await self.chat_store.aadd_message(self.chat_store_key, message)
 
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
