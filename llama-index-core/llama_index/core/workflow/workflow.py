@@ -327,8 +327,6 @@ class Workflow(metaclass=WorkflowMeta):
                 result.set_result(ctx._retval)
             except Exception as e:
                 result.set_exception(e)
-            finally:
-                ctx.write_event_to_stream(StopEvent())
 
         asyncio.create_task(_run_workflow())
         return result

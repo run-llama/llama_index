@@ -29,7 +29,7 @@ AnnotatedChatMessage = Annotated[
 
 
 class SimpleChatStore(BaseChatStore):
-    """Simple chat store."""
+    """Simple chat store. Async methods provide same functionality as sync methods in this class."""
 
     store: Dict[str, List[AnnotatedChatMessage]] = Field(default_factory=dict)
 

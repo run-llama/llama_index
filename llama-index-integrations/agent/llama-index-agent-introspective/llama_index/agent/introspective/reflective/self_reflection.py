@@ -269,7 +269,9 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         reflection, reflection_msg = self._reflect(chat_history=messages)
         is_done = reflection.is_done
 
-        critique_msg = ChatMessage(role=MessageRole.USER, content=reflection_msg)
+        critique_msg = ChatMessage(
+            role=MessageRole.USER, content=reflection_msg.content
+        )
         task.extra_state["new_memory"].put(critique_msg)
 
         # correction phase
@@ -386,7 +388,9 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         reflection, reflection_msg = await self._areflect(chat_history=messages)
         is_done = reflection.is_done
 
-        critique_msg = ChatMessage(role=MessageRole.USER, content=reflection_msg)
+        critique_msg = ChatMessage(
+            role=MessageRole.USER, content=reflection_msg.content
+        )
         task.extra_state["new_memory"].put(critique_msg)
 
         # correction phase
