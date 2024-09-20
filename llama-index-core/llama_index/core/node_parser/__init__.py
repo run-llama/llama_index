@@ -39,7 +39,6 @@ from llama_index.core.node_parser.text.sentence_window import (
     SentenceWindowNodeParser,
 )
 from llama_index.core.node_parser.text.token import TokenTextSplitter
-from llama_index.core.node_parser.text.topic_parser import TopicNodeParser
 
 # deprecated, for backwards compatibility
 SimpleNodeParser = SentenceSplitter
@@ -70,5 +69,4 @@ __all__ = [
     "LlamaParseJsonNodeParser",
     # deprecated, for backwards compatibility
     "SimpleNodeParser",
-    "TopicNodeParser",
 ]

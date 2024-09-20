@@ -12,7 +12,6 @@ from llama_index.core.node_parser.text.semantic_double_merging_splitter import (
     LanguageConfig,
 )
 from llama_index.core.node_parser.text.token import TokenTextSplitter
-from llama_index.core.node_parser.text.topic_parser import TopicNodeParser
 
 __all__ = [
     "CodeSplitter",
@@ -23,5 +22,4 @@ __all__ = [
     "TokenTextSplitter",
     "SemanticDoubleMergingSplitterNodeParser",
     "LanguageConfig",
-    "TopicNodeParser",
 ]
