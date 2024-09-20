@@ -35,7 +35,7 @@ from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.response_synthesizers import (
     get_response_synthesizer,
 )
-from llama_index.core.schema import QueryBundle
+from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Table
@@ -376,7 +376,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
     def sql_retriever(self) -> NLSQLRetriever:
         """Get SQL retriever."""
 
-    def _format_result_markdown(self, retrieved_nodes):
+    def _format_result_markdown(self, retrieved_nodes: List[NodeWithScore]) -> str:
         """Format the result in markdown."""
         tables = []
         for node_with_score in retrieved_nodes:
