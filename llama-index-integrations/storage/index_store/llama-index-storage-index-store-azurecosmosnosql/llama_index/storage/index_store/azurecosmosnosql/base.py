@@ -8,7 +8,7 @@ DEFAULT_INDEX_CONTAINER = "IndexStoreContainer"
 
 
 class AzureCosmosNoSqlIndexStore(KVIndexStore):
-    """Creates an Azure Cosmos DB NoSql Index Store"""
+    """Creates an Azure Cosmos DB NoSql Index Store."""
 
     def __init__(
         self,
@@ -16,7 +16,7 @@ class AzureCosmosNoSqlIndexStore(KVIndexStore):
         namespace: Optional[str] = None,
         collection_suffix: Optional[str] = None,
     ) -> None:
-        """Initializes the Azure Cosmos NoSql Index Store"""
+        """Initializes the Azure Cosmos NoSql Index Store."""
         super().__init__(azure_cosmos_nosql_kvstore, namespace, collection_suffix)
 
     @classmethod
@@ -28,8 +28,7 @@ class AzureCosmosNoSqlIndexStore(KVIndexStore):
         cosmos_container_properties: Dict[str, Any] = None,
         cosmos_database_properties: Dict[str, Any] = None,
     ) -> "AzureCosmosNoSqlIndexStore":
-        """Creates an instance of Azure Cosmos DB NoSql KV Store using a connection string"""
-
+        """Creates an instance of Azure Cosmos DB NoSql KV Store using a connection string."""
         azure_cosmos_nosql_kvstore = AzureCosmosNoSqlKVStore.from_connection_string(
             connection_string,
             index_db_name,
@@ -50,8 +49,7 @@ class AzureCosmosNoSqlIndexStore(KVIndexStore):
         cosmos_container_properties: Dict[str, Any] = None,
         cosmos_database_properties: Dict[str, Any] = None,
     ) -> "AzureCosmosNoSqlIndexStore":
-        """Creates an instance of Azure Cosmos DB NoSql KV Store using an account endpoint and key"""
-
+        """Creates an instance of Azure Cosmos DB NoSql KV Store using an account endpoint and key."""
         azure_cosmos_nosql_kvstore = AzureCosmosNoSqlKVStore.from_account_and_key(
             endpoint,
             key,
@@ -72,8 +70,7 @@ class AzureCosmosNoSqlIndexStore(KVIndexStore):
         cosmos_container_properties: Dict[str, Any] = None,
         cosmos_database_properties: Dict[str, Any] = None,
     ) -> "AzureCosmosNoSqlIndexStore":
-        """Creates an instance of Azure Cosmos DB NoSql KV Store using an aad token"""
-
+        """Creates an instance of Azure Cosmos DB NoSql KV Store using an aad token."""
         azure_cosmos_nosql_kvstore = AzureCosmosNoSqlKVStore.from_aad_token(
             endpoint,
             index_db_name,

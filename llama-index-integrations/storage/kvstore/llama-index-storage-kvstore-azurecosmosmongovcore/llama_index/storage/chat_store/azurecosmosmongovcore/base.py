@@ -12,7 +12,7 @@ APP_NAME = "Llama-Index-CDBMongoVCore-KVStore-Python"
 
 
 class AzureCosmosMongoVCoreKVStore(BaseKVStore, ABC):
-    """Creates an AzureCosmosMongoVCoreKVStore"""
+    """Creates an AzureCosmosMongoVCoreKVStore."""
 
     _mongo_client = MongoClient = PrivateAttr()
     _database = DatabaseProxy = PrivateAttr()
@@ -41,7 +41,7 @@ class AzureCosmosMongoVCoreKVStore(BaseKVStore, ABC):
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ) -> "AzureCosmosMongoVCoreKVStore":
-        """Creates an instance of AzureCosmosMongoVCoreKVStore using a connection string"""
+        """Creates an instance of AzureCosmosMongoVCoreKVStore using a connection string."""
         mongo_client = MongoClient(connection_string, appname=APP_NAME)
 
         return cls(
@@ -154,5 +154,5 @@ class AzureCosmosMongoVCoreKVStore(BaseKVStore, ABC):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name"""
+        """Get class name."""
         return "AzureCosmosMongoVCoreKVStore"

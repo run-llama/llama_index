@@ -10,7 +10,7 @@ APP_NAME = "Llama-Index-CDBMongoVCore-IndexStore-Python"
 
 
 class AzureCosmosMongoVCoreIndexStore(KVIndexStore):
-    """Creates an AzureCosmosMongoVCoreIndexStore"""
+    """Creates an AzureCosmosMongoVCoreIndexStore."""
 
     def __init__(
         self,
@@ -18,7 +18,7 @@ class AzureCosmosMongoVCoreIndexStore(KVIndexStore):
         namespace: Optional[str] = None,
         collection_suffix: Optional[str] = None,
     ) -> None:
-        """Initializes the Azure Cosmos Mongo vCore Index Store"""
+        """Initializes the Azure Cosmos Mongo vCore Index Store."""
         super().__init__(
             azure_cosmos_mongo_vcore_kvstore,
             namespace=namespace,
@@ -32,7 +32,7 @@ class AzureCosmosMongoVCoreIndexStore(KVIndexStore):
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ) -> "AzureCosmosMongoVCoreIndexStore":
-        """Creates an instance of AzureCosmosMongoVCoreIndexStore using a connection string"""
+        """Creates an instance of AzureCosmosMongoVCoreIndexStore using a connection string."""
         azure_cosmos_mongo_vcore_kvstore = (
             AzureCosmosMongoVCoreKVStore.from_connection_string(
                 connection_string, db_name=db_name, collection_name=collection_name

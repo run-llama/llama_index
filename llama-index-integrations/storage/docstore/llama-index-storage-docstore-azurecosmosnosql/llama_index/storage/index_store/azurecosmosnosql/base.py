@@ -8,7 +8,7 @@ DEFAULT_DOCUMENT_CONTAINER = "DocumentStoreContainer"
 
 
 class AzureCosmosNoSqlDocumentStore(KVDocumentStore):
-    """Creates an AzureCosmosNoSqlDocumentStore"""
+    """Creates an AzureCosmosNoSqlDocumentStore."""
 
     def __init__(
         self,
@@ -16,7 +16,7 @@ class AzureCosmosNoSqlDocumentStore(KVDocumentStore):
         namespace: Optional[str] = None,
         collection_suffix: Optional[str] = None,
     ) -> None:
-        """Initializes the AzureCosmosNoSqlDocumentStore"""
+        """Initializes the AzureCosmosNoSqlDocumentStore."""
         super().__init__(azure_cosmos_nosql_kvstore, namespace, collection_suffix)
 
     @classmethod
@@ -28,8 +28,7 @@ class AzureCosmosNoSqlDocumentStore(KVDocumentStore):
         cosmos_container_properties: Dict[str, Any] = None,
         cosmos_database_properties: Dict[str, Any] = None,
     ) -> "AzureCosmosNoSqlDocumentStore":
-        """Creates an instance of AzureCosmosNoSqlDocumentStore using a connection string"""
-
+        """Creates an instance of AzureCosmosNoSqlDocumentStore using a connection string."""
         azure_cosmos_nosql_kvstore = AzureCosmosNoSqlKVStore.from_connection_string(
             connection_string,
             document_db_name,
@@ -50,8 +49,7 @@ class AzureCosmosNoSqlDocumentStore(KVDocumentStore):
         cosmos_container_properties: Dict[str, Any] = None,
         cosmos_database_properties: Dict[str, Any] = None,
     ) -> "AzureCosmosNoSqlDocumentStore":
-        """Creates an instance of AzureCosmosNoSqlDocumentStore using an account endpoint and key"""
-
+        """Creates an instance of AzureCosmosNoSqlDocumentStore using an account endpoint and key."""
         azure_cosmos_nosql_kvstore = AzureCosmosNoSqlKVStore.from_account_and_key(
             endpoint,
             key,
@@ -72,8 +70,7 @@ class AzureCosmosNoSqlDocumentStore(KVDocumentStore):
         cosmos_container_properties: Dict[str, Any] = None,
         cosmos_database_properties: Dict[str, Any] = None,
     ) -> "AzureCosmosNoSqlDocumentStore":
-        """Creates an instance of AzureCosmosNoSqlDocumentStore using an aad token"""
-
+        """Creates an instance of AzureCosmosNoSqlDocumentStore using an aad token."""
         azure_cosmos_nosql_kvstore = AzureCosmosNoSqlKVStore.from_aad_token(
             endpoint,
             document_db_name,

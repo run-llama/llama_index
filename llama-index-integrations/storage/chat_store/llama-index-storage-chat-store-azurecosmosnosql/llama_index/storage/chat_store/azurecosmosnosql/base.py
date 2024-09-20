@@ -30,7 +30,7 @@ def _dict_to_message(d: dict) -> ChatMessage:
 
 
 class AzureCosmosNoSqlChatStore(BaseChatStore, ABC):
-    """Creates an Azure Cosmos DB NoSql Chat Store"""
+    """Creates an Azure Cosmos DB NoSql Chat Store."""
 
     _cosmos_client = CosmosClient = PrivateAttr()
     _database = DatabaseProxy = PrivateAttr()
@@ -95,7 +95,7 @@ class AzureCosmosNoSqlChatStore(BaseChatStore, ABC):
         cosmos_container_properties: Dict[str, Any] = None,
         cosmos_database_properties: Dict[str, Any] = None,
     ):
-        """Creates an instance of Azure Cosmos DB NoSql Chat Store using a connection string"""
+        """Creates an instance of Azure Cosmos DB NoSql Chat Store using a connection string."""
         cosmos_client = CosmosClient.from_connection_string(connection_string)
 
         return cls(
@@ -207,12 +207,11 @@ class AzureCosmosNoSqlChatStore(BaseChatStore, ABC):
     def get_keys(self) -> List[str]:
         """Get all keys."""
         items = self._container.read_all_items()
-        keys = [item["id"] for item in items]
-        return keys
+        return [item["id"] for item in items]
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name"""
+        """Get class name."""
         return "AzureCosmosNoSqlChatStore"
 
     @classmethod

@@ -1,14 +1,11 @@
 import logging
 from abc import ABC
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from azure.cosmos import CosmosClient, DatabaseProxy, ContainerProxy
 from llama_index.core.bridge.pydantic import PrivateAttr
-from llama_index.core.llms import ChatMessage
-from llama_index.core.storage.chat_store import BaseChatStore
 from llama_index.core.storage.kvstore.types import (
     BaseKVStore,
-    DEFAULT_BATCH_SIZE,
     DEFAULT_COLLECTION,
 )
 
@@ -20,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
-    """Creates an Azure Cosmos DB NoSql Chat Store"""
+    """Creates an Azure Cosmos DB NoSql Chat Store."""
 
     _cosmos_client: CosmosClient = PrivateAttr()
     _database: DatabaseProxy = PrivateAttr()
@@ -77,7 +74,7 @@ class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
         cosmos_container_properties: Dict[str, Any] = None,
         cosmos_database_properties: Dict[str, Any] = None,
     ) -> "AzureCosmosNoSqlKVStore":
-        """Creates an instance of Azure Cosmos DB NoSql KV Store using a connection string"""
+        """Creates an instance of Azure Cosmos DB NoSql KV Store using a connection string."""
         cosmos_client = CosmosClient.from_connection_string(connection_string)
 
         return cls(
@@ -222,7 +219,7 @@ class AzureCosmosNoSqlKVStore(BaseKVStore, ABC):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name"""
+        """Get class name."""
         return "AzureCosmosNoSqlKVStore"
 
     @classmethod

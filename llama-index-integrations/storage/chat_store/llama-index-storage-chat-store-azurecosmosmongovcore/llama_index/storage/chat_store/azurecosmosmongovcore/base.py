@@ -28,7 +28,7 @@ def _dict_to_message(d: dict) -> ChatMessage:
 
 
 class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
-    """Creates an Azure Cosmos DB NoSql Chat Store"""
+    """Creates an Azure Cosmos DB NoSql Chat Store."""
 
     _mongo_client = MongoClient = PrivateAttr()
     _database = DatabaseProxy = PrivateAttr()
@@ -65,7 +65,7 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
         db_name: Optional[str] = None,
         collection_name: Optional[str] = None,
     ):
-        """Creates an instance of AzureCosmosMongoVCoreChatStore using a connection string"""
+        """Creates an instance of AzureCosmosMongoVCoreChatStore using a connection string."""
         mongo_client = MongoClient(connection_string, appname=APP_NAME)
 
         return cls(
@@ -148,10 +148,9 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
 
     def get_keys(self) -> List[str]:
         """Get all keys."""
-        keys = self._collection.find({}, {"_id": 1})
-        return keys
+        return self._collection.find({}, {"_id": 1})
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name"""
+        """Get class name."""
         return "AzureCosmosMongoVCoreChatStore"
