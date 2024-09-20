@@ -235,7 +235,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         dense_vector_name = self.dense_vector_name()
         if dense_vector_name == DENSE_VECTOR_NAME_OLD:
             raise ValueError(
-                """The default dense vector name "" is deprecated. Please migrate dense vectors to name 'text-dense'."""
+                """The default dense vector name "" is deprecated. Please migrate dense vectors to name 'text-dense' or fix your version to <0.4.0."""
             )
         ids = []
         points = []
@@ -715,7 +715,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         dense_vector_name = self.dense_vector_name()
         if dense_vector_name == DENSE_VECTOR_NAME_OLD:
             raise ValueError(
-                """The default dense vector name "" is deprecated. Please migrate dense vectors to name 'text-dense'."""
+                """The default dense vector name "" is deprecated. Please migrate dense vectors to name 'text-dense' or fix your version to <0.4.0."""
             )
 
         query_embedding = cast(List[float], query.query_embedding)
@@ -841,7 +841,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         dense_vector_name = await self.adense_vector_name()
         if dense_vector_name == DENSE_VECTOR_NAME_OLD:
             raise ValueError(
-                """The default dense vector name "" is deprecated. Please migrate dense vectors to name 'text-dense'."""
+                """The default dense vector name "" is deprecated. Please migrate dense vectors to name 'text-dense' or fix your version to <0.4.0."""
             )
 
         query_embedding = cast(List[float], query.query_embedding)
