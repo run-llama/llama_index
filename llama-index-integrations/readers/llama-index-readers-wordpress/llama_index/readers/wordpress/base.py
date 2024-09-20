@@ -1,6 +1,6 @@
 """Wordpress reader."""
 import json
-from typing import List
+from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -13,7 +13,9 @@ class WordpressReader(BaseReader):
         wordpress_subdomain (str): Wordpress subdomain
     """
 
-    def __init__(self, url: str, password: str, username: str) -> None:
+    def __init__(
+        self, url: str, password: Optional[str] = None, username: Optional[str] = None
+    ) -> None:
         """Initialize Wordpress reader."""
         self.url = url
         self.username = username

@@ -8,7 +8,10 @@ This loader fetches the text from Wordpress blog posts using the Wordpress API. 
 
 ## Usage
 
-To use this loader, you need to pass base url of the Wordpress installation (e.g. `https://www.mysite.com`), a username, and an application password for the user (more about application passwords [here](https://www.paidmembershipspro.com/create-application-password-wordpress/))
+To use this loader, you need to pass base url of the Wordpress installation
+(e.g. `https://www.mysite.com`) and optionally a username, and an application
+password for the user (more about application passwords
+[here](https://www.paidmembershipspro.com/create-application-password-wordpress/))
 
 ```python
 from llama_index.readers.wordpress import WordpressReader
