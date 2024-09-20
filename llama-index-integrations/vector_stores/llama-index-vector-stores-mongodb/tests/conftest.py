@@ -23,7 +23,7 @@ def documents() -> List[Document]:
     text = Document.example().text
     metadata = Document.example().metadata
     texts = text.split("\n")
-    return [Document(text=text, metadata=metadata) for text in texts]
+    return [Document(text=text, metadata={"text": text}) for text in texts]
 
 
 @pytest.fixture(scope="session")

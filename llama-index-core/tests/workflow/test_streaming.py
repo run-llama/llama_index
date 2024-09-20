@@ -31,7 +31,8 @@ async def test_e2e():
     r = wf.run()
 
     async for ev in r.stream_events():
-        assert "msg" in ev
+        if not isinstance(ev, StopEvent):
+            assert "msg" in ev
 
     await r
 
@@ -62,7 +63,8 @@ async def test_task_raised():
 
     # Make sure we don't block indefinitely here because the step raised
     async for ev in r.stream_events():
-        assert ev.test_param == "foo"
+        if not isinstance(ev, StopEvent):
+            assert ev.test_param == "foo"
 
     # Make sure the await actually caught the exception
     with pytest.raises(ValueError, match="The step raised an error!"):
@@ -93,10 +95,12 @@ async def test_multiple_ongoing_streams():
     stream_2 = wf.run()
 
     async for ev in stream_1.stream_events():
-        assert "msg" in ev
+        if not isinstance(ev, StopEvent):
+            assert "msg" in ev
 
     async for ev in stream_2.stream_events():
-        assert "msg" in ev
+        if not isinstance(ev, StopEvent):
+            assert "msg" in ev
 
 
 @pytest.mark.asyncio()
