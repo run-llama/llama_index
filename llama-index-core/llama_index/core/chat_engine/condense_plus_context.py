@@ -405,8 +405,8 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             assistant_message = ChatMessage(
                 content=full_response, role=MessageRole.ASSISTANT
             )
-            self._memory.put(user_message)
-            self._memory.put(assistant_message)
+            await self._memory.aput(user_message)
+            await self._memory.aput(assistant_message)
 
         return StreamingAgentChatResponse(
             achat_stream=wrapped_gen(response),

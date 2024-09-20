@@ -55,7 +55,7 @@ class BaseChatStore(BaseComponent):
         """Async version of Get messages for a key."""
         return self.get_messages(key)
 
-    async def aadd_message(self, key: str, message: ChatMessage) -> None:
+    async def async_add_message(self, key: str, message: ChatMessage) -> None:
         """Async version of Add a message for a key."""
         self.add_message(key, message)
 

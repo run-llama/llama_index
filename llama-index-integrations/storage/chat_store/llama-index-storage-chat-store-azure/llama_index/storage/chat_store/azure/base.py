@@ -225,7 +225,7 @@ class AzureChatStore(BaseChatStore):
         """Add a message for a key."""
         asyncio.run(self.aadd_message(key, message, idx))
 
-    async def aadd_message(self, key: str, message: ChatMessage, idx: int = None):
+    async def async_add_message(self, key: str, message: ChatMessage, idx: int = None):
         metadata_client = await self._atable_service_client.create_table_if_not_exists(
             self.metadata_table_name
         )
