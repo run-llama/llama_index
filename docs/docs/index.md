@@ -50,7 +50,7 @@ LlamaIndex provides a framework for building agents including the ability to use
 
 ### What are workflows?
 
-[Workflows](./understanding/workflows/) are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications.
+[Workflows](./understanding/workflows/) are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications. You can then [deploy these agentic workflows](./module_guides/workflow/deployment.md) as production microservices.
 
 ### LlamaIndex is the framework for Context-Augmented LLM Applications
 
@@ -143,10 +143,11 @@ Need help? Have a feature suggestion? Join the LlamaIndex community:
 
 We are open-source and always welcome contributions to the project! Check out our [contributing guide](./CONTRIBUTING.md) for full details on how to extend the core library or add an integration to a third party like an LLM, a vector store, an agent tool and more.
 
-## Related projects
+## LlamaIndex Ecosystem
 
 There's more to the LlamaIndex universe! Check out some of our other projects:
 
+- [llama_deploy](https://github.com/run-llama/llama_deploy) | Deploy your agentic workflows as production microservices
 - [LlamaHub](https://llamahub.ai) | A large (and growing!) collection of custom data connectors
 - [SEC Insights](https://secinsights.ai) | A LlamaIndex-powered application for financial research
 - [create-llama](https://www.npmjs.com/package/create-llama) | A CLI tool to quickly scaffold LlamaIndex projects
