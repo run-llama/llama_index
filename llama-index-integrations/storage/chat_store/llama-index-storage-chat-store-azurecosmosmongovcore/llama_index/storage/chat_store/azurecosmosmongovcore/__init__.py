@@ -1,4 +1,4 @@
-from llama_index.storage.chat_store.azurecosmosmongovcore import (
+from llama_index.storage.chat_store.azurecosmosmongovcore.base import (
     AzureCosmosMongoVCoreChatStore,
 )
 

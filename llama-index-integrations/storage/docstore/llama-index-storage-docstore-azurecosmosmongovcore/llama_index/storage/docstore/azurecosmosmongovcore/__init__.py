@@ -1,5 +1,5 @@
-from llama_index.storage.index_store.azurecosmosmongovcore import (
-    AzureCosmosMongoVCoreIndexStore,
+from llama_index.storage.docstore.azurecosmosmongovcore.base import (
+    AzureCosmosMongoVCoreDocumentStore,
 )
 
-__all__ = ["AzureCosmosMongoVCoreIndexStore"]
+__all__ = ["AzureCosmosMongoVCoreDocumentStore"]

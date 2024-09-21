@@ -1,5 +1,5 @@
 from llama_index.core.storage.index_store.keyval_index_store import KVIndexStore
-from llama_index.storage.chat_store.azurecosmosmongovcore import (
+from llama_index.storage.index_store.azurecosmosmongovcore import (
     AzureCosmosMongoVCoreIndexStore,
 )
 

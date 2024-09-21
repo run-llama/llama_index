@@ -1,5 +1,5 @@
 from llama_index.core.storage.kvstore.types import BaseKVStore
-from llama_index.storage.kvstore.azure import AzureCosmosNoSqlKVStore
+from llama_index.storage.kvstore.azurecosmosnosql import AzureCosmosNoSqlKVStore
 
 
 def test_class():

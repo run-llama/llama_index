@@ -1,4 +1,4 @@
-from llama_index.storage.index_store.azurecosmosmongovcore import (
+from llama_index.storage.index_store.azurecosmosmongovcore.base import (
     AzureCosmosNoSqlIndexStore,
 )
 

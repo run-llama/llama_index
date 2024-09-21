@@ -1,4 +1,4 @@
-from llama_index.storage.kvstore.azurecosmosmongovcore import (
+from llama_index.storage.kvstore.azurecosmosmongovcore.base import (
     AzureCosmosMongoVCoreKVStore,
 )
 

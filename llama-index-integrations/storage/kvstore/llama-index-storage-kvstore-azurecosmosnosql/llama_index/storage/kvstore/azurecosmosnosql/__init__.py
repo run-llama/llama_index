@@ -1,3 +1,3 @@
-from llama_index.storage.chat_store.azurecosmosnosql import AzureCosmosNoSqlChatStore
+from llama_index.storage.kvstore.azurecosmosnosql.base import AzureCosmosNoSqlKVStore
 
-__all__ = ["AzureCosmosNoSqlChatStore"]
+__all__ = ["AzureCosmosNoSqlKVStore"]
