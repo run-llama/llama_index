@@ -1,9 +1,7 @@
 import logging
-from abc import ABC
 from typing import Any, Dict, List, Optional
 
-from azure.cosmos import CosmosClient
-from llama_index.core.bridge.pydantic import PrivateAttr
+from azure.cosmos import CosmosClient, DatabaseProxy, ContainerProxy
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store import BaseChatStore
 
@@ -29,12 +27,12 @@ def _dict_to_message(d: dict) -> ChatMessage:
     return ChatMessage.model_validate(d)
 
 
-class AzureCosmosNoSqlChatStore(BaseChatStore, ABC):
+class AzureCosmosNoSqlChatStore(BaseChatStore):
     """Creates an Azure Cosmos DB NoSql Chat Store."""
 
-    _cosmos_client = CosmosClient = PrivateAttr()
-    _database = DatabaseProxy = PrivateAttr()
-    _container = ContainerProxy = PrivateAttr()
+    _cosmos_client = CosmosClient
+    _database = DatabaseProxy
+    _container = ContainerProxy
 
     def __init__(
         self,

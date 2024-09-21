@@ -2,10 +2,11 @@ import logging
 from abc import ABC
 from typing import List, Optional
 
-from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store import BaseChatStore
 from pymongo import MongoClient
+from pymongo.database import Database
+from pymongo.collection import Collection
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +31,9 @@ def _dict_to_message(d: dict) -> ChatMessage:
 class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
     """Creates an Azure Cosmos DB NoSql Chat Store."""
 
-    _mongo_client = MongoClient = PrivateAttr()
-    _database = DatabaseProxy = PrivateAttr()
-    _collection = ContainerProxy = PrivateAttr()
+    _mongo_client = MongoClient
+    _database = Database
+    _collection = Collection
 
     def __init__(
         self,
