@@ -221,33 +221,36 @@ class Florence2MultiModal(HuggingFaceMultiModal):
     Handles chat-style interactions that involve both text and images.
     """
     @override
-    def complete(self, task: str, image_document: ImageDocument, **kwargs: Any) -> CompletionResponse:
-        if type(image_document) is list:
+    def complete(self, task: str, image_documents: ImageDocument, **kwargs: Any) -> CompletionResponse:
+        if type(image_documents) is list:
             print(f"{self.model_name} can handle only one image. Will continue with the first image.")
-            image_document = image_document[0]
+            image_documents = image_documents[0]
 
-        prepared_inputs = self._prepare_messages(task, image_document)
+        prepared_inputs = self._prepare_messages(task, image_documents)
         generated_text = self._generate(prepared_inputs)
         return CompletionResponse(text=generated_text)
     
     @override
-    def chat(self, task: str, image_document: ImageDocument, **kwargs: Any) -> ChatResponse:
-        if type(image_document) is list:
-            print(f"{self.model_name} can handle only one image. Will continue with the first image.")
-            image_document = image_document[0]
+    def chat(self, task: str, image_documents: ImageDocument, **kwargs: Any) -> ChatResponse:
+        if type(image_documents) is list:
+            print(f"{self.model_name} can handleo only one image. Will continue with the first image.")
+            image_documents = image_documents[0]
         
-        prepared_inputs = self._prepare_messages(task, image_document)
+        prepared_inputs = self._prepare_messages(task, image_documents)
         generated_text = self._generate(prepared_inputs)
         return ChatResponse(message=ChatMessage(role="assistant", content=generated_text), raw={"model_output": generated_text})
     
     # TODO: Florence2 works with task_prompts, not user prompts
     # Task prompts are: '<CAPTION>', '<DETAILED_CAPTION>', '<MORE_DETAILED_CAPTION>'
-    def _prepare_messages(self, task: str, image_document: ImageDocument) -> Dict[str, Any]:
+    def _prepare_messages(self, task: str, image_documents: ImageDocument) -> Dict[str, Any]:
         """
         Prepares the input messages and images for Qwen2 models. Images are appended in a custom format.
         """
+        if type(image_documents) is list:
+            print(f"{self.model_name} can handleo only one image. Will continue with the first image.")
+            image_documents = image_documents[0]
         prompt =  task.upper() if task.upper() in ['<CAPTION>', '<DETAILED_CAPTION>', '<MORE_DETAILED_CAPTION>'] else '<DETAILED_CAPTION>'
-        images = Image.open(image_document.image_path)
+        images = Image.open(image_documents.image_path)
         inputs = self._processor(text=prompt, images=images, return_tensors="pt").to(self.device, self.torch_dtype)
         return {"prompt": prompt,
                 "inputs": inputs,
@@ -333,30 +336,33 @@ class PaliGemmaMultiModal(HuggingFaceMultiModal):
     """
 
     @override
-    def complete(self, task: str, image_document: ImageDocument, **kwargs: Any) -> CompletionResponse:
-        if type(image_document) is list:
+    def complete(self, task: str, image_documents: ImageDocument, **kwargs: Any) -> CompletionResponse:
+        if type(image_documents) is list:
             print(f"{self.model_name} can handle only one image. Will continue with the first image.")
-            image_document = image_document[0]
+            image_documents = image_documents[0]
 
-        prepared_inputs = self._prepare_messages(task, image_document)
+        prepared_inputs = self._prepare_messages(task, image_documents)
         generated_text = self._generate(prepared_inputs)
         return CompletionResponse(text=generated_text)
     
     @override
-    def chat(self, task: str, image_document: ImageDocument, **kwargs: Any) -> ChatResponse:
-        if type(image_document) is list:
+    def chat(self, task: str, image_documents: ImageDocument, **kwargs: Any) -> ChatResponse:
+        if type(image_documents) is list:
             print(f"{self.model_name} can handle only one image. Will continue with the first image.")
-            image_document = image_document[0]
+            image_documents = image_documents[0]
         
-        prepared_inputs = self._prepare_messages(task, image_document)
+        prepared_inputs = self._prepare_messages(task, image_documents)
         generated_text = self._generate(prepared_inputs)
         return ChatResponse(message=ChatMessage(role="assistant", content=generated_text), raw={"model_output": generated_text})
     
-    def _prepare_messages(self, messages: ChatMessage, image_document: ImageDocument) -> Dict[str, Any]:
+    def _prepare_messages(self, messages: ChatMessage, image_documents: ImageDocument) -> Dict[str, Any]:
         """
         Prepares the input messages and images for PaliGemma models. Images are appended in a custom format.
         """
-        images = Image.open(image_document.image_path)
+        if type(image_documents) is list:
+            print(f"{self.model_name} can handleo only one image. Will continue with the first image.")
+            image_documents = image_documents[0]
+        images = Image.open(image_documents.image_path)
         inputs = self._processor(text=messages, images=images, return_tensors="pt").to(self.device)
         input_len = inputs["input_ids"].shape[-1]
         return {"inputs": inputs,
