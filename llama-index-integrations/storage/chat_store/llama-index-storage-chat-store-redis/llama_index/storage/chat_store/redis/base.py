@@ -33,8 +33,8 @@ def _dict_to_message(d: dict) -> ChatMessage:
 class RedisChatStore(BaseChatStore):
     """Redis chat store."""
 
-    redis_client: Redis = Field(description="Redis client.")
-    aredis_client: AsyncRedis = Field(default=None, description="Async Redis client.")
+    redis_client: Any = Field(description="Redis client.")
+    aredis_client: Any = Field(default=None, description="Async Redis client.")
     ttl: Optional[int] = Field(default=None, description="Time to live in seconds.")
 
     def __init__(
