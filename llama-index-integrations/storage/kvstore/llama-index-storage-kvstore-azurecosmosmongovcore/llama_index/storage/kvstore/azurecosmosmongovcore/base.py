@@ -108,7 +108,9 @@ class AzureCosmosMongoVCoreKVStore(BaseKVStore, ABC):
             messages = {}
         return messages
 
-    async def aget(self, key: str, collection: str = DEFAULT_COLLECTION) -> dict | None:
+    async def aget(
+        self, key: str, collection: str = DEFAULT_COLLECTION
+    ) -> Optional[dict]:
         """Get a value from the store.
 
         Args:
