@@ -1,4 +1,7 @@
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
+from llama_index.storage.docstore.azurecosmosmongovcore import (
+    AzureCosmosMongoVCoreDocumentStore,
+)
 
 
 def test_class():

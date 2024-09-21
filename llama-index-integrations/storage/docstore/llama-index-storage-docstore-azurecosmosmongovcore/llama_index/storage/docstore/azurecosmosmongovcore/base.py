@@ -6,7 +6,7 @@ from llama_index.storage.kvstore.azurecosmosmongovcore import (
 )
 
 
-APP_NAME = "Llama-Index-CDBMongoVCore-IndexStore-Python"
+APP_NAME = "Llama-Index-CDBMongoVCore-DocumentStore-Python"
 
 
 class AzureCosmosMongoVCoreDocumentStore(KVDocumentStore):
