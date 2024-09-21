@@ -132,7 +132,7 @@ class TestWasonxLLMInference:
             ValueError, match=r"^Did not find 'apikey' or 'token',"
         ) as e_info:
             _ = WatsonxLLM(
-                model=self.TEST_MODEL,
+                model_id=self.TEST_MODEL,
                 url=self.TEST_URL,
                 project_id=self.TEST_PROJECT_ID,
             )
@@ -140,7 +140,7 @@ class TestWasonxLLMInference:
         # CPD scenario
         with pytest.raises(ValueError, match=r"^Did not find instance_id") as e_info:
             _ = WatsonxLLM(
-                model=self.TEST_MODEL,
+                model_id=self.TEST_MODEL,
                 token="123",
                 url="cpd-instance",
                 project_id=self.TEST_PROJECT_ID,
