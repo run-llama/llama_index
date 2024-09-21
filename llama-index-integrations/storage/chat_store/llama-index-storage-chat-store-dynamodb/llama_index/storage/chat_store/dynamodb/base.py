@@ -166,11 +166,18 @@ class DynamoDBChatStore(BaseChatStore):
             )
 
         self._client = session.resource("dynamodb", config=config, **resource_kwargs)
-        self._aclient = async_session.resource(
-            "dynamodb", config=config, **resource_kwargs
-        )
         self._table = self._client.Table(table_name)
-        self._atable = asyncio.run(self._aclient.Table(table_name))
+        asyncio.run(
+            self.init_async_table(table_name, async_session, config, **resource_kwargs)
+        )
+
+    async def init_async_table(
+        self, table_name, async_session, config, **resource_kwargs
+    ):
+        async with async_session.resource(
+            "dynamodb", config=self.botocore_config, **self.resource_kwargs
+        ) as dynamodb:
+            self._atable = await dynamodb.Table(self.table_name)
 
     @classmethod
     def class_name(self) -> str:
