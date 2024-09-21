@@ -322,7 +322,7 @@ class DynamoDBChatStore(BaseChatStore):
         """
         return self.delete_message(key, -1)
 
-    async def adelete_last_message(self, key: str) -> ChatMessage | None:
+    async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
         return self.adelete_message(key, -1)
 
     def get_keys(self) -> List[str]:
