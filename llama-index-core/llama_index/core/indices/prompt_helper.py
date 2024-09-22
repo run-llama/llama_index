@@ -214,8 +214,8 @@ class PromptHelper(BaseComponent):
             prompt_str = get_empty_prompt_txt(prompt)
             num_prompt_tokens = self._token_counter.get_string_tokens(prompt_str)
 
-        print(f"Num prompt tokens: {num_prompt_tokens}")
-        print(f"System prompt tokens: {self._token_counter.get_string_tokens(llm.system_prompt)}")
+        # print(f"Num prompt tokens: {num_prompt_tokens}")
+        # print(f"System prompt tokens: {self._token_counter.get_string_tokens(llm.system_prompt)}")
 
         available_context_size = self._get_available_context_size(num_prompt_tokens)
         result = available_context_size // num_chunks - padding

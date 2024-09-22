@@ -900,10 +900,10 @@ class OpenAI(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
-        from llama_index.core.utilities.token_counting import TokenCounter
-        token_counter = TokenCounter()
-        print(f"Full messages tokens: {token_counter.estimate_tokens_in_messages(messages)}")
-        # print(f">>>>> Full messages: {messages}")
+        # from llama_index.core.utilities.token_counting import TokenCounter
+        # token_counter = TokenCounter()
+        # print(f"Full messages tokens: {token_counter.estimate_tokens_in_messages(messages)}")
+        # # print(f">>>>> Full messages: {messages}")
 
         return {
             "messages": messages,

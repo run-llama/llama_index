@@ -369,8 +369,8 @@ class LLM(BaseLLM):
         )
 
         result = program(llm_kwargs=llm_kwargs, **prompt_args)
-        print(result)
-        print(type(result))
+        # print(result)
+        # print(type(result))
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
