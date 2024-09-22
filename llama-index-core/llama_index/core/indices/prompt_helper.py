@@ -11,7 +11,10 @@ needed), or truncating them so that they fit in a single LLM call.
 import logging
 from copy import deepcopy
 from string import Formatter
-from typing import Callable, List, Optional, Sequence
+from typing import TYPE_CHECKING, Callable, List, Optional, Sequence
+
+if TYPE_CHECKING:
+    from llama_index.core.tools import BaseTool
 
 from llama_index.core.base.llms.types import ChatMessage, LLMMetadata
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -25,10 +28,8 @@ from llama_index.core.prompts import (
     ChatPromptTemplate,
     SelectorPromptTemplate,
 )
-from llama_index.core.program.function_program import get_function_tool
 from llama_index.core.prompts.prompt_utils import get_empty_prompt_txt
 from llama_index.core.schema import BaseComponent
-from llama_index.core.tools import BaseTool
 from llama_index.core.utilities.token_counting import TokenCounter
 
 DEFAULT_PADDING = 5
@@ -156,8 +157,10 @@ class PromptHelper(BaseComponent):
         return context_size_tokens
 
     def _get_tools_from_llm(
-        self, llm: Optional[LLM] = None, tools: Optional[List[BaseTool]] = None
-    ) -> List[BaseTool]:
+        self, llm: Optional[LLM] = None, tools: Optional[List["BaseTool"]] = None
+    ) -> List["BaseTool"]:
+        from llama_index.core.program.function_program import get_function_tool
+
         tools = tools or []
         if isinstance(llm, StructuredLLM):
             tools.append(get_function_tool(llm.output_cls))
@@ -170,7 +173,7 @@ class PromptHelper(BaseComponent):
         num_chunks: int = 1,
         padding: int = 5,
         llm: Optional[LLM] = None,
-        tools: Optional[List[BaseTool]] = None,
+        tools: Optional[List["BaseTool"]] = None,
     ) -> int:
         """Get available chunk size.
 
@@ -233,7 +236,8 @@ class PromptHelper(BaseComponent):
             [x.metadata.to_openai_tool() for x in tools]
         )
 
-        if llm is not None:
+        # structured llms cannot have system prompts currently
+        if llm is not None and not isinstance(llm, StructuredLLM):
             num_prompt_tokens += self._token_counter.get_string_tokens(
                 llm.system_prompt or ""
             )
@@ -250,7 +254,7 @@ class PromptHelper(BaseComponent):
         num_chunks: int = 1,
         padding: int = DEFAULT_PADDING,
         llm: Optional[LLM] = None,
-        tools: Optional[List[BaseTool]] = None,
+        tools: Optional[List["BaseTool"]] = None,
     ) -> TokenTextSplitter:
         """Get text splitter configured to maximally pack available context window,
         taking into account of given prompt, and desired number of chunks.
@@ -274,7 +278,7 @@ class PromptHelper(BaseComponent):
         text_chunks: Sequence[str],
         padding: int = DEFAULT_PADDING,
         llm: Optional[LLM] = None,
-        tools: Optional[List[BaseTool]] = None,
+        tools: Optional[List["BaseTool"]] = None,
     ) -> List[str]:
         """Truncate text chunks to fit available context window."""
         text_splitter = self.get_text_splitter_given_prompt(
@@ -292,7 +296,7 @@ class PromptHelper(BaseComponent):
         text_chunks: Sequence[str],
         padding: int = DEFAULT_PADDING,
         llm: Optional[LLM] = None,
-        tools: Optional[List[BaseTool]] = None,
+        tools: Optional[List["BaseTool"]] = None,
     ) -> List[str]:
         """Repack text chunks to fit available context window.
 

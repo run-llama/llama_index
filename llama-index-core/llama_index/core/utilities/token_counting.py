@@ -88,4 +88,7 @@ class TokenCounter:
         Returns:
             int: The estimated token count.
         """
+        if not tools:
+            return 0
+
         return self.get_string_tokens(str(tools))
