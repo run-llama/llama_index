@@ -885,7 +885,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         schema.add_field(
             field_name="id",
             datatype=DataType.VARCHAR,
-            max_length=65535,
+            max_length=65_535,
             is_primary=True,
         )
         schema.add_field(
@@ -895,13 +895,15 @@ class MilvusVectorStore(BasePydanticVectorStore):
         )
         schema.add_field(
             field_name=self.doc_id_field,
-            datatype=DataType.VARCHAR
+            datatype=DataType.VARCHAR,
+            max_length=65_535,
         )
         if self.scalar_field_names is not None and self.scalar_field_types is not None:
             if len(self.scalar_field_names) != len(self.scalar_field_types):
                 raise ValueError("scalar_field_names and scalar_field_types must have same length.")
 
         for field_name, field_type in zip(self.scalar_field_names, self.scalar_field_types):
-            schema.add_field(field_name=field_name, datatype=field_type)
+            max_length = 65_535 if field_type == DataType.VARCHAR else None
+            schema.add_field(field_name=field_name, datatype=field_type, max_length=max_length)
 
         return schema
