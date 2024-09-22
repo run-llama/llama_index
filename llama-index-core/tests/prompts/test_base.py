@@ -274,3 +274,21 @@ def test_function_mappings() -> None:
         "user: hello tmp1-tmp2 tmp2\n"
         "assistant: "
     )
+
+
+def test_template_with_json() -> None:
+    """Test partial format."""
+    prompt_txt = 'hello {text} {foo} {"bar": "baz"}'
+    prompt = PromptTemplate(prompt_txt)
+
+    assert prompt.format(foo="foo2", text="world") == 'hello world foo2 {"bar": "baz"}'
+
+    assert prompt.format_messages(foo="foo2", text="world") == [
+        ChatMessage(content='hello world foo2 {"bar": "baz"}', role=MessageRole.USER)
+    ]
+
+    test_case_2 = PromptTemplate("test {message} {test}")
+    assert test_case_2.format(message="message") == "test message {test}"
+
+    test_case_3 = PromptTemplate("test {{message}} {{test}}")
+    assert test_case_3.format(message="message", test="test") == "test {message} {test}"
