@@ -68,9 +68,6 @@ from llama_index.llms.openai.utils import (
 from llama_index.core.bridge.pydantic import (
     BaseModel,
 )
-from llama_index.core.bridge.pydantic import (
-    BaseModel,
-)
 
 from openai import AsyncOpenAI, AzureOpenAI
 from openai import OpenAI as SyncOpenAI
