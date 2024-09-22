@@ -46,12 +46,10 @@ class RedisChatStore(BaseChatStore):
         **kwargs: Any,
     ) -> None:
         """Initialize."""
-        redis_client = redis_client or self._get_client(redis_url, **kwargs)
-        aredis_client = aredis_client or self._aget_client(redis_url, **kwargs)
+        super().__init__(ttl=ttl)
 
-        super().__init__(
-            redis_client=redis_client, aredis_client=aredis_client, ttl=ttl
-        )
+        self.redis_client = redis_client or self._get_client(redis_url, **kwargs)
+        self.aredis_client = aredis_client or self._aget_client(redis_url, **kwargs)
 
     @classmethod
     def class_name(cls) -> str:
