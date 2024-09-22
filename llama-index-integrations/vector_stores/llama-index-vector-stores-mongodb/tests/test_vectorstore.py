@@ -107,7 +107,7 @@ def test_vectorstore(
             "How do we best augment LLMs with our own private data?",
             "easily used with LLMs.",
         ]
-        filters_compoound = MetadataFilters(
+        filters_compound = MetadataFilters(
             condition=FilterCondition.AND,
             filters=[
                 MetadataFilter(
@@ -122,7 +122,7 @@ def test_vectorstore(
             query_str=query_str,
             query_embedding=query_embedding,
             similarity_top_k=n_similar,
-            filters=filters_compoound,
+            filters=filters_compound,
         )
         responses_with_filter_compound = vector_store.query(query=query)
         assert len(responses_with_filter_compound.ids) == n_similar
@@ -158,7 +158,7 @@ def test_vectorstore(
         query = VectorStoreQuery(
             query_str="llamaindex",
             query_embedding=query_embedding,  # "What are LLMs useful for?"
-            hybrid_top_k=n_similar,
+            similarity_top_k=n_similar,
             mode=VectorStoreQueryMode.HYBRID,
             alpha=0.5,
         )

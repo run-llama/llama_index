@@ -333,7 +333,7 @@ class LLM(BaseLLM):
 
         Examples:
             ```python
-            from pydantic.v1 import BaseModel
+            from pydantic import BaseModel
 
             class Test(BaseModel):
                 \"\"\"My test class.\"\"\"
@@ -386,7 +386,7 @@ class LLM(BaseLLM):
 
         Examples:
             ```python
-            from pydantic.v1 import BaseModel
+            from pydantic import BaseModel
 
             class Test(BaseModel):
                 \"\"\"My test class.\"\"\"
@@ -441,7 +441,7 @@ class LLM(BaseLLM):
 
         Examples:
             ```python
-            from pydantic.v1 import BaseModel
+            from pydantic import BaseModel
 
             class Test(BaseModel):
                 \"\"\"My test class.\"\"\"
@@ -500,7 +500,7 @@ class LLM(BaseLLM):
 
         Examples:
             ```python
-            from pydantic.v1 import BaseModel
+            from pydantic import BaseModel
 
             class Test(BaseModel):
                 \"\"\"My test class.\"\"\"
@@ -877,11 +877,13 @@ class LLMCompleteComponent(BaseLLMComponent):
 
         # do special check to see if prompt is a list of chat messages
         if isinstance(input["prompt"], get_args(List[ChatMessage])):
-            input["prompt"] = self.llm.messages_to_prompt(input["prompt"])
+            if self.llm.messages_to_prompt:
+                input["prompt"] = self.llm.messages_to_prompt(input["prompt"])
             input["prompt"] = validate_and_convert_stringable(input["prompt"])
         else:
             input["prompt"] = validate_and_convert_stringable(input["prompt"])
-            input["prompt"] = self.llm.completion_to_prompt(input["prompt"])
+            if self.llm.completion_to_prompt:
+                input["prompt"] = self.llm.completion_to_prompt(input["prompt"])
 
         return input
 
@@ -891,6 +893,8 @@ class LLMCompleteComponent(BaseLLMComponent):
         # non-trivial to figure how to support chat/complete/etc.
         prompt = kwargs["prompt"]
         # ignore all other kwargs for now
+
+        response: Any
         if self.streaming:
             response = self.llm.stream_complete(prompt, formatted=True)
         else:
@@ -941,6 +945,8 @@ class LLMChatComponent(BaseLLMComponent):
         # TODO: support only complete for now
         # non-trivial to figure how to support chat/complete/etc.
         messages = kwargs["messages"]
+
+        response: Any
         if self.streaming:
             response = self.llm.stream_chat(messages)
         else:
@@ -952,6 +958,8 @@ class LLMChatComponent(BaseLLMComponent):
         # TODO: support only complete for now
         # non-trivial to figure how to support chat/complete/etc.
         messages = kwargs["messages"]
+
+        response: Any
         if self.streaming:
             response = await self.llm.astream_chat(messages)
         else:

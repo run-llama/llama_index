@@ -47,6 +47,7 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
             | retry_if_exception_type(google.api_core.exceptions.ResourceExhausted)
             | retry_if_exception_type(google.api_core.exceptions.Aborted)
             | retry_if_exception_type(google.api_core.exceptions.DeadlineExceeded)
+            | retry_if_exception_type(google.api_core.exceptions.InternalServerError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )

@@ -64,6 +64,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         llm: Optional[LLM] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        callback_manager: Optional[CallbackManager] = None,
         # response synthesizer args
         response_mode: ResponseMode = ResponseMode.COMPACT,
         text_qa_template: Optional[BasePromptTemplate] = None,
@@ -81,6 +82,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             retriever (BaseRetriever): A retriever object.
             node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
                 node postprocessors.
+            callback_manager (Optional[CallbackManager]): A callback manager.
             verbose (bool): Whether to print out debug info.
             response_mode (ResponseMode): A ResponseMode object.
             text_qa_template (Optional[BasePromptTemplate]): A BasePromptTemplate
@@ -108,7 +110,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             streaming=streaming,
         )
 
-        callback_manager = Settings.callback_manager
+        callback_manager = callback_manager or Settings.callback_manager
 
         return cls(
             retriever=retriever,

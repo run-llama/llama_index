@@ -56,7 +56,7 @@ class Xinference(CustomLLM):
     model_uid: str = Field(description="The Xinference model to use.")
     endpoint: str = Field(description="The Xinference endpoint URL to use.")
     temperature: float = Field(
-        description="The temperature to use for sampling.", gte=0.0, lte=1.0
+        description="The temperature to use for sampling.", ge=0.0, le=1.0
     )
     max_tokens: int = Field(
         description="The maximum new tokens to generate as answer.", gt=0

@@ -26,13 +26,13 @@ class PythonicallyPrintingBaseHandler(BaseCallbackHandler):
     ) -> None:
         self.logger: Optional[logging.Logger] = logger
         super().__init__(
-            event_starts_to_ignore=event_starts_to_ignore,
-            event_ends_to_ignore=event_ends_to_ignore,
+            event_starts_to_ignore=event_starts_to_ignore or [],
+            event_ends_to_ignore=event_ends_to_ignore or [],
         )
 
-    def _print(self, str) -> None:
+    def _print(self, print_str: str) -> None:
         if self.logger:
-            self.logger.debug(str)
+            self.logger.debug(print_str)
         else:
             # This branch is to preserve existing behavior.
-            print(str, flush=True)
+            print(print_str, flush=True)

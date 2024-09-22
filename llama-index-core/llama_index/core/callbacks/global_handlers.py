@@ -28,7 +28,7 @@ def create_global_handler(
                 "Please install it using `pip install llama-index-callbacks-wandb`"
             )
 
-        handler: BaseCallbackHandler = WandbCallbackHandler(**eval_params)
+        handler = WandbCallbackHandler(**eval_params)
     elif eval_mode == "openinference":
         try:
             from llama_index.callbacks.openinference import (
@@ -132,6 +132,17 @@ def create_global_handler(
                 "Please install it using `pip install llama-index-callbacks-literalai`"
             )
         handler = literalai_callback_handler(**eval_params)
+    elif eval_mode == "opik":
+        try:
+            from llama_index.callbacks.opik import (
+                opik_callback_handler,
+            )  # pants: no-infer-dep
+        except ImportError:
+            raise ImportError(
+                "Opik Handler is not installed. "
+                "Please install it using `pip install llama-index-callbacks-opik`"
+            )
+        handler = opik_callback_handler(**eval_params)
     else:
         raise ValueError(f"Eval mode {eval_mode} not supported.")
 

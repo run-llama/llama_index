@@ -90,7 +90,7 @@ class RagCLI(BaseModel):
     )
     chat_engine: Optional[CondenseQuestionChatEngine] = Field(
         description="Chat engine to use for chatting.",
-        default_factory=None,
+        default=None,
     )
     file_extractor: Optional[Dict[str, BaseReader]] = Field(
         description="File extractor to use for extracting text from files.",
