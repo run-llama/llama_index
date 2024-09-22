@@ -39,17 +39,22 @@ Let's think step by step:
 Final Answer: Provide your answer here. Ensure it is as concise as possible, without any explanation.
 
 Confidence: Rate your confidence in the answer from 1 (low) to 5 (high).
+
+Your response should be in the exact format:
+
+<answer>
+<confidence_value>
+
+Replace <answer> with your actual answer and <confidence_value> with your actual confidence rating.
 """
 text_prompt = PromptTemplate(template=text_prompt_str)
 
-
 class FinalAnswerOutputParser(ChainableOutputParser):
     """Output parser for the ErsatzO1 approach."""
-
     def parse(self, output: str) -> Optional[str]:
-        lines = output.split("Final Answer:")
-        if len(lines) > 1:
-            return lines[-1].strip()
+        lines = output.strip().split('\n')
+        if len(lines) >= 2:
+            return output.strip()  # Return the entire formatted output
         return None
 
     def format(self, query: Any) -> str:
@@ -58,8 +63,13 @@ class FinalAnswerOutputParser(ChainableOutputParser):
 
 def parse_response(response: str) -> Tuple[str, int]:
     """Parse the response from the LLM in the ErsatzO1 approach."""
-    answer = response.split("Final Answer:")[1].split("Confidence:")[0].strip()
-    confidence = int(response.split("Confidence:")[1].strip())
+    lines = response.strip().split('\n')
+    if len(lines) != 2:
+        raise ValueError("Response format is incorrect")
+
+    answer = lines[0].strip("'")  # Remove surrounding quotes if present
+    confidence = int(lines[1].strip())
+
     return answer, confidence
 
 
@@ -69,7 +79,7 @@ async def async_textual_reasoning(
         llm: LLM,
         num_paths: int = 5,
         verbose: bool = False,
-        temperature: float = 0.7,
+        temperature: float = 0.01,
 ) -> List[Tuple[str, int]]:
     """
     Perform asynchronous textual reasoning using the ErsatzO1 approach.
