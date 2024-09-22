@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import tempfile
 from typing import Any, Dict, List, Union, Optional
-from typing import Any, Dict, List, Optional
 
 import requests
 from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
@@ -37,6 +36,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         sharepoint_folder_id (Optional[str]): The ID of the SharePoint folder to download from. Overrides sharepoint_folder_path.
         drive_name (Optional[str]): The name of the drive to download from.
         drive_id (Optional[str]): The ID of the drive to download from. Overrides drive_name.
+        required_exts (Optional[List[str]]): List of required extensions. Default is None.
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that
                                                           file to text. See `SimpleDirectoryReader` for more details.
         attach_permission_metadata (bool): If True, the reader will attach permission metadata to the documents. Set to False if your vector store
@@ -50,6 +50,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
     sharepoint_site_id: Optional[str] = None
     sharepoint_folder_path: Optional[str] = None
     sharepoint_folder_id: Optional[str] = None
+    required_exts: Optional[List[str]] = None
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
         default=None, exclude=True
     )
@@ -70,6 +71,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         sharepoint_site_name: Optional[str] = None,
         sharepoint_folder_path: Optional[str] = None,
         sharepoint_folder_id: Optional[str] = None,
+        required_exts: Optional[List[str]] = None,
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         drive_name: Optional[str] = None,
         drive_id: Optional[str] = None,
@@ -82,6 +84,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             sharepoint_site_name=sharepoint_site_name,
             sharepoint_folder_path=sharepoint_folder_path,
             sharepoint_folder_id=sharepoint_folder_id,
+            required_exts=required_exts,
             file_extractor=file_extractor,
             drive_name=drive_name,
             drive_id=drive_id,
@@ -530,6 +533,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         simple_loader = SimpleDirectoryReader(
             download_dir,
+            required_exts=self.required_exts,
             file_extractor=self.file_extractor,
             file_metadata=get_metadata,
             recursive=recursive,
