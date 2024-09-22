@@ -13,7 +13,7 @@ from itertools import repeat
 from pathlib import Path, PurePosixPath
 import fsspec
 from fsspec.implementations.local import LocalFileSystem
-from typing import Any, Callable, Dict, Generator, List, Optional, Type, Set
+from typing import Any, Callable, Dict, Generator, List, Optional, Set, Type, Union
 
 from llama_index.core.readers.base import BaseReader, ResourcesReaderMixin
 from llama_index.core.async_utils import run_jobs, get_asyncio_module
@@ -182,7 +182,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
     Automatically select the best file reader given file extensions.
 
     Args:
-        input_dir (str): Path to the directory.
+        input_dir (Union[Path, str]): Path to the directory.
         input_files (List): List of file paths to read
             (Optional; overrides input_dir, exclude)
         exclude (List): glob of python file paths to exclude (Optional)
@@ -215,7 +215,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
     def __init__(
         self,
-        input_dir: Optional[str] = None,
+        input_dir: Optional[Union[Path, str]] = None,
         input_files: Optional[List] = None,
         exclude: Optional[List] = None,
         exclude_hidden: bool = True,
