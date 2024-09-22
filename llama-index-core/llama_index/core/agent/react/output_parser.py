@@ -93,7 +93,7 @@ class ReActOutputParser(BaseOutputParser):
         {EXPECTED_OUTPUT_INSTRUCTIONS}
         """
         if "Thought:" not in output:
-            if "Action:" in output and "Action Input:" in output:
+            if "Action:" in output or "Action Input:" in output:
                 raise ValueError(f"{COULD_NOT_PARSE_TXT} {output}")
             # NOTE: handle the case where the agent directly outputs the answer
             # instead of following the thought-answer format
