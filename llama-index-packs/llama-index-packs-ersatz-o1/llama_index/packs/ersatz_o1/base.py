@@ -79,7 +79,7 @@ async def async_textual_reasoning(
         llm: LLM,
         num_paths: int = 5,
         verbose: bool = False,
-        temperature: float = 0.01,
+        temperature: float = 1.99,
 ) -> List[Tuple[str, int]]:
     """
     Perform asynchronous textual reasoning using the ErsatzO1 approach.
@@ -96,8 +96,11 @@ async def async_textual_reasoning(
             question=query_str,
             context=context,
         )
-        answer, confidence = parse_response(str(response))
-        results.append((answer, confidence))
+        try:
+            answer, confidence = parse_response(str(response))
+            results.append((answer, confidence))
+        except:
+            print(f"Error parsing response: {response}")
 
     return results
 
