@@ -1,5 +1,62 @@
 # ChangeLog
 
+## [2024-09-20]
+
+### `llama-index-core` [0.11.11]
+
+- Use response synthesizer in context chat engines (#16017)
+- Async chat memory operation (#16127)
+- Sql query add option for markdown response (#16103)
+- Add support for Path for SimpleDirectoryReader (#16108)
+- Update chat message class for multi-modal (#15969)
+- fix: `handler.stream_events()` doesn't yield StopEvent (#16115)
+- pass `hybrid_top_k` in vector retriever (#16105)
+
+### `llama-index-embeddings-elasticsearch` [0.2.1]
+
+- fix elasticsearch embedding async function (#16083)
+
+### `llama-index-embeddings-jinaai` [0.3.1]
+
+- feat: update JinaEmbedding for v3 release (#15971)
+
+### `llama-index-experimental` [0.3.3]
+
+- Enhance Pandas Query Engine Output Processor (#16052)
+
+### `llama-index-indices-managed-vertexai` [0.1.1]
+
+- fix incorrect parameters in VertexAIIndex client (#16080)
+
+### `llama-index-node-parser-topic` [0.1.0]
+
+- Add TopicNodeParser based on MedGraphRAG paper (#16131)
+
+### `llama-index-multi-modal-llms-ollama` [0.3.2]
+
+- Implement async for multi modal ollama (#16091)
+
+### `llama-index-postprocessor-cohere-rerank` [0.2.1]
+
+- feat: add configurable base_url field in rerank (#16050)
+
+### `llama-index-readers-file` [0.2.2]
+
+- fix bug missing import for bytesio (#16096)
+
+### `llama-index-readers-wordpress` [0.2.2]
+
+- Wordpress: Allow control of whether Pages and/or Posts are retrieved (#16128)
+- Fix Issue 16071: wordpress requires username, password (#16072)
+
+### `llama-index-vector-stores-lancedb` [0.2.1]
+
+- fix hybrid search with latest lancedb client (#16057)
+
+### `llama-index-vector-stores-mongodb` [0.3.0]
+
+- Fix mongodb hybrid search top-k specs (#16105)
+
 ## [2024-09-16]
 
 ### `llama-index-core` [0.11.10]

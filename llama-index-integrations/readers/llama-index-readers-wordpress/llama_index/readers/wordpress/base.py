@@ -1,5 +1,7 @@
 """Wordpress reader."""
 import json
+import warnings
+
 from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
@@ -11,15 +13,24 @@ class WordpressReader(BaseReader):
 
     Args:
         wordpress_subdomain (str): Wordpress subdomain
+        get_pages (bool): Retrieve static Wordpress 'pages'.  Default True.
+        get_posts (bool): Retrieve Wordpress 'posts' (blog entries).  Default True.
     """
 
     def __init__(
-        self, url: str, password: Optional[str] = None, username: Optional[str] = None
+        self,
+        url: str,
+        password: Optional[str] = None,
+        username: Optional[str] = None,
+        get_pages: bool = True,
+        get_posts: bool = True,
     ) -> None:
         """Initialize Wordpress reader."""
         self.url = url
         self.username = username
         self.password = password
+        self.get_pages = get_pages
+        self.get_posts = get_posts
 
     def load_data(self) -> List[Document]:
         """Load data from the workspace.
@@ -27,18 +38,28 @@ class WordpressReader(BaseReader):
         Returns:
             List[Document]: List of documents.
         """
-        from bs4 import BeautifulSoup
+        from bs4 import BeautifulSoup, GuessedAtParserWarning
+
+        #  Suppressing this warning because guessing at the parser is the
+        #  desired behavior -- we don't want to force lxml on packages
+        #  where it's not installed.
+        warnings.filterwarnings("ignore", category=GuessedAtParserWarning)
 
         results = []
+        articles = []
 
-        articles = self.get_all_posts()
+        if self.get_pages:
+            articles.extend(self.get_all_posts("pages"))
+
+        if self.get_posts:
+            articles.extend(self.get_all_posts("posts"))
 
         for article in articles:
             body = article.get("content", {}).get("rendered", None)
-            if not body:
+            if body is None:
                 body = article.get("content")
 
-            soup = BeautifulSoup(body, "html.parser")
+            soup = BeautifulSoup(body)
             body = soup.get_text()
 
             title = article.get("title", {}).get("rendered", None)
@@ -60,12 +81,12 @@ class WordpressReader(BaseReader):
             )
         return results
 
-    def get_all_posts(self):
+    def get_all_posts(self, post_type: str):
         posts = []
         next_page = 1
 
         while True:
-            response = self.get_posts_page(next_page)
+            response = self.get_posts_page(post_type, next_page)
             posts.extend(response["articles"])
             next_page = response["next_page"]
 
@@ -74,10 +95,10 @@ class WordpressReader(BaseReader):
 
         return posts
 
-    def get_posts_page(self, current_page: int = 1):
+    def get_posts_page(self, post_type: str, current_page: int = 1):
         import requests
 
-        url = f"{self.url}/wp-json/wp/v2/posts?per_page=100&page={current_page}"
+        url = f"{self.url}/wp-json/wp/v2/{post_type}?per_page=100&page={current_page}"
 
         response = requests.get(url)
         headers = response.headers

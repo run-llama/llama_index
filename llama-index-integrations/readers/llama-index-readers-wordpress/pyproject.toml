@@ -18,7 +18,7 @@ WordpressReader = "bbornsztein"
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.9"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
@@ -29,10 +29,10 @@ license = "MIT"
 maintainers = ["bbornsztein"]
 name = "llama-index-readers-wordpress"
 readme = "README.md"
-version = "0.2.1"
+version = "0.2.2"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -43,6 +43,7 @@ pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
 pytest-mock = "3.11.1"
+responses = "^0.25.3"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
