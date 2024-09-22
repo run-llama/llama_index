@@ -182,6 +182,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
                 prompt=query_template,
                 num_chunks=len(cur_node_list),
+                llm=self._llm,
             )
             numbered_node_text = get_numbered_text_from_nodes(
                 cur_node_list, text_splitter=text_splitter
@@ -201,6 +202,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
                 prompt=query_template_multiple,
                 num_chunks=len(cur_node_list),
+                llm=self._llm,
             )
             numbered_node_text = get_numbered_text_from_nodes(
                 cur_node_list, text_splitter=text_splitter
@@ -296,6 +298,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
                 prompt=query_template,
                 num_chunks=len(cur_node_list),
+                llm=self._llm,
             )
             numbered_node_text = get_numbered_text_from_nodes(
                 cur_node_list, text_splitter=text_splitter
@@ -315,6 +318,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
                 prompt=query_template_multiple,
                 num_chunks=len(cur_node_list),
+                llm=self._llm,
             )
             numbered_node_text = get_numbered_text_from_nodes(
                 cur_node_list, text_splitter=text_splitter

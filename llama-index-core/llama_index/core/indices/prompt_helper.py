@@ -17,6 +17,7 @@ from llama_index.core.base.llms.types import ChatMessage, LLMMetadata
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.llms.llm import LLM
+from llama_index.core.llms.structured_llm import StructuredLLM
 from llama_index.core.node_parser.text.token import TokenTextSplitter
 from llama_index.core.node_parser.text.utils import truncate_text
 from llama_index.core.prompts import (
@@ -24,8 +25,10 @@ from llama_index.core.prompts import (
     ChatPromptTemplate,
     SelectorPromptTemplate,
 )
+from llama_index.core.program.function_program import get_function_tool
 from llama_index.core.prompts.prompt_utils import get_empty_prompt_txt
 from llama_index.core.schema import BaseComponent
+from llama_index.core.tools import BaseTool
 from llama_index.core.utilities.token_counting import TokenCounter
 
 DEFAULT_PADDING = 5
@@ -152,12 +155,22 @@ class PromptHelper(BaseComponent):
             )
         return context_size_tokens
 
+    def _get_tools_from_llm(
+        self, llm: Optional[LLM] = None, tools: Optional[List[BaseTool]] = None
+    ) -> List[BaseTool]:
+        tools = tools or []
+        if isinstance(llm, StructuredLLM):
+            tools.append(get_function_tool(llm.output_cls))
+
+        return tools
+
     def _get_available_chunk_size(
         self,
         prompt: BasePromptTemplate,
         num_chunks: int = 1,
         padding: int = 5,
         llm: Optional[LLM] = None,
+        tools: Optional[List[BaseTool]] = None,
     ) -> int:
         """Get available chunk size.
 
@@ -169,6 +182,8 @@ class PromptHelper(BaseComponent):
         - By default, we use padding of 5 (to save space for formatting needs).
         - Available chunk size is further clamped to chunk_size_limit if specified.
         """
+        tools = self._get_tools_from_llm(llm=llm, tools=tools)
+
         if isinstance(prompt, SelectorPromptTemplate):
             prompt = prompt.select(llm=llm)
 
@@ -210,9 +225,11 @@ class PromptHelper(BaseComponent):
             num_prompt_tokens = self._token_counter.estimate_tokens_in_messages(
                 partial_messages
             )
+            num_prompt_tokens += self._token_counter.estimate_tokens_in_tools(tools)
         else:
             prompt_str = get_empty_prompt_txt(prompt)
             num_prompt_tokens = self._token_counter.get_string_tokens(prompt_str)
+            num_prompt_tokens += self._token_counter.estimate_tokens_in_tools(tools)
 
         available_context_size = self._get_available_context_size(num_prompt_tokens)
         result = available_context_size // num_chunks - padding
@@ -226,12 +243,13 @@ class PromptHelper(BaseComponent):
         num_chunks: int = 1,
         padding: int = DEFAULT_PADDING,
         llm: Optional[LLM] = None,
+        tools: Optional[List[BaseTool]] = None,
     ) -> TokenTextSplitter:
         """Get text splitter configured to maximally pack available context window,
         taking into account of given prompt, and desired number of chunks.
         """
         chunk_size = self._get_available_chunk_size(
-            prompt, num_chunks, padding=padding, llm=llm
+            prompt, num_chunks, padding=padding, llm=llm, tools=tools
         )
         if chunk_size <= 0:
             raise ValueError(f"Chunk size {chunk_size} is not positive.")
@@ -249,6 +267,7 @@ class PromptHelper(BaseComponent):
         text_chunks: Sequence[str],
         padding: int = DEFAULT_PADDING,
         llm: Optional[LLM] = None,
+        tools: Optional[List[BaseTool]] = None,
     ) -> List[str]:
         """Truncate text chunks to fit available context window."""
         text_splitter = self.get_text_splitter_given_prompt(
@@ -256,6 +275,7 @@ class PromptHelper(BaseComponent):
             num_chunks=len(text_chunks),
             padding=padding,
             llm=llm,
+            tools=tools,
         )
         return [truncate_text(chunk, text_splitter) for chunk in text_chunks]
 
@@ -265,6 +285,7 @@ class PromptHelper(BaseComponent):
         text_chunks: Sequence[str],
         padding: int = DEFAULT_PADDING,
         llm: Optional[LLM] = None,
+        tools: Optional[List[BaseTool]] = None,
     ) -> List[str]:
         """Repack text chunks to fit available context window.
 
@@ -273,7 +294,7 @@ class PromptHelper(BaseComponent):
 
         """
         text_splitter = self.get_text_splitter_given_prompt(
-            prompt, padding=padding, llm=llm
+            prompt, padding=padding, llm=llm, tools=tools
         )
         combined_str = "\n\n".join([c.strip() for c in text_chunks if c.strip()])
         return text_splitter.split_text(combined_str)
