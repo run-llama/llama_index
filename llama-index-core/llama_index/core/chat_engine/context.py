@@ -302,8 +302,8 @@ class ContextChatEngine(BaseChatEngine):
         user_message = ChatMessage(content=message, role=MessageRole.USER)
         ai_message = ChatMessage(content=str(response), role=MessageRole.ASSISTANT)
 
-        self._memory.put(user_message)
-        self._memory.put(ai_message)
+        await self._memory.aput(user_message)
+        await self._memory.aput(ai_message)
 
         return AgentChatResponse(
             response=str(response),
@@ -354,8 +354,8 @@ class ContextChatEngine(BaseChatEngine):
 
             user_message = ChatMessage(content=message, role=MessageRole.USER)
             ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
-            self._memory.put(user_message)
-            self._memory.put(ai_message)
+            await self._memory.aput(user_message)
+            await self._memory.aput(ai_message)
 
         return StreamingAgentChatResponse(
             achat_stream=wrapped_gen(response),

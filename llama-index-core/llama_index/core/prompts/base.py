@@ -304,7 +304,9 @@ class ChatPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
 
         messages: List[ChatMessage] = []
         for message_template in self.message_templates:
-            template_vars = get_template_vars(message_template.content or "")
+            message_content = message_template.content or ""
+
+            template_vars = get_template_vars(message_content)
             relevant_kwargs = {
                 k: v for k, v in mapped_all_kwargs.items() if k in template_vars
             }
