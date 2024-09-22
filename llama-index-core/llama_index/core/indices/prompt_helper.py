@@ -229,10 +229,14 @@ class PromptHelper(BaseComponent):
             prompt_str = get_empty_prompt_txt(prompt)
             num_prompt_tokens = self._token_counter.get_string_tokens(prompt_str)
 
-        num_prompt_tokens += self._token_counter.estimate_tokens_in_tools(tools)
-        num_prompt_tokens += self._token_counter.get_string_tokens(
-            llm.system_prompt or ""
+        num_prompt_tokens += self._token_counter.estimate_tokens_in_tools(
+            [x.metadata.to_openai_tool() for x in tools]
         )
+
+        if llm is not None:
+            num_prompt_tokens += self._token_counter.get_string_tokens(
+                llm.system_prompt or ""
+            )
 
         available_context_size = self._get_available_context_size(num_prompt_tokens)
         result = available_context_size // num_chunks - padding
