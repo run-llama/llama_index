@@ -21,7 +21,7 @@ class SafeFormatter:
         return str(self.format_dict.get(key, match.group(0)))
 
 
-def format_string(string_to_format: str, **kwargs: Dict[str, str]) -> str:
+def format_string(string_to_format: str, **kwargs: str) -> str:
     """Format a string with kwargs."""
     formatter = SafeFormatter(format_dict=kwargs)
     return formatter.format(string_to_format)
