@@ -178,6 +178,14 @@ class LLM(BaseLLM):
             Pydantic program mode to use for structured prediction.
     """
 
+    context_window: Optional[int] = Field(
+        default=None, description=(
+            "The maximum number of context tokens for the model."
+            "Should not be set unless you would like to override the default."
+            "(You may want to do this in special cases where the tokenizer is inexact, and you "
+            "need to lower the context window to avoid tokenization errors.)"
+        )
+    )
     system_prompt: Optional[str] = Field(
         default=None, description="System prompt for LLM calls."
     )
@@ -361,6 +369,8 @@ class LLM(BaseLLM):
         )
 
         result = program(llm_kwargs=llm_kwargs, **prompt_args)
+        print(result)
+        print(type(result))
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
@@ -852,7 +862,12 @@ class LLM(BaseLLM):
         """Return a structured LLM around a given object."""
         from llama_index.core.llms.structured_llm import StructuredLLM
 
-        return StructuredLLM(llm=self, output_cls=output_cls, **kwargs)
+        return StructuredLLM(
+            llm=self, 
+            output_cls=output_cls, 
+            system_prompt=self.system_prompt,
+            **kwargs
+        )
 
 
 class BaseLLMComponent(QueryComponent):

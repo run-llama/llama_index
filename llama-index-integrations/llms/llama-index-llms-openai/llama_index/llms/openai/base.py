@@ -333,7 +333,7 @@ class OpenAI(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=openai_modelname_to_contextsize(self._get_model_name()),
+            context_window=self.context_window or openai_modelname_to_contextsize(self._get_model_name()),
             num_output=self.max_tokens or -1,
             is_chat_model=is_chat_model(model=self._get_model_name()),
             is_function_calling_model=is_function_calling_model(
@@ -899,6 +899,11 @@ class OpenAI(FunctionCallingLLM):
         messages = chat_history or []
         if user_msg:
             messages.append(user_msg)
+
+        from llama_index.core.utilities.token_counting import TokenCounter
+        token_counter = TokenCounter()
+        print(f"Full messages tokens: {token_counter.estimate_tokens_in_messages(messages)}")
+        # print(f">>>>> Full messages: {messages}")
 
         return {
             "messages": messages,

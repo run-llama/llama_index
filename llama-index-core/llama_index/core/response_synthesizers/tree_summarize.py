@@ -68,7 +68,7 @@ class TreeSummarize(BaseSynthesizer):
         summary_template = self._summary_template.partial_format(query_str=query_str)
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._prompt_helper.repack(
-            summary_template, text_chunks=text_chunks
+            summary_template, text_chunks=text_chunks, llm=self._llm
         )
 
         if self._verbose:
@@ -144,8 +144,16 @@ class TreeSummarize(BaseSynthesizer):
         summary_template = self._summary_template.partial_format(query_str=query_str)
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._prompt_helper.repack(
-            summary_template, text_chunks=text_chunks
+            summary_template, text_chunks=text_chunks, llm=self._llm
         )
+
+        # TMP
+        for text_chunk in text_chunks:
+            print(f"Text chunk tokens: {self._prompt_helper._token_counter.get_string_tokens(text_chunk)}")
+            summary_messages = summary_template.format_messages(llm=self._llm, context_str=text_chunk)
+            print(f"Full summary messages tokens: {self._prompt_helper._token_counter.estimate_tokens_in_messages(summary_messages)}")
+            # print(f">>>>>>> Full summary template: {summary_template}")
+            # print(f">>>>>>> Full summary messages: {summary_messages}")
 
         if self._verbose:
             print(f"{len(text_chunks)} text chunks after repacking")
