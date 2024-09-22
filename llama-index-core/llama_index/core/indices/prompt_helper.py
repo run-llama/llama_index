@@ -241,7 +241,7 @@ class PromptHelper(BaseComponent):
             num_prompt_tokens += self._token_counter.get_string_tokens(
                 llm.llm.system_prompt or ""
             )
-        else:
+        elif llm is not None:
             num_prompt_tokens += self._token_counter.get_string_tokens(
                 llm.system_prompt or ""
             )
