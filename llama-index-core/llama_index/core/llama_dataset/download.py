@@ -40,7 +40,7 @@ def download_llama_dataset(
     llama_datasets_source_files_tree_url: str = LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     show_progress: bool = False,
     load_documents: bool = True,
-) -> Tuple[Type[BaseLlamaDataset], List[Document]]:
+) -> Tuple[BaseLlamaDataset, List[Document]]:
     """Download dataset from datasets-LFS and llamahub.
 
     Args:

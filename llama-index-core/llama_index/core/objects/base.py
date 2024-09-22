@@ -22,7 +22,7 @@ from llama_index.core.objects.base_node_mapping import (
     BaseObjectNodeMapping,
     SimpleObjectNodeMapping,
 )
-from llama_index.core.schema import QueryBundle, QueryType, TextNode
+from llama_index.core.schema import BaseNode, QueryBundle, QueryType
 from llama_index.core.storage.storage_context import (
     DEFAULT_PERSIST_DIR,
     StorageContext,
@@ -153,8 +153,8 @@ class ObjectIndex(Generic[OT]):
         cls,
         objects: Sequence[OT],
         object_mapping: Optional[BaseObjectNodeMapping] = None,
-        from_node_fn: Optional[Callable[[TextNode], OT]] = None,
-        to_node_fn: Optional[Callable[[OT], TextNode]] = None,
+        from_node_fn: Optional[Callable[[BaseNode], OT]] = None,
+        to_node_fn: Optional[Callable[[OT], BaseNode]] = None,
         index_cls: Type[BaseIndex] = VectorStoreIndex,
         **index_kwargs: Any,
     ) -> "ObjectIndex":
@@ -178,8 +178,8 @@ class ObjectIndex(Generic[OT]):
         objects: Sequence[OT],
         index: BaseIndex,
         object_mapping: Optional[BaseObjectNodeMapping] = None,
-        from_node_fn: Optional[Callable[[TextNode], OT]] = None,
-        to_node_fn: Optional[Callable[[OT], TextNode]] = None,
+        from_node_fn: Optional[Callable[[BaseNode], OT]] = None,
+        to_node_fn: Optional[Callable[[OT], BaseNode]] = None,
     ) -> "ObjectIndex":
         from llama_index.core.objects.utils import get_object_mapping
 

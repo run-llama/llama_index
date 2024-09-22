@@ -43,7 +43,7 @@ class TokenCounter:
             if message.role:
                 tokens += self.get_string_tokens(message.role)
 
-            if message.content:
+            if isinstance(message.content, str):
                 tokens += self.get_string_tokens(message.content)
 
             additional_kwargs = {**message.additional_kwargs}

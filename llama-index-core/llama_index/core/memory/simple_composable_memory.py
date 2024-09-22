@@ -42,8 +42,12 @@ class SimpleComposableMemory(BaseMemory):
         cls,
         primary_memory: Optional[BaseMemory] = None,
         secondary_memory_sources: Optional[List[BaseMemory]] = None,
+        **kwargs: Any,
     ) -> "SimpleComposableMemory":
         """Create a simple composable memory from an LLM."""
+        if kwargs:
+            raise ValueError(f"Unexpected kwargs: {kwargs}")
+
         primary_memory = primary_memory or ChatMemoryBuffer.from_defaults()
         secondary_memory_sources = secondary_memory_sources or []
 
@@ -100,6 +104,7 @@ class SimpleComposableMemory(BaseMemory):
 
             # add single_secondary_memory_str to chat_history
             if len(messages) > 0 and messages[0].role == MessageRole.SYSTEM:
+                assert messages[0].content is not None
                 system_message = messages[0].content.split(
                     DEFAULT_INTRO_HISTORY_MESSAGE
                 )[0]
@@ -130,6 +135,12 @@ class SimpleComposableMemory(BaseMemory):
         self.primary_memory.put(message)
         for mem in self.secondary_memory_sources:
             mem.put(message)
+
+    async def aput(self, message: ChatMessage) -> None:
+        """Put chat history."""
+        await self.primary_memory.aput(message)
+        for mem in self.secondary_memory_sources:
+            await mem.aput(message)
 
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""

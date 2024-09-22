@@ -1,8 +1,22 @@
+import base64
+import requests
 from enum import Enum
-from typing import Any, AsyncGenerator, Generator, Optional, Union, List, Any
+from io import BytesIO
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    Literal,
+    Optional,
+    Union,
+    List,
+    Any,
+)
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.core.schema import ImageType
 
 try:
     from pydantic import BaseModel as V2BaseModel
@@ -10,7 +24,7 @@ try:
 except ImportError:
     from pydantic import BaseModel as V2BaseModel
 
-    V1BaseModel = V2BaseModel
+    V1BaseModel = V2BaseModel  # type: ignore
 
 
 class MessageRole(str, Enum):
@@ -26,6 +40,39 @@ class MessageRole(str, Enum):
 
 
 # ===== Generic Model Input - Chat =====
+class ContentBlockTypes(str, Enum):
+    TEXT = "text"
+    IMAGE = "image"
+
+
+class TextBlock(BaseModel):
+    type: Literal[ContentBlockTypes.TEXT] = ContentBlockTypes.TEXT
+
+    text: str
+
+
+class ImageBlock(BaseModel):
+    type: Literal[ContentBlockTypes.IMAGE] = ContentBlockTypes.IMAGE
+
+    image: Optional[str] = None
+    image_path: Optional[str] = None
+    image_url: Optional[str] = None
+    image_mimetype: Optional[str] = None
+
+    def resolve_image(self) -> ImageType:
+        """Resolve an image such that PIL can read it."""
+        if self.image is not None:
+            return BytesIO(base64.b64decode(self.image))
+        elif self.image_path is not None:
+            return self.image_path
+        elif self.image_url is not None:
+            # load image from URL
+            response = requests.get(self.image_url)
+            return BytesIO(response.content)
+        else:
+            raise ValueError("No image found in the chat message!")
+
+
 class ChatMessage(BaseModel):
     """Chat message."""
 
@@ -49,7 +96,7 @@ class ChatMessage(BaseModel):
 
     def _recursive_serialization(self, value: Any) -> Any:
         if isinstance(value, (V1BaseModel, V2BaseModel)):
-            return value.model_dump()
+            return value.model_dump()  # type: ignore
         if isinstance(value, dict):
             return {
                 key: self._recursive_serialization(value)
@@ -59,10 +106,10 @@ class ChatMessage(BaseModel):
             return [self._recursive_serialization(item) for item in value]
         return value
 
-    def dict(self, **kwargs: Any) -> dict:
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
         return self.model_dump(**kwargs)
 
-    def model_dump(self, **kwargs: Any) -> dict:
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
         # ensure all additional_kwargs are serializable
         msg = super().model_dump(**kwargs)
 
