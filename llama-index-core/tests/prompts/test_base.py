@@ -286,3 +286,9 @@ def test_template_with_json() -> None:
     assert prompt.format_messages(foo="foo2", text="world") == [
         ChatMessage(content='hello world foo2 {"bar": "baz"}', role=MessageRole.USER)
     ]
+
+    test_case_2 = PromptTemplate("test {message} {test}")
+    assert test_case_2.format(message="message") == "test message {test}"
+
+    test_case_3 = PromptTemplate("test {{message}} {{test}}")
+    assert test_case_3.format(message="message", test="test") == "test {message} {test}"
