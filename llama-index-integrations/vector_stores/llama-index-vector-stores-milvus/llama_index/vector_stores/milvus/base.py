@@ -256,7 +256,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             hybrid_ranker_params=hybrid_ranker_params,
             index_management=index_management,
             scalar_field_names=scalar_field_names,
-            scalar_field_types=scalar_field_types
+            scalar_field_types=scalar_field_types,
         )
 
         # Select the similarity metric
@@ -879,9 +879,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         Returns: The schema of the collection
         """
-        schema = MilvusClient.create_schema(
-            auto_id=False, enable_dynamic_field=True
-        )
+        schema = MilvusClient.create_schema(auto_id=False, enable_dynamic_field=True)
         schema.add_field(
             field_name="id",
             datatype=DataType.VARCHAR,
@@ -900,10 +898,16 @@ class MilvusVectorStore(BasePydanticVectorStore):
         )
         if self.scalar_field_names is not None and self.scalar_field_types is not None:
             if len(self.scalar_field_names) != len(self.scalar_field_types):
-                raise ValueError("scalar_field_names and scalar_field_types must have same length.")
+                raise ValueError(
+                    "scalar_field_names and scalar_field_types must have same length."
+                )
 
-        for field_name, field_type in zip(self.scalar_field_names, self.scalar_field_types):
-            max_length = 65_535 if field_type == DataType.VARCHAR else None
-            schema.add_field(field_name=field_name, datatype=field_type, max_length=max_length)
+            for field_name, field_type in zip(
+                self.scalar_field_names, self.scalar_field_types
+            ):
+                max_length = 65_535 if field_type == DataType.VARCHAR else None
+                schema.add_field(
+                    field_name=field_name, datatype=field_type, max_length=max_length
+                )
 
         return schema
