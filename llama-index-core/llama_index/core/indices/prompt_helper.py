@@ -236,8 +236,12 @@ class PromptHelper(BaseComponent):
             [x.metadata.to_openai_tool() for x in tools]
         )
 
-        # structured llms cannot have system prompts currently
-        if llm is not None and not isinstance(llm, StructuredLLM):
+        # structured llms cannot have system prompts currently -- check the underlying llm
+        if isinstance(llm, StructuredLLM):
+            num_prompt_tokens += self._token_counter.get_string_tokens(
+                llm.llm.system_prompt or ""
+            )
+        else:
             num_prompt_tokens += self._token_counter.get_string_tokens(
                 llm.system_prompt or ""
             )
