@@ -225,11 +225,14 @@ class PromptHelper(BaseComponent):
             num_prompt_tokens = self._token_counter.estimate_tokens_in_messages(
                 partial_messages
             )
-            num_prompt_tokens += self._token_counter.estimate_tokens_in_tools(tools)
         else:
             prompt_str = get_empty_prompt_txt(prompt)
             num_prompt_tokens = self._token_counter.get_string_tokens(prompt_str)
-            num_prompt_tokens += self._token_counter.estimate_tokens_in_tools(tools)
+
+        num_prompt_tokens += self._token_counter.estimate_tokens_in_tools(tools)
+        num_prompt_tokens += self._token_counter.get_string_tokens(
+            llm.system_prompt or ""
+        )
 
         available_context_size = self._get_available_context_size(num_prompt_tokens)
         result = available_context_size // num_chunks - padding
