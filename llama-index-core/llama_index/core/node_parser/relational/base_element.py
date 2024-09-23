@@ -188,7 +188,8 @@ class BaseElementNodeParser(NodeParser):
             index = SummaryIndex.from_documents(
                 [Document(text=table_context)],
             )
-            query_engine = index.as_query_engine(llm=llm, output_cls=TableOutput)
+            sllm = llm.as_structured_llm(TableOutput)
+            query_engine = index.as_query_engine(llm=sllm)
             try:
                 response = await query_engine.aquery(summary_query_str)
                 return cast(PydanticResponse, response).response
