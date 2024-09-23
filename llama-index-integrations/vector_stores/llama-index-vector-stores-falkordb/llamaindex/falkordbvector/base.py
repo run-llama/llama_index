@@ -129,7 +129,7 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
 
     def retrieve_existing_index(self) -> bool:
         index_information = self._driver.query(
-            "SHOW INDEXES "
+            "CALL db.indexes() "
             "YIELD name, type, entityType, properties, options "
             "WHERE type = 'VECTOR' AND name = $index_name",
             params={"index_name": self.index_name}
