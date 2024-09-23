@@ -228,7 +228,7 @@ These partner integrations use our legacy `CallbackManager` or third-party calls
 
 ### Langfuse
 
-[Langfuse](https://langfuse.com/docs) is an open source LLM engineering platform to help teams collaboratively debug, analyze and iterate on their LLM Applications. With the Langfuse integration, you can seamlessly track and monitor performance, traces, and metrics of your LlamaIndex application. Detailed traces of the LlamaIndex context augmentation and the LLM querying processes are captured and can be inspected directly in the Langfuse UI.
+[Langfuse](https://langfuse.com/docs) is an open source LLM engineering platform to help teams collaboratively debug, analyze and iterate on their LLM Applications. With the Langfuse integration, you can seamlessly track and monitor performance, traces, and metrics of your LlamaIndex application. Detailed [traces](https://langfuse.com/docs/tracing) of the LlamaIndex context augmentation and the LLM querying processes are captured and can be inspected directly in the Langfuse UI.
 
 #### Usage Pattern
 
@@ -245,7 +245,8 @@ set_global_handler("langfuse")
 
 #### Guides
 
-- [Langfuse Callback Handler](../../examples/callbacks/LangfuseCallbackHandler.ipynb)
+- [Langfuse Callback Handler](../../examples/observability/LangfuseCallbackHandler.ipynb)
+- [Langfuse Tracing with PostHog](../../examples/observability/LangfuseMistralPostHog.ipynb)
 
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
 
