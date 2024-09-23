@@ -14,7 +14,13 @@ from llama_index.core.bridge.pydantic import (
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser.interface import NodeParser
-from llama_index.core.schema import BaseNode, Document, IndexNode, TextNode
+from llama_index.core.schema import (
+    BaseNode,
+    Document,
+    IndexNode,
+    MetadataMode,
+    TextNode,
+)
 from llama_index.core.utils import get_tqdm_iterable
 
 DEFAULT_SUMMARY_QUERY_STR = """\
@@ -328,7 +334,7 @@ class BaseElementNodeParser(NodeParser):
 
         node_parser = self.nested_node_parser or SentenceSplitter()
 
-        nodes = []
+        nodes: List[BaseNode] = []
         cur_text_el_buffer: List[str] = []
         for element in elements:
             if element.type == "table" or element.type == "table_text":
@@ -384,11 +390,11 @@ class BaseElementNodeParser(NodeParser):
                     if start_char_idx >= 0:
                         end_char_idx = start_char_idx + len(str(element.element))
                     else:
-                        start_char_idx = None
-                        end_char_idx = None
+                        start_char_idx = None  # type: ignore
+                        end_char_idx = None  # type: ignore
                 else:
-                    start_char_idx = None
-                    end_char_idx = None
+                    start_char_idx = None  # type: ignore
+                    end_char_idx = None  # type: ignore
 
                 # shared index_id and node_id
                 node_id = str(uuid.uuid4())
@@ -445,14 +451,18 @@ class BaseElementNodeParser(NodeParser):
                 node.excluded_llm_metadata_keys = (
                     node_inherited.excluded_llm_metadata_keys
                 )
-        return [node for node in nodes if len(node.text) > 0]
+        return [
+            node
+            for node in nodes
+            if len(node.get_content(metadata_mode=MetadataMode.NONE)) > 0
+        ]
 
-    def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
-        nodes = self.get_nodes_from_documents(nodes, **kwargs)
+    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        nodes = self.get_nodes_from_documents(nodes, **kwargs)  # type: ignore
         nodes, objects = self.get_nodes_and_objects(nodes)
-        return nodes + objects
+        return nodes + objects  # type: ignore
 
-    async def acall(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
-        nodes = await self.aget_nodes_from_documents(nodes, **kwargs)
+    async def acall(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[BaseNode]:
+        nodes = await self.aget_nodes_from_documents(nodes, **kwargs)  # type: ignore
         nodes, objects = self.get_nodes_and_objects(nodes)
-        return nodes + objects
+        return nodes + objects  # type: ignore
