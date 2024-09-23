@@ -1,3 +1,4 @@
+import asyncio
 from itertools import chain
 from typing import Any, List, Optional
 
@@ -160,8 +161,12 @@ class AzureChatStore(BaseChatStore):
 
     def set_messages(self, key: str, messages: List[ChatMessage]) -> None:
         """Set messages for a key."""
+        asyncio.run(self.aset_messages(key, messages))
+
+    async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
+        """Asynchronoulsy set messages for a key."""
         # Delete existing messages and insert new messages in one transaction
-        chat_client = self._table_service_client.create_table_if_not_exists(
+        chat_client = await self._atable_service_client.create_table_if_not_exists(
             self.chat_table_name
         )
         entities = chat_client.query_entities(f"PartitionKey eq '{key}'")
@@ -182,14 +187,16 @@ class AzureChatStore(BaseChatStore):
             )
             for idx, message in enumerate(messages)
         )
-        chat_client.submit_transaction(chain(delete_operations, create_operations))
+        await chat_client.submit_transaction(
+            chain(delete_operations, create_operations)
+        )
 
         # Update metadata
-        metadata_client = self._table_service_client.create_table_if_not_exists(
+        metadata_client = await self._atable_service_client.create_table_if_not_exists(
             self.metadata_table_name
         )
         messages_len = len(messages)
-        metadata_client.upsert_entity(
+        await metadata_client.upsert_entity(
             {
                 "PartitionKey": self.metadata_partition_key,
                 "RowKey": key,
@@ -201,7 +208,11 @@ class AzureChatStore(BaseChatStore):
 
     def get_messages(self, key: str) -> List[ChatMessage]:
         """Get messages for a key."""
-        chat_client = self._table_service_client.create_table_if_not_exists(
+        asyncio.run(self.aget_messages(key))
+
+    async def aget_messages(self, key: str) -> List[ChatMessage]:
+        """Asynchronously get messages for a key."""
+        chat_client = await self._atable_service_client.create_table_if_not_exists(
             self.chat_table_name
         )
         entities = chat_client.query_entities(f"PartitionKey eq '{key}'")
@@ -212,8 +223,10 @@ class AzureChatStore(BaseChatStore):
 
     def add_message(self, key: str, message: ChatMessage, idx: int = None):
         """Add a message for a key."""
-        # Fetch current metadata to find the next index
-        metadata_client = self._table_service_client.create_table_if_not_exists(
+        asyncio.run(self.async_add_message(key, message, idx))
+
+    async def async_add_message(self, key: str, message: ChatMessage, idx: int = None):
+        metadata_client = await self._atable_service_client.create_table_if_not_exists(
             self.metadata_table_name
         )
         metadata = self._get_or_default_metadata(metadata_client, key)
@@ -225,7 +238,7 @@ class AzureChatStore(BaseChatStore):
             idx = next_index
 
         # Insert the new message
-        chat_client = self._table_service_client.create_table_if_not_exists(
+        chat_client = await self._atable_service_client.create_table_if_not_exists(
             self.chat_table_name
         )
         chat_client.create_entity(
@@ -246,29 +259,36 @@ class AzureChatStore(BaseChatStore):
 
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         # Delete all messages for the key
-        chat_client = self._table_service_client.create_table_if_not_exists(
+        asyncio.run(self.adelete_messages(key))
+
+    async def adelete_messages(self, key: str) -> Optional[List[ChatMessage]]:
+        """Asynchronously delete all messages for a key."""
+        chat_client = await self._atable_service_client.create_table_if_not_exists(
             self.chat_table_name
         )
         entities = chat_client.query_entities(f"PartitionKey eq '{key}'")
-        chat_client.submit_transaction(
+        await chat_client.submit_transaction(
             (TransactionOperation.DELETE, entity) for entity in entities
         )
 
-        # Reset metadata
-        metadata_client = self._table_service_client.create_table_if_not_exists(
+        metadata_client = await self._atable_service_client.create_table_if_not_exists(
             self.metadata_table_name
         )
-        metadata_client.upsert_entity(
+        await metadata_client.upsert_entity(
             self._get_default_metadata(key), UpdateMode.REPLACE
         )
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete specific message for a key."""
+        asyncio.run(self.adelete_message(key, idx))
+
+    async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
+        """Asynchronously delete specific message for a key."""
         # Fetch metadata to get the message count
-        metadata_client = self._table_service_client.create_table_if_not_exists(
+        metadata_client = await self._atable_service_client.create_table_if_not_exists(
             self.metadata_table_name
         )
-        metadata = metadata_client.get_entity(
+        metadata = await metadata_client.get_entity(
             partition_key=self.metadata_partition_key, row_key=key
         )
 
@@ -278,10 +298,12 @@ class AzureChatStore(BaseChatStore):
             return None
 
         # Delete the message
-        chat_client = self._table_service_client.create_table_if_not_exists(
+        chat_client = await self._atable_service_client.create_table_if_not_exists(
             self.chat_table_name
         )
-        chat_client.delete_entity(partition_key=key, row_key=self._to_row_key(idx))
+        await chat_client.delete_entity(
+            partition_key=key, row_key=self._to_row_key(idx)
+        )
 
         # Update metadata if last message was deleted
         if idx == message_count - 1:
@@ -291,20 +313,24 @@ class AzureChatStore(BaseChatStore):
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
-        metadata_client = self._table_service_client.create_table_if_not_exists(
+        asyncio.run(self.adelete_last_message(key))
+
+    async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
+        """Async delete last message for a key."""
+        metadata_client = await self._atable_service_client.create_table_if_not_exists(
             self.metadata_table_name
         )
         # Retrieve metadata to get the last message row key
-        metadata = metadata_client.get_entity(
+        metadata = await metadata_client.get_entity(
             partition_key=self.metadata_partition_key, row_key=key
         )
         last_row_key = metadata["LastMessageRowKey"]
 
-        chat_client = self._table_service_client.create_table_if_not_exists(
+        chat_client = await self._atable_service_client.create_table_if_not_exists(
             self.chat_table_name
         )
         # Delete the last message
-        chat_client.delete_entity(partition_key=key, row_key=last_row_key)
+        await chat_client.delete_entity(partition_key=key, row_key=last_row_key)
 
         # Update metadata
         last_row_key_num = int(last_row_key)
@@ -312,11 +338,15 @@ class AzureChatStore(BaseChatStore):
             last_row_key_num - 1 if last_row_key_num > 0 else 0
         )
         metadata["MessageCount"] = int(metadata["MessageCount"]) - 1
-        metadata_client.upsert_entity(metadata, UpdateMode.MERGE)
+        await metadata_client.upsert_entity(metadata, UpdateMode.MERGE)
 
     def get_keys(self) -> List[str]:
         """Get all keys."""
-        metadata_client = self._table_service_client.create_table_if_not_exists(
+        asyncio.run(self.aget_keys())
+
+    async def aget_keys(self) -> List[str]:
+        """Asynchronously get all keys."""
+        metadata_client = await self._atable_service_client.create_table_if_not_exists(
             self.metadata_table_name
         )
         entities = metadata_client.query_entities(

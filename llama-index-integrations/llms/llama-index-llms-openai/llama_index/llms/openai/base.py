@@ -63,6 +63,7 @@ from llama_index.llms.openai.utils import (
     openai_modelname_to_contextsize,
     resolve_openai_credentials,
     to_openai_message_dicts,
+    resolve_tool_choice,
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
@@ -167,8 +168,8 @@ class OpenAI(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate.",
@@ -181,8 +182,8 @@ class OpenAI(FunctionCallingLLM):
     top_logprobs: int = Field(
         description="The number of top token log probs to return.",
         default=0,
-        gte=0,
-        lte=20,
+        ge=0,
+        le=20,
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
@@ -190,12 +191,12 @@ class OpenAI(FunctionCallingLLM):
     max_retries: int = Field(
         default=3,
         description="The maximum number of API retries.",
-        gte=0,
+        ge=0,
     )
     timeout: float = Field(
         default=60.0,
         description="The timeout, in seconds, for API requests.",
-        gte=0,
+        ge=0,
     )
     default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
@@ -873,9 +874,6 @@ class OpenAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
-        from llama_index.agent.openai.utils import resolve_tool_choice
-
-        # misralai uses the same openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
         # if strict is passed in, use, else default to the class-level attribute, else default to True`

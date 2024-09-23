@@ -31,7 +31,7 @@ async def test_workflow_run(workflow):
 
 
 @pytest.mark.asyncio()
-async def test_workflow_run_step(workflow):
+async def test_deprecated_workflow_run_step(workflow):
     workflow._verbose = True
 
     # First step
@@ -53,6 +53,41 @@ async def test_workflow_run_step(workflow):
     result = await workflow.run_step()
     assert result == "Workflow completed"
     assert workflow.is_done()
+
+
+@pytest.mark.asyncio()
+async def test_workflow_run_step(workflow):
+    handler = workflow.run(stepwise=True)
+
+    result = await handler.run_step()
+    assert result is None
+    assert not handler.is_done()
+
+    result = await handler.run_step()
+    assert result is None
+    assert not handler.is_done()
+
+    result = await handler.run_step()
+    assert result is None
+    assert not handler.is_done()
+
+    result = await handler.run_step()
+    assert result is None
+    assert not handler.is_done()
+
+    result = await handler.run_step()
+    assert result == "Workflow completed"
+    assert handler.is_done()
+
+
+@pytest.mark.asyncio()
+async def test_workflow_run_step_continue_context():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            cur_number = await ctx.get("number", default=0)
+            await ctx.set("number", cur_number + 1)
+            return StopEvent(result="Done")
 
 
 @pytest.mark.asyncio()
@@ -379,3 +414,33 @@ def test_workflow_disable_validation():
     w._get_steps = mock.MagicMock()
     w._validate()
     w._get_steps.assert_not_called()
+
+
+@pytest.mark.asyncio()
+async def test_workflow_continue_context():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            cur_number = await ctx.get("number", default=0)
+            await ctx.set("number", cur_number + 1)
+            return StopEvent(result="Done")
+
+    wf = DummyWorkflow()
+
+    # first run
+    r = wf.run()
+    result = await r
+    assert result == "Done"
+    assert await r.ctx.get("number") == 1
+
+    # second run -- independent from the first
+    r = wf.run()
+    result = await r
+    assert result == "Done"
+    assert await r.ctx.get("number") == 1
+
+    # third run -- continue from the second run
+    r = wf.run(ctx=r.ctx)
+    result = await r
+    assert result == "Done"
+    assert await r.ctx.get("number") == 2

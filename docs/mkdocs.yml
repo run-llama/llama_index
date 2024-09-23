@@ -439,6 +439,7 @@ nav:
       - Node Parsers & Text Splitters:
           - ./examples/node_parsers/semantic_chunking.ipynb
           - ./examples/node_parsers/semantic_double_merging_chunking.ipynb
+          - ./examples/node_parsers/topic_parser.ipynb
       - Node Postprocessors:
           - ./examples/node_postprocessor/CohereRerank.ipynb
           - ./examples/node_postprocessor/ColbertRerank.ipynb
@@ -471,6 +472,7 @@ nav:
           - ./examples/observability/MLflow.ipynb
           - ./examples/observability/OpenInferenceCallback.ipynb
           - ./examples/observability/OpenLLMetry.ipynb
+          - ./examples/observability/OpikCallback.ipynb
           - ./examples/observability/PromptLayerHandler.ipynb
           - ./examples/observability/TokenCountingHandler.ipynb
           - ./examples/observability/UpTrainCallback.ipynb
@@ -669,11 +671,13 @@ nav:
           - ./examples/vector_stores/qdrant_bm42.ipynb
           - ./examples/vector_stores/qdrant_hybrid.ipynb
       - Workflow:
+          - ./examples/workflow/.ipynb_checkpoints/human_in_the_loop_story_crafting-checkpoint.ipynb
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
           - ./examples/workflow/function_calling_agent.ipynb
+          - ./examples/workflow/human_in_the_loop_story_crafting.ipynb
           - ./examples/workflow/long_rag_pack.ipynb
           - ./examples/workflow/multi_step_query_engine.ipynb
           - ./examples/workflow/multi_strategy_workflow.ipynb
@@ -761,7 +765,7 @@ nav:
               - ./module_guides/querying/response_synthesizers/response_synthesizers.md
           - Routing: ./module_guides/querying/router/index.md
           - Workflows: ./module_guides/workflow/index.md
-          - Query Pipelines:
+          - Query Pipelines (Deprecated):
               - ./module_guides/querying/pipeline/index.md
               - ./module_guides/querying/pipeline/usage_pattern.md
               - ./module_guides/querying/pipeline/modules.md
@@ -777,6 +781,9 @@ nav:
           - ./module_guides/deploying/agents/agent_runner.md
           - ./module_guides/deploying/agents/modules.md
           - ./module_guides/deploying/agents/tools.md
+      - Workflows:
+          - ./module_guides/workflow/index.md
+          - ./module_guides/workflow/deployment.md
       - Evaluation:
           - ./module_guides/evaluating/index.md
           - ./module_guides/evaluating/usage_pattern.md
@@ -790,7 +797,6 @@ nav:
           - ./module_guides/observability/index.md
           - ./module_guides/observability/instrumentation.md
       - Settings: ./module_guides/supporting_modules/settings.md
-      - Workflows: ./module_guides/workflow/index.md
   - Advanced Topics:
       - ./optimizing/production_rag.md
       - ./optimizing/basic_strategies/basic_strategies.md
@@ -826,6 +832,7 @@ nav:
           - ./api_reference/callbacks/literalai.md
           - ./api_reference/callbacks/llama_debug.md
           - ./api_reference/callbacks/openinference.md
+          - ./api_reference/callbacks/opik.md
           - ./api_reference/callbacks/promptlayer.md
           - ./api_reference/callbacks/token_counter.md
           - ./api_reference/callbacks/uptrain.md
@@ -1113,6 +1120,7 @@ nav:
       - Node Parsers & Text Splitters:
           - ./api_reference/node_parser/alibabacloud_aisearch.md
           - ./api_reference/node_parser/dashscope.md
+          - ./api_reference/node_parser/topic.md
           - ./api_reference/node_parsers/code.md
           - ./api_reference/node_parsers/hierarchical.md
           - ./api_reference/node_parsers/html.md
@@ -1335,6 +1343,7 @@ nav:
           - ./api_reference/readers/preprocess.md
           - ./api_reference/readers/psychic.md
           - ./api_reference/readers/qdrant.md
+          - ./api_reference/readers/quip.md
           - ./api_reference/readers/rayyan.md
           - ./api_reference/readers/readme.md
           - ./api_reference/readers/readwise.md
@@ -1409,6 +1418,8 @@ nav:
           - ./api_reference/schema/index.md
       - Selectors:
           - ./api_reference/selectors/notdiamond.md
+      - Sparse Embeddings:
+          - ./api_reference/sparse_embeddings/fastembed.md
       - Storage:
           - Chat Store:
               - ./api_reference/storage/chat_store/azure.md
@@ -1577,10 +1588,11 @@ nav:
           - ./api_reference/tools/yelp.md
           - ./api_reference/tools/zapier.md
       - Workflow:
+          - ./api_reference/workflow/decorators.md
           - ./api_reference/workflow/context.md
           - ./api_reference/workflow/events.md
-          - ./api_reference/workflow/workflow.md
           - ./api_reference/workflow/retry_policy.md
+          - ./api_reference/workflow/workflow.md
   - Open-Source Community:
       - Integrations: ./community/integrations.md
       - Full Stack Projects: ./community/full_stack_projects.md
@@ -2173,6 +2185,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-sambanova
             - ../llama-index-integrations/embeddings/llama-index-embeddings-gigachat
             - ../llama-index-integrations/llms/llama-index-llms-gigachat
+            - ../llama-index-integrations/callbacks/llama-index-callbacks-opik
             - ../llama-index-integrations/embeddings/llama-index-embeddings-xinference
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-xinference-rerank
             - ../llama-index-integrations/selectors/llama-index-selectors-notdiamond
@@ -2185,6 +2198,9 @@ plugins:
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-dynamodb
             - ../llama-index-integrations/readers/llama-index-readers-alibabacloud-aisearch
             - ../llama-index-integrations/llms/llama-index-llms-alibabacloud-aisearch
+            - ../llama-index-integrations/readers/llama-index-readers-quip
+            - ../llama-index-integrations/sparse_embeddings/llama-index-sparse-embeddings-fastembed
+            - ../llama-index-integrations/node_parser/llama-index-node-parser-topic
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2275,6 +2291,7 @@ plugins:
         ./examples/callbacks/OpenInferenceCallback.md: https://docs.llamaindex.ai/en/stable/examples/observability/OpenInferenceCallback/
         ./examples/callbacks/OpenLLMetry.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/OpenLLMetry/
         ./examples/callbacks/OpenLLMetry.md: https://docs.llamaindex.ai/en/stable/examples/observability/OpenLLMetry/
+        ./examples/callbacks/OpikCallbackHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/OpikCallbackHandler/
         ./examples/callbacks/PromptLayerHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/PromptLayerHandler/
         ./examples/callbacks/PromptLayerHandler.md: https://docs.llamaindex.ai/en/stable/examples/observability/PromptLayerHandler/
         ./examples/callbacks/TokenCountingHandler.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/TokenCountingHandler/

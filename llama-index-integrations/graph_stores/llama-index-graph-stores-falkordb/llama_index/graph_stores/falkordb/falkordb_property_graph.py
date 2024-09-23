@@ -488,7 +488,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
             f"""MATCH (e:`__Entity__`)
             WHERE e.embedding IS NOT NULL AND ({filters})
             WITH e, vec.euclideanDistance(e.embedding, vecf32($embedding)) AS score
-            ORDER BY score DESC LIMIT $limit
+            ORDER BY score LIMIT $limit
             RETURN e.id AS name,
                [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
                e{{.* , embedding: Null, name: Null, id: Null}} AS properties,

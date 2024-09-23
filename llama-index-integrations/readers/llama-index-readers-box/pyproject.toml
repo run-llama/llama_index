@@ -37,11 +37,11 @@ maintainers = [
 name = "llama-index-readers-box"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.1"
+version = "0.2.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-box-sdk-gen = "^1.0.0"
+box-sdk-gen = ">=1.0.0,<1.5.0"
 llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]

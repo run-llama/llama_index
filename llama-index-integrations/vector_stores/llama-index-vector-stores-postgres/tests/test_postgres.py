@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, Generator, List, Union
+from typing import Any, Dict, Generator, List, Union, Optional
 
 import pytest
 from llama_index.core.schema import (
@@ -957,3 +957,77 @@ async def test_clear(
         res = pg.query(q)
     assert all(i not in res.ids for i in ["bbb", "aaa", "ddd", "ccc"])
     assert len(res.ids) == 0
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.parametrize(
+    ("node_ids", "filters", "expected_node_ids"),
+    [
+        (["aaa", "bbb"], None, ["aaa", "bbb"]),
+        (
+            None,
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="test_num",
+                        value=1,
+                        operator=FilterOperator.EQ,
+                    )
+                ]
+            ),
+            ["aaa"],
+        ),
+        (
+            ["bbb", "ccc"],
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="test_key",
+                        value="test_value",
+                        operator=FilterOperator.EQ,
+                    )
+                ]
+            ),
+            ["bbb"],
+        ),
+        (
+            ["ccc"],
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="test_key",
+                        value="test_value",
+                        operator=FilterOperator.EQ,
+                    )
+                ]
+            ),
+            [],
+        ),
+        (
+            ["aaa", "bbb"],
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="test_num",
+                        value=999,
+                        operator=FilterOperator.EQ,
+                    )
+                ]
+            ),
+            [],
+        ),
+    ],
+)
+def test_get_nodes_parametrized(
+    pg: PGVectorStore,
+    node_embeddings: List[TextNode],
+    node_ids: Optional[List[str]],
+    filters: Optional[MetadataFilters],
+    expected_node_ids: List[str],
+) -> None:
+    """Test get_nodes method with various combinations of node_ids and filters."""
+    pg.add(node_embeddings)
+    nodes = pg.get_nodes(node_ids=node_ids, filters=filters)
+    retrieved_ids = [node.node_id for node in nodes]
+    assert set(retrieved_ids) == set(expected_node_ids)
+    assert len(retrieved_ids) == len(expected_node_ids)
