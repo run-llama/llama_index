@@ -12,9 +12,9 @@ def test_class():
 
 
 # unit tests
-uname = "ut"
-passwd = "ut"
-v_dsn = "phoenix104636.dev3sub3phx.databasede3phx.oraclevcn.com/v5.regress.rdbms.dev.us.oracle.com"
+uname = ""
+passwd = ""
+v_dsn = ""
 
 
 ### Test OracleEmbeddings #####
@@ -42,4 +42,4 @@ def test_embeddings_test() -> None:
 
 
 # test embedder
-test_embeddings_test()
+# test_embeddings_test()

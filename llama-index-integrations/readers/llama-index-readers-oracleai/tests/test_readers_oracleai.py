@@ -12,9 +12,9 @@ def test_class():
 
 
 # unit tests
-uname = "ut"
-passwd = "ut"
-v_dsn = "phoenix104636.dev3sub3phx.databasede3phx.oraclevcn.com/v5.regress.rdbms.dev.us.oracle.com"
+uname = ""
+passwd = ""
+v_dsn = ""
 
 
 ### Test OracleReader #####
@@ -138,5 +138,5 @@ def test_splitter_test() -> None:
 
 
 # test loader and splitter
-test_loader_test()
-test_splitter_test()
+# test_loader_test()
+# test_splitter_test()

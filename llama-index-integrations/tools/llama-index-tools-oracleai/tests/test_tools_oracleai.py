@@ -6,9 +6,9 @@ if TYPE_CHECKING:
 
 
 # unit tests
-uname = "ut"
-passwd = "ut"
-v_dsn = "phoenix104636.dev3sub3phx.databasede3phx.oraclevcn.com/v5.regress.rdbms.dev.us.oracle.com"
+uname = ""
+passwd = ""
+v_dsn = ""
 
 
 ### Test OracleSummary #####
@@ -46,4 +46,4 @@ def test_summary_test() -> None:
 
 
 # test embedder
-test_summary_test()
+# test_summary_test()
