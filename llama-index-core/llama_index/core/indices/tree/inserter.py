@@ -77,6 +77,7 @@ class TreeIndexInserter:
                 text_chunks=[
                     node.get_content(metadata_mode=MetadataMode.LLM) for node in half1
                 ],
+                llm=self._llm,
             )
             text_chunk1 = "\n".join(truncated_chunks)
 
@@ -89,6 +90,7 @@ class TreeIndexInserter:
                 text_chunks=[
                     node.get_content(metadata_mode=MetadataMode.LLM) for node in half2
                 ],
+                llm=self._llm,
             )
             text_chunk2 = "\n".join(truncated_chunks)
             summary2 = self._llm.predict(self.summary_prompt, context_str=text_chunk2)
@@ -129,6 +131,7 @@ class TreeIndexInserter:
             text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
                 prompt=self.insert_prompt,
                 num_chunks=len(cur_graph_node_list),
+                llm=self._llm,
             )
             numbered_text = get_numbered_text_from_nodes(
                 cur_graph_node_list, text_splitter=text_splitter
@@ -163,6 +166,7 @@ class TreeIndexInserter:
                     node.get_content(metadata_mode=MetadataMode.LLM)
                     for node in cur_graph_node_list
                 ],
+                llm=self._llm,
             )
             text_chunk = "\n".join(truncated_chunks)
             new_summary = self._llm.predict(self.summary_prompt, context_str=text_chunk)
