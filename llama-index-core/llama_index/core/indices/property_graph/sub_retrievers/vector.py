@@ -43,6 +43,7 @@ class VectorContextRetriever(BasePGRetriever):
         self,
         graph_store: PropertyGraphStore,
         include_text: bool = True,
+        include_properties: bool = False,
         embed_model: Optional[BaseEmbedding] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
         similarity_top_k: int = 4,
@@ -59,7 +60,12 @@ class VectorContextRetriever(BasePGRetriever):
         self._similarity_score = similarity_score
         self._filters = filters
 
-        super().__init__(graph_store=graph_store, include_text=include_text, **kwargs)
+        super().__init__(
+            graph_store=graph_store,
+            include_text=include_text,
+            include_properties=include_properties,
+            **kwargs,
+        )
 
     def _get_vector_store_query(self, query_bundle: QueryBundle) -> VectorStoreQuery:
         if query_bundle.embedding is None:
