@@ -130,15 +130,16 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
     def retrieve_existing_index(self) -> bool:
         index_information = self._driver.query(
             "CALL db.indexes() "
-            "YIELD name, type, entityType, properties, options "
-            "WHERE type = 'VECTOR' AND name = $index_name",
+            "YIELD label, properties, types, options, entitytype "
+            "WHERE types = ['VECTOR'] AND label = $index_name",
             params={"index_name": self.index_name}
         )
         if index_information.result_set:
             index = index_information.result_set[0]
-            self.node_label = index['entityType']
+            self.node_label = index['entitytype']
             self.embedding_node_property = index['properties'][0]
             self.embedding_dimension = index['options']['dimension']
+            self.distance_strategy = index['options']['metric']
             return True
         return False
 
