@@ -21,11 +21,6 @@ from llama_index.core.vector_stores.utils import (
 
 _logger = logging.getLogger(__name__)
 
-def check_if_not_null(props: List[str], values: List[Any]) -> None:
-    for prop, value in zip(props, values):
-        if not value:
-            raise ValueError(f"Parameter `{prop}` must not be None or empty string")
-
 def clean_params(params: List[BaseNode]) -> List[Dict[str, Any]]:
     clean_params = []
     for record in params:
@@ -108,15 +103,13 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
         self._driver = FalkorDB.from_url(url).select_graph(database)
         self._database = database
 
-        check_if_not_null(
-            [
-                "index_name",
-                "node_label",
-                "embedding_node_property",
-                "text_node_property",
-            ],
-            [index_name, node_label, embedding_node_property, text_node_property],
-        )
+        # Inline check_if_not_null function
+        for prop, value in zip(
+            ["index_name", "node_label", "embedding_node_property", "text_node_property"],
+            [index_name, node_label, embedding_node_property, text_node_property]
+        ):
+            if not value:
+                raise ValueError(f"Parameter `{prop}` must not be None or empty string")
 
         if not self.retrieve_existing_index():
             self.create_new_index()
