@@ -151,6 +151,7 @@ class ReActAgent(BaseAgent):
         if output.message.content is None:
             raise ValueError("Got empty message.")
         message_content = output.message.content
+
         current_reasoning = []
         try:
             reasoning_step = self._output_parser.parse(message_content, is_streaming)
@@ -268,6 +269,7 @@ class ReActAgent(BaseAgent):
             bool: Boolean on whether the chunk is the start of the final response
         """
         latest_content = chunk.message.content
+
         if latest_content:
             if not latest_content.startswith(
                 "Thought"

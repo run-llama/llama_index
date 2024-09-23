@@ -25,10 +25,11 @@ class WorkflowHandler(asyncio.Future):
 
         while True:
             ev = await self.ctx.streaming_queue.get()
-            if type(ev) is StopEvent:
-                break
 
             yield ev
+
+            if type(ev) is StopEvent:
+                break
 
     async def run_step(self) -> Optional[Any]:
         if self.ctx and not self.ctx.stepwise:

@@ -39,40 +39,6 @@ from llama_index.core.base.query_pipeline.query import (
     OutputKeys,
     QueryComponent,
 )
-import re
-
-
-def _escape_braces(text: str) -> str:
-    """
-    Escape braces in text.
-    Only captures template variables, skips already escaped braces.
-    """
-
-    def replace(match: re.Match[str]) -> str:
-        if match.group(0).startswith("{{") and match.group(0).endswith("}}"):
-            return match.group(0)  # Already escaped, return as is
-        return "{{" + match.group(1) + "}}"
-
-    pattern = r"(?<!\{)\{([^{}]+?)\}(?!\})"
-    return re.sub(pattern, replace, text)
-
-
-def _escape_json(messages: Sequence[ChatMessage]) -> Sequence[ChatMessage]:
-    """Escape JSON in messages."""
-    new_messages = []
-    for message in messages:
-        if isinstance(message.content, str):
-            escaped_msg = _escape_braces(message.content)
-            new_messages.append(
-                ChatMessage(
-                    role=message.role,
-                    content=escaped_msg,
-                    additional_kwargs=message.additional_kwargs,
-                )
-            )
-        else:
-            new_messages.append(message)
-    return new_messages
 
 
 class StructuredLLM(LLM):
@@ -104,7 +70,7 @@ class StructuredLLM(LLM):
         # make this work with our FunctionCallingProgram, even though
         # the messages don't technically have any variables (they are already formatted)
 
-        chat_prompt = ChatPromptTemplate(message_templates=_escape_json(messages))
+        chat_prompt = ChatPromptTemplate(message_templates=messages)
 
         output = self.llm.structured_predict(
             output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
@@ -120,7 +86,7 @@ class StructuredLLM(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        chat_prompt = ChatPromptTemplate(message_templates=_escape_json(messages))
+        chat_prompt = ChatPromptTemplate(message_templates=messages)
 
         stream_output = self.llm.stream_structured_predict(
             output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
@@ -158,7 +124,7 @@ class StructuredLLM(LLM):
         # make this work with our FunctionCallingProgram, even though
         # the messages don't technically have any variables (they are already formatted)
 
-        chat_prompt = ChatPromptTemplate(message_templates=_escape_json(messages))
+        chat_prompt = ChatPromptTemplate(message_templates=messages)
 
         output = await self.llm.astructured_predict(
             output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
@@ -179,7 +145,7 @@ class StructuredLLM(LLM):
         """Async stream chat endpoint for LLM."""
 
         async def gen() -> ChatResponseAsyncGen:
-            chat_prompt = ChatPromptTemplate(message_templates=_escape_json(messages))
+            chat_prompt = ChatPromptTemplate(message_templates=messages)
 
             stream_output = await self.llm.astream_structured_predict(
                 output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
