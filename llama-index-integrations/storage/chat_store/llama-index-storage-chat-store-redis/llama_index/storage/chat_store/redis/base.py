@@ -1,12 +1,19 @@
 import json
 import logging
 import sys
-from typing import Any, List, Optional
+import asyncio
+from typing import Any, List, Optional, Union, Tuple
 from urllib.parse import urlparse
 
 import redis
 from redis import Redis
 from redis.cluster import RedisCluster
+from redis.sentinel import Sentinel
+
+import redis.asyncio
+from redis.asyncio import Redis as AsyncRedis
+from redis.asyncio.cluster import RedisCluster as AsyncRedisCluster
+from redis.asyncio.sentinel import Sentinel as AsyncSentinel
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.llms import ChatMessage
@@ -20,25 +27,29 @@ def _message_to_dict(message: ChatMessage) -> dict:
 
 # Convert the json object in Redis to a ChatMessage
 def _dict_to_message(d: dict) -> ChatMessage:
-    return ChatMessage.parse_obj(d)
+    return ChatMessage.model_validate(d)
 
 
 class RedisChatStore(BaseChatStore):
     """Redis chat store."""
 
     redis_client: Any = Field(description="Redis client.")
+    aredis_client: Any = Field(default=None, description="Async Redis client.")
     ttl: Optional[int] = Field(default=None, description="Time to live in seconds.")
 
     def __init__(
         self,
         redis_url: str = "redis://localhost:6379",
-        redis_client: Optional[Any] = None,
+        redis_client: Optional[Redis] = None,
+        aredis_client: Optional[AsyncRedis] = None,
         ttl: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize."""
-        redis_client = redis_client or self._get_client(redis_url, **kwargs)
-        super().__init__(redis_client=redis_client, ttl=ttl)
+        super().__init__(ttl=ttl)
+
+        self.redis_client = redis_client or self._get_client(redis_url, **kwargs)
+        self.aredis_client = aredis_client or self._aget_client(redis_url, **kwargs)
 
     @classmethod
     def class_name(cls) -> str:
@@ -54,9 +65,26 @@ class RedisChatStore(BaseChatStore):
         if self.ttl:
             self.redis_client.expire(key, self.ttl)
 
+    async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
+        await self.aredis_client.delete(key)
+        for message in messages:
+            await self.async_add_message(key, message)
+
+        if self.ttl:
+            await self.aredis_client.expire(key, self.ttl)
+
     def get_messages(self, key: str) -> List[ChatMessage]:
         """Get messages for a key."""
         items = self.redis_client.lrange(key, 0, -1)
+        if len(items) == 0:
+            return []
+
+        items_json = [json.loads(m.decode("utf-8")) for m in items]
+        return [_dict_to_message(d) for d in items_json]
+
+    async def aget_messages(self, key: str) -> List[ChatMessage]:
+        """Get messages for a key."""
+        items = await self.aredis_client.lrange(key, 0, -1)
         if len(items) == 0:
             return []
 
@@ -76,9 +104,27 @@ class RedisChatStore(BaseChatStore):
         if self.ttl:
             self.redis_client.expire(key, self.ttl)
 
+    async def async_add_message(
+        self, key: str, message: ChatMessage, idx: Optional[int] = None
+    ) -> None:
+        """Add a message for a key."""
+        if idx is None:
+            item = json.dumps(_message_to_dict(message))
+            await self.aredis_client.rpush(key, item)
+        else:
+            await self._ainsert_element_at_index(key, idx, message)
+
+        if self.ttl:
+            await self.aredis_client.expire(key, self.ttl)
+
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         """Delete messages for a key."""
         self.redis_client.delete(key)
+        return None
+
+    async def adelete_messages(self, key: str) -> Optional[List[ChatMessage]]:
+        """Delete messages for a key."""
+        await self.aredis_client.delete(key)
         return None
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
@@ -89,6 +135,18 @@ class RedisChatStore(BaseChatStore):
 
             self.redis_client.delete(key)
             self.redis_client.lpush(key, *current_list)
+            return removed_item
+        else:
+            return None
+
+    async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
+        """Delete specific message for a key."""
+        current_list = await self.aredis_client.lrange(key, 0, -1)
+        if 0 <= idx < len(current_list):
+            removed_item = current_list.pop(idx)
+
+            await self.aredis_client.delete(key)
+            await self.aredis_client.lpush(key, *current_list)
             return removed_item
         else:
             return None
@@ -114,17 +172,35 @@ class RedisChatStore(BaseChatStore):
         self.set_messages(key, current_list)
         return self.get_messages(key)
 
+    async def _ainsert_element_at_index(
+        self, key: str, index: int, message: ChatMessage
+    ) -> List[ChatMessage]:
+        # Step 1: Retrieve the current list
+        current_list = await self.aget_messages(key)
+        # Step 2: Insert the new element at the desired index in the local list
+        current_list.insert(index, message)
+
+        # Step 3: Push the modified local list back to Redis
+        await self.aredis_client.delete(key)  # Remove the existing list
+        await self.aset_messages(key, current_list)
+        return await self.aget_messages(key)
+
     def _redis_cluster_client(self, redis_url: str, **kwargs: Any) -> "Redis":
         return RedisCluster.from_url(redis_url, **kwargs)  # type: ignore
 
-    def _check_for_cluster(self, redis_client: "Redis") -> bool:
+    def _aredis_cluster_client(self, redis_url: str, **kwargs: Any) -> "AsyncRedis":
+        return AsyncRedisCluster.from_url(redis_url, **kwargs)
+
+    def _check_for_cluster(self, redis_client: Union["Redis", "AsyncRedis"]) -> bool:
         try:
             cluster_info = redis_client.info("cluster")
             return cluster_info["cluster_enabled"] == 1
         except redis.exceptions.RedisError:
             return False
 
-    def _redis_sentinel_client(self, redis_url: str, **kwargs: Any) -> "Redis":
+    def _redis_sentinel_parser(
+        self, redis_url: str, **kwargs
+    ) -> Tuple[str, List[Tuple[str, int]]]:
         """
         Helper method to parse an (un-official) redis+sentinel url
         and create a Sentinel connection to fetch the final redis client
@@ -161,9 +237,18 @@ class RedisChatStore(BaseChatStore):
             if arg.startswith("ssl") or arg == "client_name":
                 sentinel_args[arg] = kwargs[arg]
 
+        return sentinel_args, sentinel_list, service_name, kwargs
+
+    def _redis_sentinel_client(self, redis_url: str, **kwargs: Any) -> "Redis":
+        (
+            sentinel_args,
+            sentinel_list,
+            service_name,
+            kwargs,
+        ) = self._redis_sentinel_parser(redis_url, **kwargs)
         # sentinel user/pass is part of sentinel_kwargs, user/pass for redis server
         # connection as direct parameter in kwargs
-        sentinel_client = redis.sentinel.Sentinel(
+        sentinel_client = Sentinel(
             sentinel_list, sentinel_kwargs=sentinel_args, **kwargs
         )
 
@@ -179,7 +264,34 @@ class RedisChatStore(BaseChatStore):
                     msg="Redis sentinel connection configured with password but Sentinel \
     answered NO PASSWORD NEEDED - Please check Sentinel configuration"
                 )
-                sentinel_client = redis.sentinel.Sentinel(sentinel_list, **kwargs)
+                sentinel_client = Sentinel(sentinel_list, **kwargs)
+            else:
+                raise
+
+        return sentinel_client.master_for(service_name)
+
+    def _aredis_sentinel_client(self, redis_url: str, **kwargs: Any) -> "AsyncRedis":
+        (
+            sentinel_args,
+            sentinel_list,
+            service_name,
+            kwargs,
+        ) = self._redis_sentinel_parser(redis_url, **kwargs)
+        sentinel_client = AsyncSentinel(
+            sentinel_list, sentinel_kwargs=sentinel_args, **kwargs
+        )
+
+        try:
+            asyncio.run(sentinel_client.execute_command("ping"))
+        except redis.exceptions.AuthenticationError:
+            exception_info = sys.exc_info()
+            exception = exception_info[1] or None
+            if exception is not None and "no password is set" in exception.args[0]:
+                logging.warning(
+                    msg="Redis sentinel connection configured with password but Sentinel \
+    answered NO PASSWORD NEEDED - Please check Sentinel configuration"
+                )
+                sentinel_client = AsyncSentinel(sentinel_list, **kwargs)
             else:
                 raise
 
@@ -240,4 +352,24 @@ class RedisChatStore(BaseChatStore):
             if self._check_for_cluster(redis_client):
                 redis_client.close()
                 redis_client = self._redis_cluster_client(redis_url, **kwargs)
+        return redis_client
+
+    def _aget_client(self, redis_url: str, **kwargs: Any) -> "AsyncRedis":
+        redis_client: "AsyncRedis"
+        # check if normal redis:// or redis+sentinel:// url
+        if redis_url.startswith("redis+sentinel"):
+            redis_client = self._aredis_sentinel_client(redis_url, **kwargs)
+        elif redis_url.startswith(
+            "rediss+sentinel"
+        ):  # sentinel with TLS support enables
+            kwargs["ssl"] = True
+            if "ssl_cert_reqs" not in kwargs:
+                kwargs["ssl_cert_reqs"] = "none"
+            redis_client = self._aredis_sentinel_client(redis_url, **kwargs)
+        else:
+            # connect to redis server from url, reconnect with cluster client if needed
+            redis_client = redis.asyncio.from_url(redis_url, **kwargs)
+            if self._check_for_cluster(redis_client):
+                redis_client.close()
+                redis_client = self._aredis_cluster_client(redis_url, **kwargs)
         return redis_client
