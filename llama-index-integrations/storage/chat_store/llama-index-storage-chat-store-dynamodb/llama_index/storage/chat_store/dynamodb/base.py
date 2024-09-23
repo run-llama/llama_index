@@ -182,13 +182,6 @@ class DynamoDBChatStore(BaseChatStore):
             ) as dynamodb:
                 self._atable = await dynamodb.Table(self.table_name)
 
-    def is_async_initialized(self):
-        """Check if the asynchronous table is initialized."""
-        if self._atable is None:
-            raise RuntimeError(
-                "Asynchronous table is not initialized. Please call init_async_table first."
-            )
-
     @classmethod
     def class_name(self) -> str:
         return "DynamoDBChatStore"
@@ -209,7 +202,7 @@ class DynamoDBChatStore(BaseChatStore):
         )
 
     async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
-        self.is_async_initialized()
+        self.init_async_table()
         await self._atable.put_item(
             Item={self.primary_key: key, "History": _messages_to_dict(messages)}
         )
@@ -233,7 +226,7 @@ class DynamoDBChatStore(BaseChatStore):
         return [_dict_to_message(message) for message in message_history]
 
     async def aget_messages(self, key: str) -> List[ChatMessage]:
-        self.is_async_initialized()
+        self.init_async_table()
         response = await self._atable.get_item(Key={self.primary_key: key})
 
         if response and "Item" in response:
@@ -260,7 +253,7 @@ class DynamoDBChatStore(BaseChatStore):
         self._table.put_item(Item={self.primary_key: key, "History": current_messages})
 
     async def async_add_message(self, key: str, message: ChatMessage) -> None:
-        self.is_async_initialized()
+        self.init_async_table()
         current_messages = _messages_to_dict(await self.aget_messages(key))
         current_messages.append(_message_to_dict(message))
 
@@ -283,7 +276,7 @@ class DynamoDBChatStore(BaseChatStore):
         return messages_to_delete
 
     async def adelete_messages(self, key: str) -> Optional[List[ChatMessage]]:
-        self.is_async_initialized()
+        self.init_async_table()
         messages_to_delete = await self.aget_messages(key)
         await self._atable.delete_item(Key={self.primary_key: key})
         return messages_to_delete
@@ -312,7 +305,7 @@ class DynamoDBChatStore(BaseChatStore):
             return None
 
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
-        self.is_async_initialized()
+        self.init_async_table()
         current_messages = await self.aget_messages(key)
         try:
             message_to_delete = current_messages[idx]
@@ -357,7 +350,7 @@ class DynamoDBChatStore(BaseChatStore):
         return keys
 
     async def aget_keys(self) -> List[str]:
-        self.is_async_initialized()
+        self.init_async_table()
         response = await self._atable.scan(ProjectionExpression=self.primary_key)
         keys = [item[self.primary_key] for item in response["Items"]]
         while "LastEvaluatedKey" in response:
