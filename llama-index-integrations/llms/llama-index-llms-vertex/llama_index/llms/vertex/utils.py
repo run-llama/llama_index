@@ -97,18 +97,13 @@ def completion_with_retry(
                 stream=stream,
                 tools=tools,
                 generation_config=generation_config,
-               
             )
         elif chat:
             generation = client.start_chat(**params)
             if stream:
-                return generation.send_message_streaming(
-                    prompt, **kwargs
-                )
+                return generation.send_message_streaming(prompt, **kwargs)
             else:
-                return generation.send_message(
-                    prompt, **kwargs
-                )
+                return generation.send_message(prompt, **kwargs)
         else:
             if stream:
                 return client.predict_streaming(prompt, **kwargs)
@@ -143,13 +138,10 @@ async def acompletion_with_retry(
                 prompt,
                 tools=tools,
                 generation_config=generation_config,
-               
             )
         elif chat:
             generation = client.start_chat(**params)
-            return await generation.send_message_async(
-                prompt, **kwargs
-            )
+            return await generation.send_message_async(prompt, **kwargs)
         else:
             return await client.predict_async(prompt, **kwargs)
 
