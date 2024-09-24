@@ -22,7 +22,7 @@ To use the FalkorDB vector store, you first need to initialize it with your Falk
 from llama_index.vector_stores.falkordb import FalkorDBVectorStore
 
 vector_store = FalkorDBVectorStore(
-    url="bolt://localhost:7687",
+    url="falkor://localhost:7687",
     database="your_database_name",
     index_name="your_index_name",
     node_label="YourNodeLabel",
