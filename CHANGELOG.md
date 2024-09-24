@@ -1,5 +1,36 @@
 # ChangeLog
 
+## [2024-09-24]
+
+### `llama-index-core` [0.11.13]
+
+- add option for string node representation during retireval in property graphs (#16100)
+- improve markdown element node parser and structured prediction reliability (#16172)
+
+### `llama-index-graph-stores-neptune` [0.2.1]
+
+- Fixed issue where Neptune was adding additional labels (#16137)
+
+### `llama-index-llms-vertext` [0.3.5]
+
+- Pass safety_settings to send_message methods to fix settings not being sent to API (#16153)
+
+### `llama-index-readers-box` [0.2.3]
+
+- upgrading box sdk to >= 1.5.0 #16169
+
+### `llama-index-storage-chat-store-dynamodb` [0.2.0]
+
+- Async support for dynamodb (#16139)
+
+### `llama-index-storage-chat-store-redis` [0.3.1]
+
+- Async support for redis (#16139)
+
+### `llama-index-vector-stores-astra-db` [0.3.0]
+
+- Depend on AstraPy 1.5 and above for AstraDBVectorStore (#16164)
+
 ## [2024-09-22]
 
 ### `llama-index-core` [0.11.12]

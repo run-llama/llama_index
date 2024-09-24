@@ -468,6 +468,7 @@ nav:
           - ./examples/observability/AimCallback.ipynb
           - ./examples/observability/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/observability/LangfuseCallbackHandler.ipynb
+          - ./examples/observability/LangfuseMistralPostHog.ipynb
           - ./examples/observability/LlamaDebugHandler.ipynb
           - ./examples/observability/MLflow.ipynb
           - ./examples/observability/OpenInferenceCallback.ipynb
