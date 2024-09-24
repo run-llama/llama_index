@@ -7,12 +7,12 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.multi_modal_llms.generic_utils import encode_image
 from llama_index.core.schema import ImageDocument
 
-DEFAULT_MISTRAL_API_TYPE = "mistral_ai"
-DEFAULT_MISTRAL_API_BASE = "https://api.mistral.ai/"
-DEFAULT_MISTRAL_API_VERSION = ""
+DEFAULT_MISTRALAI_API_TYPE = "mistral_ai"
+DEFAULT_MISTRALAI_API_BASE = "https://api.mistral.ai/"
+DEFAULT_MISTRALAI_API_VERSION = ""
 
 
-MISTRAL_MULTI_MODAL_MODELS = {
+MISTRALAI_MULTI_MODAL_MODELS = {
     "pixtral-12b-2409": 128000,
 }
 
@@ -133,7 +133,7 @@ def resolve_mistral_credentials(
 
     # resolve from Mistral module or default
     final_api_key = api_key or ""
-    final_api_base = api_base or DEFAULT_MISTRAL_API_BASE
-    final_api_version = api_version or DEFAULT_MISTRAL_API_VERSION
+    final_api_base = api_base or DEFAULT_MISTRALAI_API_BASE
+    final_api_version = api_version or DEFAULT_MISTRALAI_API_VERSION
 
     return final_api_key, str(final_api_base), final_api_version

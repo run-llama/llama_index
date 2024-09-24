@@ -23,7 +23,7 @@ from llama_index.core.multi_modal_llms import (
 )
 from llama_index.core.schema import ImageNode
 from llama_index.multi_modal_llms.mistral.utils import (
-    MISTRAL_MULTI_MODAL_MODELS,
+    MISTRALAI_MULTI_MODAL_MODELS,
     generate_mistral_multi_modal_chat_message,
     resolve_mistral_credentials,
 )
@@ -31,7 +31,7 @@ from llama_index.multi_modal_llms.mistral.utils import (
 from mistralai import Mistral
 
 
-class MistralMultiModal(MultiModalLLM):
+class MistralAIMultiModal(MultiModalLLM):
     model: str = Field(description="The Multi-Modal model to use from Mistral.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: Optional[int] = Field(
@@ -53,7 +53,6 @@ class MistralMultiModal(MultiModalLLM):
         ge=0,
     )
     api_key: str = Field(default=None, description="The Mistral API key.", exclude=True)
-    system_prompt: str = Field(default="", description="System Prompt.")
     api_base: str = Field(default=None, description="The base URL for Mistral API.")
     api_version: str = Field(description="The API version for Mistral API.")
     additional_kwargs: Dict[str, Any] = Field(
@@ -85,7 +84,6 @@ class MistralMultiModal(MultiModalLLM):
         callback_manager: Optional[CallbackManager] = None,
         default_headers: Optional[Dict[str, str]] = None,
         http_client: Optional[httpx.Client] = None,
-        system_prompt: Optional[str] = "",
         **kwargs: Any,
     ) -> None:
         api_key, api_base, api_version = resolve_mistral_credentials(
@@ -107,7 +105,6 @@ class MistralMultiModal(MultiModalLLM):
             api_version=api_version,
             callback_manager=callback_manager,
             default_headers=default_headers,
-            system_promt=system_prompt,
             **kwargs,
         )
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
@@ -133,9 +130,6 @@ class MistralMultiModal(MultiModalLLM):
     def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         return {
             "api_key": self.api_key,
-            "base_url": self.api_base,
-            "max_retries": self.max_retries,
-            "timeout": self.timeout,
             **kwargs,
         }
 
@@ -154,10 +148,10 @@ class MistralMultiModal(MultiModalLLM):
 
     # Model Params for Mistral Multi Modal model.
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        if self.model not in MISTRAL_MULTI_MODAL_MODELS:
+        if self.model not in MISTRALAI_MULTI_MODAL_MODELS:
             raise ValueError(
                 f"Invalid model {self.model}. "
-                f"Available models are: {list(MISTRAL_MULTI_MODAL_MODELS.keys())}"
+                f"Available models are: {list(MISTRALAI_MULTI_MODAL_MODELS.keys())}"
             )
         base_kwargs = {"model": self.model, "temperature": self.temperature, **kwargs}
         if self.max_tokens is not None:
@@ -185,12 +179,11 @@ class MistralMultiModal(MultiModalLLM):
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
-            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
+            prompt=prompt, role=MessageRole.USER.value, image_documents=image_documents
         )
 
         response = self._client.chat.complete(
             messages=message_dict,
-            system=self.system_prompt,
             stream=False,
             **all_kwargs,
         )
@@ -206,7 +199,7 @@ class MistralMultiModal(MultiModalLLM):
     ) -> CompletionResponseGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
-            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
+            prompt=prompt, role=MessageRole.USER.value, image_documents=image_documents
         )
 
         response = self._client.chat.stream(messages=messages, **all_kwargs)
@@ -215,7 +208,7 @@ class MistralMultiModal(MultiModalLLM):
             content = ""
             for chunk in response:
                 delta = chunk.data.choices[0].delta
-                role = delta.role or MessageRole.ASSISTANT
+                role = delta.role or MessageRole.ASSISTANT.value
 
                 content_delta = delta.content
                 if content_delta is None:
@@ -264,12 +257,11 @@ class MistralMultiModal(MultiModalLLM):
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
-            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
+            prompt=prompt, role=MessageRole.USER.value, image_documents=image_documents
         )
 
         response = await self._client.chat.complete_async(
             messages=message_dict,
-            system=self.system_prompt,
             stream=False,
             **all_kwargs,
         )
@@ -290,7 +282,7 @@ class MistralMultiModal(MultiModalLLM):
     ) -> CompletionResponseAsyncGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
-            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
+            prompt=prompt, role=MessageRole.USER.value, image_documents=image_documents
         )
 
         response = await self._client.chat.stream_async(messages=messages, **all_kwargs)
@@ -299,7 +291,7 @@ class MistralMultiModal(MultiModalLLM):
             content = ""
             async for chunk in response:
                 delta = chunk.data.choices[0].delta
-                role = delta.role or MessageRole.ASSISTANT
+                role = delta.role or MessageRole.ASSISTANT.value
 
                 content_delta = delta.content
                 if content_delta is None:
