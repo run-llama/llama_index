@@ -30,13 +30,16 @@ from llama_index.core.schema import (
 )
 from llama_index.core.utils import iter_batch
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
 
 if TYPE_CHECKING:
     from oracledb import Connection
+
+from llama_index.core.vector_stores.utils import metadata_dict_to_node
+from pydantic import PrivateAttr
 
 
 logger = logging.getLogger(__name__)
@@ -365,7 +368,7 @@ def drop_index_if_exists(client: Connection, index_name: str):
         logger.exception(f"Index {index_name} does not exist.")
 
 
-class OraLlamaVS(VectorStore):
+class OraLlamaVS(BasePydanticVectorStore):
     """`OraLlamaVS` vector store.
 
     To use, you should have both:
@@ -387,6 +390,12 @@ class OraLlamaVS(VectorStore):
     AMPLIFY_RATIO_GT5 = 20
     AMPLIFY_RATIO_GT50 = 10
     metadata_column: str = "metadata"
+    stores_text: bool = True
+    _client: Connection = PrivateAttr()
+    table_name: str
+    distance_strategy: DistanceStrategy
+    batch_size: Optional[int]
+    params: Optional[dict[str, Any]]
 
     def __init__(
         self,
@@ -405,16 +414,16 @@ class OraLlamaVS(VectorStore):
             ) from e
 
         try:
-            """Initialize with oracledb client."""
-            self._client = _client
             """Initialize with necessary components."""
-
-            self.table_name = table_name
-            self.distance_strategy = distance_strategy
-            self.batch_size = batch_size
-            self.params = params
-
-            _create_table(_client, self.table_name)
+            super().__init__(
+                table_name=table_name,
+                distance_strategy=distance_strategy,
+                batch_size=batch_size,
+                params=params,
+            )
+            # Assign _client to PrivateAttr after the Pydantic initialization
+            object.__setattr__(self, "_client", _client)
+            _create_table(_client, table_name)
 
         except oracledb.DatabaseError as db_err:
             logger.exception(f"Database error occurred while create table: {db_err}")
@@ -612,16 +621,22 @@ class OraLlamaVS(VectorStore):
                 if isinstance(node_info, dict):
                     start_char_idx = node_info.get("start", None)
                     end_char_idx = node_info.get("end", None)
-                node = TextNode(
-                    id_=result[0],
-                    text=text,
-                    metadata=metadata,
-                    start_char=start_char_idx,
-                    end_char=end_char_idx,
-                    relationships={
-                        NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc_id)
-                    },
-                )
+                try:
+                    node = metadata_dict_to_node(metadata)
+                    node.set_content(text)
+                except Exception:
+                    # Note: deprecated legacy logic for backward compatibility
+
+                    node = TextNode(
+                        id_=result[0],
+                        text=text,
+                        metadata=metadata,
+                        start_char_idx=start_char_idx,
+                        end_char_idx=end_char_idx,
+                        relationships={
+                            NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc_id)
+                        },
+                    )
 
                 nodes.append(node)
                 similarities.append(1.0 - math.exp(-result[5]))
