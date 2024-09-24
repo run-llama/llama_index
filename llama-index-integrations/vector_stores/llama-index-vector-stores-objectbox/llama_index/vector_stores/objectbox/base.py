@@ -1,10 +1,10 @@
-from typing import Any, List, Optional
+import logging
 import os
 import shutil
+import sys
 import time
-import logging
+from typing import Any, List, Optional
 
-from click import clear
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores import MetadataFilters
 from llama_index.core.vector_stores.types import (
@@ -30,6 +30,9 @@ from pydantic import PrivateAttr
 
 DIRECTORY = "objectbox"
 _logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(stream=sys.stdout)
+_logger.addHandler(handler)
+_logger.setLevel(logging.INFO)
 
 
 class ObjectBoxVectorStore(BasePydanticVectorStore):
@@ -84,14 +87,16 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
                 if node.embedding is None:
                     _logger.info("A node with no embedding was found ")
                     continue
-                entity_id = self._box.put(
+                self._box.put(
                     self._entity_class(
+                        node_id=node.node_id,
+                        doc_id=node.ref_doc_id if node.ref_doc_id is not None else "",
                         text=node.get_content(metadata_mode=MetadataMode.NONE),
                         metadata=node.metadata,
-                        embeddings=node.embedding,
+                        embeddings=node.embedding
                     )
                 )
-                ids.append(str(entity_id))
+                ids.append(node.node_id)
             if self.do_log:
                 end = time.perf_counter()
                 _logger.info(
@@ -101,10 +106,7 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
 
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        try:
-            self._box.remove(int(ref_doc_id))
-        except ValueError:
-            raise ValueError(f"Invalid doc id: {ref_doc_id}")
+        self._box.query(self._entity_class.doc_id.equals(ref_doc_id)).build().remove()
 
 
     def delete_nodes(
@@ -113,11 +115,8 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        # TODO: Check if filters can be used to implement
-        #       conditional filters
         if node_ids is not None:
-            for node_id in node_ids:
-                self._box.remove(int(node_id))
+            self._box.query(self._entity_class.node_id.oneOf(node_ids)).build().remove()
 
 
     def get_nodes(
@@ -130,17 +129,19 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
         if node_ids is not None:
             retrieved_nodes: list[BaseNode] = []
             with self._store.read_tx():
+                query_obj = self._box.query(self._entity_class.node_id.equals("node_id").alias("node_id")).build()
                 for node_id in node_ids:
                     try:
-                        entity = self._box.get(int(node_id))
-                        if entity is None:
-                            _logger.info(f"No entity with id = {int(node_id)} was found")
+                        query_obj.set_parameter_alias_string("node_id", node_id)
+                        entities = query_obj.find()
+                        if len(entities) == 0:
+                            _logger.info(f"No entity with id = {node_id} was found")
                             continue
                         retrieved_nodes.append(
                             TextNode(
-                                text=entity.text,
-                                id_=str(entity.id),
-                                metadata=entity.metadata,
+                                text=entities[0].text,
+                                id_=entities[0].node_id,
+                                metadata=entities[0].metadata,
                             )
                         )
                     except ValueError:
@@ -171,8 +172,12 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
             )
 
         for entity, score in results:
-            node = TextNode(text=entity.text, id_=str(entity.id), metadata=entity.metadata)
-            ids.append(str(entity.id))
+            node = TextNode(
+                text=entity.text,
+                id_=entity.node_id,
+                metadata=entity.metadata
+            )
+            ids.append(entity.node_id)
             nodes.append(node)
             similarities.append(score)
 
@@ -193,8 +198,10 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
         @Entity()
         class VectorEntity:
             id = Id()
+            node_id = String()
+            doc_id = String()
             text = String()
-            metadata = Property(dict, type=PropertyType.flex, id=3, uid=1003)
+            metadata = Property(dict, type=PropertyType.flex)
             embeddings = Float32Vector(
                 index=HnswIndex(
                     dimensions=self.embedding_dimensions,

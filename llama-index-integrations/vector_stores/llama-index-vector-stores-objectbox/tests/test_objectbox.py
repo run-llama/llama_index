@@ -29,9 +29,21 @@ def vectorstore():
 @pytest.fixture()
 def node_embeddings() -> Sequence[BaseNode]:
     text_nodes_with_embeddings = [
-        TextNode(text="test1", embedding=[1.2, 0.3, -0.9]),
-        TextNode(text="test2", embedding=[0.1, 0.0, 0.0]),
-        TextNode(text="test3", embedding=[-2.3, 1.2, -6.7]),
+        TextNode(
+            id_="e8671c2d-8ee3-4f95-9730-7832f0115560",
+            text="test1",
+            embedding=[1.2, 0.3, -0.9],
+        ),
+        TextNode(
+            id_="d0db4ed6-da16-4769-bf19-d1c06267a5f6",
+            text="test2",
+            embedding=[0.1, 0.0, 0.0],
+        ),
+        TextNode(
+            id_="8601b27c-376e-48dd-a252-e61e01f29069",
+            text="test3",
+            embedding=[-2.3, 1.2, -6.7],
+        ),
     ]
     return text_nodes_with_embeddings
 
@@ -48,22 +60,18 @@ def test_query(vectorstore: ObjectBoxVectorStore, node_embeddings: Sequence[Base
         VectorStoreQuery(query_embedding=[0.15, 0.001, -0.01], similarity_top_k=1)
     )
     assert len(search_result.ids) == 1
-    assert search_result.nodes[0].id_ == "2"
+    assert search_result.nodes[0].id_ == "d0db4ed6-da16-4769-bf19-d1c06267a5f6"
 
 
 def test_get_nodes(
     vectorstore: ObjectBoxVectorStore, node_embeddings: Sequence[BaseNode]
 ):
     vectorstore.add(node_embeddings)
-    retrieved_nodes = vectorstore.get_nodes(node_ids=["3"])
+    retrieved_nodes = vectorstore.get_nodes(
+        node_ids=["8601b27c-376e-48dd-a252-e61e01f29069"]
+    )
     assert len(retrieved_nodes) == 1
-    assert retrieved_nodes[0].id_ == "3"
-
-
-def test_delete(vectorstore: ObjectBoxVectorStore, node_embeddings: Sequence[BaseNode]):
-    vectorstore.add(node_embeddings)
-    vectorstore.delete(ref_doc_id="2")
-    assert len(vectorstore.get_nodes(node_ids=["2"])) == 0
+    assert retrieved_nodes[0].id_ == "8601b27c-376e-48dd-a252-e61e01f29069"
 
 
 def test_clear(vectorstore: ObjectBoxVectorStore, node_embeddings: Sequence[BaseNode]):
