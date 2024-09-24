@@ -15,7 +15,7 @@ from redis.asyncio import Redis as AsyncRedis
 from redis.asyncio.cluster import RedisCluster as AsyncRedisCluster
 from redis.asyncio.sentinel import Sentinel as AsyncSentinel
 
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
 
@@ -33,9 +33,11 @@ def _dict_to_message(d: dict) -> ChatMessage:
 class RedisChatStore(BaseChatStore):
     """Redis chat store."""
 
-    redis_client: Any = Field(description="Redis client.")
-    aredis_client: Any = Field(default=None, description="Async Redis client.")
+    redis_url: str = Field(default="redis://localhost:6379", description="Redis URL.")
     ttl: Optional[int] = Field(default=None, description="Time to live in seconds.")
+
+    _redis_client: Optional[Redis] = PrivateAttr()
+    _aredis_client: Optional[AsyncRedis] = PrivateAttr()
 
     def __init__(
         self,
@@ -48,8 +50,8 @@ class RedisChatStore(BaseChatStore):
         """Initialize."""
         super().__init__(ttl=ttl)
 
-        self.redis_client = redis_client or self._get_client(redis_url, **kwargs)
-        self.aredis_client = aredis_client or self._aget_client(redis_url, **kwargs)
+        self._redis_client = redis_client or self._get_client(redis_url, **kwargs)
+        self._aredis_client = aredis_client or self._aget_client(redis_url, **kwargs)
 
     @classmethod
     def class_name(cls) -> str:
@@ -58,24 +60,24 @@ class RedisChatStore(BaseChatStore):
 
     def set_messages(self, key: str, messages: List[ChatMessage]) -> None:
         """Set messages for a key."""
-        self.redis_client.delete(key)
+        self._redis_client.delete(key)
         for message in messages:
             self.add_message(key, message)
 
         if self.ttl:
-            self.redis_client.expire(key, self.ttl)
+            self._redis_client.expire(key, self.ttl)
 
     async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
-        await self.aredis_client.delete(key)
+        await self._aredis_client.delete(key)
         for message in messages:
             await self.async_add_message(key, message)
 
         if self.ttl:
-            await self.aredis_client.expire(key, self.ttl)
+            await self._aredis_client.expire(key, self.ttl)
 
     def get_messages(self, key: str) -> List[ChatMessage]:
         """Get messages for a key."""
-        items = self.redis_client.lrange(key, 0, -1)
+        items = self._redis_client.lrange(key, 0, -1)
         if len(items) == 0:
             return []
 
@@ -84,7 +86,7 @@ class RedisChatStore(BaseChatStore):
 
     async def aget_messages(self, key: str) -> List[ChatMessage]:
         """Get messages for a key."""
-        items = await self.aredis_client.lrange(key, 0, -1)
+        items = await self._aredis_client.lrange(key, 0, -1)
         if len(items) == 0:
             return []
 
@@ -97,12 +99,12 @@ class RedisChatStore(BaseChatStore):
         """Add a message for a key."""
         if idx is None:
             item = json.dumps(_message_to_dict(message))
-            self.redis_client.rpush(key, item)
+            self._redis_client.rpush(key, item)
         else:
             self._insert_element_at_index(key, idx, message)
 
         if self.ttl:
-            self.redis_client.expire(key, self.ttl)
+            self._redis_client.expire(key, self.ttl)
 
     async def async_add_message(
         self, key: str, message: ChatMessage, idx: Optional[int] = None
@@ -110,54 +112,54 @@ class RedisChatStore(BaseChatStore):
         """Add a message for a key."""
         if idx is None:
             item = json.dumps(_message_to_dict(message))
-            await self.aredis_client.rpush(key, item)
+            await self._aredis_client.rpush(key, item)
         else:
             await self._ainsert_element_at_index(key, idx, message)
 
         if self.ttl:
-            await self.aredis_client.expire(key, self.ttl)
+            await self._aredis_client.expire(key, self.ttl)
 
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         """Delete messages for a key."""
-        self.redis_client.delete(key)
+        self._redis_client.delete(key)
         return None
 
     async def adelete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         """Delete messages for a key."""
-        await self.aredis_client.delete(key)
+        await self._aredis_client.delete(key)
         return None
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete specific message for a key."""
-        current_list = self.redis_client.lrange(key, 0, -1)
+        current_list = self._redis_client.lrange(key, 0, -1)
         if 0 <= idx < len(current_list):
             removed_item = current_list.pop(idx)
 
-            self.redis_client.delete(key)
-            self.redis_client.lpush(key, *current_list)
+            self._redis_client.delete(key)
+            self._redis_client.lpush(key, *current_list)
             return removed_item
         else:
             return None
 
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete specific message for a key."""
-        current_list = await self.aredis_client.lrange(key, 0, -1)
+        current_list = await self._aredis_client.lrange(key, 0, -1)
         if 0 <= idx < len(current_list):
             removed_item = current_list.pop(idx)
 
-            await self.aredis_client.delete(key)
-            await self.aredis_client.lpush(key, *current_list)
+            await self._aredis_client.delete(key)
+            await self._aredis_client.lpush(key, *current_list)
             return removed_item
         else:
             return None
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
-        return self.redis_client.rpop(key)
+        return self._redis_client.rpop(key)
 
     def get_keys(self) -> List[str]:
         """Get all keys."""
-        return [key.decode("utf-8") for key in self.redis_client.keys("*")]
+        return [key.decode("utf-8") for key in self._redis_client.keys("*")]
 
     def _insert_element_at_index(
         self, key: str, index: int, message: ChatMessage
@@ -168,7 +170,7 @@ class RedisChatStore(BaseChatStore):
         current_list.insert(index, message)
 
         # Step 3: Push the modified local list back to Redis
-        self.redis_client.delete(key)  # Remove the existing list
+        self._redis_client.delete(key)  # Remove the existing list
         self.set_messages(key, current_list)
         return self.get_messages(key)
 
@@ -181,7 +183,7 @@ class RedisChatStore(BaseChatStore):
         current_list.insert(index, message)
 
         # Step 3: Push the modified local list back to Redis
-        await self.aredis_client.delete(key)  # Remove the existing list
+        await self._aredis_client.delete(key)  # Remove the existing list
         await self.aset_messages(key, current_list)
         return await self.aget_messages(key)
 
