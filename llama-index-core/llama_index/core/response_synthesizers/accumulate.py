@@ -117,7 +117,9 @@ class Accumulate(BaseSynthesizer):
         """Give responses given a query and a corresponding text chunk."""
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
 
-        text_chunks = self._prompt_helper.repack(text_qa_template, [text_chunk])
+        text_chunks = self._prompt_helper.repack(
+            text_qa_template, [text_chunk], llm=self._llm
+        )
 
         predictor: Callable
         if self._output_cls is None:

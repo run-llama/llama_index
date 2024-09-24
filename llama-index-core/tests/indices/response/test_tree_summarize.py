@@ -1,6 +1,6 @@
 """Test tree summarize."""
 
-from typing import Any, List, Sequence
+from typing import Any, List, Sequence, Optional
 from unittest.mock import Mock, patch
 
 import pytest
@@ -15,7 +15,10 @@ from llama_index.core.response_synthesizers import TreeSummarize
 @pytest.fixture()
 def mock_prompt_helper(patch_llm_predictor, patch_token_text_splitter):
     def mock_repack(
-        prompt_template: PromptTemplate, text_chunks: Sequence[str]
+        prompt_template: PromptTemplate,
+        text_chunks: Sequence[str],
+        llm: Optional[Any] = None,
+        tools: Optional[Any] = None,
     ) -> List[str]:
         merged_chunks = []
         for chunks in zip(*[iter(text_chunks)] * 2):

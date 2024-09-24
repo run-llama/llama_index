@@ -79,7 +79,8 @@ class DefaultRefineProgram(BasePydanticProgram):
                 self._prompt,
                 **kwds,
             )
-            answer = answer.model_dump_json()
+            if isinstance(answer, BaseModel):
+                answer = answer.model_dump_json()
         else:
             answer = self._llm.predict(
                 self._prompt,
@@ -94,7 +95,8 @@ class DefaultRefineProgram(BasePydanticProgram):
                 self._prompt,
                 **kwds,
             )
-            answer = answer.model_dump_json()
+            if isinstance(answer, BaseModel):
+                answer = answer.model_dump_json()
         else:
             answer = await self._llm.apredict(
                 self._prompt,
@@ -185,7 +187,10 @@ class Refine(BaseSynthesizer):
             prev_response = response
         if isinstance(response, str):
             if self._output_cls is not None:
-                response = self._output_cls.model_validate_json(response)
+                try:
+                    response = self._output_cls.model_validate_json(response)
+                except ValidationError:
+                    pass
             else:
                 response = response or "Empty Response"
         else:
@@ -220,7 +225,9 @@ class Refine(BaseSynthesizer):
     ) -> RESPONSE_TEXT_TYPE:
         """Give response given a query and a corresponding text chunk."""
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
-        text_chunks = self._prompt_helper.repack(text_qa_template, [text_chunk])
+        text_chunks = self._prompt_helper.repack(
+            text_qa_template, [text_chunk], llm=self._llm
+        )
 
         response: Optional[RESPONSE_TEXT_TYPE] = None
         program = self._program_factory(text_qa_template)
@@ -301,7 +308,7 @@ class Refine(BaseSynthesizer):
 
         # obtain text chunks to add to the refine template
         text_chunks = self._prompt_helper.repack(
-            refine_template, text_chunks=[text_chunk]
+            refine_template, text_chunks=[text_chunk], llm=self._llm
         )
 
         program = self._program_factory(refine_template)
@@ -410,7 +417,7 @@ class Refine(BaseSynthesizer):
 
         # obtain text chunks to add to the refine template
         text_chunks = self._prompt_helper.repack(
-            refine_template, text_chunks=[text_chunk]
+            refine_template, text_chunks=[text_chunk], llm=self._llm
         )
 
         program = self._program_factory(refine_template)
@@ -467,7 +474,9 @@ class Refine(BaseSynthesizer):
     ) -> RESPONSE_TEXT_TYPE:
         """Give response given a query and a corresponding text chunk."""
         text_qa_template = self._text_qa_template.partial_format(query_str=query_str)
-        text_chunks = self._prompt_helper.repack(text_qa_template, [text_chunk])
+        text_chunks = self._prompt_helper.repack(
+            text_qa_template, [text_chunk], llm=self._llm
+        )
 
         response: Optional[RESPONSE_TEXT_TYPE] = None
         program = self._program_factory(text_qa_template)
