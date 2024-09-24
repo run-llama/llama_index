@@ -22,7 +22,7 @@ from llama_index.core.multi_modal_llms import (
     MultiModalLLMMetadata,
 )
 from llama_index.core.schema import ImageNode
-from llama_index.multi_modal_llms.mistral.utils import (
+from llama_index.multi_modal_llms.mistralai.utils import (
     MISTRALAI_MULTI_MODAL_MODELS,
     generate_mistral_multi_modal_chat_message,
     resolve_mistral_credentials,
@@ -202,28 +202,26 @@ class MistralAIMultiModal(MultiModalLLM):
             prompt=prompt, role=MessageRole.USER.value, image_documents=image_documents
         )
 
-        response = self._client.chat.stream(messages=messages, **all_kwargs)
+        response = self._client.chat.stream(messages=message_dict, **all_kwargs)
 
-        def gen() -> ChatResponseGen:
+        def gen() -> CompletionResponseGen:
             content = ""
             for chunk in response:
                 delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT.value
 
-                content_delta = delta.content
+                content_delta = delta.content or ""
                 if content_delta is None:
                     pass
                     # continue
                 else:
                     content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(
-                        role=role,
-                        content=content,
-                        additional_kwargs=additional_kwargs,
-                    ),
+
+                yield CompletionResponse(
                     delta=content_delta,
-                    raw=chunk,
+                    text=content,
+                    raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
                 )
 
         return gen()
@@ -285,9 +283,11 @@ class MistralAIMultiModal(MultiModalLLM):
             prompt=prompt, role=MessageRole.USER.value, image_documents=image_documents
         )
 
-        response = await self._client.chat.stream_async(messages=messages, **all_kwargs)
+        response = await self._client.chat.stream_async(
+            messages=message_dict, **all_kwargs
+        )
 
-        async def gen() -> ChatResponseGen:
+        async def gen() -> CompletionResponseAsyncGen:
             content = ""
             async for chunk in response:
                 delta = chunk.data.choices[0].delta
@@ -299,14 +299,11 @@ class MistralAIMultiModal(MultiModalLLM):
                     # continue
                 else:
                     content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(
-                        role=role,
-                        content=content,
-                        additional_kwargs=additional_kwargs,
-                    ),
+                yield CompletionResponse(
                     delta=content_delta,
-                    raw=chunk,
+                    text=content,
+                    raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
                 )
 
         return gen()

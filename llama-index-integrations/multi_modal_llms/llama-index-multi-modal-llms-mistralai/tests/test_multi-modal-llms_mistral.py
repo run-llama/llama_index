@@ -1,5 +1,5 @@
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
-from llama_index.multi_modal_llms.mistral import MistralAIMultiModal
+from llama_index.multi_modal_llms.mistralai import MistralAIMultiModal
 
 
 def test_embedding_class():
