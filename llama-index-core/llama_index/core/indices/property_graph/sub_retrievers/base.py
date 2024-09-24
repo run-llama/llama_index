@@ -38,11 +38,13 @@ class BasePGRetriever(BaseRetriever):
         graph_store: PropertyGraphStore,
         include_text: bool = True,
         include_text_preamble: Optional[str] = DEFAULT_PREAMBLE,
+        include_properties: bool = False,
         **kwargs: Any,
     ) -> None:
         self._graph_store = graph_store
         self.include_text = include_text
         self._include_text_preamble = include_text_preamble
+        self.include_properties = include_properties
         super().__init__(callback_manager=kwargs.get("callback_manager", None))
 
     def _get_nodes_with_score(
@@ -57,7 +59,10 @@ class BasePGRetriever(BaseRetriever):
                     node_id=source_id
                 )
 
-            text = f"{triplet[0]!s} -> {triplet[1]!s} -> {triplet[2]!s}"
+            if self.include_properties:
+                text = f"{triplet[0]!s} -> {triplet[1]!s} -> {triplet[2]!s}"
+            else:
+                text = f"{triplet[0].id} -> {triplet[1].id} -> {triplet[2].id}"
             results.append(
                 NodeWithScore(
                     node=TextNode(
