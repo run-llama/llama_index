@@ -1,7 +1,7 @@
 import enum
 import uuid
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, ClassVar
 
 from llama_index.legacy.constants import DEFAULT_EMBEDDING_DIM
 from llama_index.legacy.schema import BaseNode, MetadataMode, TextNode
@@ -26,8 +26,8 @@ class IndexType(enum.Enum):
 
 
 class TimescaleVectorStore(VectorStore):
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
 
     def __init__(
         self,
@@ -247,7 +247,7 @@ class TimescaleVectorStore(VectorStore):
         filter: Dict[str, str] = {"doc_id": ref_doc_id}
         self._sync_client.delete_by_metadata(filter)
 
-    DEFAULT_INDEX_TYPE = IndexType.TIMESCALE_VECTOR
+    DEFAULT_INDEX_TYPE: ClassVar = IndexType.TIMESCALE_VECTOR
 
     def create_index(
         self, index_type: IndexType = DEFAULT_INDEX_TYPE, **kwargs: Any
