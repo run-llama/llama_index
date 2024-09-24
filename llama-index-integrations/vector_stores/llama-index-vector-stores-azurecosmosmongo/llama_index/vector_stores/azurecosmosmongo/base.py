@@ -139,8 +139,8 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         db.command(create_index_commands)
 
     def _get_vector_index_ivf(
-            self,
-            kind: str,
+        self,
+        kind: str,
     ) -> Dict[str, Any]:
         return {
             "createIndexes": self._collection_name,
@@ -163,8 +163,8 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         }
 
     def _get_vector_index_hnsw(
-            self,
-            kind: str,
+        self,
+        kind: str,
     ) -> Dict[str, Any]:
         return {
             "createIndexes": self._collection_name,
@@ -190,9 +190,9 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         }
 
     def create_filter_index(
-            self,
-            property_to_filter: str,
-            index_name: str,
+        self,
+        property_to_filter: str,
+        index_name: str,
     ) -> dict[str, Any]:
         db = self._mongodb_client[self._db_name]
         command = {
