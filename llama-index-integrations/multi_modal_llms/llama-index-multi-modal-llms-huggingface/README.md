@@ -20,7 +20,7 @@ Author of that Integration [GitHub](https://github.com/g-hano) | [LinkedIn](http
 ## Installation
 
 ```bash
-pip install llama-index transformers torch pillow
+pip install llama-index-multi-modal-llms-huggingface
 ```
 
 Make sure to set your Hugging Face API token as an environment variable:
@@ -34,7 +34,7 @@ export HF_TOKEN=your_huggingface_token_here
 Here's a basic example of how to use the Hugging Face multimodal integration:
 
 ```python
-from llama_index.multi_modal_llms import HuggingFaceMultiModal
+from llama_index.multi_modal_llms.huggingface import HuggingFaceMultiModal
 from llama_index.schema import ImageDocument
 
 # Initialize the model
