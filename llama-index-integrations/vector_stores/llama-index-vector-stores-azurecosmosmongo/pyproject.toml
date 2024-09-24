@@ -21,13 +21,13 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Aayush Kataria aayushkataria3011@gmail.com"]
+authors = ["Your Name <you@example.com>"]
 description = "llama-index vector_stores azurecosmosmongo integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-azurecosmosmongo"
 readme = "README.md"
-version = "0.2.1"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
