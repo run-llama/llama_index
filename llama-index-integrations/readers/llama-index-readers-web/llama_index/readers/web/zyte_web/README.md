@@ -41,7 +41,7 @@ documents = zyte_reader.load_data(urls=["http://example.com"])
 
 ### Example Usage
 
-Here is an example demonstrating how to initialize the ZyteWebReader, load documents from a URL, and then create a summary index from those documents for querying.
+Here is an example demonstrating how to initialize the ZyteWebReader, load document from a URL.
 
 ```python
 # Initialize the ZyteWebReader with your API key and desired mode
@@ -56,6 +56,6 @@ zyte_reader = ZyteWebReader(
 # Load documents from Paul Graham's essay URL
 documents = zyte_reader.load_data(urls=["http://www.paulgraham.com/"])
 
-# Display the query response
+# Display the document
 print(documents)
 ```
