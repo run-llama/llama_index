@@ -9,37 +9,31 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.indices.managed.llama_cloud"
+import_path = "llama_index.multi_modal_llms.mistral"
 
 [tool.llamahub.class_authors]
-LlamaCloudIndex = "llama-index"
-
-[tool.llamahub.secondary_class_authors]
-LlamaCloudRetriever = "llama-index"
+MistralMultiModal = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
-# Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
-explicit_package_bases = true
 ignore_missing_imports = true
-namespace_packages = true
-plugins = "pydantic.mypy"
-python_version = "3.8"
+python_version = "3.9"
 
 [tool.poetry]
-authors = ["Logan Markewich <logan@llamaindex.ai>"]
-description = "llama-index indices llama-cloud integration"
+authors = ["Your Name <you@example.com>"]
+description = "llama-index multi-modal-llms mistral integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-indices-managed-llama-cloud"
+name = "llama-index-multi-modal-llms-mistral"
 readme = "README.md"
-version = "0.4.0"
+version = "0.1"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-cloud = ">=0.0.11"
-llama-index-core = "^0.11.13.post1"
+python = ">=3.9,<4.0"
+mistralai = ">=1.1.0"
+llama-index-core = "^0.11.0"
+filetype = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

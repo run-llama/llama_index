@@ -1,4 +1,5 @@
 import os
+import httpx
 from typing import Optional, TYPE_CHECKING
 
 from llama_index.core.constants import (
@@ -15,6 +16,7 @@ def get_client(
     base_url: Optional[str] = None,
     app_url: Optional[str] = None,
     timeout: int = 60,
+    httpx_client: Optional[httpx.Client] = None,
 ) -> "LlamaCloud":
     """Get the sync platform API client."""
     from llama_cloud.client import LlamaCloud
@@ -23,7 +25,9 @@ def get_client(
     app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
     api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
 
-    return LlamaCloud(base_url=base_url, token=api_key, timeout=timeout)
+    return LlamaCloud(
+        base_url=base_url, token=api_key, timeout=timeout, httpx_client=httpx_client
+    )
 
 
 def get_aclient(
@@ -31,6 +35,7 @@ def get_aclient(
     base_url: Optional[str] = None,
     app_url: Optional[str] = None,
     timeout: int = 60,
+    httpx_client: Optional[httpx.AsyncClient] = None,
 ) -> "AsyncLlamaCloud":
     """Get the async platform API client."""
     from llama_cloud.client import AsyncLlamaCloud
@@ -39,4 +44,6 @@ def get_aclient(
     app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
     api_key = api_key or os.environ.get("LLAMA_CLOUD_API_KEY", None)
 
-    return AsyncLlamaCloud(base_url=base_url, token=api_key, timeout=timeout)
+    return AsyncLlamaCloud(
+        base_url=base_url, token=api_key, timeout=timeout, httpx_client=httpx_client
+    )
