@@ -1,4 +1,7 @@
 import asyncio
+import base64
+import json
+import pickle
 import warnings
 from collections import defaultdict
 from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING, Set, Tuple
@@ -24,6 +27,7 @@ class Context:
 
     def __init__(self, workflow: "Workflow", stepwise: bool = False) -> None:
         self.stepwise = stepwise
+
         self._workflow = workflow
         # Broker machinery
         self._queues: Dict[str, asyncio.Queue] = {}
@@ -39,6 +43,69 @@ class Context:
         self._globals: Dict[str, Any] = {}
         # Step-specific instance
         self._events_buffer: Dict[Type[Event], List[Event]] = defaultdict(list)
+
+        # keep track of all the event classes that are accepted by the workflow
+        self._event_classes: Dict[str, type] = {}
+        for step_func in self._workflow._get_steps().values():
+            step_config: Optional[StepConfig] = getattr(
+                step_func, "__step_config", None
+            )
+            if step_config and step_config.accepted_events:
+                for event_type_cls in step_config.accepted_events:
+                    self._event_classes[event_type_cls.__name__] = event_type_cls
+
+            if step_config and step_config.return_types:
+                for return_type_cls in step_config.return_types:
+                    self._event_classes[return_type_cls.__name__] = return_type_cls
+
+    def _serialize_event(self, event: Event) -> Tuple[str, Any]:
+        return (event.__class__.__name__, event.model_dump())
+
+    def _deserialize_event(self, event_name: str, event_data: Any) -> Event:
+        event_cls = self._event_classes[event_name]
+        return event_cls.model_validate(event_data)
+
+    def _serialize_queue(self, queue: asyncio.Queue) -> str:
+        queue_items = list(queue._queue)
+
+        # dump a mapping of the event name to the event object
+        queue_objs = [self._serialize_event(obj) for obj in queue_items]
+        return json.dumps(queue_objs)
+
+    def _deserialize_queue(self, queue_str: str) -> asyncio.Queue:
+        # deserialize the queue
+        queue_objs = json.loads(queue_str)
+
+        # create a new queue, and put the objects back into it
+        queue = asyncio.Queue()
+        for obj in queue_objs:
+            event_obj = self._deserialize_event(obj[0], obj[1])
+            queue.put_nowait(event_obj)
+
+        return queue
+
+    def _serialize_globals(self) -> Dict[str, Any]:
+        serialized_globals = {}
+        for key, value in self._globals.items():
+            try:
+                serialized_globals[key] = json.dumps(value)
+            except TypeError:
+                # if the value is not serializable, we pickle it
+                serialized_globals[key] = base64.b64encode(pickle.dumps(value)).decode()
+
+        return serialized_globals
+
+    def _deserialize_globals(
+        self, serialized_globals: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        deserialized_globals = {}
+        for key, value in serialized_globals.items():
+            try:
+                deserialized_globals[key] = json.loads(value)
+            except json.JSONDecodeError:
+                deserialized_globals[key] = pickle.loads(base64.b64decode(value))
+
+        return deserialized_globals
 
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:
         """Store `value` into the Context under `key`.

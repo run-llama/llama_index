@@ -19,6 +19,12 @@ class WorkflowHandler(asyncio.Future):
     def is_done(self) -> bool:
         return self.done()
 
+    def get_pickled_state_string(self) -> str:
+        if not self.ctx:
+            raise ValueError("Context is not set!")
+
+        return self.ctx.get_pickled_state_string()
+
     async def stream_events(self) -> AsyncGenerator[Event, None]:
         if not self.ctx:
             raise ValueError("Context is not set!")

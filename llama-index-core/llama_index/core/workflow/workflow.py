@@ -386,6 +386,12 @@ class Workflow(metaclass=WorkflowMeta):
 
         return retval
 
+    @dispatcher.span
+    def resume_from_pickled_state(self, pickled_state: str) -> WorkflowHandler:
+        """Resumes the workflow from a pickled state."""
+        ctx = Context.from_pickled_state(self, pickled_state)
+        return WorkflowHandler(ctx=ctx)
+
     def is_done(self) -> bool:
         """Checks if the workflow is done."""
         return self._stepwise_context is None
