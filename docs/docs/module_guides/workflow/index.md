@@ -352,6 +352,59 @@ class RetryOnFridayPolicy:
         return None
 ```
 
+## Human-in-the-loop
+
+Since workflows are so flexible, there are many possible ways to implement human-in-the-loop patterns.
+
+The easiest way to implement a human-in-the-loop is to use the `InputRequiredEvent` and `HumanResponseEvent` events during event streaming.
+
+```python
+class HumanInTheLoopWorkflow(Workflow):
+    @step
+    async def step1(self, ev: StartEvent) -> InputRequiredEvent:
+        return InputRequiredEvent(prefix="Enter a number: ")
+
+    @step
+    async def step2(self, ev: HumanResponseEvent) -> StopEvent:
+        return StopEvent(result=ev.response)
+
+
+# workflow should work with streaming
+workflow = HumanInTheLoopWorkflow()
+
+handler = workflow.run()
+async for event in handler.stream_events():
+    if isinstance(event, InputRequiredEvent):
+        # here, we can handle human input however you want
+        # this means using input(), websockets, accessing async state, etc.
+        # here, we just use input()
+        response = input(event.prefix)
+        handler.ctx.send_event(HumanResponseEvent(response=response))
+
+final_result = await handler
+```
+
+Here, the workflow will wait until the `HumanResponseEvent` is emitted.
+
+Also note that you can break out of the loop, and resume it later. This is useful if you want to pause the workflow to wait for a human response, but continue the workflow later.
+
+```python
+handler = workflow.run()
+async for event in handler.stream_events():
+    if isinstance(event, InputRequiredEvent):
+        break
+
+# now we handle the human response
+response = input(event.prefix)
+handler.ctx.send_event(HumanResponseEvent(response=response))
+
+# now we resume the workflow streaming
+async for event in handler.stream_events():
+    continue
+
+final_result = await handler
+```
+
 ## Stepwise Execution
 
 Workflows have built-in utilities for stepwise execution, allowing you to control execution and debug state as things progress.
