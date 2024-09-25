@@ -122,7 +122,7 @@ def _stringify_list(lst: List) -> str:
     return "[" + ",".join(str(item) for item in lst) + "]"
 
 
-def _table_exists(client: Connection, table_name: str) -> bool:
+def _table_exists(connection: Connection, table_name: str) -> bool:
     try:
         import oracledb
     except ImportError as e:
@@ -131,7 +131,7 @@ def _table_exists(client: Connection, table_name: str) -> bool:
             "`pip install -U oracledb`."
         ) from e
     try:
-        with client.cursor() as cursor:
+        with connection.cursor() as cursor:
             cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
             return True
     except oracledb.DatabaseError as ex:
@@ -142,13 +142,13 @@ def _table_exists(client: Connection, table_name: str) -> bool:
 
 
 @_handle_exceptions
-def _index_exists(client: Connection, index_name: str) -> bool:
+def _index_exists(connection: Connection, index_name: str) -> bool:
     # Check if the index exists
     query = (
         "SELECT index_name FROM all_indexes WHERE upper(index_name) = upper(:idx_name)"
     )
 
-    with client.cursor() as cursor:
+    with connection.cursor() as cursor:
         # Execute the query
         cursor.execute(query, idx_name=index_name.upper())
         result = cursor.fetchone()
@@ -182,9 +182,9 @@ def _get_index_name(base_name: str) -> str:
 
 
 @_handle_exceptions
-def _create_table(client: Connection, table_name: str) -> None:
-    if not _table_exists(client, table_name):
-        with client.cursor() as cursor:
+def _create_table(connection: Connection, table_name: str) -> None:
+    if not _table_exists(connection, table_name):
+        with connection.cursor() as cursor:
             column_definitions = ", ".join(
                 [f'{k} {v["type"]}' for k, v in column_config.items()]
             )
@@ -200,22 +200,31 @@ def _create_table(client: Connection, table_name: str) -> None:
 
 @_handle_exceptions
 def create_index(
-    client: Connection,
+    connection: Connection,
     vector_store: OraLlamaVS,
     params: Optional[dict[str, Any]] = None,
 ) -> None:
     if params:
         if params["idx_type"] == "HNSW":
             _create_hnsw_index(
-                client, vector_store.table_name, vector_store.distance_strategy, params
+                connection,
+                vector_store.table_name,
+                vector_store.distance_strategy,
+                params,
             )
         elif params["idx_type"] == "IVF":
             _create_ivf_index(
-                client, vector_store.table_name, vector_store.distance_strategy, params
+                connection,
+                vector_store.table_name,
+                vector_store.distance_strategy,
+                params,
             )
         else:
             _create_hnsw_index(
-                client, vector_store.table_name, vector_store.distance_strategy, params
+                connection,
+                vector_store.table_name,
+                vector_store.distance_strategy,
+                params,
             )
 
 
@@ -243,7 +252,7 @@ def _create_config(defaults: dict, params: dict) -> dict:
 
 @_handle_exceptions
 def _create_hnsw_index(
-    client: Connection,
+    connection: Connection,
     table_name: str,
     distance_strategy: DistanceStrategy,
     params: Optional[dict[str, Any]] = None,
@@ -288,8 +297,8 @@ def _create_hnsw_index(
     ddl = ddl_assembly.format(**config)
 
     # Check if the index exists
-    if not _index_exists(client, config["idx_name"]):
-        with client.cursor() as cursor:
+    if not _index_exists(connection, config["idx_name"]):
+        with connection.cursor() as cursor:
             cursor.execute(ddl)
             logger.info("Index created successfully...")
     else:
@@ -298,7 +307,7 @@ def _create_hnsw_index(
 
 @_handle_exceptions
 def _create_ivf_index(
-    client: Connection,
+    connection: Connection,
     table_name: str,
     distance_strategy: DistanceStrategy,
     params: Optional[dict[str, Any]] = None,
@@ -337,8 +346,8 @@ def _create_ivf_index(
     ddl = ddl_assembly.format(**config)
 
     # Check if the index exists
-    if not _index_exists(client, config["idx_name"]):
-        with client.cursor() as cursor:
+    if not _index_exists(connection, config["idx_name"]):
+        with connection.cursor() as cursor:
             cursor.execute(ddl)
         logger.info("Index created successfully...")
     else:
@@ -346,9 +355,9 @@ def _create_ivf_index(
 
 
 @_handle_exceptions
-def drop_table_purge(client: Connection, table_name: str):
-    if _table_exists(client, table_name):
-        cursor = client.cursor()
+def drop_table_purge(connection: Connection, table_name: str) -> None:
+    if _table_exists(connection, table_name):
+        cursor = connection.cursor()
         with cursor:
             ddl = f"DROP TABLE {table_name} PURGE"
             cursor.execute(ddl)
@@ -358,10 +367,10 @@ def drop_table_purge(client: Connection, table_name: str):
 
 
 @_handle_exceptions
-def drop_index_if_exists(client: Connection, index_name: str):
-    if _index_exists(client, index_name):
+def drop_index_if_exists(connection: Connection, index_name: str):
+    if _index_exists(connection, index_name):
         drop_query = f"DROP INDEX {index_name}"
-        with client.cursor() as cursor:
+        with connection.cursor() as cursor:
             cursor.execute(drop_query)
             logger.info(f"Index {index_name} has been dropped.")
     else:
@@ -479,7 +488,7 @@ class OraLlamaVS(BasePydanticVectorStore):
 
     def _build_query(
         self, distance_function: str, k: int, where_str: Optional[str] = None
-    ):
+    ) -> str:
         where_clause = f"WHERE {where_str}" if where_str else ""
 
         return f"""
