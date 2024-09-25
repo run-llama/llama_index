@@ -31,7 +31,7 @@ SUPPORTED_VLMS = [
     "Florence2ForConditionalGeneration",
     "Qwen2VLForConditionalGeneration",
     "PaliGemmaForConditionalGeneration",
-    "MllamaForConditionalGeneration"
+    "MllamaForConditionalGeneration",
 ]
 
 
@@ -513,6 +513,7 @@ class PaliGemmaMultiModal(HuggingFaceMultiModal):
             "PaliGemmaMultiModal does not support async streaming chat yet."
         )
 
+
 class LlamaMultiModal(HuggingFaceMultiModal):
     """
     A specific implementation for the Llama3.2 multi-modal model.
@@ -526,10 +527,13 @@ class LlamaMultiModal(HuggingFaceMultiModal):
         Prepares the input messages and images for Llama3.2 models. Images are appended in a custom format.
         """
         messages = [
-            {"role": "user", "content": [
-                {"type": "image"},
-                {"type": "text", "text": messages[0].content}
-            ]}
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image"},
+                    {"type": "text", "text": messages[0].content},
+                ],
+            }
         ]
         images = []
 
@@ -542,9 +546,7 @@ class LlamaMultiModal(HuggingFaceMultiModal):
         )
 
         # Prepare the model inputs (text + images) and convert to tensor
-        inputs = self._processor(
-            images, input_text, return_tensors="pt"
-        )
+        inputs = self._processor(images, input_text, return_tensors="pt")
         return inputs.to(self.device)
 
     def _generate(self, prepared_inputs: Dict[str, Any]) -> str:
