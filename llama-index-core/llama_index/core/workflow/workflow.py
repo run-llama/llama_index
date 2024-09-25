@@ -435,9 +435,12 @@ class Workflow(metaclass=WorkflowMeta):
             requested_services.update(step_config.requested_services)
 
         # Check if all consumed events are produced (except specific built-in events)
-        unconsumed_events = (
-            consumed_events - produced_events - {InputRequiredEvent, HumanResponseEvent}  # type: ignore
-        )
+        unconsumed_events = consumed_events - produced_events
+        unconsumed_events = {
+            x
+            for x in unconsumed_events
+            if not issubclass(x, (InputRequiredEvent, HumanResponseEvent))
+        }
         if unconsumed_events:
             names = ", ".join(ev.__name__ for ev in unconsumed_events)
             raise WorkflowValidationError(
@@ -445,11 +448,12 @@ class Workflow(metaclass=WorkflowMeta):
             )
 
         # Check if there are any unused produced events (except specific built-in events)
-        unused_events = (
-            produced_events
-            - consumed_events
-            - {StopEvent, InputRequiredEvent, HumanResponseEvent}
-        )
+        unused_events = produced_events - consumed_events
+        unused_events = {
+            x
+            for x in unused_events
+            if not issubclass(x, (InputRequiredEvent, HumanResponseEvent))
+        }
         if unused_events:
             names = ", ".join(ev.__name__ for ev in unused_events)
             raise WorkflowValidationError(
