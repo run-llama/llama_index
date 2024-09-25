@@ -1,6 +1,7 @@
 import asyncio
 import time
 from unittest import mock
+from typing import Type
 
 import pytest
 
@@ -486,49 +487,79 @@ async def test_human_in_the_loop():
     assert final_result == "42"
 
 
-async def test_workflow_run_num_concurrent():
-    class DummyWorkflow(Workflow):
-        def __init__(self, **kwargs) -> None:
-            super().__init__(**kwargs)
-            self._lock = asyncio.Lock()
-            self.num_active_runs = 0
+class DummyWorkflowForConcurrentRunsTest(Workflow):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._lock = asyncio.Lock()
+        self.num_active_runs = 0
 
-        @step
-        async def step_one(self, ev: StartEvent) -> StopEvent:
-            run_num = ev.get("run_num")
-            async with self._lock:
-                self.num_active_runs += 1
-            await asyncio.sleep(0.1)
-            return StopEvent(result=f"Run {run_num}: Done")
+    @step
+    async def step_one(self, ev: StartEvent) -> StopEvent:
+        run_num = ev.get("run_num")
+        async with self._lock:
+            self.num_active_runs += 1
+        await asyncio.sleep(0.1)
+        return StopEvent(result=f"Run {run_num}: Done")
 
-        @step
-        async def _done(self, ctx: Context, ev: StopEvent) -> None:
-            async with self._lock:
-                self.num_active_runs -= 1
-            await super()._done(ctx, ev)
+    @step
+    async def _done(self, ctx: Context, ev: StopEvent) -> None:
+        async with self._lock:
+            self.num_active_runs -= 1
+        await super()._done(ctx, ev)
 
-        async def get_active_runs(self):
-            async with self._lock:
-                return self.num_active_runs
+    async def get_active_runs(self):
+        async with self._lock:
+            return self.num_active_runs
 
+
+class NumConcurrentRunsException(Exception):
+    pass
+
+
+@pytest.mark.parametrize(
+    (
+        "workflow",
+        "desired_max_concurrent_runs",
+        "expected_exception",
+    ),
+    [
+        (
+            DummyWorkflowForConcurrentRunsTest(num_concurrent_runs=1),
+            1,
+            type(None),
+        ),
+        # This workflow is not protected, and so NumConcurrentRunsException is raised
+        (
+            DummyWorkflowForConcurrentRunsTest(),
+            1,
+            NumConcurrentRunsException,
+        ),
+    ],
+)
+async def test_workflow_run_num_concurrent(
+    workflow: DummyWorkflowForConcurrentRunsTest,
+    desired_max_concurrent_runs: int,
+    expected_exception: Type,
+):
     async def _poll_workflow(
-        wf: DummyWorkflow, desired_max_concurrent_runs: int
+        wf: DummyWorkflowForConcurrentRunsTest, desired_max_concurrent_runs: int
     ) -> None:
-        """Check that num_active_runs of the workflow is less than desired max amount."""
+        """Check that number of concurrent runs is less than desired max amount."""
         for _ in range(100):
             num_active_runs = await wf.get_active_runs()
             if num_active_runs > desired_max_concurrent_runs:
-                raise ValueError(
-                    "Number of active runs is greater than desired number of concurrent runs."
-                )
+                raise NumConcurrentRunsException
             await asyncio.sleep(0.01)
 
-    wf = DummyWorkflow(num_concurrent_runs=1)
-    poll_task = asyncio.create_task(_poll_workflow(wf, wf._num_concurrent_runs))
+    poll_task = asyncio.create_task(
+        _poll_workflow(
+            wf=workflow, desired_max_concurrent_runs=desired_max_concurrent_runs
+        ),
+    )
 
     tasks = []
     for ix in range(1, 5):
-        tasks.append(wf.run(run_num=ix))
+        tasks.append(workflow.run(run_num=ix))
 
     results = await asyncio.gather(*tasks)
 
@@ -536,5 +567,5 @@ async def test_workflow_run_num_concurrent():
         await poll_task
     e = poll_task.exception()
 
-    assert e is None
+    assert type(e) == expected_exception
     assert results == [f"Run {ix}: Done" for ix in range(1, 5)]
