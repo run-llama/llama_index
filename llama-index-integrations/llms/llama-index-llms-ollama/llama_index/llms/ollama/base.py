@@ -16,12 +16,6 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.base.llms.generic_utils import (
-    chat_to_completion_decorator,
-    achat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
-)
 from llama_index.core.tools import ToolSelection
 
 if TYPE_CHECKING:
@@ -112,7 +106,7 @@ class Ollama(FunctionCallingLLM):
         request_timeout: float = DEFAULT_REQUEST_TIMEOUT,
         prompt_key: str = "prompt",
         json_mode: bool = False,
-        additional_kwargs: Dict[str, Any] = {},
+        additional_kwargs: Optional[Dict[str, Any]] = None,
         client: Optional[Client] = None,
         async_client: Optional[AsyncClient] = None,
         is_function_calling_model: bool = True,
@@ -131,6 +125,7 @@ class Ollama(FunctionCallingLLM):
             **kwargs,
         )
 
+        self.additional_kwargs = additional_kwargs or {}
         self._client = client
         self._async_client = async_client
 
@@ -239,6 +234,7 @@ class Ollama(FunctionCallingLLM):
         self,
         response: "ChatResponse",
         error_on_no_tool_call: bool = True,
+        **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
         tool_calls = response.message.additional_kwargs.get("tool_calls", [])
@@ -416,24 +412,148 @@ class Ollama(FunctionCallingLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        return chat_to_completion_decorator(self.chat)(prompt, **kwargs)
+        suffix = kwargs.pop("suffix", "")
+        system = kwargs.pop("system", "")
+        template = kwargs.pop("template", "")
+        keep_alive = kwargs.pop("keep_alive", None)
+
+        response = self.client.generate(
+            model=self.model,
+            prompt=prompt,
+            suffix=suffix,
+            system=system,
+            template=template,
+            stream=False,
+            raw=not formatted,
+            format="json" if self.json_mode else "",
+            options=self._model_kwargs,
+            keep_alive=keep_alive,
+        )
+        token_counts = self._get_response_token_counts(response)
+        if token_counts:
+            response["usage"] = token_counts
+        return CompletionResponse(
+            text=response["response"],
+            additional_kwargs=self.additional_kwargs,
+            raw=response,
+        )
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        return await achat_to_completion_decorator(self.achat)(prompt, **kwargs)
+        suffix = kwargs.pop("suffix", "")
+        system = kwargs.pop("system", "")
+        template = kwargs.pop("template", "")
+        keep_alive = kwargs.pop("keep_alive", None)
+
+        response = await self.async_client.generate(
+            model=self.model,
+            prompt=prompt,
+            suffix=suffix,
+            system=system,
+            template=template,
+            stream=False,
+            raw=not formatted,
+            format="json" if self.json_mode else "",
+            options=self._model_kwargs,
+            keep_alive=keep_alive,
+        )
+        token_counts = self._get_response_token_counts(response)
+        if token_counts:
+            response["usage"] = token_counts
+        return CompletionResponse(
+            text=response["response"],
+            additional_kwargs=self.additional_kwargs,
+            raw=response,
+        )
 
     @llm_completion_callback()
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        return stream_chat_to_completion_decorator(self.stream_chat)(prompt, **kwargs)
+        suffix = kwargs.pop("suffix", "")
+        system = kwargs.pop("system", "")
+        template = kwargs.pop("template", "")
+        keep_alive = kwargs.pop("keep_alive", None)
+
+        def gen() -> CompletionResponseGen:
+            response = self.client.generate(
+                model=self.model,
+                prompt=prompt,
+                suffix=suffix,
+                system=system,
+                template=template,
+                stream=True,
+                raw=not formatted,
+                format="json" if self.json_mode else "",
+                options=self._model_kwargs,
+                keep_alive=keep_alive,
+            )
+
+            response_txt = ""
+
+            for r in response:
+                if r["response"] is None:
+                    continue
+
+                response_txt += r["response"]
+
+                if r["done"] is True:
+                    token_counts = self._get_response_token_counts(r)
+                    if token_counts:
+                        r["usage"] = token_counts
+
+                yield CompletionResponse(
+                    text=response_txt,
+                    additional_kwargs=self.additional_kwargs,
+                    raw=r,
+                    delta=r["response"],
+                )
+
+        return gen()
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        return await astream_chat_to_completion_decorator(self.astream_chat)(
-            prompt, **kwargs
-        )
+        suffix = kwargs.pop("suffix", "")
+        system = kwargs.pop("system", "")
+        template = kwargs.pop("template", "")
+        keep_alive = kwargs.pop("keep_alive", None)
+
+        async def gen() -> CompletionResponseAsyncGen:
+            response = await self.async_client.generate(
+                model=self.model,
+                prompt=prompt,
+                suffix=suffix,
+                system=system,
+                template=template,
+                stream=True,
+                raw=not formatted,
+                format="json" if self.json_mode else "",
+                options=self._model_kwargs,
+                keep_alive=keep_alive,
+            )
+
+            response_txt = ""
+
+            for r in response:
+                if r["response"] is None:
+                    continue
+
+                response_txt += r["response"]
+
+                if r["done"] is True:
+                    token_counts = self._get_response_token_counts(r)
+                    if token_counts:
+                        r["usage"] = token_counts
+
+                yield CompletionResponse(
+                    text=response_txt,
+                    additional_kwargs=self.additional_kwargs,
+                    raw=r,
+                    delta=r["response"],
+                )
+
+        return gen()
