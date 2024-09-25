@@ -92,6 +92,7 @@ class Vertex(FunctionCallingLLM):
     _is_chat_model: bool = PrivateAttr()
     _client: Any = PrivateAttr()
     _chat_client: Any = PrivateAttr()
+    _safety_settings: Dict[str, Any] = PrivateAttr()
 
     def __init__(
         self,
@@ -115,7 +116,7 @@ class Vertex(FunctionCallingLLM):
     ) -> None:
         init_vertexai(project=project, location=location, credentials=credentials)
 
-        self._safety_settings = safety_settings or {}
+        safety_settings = safety_settings or {}
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
@@ -135,6 +136,7 @@ class Vertex(FunctionCallingLLM):
             output_parser=output_parser,
         )
 
+        self._safety_settings = safety_settings
         self._is_gemini = False
         self._is_chat_model = False
         if model in CHAT_MODELS:

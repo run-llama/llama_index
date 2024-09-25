@@ -1,11 +1,18 @@
 import asyncio
 import time
 from unittest import mock
+from typing import Type
 
 import pytest
 
 from llama_index.core.workflow.decorators import step
-from llama_index.core.workflow.events import StartEvent, StopEvent
+from llama_index.core.workflow.handler import WorkflowHandler
+from llama_index.core.workflow.events import (
+    InputRequiredEvent,
+    HumanResponseEvent,
+    StartEvent,
+    StopEvent,
+)
 from llama_index.core.workflow.workflow import (
     Context,
     Workflow,
@@ -444,3 +451,121 @@ async def test_workflow_continue_context():
     result = await r
     assert result == "Done"
     assert await r.ctx.get("number") == 2
+
+
+@pytest.mark.asyncio()
+async def test_human_in_the_loop():
+    class HumanInTheLoopWorkflow(Workflow):
+        @step
+        async def step1(self, ev: StartEvent) -> InputRequiredEvent:
+            return InputRequiredEvent(prefix="Enter a number: ")
+
+        @step
+        async def step2(self, ev: HumanResponseEvent) -> StopEvent:
+            return StopEvent(result=ev.response)
+
+    workflow = HumanInTheLoopWorkflow(timeout=1)
+
+    # workflow should raise a timeout error because hitl only works with streaming
+    with pytest.raises(WorkflowTimeoutError):
+        await workflow.run()
+
+    # workflow should not work with stepwise
+    with pytest.raises(WorkflowRuntimeError):
+        handler = workflow.run(stepwise=True)
+
+    # workflow should work with streaming
+    workflow = HumanInTheLoopWorkflow()
+
+    handler: WorkflowHandler = workflow.run()
+    async for event in handler.stream_events():
+        if isinstance(event, InputRequiredEvent):
+            assert event.prefix == "Enter a number: "
+            handler.ctx.send_event(HumanResponseEvent(response="42"))
+
+    final_result = await handler
+    assert final_result == "42"
+
+
+class DummyWorkflowForConcurrentRunsTest(Workflow):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._lock = asyncio.Lock()
+        self.num_active_runs = 0
+
+    @step
+    async def step_one(self, ev: StartEvent) -> StopEvent:
+        run_num = ev.get("run_num")
+        async with self._lock:
+            self.num_active_runs += 1
+        await asyncio.sleep(0.1)
+        return StopEvent(result=f"Run {run_num}: Done")
+
+    @step
+    async def _done(self, ctx: Context, ev: StopEvent) -> None:
+        async with self._lock:
+            self.num_active_runs -= 1
+        await super()._done(ctx, ev)
+
+    async def get_active_runs(self):
+        async with self._lock:
+            return self.num_active_runs
+
+
+class NumConcurrentRunsException(Exception):
+    pass
+
+
+@pytest.mark.parametrize(
+    (
+        "workflow",
+        "desired_max_concurrent_runs",
+        "expected_exception",
+    ),
+    [
+        (
+            DummyWorkflowForConcurrentRunsTest(num_concurrent_runs=1),
+            1,
+            type(None),
+        ),
+        # This workflow is not protected, and so NumConcurrentRunsException is raised
+        (
+            DummyWorkflowForConcurrentRunsTest(),
+            1,
+            NumConcurrentRunsException,
+        ),
+    ],
+)
+async def test_workflow_run_num_concurrent(
+    workflow: DummyWorkflowForConcurrentRunsTest,
+    desired_max_concurrent_runs: int,
+    expected_exception: Type,
+):
+    async def _poll_workflow(
+        wf: DummyWorkflowForConcurrentRunsTest, desired_max_concurrent_runs: int
+    ) -> None:
+        """Check that number of concurrent runs is less than desired max amount."""
+        for _ in range(100):
+            num_active_runs = await wf.get_active_runs()
+            if num_active_runs > desired_max_concurrent_runs:
+                raise NumConcurrentRunsException
+            await asyncio.sleep(0.01)
+
+    poll_task = asyncio.create_task(
+        _poll_workflow(
+            wf=workflow, desired_max_concurrent_runs=desired_max_concurrent_runs
+        ),
+    )
+
+    tasks = []
+    for ix in range(1, 5):
+        tasks.append(workflow.run(run_num=ix))
+
+    results = await asyncio.gather(*tasks)
+
+    if not poll_task.done():
+        await poll_task
+    e = poll_task.exception()
+
+    assert type(e) == expected_exception
+    assert results == [f"Run {ix}: Done" for ix in range(1, 5)]
