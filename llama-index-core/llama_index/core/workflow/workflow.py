@@ -48,6 +48,7 @@ class Workflow(metaclass=WorkflowMeta):
         disable_validation: bool = False,
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
+        num_concurrent_runs: Optional[int] = None,
     ) -> None:
         """Create an instance of the workflow.
 
@@ -60,11 +61,17 @@ class Workflow(metaclass=WorkflowMeta):
             verbose: whether or not the workflow should print additional informative messages during execution.
             service_manager: The instance of the `ServiceManager` used to make nested workflows available to this
                 workflow instance. The default value is the best choice unless you're customizing the workflow runtime.
+            num_concurrent_runs: maximum number of .run() executions occurring simultaneously. If set to `None`, there
+                is no limit to this number.
         """
         # Configuration
         self._timeout = timeout
         self._verbose = verbose
         self._disable_validation = disable_validation
+        self._num_concurrent_runs = num_concurrent_runs
+        self._sem = (
+            asyncio.Semaphore(num_concurrent_runs) if num_concurrent_runs else None
+        )
         # Broker machinery
         self._contexts: Set[Context] = set()
         self._stepwise_context: Optional[Context] = None
@@ -297,6 +304,8 @@ class Workflow(metaclass=WorkflowMeta):
         result = WorkflowHandler(ctx=ctx)
 
         async def _run_workflow() -> None:
+            if self._sem:
+                await self._sem.acquire()
             try:
                 # Send the first event
                 ctx.send_event(StartEvent(**kwargs))
@@ -335,6 +344,9 @@ class Workflow(metaclass=WorkflowMeta):
                 result.set_result(ctx._retval)
             except Exception as e:
                 result.set_exception(e)
+            finally:
+                if self._sem:
+                    await self._sem.release()
 
         asyncio.create_task(_run_workflow())
         return result

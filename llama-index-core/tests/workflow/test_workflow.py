@@ -484,3 +484,57 @@ async def test_human_in_the_loop():
 
     final_result = await handler
     assert final_result == "42"
+
+
+async def test_workflow_run_num_concurrent():
+    class DummyWorkflow(Workflow):
+        def __init__(self, **kwargs) -> None:
+            super().__init__(**kwargs)
+            self._lock = asyncio.Lock()
+            self.num_active_runs = 0
+
+        @step
+        async def step_one(self, ev: StartEvent) -> StopEvent:
+            run_num = ev.get("run_num")
+            async with self._lock:
+                self.num_active_runs += 1
+            await asyncio.sleep(0.1)
+            return StopEvent(result=f"Run {run_num}: Done")
+
+        @step
+        async def _done(self, ctx: Context, ev: StopEvent) -> None:
+            async with self._lock:
+                self.num_active_runs -= 1
+            await super()._done(ctx, ev)
+
+        async def get_active_runs(self):
+            async with self._lock:
+                return self.num_active_runs
+
+    async def _poll_workflow(
+        wf: DummyWorkflow, desired_max_concurrent_runs: int
+    ) -> None:
+        """Check that num_active_runs of the workflow is less than desired max amount."""
+        for _ in range(100):
+            num_active_runs = await wf.get_active_runs()
+            if num_active_runs > desired_max_concurrent_runs:
+                raise ValueError(
+                    "Number of active runs is greater than desired number of concurrent runs."
+                )
+            await asyncio.sleep(0.01)
+
+    wf = DummyWorkflow(num_concurrent_runs=1)
+    poll_task = asyncio.create_task(_poll_workflow(wf, wf._num_concurrent_runs))
+
+    tasks = []
+    for ix in range(1, 5):
+        tasks.append(wf.run(run_num=ix))
+
+    results = await asyncio.gather(*tasks)
+
+    if not poll_task.done():
+        await poll_task
+    e = poll_task.exception()
+
+    assert e is None
+    assert results == [f"Run {ix}: Done" for ix in range(1, 5)]
