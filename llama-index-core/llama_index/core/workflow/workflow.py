@@ -314,7 +314,9 @@ class Workflow(metaclass=WorkflowMeta):
                 # Cancel any pending tasks
                 for t in unfinished:
                     t.cancel()
-                    await asyncio.sleep(0)
+
+                # wait for cancelled tasks to cleanup
+                await asyncio.gather(*unfinished, return_exceptions=True)
 
                 if exception_raised:
                     ctx.write_event_to_stream(StopEvent())
