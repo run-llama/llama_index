@@ -346,7 +346,7 @@ class Workflow(metaclass=WorkflowMeta):
                 result.set_exception(e)
             finally:
                 if self._sem:
-                    await self._sem.release()
+                    self._sem.release()
 
         asyncio.create_task(_run_workflow())
         return result
