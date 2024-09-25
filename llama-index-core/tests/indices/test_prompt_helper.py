@@ -227,3 +227,21 @@ def test_json_in_prompt() -> None:
 
     texts = prompt_helper.repack(prompt, ["hello_world"])
     assert len(texts) == 1
+
+    # test with more complex JSON
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ChatMessage(
+                role="system",
+                content=(
+                    "You are a helpful assistant that knows about {topic}\n"
+                    "Here's some JSON: {'foo': 'bar'}\n"
+                    "here's some other stuff: {key: val for val in d.items()}\n"
+                ),
+            ),
+            ChatMessage(
+                role="user",
+                content="What is the capital of the moon? Here's some JSON: {'foo': 'bar'}",
+            ),
+        ]
+    )
