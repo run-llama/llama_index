@@ -430,9 +430,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             raise ValueError("Query embedding is required for querying.")
 
         redis_query = self._to_redis_query(query)
-        logger.info(
-            f"Querying index {self._index.name} with filters {redis_query.get_filter()}"
-        )
+        logger.info(f"Querying index {self._index.name} with query {redis_query!s}")
 
         try:
             results = self._index.query(redis_query)

@@ -31,7 +31,7 @@ license = "MIT"
 name = "llama-index-llms-ibm"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.0"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"

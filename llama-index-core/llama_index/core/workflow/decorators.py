@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type
 
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
 from .errors import WorkflowValidationError
 from .utils import (
@@ -12,22 +12,27 @@ from .utils import (
 
 if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
+from .retry_policy import RetryPolicy
 
 
 class StepConfig(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     accepted_events: List[Any]
     event_name: str
     return_types: List[Any]
     context_parameter: Optional[str]
     num_workers: int
     requested_services: List[ServiceDefinition]
+    retry_policy: Optional[RetryPolicy]
 
 
 def step(
     *args: Any,
     workflow: Optional[Type["Workflow"]] = None,
     pass_context: bool = False,
-    num_workers: int = 1,
+    num_workers: int = 4,
+    retry_policy: Optional[RetryPolicy] = None,
 ) -> Callable:
     """Decorator used to mark methods and functions as workflow steps.
 
@@ -35,6 +40,13 @@ def step(
     starting the communication channels until runtime. For this reason,
     we temporarily store the list of events that will be consumed by this
     step in the function object itself.
+
+    Args:
+        workflow: Workflow class to which the decorated step will be added. Only needed when using the
+            decorator on free functions instead of class methods.
+        num_workers: The number of workers that will process events for the decorated step. The default
+            value works most of the times.
+        retry_policy: The policy used to retry a step that encountered an error while running.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -56,6 +68,7 @@ def step(
             context_parameter=spec.context_parameter,
             num_workers=num_workers,
             requested_services=spec.requested_services or [],
+            retry_policy=retry_policy,
         )
 
         # If this is a free function, call add_step() explicitly.

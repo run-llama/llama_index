@@ -57,8 +57,8 @@ class Llamafile(CustomLLM):
     temperature: float = Field(
         default=0.8,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
 
     seed: int = Field(default=0, description="Random seed")

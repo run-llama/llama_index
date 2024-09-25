@@ -36,9 +36,16 @@ class VoyageEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
-        if model_name == "voyage-01":
+        if model_name in [
+            "voyage-01",
+            "voyage-lite-01",
+            "voyage-lite-01-instruct",
+            "voyage-02",
+            "voyage-2",
+            "voyage-lite-02-instruct",
+        ]:
             logger.warning(
-                "voyage-01 is not the latest model by Voyage AI. Please note that `model_name` "
+                f"{model_name} is not the latest model by Voyage AI. Please note that `model_name` "
                 "will be a required argument in the future. We recommend setting it explicitly. Please see "
                 "https://docs.voyageai.com/docs/embeddings for the latest models offered by Voyage AI."
             )

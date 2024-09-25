@@ -115,7 +115,7 @@ class Vertex(FunctionCallingLLM):
     ) -> None:
         init_vertexai(project=project, location=location, credentials=credentials)
 
-        safety_settings = safety_settings or {}
+        self._safety_settings = safety_settings or {}
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
@@ -158,7 +158,7 @@ class Vertex(FunctionCallingLLM):
 
             self._client = TextGenerationModel.from_pretrained(model)
         elif is_gemini_model(model):
-            self._client = create_gemini_client(model, safety_settings)
+            self._client = create_gemini_client(model, self._safety_settings)
             self._chat_client = self._client
             self._is_gemini = True
             self._is_chat_model = True
@@ -185,6 +185,7 @@ class Vertex(FunctionCallingLLM):
         base_kwargs = {
             "temperature": self.temperature,
             "max_output_tokens": self.max_tokens,
+            "safety_settings": self._safety_settings,
         }
         return {
             **base_kwargs,

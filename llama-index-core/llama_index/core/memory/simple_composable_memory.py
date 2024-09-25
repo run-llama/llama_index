@@ -136,6 +136,12 @@ class SimpleComposableMemory(BaseMemory):
         for mem in self.secondary_memory_sources:
             mem.put(message)
 
+    async def aput(self, message: ChatMessage) -> None:
+        """Put chat history."""
+        await self.primary_memory.aput(message)
+        for mem in self.secondary_memory_sources:
+            await mem.aput(message)
+
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
         self.primary_memory.set(messages)
