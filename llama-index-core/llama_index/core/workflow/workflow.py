@@ -8,7 +8,7 @@ from llama_index.core.instrumentation import get_dispatcher
 
 from .decorators import StepConfig, step
 from .context import Context
-from .events import Event, StartEvent, StopEvent
+from .events import InputRequiredEvent, HumanResponseEvent, Event, StartEvent, StopEvent
 from .errors import *
 from .service import ServiceManager
 from .utils import (
@@ -248,6 +248,8 @@ class Workflow(metaclass=WorkflowMeta):
                         warnings.warn(
                             f"Step function {name} returned {type(new_ev).__name__} instead of an Event instance."
                         )
+                    elif isinstance(new_ev, InputRequiredEvent):
+                        ctx.write_event_to_stream(new_ev)
                     else:
                         ctx.send_event(new_ev)
 
@@ -283,7 +285,11 @@ class Workflow(metaclass=WorkflowMeta):
     ) -> WorkflowHandler:
         """Runs the workflow until completion."""
         # Validate the workflow if needed
-        self._validate()
+        uses_hitl = self._validate()
+        if uses_hitl and stepwise:
+            raise WorkflowRuntimeError(
+                "Human-in-the-loop is not supported with stepwise execution"
+            )
 
         # Start the machinery in a new Context or use the provided one
         ctx = self._start(ctx=ctx, stepwise=stepwise)
@@ -402,7 +408,7 @@ class Workflow(metaclass=WorkflowMeta):
     def _validate(self) -> None:
         """Validate the workflow to ensure it's well-formed."""
         if self._disable_validation:
-            return
+            return None
 
         produced_events: Set[type] = {StartEvent}
         consumed_events: Set[type] = set()
@@ -425,16 +431,22 @@ class Workflow(metaclass=WorkflowMeta):
 
             requested_services.update(step_config.requested_services)
 
-        # Check if all consumed events are produced
-        unconsumed_events = consumed_events - produced_events
+        # Check if all consumed events are produced (except specific built-in events)
+        unconsumed_events = (
+            consumed_events - produced_events - {InputRequiredEvent, HumanResponseEvent}
+        )
         if unconsumed_events:
             names = ", ".join(ev.__name__ for ev in unconsumed_events)
             raise WorkflowValidationError(
                 f"The following events are consumed but never produced: {names}"
             )
 
-        # Check if there are any unused produced events (except StopEvent)
-        unused_events = produced_events - consumed_events - {StopEvent}
+        # Check if there are any unused produced events (except specific built-in events)
+        unused_events = (
+            produced_events
+            - consumed_events
+            - {StopEvent, InputRequiredEvent, HumanResponseEvent}
+        )
         if unused_events:
             names = ", ".join(ev.__name__ for ev in unused_events)
             raise WorkflowValidationError(
@@ -451,3 +463,9 @@ class Workflow(metaclass=WorkflowMeta):
             if missing:
                 msg = f"The following services are not available: {', '.join(str(m) for m in missing)}"
                 raise WorkflowValidationError(msg)
+
+        # Check if the workflow uses human-in-the-loop
+        return (
+            InputRequiredEvent in consumed_events
+            or HumanResponseEvent in consumed_events
+        )

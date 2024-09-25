@@ -5,7 +5,13 @@ from unittest import mock
 import pytest
 
 from llama_index.core.workflow.decorators import step
-from llama_index.core.workflow.events import StartEvent, StopEvent
+from llama_index.core.workflow.handler import WorkflowHandler
+from llama_index.core.workflow.events import (
+    InputRequiredEvent,
+    HumanResponseEvent,
+    StartEvent,
+    StopEvent,
+)
 from llama_index.core.workflow.workflow import (
     Context,
     Workflow,
@@ -444,3 +450,37 @@ async def test_workflow_continue_context():
     result = await r
     assert result == "Done"
     assert await r.ctx.get("number") == 2
+
+
+@pytest.mark.asyncio()
+async def test_human_in_the_loop():
+    class HumanInTheLoopWorkflow(Workflow):
+        @step
+        async def step1(self, ev: StartEvent) -> InputRequiredEvent:
+            return InputRequiredEvent(prefix="Enter a number: ")
+
+        @step
+        async def step2(self, ev: HumanResponseEvent) -> StopEvent:
+            return StopEvent(result=ev.response)
+
+    workflow = HumanInTheLoopWorkflow(timeout=1)
+
+    # workflow should raise a timeout error because hitl only works with streaming
+    with pytest.raises(WorkflowTimeoutError):
+        await workflow.run()
+
+    # workflow should not work with stepwise
+    with pytest.raises(WorkflowRuntimeError):
+        handler = workflow.run(stepwise=True)
+
+    # workflow should work with streaming
+    workflow = HumanInTheLoopWorkflow()
+
+    handler: WorkflowHandler = workflow.run()
+    async for event in handler.stream_events():
+        if isinstance(event, InputRequiredEvent):
+            assert event.prefix == "Enter a number: "
+            handler.ctx.send_event(HumanResponseEvent(response="42"))
+
+    final_result = await handler
+    assert final_result == "42"
