@@ -405,10 +405,13 @@ class Workflow(metaclass=WorkflowMeta):
         # Signal we want to stop the workflow
         raise WorkflowDone
 
-    def _validate(self) -> None:
-        """Validate the workflow to ensure it's well-formed."""
+    def _validate(self) -> bool:
+        """Validate the workflow to ensure it's well-formed.
+
+        Returns True if the workflow uses human-in-the-loop, False otherwise.
+        """
         if self._disable_validation:
-            return None
+            return False
 
         produced_events: Set[type] = {StartEvent}
         consumed_events: Set[type] = set()
@@ -433,7 +436,7 @@ class Workflow(metaclass=WorkflowMeta):
 
         # Check if all consumed events are produced (except specific built-in events)
         unconsumed_events = (
-            consumed_events - produced_events - {InputRequiredEvent, HumanResponseEvent}
+            consumed_events - produced_events - {InputRequiredEvent, HumanResponseEvent}  # type: ignore
         )
         if unconsumed_events:
             names = ", ".join(ev.__name__ for ev in unconsumed_events)
@@ -466,6 +469,6 @@ class Workflow(metaclass=WorkflowMeta):
 
         # Check if the workflow uses human-in-the-loop
         return (
-            InputRequiredEvent in consumed_events
+            InputRequiredEvent in produced_events
             or HumanResponseEvent in consumed_events
         )
