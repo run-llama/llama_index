@@ -22,6 +22,13 @@ from typing import Dict, List, TYPE_CHECKING
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
+import logging
+from typing import (
+    Any,
+    Dict,
+    List,
+)
+
 if TYPE_CHECKING:
     from oracledb import Connection
 
@@ -362,13 +369,8 @@ class OracleReader(BaseReader):
             traceback.print_exc()
             raise
 
-
-import logging
-from typing import (
-    Any,
-    Dict,
-    List,
-)
+    def load_data(self) -> List[Document]:
+        return self.load()
 
 
 logger = logging.getLogger(__name__)
@@ -421,37 +423,3 @@ class OracleTextSplitter:
             print(f"An exception occurred :: {ex}")
             traceback.print_exc()
             raise
-
-
-# uncomment the following code block to run the test
-
-"""
-# A sample unit test.
-
-# get the Oracle connection
-conn = oracledb.connect(
-    user="<username>",
-    password="<password>",
-    dsn="<hostname/service_name>",
-)
-print("Oracle connection is established...")
-
-# params
-loader_params = {"owner": "ut", "tablename": "demo_tab", "colname": "data"}
-splitter_params = {"by": "words", "max": "100"}
-
-# instances
-loader = OracleReader(conn=conn, params=loader_params)
-splitter = OracleTextSplitter(conn=conn, params=splitter_params)
-
-print("Processing the documents...")
-docs = loader.load()
-for id, doc in enumerate(docs, start=1):
-    print(f"Document#{id}, Metadata: {doc.metadata}")
-    chunks = splitter.split_text(doc.text)
-    print(f"Document#{id}, Num of Chunk: {len(chunks)}\n")
-
-conn.close()
-print("Connection is closed.")
-
-"""
