@@ -199,8 +199,8 @@ class PromptHelper(BaseComponent):
                 partial_message = deepcopy(message)
 
                 prompt_kwargs = prompt.kwargs or {}
-                partial_message = format_string(
-                    partial_message.content, **prompt_kwargs
+                partial_message.content = format_string(
+                    partial_message.content or "", **prompt_kwargs
                 )
 
                 # add to list of partial messages
