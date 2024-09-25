@@ -126,19 +126,35 @@ class VectorMemory(BaseMemory):
         self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any
     ) -> List[ChatMessage]:
         """Get chat history."""
-        if input is None:
-            return []
-
-        # retrieve from index
-        retriever = self.vector_index.as_retriever(**self.retriever_kwargs)
+        retriever = self._get_retriever()
         nodes = retriever.retrieve(input or "")
 
         # retrieve underlying messages
+        return self._retrieve_messages(nodes=nodes)
+
+    async def aget(
+        self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any
+    ) -> List[ChatMessage]:
+        """Get chat history."""
+        retriever = self._get_retriever()
+        nodes = await retriever.aretrieve(input or "")
+
+        # retrieve underlying messages
+        return self._retrieve_messages(nodes=nodes)        
+
+    def _retrieve_messages(self, nodes):
         return [
             ChatMessage.parse_obj(sub_dict)
             for node in nodes
             for sub_dict in node.metadata["sub_dicts"]
         ]
+    def _get_retriever(self):
+        if input is None:
+            return []
+
+        # retrieve from index
+        retriever = self.vector_index.as_retriever(**self.retriever_kwargs)
+        return retriever
 
     def get_all(self) -> List[ChatMessage]:
         """Get all chat history."""

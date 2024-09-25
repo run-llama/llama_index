@@ -20,7 +20,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
-    FilterOperator
+    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -52,6 +52,7 @@ class RedisVectorStore(BasePydanticVectorStore):
 
     _tokenizer: Any = PrivateAttr()
     _redis_client: Any = PrivateAttr()
+    _redis_client_async: Any = PrivateAttr()
     _prefix: str = PrivateAttr()
     _index_name: str = PrivateAttr()
     _index_args: Dict[str, Any] = PrivateAttr()
@@ -69,6 +70,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         metadata_fields: Optional[List[str]] = None,
         redis_url: str = "redis://localhost:6379",
         redis_client: Optional[Redis] = None,
+        redis_client_async: Optional[Redis] = None,
         overwrite: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -115,15 +117,16 @@ class RedisVectorStore(BasePydanticVectorStore):
             >>>     overwrite=True)
         """
         try:
-            
             if redis_client:
                 self._redis_client = redis_client
+            if redis_client_async:
+                self._redis_client_async = redis_client_async
             # connect to redis from url
-            else:
+            if not redis_client and not redis_client_async:
                 self._redis_client = redis.from_url(redis_url, **kwargs)
             # check if redis has redisearch module installed
             check_redis_modules_exist(self._redis_client)
-            
+
         except ValueError as e:
             raise ValueError(f"Redis failed to connect: {e}")
 
@@ -155,6 +158,25 @@ class RedisVectorStore(BasePydanticVectorStore):
         Raises:
             ValueError: If the index already exists and overwrite is False.
         """
+        self._check_index(nodes=nodes)
+        return self._sync_add(nodes=nodes)
+
+    async def async_add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+        """Add nodes to the index.
+
+        Args:
+            nodes (List[BaseNode]): List of nodes with embeddings
+
+        Returns:
+            List[str]: List of ids of the documents added to the index.
+
+        Raises:
+            ValueError: If the index already exists and overwrite is False.
+        """
+        self._check_index(nodes=nodes)
+        return await self._async_add(nodes=nodes)
+
+    def _check_index(self, nodes):
         # check to see if empty document list was passed
         if len(nodes) == 0:
             return []
@@ -171,30 +193,49 @@ class RedisVectorStore(BasePydanticVectorStore):
         else:
             self._create_index()
 
+    def _sync_add(self, nodes):
         ids = []
         for node in nodes:
-            mapping = {
-                "id": node.node_id,
-                "doc_id": node.ref_doc_id,
-                "text": node.get_content(metadata_mode=MetadataMode.NONE),
-                self._vector_key: array_to_buffer(node.get_embedding()),
-            }
-            additional_metadata = node_to_metadata_dict(
-                node, remove_text=True, flat_metadata=self.flat_metadata
-            )
-            mapping.update(additional_metadata)
-
-            ids.append(node.node_id)
-            key = "_".join([self._prefix, str(node.node_id)])
-            mapping.pop('sub_dicts', None) # Remove if present from VectorMemory to avoid serialization issues
+            key, mapping = self._create_key_mapping(node=node, ids=ids)
             self._redis_client.hset(key, mapping=mapping)  # type: ignore
 
         _logger.info(f"Added {len(ids)} documents to index {self._index_name}")
         return ids
 
+    async def _async_add(self, nodes):
+        ids = []
+        assert self._redis_client_async
+        async with self._redis_client_async.pipeline(transaction=True) as pipe:
+            for node in nodes:
+                key, mapping = self._create_key_mapping(node=node, ids=ids)
+                await pipe.hset(key, mapping=mapping)  # type: ignore
+            await pipe.execute()
+
+        _logger.info(f"Added {len(ids)} documents to index {self._index_name}")
+        return ids
+
+    def _create_key_mapping(self, node, ids: list):
+        mapping = {
+            "id": node.node_id,
+            "doc_id": node.ref_doc_id,
+            "text": node.get_content(metadata_mode=MetadataMode.NONE),
+            self._vector_key: array_to_buffer(node.get_embedding()),
+        }
+        additional_metadata = node_to_metadata_dict(
+            node, remove_text=True, flat_metadata=self.flat_metadata
+        )
+        mapping.update(additional_metadata)
+
+        ids.append(node.node_id)
+        key = "_".join([self._prefix, str(node.node_id)])
+        mapping.pop(
+            "sub_dicts", None
+        )  # Remove if present from VectorMemory to avoid serialization issues
+        return key, mapping
+
     def delete_nodes(self, node_ids: list):
         for node_id in node_ids:
-            self._redis_client.delete( "_".join([self._prefix, str(node_id)]))
+            self._redis_client.delete("_".join([self._prefix, str(node_id)]))
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -243,6 +284,32 @@ class RedisVectorStore(BasePydanticVectorStore):
             redis.exceptions.TimeoutError: If there is a timeout querying the index.
             ValueError: If no documents are found when querying the index.
         """
+
+        redis_query, query_params = self._prepare_query()
+        results = self._run_query(redis_query=redis_query, query_params=query_params)
+        return self._query_post_processing(results)
+
+    async def aquery(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """Query the index.
+
+        Args:
+            query (VectorStoreQuery): query object
+
+        Returns:
+            VectorStoreQueryResult: query result
+
+        Raises:
+            ValueError: If query.query_embedding is None.
+            redis.exceptions.RedisError: If there is an error querying the index.
+            redis.exceptions.TimeoutError: If there is a timeout querying the index.
+            ValueError: If no documents are found when querying the index.
+        """
+
+        redis_query, query_params = self._prepare_query(query=query)
+        results = await self._arun_query(redis_query=redis_query, query_params=query_params)
+        return self._query_post_processing(results=results)        
+
+    def _prepare_query(self, query: VectorStoreQuery):
         return_fields = [
             "id",
             "doc_id",
@@ -262,7 +329,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             vector_field=self._vector_field,
             filters=filters,
         )
-        
+
         if not query.query_embedding:
             raise ValueError("Query embedding is required for querying.")
 
@@ -271,6 +338,9 @@ class RedisVectorStore(BasePydanticVectorStore):
         }
         _logger.info(f"Querying index {self._index_name}")
 
+        return redis_query, query_params
+
+    def _run_query(self, redis_query: str, query_params: dict):
         try:
             results = self._redis_client.ft(self._index_name).search(
                 redis_query, query_params=query_params  # type: ignore
@@ -281,6 +351,22 @@ class RedisVectorStore(BasePydanticVectorStore):
         except RedisError as e:
             _logger.error(f"Error querying {self._index_name}: {e}")
             raise
+        return results
+
+    async def _arun_query(self, redis_query: str, query_params: dict):
+        try:
+            results = await self._redis_client_async.ft(self._index_name).search(
+                redis_query, query_params=query_params  # type: ignore
+            )
+        except RedisTimeoutError as e:
+            _logger.error(f"Query timed out on {self._index_name}: {e}")
+            raise
+        except RedisError as e:
+            _logger.error(f"Error querying {self._index_name}: {e}")
+            raise
+        return results
+
+    def _query_post_processing(self, results) -> VectorStoreQueryResult:
 
         if len(results.docs) == 0:
             raise ValueError(
@@ -312,7 +398,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             scores.append(1 - float(doc.vector_score))
         _logger.info(f"Found {len(nodes)} results for query with id {ids}")
 
-        return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
+        return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)  
 
     def persist(
         self,
@@ -462,7 +548,7 @@ def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
     for filter in metadata_filters.legacy_filters():
         # adds quotes around the value to ensure that the filter is treated as an
         #   exact match
-        
+
         if filter.operator == FilterOperator.IN:
             if len(filter.value.split()) > 1:
                 filter.value = f'"{filter.value}"'
@@ -478,4 +564,4 @@ def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
         filter_string = f"@{filter.key}:{values}"
         filter_strings.append(filter_string)
     joined_filter_strings = " & ".join(filter_strings)
-    return f'({joined_filter_strings})'
+    return f"({joined_filter_strings})"

@@ -191,7 +191,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 nodes_batch, show_progress
             )
             new_ids = await self._vector_store.async_add(nodes_batch, **insert_kwargs)
-
             # if the vector store doesn't store text, we need to add the nodes to the
             # index struct and document store
             if not self._vector_store.stores_text or self._store_nodes_override:
