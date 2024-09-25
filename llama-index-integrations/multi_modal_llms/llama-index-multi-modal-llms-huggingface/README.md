@@ -14,8 +14,8 @@ This project integrates Hugging Face's multimodal language models into the Llama
 - Configurable model parameters for fine-tuned performance
 
 ---
-Author of that Integration [GitHub](https://github.com/g-hano) | [LinkedIn](https://www.linkedin.com/in/chanyalcin/) | [Email](mcihan.yalcin@outlook.com)
----
+
+## Author of that Integration [GitHub](https://github.com/g-hano) | [LinkedIn](https://www.linkedin.com/in/chanyalcin/) | [Email](mcihan.yalcin@outlook.com)
 
 ## Installation
 
@@ -49,6 +49,7 @@ response = model.complete(prompt, image_documents=[image_document])
 
 print(response.text)
 ```
+
 You can also refer to this [Colab notebook](examples\huggingface_multimodal.ipynb)
 
 ## Supported Models
@@ -70,7 +71,7 @@ model = HuggingFaceMultiModal(
     device="cuda",  # or "cpu"
     torch_dtype=torch.float16,
     max_new_tokens=100,
-    temperature=0.7
+    temperature=0.7,
 )
 ```
 
@@ -80,5 +81,5 @@ model = HuggingFaceMultiModal(
 - Some models have specific requirements or limitations. Please refer to the individual model classes for details.
 
 ---
-Author of that Integration [GitHub](https://github.com/g-hano) | [LinkedIn](https://www.linkedin.com/in/chanyalcin/) | [Email](mcihan.yalcin@outlook.com)
----
+
+## Author of that Integration [GitHub](https://github.com/g-hano) | [LinkedIn](https://www.linkedin.com/in/chanyalcin/) | [Email](mcihan.yalcin@outlook.com)
