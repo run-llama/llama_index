@@ -107,12 +107,6 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
             num_workers=ingestion_num_workers,
         )
 
-        if not DEEPLAKE_INSTALLED:
-            raise ImportError(
-                "Could not import deeplake python package. "
-                "Please install it with `pip install deeplake`."
-            )
-
         self._vectorstore = VectorStore(
             path=dataset_path,
             ingestion_batch_size=ingestion_batch_size,
