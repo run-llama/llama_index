@@ -12,11 +12,25 @@ logger = logging.getLogger(__name__)
 
 # Convert a ChatMessage to a json object for Redis
 def _message_to_dict(message: ChatMessage) -> dict:
+    """
+    Convert a ChatMessage to a JSON-serializable dictionary.
+
+    Args:
+        message (ChatMessage): The ChatMessage object to convert.
+
+    Returns:
+        dict: A dictionary representation of the ChatMessage.
+    """
     return message.dict()
 
 
 class UpstashChatStore(BaseChatStore):
-    """Upstash chat store."""
+    """
+    Upstash chat store for storing and retrieving chat messages using Redis.
+
+    This class implements the BaseChatStore interface and provides methods
+    for managing chat messages in an Upstash Redis database.
+    """
 
     redis_client: Any = Field(description="Redis client.")
     ttl: Optional[int] = Field(default=None, description="Time to live in seconds.")
@@ -27,6 +41,17 @@ class UpstashChatStore(BaseChatStore):
         redis_token: str = "",
         ttl: Optional[int] = None,
     ):
+        """
+        Initialize the UpstashChatStore.
+
+        Args:
+            redis_url (str): The URL of the Upstash Redis instance.
+            redis_token (str): The authentication token for the Upstash Redis instance.
+            ttl (Optional[int]): Time to live in seconds for stored messages.
+
+        Raises:
+            ValueError: If redis_url or redis_token is empty.
+        """
         if redis_url == "" or redis_token == "":
             raise ValueError("Please provide a valid URL and token")
 
@@ -39,11 +64,22 @@ class UpstashChatStore(BaseChatStore):
         super().__init__(redis_client=self.redis_client, ttl=ttl)
 
     def class_name(self) -> str:
-        """Get class name."""
+        """
+        Get the class name.
+
+        Returns:
+            str: The name of the class.
+        """
         return "UpstashChatStore"
 
     def set_messages(self, key: str, messages: List[ChatMessage]) -> None:
-        """Set messages for a key."""
+        """
+        Set messages for a key.
+
+        Args:
+            key (str): The key to store the messages under.
+            messages (List[ChatMessage]): The list of messages to store.
+        """
         self.redis_client.delete(key)
         for message in messages:
             self.add_message(key, message)
@@ -52,7 +88,15 @@ class UpstashChatStore(BaseChatStore):
             self.redis_client.expire(key, self.ttl)
 
     def get_messages(self, key: str) -> List[ChatMessage]:
-        """Get messages for a key."""
+        """
+        Get messages for a key.
+
+        Args:
+            key (str): The key to retrieve messages from.
+
+        Returns:
+            List[ChatMessage]: The list of retrieved messages.
+        """
         items = self.redis_client.lrange(key, 0, -1)
         if len(items) == 0:
             return []
@@ -62,7 +106,14 @@ class UpstashChatStore(BaseChatStore):
     def add_message(
         self, key: str, message: ChatMessage, idx: Optional[int] = None
     ) -> None:
-        """Add a message to a key."""
+        """
+        Add a message to a key.
+
+        Args:
+            key (str): The key to add the message to.
+            message (ChatMessage): The message to add.
+            idx (Optional[int]): The index at which to insert the message.
+        """
         if idx is None:
             message_json = json.dumps(_message_to_dict(message))
             self.redis_client.rpush(key, message_json)
@@ -73,12 +124,29 @@ class UpstashChatStore(BaseChatStore):
             self.redis_client.expire(key, self.ttl)
 
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
-        """Delete messages for a key."""
+        """
+        Delete messages for a key.
+
+        Args:
+            key (str): The key to delete messages from.
+
+        Returns:
+            Optional[List[ChatMessage]]: Always returns None in this implementation.
+        """
         self.redis_client.delete(key)
         return None
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
-        """Delete a message from a key."""
+        """
+        Delete a message from a key.
+
+        Args:
+            key (str): The key to delete the message from.
+            idx (int): The index of the message to delete.
+
+        Returns:
+            Optional[ChatMessage]: The deleted message, or None if not found or an error occurred.
+        """
         try:
             deleted_message = self.redis_client.lindex(key, idx)
             if deleted_message is None:
@@ -98,17 +166,40 @@ class UpstashChatStore(BaseChatStore):
             return None
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
-        """Delete the last message from a key."""
+        """
+        Delete the last message from a key.
+
+        Args:
+            key (str): The key to delete the last message from.
+
+        Returns:
+            Optional[ChatMessage]: The deleted message, or None if the list is empty.
+        """
         return self.redis_client.rpop(key)
 
     def get_keys(self) -> List[str]:
-        """Get all keys."""
+        """
+        Get all keys.
+
+        Returns:
+            List[str]: A list of all keys in the Redis store.
+        """
         return [key.decode("utf-8") for key in self.redis_client.keys("*")]
 
     def _insert_element_at_index(
         self, key: str, message: ChatMessage, idx: int
     ) -> List[ChatMessage]:
-        """Insert a message at a specific index."""
+        """
+        Insert a message at a specific index.
+
+        Args:
+            key (str): The key of the list to insert into.
+            message (ChatMessage): The message to insert.
+            idx (int): The index at which to insert the message.
+
+        Returns:
+            List[ChatMessage]: The updated list of messages.
+        """
         current_list = self.get_messages(key)
         current_list.insert(idx, message)
 
