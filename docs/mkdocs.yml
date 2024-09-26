@@ -319,8 +319,6 @@ nav:
           - ./examples/llm/fireworks_cookbook.ipynb
           - ./examples/llm/friendli.ipynb
           - ./examples/llm/gemini.ipynb
-          - ./examples/llm/gradient_base_model.ipynb
-          - ./examples/llm/gradient_model_adapter.ipynb
           - ./examples/llm/groq.ipynb
           - ./examples/llm/huggingface.ipynb
           - ./examples/llm/ibm_watsonx.ipynb
@@ -340,7 +338,6 @@ nav:
           - ./examples/llm/maritalk.ipynb
           - ./examples/llm/mistral_rs.ipynb
           - ./examples/llm/mistralai.ipynb
-          - ./examples/llm/mlx.ipynb
           - ./examples/llm/modelscope.ipynb
           - ./examples/llm/monsterapi.ipynb
           - ./examples/llm/mymagic.ipynb
