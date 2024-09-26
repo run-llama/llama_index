@@ -99,6 +99,10 @@ class Ollama(FunctionCallingLLM):
         default=True,
         description="Whether the model is a function calling model.",
     )
+    keep_alive: Optional[Union[float, str]] = Field(
+        default="5m",
+        description="controls how long the model will stay loaded into memory following the request(default: 5m)"
+    )
 
     _client: Optional[Client] = PrivateAttr()
     _async_client: Optional[AsyncClient] = PrivateAttr()
@@ -116,6 +120,7 @@ class Ollama(FunctionCallingLLM):
         client: Optional[Client] = None,
         async_client: Optional[AsyncClient] = None,
         is_function_calling_model: bool = True,
+        keep_alive: Optional[Union[float, str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -128,6 +133,7 @@ class Ollama(FunctionCallingLLM):
             json_mode=json_mode,
             additional_kwargs=additional_kwargs,
             is_function_calling_model=is_function_calling_model,
+            keep_alive=keep_alive,
             **kwargs,
         )
 
@@ -271,7 +277,6 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
-        keep_alive = kwargs.pop("keep_alive", None)
 
         response = self.client.chat(
             model=self.model,
@@ -280,7 +285,7 @@ class Ollama(FunctionCallingLLM):
             format="json" if self.json_mode else "",
             tools=tools,
             options=self._model_kwargs,
-            keep_alive=keep_alive,
+            keep_alive=self.keep_alive,
         )
 
         tool_calls = response["message"].get("tool_calls", [])
@@ -304,7 +309,6 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
-        keep_alive = kwargs.pop("keep_alive", None)
 
         def gen() -> ChatResponseGen:
             response = self.client.chat(
@@ -314,7 +318,7 @@ class Ollama(FunctionCallingLLM):
                 format="json" if self.json_mode else "",
                 tools=tools,
                 options=self._model_kwargs,
-                keep_alive=keep_alive,
+                keep_alive=self.keep_alive,
             )
 
             response_txt = ""
@@ -349,7 +353,6 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
-        keep_alive = kwargs.pop("keep_alive", None)
 
         async def gen() -> ChatResponseAsyncGen:
             response = await self.async_client.chat(
@@ -359,7 +362,7 @@ class Ollama(FunctionCallingLLM):
                 format="json" if self.json_mode else "",
                 tools=tools,
                 options=self._model_kwargs,
-                keep_alive=keep_alive,
+                keep_alive=self.keep_alive,
             )
 
             response_txt = ""
@@ -394,7 +397,6 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
-        keep_alive = kwargs.pop("keep_alive", None)
 
         response = await self.async_client.chat(
             model=self.model,
@@ -403,7 +405,7 @@ class Ollama(FunctionCallingLLM):
             format="json" if self.json_mode else "",
             tools=tools,
             options=self._model_kwargs,
-            keep_alive=keep_alive,
+            keep_alive=self.keep_alive,
         )
 
         tool_calls = response["message"].get("tool_calls", [])
