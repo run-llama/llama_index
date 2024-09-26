@@ -122,7 +122,6 @@ nav:
           - ./examples/agent/react_agent_with_query_engine.ipynb
           - ./examples/agent/return_direct_agent.ipynb
           - ./examples/agent/structured_planner.ipynb
-          - ./examples/agents/nvidia_agent.ipynb
       - Chat Engines:
           - ./examples/chat_engine/chat_engine_best.ipynb
           - ./examples/chat_engine/chat_engine_condense_plus_context.ipynb
@@ -226,7 +225,6 @@ nav:
           - ./examples/embeddings/gemini.ipynb
           - ./examples/embeddings/gigachat.ipynb
           - ./examples/embeddings/google_palm.ipynb
-          - ./examples/embeddings/gradient.ipynb
           - ./examples/embeddings/huggingface.ipynb
           - ./examples/embeddings/ibm_watsonx.ipynb
           - ./examples/embeddings/ipex_llm.ipynb
@@ -280,9 +278,6 @@ nav:
           - ./examples/finetuning/embeddings/finetune_corpus_embedding.ipynb
           - ./examples/finetuning/embeddings/finetune_embedding.ipynb
           - ./examples/finetuning/embeddings/finetune_embedding_adapter.ipynb
-          - ./examples/finetuning/gradient/gradient_fine_tuning.ipynb
-          - ./examples/finetuning/gradient/gradient_structured.ipynb
-          - ./examples/finetuning/gradient/gradient_text2sql.ipynb
           - ./examples/finetuning/llm_judge/correctness/finetune_llm_judge_single_grading_correctness.ipynb
           - ./examples/finetuning/llm_judge/pairwise/finetune_llm_judge.ipynb
           - ./examples/finetuning/mistralai_fine_tuning.ipynb
