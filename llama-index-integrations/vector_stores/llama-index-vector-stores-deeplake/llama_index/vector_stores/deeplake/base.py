@@ -22,12 +22,7 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
-try:
-    from deeplake.core.vectorstore.deeplake_vectorstore import VectorStore
-
-    DEEPLAKE_INSTALLED = True
-except ImportError:
-    DEEPLAKE_INSTALLED = False
+from deeplake.core.vectorstore.deeplake_vectorstore import VectorStore
 
 logger = logging.getLogger(__name__)
 
