@@ -1,10 +1,12 @@
 import logging
+import urllib.parse
 from abc import ABC
-from typing import List, Optional
+from typing import Any, List, Mapping, Optional
 
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store import BaseChatStore
 from pymongo import MongoClient
+from pymongo.cursor import Cursor
 from pymongo.database import Database
 from pymongo.collection import Collection
 
@@ -67,7 +69,14 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
         collection_name: Optional[str] = None,
     ):
         """Creates an instance of AzureCosmosMongoVCoreChatStore using a connection string."""
-        mongo_client = MongoClient(connection_string, appname=APP_NAME)
+        # Parse the MongoDB URI
+        parsed_uri = urllib.parse.urlparse(connection_string)
+        # Extract username and password, and perform url_encoding
+        username = urllib.parse.quote_plus(parsed_uri.username)
+        password = urllib.parse.quote_plus(parsed_uri.password)
+
+        encoded_conn_string = f"mongodb+srv://{username}:{password}@{parsed_uri.hostname}/?{parsed_uri.query}"
+        mongo_client = MongoClient(encoded_conn_string, appname=APP_NAME)
 
         return cls(
             mongo_client=mongo_client,
@@ -147,7 +156,7 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
         """Delete last message for a key."""
         return self.delete_message(key, -1)
 
-    def get_keys(self) -> List[str]:
+    def get_keys(self) -> Cursor[Mapping[str, Any] | Any]:
         """Get all keys."""
         return self._collection.find({}, {"_id": 1})
 
