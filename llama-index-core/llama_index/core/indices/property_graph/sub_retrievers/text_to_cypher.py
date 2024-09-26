@@ -56,6 +56,8 @@ class TextToCypherRetriever(BasePGRetriever):
         summarize_response (Optional[bool], optional):
             If True this will run the response through the provided LLM to create a more human readable
             response, If False this uses the provided or default response_template. Defaults to False.
+        summarization_template (Optional[str], optional):
+            The template to use for summarizing the response. Defaults to None.
     """
 
     def __init__(
@@ -68,6 +70,7 @@ class TextToCypherRetriever(BasePGRetriever):
         allowed_output_fields: Optional[List[str]] = None,
         include_raw_response_as_metadata: Optional[bool] = False,
         summarize_response: Optional[bool] = False,
+        summarization_template: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         if not graph_store.supports_structured_queries:
@@ -80,6 +83,9 @@ class TextToCypherRetriever(BasePGRetriever):
         if isinstance(text_to_cypher_template, str):
             text_to_cypher_template = PromptTemplate(text_to_cypher_template)
 
+        if isinstance(summarization_template, str):
+            summarization_template = PromptTemplate(summarization_template)
+
         self.response_template = response_template or DEFAULT_RESPONSE_TEMPLATE
         self.text_to_cypher_template = (
             text_to_cypher_template or graph_store.text_to_cypher_template
@@ -88,6 +94,9 @@ class TextToCypherRetriever(BasePGRetriever):
         self.allowed_output_fields = allowed_output_fields
         self.include_raw_response_as_metadata = include_raw_response_as_metadata
         self.summarize_response = summarize_response
+        self.summarization_template = summarization_template or PromptTemplate(
+            DEFAULT_SUMMARY_TEMPLATE
+        )
         super().__init__(
             graph_store=graph_store, include_text=False, include_properties=False
         )
@@ -139,9 +148,8 @@ class TextToCypherRetriever(BasePGRetriever):
         cleaned_query_output = self._clean_query_output(query_output)
 
         if self.summarize_response:
-            template = PromptTemplate(DEFAULT_SUMMARY_TEMPLATE)
             summarized_response = self.llm.predict(
-                template,
+                self.summarization_template,
                 context=str(cleaned_query_output),
                 question=parsed_cypher_query,
             )
@@ -185,9 +193,8 @@ class TextToCypherRetriever(BasePGRetriever):
         cleaned_query_output = self._clean_query_output(query_output)
 
         if self.summarize_response:
-            template = PromptTemplate(DEFAULT_SUMMARY_TEMPLATE)
             summarized_response = await self.llm.apredict(
-                template,
+                self.summarization_template,
                 context=str(cleaned_query_output),
                 question=parsed_cypher_query,
             )
