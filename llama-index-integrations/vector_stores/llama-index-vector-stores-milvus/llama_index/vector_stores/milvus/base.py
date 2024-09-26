@@ -300,7 +300,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                         )
 
                         # Create a schema according to LlamaIndex Schema.
-                        schema = self._create_schema(auto_id=False, **kwargs)
+                        schema = self._create_schema()
                         schema.verify()
 
                         # Using private method exposed by pymilvus client, in order to avoid creating indexes twice
