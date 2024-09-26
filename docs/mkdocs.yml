@@ -416,6 +416,7 @@ nav:
           - ./examples/multi_modal/image_to_image_retrieval.ipynb
           - ./examples/multi_modal/llava_demo.ipynb
           - ./examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
+          - ./examples/multi_modal/mistral_multi_modal.ipynb
           - ./examples/multi_modal/mm_agent.ipynb
           - ./examples/multi_modal/multi_modal_pydantic.ipynb
           - ./examples/multi_modal/multi_modal_rag_nomic.ipynb
@@ -1107,6 +1108,7 @@ nav:
           - ./api_reference/multi_modal_llms/dashscope.md
           - ./api_reference/multi_modal_llms/gemini.md
           - ./api_reference/multi_modal_llms/index.md
+          - ./api_reference/multi_modal_llms/mistral.md
           - ./api_reference/multi_modal_llms/ollama.md
           - ./api_reference/multi_modal_llms/openai.md
           - ./api_reference/multi_modal_llms/replicate.md
@@ -2194,6 +2196,7 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-quip
             - ../llama-index-integrations/sparse_embeddings/llama-index-sparse-embeddings-fastembed
             - ../llama-index-integrations/node_parser/llama-index-node-parser-topic
+            - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-mistralai
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
