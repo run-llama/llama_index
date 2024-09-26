@@ -355,7 +355,8 @@ class BaseIndex(Generic[IS], ABC):
         ...
 
     @abstractmethod
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever: ...
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        ...
 
     def as_query_engine(
         self, llm: Optional[LLMType] = None, **kwargs: Any
