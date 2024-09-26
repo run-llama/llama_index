@@ -8,7 +8,7 @@ from llama_index.core.instrumentation import get_dispatcher
 
 from .decorators import StepConfig, step
 from .context import Context
-from .events import Event, StartEvent, StopEvent
+from .events import InputRequiredEvent, HumanResponseEvent, Event, StartEvent, StopEvent
 from .errors import *
 from .service import ServiceManager
 from .utils import (
@@ -48,6 +48,7 @@ class Workflow(metaclass=WorkflowMeta):
         disable_validation: bool = False,
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
+        num_concurrent_runs: Optional[int] = None,
     ) -> None:
         """Create an instance of the workflow.
 
@@ -60,11 +61,17 @@ class Workflow(metaclass=WorkflowMeta):
             verbose: whether or not the workflow should print additional informative messages during execution.
             service_manager: The instance of the `ServiceManager` used to make nested workflows available to this
                 workflow instance. The default value is the best choice unless you're customizing the workflow runtime.
+            num_concurrent_runs: maximum number of .run() executions occurring simultaneously. If set to `None`, there
+                is no limit to this number.
         """
         # Configuration
         self._timeout = timeout
         self._verbose = verbose
         self._disable_validation = disable_validation
+        self._num_concurrent_runs = num_concurrent_runs
+        self._sem = (
+            asyncio.Semaphore(num_concurrent_runs) if num_concurrent_runs else None
+        )
         # Broker machinery
         self._contexts: Set[Context] = set()
         self._stepwise_context: Optional[Context] = None
@@ -248,6 +255,8 @@ class Workflow(metaclass=WorkflowMeta):
                         warnings.warn(
                             f"Step function {name} returned {type(new_ev).__name__} instead of an Event instance."
                         )
+                    elif isinstance(new_ev, InputRequiredEvent):
+                        ctx.write_event_to_stream(new_ev)
                     else:
                         ctx.send_event(new_ev)
 
@@ -283,7 +292,11 @@ class Workflow(metaclass=WorkflowMeta):
     ) -> WorkflowHandler:
         """Runs the workflow until completion."""
         # Validate the workflow if needed
-        self._validate()
+        uses_hitl = self._validate()
+        if uses_hitl and stepwise:
+            raise WorkflowRuntimeError(
+                "Human-in-the-loop is not supported with stepwise execution"
+            )
 
         # Start the machinery in a new Context or use the provided one
         ctx = self._start(ctx=ctx, stepwise=stepwise)
@@ -291,6 +304,8 @@ class Workflow(metaclass=WorkflowMeta):
         result = WorkflowHandler(ctx=ctx)
 
         async def _run_workflow() -> None:
+            if self._sem:
+                await self._sem.acquire()
             try:
                 # Send the first event
                 ctx.send_event(StartEvent(**kwargs))
@@ -329,6 +344,9 @@ class Workflow(metaclass=WorkflowMeta):
                 result.set_result(ctx._retval)
             except Exception as e:
                 result.set_exception(e)
+            finally:
+                if self._sem:
+                    self._sem.release()
 
         asyncio.create_task(_run_workflow())
         return result
@@ -399,10 +417,13 @@ class Workflow(metaclass=WorkflowMeta):
         # Signal we want to stop the workflow
         raise WorkflowDone
 
-    def _validate(self) -> None:
-        """Validate the workflow to ensure it's well-formed."""
+    def _validate(self) -> bool:
+        """Validate the workflow to ensure it's well-formed.
+
+        Returns True if the workflow uses human-in-the-loop, False otherwise.
+        """
         if self._disable_validation:
-            return
+            return False
 
         produced_events: Set[type] = {StartEvent}
         consumed_events: Set[type] = set()
@@ -425,16 +446,26 @@ class Workflow(metaclass=WorkflowMeta):
 
             requested_services.update(step_config.requested_services)
 
-        # Check if all consumed events are produced
+        # Check if all consumed events are produced (except specific built-in events)
         unconsumed_events = consumed_events - produced_events
+        unconsumed_events = {
+            x
+            for x in unconsumed_events
+            if not issubclass(x, (InputRequiredEvent, HumanResponseEvent))
+        }
         if unconsumed_events:
             names = ", ".join(ev.__name__ for ev in unconsumed_events)
             raise WorkflowValidationError(
                 f"The following events are consumed but never produced: {names}"
             )
 
-        # Check if there are any unused produced events (except StopEvent)
-        unused_events = produced_events - consumed_events - {StopEvent}
+        # Check if there are any unused produced events (except specific built-in events)
+        unused_events = produced_events - consumed_events
+        unused_events = {
+            x
+            for x in unused_events
+            if not issubclass(x, (InputRequiredEvent, HumanResponseEvent))
+        }
         if unused_events:
             names = ", ".join(ev.__name__ for ev in unused_events)
             raise WorkflowValidationError(
@@ -451,3 +482,9 @@ class Workflow(metaclass=WorkflowMeta):
             if missing:
                 msg = f"The following services are not available: {', '.join(str(m) for m in missing)}"
                 raise WorkflowValidationError(msg)
+
+        # Check if the workflow uses human-in-the-loop
+        return (
+            InputRequiredEvent in produced_events
+            or HumanResponseEvent in consumed_events
+        )
