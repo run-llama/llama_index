@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional, Union
 from copy import deepcopy
 from enum import Enum
 
-
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
 from llama_index.core.schema import BaseNode, TextNode
@@ -153,6 +152,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
                   in the hybrid retrieval process.
             Defaults to an empty dictionary, implying that the ranker will operate with its predefined default settings.
         index_management (IndexManagement): Specifies the index management strategy to use. Defaults to "create_if_not_exists".
+        scalar_field_names (list): The names of the extra scalar fields to be included in the collection schema.
+        scalar_field_types (list): The types of the extra scalar fields.
 
     Raises:
         ImportError: Unable to import `pymilvus`.
@@ -203,6 +204,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
     hybrid_ranker: str
     hybrid_ranker_params: dict = {}
     index_management: IndexManagement = IndexManagement.CREATE_IF_NOT_EXISTS
+    scalar_field_names: Optional[List[str]]
+    scalar_field_types: Optional[List[DataType]]
 
     _milvusclient: MilvusClient = PrivateAttr()
     _collection: Any = PrivateAttr()
@@ -229,6 +232,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         hybrid_ranker: str = "RRFRanker",
         hybrid_ranker_params: dict = {},
         index_management: IndexManagement = IndexManagement.CREATE_IF_NOT_EXISTS,
+        scalar_field_names: Optional[List[str]] = None,
+        scalar_field_types: Optional[List[DataType]] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -250,6 +255,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
             hybrid_ranker=hybrid_ranker,
             hybrid_ranker_params=hybrid_ranker_params,
             index_management=index_management,
+            scalar_field_names=scalar_field_names,
+            scalar_field_types=scalar_field_types,
         )
 
         # Select the similarity metric
