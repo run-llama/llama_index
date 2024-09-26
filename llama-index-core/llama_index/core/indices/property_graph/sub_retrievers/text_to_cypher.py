@@ -11,7 +11,8 @@ DEFAULT_RESPONSE_TEMPLATE = (
     "Generated Cypher query:\n{query}\n\n" "Cypher Response:\n{response}"
 )
 
-DEFAULT_SUMMARY_TEMPLATE = """You are an assistant that helps to form nice and human understandable answers.
+DEFAULT_SUMMARY_TEMPLATE = PromptTemplate(
+    """You are an assistant that helps to form nice and human understandable answers.
         The information part contains the provided information you must use to construct an answer.
         The provided information is authoritative, never doubt it or try to use your internal knowledge to correct it.
         If the provided information is empty, say that you don't know the answer.
@@ -30,6 +31,7 @@ DEFAULT_SUMMARY_TEMPLATE = """You are an assistant that helps to form nice and h
         Information:
         {context}
         Helpful Answer:"""
+)
 
 
 class TextToCypherRetriever(BasePGRetriever):
@@ -70,7 +72,7 @@ class TextToCypherRetriever(BasePGRetriever):
         allowed_output_fields: Optional[List[str]] = None,
         include_raw_response_as_metadata: Optional[bool] = False,
         summarize_response: Optional[bool] = False,
-        summarization_template: Optional[str] = None,
+        summarization_template: Optional[Union[PromptTemplate, str]] = None,
         **kwargs: Any,
     ) -> None:
         if not graph_store.supports_structured_queries:
@@ -94,9 +96,8 @@ class TextToCypherRetriever(BasePGRetriever):
         self.allowed_output_fields = allowed_output_fields
         self.include_raw_response_as_metadata = include_raw_response_as_metadata
         self.summarize_response = summarize_response
-        self.summarization_template = summarization_template or PromptTemplate(
-            DEFAULT_SUMMARY_TEMPLATE
-        )
+        self.summarization_template = summarization_template or DEFAULT_SUMMARY_TEMPLATE
+
         super().__init__(
             graph_store=graph_store, include_text=False, include_properties=False
         )
