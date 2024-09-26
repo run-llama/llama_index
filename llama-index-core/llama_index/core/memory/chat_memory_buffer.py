@@ -123,15 +123,16 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
 
         while token_count > self.token_limit and message_count > 1:
             message_count -= 1
-            if chat_history[-message_count].role == MessageRole.TOOL:
-                # all tool messages should be preceded by an assistant message
-                # if we remove a tool message, we need to remove the assistant message too
-                message_count -= 1
-
-            if chat_history[-message_count].role == MessageRole.ASSISTANT:
+            while chat_history[-message_count].role in (
+                MessageRole.TOOL,
+                MessageRole.ASSISTANT,
+            ):
                 # we cannot have an assistant message at the start of the chat history
                 # if after removal of the first, we have an assistant message,
                 # we need to remove the assistant message too
+                #
+                # all tool messages should be preceded by an assistant message
+                # if we remove a tool message, we need to remove the assistant message too
                 message_count -= 1
 
             cur_messages = chat_history[-message_count:]

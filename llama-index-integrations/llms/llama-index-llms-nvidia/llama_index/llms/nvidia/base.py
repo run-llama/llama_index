@@ -37,12 +37,6 @@ KNOWN_URLS = [
 ]
 
 
-def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
-    if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
-
-
 class Model(BaseModel):
     id: str
     base_model: Optional[str]
@@ -254,18 +248,6 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             "tools": tool_specs or None,
             **kwargs,
         }
-
-    def _validate_chat_with_tools_response(
-        self,
-        response: ChatResponse,
-        tools: List["BaseTool"],
-        allow_parallel_tool_calls: bool = False,
-        **kwargs: Any,
-    ) -> ChatResponse:
-        """Validate the response from chat_with_tools."""
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-        return response
 
     def get_tool_calls_from_response(
         self,
