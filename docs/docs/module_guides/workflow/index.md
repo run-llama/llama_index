@@ -508,8 +508,9 @@ workflow, showcasing how to query a web search engine after an evaluation step.
 - [Utilizing Concurrency](../../examples/workflow/parallel_execution.ipynb) explains how to manage the parallel
 execution of steps in a workflow, something that's important to know as your workflows grow in complexity.
 
-RAG applications are well known and relatively simple, a great opportunity to learn the basics, but agents is where
-workflows excel, as you can learn from the following examples:
+RAG applications are easy to understand and offer a great opportunity to learn the basics of workflows. However, more complex agentic scenarios involving tool calling, memory, and routing are where workflows excel. 
+
+The examples below highlight some of these use-cases.
 
 - [ReAct Agent](../../examples/workflow/react_agent.ipynb) is obviously the perfect example to show how to implement
 tools in a workflow.
