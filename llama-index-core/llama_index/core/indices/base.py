@@ -203,17 +203,17 @@ class BaseIndex(Generic[IS], ABC):
             self._insert(nodes, **insert_kwargs)
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
-    def insert(self, document: Document, **kwargs: Any) -> None:
+    def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
         with self._callback_manager.as_trace("insert"):
             nodes = run_transformations(
                 [document],
                 self._transformations,
                 show_progress=self._show_progress,
-                **kwargs,
+                **insert_kwargs,
             )
 
-            self.insert_nodes(nodes, **kwargs)
+            self.insert_nodes(nodes, **insert_kwargs)
             self.docstore.set_document_hash(document.get_doc_id(), document.hash)
 
     @abstractmethod
