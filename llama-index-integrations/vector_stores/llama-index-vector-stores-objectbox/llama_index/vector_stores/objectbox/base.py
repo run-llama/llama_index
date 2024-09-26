@@ -36,8 +36,35 @@ _logger.setLevel(logging.INFO)
 
 
 class ObjectBoxVectorStore(BasePydanticVectorStore):
-    """
-    ObjectBox VectorStore For LlamaIndex
+    """ObjectBox vector store.
+
+    In this vector store, embeddings are stored within a ObjectBox `Box` (collection).
+
+    During query time, the index uses ObjectBox to query for the top-K most similar nodes.
+
+    Args:
+        embedding_dimensions (int): Number of elements in the embedding to be stored
+        distance_type (objectbox.model.properties.VectorDistanceType):
+            Distance metric to be used for vector search
+        db_directory (str): File path where ObjectBox database files will be stored
+        clear_db (bool): Whether to delete any existing database on `db_directory`
+        do_log (bool): enable/disable logging
+
+    Examples:
+        `pip install llama-index-vector-stores-objectbox`
+
+        ```python
+        from llama_index.vector_stores.objectbox import ObjectBoxVectorStore
+        from objectbox import VectorDistanceType
+
+        vector_store = ObjectBoxVectorStore(
+            embedding_dim,
+            distance_type=VectorDistanceType.COSINE,
+            db_directory="obx_data",
+            clear_db=False,
+            do_log=True
+        )
+        ```
     """
 
     stores_text: bool = True
@@ -100,7 +127,7 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
             if self.do_log:
                 end = time.perf_counter()
                 _logger.info(
-                    f"ObjectBox stored {len(ids)} documents in {end - start} seconds"
+                    f"ObjectBox stored {len(ids)} nodes in {end - start} seconds"
                 )
             return ids
 
@@ -116,7 +143,10 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
         **delete_kwargs: Any,
     ) -> None:
         if node_ids is not None:
-            self._box.query(self._entity_class.node_id.oneOf(node_ids)).build().remove()
+            query_obj = self._box.query(self._entity_class.node_id.equals("node_id").alias("node_id")).build()
+            for node_id in node_ids:
+                query_obj.set_parameter_alias_string("node_id", node_id)
+                query_obj.remove()
 
 
     def get_nodes(
@@ -182,6 +212,10 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
             similarities.append(score)
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+
+    def count(self) -> int:
+        return self._box.count()
 
 
     def clear(self) -> None:

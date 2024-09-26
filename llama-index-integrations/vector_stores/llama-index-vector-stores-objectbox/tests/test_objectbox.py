@@ -74,6 +74,20 @@ def test_get_nodes(
     assert retrieved_nodes[0].id_ == "8601b27c-376e-48dd-a252-e61e01f29069"
 
 
+def test_count(vectorstore: ObjectBoxVectorStore, node_embeddings: Sequence[BaseNode]):
+    vectorstore.add(node_embeddings)
+    assert vectorstore.count() == len(node_embeddings)
+
+
+def test_delete_nodes(
+    vectorstore: ObjectBoxVectorStore, node_embeddings: Sequence[BaseNode]
+):
+    node_ids = vectorstore.add(node_embeddings)
+    node_ids_to_be_deleted = node_ids[0:2]
+    vectorstore.delete_nodes(node_ids_to_be_deleted)
+    assert vectorstore.count() == 1
+
+
 def test_clear(vectorstore: ObjectBoxVectorStore, node_embeddings: Sequence[BaseNode]):
     node_ids = vectorstore.add(node_embeddings)
     vectorstore.clear()
@@ -89,7 +103,6 @@ def remove_test_dir(test_dir: str):
 @pytest.fixture(autouse=True)
 def auto_cleanup(vectorstore: ObjectBoxVectorStore):
     yield  # run the test function
-    print("Cleaned")
     vectorstore.close()
     os.remove("llama_index/vector_stores/objectbox/objectbox-model.json")
     remove_test_dir("objectbox")
