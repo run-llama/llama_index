@@ -1,12 +1,11 @@
 import logging
 import urllib.parse
 from abc import ABC
-from typing import Any, List, Mapping, Optional
+from typing import List, Optional
 
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store import BaseChatStore
 from pymongo import MongoClient
-from pymongo.cursor import Cursor
 from pymongo.database import Database
 from pymongo.collection import Collection
 
@@ -156,9 +155,9 @@ class AzureCosmosMongoVCoreChatStore(BaseChatStore, ABC):
         """Delete last message for a key."""
         return self.delete_message(key, -1)
 
-    def get_keys(self) -> Cursor[Mapping[str, Any] | Any]:
+    def get_keys(self) -> List[str]:
         """Get all keys."""
-        return self._collection.find({}, {"_id": 1})
+        return [doc["id"] for doc in self._collection.find({}, {"id": 1})]
 
     @classmethod
     def class_name(cls) -> str:
