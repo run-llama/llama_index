@@ -101,7 +101,7 @@ class Ollama(FunctionCallingLLM):
     )
     keep_alive: Optional[Union[float, str]] = Field(
         default="5m",
-        description="controls how long the model will stay loaded into memory following the request(default: 5m)"
+        description="controls how long the model will stay loaded into memory following the request(default: 5m)",
     )
 
     _client: Optional[Client] = PrivateAttr()
