@@ -330,9 +330,7 @@ class Anthropic(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         anthropic_messages, system_prompt = messages_to_anthropic_messages(messages)
-        print(anthropic_messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
-        print(all_kwargs)
 
         response = await self._aclient.messages.create(
             messages=anthropic_messages,
