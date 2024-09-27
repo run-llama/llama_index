@@ -30,6 +30,8 @@ python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.0"
 transformers = {extras = ["torch"], version = "^4.0"}
 qwen-vl-utils = ">=0.0.8"
+torchvision = "^0.19.1"
+Pillow = "^10.0.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
