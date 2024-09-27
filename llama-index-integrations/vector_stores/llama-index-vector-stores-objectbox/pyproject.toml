@@ -21,13 +21,17 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "ObjectBox vector-store integration for LlamaIndex"
+authors = ["ObjectBox"]
+description = "Integration package connecting ObjectBox and LlamaIndex"
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-objectbox"
 readme = "README.md"
 version = "0.1.0"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License"
+]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
