@@ -326,12 +326,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
                             "Error creating collection with index_config"
                         ) from e
                 else:
-                    schema = self._create_schema()
-                    schema.verify()
-
                     self._milvusclient.create_collection(
                         collection_name=collection_name,
-                        schema=schema,
                         dimension=dim,
                         primary_field_name=MILVUS_ID_FIELD,
                         vector_field_name=embedding_field,
