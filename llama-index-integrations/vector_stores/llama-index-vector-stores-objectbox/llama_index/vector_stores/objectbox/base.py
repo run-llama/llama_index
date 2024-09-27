@@ -142,6 +142,8 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
+        if filters is not None:
+            raise NotImplementedError("ObjectBox does not support delete_nodes() with metadata filters")
         if node_ids is not None:
             query_obj = self._box.query(self._entity_class.node_id.equals("node_id").alias("node_id")).build()
             for node_id in node_ids:
@@ -154,8 +156,8 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
-        # TODO: Check if filters can be used to implement
-        #       conditional filters
+        if filters is not None:
+            raise NotImplementedError("ObjectBox does not support get_nodes() with metadata filters")
         if node_ids is not None:
             retrieved_nodes: list[BaseNode] = []
             with self._store.read_tx():
@@ -182,6 +184,9 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
 
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        if query.filters is not None:
+            raise NotImplementedError("ObjectBox does not support query() with metadata filters")
+
         query_embedding = query.query_embedding
         n_results = query.similarity_top_k
 
