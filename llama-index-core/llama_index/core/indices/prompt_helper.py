@@ -10,7 +10,6 @@ needed), or truncating them so that they fit in a single LLM call.
 
 import logging
 from copy import deepcopy
-from string import Formatter
 from typing import TYPE_CHECKING, Callable, List, Optional, Sequence
 
 if TYPE_CHECKING:
@@ -29,6 +28,7 @@ from llama_index.core.prompts import (
     SelectorPromptTemplate,
 )
 from llama_index.core.prompts.prompt_utils import get_empty_prompt_txt
+from llama_index.core.prompts.utils import format_string
 from llama_index.core.schema import BaseComponent
 from llama_index.core.utilities.token_counting import TokenCounter
 
@@ -198,29 +198,10 @@ class PromptHelper(BaseComponent):
             for message in messages:
                 partial_message = deepcopy(message)
 
-                # get string variables (if any)
-                template_vars = [
-                    var
-                    for _, var, _, _ in Formatter().parse(str(message))
-                    if var is not None
-                ]
-
-                # figure out which variables are partially formatted
-                # if a variable is not formatted, it will be replaced with
-                # the template variable itself
-                used_vars = {
-                    template_var: f"{{{template_var}}}"
-                    for template_var in template_vars
-                }
-                for var_name, val in prompt.kwargs.items():
-                    if var_name in template_vars:
-                        used_vars[var_name] = val
-
-                # format partial message
-                if partial_message.content is not None:
-                    partial_message.content = partial_message.content.format(
-                        **used_vars
-                    )
+                prompt_kwargs = prompt.kwargs or {}
+                partial_message.content = format_string(
+                    partial_message.content or "", **prompt_kwargs
+                )
 
                 # add to list of partial messages
                 partial_messages.append(partial_message)
