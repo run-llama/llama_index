@@ -9,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.multi_modal_llms.mistral"
+import_path = "llama_index.multi_modal_llms.mistralai"
 
 [tool.llamahub.class_authors]
 MistralMultiModal = "llama-index"
