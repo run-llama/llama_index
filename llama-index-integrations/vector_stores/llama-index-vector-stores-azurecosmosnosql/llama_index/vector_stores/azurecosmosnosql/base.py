@@ -5,6 +5,7 @@ An index that is built on top of an existing vector store.
 """
 import logging
 from typing import Any, Optional, Dict, cast, List
+from datetime import date
 
 from azure.cosmos import CosmosClient
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -182,6 +183,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                 self._embedding_key: node.get_embedding(),
                 self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
+                "timeStamp": date.today(),
             }
             data_to_insert.append(entry)
             ids.append(node.node_id)
@@ -206,23 +208,48 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         """Return CosmosDB client."""
         return self._cosmos_client
 
-    def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def _query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         params: Dict[str, Any] = {
             "vector": query.query_embedding,
             "path": self._embedding_key,
             "k": query.similarity_top_k,
         }
 
+        pre_filter = kwargs.get("pre_filter", {})
+
+        query = "SELECT "
+
+        # If limit_offset_clause is not specified, add TOP clause
+        if pre_filter is None or pre_filter.get("limit_offset_clause") is None:
+            query += "TOP @limit "
+
+        query += (
+            "c.id, c.{}, c.text, c.metadata, "
+            "VectorDistance(c.@embeddingKey, @embeddings) AS SimilarityScore FROM c"
+        )
+
+        # Add where_clause if specified
+        if pre_filter is not None and pre_filter.get("where_clause") is not None:
+            query += " {}".format(pre_filter["where_clause"])
+
+        query += " ORDER BY VectorDistance(c.@embeddingKey, @embeddings)"
+
+        # Add limit_offset_clause if specified
+        if pre_filter is not None and pre_filter.get("limit_offset_clause") is not None:
+            query += " {}".format(pre_filter["limit_offset_clause"])
+        parameters = [
+            {"name": "@limit", "value": params["k"]},
+            {"name": "@embeddingKey", "value": self._embedding_key},
+            {"name": "@embeddings", "value": params["vector"]},
+        ]
+
         top_k_nodes = []
         top_k_ids = []
         top_k_scores = []
 
         for item in self._container.query_items(
-            query="SELECT TOP @k c.id, c.embedding, c.text, c.metadata, VectorDistance(c.embedding,@embedding) AS SimilarityScore FROM c ORDER BY VectorDistance(c.embedding,@embedding)",
-            parameters=[
-                {"name": "@k", "value": params["k"]},
-                {"name": "@embedding", "value": params["vector"]},
-            ],
+            query=query,
+            parameters=parameters,
             enable_cross_partition_query=True,
         ):
             node = metadata_dict_to_node(item[self._metadata_key])
@@ -248,4 +275,4 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         Returns:
             A VectorStoreQueryResult containing the results of the query.
         """
-        return self._query(query)
+        return self._query(query, **kwargs)

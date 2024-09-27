@@ -40,7 +40,7 @@ class OpenAIAgent(AgentRunner):
 
     For the legacy implementation see:
     ```python
-    from llama_index..agent.legacy.openai.base import OpenAIAgent
+    from llama_index.agent.legacy.openai.base import OpenAIAgent
     ```
 
     """
