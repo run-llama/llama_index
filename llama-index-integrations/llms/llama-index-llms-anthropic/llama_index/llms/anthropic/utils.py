@@ -96,6 +96,16 @@ def messages_to_anthropic_messages(
                     if item and isinstance(item, dict) and item.get("type", None):
                         if item["type"] == "image":
                             content.append(ImageBlockParam(**item))
+                        elif "cache_control" in item:
+                            content.append(
+                                PromptCachingBetaTextBlockParam(
+                                    text=item["text"],
+                                    type="text",
+                                    cache_control=PromptCachingBetaCacheControlEphemeralParam(
+                                        type="ephemeral"
+                                    ),
+                                )
+                            )
                         else:
                             content.append(TextBlockParam(**item))
                     else:
@@ -110,7 +120,7 @@ def messages_to_anthropic_messages(
                         ),
                     )
                     if "cache_control" in message.additional_kwargs
-                    else [TextBlockParam(text=message.content, type="text")]
+                    else TextBlockParam(text=message.content, type="text")
                 )
                 content.append(content_)
 
@@ -134,7 +144,6 @@ def messages_to_anthropic_messages(
                 content=content,  # TODO: type detect for multimodal
             )
             anthropic_messages.append(anth_message)
-
     return __merge_common_role_msgs(anthropic_messages), system_prompt.strip()
 
 
