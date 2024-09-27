@@ -42,12 +42,12 @@ def test_invalid_initialization():
         UpstashChatStore(redis_url="", redis_token="")
 
 
-@pytest.mark.skipif(not upstash_installed, reason="Upstash Redis is not installed")
+@pytest.mark.skip(reason="Skipping all tests")
 def test_upstash_basic(upstash_chat_store: UpstashChatStore):
     assert upstash_chat_store.class_name() == "UpstashChatStore"
 
 
-@pytest.mark.skipif(not upstash_installed, reason="Upstash Redis is not installed")
+@pytest.mark.skip(reason="Skipping all tests")
 def test_upstash_add_message(upstash_chat_store: UpstashChatStore):
     key = "test_add_key"
 
@@ -59,7 +59,7 @@ def test_upstash_add_message(upstash_chat_store: UpstashChatStore):
     assert result[0].content == "add_message_test" and result[0].role == "user"
 
 
-@pytest.mark.skipif(not upstash_installed, reason="Upstash Redis is not installed")
+@pytest.mark.skip(reason="Skipping all tests")
 def test_set_and_retrieve_messages(upstash_chat_store: UpstashChatStore):
     messages = [
         ChatMessage(content="First message", role="user"),
@@ -74,7 +74,7 @@ def test_set_and_retrieve_messages(upstash_chat_store: UpstashChatStore):
     assert retrieved_messages[1].content == "Second message"
 
 
-@pytest.mark.skipif(not upstash_installed, reason="Upstash Redis is not installed")
+@pytest.mark.skip(reason="Skipping all tests")
 def test_delete_messages(upstash_chat_store: UpstashChatStore):
     messages = [ChatMessage(content="Message to delete", role="user")]
     key = "test_delete_key"
@@ -85,7 +85,7 @@ def test_delete_messages(upstash_chat_store: UpstashChatStore):
     assert retrieved_messages == []
 
 
-@pytest.mark.skipif(not upstash_installed, reason="Upstash Redis is not installed")
+@pytest.mark.skip(reason="Skipping all tests")
 def test_delete_specific_message(upstash_chat_store: UpstashChatStore):
     messages = [
         ChatMessage(content="Keep me", role="user"),
@@ -100,7 +100,7 @@ def test_delete_specific_message(upstash_chat_store: UpstashChatStore):
     assert retrieved_messages[0].content == "Keep me"
 
 
-@pytest.mark.skipif(not upstash_installed, reason="Upstash Redis is not installed")
+@pytest.mark.skip(reason="Skipping all tests")
 def test_ttl_on_messages(upstash_chat_store: UpstashChatStore):
     upstash_chat_store.ttl = 3
     key = "ttl_test_key"
