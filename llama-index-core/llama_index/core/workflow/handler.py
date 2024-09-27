@@ -78,11 +78,11 @@ class WorkflowHandler(asyncio.Future):
         return retval
 
 
-def get_state_dict(self) -> Dict[str, Any]:
-    if not self.ctx:
+def get_state_dict(handler: WorkflowHandler) -> Dict[str, Any]:
+    if not handler.ctx:
         raise ValueError("Context is not set!")
 
-    return self.ctx.to_dict()
+    return handler.ctx.to_dict()
 
 
 def get_handler_from_state_dict(

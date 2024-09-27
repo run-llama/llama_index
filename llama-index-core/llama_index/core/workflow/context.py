@@ -46,7 +46,7 @@ class Context:
         self._events_buffer: Dict[Type[Event], List[Event]] = defaultdict(list)
 
         # keep track of all the event classes that are accepted by the workflow
-        self._event_classes: Dict[str, type] = {}
+        self._event_classes: Dict[str, Type[Event]] = {}
         for step_func in self._workflow._get_steps().values():
             step_config: Optional[StepConfig] = getattr(
                 step_func, "__step_config", None
@@ -67,18 +67,18 @@ class Context:
         return event_cls.model_validate(event_data)
 
     def _serialize_queue(self, queue: asyncio.Queue) -> str:
-        queue_items = list(queue._queue)
+        queue_items = list(queue._queue)  # type: ignore
 
         # dump a mapping of the event name to the event object
         queue_objs = [self._serialize_event(obj) for obj in queue_items]
-        return json.dumps(queue_objs)
+        return json.dumps(queue_objs)  # type: ignore
 
     def _deserialize_queue(self, queue_str: str) -> asyncio.Queue:
         # deserialize the queue
         queue_objs = json.loads(queue_str)
 
         # create a new queue, and put the objects back into it
-        queue = asyncio.Queue()
+        queue = asyncio.Queue()  # type: ignore
         for obj in queue_objs:
             event_obj = self._deserialize_event(obj[0], obj[1])
             queue.put_nowait(event_obj)
