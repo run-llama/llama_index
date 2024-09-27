@@ -96,7 +96,7 @@ def messages_to_anthropic_messages(
                     if item and isinstance(item, dict) and item.get("type", None):
                         if item["type"] == "image":
                             content.append(ImageBlockParam(**item))
-                        elif "cache_control" in item:
+                        elif "cache_control" in item and item["type"] == "text":
                             content.append(
                                 PromptCachingBetaTextBlockParam(
                                     text=item["text"],
