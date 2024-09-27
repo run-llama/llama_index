@@ -4,6 +4,8 @@
 
 ### Setup and Installation
 
+`pip install llama-index-readers-web`
+
 1. **Install zyte-api Package**: Ensure the `zyte-api` package is installed to use the ZyteWebReader. Install it via pip with the following command:
 
    ```bash
