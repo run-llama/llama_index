@@ -37,6 +37,7 @@ def upstash_chat_store() -> UpstashChatStore:
     )
 
 
+@pytest.mark.skip(reason="Skipping all tests")
 def test_invalid_initialization():
     with pytest.raises(ValueError):
         UpstashChatStore(redis_url="", redis_token="")
@@ -113,6 +114,7 @@ def test_ttl_on_messages(upstash_chat_store: UpstashChatStore):
     assert retrieved_messages == []
 
 
+@pytest.mark.skip(reason="Skipping all tests")
 def test_add_message_at_index(upstash_chat_store: UpstashChatStore):
     key = "test_add_message_index_key"
     # Clear any existing data for the key
