@@ -18,7 +18,6 @@ from llama_index.core.vector_stores.types import (
 )
 from llama_index.vector_stores.kdbai.utils import (
     default_sparse_encoder,
-    convert_metadata_col,
 )
 
 DEFAULT_COLUMN_NAMES = ["document_id", "text", "embeddings"]
@@ -144,9 +143,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 if len(schema) > len(DEFAULT_COLUMN_NAMES):
                     for column in [item for item in schema if item['name'] not in DEFAULT_COLUMN_NAMES]:
                         try:
-                            doc[column["name"]] = convert_metadata_col(
-                                column, node.metadata[column["name"]]
-                            )
+                            doc[column["name"]] = node.metadata[column["name"]]
                         except Exception as e:
                             logger.error(
                                 f"Error writing column {column['name']} as type {column['type']}: {e}."
@@ -210,7 +207,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
         else:
             raise ValueError(
                 "Could not run the search. "
-                "Please please provide KDBAI index name."
+                "Please provide KDBAI index name."
             )
 
         if self.hybrid_search:
