@@ -5,6 +5,10 @@ from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageR
 from anthropic.types import MessageParam, TextBlockParam, ImageBlockParam
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
+from anthropic.types.beta.prompt_caching import (
+    PromptCachingBetaTextBlockParam,
+    PromptCachingBetaCacheControlEphemeralParam,
+)
 
 HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
@@ -97,7 +101,18 @@ def messages_to_anthropic_messages(
                     else:
                         content.append(TextBlockParam(text=item, type="text"))
             elif message.content:
-                content.append(TextBlockParam(text=message.content, type="text"))
+                content_ = (
+                    PromptCachingBetaTextBlockParam(
+                        text=message.content,
+                        type="text",
+                        cache_control=PromptCachingBetaCacheControlEphemeralParam(
+                            type="ephemeral"
+                        ),
+                    )
+                    if "cache_control" in message.additional_kwargs
+                    else [TextBlockParam(text=message.content, type="text")]
+                )
+                content.append(content_)
 
             tool_calls = message.additional_kwargs.get("tool_calls", [])
             for tool_call in tool_calls:
