@@ -1,9 +1,12 @@
 import asyncio
-from typing import Any, AsyncGenerator, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional
 
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.events import Event, StopEvent
 from llama_index.core.workflow.errors import WorkflowDone
+
+if TYPE_CHECKING:
+    from llama_index.core.workflow.workflow import Workflow
 
 
 class WorkflowHandler(asyncio.Future):
@@ -18,12 +21,6 @@ class WorkflowHandler(asyncio.Future):
 
     def is_done(self) -> bool:
         return self.done()
-
-    def get_pickled_state_string(self) -> str:
-        if not self.ctx:
-            raise ValueError("Context is not set!")
-
-        return self.ctx.get_pickled_state_string()
 
     async def stream_events(self) -> AsyncGenerator[Event, None]:
         if not self.ctx:
@@ -79,3 +76,17 @@ class WorkflowHandler(asyncio.Future):
             raise ValueError("Context is not set!")
 
         return retval
+
+
+def get_state_dict(self) -> Dict[str, Any]:
+    if not self.ctx:
+        raise ValueError("Context is not set!")
+
+    return self.ctx.to_dict()
+
+
+def get_handler_from_state_dict(
+    workflow: "Workflow", data: Dict[str, Any]
+) -> WorkflowHandler:
+    ctx = Context.from_dict(workflow, data)
+    return WorkflowHandler(ctx=ctx)

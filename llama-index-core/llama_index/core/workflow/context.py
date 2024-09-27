@@ -4,6 +4,7 @@ import json
 import pickle
 import warnings
 from collections import defaultdict
+from pydantic import BaseModel
 from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING, Set, Tuple
 
 from .decorators import StepConfig
@@ -88,10 +89,20 @@ class Context:
         serialized_globals = {}
         for key, value in self._globals.items():
             try:
+                if isinstance(value, BaseModel):
+                    raise TypeError(
+                        "BaseModel is not serializable because we cannot hydrate it back."
+                    )
+
                 serialized_globals[key] = json.dumps(value)
             except TypeError:
-                # if the value is not serializable, we pickle it
-                serialized_globals[key] = base64.b64encode(pickle.dumps(value)).decode()
+                try:
+                    # if the value is not serializable, we pickle it
+                    serialized_globals[key] = base64.b64encode(
+                        pickle.dumps(value)
+                    ).decode()
+                except Exception as e:
+                    raise ValueError(f"Failed to serialize value for key {key}: {e}")
 
         return serialized_globals
 
@@ -106,6 +117,24 @@ class Context:
                 deserialized_globals[key] = pickle.loads(base64.b64decode(value))
 
         return deserialized_globals
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "globals": self._serialize_globals(),
+            "streaming_queue": self._serialize_queue(self._streaming_queue),
+            "queues": {k: self._serialize_queue(v) for k, v in self._queues.items()},
+            "stepwise": self.stepwise,
+        }
+
+    @classmethod
+    def from_dict(cls, workflow: "Workflow", data: Dict[str, Any]) -> "Context":
+        context = cls(workflow, stepwise=data["stepwise"])
+        context._globals = context._deserialize_globals(data["globals"])
+        context._queues = {
+            k: context._deserialize_queue(v) for k, v in data["queues"].items()
+        }
+        context._streaming_queue = context._deserialize_queue(data["streaming_queue"])
+        return context
 
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:
         """Store `value` into the Context under `key`.

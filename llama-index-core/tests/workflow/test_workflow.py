@@ -4,8 +4,14 @@ from unittest import mock
 
 import pytest
 
+from llama_index.core import MockEmbedding
+from llama_index.core.llms.mock import MockLLM
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StartEvent, StopEvent
+from llama_index.core.workflow.handler import (
+    get_handler_from_state_dict,
+    get_state_dict,
+)
 from llama_index.core.workflow.workflow import (
     Context,
     Workflow,
@@ -444,3 +450,53 @@ async def test_workflow_continue_context():
     result = await r
     assert result == "Done"
     assert await r.ctx.get("number") == 2
+
+
+@pytest.mark.asyncio()
+async def test_workflow_pickle():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            cur_step = await ctx.get("step", default=0)
+            await ctx.set("step", cur_step + 1)
+            await ctx.set("embedding", MockEmbedding(embed_dim=cur_step))
+            await ctx.set("llm", MockLLM(max_tokens=cur_step))
+            return StopEvent(result="Done")
+
+    wf = DummyWorkflow()
+    handler = wf.run()
+    _ = await handler
+
+    state_dict = get_state_dict(handler)
+    new_handler = get_handler_from_state_dict(wf, state_dict)
+
+    # check that the step count is the same
+    cur_step = await handler.ctx.get("step")
+    new_step = await new_handler.ctx.get("step")
+    assert new_step == cur_step
+
+    # check that the embedding is the same
+    embedding = await handler.ctx.get("embedding")
+    new_embedding = await new_handler.ctx.get("embedding")
+    assert new_embedding.embed_dim == embedding.embed_dim
+
+    # check that the llm is the same
+    llm = await handler.ctx.get("llm")
+    new_llm = await new_handler.ctx.get("llm")
+    assert new_llm.max_tokens == llm.max_tokens
+
+    handler = wf.run(ctx=new_handler.ctx)
+    _ = await handler
+
+    # check that the step count is incremented
+    assert await handler.ctx.get("step") == cur_step + 1
+
+    # check that the embedding is the same
+    embedding = await handler.ctx.get("embedding")
+    new_embedding = await new_handler.ctx.get("embedding")
+    assert new_embedding.embed_dim == embedding.embed_dim
+
+    # check that the llm is the same
+    llm = await handler.ctx.get("llm")
+    new_llm = await new_handler.ctx.get("llm")
+    assert new_llm.max_tokens == llm.max_tokens
