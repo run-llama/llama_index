@@ -1108,7 +1108,7 @@ nav:
           - ./api_reference/multi_modal_llms/dashscope.md
           - ./api_reference/multi_modal_llms/gemini.md
           - ./api_reference/multi_modal_llms/index.md
-          - ./api_reference/multi_modal_llms/mistral.md
+          - ./api_reference/multi_modal_llms/mistralai.md
           - ./api_reference/multi_modal_llms/ollama.md
           - ./api_reference/multi_modal_llms/openai.md
           - ./api_reference/multi_modal_llms/replicate.md
