@@ -27,7 +27,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-objectbox"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.0a"
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License"
