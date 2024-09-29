@@ -67,7 +67,6 @@ async def test_workflow_run_step(workflow):
     handler = workflow.run(stepwise=True)
     await asyncio.sleep(0)
 
-    print("here", flush=True)
     event = await handler.run_step()
     assert isinstance(event, OneTestEvent)
     assert not handler.is_done()
