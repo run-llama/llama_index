@@ -120,7 +120,7 @@ def messages_to_anthropic_messages(
                         ),
                     )
                     if "cache_control" in message.additional_kwargs
-                    else [TextBlockParam(text=message.content, type="text")]
+                    else TextBlockParam(text=message.content, type="text")
                 )
                 content.append(content_)
 
