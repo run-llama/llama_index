@@ -106,7 +106,7 @@ class Ollama(FunctionCallingLLM):
         request_timeout: float = DEFAULT_REQUEST_TIMEOUT,
         prompt_key: str = "prompt",
         json_mode: bool = False,
-        additional_kwargs: Optional[Dict[str, Any]] = None,
+        additional_kwargs: Dict[str, Any] = {},
         client: Optional[Client] = None,
         async_client: Optional[AsyncClient] = None,
         is_function_calling_model: bool = True,
@@ -125,7 +125,6 @@ class Ollama(FunctionCallingLLM):
             **kwargs,
         )
 
-        self.additional_kwargs = additional_kwargs or {}
         self._client = client
         self._async_client = async_client
 
