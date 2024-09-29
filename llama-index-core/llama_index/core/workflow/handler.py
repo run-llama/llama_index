@@ -31,7 +31,7 @@ class WorkflowHandler(asyncio.Future):
             if type(ev) is StopEvent:
                 break
 
-    async def run_step(self) -> Optional[Any]:
+    async def run_step(self) -> Optional[Event]:
         if self.ctx and not self.ctx.stepwise:
             raise ValueError("Stepwise context is required to run stepwise.")
 
@@ -44,31 +44,43 @@ class WorkflowHandler(asyncio.Future):
             # the chance to run (we won't actually sleep here).
             await asyncio.sleep(0)
 
-            # See if we're done, or if a step raised any error
-            we_done = False
-            exception_raised = None
-            for t in self.ctx._tasks:
-                # Check if we're done
-                if not t.done():
-                    continue
-
-                we_done = True
-                e = t.exception()
-                if type(e) != WorkflowDone:
-                    exception_raised = e
-
-            retval = None
-            if we_done:
-                # Remove any reference to the tasks
+            # check if StopEvent was sent
+            if isinstance(self.ctx._event_holding, StopEvent):
+                # See if we're done, or if a step raised any error
+                retval = None
+                we_done = False
+                exception_raised = None
                 for t in self.ctx._tasks:
-                    t.cancel()
-                    await asyncio.sleep(0)
-                retval = self.ctx.get_result()
+                    # Check if we're done
+                    if not t.done():
+                        continue
 
-                self.set_result(retval)
+                    we_done = True
+                    e = t.exception()
+                    if type(e) != WorkflowDone:
+                        exception_raised = e
 
-            if exception_raised:
-                raise exception_raised
+                if we_done:
+                    # Remove any reference to the tasks
+                    for t in self.ctx._tasks:
+                        t.cancel()
+                        await asyncio.sleep(0)
+                    res = self.ctx.get_result()
+
+                    self.set_result(res)
+
+                if exception_raised:
+                    raise exception_raised
+
+            else:
+                # Wait to be notified that the new_ev has been written
+                async with self.ctx._event_condition:
+                    self.ctx._event_condition.notify()
+
+                async with self.ctx._event_written_condition:
+                    await self.ctx._event_written_condition.wait()
+                    retval = self.ctx._event_holding
+
         else:
             raise ValueError("Context is not set!")
 

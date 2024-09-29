@@ -258,7 +258,14 @@ class Workflow(metaclass=WorkflowMeta):
                     elif isinstance(new_ev, InputRequiredEvent):
                         ctx.write_event_to_stream(new_ev)
                     else:
-                        ctx.send_event(new_ev)
+                        if stepwise:
+                            async with ctx._event_condition:
+                                await ctx._event_condition.wait()
+                                ctx._event_holding = new_ev
+                                ctx._event_written_condition.notify()
+                                print(f"...notified", flush=True)
+                        else:
+                            ctx.send_event(new_ev)
 
             for _ in range(step_config.num_workers):
                 ctx._tasks.add(
