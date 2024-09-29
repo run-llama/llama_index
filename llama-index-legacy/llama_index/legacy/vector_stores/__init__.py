@@ -74,7 +74,6 @@ __all__ = [
     "CassandraVectorStore",
     "ChromaVectorStore",
     "MetalVectorStore",
-    "OraLlamaVS",
     "OpensearchVectorStore",
     "OpensearchVectorClient",
     "ChatGPTRetrievalPluginClient",
