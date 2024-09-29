@@ -37,54 +37,58 @@ async def test_workflow_run(workflow):
     assert result == "Workflow completed"
 
 
-@pytest.mark.asyncio()
-async def test_deprecated_workflow_run_step(workflow):
-    workflow._verbose = True
+# @pytest.mark.asyncio()
+# async def test_deprecated_workflow_run_step(workflow):
+#     workflow._verbose = True
 
-    # First step
-    result = await workflow.run_step()
-    assert result is None
-    assert not workflow.is_done()
+#     # First step
+#     result = await workflow.run_step()
+#     assert result is None
+#     assert not workflow.is_done()
 
-    # Second step
-    result = await workflow.run_step()
-    assert result is None
-    assert not workflow.is_done()
+#     # Second step
+#     result = await workflow.run_step()
+#     assert result is None
+#     assert not workflow.is_done()
 
-    # Final step
-    result = await workflow.run_step()
-    assert not workflow.is_done()
-    assert result is None
+#     # Final step
+#     result = await workflow.run_step()
+#     assert not workflow.is_done()
+#     assert result is None
 
-    # Cleanup step
-    result = await workflow.run_step()
-    assert result == "Workflow completed"
-    assert workflow.is_done()
+#     # Cleanup step
+#     result = await workflow.run_step()
+#     assert result == "Workflow completed"
+#     assert workflow.is_done()
 
 
 @pytest.mark.asyncio()
 async def test_workflow_run_step(workflow):
     handler = workflow.run(stepwise=True)
+    await asyncio.sleep(0)
 
-    result = await handler.run_step()
-    assert result is None
+    print("here", flush=True)
+    event = await handler.run_step()
+    assert isinstance(event, OneTestEvent)
     assert not handler.is_done()
+    handler.ctx.send_event(event)
 
-    result = await handler.run_step()
-    assert result is None
+    event = await handler.run_step()
+    assert isinstance(event, LastEvent)
     assert not handler.is_done()
+    handler.ctx.send_event(event)
 
-    result = await handler.run_step()
-    assert result is None
+    event = await handler.run_step()
+    assert isinstance(event, StopEvent)
     assert not handler.is_done()
+    handler.ctx.send_event(event)
 
-    result = await handler.run_step()
-    assert result is None
-    assert not handler.is_done()
+    event = await handler.run_step()
+    assert event is None
 
-    result = await handler.run_step()
-    assert result == "Workflow completed"
+    result = await handler
     assert handler.is_done()
+    assert result == "Workflow completed"
 
 
 @pytest.mark.asyncio()

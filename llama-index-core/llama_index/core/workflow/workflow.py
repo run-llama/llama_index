@@ -161,6 +161,7 @@ class Workflow(metaclass=WorkflowMeta):
             ctx._queues = {}
             ctx._step_flags = {}
             ctx._retval = None
+            ctx._event_holding = None
 
         for name, step_func in self._get_steps().items():
             ctx._queues[name] = asyncio.Queue()
@@ -262,8 +263,7 @@ class Workflow(metaclass=WorkflowMeta):
                             async with ctx._event_condition:
                                 await ctx._event_condition.wait()
                                 ctx._event_holding = new_ev
-                                ctx._event_written_condition.notify()
-                                print(f"...notified", flush=True)
+                                ctx._event_written_condition.notify()  # shares same lock
                         else:
                             ctx.send_event(new_ev)
 

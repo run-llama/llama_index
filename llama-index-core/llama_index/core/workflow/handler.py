@@ -44,7 +44,7 @@ class WorkflowHandler(asyncio.Future):
             # the chance to run (we won't actually sleep here).
             await asyncio.sleep(0)
 
-            # check if StopEvent was sent
+            # check if StopEvent is in holding
             if isinstance(self.ctx._event_holding, StopEvent):
                 # See if we're done, or if a step raised any error
                 retval = None
@@ -73,10 +73,11 @@ class WorkflowHandler(asyncio.Future):
                     raise exception_raised
 
             else:
-                # Wait to be notified that the new_ev has been written
+                # notify unblocked task that we're ready to accept next event
                 async with self.ctx._event_condition:
                     self.ctx._event_condition.notify()
 
+                # Wait to be notified that the new_ev has been written
                 async with self.ctx._event_written_condition:
                     await self.ctx._event_written_condition.wait()
                     retval = self.ctx._event_holding
