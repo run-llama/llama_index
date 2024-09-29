@@ -1,1 +1,0 @@
-# OopCompanion:suppressRename
