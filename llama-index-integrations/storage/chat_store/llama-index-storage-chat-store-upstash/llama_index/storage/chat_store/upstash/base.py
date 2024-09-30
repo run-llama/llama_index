@@ -72,7 +72,6 @@ class UpstashChatStore(BaseChatStore):
         super().__init__(ttl=ttl)
 
     @classmethod
-    @classmethod
     def class_name(cls) -> str:
         """
         Get the class name.
