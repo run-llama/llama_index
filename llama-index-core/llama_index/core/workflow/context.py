@@ -65,7 +65,7 @@ class Context:
         serializer: Optional[ContextSerializer] = None,
     ) -> None:
         self.stepwise = stepwise
-        self.serializer = serializer
+        self.serializer = serializer or ContextSerializer()
 
         self._workflow = workflow
         # Broker machinery
