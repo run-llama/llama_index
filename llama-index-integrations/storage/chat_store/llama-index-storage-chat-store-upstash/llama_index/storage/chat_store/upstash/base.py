@@ -63,6 +63,7 @@ class UpstashChatStore(BaseChatStore):
         # self.ttl = ttl
         super().__init__(redis_client=self.redis_client, ttl=ttl)
 
+    @classmethod
     def class_name(self) -> str:
         """
         Get the class name.
