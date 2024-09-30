@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional, Union
 from copy import deepcopy
 from enum import Enum
 
-
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
 from llama_index.core.schema import BaseNode, TextNode
@@ -152,7 +151,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
                   These weights are used to adjust the importance of the dense and sparse components of the embeddings
                   in the hybrid retrieval process.
             Defaults to an empty dictionary, implying that the ranker will operate with its predefined default settings.
-        index_managemen (IndexManagement): Specifies the index management strategy to use. Defaults to "create_if_not_exists".
+        index_management (IndexManagement): Specifies the index management strategy to use. Defaults to "create_if_not_exists".
+        scalar_field_names (list): The names of the extra scalar fields to be included in the collection schema.
+        scalar_field_types (list): The types of the extra scalar fields.
 
     Raises:
         ImportError: Unable to import `pymilvus`.
@@ -203,6 +204,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
     hybrid_ranker: str
     hybrid_ranker_params: dict = {}
     index_management: IndexManagement = IndexManagement.CREATE_IF_NOT_EXISTS
+    scalar_field_names: Optional[List[str]]
+    scalar_field_types: Optional[List[DataType]]
 
     _milvusclient: MilvusClient = PrivateAttr()
     _collection: Any = PrivateAttr()
@@ -229,6 +232,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         hybrid_ranker: str = "RRFRanker",
         hybrid_ranker_params: dict = {},
         index_management: IndexManagement = IndexManagement.CREATE_IF_NOT_EXISTS,
+        scalar_field_names: Optional[List[str]] = None,
+        scalar_field_types: Optional[List[DataType]] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -250,6 +255,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
             hybrid_ranker=hybrid_ranker,
             hybrid_ranker_params=hybrid_ranker_params,
             index_management=index_management,
+            scalar_field_names=scalar_field_names,
+            scalar_field_types=scalar_field_types,
         )
 
         # Select the similarity metric
@@ -277,16 +284,64 @@ class MilvusVectorStore(BasePydanticVectorStore):
             if dim is None:
                 raise ValueError("Dim argument required for collection creation.")
             if self.enable_sparse is False:
-                self._milvusclient.create_collection(
-                    collection_name=collection_name,
-                    dimension=dim,
-                    primary_field_name=MILVUS_ID_FIELD,
-                    vector_field_name=embedding_field,
-                    id_type="string",
-                    metric_type=self.similarity_metric,
-                    max_length=65_535,
-                    consistency_level=consistency_level,
-                )
+                # Check if custom index should be created
+                if (
+                    index_config is not None
+                    and self.index_management is not IndexManagement.NO_VALIDATION
+                ):
+                    try:
+                        # Prepare index
+                        index_params = self.client.prepare_index_params()
+                        index_type = index_config["index_type"]
+                        index_params.add_index(
+                            field_name=embedding_field,
+                            index_type=index_type,
+                            metric_type=self.similarity_metric,
+                        )
+
+                        # Create a schema according to LlamaIndex Schema.
+                        schema = self._create_schema()
+                        schema.verify()
+
+                        # Using private method exposed by pymilvus client, in order to avoid creating indexes twice
+                        # Reason: create_collection in pymilvus only checks schema and ignores index_config setup
+                        # https://github.com/milvus-io/pymilvus/issues/2265
+                        self.client._create_collection_with_schema(
+                            collection_name=collection_name,
+                            schema=schema,
+                            index_params=index_params,
+                            dimemsion=dim,
+                            primary_field=MILVUS_ID_FIELD,
+                            vector_field=embedding_field,
+                            id_type="string",
+                            max_length=65_535,
+                            consistency_level=consistency_level,
+                        )
+                        self._collection = Collection(
+                            collection_name, using=self._milvusclient._using
+                        )
+                    except Exception as e:
+                        logger.error("Error creating collection with index_config")
+                        raise NotImplementedError(
+                            "Error creating collection with index_config"
+                        ) from e
+                else:
+                    self._milvusclient.create_collection(
+                        collection_name=collection_name,
+                        dimension=dim,
+                        primary_field_name=MILVUS_ID_FIELD,
+                        vector_field_name=embedding_field,
+                        id_type="string",
+                        metric_type=self.similarity_metric,
+                        max_length=65_535,
+                        consistency_level=consistency_level,
+                    )
+                    self._collection = Collection(
+                        collection_name, using=self._milvusclient._using
+                    )
+
+                    # Check if we have to create an index here to avoid duplicity of indexes
+                    self._create_index_if_required()
             else:
                 try:
                     _ = DataType.SPARSE_FLOAT_VECTOR
@@ -298,9 +353,6 @@ class MilvusVectorStore(BasePydanticVectorStore):
                         "Hybrid retrieval requires Milvus 2.4.0 or later."
                     ) from e
                 self._create_hybrid_index(collection_name)
-
-        self._collection = Collection(collection_name, using=self._milvusclient._using)
-        self._create_index_if_required()
 
         # Set properties
         if collection_properties:
@@ -367,7 +419,6 @@ class MilvusVectorStore(BasePydanticVectorStore):
             self._collection.insert(insert_batch)
         if add_kwargs.get("force_flush", False):
             self._collection.flush()
-        self._create_index_if_required()
         logger.debug(
             f"Successfully inserted embeddings into: {self.collection_name} "
             f"Num Inserted: {len(insert_list)}"
@@ -882,3 +933,42 @@ class MilvusVectorStore(BasePydanticVectorStore):
             self._collection.create_index(self.embedding_field, dense_index)
 
         self._collection.load()
+
+    def _create_schema(self):
+        """
+        Creates the collection schema. The default fields include the id, embedding and doc_id.
+
+        Returns: The schema of the collection
+        """
+        schema = MilvusClient.create_schema(auto_id=False, enable_dynamic_field=True)
+        schema.add_field(
+            field_name="id",
+            datatype=DataType.VARCHAR,
+            max_length=65_535,
+            is_primary=True,
+        )
+        schema.add_field(
+            field_name=self.embedding_field,
+            datatype=DataType.FLOAT_VECTOR,
+            dim=self.dim,
+        )
+        schema.add_field(
+            field_name=self.doc_id_field,
+            datatype=DataType.VARCHAR,
+            max_length=65_535,
+        )
+        if self.scalar_field_names is not None and self.scalar_field_types is not None:
+            if len(self.scalar_field_names) != len(self.scalar_field_types):
+                raise ValueError(
+                    "scalar_field_names and scalar_field_types must have same length."
+                )
+
+            for field_name, field_type in zip(
+                self.scalar_field_names, self.scalar_field_types
+            ):
+                max_length = 65_535 if field_type == DataType.VARCHAR else None
+                schema.add_field(
+                    field_name=field_name, datatype=field_type, max_length=max_length
+                )
+
+        return schema

@@ -68,7 +68,7 @@ class TreeSummarize(BaseSynthesizer):
         summary_template = self._summary_template.partial_format(query_str=query_str)
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._prompt_helper.repack(
-            summary_template, text_chunks=text_chunks
+            summary_template, text_chunks=text_chunks, llm=self._llm
         )
 
         if self._verbose:
@@ -144,7 +144,7 @@ class TreeSummarize(BaseSynthesizer):
         summary_template = self._summary_template.partial_format(query_str=query_str)
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._prompt_helper.repack(
-            summary_template, text_chunks=text_chunks
+            summary_template, text_chunks=text_chunks, llm=self._llm
         )
 
         if self._verbose:

@@ -62,7 +62,8 @@ class AstraDBVectorStore(BasePydanticVectorStore):
         token (str): The Astra DB Application Token to use.
         api_endpoint (str): The Astra DB JSON API endpoint for your database.
         embedding_dimension (int): length of the embedding vectors in use.
-        namespace (Optional[str]): The namespace to use. If not provided, 'default_keyspace'
+        keyspace (Optional[str]): The keyspace to use. If not provided, 'default_keyspace'
+        namespace (Optional[str]): [DEPRECATED] The keyspace to use. If not provided, 'default_keyspace'
 
     Examples:
         `pip install llama-index-vector-stores-astra`
@@ -95,6 +96,7 @@ class AstraDBVectorStore(BasePydanticVectorStore):
         token: str,
         api_endpoint: str,
         embedding_dimension: int,
+        keyspace: Optional[str] = None,
         namespace: Optional[str] = None,
         ttl_seconds: Optional[int] = None,
     ) -> None:
@@ -115,6 +117,9 @@ class AstraDBVectorStore(BasePydanticVectorStore):
 
         _logger.debug("Creating the Astra DB client and database instances")
 
+        # Choose the keyspace param
+        keyspace_param = keyspace or namespace
+
         # Build the Database object
         self._database = DataAPIClient(
             caller_name=getattr(llama_index, "__name__", "llama_index"),
@@ -122,7 +127,7 @@ class AstraDBVectorStore(BasePydanticVectorStore):
         ).get_database(
             api_endpoint,
             token=token,
-            namespace=namespace,
+            keyspace=keyspace_param,
         )
 
         from astrapy.exceptions import DataAPIException
