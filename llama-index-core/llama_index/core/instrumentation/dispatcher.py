@@ -253,6 +253,7 @@ class Dispatcher(BaseModel):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
             tags = active_instrument_tags.get()
+            result = None
 
             token = active_span_id.set(id_)
             parent_id = None if token.old_value is Token.MISSING else token.old_value
