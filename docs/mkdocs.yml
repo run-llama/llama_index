@@ -144,6 +144,7 @@ nav:
           - ./examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
           - ./examples/cookbooks/mistralai.ipynb
           - ./examples/cookbooks/mixedbread_reranker.ipynb
+          - ./examples/cookbooks/oracleai_demo.ipynb
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-2/Components_Of_LlamaIndex.ipynb
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-3/Evaluating_RAG_Systems.ipynb
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-4/Ingestion_Pipeline.ipynb
@@ -194,6 +195,7 @@ nav:
           - ./examples/data_connectors/WebPageDemo.ipynb
           - ./examples/data_connectors/deplot/DeplotReader.ipynb
           - ./examples/data_connectors/html_tag_reader.ipynb
+          - ./examples/data_connectors/oracleai.ipynb
           - ./examples/data_connectors/simple_directory_reader.ipynb
           - ./examples/data_connectors/simple_directory_reader_parallel.ipynb
           - ./examples/data_connectors/simple_directory_reader_remote_fs.ipynb
@@ -243,6 +245,7 @@ nav:
           - ./examples/embeddings/ollama_embedding.ipynb
           - ./examples/embeddings/openvino.ipynb
           - ./examples/embeddings/optimum_intel.ipynb
+          - ./examples/embeddings/oracleai.ipynb
           - ./examples/embeddings/premai.ipynb
           - ./examples/embeddings/sagemaker_embedding_endpoint.ipynb
           - ./examples/embeddings/text_embedding_inference.ipynb
@@ -659,6 +662,7 @@ nav:
           - ./examples/vector_stores/existing_data/pinecone_existing_data.ipynb
           - ./examples/vector_stores/existing_data/weaviate_existing_data.ipynb
           - ./examples/vector_stores/neo4j_metadata_filter.ipynb
+          - ./examples/vector_stores/orallamavs.ipynb
           - ./examples/vector_stores/pinecone_auto_retriever.ipynb
           - ./examples/vector_stores/pinecone_metadata_filter.ipynb
           - ./examples/vector_stores/postgres.ipynb
@@ -882,6 +886,7 @@ nav:
           - ./api_reference/embeddings/octoai.md
           - ./api_reference/embeddings/ollama.md
           - ./api_reference/embeddings/openai.md
+          - ./api_reference/embeddings/oracleai.md
           - ./api_reference/embeddings/premai.md
           - ./api_reference/embeddings/sagemaker_endpoint.md
           - ./api_reference/embeddings/text_embeddings_inference.md
@@ -1326,6 +1331,7 @@ nav:
           - ./api_reference/readers/openapi.md
           - ./api_reference/readers/opendal.md
           - ./api_reference/readers/opensearch.md
+          - ./api_reference/readers/oracleai.md
           - ./api_reference/readers/pandas_ai.md
           - ./api_reference/readers/papers.md
           - ./api_reference/readers/patentsview.md
@@ -1506,6 +1512,7 @@ nav:
               - ./api_reference/storage/vector_store/neo4jvector.md
               - ./api_reference/storage/vector_store/neptune.md
               - ./api_reference/storage/vector_store/opensearch.md
+              - ./api_reference/storage/vector_store/oracledb.md
               - ./api_reference/storage/vector_store/pgvecto_rs.md
               - ./api_reference/storage/vector_store/pinecone.md
               - ./api_reference/storage/vector_store/postgres.md
@@ -1561,6 +1568,7 @@ nav:
           - ./api_reference/tools/ondemand_loader.md
           - ./api_reference/tools/openai.md
           - ./api_reference/tools/openapi.md
+          - ./api_reference/tools/oracleai.md
           - ./api_reference/tools/passio_nutrition_ai.md
           - ./api_reference/tools/playgrounds.md
           - ./api_reference/tools/python_file.md
@@ -2196,6 +2204,9 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-quip
             - ../llama-index-integrations/sparse_embeddings/llama-index-sparse-embeddings-fastembed
             - ../llama-index-integrations/node_parser/llama-index-node-parser-topic
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-oracledb
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-oracleai
+            - ../llama-index-integrations/readers/llama-index-readers-oracleai
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-mistralai
   - redirects:
       redirect_maps:
