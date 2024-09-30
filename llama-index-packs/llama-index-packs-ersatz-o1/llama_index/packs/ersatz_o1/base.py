@@ -10,7 +10,6 @@ import asyncio
 from typing import Any, Dict, List, Optional, Tuple
 
 from llama_index.core import PromptTemplate
-from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.llama_pack import BaseLlamaPack
 from llama_index.core.llms import LLM
 from llama_index.core.llms.utils import LLMType, resolve_llm
@@ -18,7 +17,6 @@ from llama_index.core.output_parsers import ChainableOutputParser
 from llama_index.core.query_engine import CustomQueryEngine
 from llama_index.core.query_pipeline import QueryPipeline
 from pydantic import Field
-
 
 text_prompt_str = """\
 You are an advanced AI implementing the ErsatzO1 approach, capable of analyzing and understanding information within text. Read the following text:
@@ -49,10 +47,12 @@ Replace <answer> with your actual answer and <confidence_value> with your actual
 """
 text_prompt = PromptTemplate(template=text_prompt_str)
 
+
 class FinalAnswerOutputParser(ChainableOutputParser):
     """Output parser for the ErsatzO1 approach."""
+
     def parse(self, output: str) -> Optional[str]:
-        lines = output.strip().split('\n')
+        lines = output.strip().split("\n")
         if len(lines) >= 2:
             return output.strip()  # Return the entire formatted output
         return None
@@ -63,7 +63,7 @@ class FinalAnswerOutputParser(ChainableOutputParser):
 
 def parse_response(response: str) -> Tuple[str, int]:
     """Parse the response from the LLM in the ErsatzO1 approach."""
-    lines = response.strip().split('\n')
+    lines = response.strip().split("\n")
     if len(lines) != 2:
         raise ValueError("Response format is incorrect")
 
@@ -74,12 +74,12 @@ def parse_response(response: str) -> Tuple[str, int]:
 
 
 async def async_textual_reasoning(
-        context: str,
-        query_str: str,
-        llm: LLM,
-        num_paths: int = 5,
-        verbose: bool = False,
-        temperature: float = 1.99,
+    context: str,
+    query_str: str,
+    llm: LLM,
+    num_paths: int = 5,
+    verbose: bool = False,
+    temperature: float = 1,
 ) -> List[Tuple[str, int]]:
     """
     Perform asynchronous textual reasoning using the ErsatzO1 approach.
@@ -99,7 +99,7 @@ async def async_textual_reasoning(
         try:
             answer, confidence = parse_response(str(response))
             results.append((answer, confidence))
-        except:
+        except IndexError:
             print(f"Error parsing response: {response}")
 
     return results
@@ -130,12 +130,12 @@ class ErsatzO1QueryEngine(CustomQueryEngine):
     reasoning_paths: int = Field(default=5, description="Number of reasoning paths.")
 
     def __init__(
-            self,
-            context: str,
-            llm: Optional[LLMType] = None,
-            verbose: bool = False,
-            reasoning_paths: int = 5,
-            **kwargs: Any,
+        self,
+        context: str,
+        llm: Optional[LLMType] = None,
+        verbose: bool = False,
+        reasoning_paths: int = 5,
+        **kwargs: Any,
     ):
         llm = resolve_llm(llm)
 
@@ -147,7 +147,7 @@ class ErsatzO1QueryEngine(CustomQueryEngine):
             **kwargs,
         )
 
-    def custom_query(self, query_str: str) -> RESPONSE_TYPE:
+    def custom_query(self, query_str: str) -> str:
         results = asyncio.run(
             async_textual_reasoning(
                 self.context,
@@ -159,7 +159,7 @@ class ErsatzO1QueryEngine(CustomQueryEngine):
         )
         return aggregate_textual_results(results)
 
-    async def acustom_query(self, query_str: str) -> RESPONSE_TYPE:
+    async def acustom_query(self, query_str: str) -> str:
         results = await async_textual_reasoning(
             self.context,
             query_str,
@@ -174,12 +174,12 @@ class ErsatzO1Pack(BaseLlamaPack):
     """ErsatzO1 Pack for generic text input."""
 
     def __init__(
-            self,
-            context: str,
-            llm: Optional[LLMType] = None,
-            verbose: bool = False,
-            reasoning_paths: int = 5,
-            **kwargs: Any,
+        self,
+        context: str,
+        llm: Optional[LLMType] = None,
+        verbose: bool = False,
+        reasoning_paths: int = 5,
+        **kwargs: Any,
     ) -> None:
         self.query_engine = ErsatzO1QueryEngine(
             context=context,
