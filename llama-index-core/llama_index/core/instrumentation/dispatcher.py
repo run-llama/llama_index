@@ -264,7 +264,12 @@ class Dispatcher(BaseModel):
                 tags=tags,
             )
 
-            def handle_future_result(future, span_id, bound_args, instance):
+            def handle_future_result(
+                future: asyncio.Future,
+                span_id: str,
+                bound_args: inspect.BoundArguments,
+                instance: Any,
+            ) -> None:
                 try:
                     result = future.result()
                     self.span_exit(
