@@ -395,9 +395,9 @@ class OraLlamaVS(BasePydanticVectorStore):
                 print ("Database version:", connection.version)
     """
 
-    AMPLIFY_RATIO_LE5 = 100
-    AMPLIFY_RATIO_GT5 = 20
-    AMPLIFY_RATIO_GT50 = 10
+    AMPLIFY_RATIO_LE5: ClassVar[int] = 100
+    AMPLIFY_RATIO_GT5: ClassVar[int] = 20
+    AMPLIFY_RATIO_GT50: ClassVar[int] = 10
     metadata_column: str = "metadata"
     stores_text: bool = True
     _client: Connection = PrivateAttr()
