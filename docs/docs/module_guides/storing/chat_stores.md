@@ -47,6 +47,65 @@ chat_store_string = chat_store.json()
 loaded_chat_store = SimpleChatStore.parse_raw(chat_store_string)
 ```
 
+## UpstashChatStore
+
+Using `UpstashChatStore`, you can store your chat history remotely using Upstash Redis, which offers a serverless Redis solution, making it ideal for applications that require scalable and efficient chat storage.
+This chat store supports both synchronous and asynchronous operations.
+
+### Installation
+
+```bash
+pip install llama-index-storage-chat-store-upstash
+```
+
+### Usage
+
+```python
+from llama_index.storage.chat_store.upstash import UpstashChatStore
+from llama_index.core.memory import ChatMemoryBuffer
+
+chat_store = UpstashChatStore(
+    redis_url="YOUR_UPSTASH_REDIS_URL",
+    redis_token="YOUR_UPSTASH_REDIS_TOKEN",
+    ttl=300,  # Optional: Time to live in seconds
+)
+
+chat_memory = ChatMemoryBuffer.from_defaults(
+    token_limit=3000,
+    chat_store=chat_store,
+    chat_store_key="user1",
+)
+```
+
+UpstashChatStore supports both synchronous and asynchronous operations. Here's an example of using async methods:
+
+```python
+import asyncio
+from llama_index.core.llms import ChatMessage
+
+
+async def main():
+    # Add messages
+    messages = [
+        ChatMessage(content="Hello", role="user"),
+        ChatMessage(content="Hi there!", role="assistant"),
+    ]
+    await chat_store.async_set_messages("conversation1", messages)
+
+    # Retrieve messages
+    retrieved_messages = await chat_store.async_get_messages("conversation1")
+    print(retrieved_messages)
+
+    # Delete last message
+    deleted_message = await chat_store.async_delete_last_message(
+        "conversation1"
+    )
+    print(f"Deleted message: {deleted_message}")
+
+
+asyncio.run(main())
+```
+
 ## RedisChatStore
 
 Using `RedisChatStore`, you can store your chat history remotely, without having to worry about manually persisting and loading the chat history.
@@ -103,12 +162,15 @@ response = chat_engine.chat("Hello.")
 Using `DynamoDBChatStore`, you can store your chat history in AWS DynamoDB.
 
 ### Installation
+
 ```bash
 pip install llama-index-storage-chat-store-dynamodb
 ```
 
 ### Usage
+
 Ensure you have a DynamoDB table created with the appropriate schema. By default, here is an example:
+
 ```python
 import boto3
 
@@ -127,6 +189,7 @@ table = dynamodb.create_table(
 ```
 
 You can then use the `DynamoDBChatStore` class to persist and retrieve chat histories:
+
 ```python
 import os
 from llama_index.core.llms import ChatMessage, MessageRole
