@@ -491,6 +491,7 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"'[\"{filter_.value}\"]'"
             )
         elif filter_.operator == FilterOperator.TEXT_MATCH:
+            # Where the operator is text_match, we need to wrap the filter in '%' characters
             return text(
                 f"metadata_->>'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
