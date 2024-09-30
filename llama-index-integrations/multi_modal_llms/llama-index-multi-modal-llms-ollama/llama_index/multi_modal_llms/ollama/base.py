@@ -67,6 +67,7 @@ class OllamaMultiModal(MultiModalLLM):
         gt=0,
     )
     request_timeout: Optional[float] = Field(
+        default=60.0,
         description="The timeout for making http request to Ollama API server",
     )
     additional_kwargs: Dict[str, Any] = Field(

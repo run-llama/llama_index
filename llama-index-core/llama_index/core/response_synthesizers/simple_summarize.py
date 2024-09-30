@@ -49,6 +49,7 @@ class SimpleSummarize(BaseSynthesizer):
         truncated_chunks = self._prompt_helper.truncate(
             prompt=text_qa_template,
             text_chunks=[single_text_chunk],
+            llm=self._llm,
         )
 
         response: RESPONSE_TEXT_TYPE
@@ -83,6 +84,7 @@ class SimpleSummarize(BaseSynthesizer):
         truncated_chunks = self._prompt_helper.truncate(
             prompt=text_qa_template,
             text_chunks=[single_text_chunk],
+            llm=self._llm,
         )
 
         response: RESPONSE_TEXT_TYPE

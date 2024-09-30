@@ -1,0 +1,2 @@
+zyte-api
+html2text
