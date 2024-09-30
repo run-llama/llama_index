@@ -384,42 +384,30 @@ class Workflow(metaclass=WorkflowMeta):
         # the chance to run (we won't actually sleep here).
         await asyncio.sleep(0)
 
-        # check if StopEvent is in holding
-        if isinstance(self._stepwise_context._step_event_holding, StopEvent):
-            # See if we're done, or if a step raised any error
-            retval = None
-            we_done = False
-            exception_raised = None
+        # See if we're done, or if a step raised any error
+        we_done = False
+        exception_raised = None
+        for t in self._stepwise_context._tasks:
+            # Check if we're done
+            if not t.done():
+                continue
+
+            we_done = True
+            e = t.exception()
+            if type(e) != WorkflowDone:
+                exception_raised = e
+
+        retval = None
+        if we_done:
+            # Remove any reference to the tasks
             for t in self._stepwise_context._tasks:
-                # Check if we're done
-                if not t.done():
-                    continue
+                t.cancel()
+                await asyncio.sleep(0)
+            retval = self._stepwise_context._retval
+            self._stepwise_context = None
 
-                we_done = True
-                e = t.exception()
-                if type(e) != WorkflowDone:
-                    exception_raised = e
-
-            if we_done:
-                # Remove any reference to the tasks
-                for t in self._stepwise_context._tasks:
-                    t.cancel()
-                    await asyncio.sleep(0)
-                res = self._stepwise_context.get_result()
-                self._stepwise_context = None
-
-            if exception_raised:
-                raise exception_raised
-
-        else:
-            # notify unblocked task that we're ready to accept next event
-            async with self._stepwise_context._step_condition:
-                self._stepwise_context._step_condition.notify()
-
-            # Wait to be notified that the new_ev has been written
-            async with self._stepwise_context._step_event_written:
-                await self._stepwise_context._step_event_written.wait()
-                retval = self._stepwise_context._step_event_holding
+        if exception_raised:
+            raise exception_raised
 
         return retval
 
