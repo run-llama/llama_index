@@ -2,6 +2,8 @@
 
 This API is to generate an embedding from a text.
 
+`pip install llama-index-embeddings-oracleai`
+
 # A sample example
 
 ```python

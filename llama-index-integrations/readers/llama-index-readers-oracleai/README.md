@@ -5,6 +5,8 @@ There are two classes here:
 - OracleReader: This API is to load document(s) from a file or a directory or a Oracle Database table.
 - OracleTextSplitter: This API is to split a document into chunks with a lots of customizations.
 
+`pip install llama-index-readers-oracleai`
+
 # A sample example
 
 ```python
