@@ -32,6 +32,23 @@ class WorkflowHandler(asyncio.Future):
                 break
 
     async def run_step(self) -> Optional[Event]:
+        """Runs the next workflow step and returns the output Event.
+
+        If return is None, then the workflow is considered done.
+
+        Examples:
+            ```python
+            handler = workflow.run(stepwise=True)
+            while True:
+                ev = await handler.run_step()
+                if ev is None:
+                    break
+                handler.ctx.send_event(ev)
+
+            result = await handler
+            print(result)
+            ```
+        """
         if self.ctx and not self.ctx.stepwise:
             raise ValueError("Stepwise context is required to run stepwise.")
 
