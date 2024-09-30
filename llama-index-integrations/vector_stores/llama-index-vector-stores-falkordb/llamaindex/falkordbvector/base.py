@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 import logging
 
 from falkordb import FalkorDB
@@ -11,7 +11,6 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
     FilterOperator,
     MetadataFilters,
-    MetadataFilter,
     FilterCondition,
 )
 from llama_index.core.vector_stores.utils import (
@@ -20,6 +19,7 @@ from llama_index.core.vector_stores.utils import (
 )
 
 _logger = logging.getLogger(__name__)
+
 
 def clean_params(params: List[BaseNode]) -> List[Dict[str, Any]]:
     clean_params = []
@@ -36,6 +36,7 @@ def clean_params(params: List[BaseNode]) -> List[Dict[str, Any]]:
         )
     return clean_params
 
+
 def _to_falkordb_operator(operator: FilterOperator) -> str:
     operator_map = {
         FilterOperator.EQ: "=",
@@ -46,9 +47,10 @@ def _to_falkordb_operator(operator: FilterOperator) -> str:
         FilterOperator.LTE: "<=",
         FilterOperator.IN: "IN",
         FilterOperator.NIN: "NOT IN",
-        FilterOperator.CONTAINS: "CONTAINS"
+        FilterOperator.CONTAINS: "CONTAINS",
     }
     return operator_map.get(operator, "=")
+
 
 def construct_metadata_filter(filters: MetadataFilters):
     cypher_snippets = []
@@ -61,6 +63,7 @@ def construct_metadata_filter(filters: MetadataFilters):
 
     condition = " OR " if filters.condition == FilterCondition.OR else " AND "
     return condition.join(cypher_snippets), params
+
 
 class FalkorDBVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
@@ -105,8 +108,13 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
 
         # Inline check_if_not_null function
         for prop, value in zip(
-            ["index_name", "node_label", "embedding_node_property", "text_node_property"],
-            [index_name, node_label, embedding_node_property, text_node_property]
+            [
+                "index_name",
+                "node_label",
+                "embedding_node_property",
+                "text_node_property",
+            ],
+            [index_name, node_label, embedding_node_property, text_node_property],
         ):
             if not value:
                 raise ValueError(f"Parameter `{prop}` must not be None or empty string")
@@ -132,14 +140,14 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
             "CALL db.indexes() "
             "YIELD label, properties, types, options, entitytype "
             "WHERE types = ['VECTOR'] AND label = $index_name",
-            params={"index_name": self.index_name}
+            params={"index_name": self.index_name},
         )
         if index_information.result_set:
             index = index_information.result_set[0]
-            self.node_label = index['entitytype']
-            self.embedding_node_property = index['properties'][0]
-            self.embedding_dimension = index['options']['dimension']
-            self.distance_strategy = index['options']['metric']
+            self.node_label = index["entitytype"]
+            self.embedding_node_property = index["properties"][0]
+            self.embedding_dimension = index["options"]["dimension"]
+            self.distance_strategy = index["options"]["metric"]
             return True
         return False
 
