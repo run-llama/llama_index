@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set, Tuple
 from llama_index.core.instrumentation import get_dispatcher
 
 from .decorators import StepConfig, step
-from .context import Context
+from .context import Context, ContextSerializer
 from .events import InputRequiredEvent, HumanResponseEvent, Event, StartEvent, StopEvent
 from .errors import *
 from .service import ServiceManager
@@ -49,20 +49,32 @@ class Workflow(metaclass=WorkflowMeta):
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
         num_concurrent_runs: Optional[int] = None,
+        serializer: Optional[ContextSerializer] = None,
+        allow_pickle: bool = False,
     ) -> None:
         """Create an instance of the workflow.
 
         Args:
-            timeout: number of seconds after the workflow execution will be halted, raising a `WorkflowTimeoutError`
+            timeout:
+                Number of seconds after the workflow execution will be halted, raising a `WorkflowTimeoutError`
                 exception. If set to `None`, the timeout will be disabled.
-            disable_validaton: whether or not the workflow should be validated before running. In case the workflow is
+            disable_validaton:
+                Whether or not the workflow should be validated before running. In case the workflow is
                 misconfigured, a call to `run` will raise a `WorkflowValidationError` exception explaining the details
                 of the problem.
-            verbose: whether or not the workflow should print additional informative messages during execution.
-            service_manager: The instance of the `ServiceManager` used to make nested workflows available to this
+            verbose:
+                Whether or not the workflow should print additional informative messages during execution.
+            service_manager:
+                The instance of the `ServiceManager` used to make nested workflows available to this
                 workflow instance. The default value is the best choice unless you're customizing the workflow runtime.
-            num_concurrent_runs: maximum number of .run() executions occurring simultaneously. If set to `None`, there
+            num_concurrent_runs:
+                maximum number of .run() executions occurring simultaneously. If set to `None`, there
                 is no limit to this number.
+            serializer:
+                The serializer to use for the context. If not provided, a default serializer will be used.
+            allow_pickle:
+                Whether to allow pickle serialization with the default serializer.
+                This should be used with caution if you do not trust the inputs to the workflow.
         """
         # Configuration
         self._timeout = timeout
@@ -77,6 +89,7 @@ class Workflow(metaclass=WorkflowMeta):
         self._stepwise_context: Optional[Context] = None
         # Services management
         self._service_manager = service_manager or ServiceManager()
+        self._serializer = serializer or ContextSerializer(allow_pickle=allow_pickle)
 
     async def stream_events(self) -> AsyncGenerator[Event, None]:
         """Returns an async generator to consume any event that workflow steps decide to stream.
@@ -153,7 +166,7 @@ class Workflow(metaclass=WorkflowMeta):
         This method also launches each step as an async task.
         """
         if ctx is None:
-            ctx = Context(self, stepwise=stepwise)
+            ctx = Context(self, stepwise=stepwise, serializer=self._serializer)
             self._contexts.add(ctx)
         else:
             # clean up the context from the previous run

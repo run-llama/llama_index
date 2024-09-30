@@ -15,6 +15,38 @@ if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
 
 
+class ContextSerializer:
+    def __init__(self, allow_pickle: bool = False):
+        self.allow_pickle = allow_pickle
+
+    def serialize(self, value: Any) -> str:
+        try:
+            if isinstance(value, BaseModel):
+                raise TypeError(
+                    "BaseModel is not serializable because we cannot hydrate it back."
+                )
+
+            return json.dumps(value)
+        except TypeError:
+            if self.allow_pickle:
+                return base64.b64encode(pickle.dumps(value)).decode()
+            else:
+                raise ValueError(
+                    f"Value is not JSON serializable and pickling is not allowed."
+                )
+
+    def deserialize(self, value: str) -> Any:
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            if self.allow_pickle:
+                return pickle.loads(base64.b64decode(value))
+            else:
+                raise ValueError(
+                    "Failed to deserialize value and pickling is not allowed."
+                )
+
+
 class Context:
     """A global object representing a context for a given workflow run.
 
@@ -26,8 +58,14 @@ class Context:
     Both `set` and `get` operations on global data are governed by a lock, and considered coroutine-safe.
     """
 
-    def __init__(self, workflow: "Workflow", stepwise: bool = False) -> None:
+    def __init__(
+        self,
+        workflow: "Workflow",
+        stepwise: bool = False,
+        serializer: Optional[ContextSerializer] = None,
+    ) -> None:
         self.stepwise = stepwise
+        self.serializer = serializer
 
         self._workflow = workflow
         # Broker machinery
@@ -68,42 +106,24 @@ class Context:
 
     def _serialize_queue(self, queue: asyncio.Queue) -> str:
         queue_items = list(queue._queue)  # type: ignore
-
-        # dump a mapping of the event name to the event object
         queue_objs = [self._serialize_event(obj) for obj in queue_items]
         return json.dumps(queue_objs)  # type: ignore
 
     def _deserialize_queue(self, queue_str: str) -> asyncio.Queue:
-        # deserialize the queue
         queue_objs = json.loads(queue_str)
-
-        # create a new queue, and put the objects back into it
         queue = asyncio.Queue()  # type: ignore
         for obj in queue_objs:
             event_obj = self._deserialize_event(obj[0], obj[1])
             queue.put_nowait(event_obj)
-
         return queue
 
     def _serialize_globals(self) -> Dict[str, Any]:
         serialized_globals = {}
         for key, value in self._globals.items():
             try:
-                if isinstance(value, BaseModel):
-                    raise TypeError(
-                        "BaseModel is not serializable because we cannot hydrate it back."
-                    )
-
-                serialized_globals[key] = json.dumps(value)
-            except TypeError:
-                try:
-                    # if the value is not serializable, we pickle it
-                    serialized_globals[key] = base64.b64encode(
-                        pickle.dumps(value)
-                    ).decode()
-                except Exception as e:
-                    raise ValueError(f"Failed to serialize value for key {key}: {e}")
-
+                serialized_globals[key] = self.serializer.serialize(value)
+            except Exception as e:
+                raise ValueError(f"Failed to serialize value for key {key}: {e}")
         return serialized_globals
 
     def _deserialize_globals(
@@ -112,10 +132,9 @@ class Context:
         deserialized_globals = {}
         for key, value in serialized_globals.items():
             try:
-                deserialized_globals[key] = json.loads(value)
-            except json.JSONDecodeError:
-                deserialized_globals[key] = pickle.loads(base64.b64decode(value))
-
+                deserialized_globals[key] = self.serializer.deserialize(value)
+            except Exception as e:
+                raise ValueError(f"Failed to deserialize value for key {key}: {e}")
         return deserialized_globals
 
     def to_dict(self) -> Dict[str, Any]:
@@ -127,8 +146,13 @@ class Context:
         }
 
     @classmethod
-    def from_dict(cls, workflow: "Workflow", data: Dict[str, Any]) -> "Context":
-        context = cls(workflow, stepwise=data["stepwise"])
+    def from_dict(
+        cls,
+        workflow: "Workflow",
+        data: Dict[str, Any],
+        serializer: Optional[ContextSerializer] = None,
+    ) -> "Context":
+        context = cls(workflow, stepwise=data["stepwise"], serializer=serializer)
         context._globals = context._deserialize_globals(data["globals"])
         context._queues = {
             k: context._deserialize_queue(v) for k, v in data["queues"].items()

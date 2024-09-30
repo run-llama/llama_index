@@ -88,5 +88,5 @@ def get_state_dict(handler: WorkflowHandler) -> Dict[str, Any]:
 def get_handler_from_state_dict(
     workflow: "Workflow", data: Dict[str, Any]
 ) -> WorkflowHandler:
-    ctx = Context.from_dict(workflow, data)
+    ctx = Context.from_dict(workflow, data, serializer=workflow._serializer)
     return WorkflowHandler(ctx=ctx)

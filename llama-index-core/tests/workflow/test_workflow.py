@@ -475,6 +475,15 @@ async def test_workflow_pickle():
     handler = wf.run()
     _ = await handler
 
+    # by default, we can't pickle the LLM/embedding object
+    with pytest.raises(ValueError):
+        state_dict = get_state_dict(handler)
+
+    # if we allow pickle, then we can pickle the LLM/embedding object
+    wf = DummyWorkflow(allow_pickle=True)
+    handler = wf.run()
+    _ = await handler
+
     state_dict = get_state_dict(handler)
     new_handler = get_handler_from_state_dict(wf, state_dict)
 
