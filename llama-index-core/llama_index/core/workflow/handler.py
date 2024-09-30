@@ -45,7 +45,7 @@ class WorkflowHandler(asyncio.Future):
             await asyncio.sleep(0)
 
             # check if StopEvent is in holding
-            if isinstance(self.ctx._event_holding, StopEvent):
+            if isinstance(self.ctx._step_event_holding, StopEvent):
                 # See if we're done, or if a step raised any error
                 retval = None
                 we_done = False
@@ -74,13 +74,13 @@ class WorkflowHandler(asyncio.Future):
 
             else:
                 # notify unblocked task that we're ready to accept next event
-                async with self.ctx._event_condition:
-                    self.ctx._event_condition.notify()
+                async with self.ctx._step_condition:
+                    self.ctx._step_condition.notify()
 
                 # Wait to be notified that the new_ev has been written
-                async with self.ctx._event_written_condition:
-                    await self.ctx._event_written_condition.wait()
-                    retval = self.ctx._event_holding
+                async with self.ctx._step_event_written:
+                    await self.ctx._step_event_written.wait()
+                    retval = self.ctx._step_event_holding
 
         else:
             raise ValueError("Context is not set!")
