@@ -87,7 +87,7 @@ class RetrieverTool(AsyncBaseTool):
         return ToolOutput(
             content=content,
             tool_name=self.metadata.name,
-            raw_input={"input": input},
+            raw_input={"input": query_str},
             raw_output=docs,
         )
 
@@ -112,7 +112,7 @@ class RetrieverTool(AsyncBaseTool):
         return ToolOutput(
             content=content,
             tool_name=self.metadata.name,
-            raw_input={"input": input},
+            raw_input={"input": query_str},
             raw_output=docs,
         )
 

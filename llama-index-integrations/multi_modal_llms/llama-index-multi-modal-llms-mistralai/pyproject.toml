@@ -9,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.multi_modal_llms.mistral"
+import_path = "llama_index.multi_modal_llms.mistralai"
 
 [tool.llamahub.class_authors]
 MistralMultiModal = "llama-index"
@@ -25,9 +25,9 @@ authors = ["Your Name <you@example.com>"]
 description = "llama-index multi-modal-llms mistral integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-multi-modal-llms-mistral"
+name = "llama-index-multi-modal-llms-mistralai"
 readme = "README.md"
-version = "0.1"
+version = "0.2"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
