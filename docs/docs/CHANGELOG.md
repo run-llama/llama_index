@@ -1,5 +1,98 @@
 # ChangeLog
 
+## [2024-09-26]
+
+### `llama-index-core` [0.11.14]
+
+- Enhance insert Method in BaseIndex to Support Customizable Transformations (#16206)
+- Ensure ChatMemoryBuffer's chat history never begins with a TOOL message (#16214)
+- safe prompt helper string formatting (#16219)
+- [Feature Request] Support max concurrent workflow_instance.run() executions (#16215)
+- Workflows + Human In The Loop Dedicated Support (#16220)
+
+### `llama-index-graph-stores-neptune` [0.2.2]
+
+- fix NoneType object error when passing in provided client (#16174)
+
+### `llama-index-llms-ollama` [0.3.3]
+
+- fix ollama chat missing `keep_alive` (#16182)
+
+### `llama-index-llms-vertex` [0.3.6]
+
+- Fix vertex init function (#16216)
+
+### `llama-index-multi-modal-llms-mistral` [0.1.0]
+
+- Add support for Mistral Multi modal LLM (#16191)
+
+### `llama-index-readers-jira` [0.3.0]
+
+- Add pagination support for Jira Reader (#16226)
+
+### `llama-index-vector-stores-azurecosmosmongo` [0.2.1]
+
+- Azure Cosmos DB Filtered Vector Search (#16175)
+
+### `llama-index-vector-stores-azurecosmosnosql` [1.1.0]
+
+- Azure Cosmos DB Filtered Vector Search (#16175)
+
+### `llama-index-vector-stores-deeplake` [0.2.1]
+
+- Add missing JWT dependency (#16236)
+
+## [2024-09-24]
+
+### `llama-index-core` [0.11.13]
+
+- add option for string node representation during retireval in property graphs (#16100)
+- improve markdown element node parser and structured prediction reliability (#16172)
+
+### `llama-index-graph-stores-neptune` [0.2.1]
+
+- Fixed issue where Neptune was adding additional labels (#16137)
+
+### `llama-index-llms-vertext` [0.3.5]
+
+- Pass safety_settings to send_message methods to fix settings not being sent to API (#16153)
+
+### `llama-index-readers-box` [0.2.3]
+
+- upgrading box sdk to >= 1.5.0 #16169
+
+### `llama-index-storage-chat-store-dynamodb` [0.2.0]
+
+- Async support for dynamodb (#16139)
+
+### `llama-index-storage-chat-store-redis` [0.3.1]
+
+- Async support for redis (#16139)
+
+### `llama-index-vector-stores-astra-db` [0.3.0]
+
+- Depend on AstraPy 1.5 and above for AstraDBVectorStore (#16164)
+
+## [2024-09-22]
+
+### `llama-index-core` [0.11.12]
+
+- Correct Pydantic warning(s) issed for llm base class (#16141)
+- globally safe format prompt variables in strings with JSON (#15734)
+- account for tools in prompt helper and response synthesizers (#16157)
+
+### `llama-index-readers-google` [0.4.1]
+
+- feat: add drive link to google drive reader metadata (#16156)
+
+### `llama-index-readers-microsoft-sharepoint` [0.3.2]
+
+- Add required_exts option to SharePoint reader (#16152)
+
+### `llama-index-vector-stores-milvus` [0.2.4]
+
+- Support user-defined schema in MilvusVectorStore (#16151)
+
 ## [2024-09-20]
 
 ### `llama-index-core` [0.11.11]

@@ -8,7 +8,13 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
-from llama_index.core.schema import BaseNode, IndexNode, NodeWithScore, QueryBundle
+from llama_index.core.schema import (
+    BaseNode,
+    IndexNode,
+    NodeWithScore,
+    QueryBundle,
+    MetadataMode,
+)
 from llama_index.core.storage.docstore.types import BaseDocumentStore
 from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
@@ -75,7 +81,7 @@ class BM25Retriever(BaseRetriever):
             self.corpus = [node_to_metadata_dict(node) for node in nodes]
 
             corpus_tokens = bm25s.tokenize(
-                [node.get_content() for node in nodes],
+                [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
                 stopwords=language,
                 stemmer=self.stemmer,
                 show_progress=verbose,

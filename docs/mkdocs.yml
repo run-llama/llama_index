@@ -122,7 +122,6 @@ nav:
           - ./examples/agent/react_agent_with_query_engine.ipynb
           - ./examples/agent/return_direct_agent.ipynb
           - ./examples/agent/structured_planner.ipynb
-          - ./examples/agents/nvidia_agent.ipynb
       - Chat Engines:
           - ./examples/chat_engine/chat_engine_best.ipynb
           - ./examples/chat_engine/chat_engine_condense_plus_context.ipynb
@@ -228,7 +227,6 @@ nav:
           - ./examples/embeddings/gemini.ipynb
           - ./examples/embeddings/gigachat.ipynb
           - ./examples/embeddings/google_palm.ipynb
-          - ./examples/embeddings/gradient.ipynb
           - ./examples/embeddings/huggingface.ipynb
           - ./examples/embeddings/ibm_watsonx.ipynb
           - ./examples/embeddings/ipex_llm.ipynb
@@ -283,9 +281,6 @@ nav:
           - ./examples/finetuning/embeddings/finetune_corpus_embedding.ipynb
           - ./examples/finetuning/embeddings/finetune_embedding.ipynb
           - ./examples/finetuning/embeddings/finetune_embedding_adapter.ipynb
-          - ./examples/finetuning/gradient/gradient_fine_tuning.ipynb
-          - ./examples/finetuning/gradient/gradient_structured.ipynb
-          - ./examples/finetuning/gradient/gradient_text2sql.ipynb
           - ./examples/finetuning/llm_judge/correctness/finetune_llm_judge_single_grading_correctness.ipynb
           - ./examples/finetuning/llm_judge/pairwise/finetune_llm_judge.ipynb
           - ./examples/finetuning/mistralai_fine_tuning.ipynb
@@ -322,8 +317,6 @@ nav:
           - ./examples/llm/fireworks_cookbook.ipynb
           - ./examples/llm/friendli.ipynb
           - ./examples/llm/gemini.ipynb
-          - ./examples/llm/gradient_base_model.ipynb
-          - ./examples/llm/gradient_model_adapter.ipynb
           - ./examples/llm/groq.ipynb
           - ./examples/llm/huggingface.ipynb
           - ./examples/llm/ibm_watsonx.ipynb
@@ -343,7 +336,6 @@ nav:
           - ./examples/llm/maritalk.ipynb
           - ./examples/llm/mistral_rs.ipynb
           - ./examples/llm/mistralai.ipynb
-          - ./examples/llm/mlx.ipynb
           - ./examples/llm/modelscope.ipynb
           - ./examples/llm/monsterapi.ipynb
           - ./examples/llm/mymagic.ipynb
@@ -427,6 +419,7 @@ nav:
           - ./examples/multi_modal/image_to_image_retrieval.ipynb
           - ./examples/multi_modal/llava_demo.ipynb
           - ./examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
+          - ./examples/multi_modal/mistral_multi_modal.ipynb
           - ./examples/multi_modal/mm_agent.ipynb
           - ./examples/multi_modal/multi_modal_pydantic.ipynb
           - ./examples/multi_modal/multi_modal_rag_nomic.ipynb
@@ -471,6 +464,7 @@ nav:
           - ./examples/observability/AimCallback.ipynb
           - ./examples/observability/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/observability/LangfuseCallbackHandler.ipynb
+          - ./examples/observability/LangfuseMistralPostHog.ipynb
           - ./examples/observability/LlamaDebugHandler.ipynb
           - ./examples/observability/MLflow.ipynb
           - ./examples/observability/OpenInferenceCallback.ipynb
@@ -1119,6 +1113,7 @@ nav:
           - ./api_reference/multi_modal_llms/dashscope.md
           - ./api_reference/multi_modal_llms/gemini.md
           - ./api_reference/multi_modal_llms/index.md
+          - ./api_reference/multi_modal_llms/mistralai.md
           - ./api_reference/multi_modal_llms/ollama.md
           - ./api_reference/multi_modal_llms/openai.md
           - ./api_reference/multi_modal_llms/replicate.md
@@ -2212,6 +2207,7 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-oracledb
             - ../llama-index-integrations/embeddings/llama-index-embeddings-oracleai
             - ../llama-index-integrations/readers/llama-index-readers-oracleai
+            - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-mistralai
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

@@ -210,6 +210,7 @@ class BaseIndex(Generic[IS], ABC):
                 [document],
                 self._transformations,
                 show_progress=self._show_progress,
+                **insert_kwargs,
             )
 
             self.insert_nodes(nodes, **insert_kwargs)

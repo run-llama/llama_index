@@ -14,7 +14,13 @@ from llama_index.core.bridge.pydantic import (
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser.interface import NodeParser
-from llama_index.core.schema import BaseNode, Document, IndexNode, TextNode
+from llama_index.core.schema import (
+    BaseNode,
+    Document,
+    IndexNode,
+    MetadataMode,
+    TextNode,
+)
 from llama_index.core.utils import get_tqdm_iterable
 
 DEFAULT_SUMMARY_QUERY_STR = """\
@@ -191,7 +197,10 @@ class BaseElementNodeParser(NodeParser):
             query_engine = index.as_query_engine(llm=llm, output_cls=TableOutput)
             try:
                 response = await query_engine.aquery(summary_query_str)
-                return cast(PydanticResponse, response).response
+                if isinstance(response, PydanticResponse):
+                    return response.response
+                else:
+                    raise ValueError(f"Expected PydanticResponse, got {type(response)}")
             except (ValidationError, ValueError):
                 # There was a pydantic validation error, so we will run with text completion
                 # fill in the summary and leave other fields blank
@@ -325,7 +334,7 @@ class BaseElementNodeParser(NodeParser):
 
         node_parser = self.nested_node_parser or SentenceSplitter()
 
-        nodes = []
+        nodes: List[BaseNode] = []
         cur_text_el_buffer: List[str] = []
         for element in elements:
             if element.type == "table" or element.type == "table_text":
@@ -376,15 +385,17 @@ class BaseElementNodeParser(NodeParser):
                 # attempt to find start_char_idx for table
                 # raw table string regardless if perfect or not is stored in element.element
 
-                start_char_idx: Optional[int] = None
-                end_char_idx: Optional[int] = None
                 if ref_doc_text:
                     start_char_idx = ref_doc_text.find(str(element.element))
                     if start_char_idx >= 0:
                         end_char_idx = start_char_idx + len(str(element.element))
                     else:
-                        start_char_idx = None
-                        end_char_idx = None
+                        start_char_idx = None  # type: ignore
+                        end_char_idx = None  # type: ignore
+                else:
+                    start_char_idx = None  # type: ignore
+                    end_char_idx = None  # type: ignore
+
                 # shared index_id and node_id
                 node_id = str(uuid.uuid4())
                 index_node = IndexNode(
@@ -440,7 +451,11 @@ class BaseElementNodeParser(NodeParser):
                 node.excluded_llm_metadata_keys = (
                     node_inherited.excluded_llm_metadata_keys
                 )
-        return [node for node in nodes if len(node.get_content()) > 0]
+        return [
+            node
+            for node in nodes
+            if len(node.get_content(metadata_mode=MetadataMode.NONE)) > 0
+        ]
 
     def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[BaseNode]:
         nodes = self.get_nodes_from_documents(nodes, **kwargs)  # type: ignore
