@@ -9,11 +9,7 @@ from llama_index.core import MockEmbedding
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StartEvent, StopEvent
-from llama_index.core.workflow.handler import (
-    get_handler_from_state_dict,
-    get_state_dict,
-    WorkflowHandler,
-)
+from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.events import (
     InputRequiredEvent,
     HumanResponseEvent,
@@ -471,15 +467,17 @@ async def test_workflow_pickle():
 
     # by default, we can't pickle the LLM/embedding object
     with pytest.raises(ValueError):
-        state_dict = get_state_dict(handler)
+        state_dict = handler.ctx.to_dict()
 
     # if we allow pickle, then we can pickle the LLM/embedding object
     wf = DummyWorkflow(allow_pickle=True)
     handler = wf.run()
     _ = await handler
 
-    state_dict = get_state_dict(handler)
-    new_handler = get_handler_from_state_dict(wf, state_dict)
+    state_dict = handler.ctx.to_dict()
+    new_handler = WorkflowHandler(
+        ctx=Context.from_dict(wf, state_dict, serializer=wf._serializer)
+    )
 
     # check that the step count is the same
     cur_step = await handler.ctx.get("step")
