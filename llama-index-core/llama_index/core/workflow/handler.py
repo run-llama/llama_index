@@ -99,7 +99,7 @@ class WorkflowHandler(asyncio.Future):
             except Exception as e:
                 if not self.is_done():  # Avoid InvalidStateError edge case
                     self.set_exception(e)
-                raise self.exception() or e
+                raise
         else:
             raise ValueError("Context is not set!")
 
