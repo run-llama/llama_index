@@ -390,7 +390,7 @@ async def test_workflow_task_raises_step():
 
     workflow = DummyWorkflow()
     with pytest.raises(ValueError, match="The step raised an error!"):
-        await workflow.run_step()
+        await workflow.run()
 
 
 def test_workflow_disable_validation():
