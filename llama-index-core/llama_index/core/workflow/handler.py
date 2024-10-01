@@ -3,7 +3,7 @@ from typing import Any, AsyncGenerator, Optional
 
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.events import Event, StopEvent
-from llama_index.core.workflow.errors import WorkflowDone
+from llama_index.core.workflow.errors import WorkflowDone, WorkflowCancelled
 
 
 class WorkflowHandler(asyncio.Future):
@@ -104,3 +104,12 @@ class WorkflowHandler(asyncio.Future):
             raise ValueError("Context is not set!")
 
         return retval
+
+    async def cancel_run(self) -> None:
+        """Method to cancel a Workflow execution."""
+        for t in self.ctx._tasks:
+            t.cancel()
+            await asyncio.sleep(0)
+
+        err = WorkflowCancelled()
+        self.set_exception(err)

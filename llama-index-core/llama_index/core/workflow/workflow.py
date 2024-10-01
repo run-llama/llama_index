@@ -162,6 +162,7 @@ class Workflow(metaclass=WorkflowMeta):
             ctx._step_flags = {}
             ctx._retval = None
             ctx._step_event_holding = None
+            ctx._cancel_flag.clear()
 
         for name, step_func in self._get_steps().items():
             ctx._queues[name] = asyncio.Queue()
@@ -176,7 +177,7 @@ class Workflow(metaclass=WorkflowMeta):
                 step: Callable,
                 config: StepConfig,
             ) -> None:
-                while True:
+                while not ctx._cancel_flag.is_set():
                     ev = await queue.get()
                     if type(ev) not in config.accepted_events:
                         continue
@@ -266,6 +267,9 @@ class Workflow(metaclass=WorkflowMeta):
                                 ctx._step_event_written.notify()  # shares same lock
                         else:
                             ctx.send_event(new_ev)
+
+                # only reaches if cancel_flag is set
+                raise WorkflowCancelled
 
             for _ in range(step_config.num_workers):
                 ctx._tasks.add(
