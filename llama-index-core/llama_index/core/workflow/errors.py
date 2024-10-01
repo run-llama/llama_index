@@ -14,5 +14,5 @@ class WorkflowDone(Exception):
     pass
 
 
-class WorkflowCancelled(Exception):
+class WorkflowCancelledByUser(Exception):
     pass

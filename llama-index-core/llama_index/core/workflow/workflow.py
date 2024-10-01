@@ -285,7 +285,7 @@ class Workflow(metaclass=WorkflowMeta):
             # add dedicated cancel task
             async def _cancel_workflow_task() -> None:
                 await ctx._cancel_flag.wait()
-                raise WorkflowCancelled
+                raise WorkflowCancelledByUser
 
             ctx._tasks.add(
                 asyncio.create_task(
