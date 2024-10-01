@@ -37,6 +37,7 @@ from llama_index.core.bridge.pydantic import (
     field_validator,
     model_validator,
     ConfigDict,
+    ValidationError,
 )
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.base.llms.base import BaseLLM
@@ -84,7 +85,7 @@ class ToolSelection(BaseModel):
 
     @field_validator('tool_kwargs', mode='wrap')
     @classmethod
-    def ignore_non_dict_arguments(cls, v: Any, handler) -> Dict[str, Any]:
+    def ignore_non_dict_arguments(cls, v: Any, handler: Callable[[Any], Dict[str, Any]) -> Dict[str, Any]:
         try:
             return handler(v)
         except ValidationError:
