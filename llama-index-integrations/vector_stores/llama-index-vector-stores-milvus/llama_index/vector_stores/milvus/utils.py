@@ -106,6 +106,9 @@ def parse_standard_filters(standard_filters: MetadataFilters = None):
         return filters, ""
 
     for filter in standard_filters.filters:
+        if isinstance(filter, MetadataFilters):
+            filters.append(f'({parse_standard_filters(filter)[1]})')
+            continue
         filter_value = parse_filter_value(filter.value)
         if filter_value is None:
             continue
