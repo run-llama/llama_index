@@ -161,6 +161,7 @@ class Workflow(metaclass=WorkflowMeta):
             ctx._queues = {}
             ctx._step_flags = {}
             ctx._retval = None
+            ctx._step_event_holding = None
 
         for name, step_func in self._get_steps().items():
             ctx._queues[name] = asyncio.Queue()
@@ -258,7 +259,13 @@ class Workflow(metaclass=WorkflowMeta):
                     elif isinstance(new_ev, InputRequiredEvent):
                         ctx.write_event_to_stream(new_ev)
                     else:
-                        ctx.send_event(new_ev)
+                        if stepwise:
+                            async with ctx._step_condition:
+                                await ctx._step_condition.wait()
+                                ctx._step_event_holding = new_ev
+                                ctx._step_event_written.notify()  # shares same lock
+                        else:
+                            ctx.send_event(new_ev)
 
             for _ in range(step_config.num_workers):
                 ctx._tasks.add(
@@ -350,59 +357,6 @@ class Workflow(metaclass=WorkflowMeta):
 
         asyncio.create_task(_run_workflow())
         return result
-
-    @dispatcher.span
-    async def run_step(self, **kwargs: Any) -> Optional[Any]:
-        """Runs the workflow stepwise until completion."""
-        warnings.warn(
-            "run_step() is deprecated, use `workflow.run(stepwise=True)` instead.\n"
-            "handler = workflow.run(stepwise=True)\n"
-            "while not handler.is_done():\n"
-            "    result = await handler.run_step()\n"
-            "    print(result)\n"
-        )
-
-        # Check if we need to start a new session
-        if self._stepwise_context is None:
-            self._validate()
-            self._stepwise_context = self._start(stepwise=True)
-            # Run the first step
-            self._stepwise_context.send_event(StartEvent(**kwargs))
-
-        # Unblock all pending steps
-        for flag in self._stepwise_context._step_flags.values():
-            flag.set()
-
-        # Yield back control to the event loop to give an unblocked step
-        # the chance to run (we won't actually sleep here).
-        await asyncio.sleep(0)
-
-        # See if we're done, or if a step raised any error
-        we_done = False
-        exception_raised = None
-        for t in self._stepwise_context._tasks:
-            # Check if we're done
-            if not t.done():
-                continue
-
-            we_done = True
-            e = t.exception()
-            if type(e) != WorkflowDone:
-                exception_raised = e
-
-        retval = None
-        if we_done:
-            # Remove any reference to the tasks
-            for t in self._stepwise_context._tasks:
-                t.cancel()
-                await asyncio.sleep(0)
-            retval = self._stepwise_context._retval
-            self._stepwise_context = None
-
-        if exception_raised:
-            raise exception_raised
-
-        return retval
 
     def is_done(self) -> bool:
         """Checks if the workflow is done."""

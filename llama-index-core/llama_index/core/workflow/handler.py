@@ -31,44 +31,75 @@ class WorkflowHandler(asyncio.Future):
             if type(ev) is StopEvent:
                 break
 
-    async def run_step(self) -> Optional[Any]:
+    async def run_step(self) -> Optional[Event]:
+        """Runs the next workflow step and returns the output Event.
+
+        If return is None, then the workflow is considered done.
+
+        Examples:
+            ```python
+            handler = workflow.run(stepwise=True)
+            while not handler.is_done():
+                ev = await handler.run_step()
+                handler.ctx.send_event(ev)
+
+            result = handler.result()
+            print(result)
+            ```
+        """
+        # since event is sent before calling this method, we need to unblock the event loop
+        await asyncio.sleep(0)
+
         if self.ctx and not self.ctx.stepwise:
             raise ValueError("Stepwise context is required to run stepwise.")
 
         if self.ctx:
-            # Unblock all pending steps
-            for flag in self.ctx._step_flags.values():
-                flag.set()
+            try:
+                # Unblock all pending steps
+                for flag in self.ctx._step_flags.values():
+                    flag.set()
 
-            # Yield back control to the event loop to give an unblocked step
-            # the chance to run (we won't actually sleep here).
-            await asyncio.sleep(0)
+                # Yield back control to the event loop to give an unblocked step
+                # the chance to run (we won't actually sleep here).
+                await asyncio.sleep(0)
 
-            # See if we're done, or if a step raised any error
-            we_done = False
-            exception_raised = None
-            for t in self.ctx._tasks:
-                # Check if we're done
-                if not t.done():
-                    continue
-
-                we_done = True
-                e = t.exception()
-                if type(e) != WorkflowDone:
-                    exception_raised = e
-
-            retval = None
-            if we_done:
-                # Remove any reference to the tasks
+                # check if we're done, or if a step raised error
+                we_done = False
+                exception_raised = None
+                retval = None
                 for t in self.ctx._tasks:
-                    t.cancel()
-                    await asyncio.sleep(0)
-                retval = self.ctx.get_result()
+                    # Check if we're done
+                    if not t.done():
+                        continue
 
-                self.set_result(retval)
+                    we_done = True
+                    e = t.exception()
+                    if type(e) != WorkflowDone:
+                        exception_raised = e
 
-            if exception_raised:
-                raise exception_raised
+                if we_done:
+                    # Remove any reference to the tasks
+                    for t in self.ctx._tasks:
+                        t.cancel()
+                        await asyncio.sleep(0)
+
+                    if exception_raised:
+                        raise exception_raised
+
+                    self.set_result(self.ctx.get_result())
+                else:  # continue with running next step
+                    # notify unblocked task that we're ready to accept next event
+                    async with self.ctx._step_condition:
+                        self.ctx._step_condition.notify()
+
+                    # Wait to be notified that the new_ev has been written
+                    async with self.ctx._step_event_written:
+                        await self.ctx._step_event_written.wait()
+                        retval = self.ctx._step_event_holding
+            except Exception as e:
+                if not self.is_done():  # Avoid InvalidStateError edge case
+                    self.set_exception(e)
+                raise
         else:
             raise ValueError("Context is not set!")
 

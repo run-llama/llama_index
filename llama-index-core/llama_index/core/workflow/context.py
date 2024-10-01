@@ -30,6 +30,14 @@ class Context:
         self._tasks: Set[asyncio.Task] = set()
         self._broker_log: List[Event] = []
         self._step_flags: Dict[str, asyncio.Event] = {}
+        self._step_event_holding: Optional[Event] = None
+        self._step_lock: asyncio.Lock = asyncio.Lock()
+        self._step_condition: asyncio.Condition = asyncio.Condition(
+            lock=self._step_lock
+        )
+        self._step_event_written: asyncio.Condition = asyncio.Condition(
+            lock=self._step_lock
+        )
         self._accepted_events: List[Tuple[str, str]] = []
         self._retval: Any = None
         # Streaming machinery
