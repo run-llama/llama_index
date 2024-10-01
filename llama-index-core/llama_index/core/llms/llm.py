@@ -1,6 +1,7 @@
 from collections import ChainMap
 from typing import (
     Any,
+    Callable,
     Dict,
     List,
     Generator,
