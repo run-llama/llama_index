@@ -65,7 +65,6 @@ async def test_workflow_run(workflow):
 @pytest.mark.asyncio()
 async def test_workflow_run_step(workflow):
     handler = workflow.run(stepwise=True)
-    await asyncio.sleep(0)
 
     event = await handler.run_step()
     assert isinstance(event, OneTestEvent)
