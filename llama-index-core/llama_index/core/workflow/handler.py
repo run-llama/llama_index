@@ -107,5 +107,6 @@ class WorkflowHandler(asyncio.Future):
 
     async def cancel_run(self) -> None:
         """Method to cancel a Workflow execution."""
-        self.ctx._cancel_flag.set()
-        await asyncio.sleep(0)
+        if self.ctx:
+            self.ctx._cancel_flag.set()
+            await asyncio.sleep(0)
