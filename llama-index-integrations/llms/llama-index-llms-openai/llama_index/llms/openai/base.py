@@ -947,7 +947,7 @@ class OpenAI(FunctionCallingLLM):
                 argument_dict = {}
 
             # Treat parsable non-dict JSON as empty
-            if not is_instance(argument_dict, dict):
+            if not isinstance(argument_dict, dict):
                 argument_dict = {}
 
             tool_selections.append(
