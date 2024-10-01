@@ -11,6 +11,7 @@ from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StartEvent, StopEvent
 from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.events import (
+    Event,
     InputRequiredEvent,
     HumanResponseEvent,
     StartEvent,
@@ -26,6 +27,10 @@ from llama_index.core.workflow.workflow import (
 )
 
 from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
+
+
+class TestEvent(Event):
+    name: str
 
 
 @pytest.mark.asyncio()
@@ -509,6 +514,63 @@ async def test_workflow_pickle():
     llm = await handler.ctx.get("llm")
     new_llm = await new_handler.ctx.get("llm")
     assert new_llm.max_tokens == llm.max_tokens
+
+
+@pytest.mark.asyncio()
+async def test_workflow_context_to_dict_mid_run(workflow):
+    handler = workflow.run(stepwise=True)
+
+    event = await handler.run_step()
+    assert isinstance(event, OneTestEvent)
+    assert not handler.is_done()
+    handler.ctx.send_event(event)
+
+    # get the context dict
+    data = handler.ctx.to_dict()
+
+    new_ctx = Context.from_dict(workflow, data)
+
+    # continue from the second step
+    new_handler = workflow.run(ctx=new_ctx, stepwise=True)
+
+    # run the second step
+    ev = await new_handler.run_step()
+    assert isinstance(ev, LastEvent)
+    assert not new_handler.is_done()
+    new_handler.ctx.send_event(ev)
+
+    # run third step
+    ev = await new_handler.run_step()
+    assert isinstance(ev, StopEvent)
+    assert new_handler.is_done()
+    new_handler.ctx.send_event(ev)
+
+    # Let the workflow finish
+    ev = await new_handler.run_step()
+    assert ev is None
+
+    result = await new_handler
+    assert new_handler.is_done()
+    assert result == "Workflow completed"
+
+
+@pytest.mark.asyncio()
+async def test_workflow_context_to_dict(workflow):
+    handler = workflow.run()
+    ctx = handler.ctx
+
+    ctx.send_event(TestEvent(name="test"))
+
+    # get the context dict
+    data = ctx.to_dict()
+
+    # finish workflow
+    await handler
+
+    new_ctx = Context.from_dict(workflow, data)
+
+    print(new_ctx._queues)
+    assert new_ctx._queues["start_step"].get_nowait().name == "test"
 
 
 @pytest.mark.asyncio()
