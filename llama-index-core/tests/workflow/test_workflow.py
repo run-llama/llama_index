@@ -19,6 +19,7 @@ from llama_index.core.workflow.workflow import (
     WorkflowTimeoutError,
     WorkflowValidationError,
     WorkflowRuntimeError,
+    WorkflowCancelledByUser,
 )
 
 from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
@@ -62,6 +63,21 @@ async def test_workflow_run_step(workflow):
     result = await handler
     assert handler.is_done()
     assert result == "Workflow completed"
+
+
+@pytest.mark.asyncio()
+async def test_workflow_cancelled_by_user(workflow):
+    handler = workflow.run(stepwise=True)
+
+    event = await handler.run_step()
+    assert isinstance(event, OneTestEvent)
+    assert not handler.is_done()
+    handler.ctx.send_event(event)
+
+    await handler.cancel_run()
+    await asyncio.sleep(0.1)  # let workflow get cancelled
+    assert handler.is_done()
+    assert type(handler.exception()) == WorkflowCancelledByUser
 
 
 @pytest.mark.asyncio()

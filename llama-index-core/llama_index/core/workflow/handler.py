@@ -104,3 +104,9 @@ class WorkflowHandler(asyncio.Future):
             raise ValueError("Context is not set!")
 
         return retval
+
+    async def cancel_run(self) -> None:
+        """Method to cancel a Workflow execution."""
+        if self.ctx:
+            self.ctx._cancel_flag.set()
+            await asyncio.sleep(0)
