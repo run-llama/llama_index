@@ -2,10 +2,16 @@ import json
 import pytest
 from typing import List
 
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole, LogProb
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    MessageRole,
+    LogProb,
+)
 from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
 from openai.types.completion_choice import Logprobs
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import (
     from_openai_message_dicts,
     from_openai_messages,
@@ -259,30 +265,36 @@ def _build_chat_response(arguments: str) -> ChatResponse:
         message=ChatMessage(
             role=MessageRole.ASSISTANT,
             content=None,
-            additional_kwargs={"tool_calls": [
-                ChatCompletionMessageToolCall(
-                    id="0123",
-                    type="function",
-                    function=Function(
-                        name="search",
-                        arguments=arguments,
+            additional_kwargs={
+                "tool_calls": [
+                    ChatCompletionMessageToolCall(
+                        id="0123",
+                        type="function",
+                        function=Function(
+                            name="search",
+                            arguments=arguments,
+                        ),
                     ),
-                ),
-            ]},
+                ],
+            },
         ),
     )
 
 
-def test_get_tool_calls_from_response_returns_empty_arguments_with_invalid_json_arguments() -> None:
+def test_get_tool_calls_from_response_returns_empty_arguments_with_invalid_json_arguments() -> (
+    None
+):
     response = _build_chat_response("INVALID JSON")
-    tools = get_tool_calls_from_response(response)
+    tools = OpenAI().get_tool_calls_from_response(response)
     assert len(tools) == 1
     assert tools[0].tool_kwargs == {}
 
 
-def test_get_tool_calls_from_response_returns_empty_arguments_with_non_dict_json_input() -> None:
+def test_get_tool_calls_from_response_returns_empty_arguments_with_non_dict_json_input() -> (
+    None
+):
     response = _build_chat_response("null")
-    tools = get_tool_calls_from_response(response)
+    tools = OpenAI().get_tool_calls_from_response(response)
     assert len(tools) == 1
     assert tools[0].tool_kwargs == {}
 
@@ -290,6 +302,6 @@ def test_get_tool_calls_from_response_returns_empty_arguments_with_non_dict_json
 def test_get_tool_calls_from_response_returns_arguments_with_dict_json_input() -> None:
     arguments = {"test": 123}
     response = _build_chat_response(json.dumps(arguments))
-    tools = get_tool_calls_from_response(response)
+    tools = OpenAI().get_tool_calls_from_response(response)
     assert len(tools) == 1
     assert tools[0].tool_kwargs == arguments
