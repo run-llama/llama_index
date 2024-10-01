@@ -370,8 +370,12 @@ class RedisChatStore(BaseChatStore):
             redis_client = self._aredis_sentinel_client(redis_url, **kwargs)
         else:
             # connect to redis server from url, reconnect with cluster client if needed
-            redis_client = redis.asyncio.from_url(redis_url, **kwargs)
-            if self._check_for_cluster(redis_client):
-                redis_client.close()
-                redis_client = self._aredis_cluster_client(redis_url, **kwargs)
-        return redis_client
+            aredis_client = redis.asyncio.from_url(redis_url, **kwargs)
+            redis_client = redis.from_url(redis_url, **kwargs)
+            is_cluster = self._check_for_cluster(redis_client)
+            redis_client.close()
+
+            if is_cluster:
+                aredis_client.close()
+                aredis_client = self._aredis_cluster_client(redis_url, **kwargs)
+        return aredis_client
