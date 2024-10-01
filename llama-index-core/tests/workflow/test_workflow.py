@@ -26,6 +26,7 @@ from llama_index.core.workflow.workflow import (
     WorkflowTimeoutError,
     WorkflowValidationError,
     WorkflowRuntimeError,
+    WorkflowCancelledByUser,
 )
 
 from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
@@ -45,53 +46,45 @@ async def test_workflow_run(workflow):
 
 
 @pytest.mark.asyncio()
-async def test_deprecated_workflow_run_step(workflow):
-    workflow._verbose = True
-
-    # First step
-    result = await workflow.run_step()
-    assert result is None
-    assert not workflow.is_done()
-
-    # Second step
-    result = await workflow.run_step()
-    assert result is None
-    assert not workflow.is_done()
-
-    # Final step
-    result = await workflow.run_step()
-    assert not workflow.is_done()
-    assert result is None
-
-    # Cleanup step
-    result = await workflow.run_step()
-    assert result == "Workflow completed"
-    assert workflow.is_done()
-
-
-@pytest.mark.asyncio()
 async def test_workflow_run_step(workflow):
     handler = workflow.run(stepwise=True)
 
-    result = await handler.run_step()
-    assert result is None
+    event = await handler.run_step()
+    assert isinstance(event, OneTestEvent)
     assert not handler.is_done()
+    handler.ctx.send_event(event)
 
-    result = await handler.run_step()
-    assert result is None
+    event = await handler.run_step()
+    assert isinstance(event, LastEvent)
     assert not handler.is_done()
+    handler.ctx.send_event(event)
 
-    result = await handler.run_step()
-    assert result is None
+    event = await handler.run_step()
+    assert isinstance(event, StopEvent)
     assert not handler.is_done()
+    handler.ctx.send_event(event)
 
-    result = await handler.run_step()
-    assert result is None
-    assert not handler.is_done()
+    event = await handler.run_step()
+    assert event is None
 
-    result = await handler.run_step()
-    assert result == "Workflow completed"
+    result = await handler
     assert handler.is_done()
+    assert result == "Workflow completed"
+
+
+@pytest.mark.asyncio()
+async def test_workflow_cancelled_by_user(workflow):
+    handler = workflow.run(stepwise=True)
+
+    event = await handler.run_step()
+    assert isinstance(event, OneTestEvent)
+    assert not handler.is_done()
+    handler.ctx.send_event(event)
+
+    await handler.cancel_run()
+    await asyncio.sleep(0.1)  # let workflow get cancelled
+    assert handler.is_done()
+    assert type(handler.exception()) == WorkflowCancelledByUser
 
 
 @pytest.mark.asyncio()
@@ -420,7 +413,8 @@ async def test_workflow_task_raises_step():
 
     workflow = DummyWorkflow()
     with pytest.raises(ValueError, match="The step raised an error!"):
-        await workflow.run_step()
+        handler = workflow.run(stepwise=True)
+        await handler.run_step()
 
 
 def test_workflow_disable_validation():

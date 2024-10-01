@@ -113,6 +113,7 @@ class JiraReader(BaseReader):
             issues.append(
                 Document(
                     text=f"{issue.fields.summary} \n {issue.fields.description}",
+                    doc_id=issue.id,
                     extra_info={
                         "id": issue.id,
                         "title": issue.fields.summary,
