@@ -85,7 +85,7 @@ class ToolSelection(BaseModel):
 
     @field_validator('tool_kwargs', mode='wrap')
     @classmethod
-    def ignore_non_dict_arguments(cls, v: Any, handler: Callable[[Any], Dict[str, Any]) -> Dict[str, Any]:
+    def ignore_non_dict_arguments(cls, v: Any, handler: Callable[[Any], Dict[str, Any]]) -> Dict[str, Any]:
         try:
             return handler(v)
         except ValidationError:
