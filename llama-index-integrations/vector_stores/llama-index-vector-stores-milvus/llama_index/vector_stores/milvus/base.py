@@ -354,7 +354,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     ) from e
                 self._create_hybrid_index(collection_name)
         else:
-            self._collection = Collection(collection_name, using=self._milvusclient._using)
+            self._collection = Collection(
+                collection_name, using=self._milvusclient._using
+            )
 
         # Set properties
         if collection_properties:
