@@ -106,23 +106,16 @@ class Context:
                 for return_type_cls in step_config.return_types:
                     self._event_classes[return_type_cls.__name__] = return_type_cls
 
-    def _serialize_event(self, event: Event) -> Tuple[str, Any]:
-        return (event.__class__.__name__, event.model_dump())
-
-    def _deserialize_event(self, event_name: str, event_data: Any) -> Event:
-        event_cls = self._event_classes[event_name]
-        return event_cls.model_validate(event_data)
-
     def _serialize_queue(self, queue: asyncio.Queue) -> str:
         queue_items = list(queue._queue)  # type: ignore
-        queue_objs = [self._serialize_event(obj) for obj in queue_items]
+        queue_objs = [obj.to_dict() for obj in queue_items]
         return json.dumps(queue_objs)  # type: ignore
 
     def _deserialize_queue(self, queue_str: str) -> asyncio.Queue:
         queue_objs = json.loads(queue_str)
         queue = asyncio.Queue()  # type: ignore
         for obj in queue_objs:
-            event_obj = self._deserialize_event(obj[0], obj[1])
+            event_obj = Event.from_dict(obj)
             queue.put_nowait(event_obj)
         return queue
 

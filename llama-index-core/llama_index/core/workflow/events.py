@@ -1,4 +1,5 @@
-from typing import Any, Dict, Type
+from importlib import import_module
+from typing import Any, Dict, Tuple, Type
 from _collections_abc import dict_keys, dict_items, dict_values
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
@@ -69,6 +70,25 @@ class Event(BaseModel):
         for private_attr, value in private_attrs.items():
             super().__setattr__(private_attr, value)
         self._data = data
+
+    def to_dict(self) -> Tuple[str, Dict[str, Any]]:
+        importable_class_name = (
+            self.__class__.__module__ + "." + self.__class__.__name__
+        )
+        return importable_class_name, self._data
+
+    @classmethod
+    def from_dict(cls, data: Tuple[str, Dict[str, Any]]) -> "Event":
+        importable_class_name, data = data
+        module, class_name = importable_class_name.rsplit(".", 1)
+
+        try:
+            module = import_module(module)
+            class_ = getattr(module, class_name)
+        except ImportError:
+            raise ValueError(f"Could not import {importable_class_name}")
+
+        return class_(**data)
 
     def __getattr__(self, __name: str) -> Any:
         if __name in self.__private_attributes__ or __name in self.model_fields:

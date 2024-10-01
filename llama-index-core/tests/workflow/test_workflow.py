@@ -574,6 +574,7 @@ class NumConcurrentRunsException(Exception):
     pass
 
 
+@pytest.mark.asyncio()
 @pytest.mark.parametrize(
     (
         "workflow",
