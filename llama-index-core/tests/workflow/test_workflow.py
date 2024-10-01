@@ -37,31 +37,6 @@ async def test_workflow_run(workflow):
     assert result == "Workflow completed"
 
 
-# @pytest.mark.asyncio()
-# async def test_deprecated_workflow_run_step(workflow):
-#     workflow._verbose = True
-
-#     # First step
-#     result = await workflow.run_step()
-#     assert result is None
-#     assert not workflow.is_done()
-
-#     # Second step
-#     result = await workflow.run_step()
-#     assert result is None
-#     assert not workflow.is_done()
-
-#     # Final step
-#     result = await workflow.run_step()
-#     assert not workflow.is_done()
-#     assert result is None
-
-#     # Cleanup step
-#     result = await workflow.run_step()
-#     assert result == "Workflow completed"
-#     assert workflow.is_done()
-
-
 @pytest.mark.asyncio()
 async def test_workflow_run_step(workflow):
     handler = workflow.run(stepwise=True)
