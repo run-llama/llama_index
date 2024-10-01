@@ -25,12 +25,17 @@ from llama_index.core.workflow.workflow import (
     WorkflowRuntimeError,
     WorkflowCancelledByUser,
 )
+from llama_index.core.workflow.context_serializers import JsonPickleSerializer
 
 from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
 
 
 class TestEvent(Event):
     name: str
+
+
+def test_fn():
+    print("test_fn")
 
 
 @pytest.mark.asyncio()
@@ -464,6 +469,7 @@ async def test_workflow_pickle():
             await ctx.set("step", cur_step + 1)
             await ctx.set("embedding", MockEmbedding(embed_dim=cur_step))
             await ctx.set("llm", MockLLM(max_tokens=cur_step))
+            await ctx.set("test_fn", test_fn)
             return StopEvent(result="Done")
 
     wf = DummyWorkflow()
@@ -475,13 +481,9 @@ async def test_workflow_pickle():
         state_dict = handler.ctx.to_dict()
 
     # if we allow pickle, then we can pickle the LLM/embedding object
-    wf = DummyWorkflow(allow_pickle=True)
-    handler = wf.run()
-    _ = await handler
-
-    state_dict = handler.ctx.to_dict()
+    state_dict = handler.ctx.to_dict(serializer=JsonPickleSerializer())
     new_handler = WorkflowHandler(
-        ctx=Context.from_dict(wf, state_dict, serializer=wf._serializer)
+        ctx=Context.from_dict(wf, state_dict, serializer=JsonPickleSerializer())
     )
 
     # check that the step count is the same

@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set, Tuple
 from llama_index.core.instrumentation import get_dispatcher
 
 from .decorators import StepConfig, step
-from .context import Context, ContextSerializer
+from .context import Context
 from .events import (
     InputRequiredEvent,
     HumanResponseEvent,
@@ -55,8 +55,6 @@ class Workflow(metaclass=WorkflowMeta):
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
         num_concurrent_runs: Optional[int] = None,
-        serializer: Optional[ContextSerializer] = None,
-        allow_pickle: bool = False,
     ) -> None:
         """Create an instance of the workflow.
 
@@ -76,11 +74,6 @@ class Workflow(metaclass=WorkflowMeta):
             num_concurrent_runs:
                 maximum number of .run() executions occurring simultaneously. If set to `None`, there
                 is no limit to this number.
-            serializer:
-                The serializer to use for the context. If not provided, a default serializer will be used.
-            allow_pickle:
-                Whether to allow pickle serialization with the default serializer.
-                This should be used with caution if you do not trust the inputs to the workflow.
         """
         # Configuration
         self._timeout = timeout
@@ -95,7 +88,6 @@ class Workflow(metaclass=WorkflowMeta):
         self._stepwise_context: Optional[Context] = None
         # Services management
         self._service_manager = service_manager or ServiceManager()
-        self._serializer = serializer or ContextSerializer(allow_pickle=allow_pickle)
 
     async def stream_events(self) -> AsyncGenerator[Event, None]:
         """Returns an async generator to consume any event that workflow steps decide to stream.
@@ -172,20 +164,21 @@ class Workflow(metaclass=WorkflowMeta):
         This method also launches each step as an async task.
         """
         if ctx is None:
-            ctx = Context(self, stepwise=stepwise, serializer=self._serializer)
+            ctx = Context(self, stepwise=stepwise)
             self._contexts.add(ctx)
         else:
             # clean up the context from the previous run
             ctx._tasks = set()
-            ctx._queues = {}
-            ctx._step_flags = {}
             ctx._retval = None
             ctx._step_event_holding = None
             ctx._cancel_flag.clear()
 
         for name, step_func in self._get_steps().items():
-            ctx._queues[name] = asyncio.Queue()
-            ctx._step_flags[name] = asyncio.Event()
+            if name not in ctx._queues:
+                ctx._queues[name] = asyncio.Queue()
+
+            if name not in ctx._step_flags:
+                ctx._step_flags[name] = asyncio.Event()
 
             # At this point, step_func is guaranteed to have the `__step_config` attribute
             step_config: StepConfig = getattr(step_func, "__step_config")
