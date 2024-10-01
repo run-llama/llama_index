@@ -82,12 +82,13 @@ class ToolSelection(BaseModel):
     tool_name: str = Field(description="Tool name to select.")
     tool_kwargs: Dict[str, Any] = Field(description="Keyword arguments for the tool.")
 
-    @field_validator('tool_kwargs')
+    @field_validator('tool_kwargs', mode='wrap')
     @classmethod
-    def ignore_non_dict_arguments(cls, v: Any) -> Dict[str, Any]:
-        if not isinstance(v, Dict[str, Any]):
-            v = {}
-        return v
+    def ignore_non_dict_arguments(cls, v: Any, handler) -> Dict[str, Any]:
+        try:
+            return handler(v)
+        except ValidationError:
+            return handler({})
 
 
 # NOTE: These two protocols are needed to appease mypy
