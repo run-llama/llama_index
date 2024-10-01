@@ -268,7 +268,7 @@ def _build_chat_response(arguments: str) -> ChatResponse:
                         arguments=arguments,
                     ),
                 ),
-            ],
+            ]},
         ),
     )
 
