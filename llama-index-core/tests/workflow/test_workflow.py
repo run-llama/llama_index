@@ -75,6 +75,7 @@ async def test_workflow_cancelled_by_user(workflow):
     handler.ctx.send_event(event)
 
     await handler.cancel_run()
+    await asyncio.sleep(0.1)  # let workflow get cancelled
     assert handler.is_done()
     assert type(handler.exception()) == WorkflowCancelled
 

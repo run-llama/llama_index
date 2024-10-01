@@ -8,7 +8,13 @@ from llama_index.core.instrumentation import get_dispatcher
 
 from .decorators import StepConfig, step
 from .context import Context
-from .events import InputRequiredEvent, HumanResponseEvent, Event, StartEvent, StopEvent
+from .events import (
+    InputRequiredEvent,
+    HumanResponseEvent,
+    Event,
+    StartEvent,
+    StopEvent,
+)
 from .errors import *
 from .service import ServiceManager
 from .utils import (
@@ -177,7 +183,7 @@ class Workflow(metaclass=WorkflowMeta):
                 step: Callable,
                 config: StepConfig,
             ) -> None:
-                while not ctx._cancel_flag.is_set():
+                while True:
                     ev = await queue.get()
                     if type(ev) not in config.accepted_events:
                         continue
@@ -268,9 +274,6 @@ class Workflow(metaclass=WorkflowMeta):
                         else:
                             ctx.send_event(new_ev)
 
-                # only reaches if cancel_flag is set
-                raise WorkflowCancelled
-
             for _ in range(step_config.num_workers):
                 ctx._tasks.add(
                     asyncio.create_task(
@@ -278,6 +281,17 @@ class Workflow(metaclass=WorkflowMeta):
                         name=name,
                     )
                 )
+
+            # add dedicated cancel task
+            async def _cancel_workflow_task() -> None:
+                await ctx._cancel_flag.wait()
+                raise WorkflowCancelled
+
+            ctx._tasks.add(
+                asyncio.create_task(
+                    _cancel_workflow_task(), name="cancel_workflow_task"
+                )
+            )
 
         return ctx
 
