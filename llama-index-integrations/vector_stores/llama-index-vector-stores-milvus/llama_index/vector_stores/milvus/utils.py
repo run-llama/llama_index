@@ -126,6 +126,7 @@ def parse_standard_filters(standard_filters: MetadataFilters = None):
                 f"{filter.key!s} like {parse_filter_value(filter.value, True)}"
             )
         elif filter.operator == FilterOperator.IS_EMPTY:
+            # in Milvus, array_length(field_name) returns 0 if the field does not exist or is not an array
             filters.append(f'array_length({filter.key!s}) == 0')
         elif filter.operator in [
             FilterOperator.EQ,
