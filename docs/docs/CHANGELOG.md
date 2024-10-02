@@ -1,5 +1,79 @@
 # ChangeLog
 
+## [2024-10-02]
+
+### `llama-index-core` [0.11.15]
+
+- added `to_dict()`, `from_dict()` and serializers for workflow context (#16250)
+- Ability to cancel workflow execution with `handler.cancel_run()` (#16320)
+- (breaking) Refactor `WorkflowHandler.run_step()` so user manually emits Event to start next step in workflow (#16277)
+
+### `llama-index-embeddings-oracleai` [0.1.0]
+
+- Oraclevs integration (#16161)
+
+### `llama-index-experimental` [0.4.0]
+
+- nudge-ft package and add an example for expanding your dataset (#16269)
+
+### `llama-index-llms-anthropic` [0.3.3]
+
+- Add support for prompt caching for Anthropic LLM (#16270)
+
+### `llama-index-llms-gemini` [0.3.6]
+
+- Output token usage in raw data for Google Gemini LLMs (#16313)
+
+### `llama-index-llms-openai` [0.2.10]
+
+- add 4o mini to azure openai models (#16335)
+
+### `llama-index-llms-vertex` [0.3.7]
+
+- Rremoving safety settings from generation config for Vertex AI models (#16337)
+
+### `llama-index-multi-modal-llms-huggingface` [0.1.0]
+
+- LlamaIndex Multi_Modal_Llms Integration: Huggingface (#16133)
+
+### `llama-index-readers-minio` [0.2.1]
+
+- rm extra print statements & replace create tmpfile function (#16291)
+
+### `llama-index-readers-oracleai` [0.1.0]
+
+- Oraclevs integration (#16161)
+
+### `llama-index-readers-web` [0.2.3]
+
+- Add Zyte Web Reader (#16197)
+
+### `llama-index-retrievers-bm25` [0.4.0]
+
+- bump deps for latest bm25s version (#16339)
+- Update BM25 retriever to use metadata (#16267)
+
+### `llama-index-storage-chat-store-redis` [0.3.2]
+
+- fix check for async client in redis chat store (#16321)
+
+### `llama-index-storage-chat-store-upstash` [0.1.0]
+
+- Upstash Storage Chat Store Integration (#16237)
+
+### `llama-index-vector-stores-milvus` [0.2.6]
+
+- milvus: always set self._collection (#16306)
+- Fix milvus collection creation with index_config (#16165)
+
+### `llama-index-vector-stores-oracledb` [0.1.0]
+
+- Oracledb integration (#16161)
+
+## `llama-index-vector-stores-postgres` [0.2.6]
+
+- Support TEXT_MATCH FilterOperator in Postgres Vector Store (#16304)
+
 ## [2024-09-26]
 
 ### `llama-index-core` [0.11.14]
