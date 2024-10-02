@@ -62,7 +62,9 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **build_kwargs: Any
+    ) -> IndexDict:
         """Build the index from nodes."""
         raise NotImplementedError(
             "_build_index_from_nodes not implemented for BaseManagedIndex."

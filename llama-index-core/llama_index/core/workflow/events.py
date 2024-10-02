@@ -81,7 +81,7 @@ class Event(BaseModel):
                     f"'{self.__class__.__name__}' object has no attribute '{__name}'"
                 )
 
-    def __setattr__(self, name, value) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         if name in self.__private_attributes__ or name in self.model_fields:
             super().__setattr__(name, value)
         else:
@@ -130,6 +130,20 @@ class StopEvent(Event):
     def __init__(self, result: Any = None) -> None:
         # forces the user to provide a result
         super().__init__(result=result)
+
+
+class InputRequiredEvent(Event):
+    """InputRequiredEvent is sent when an input is required for a step."""
+
+    prefix: str = Field(
+        description="The prefix and description of the input that is required."
+    )
+
+
+class HumanResponseEvent(Event):
+    """HumanResponseEvent is sent when a human response is required for a step."""
+
+    response: str = Field(description="The response from the human.")
 
 
 EventType = Type[Event]

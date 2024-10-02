@@ -176,6 +176,7 @@ await w.run(topic="Pirates")
 draw_most_recent_execution(w, filename="joke_flow_recent.html")
 ```
 
+<div id="working-with-global-context-state"></div>
 ## Working with Global Context/State
 
 Optionally, you can choose to use global context between steps. For example, maybe multiple steps access the original `query` input from the user. You can store this in global context so that every step has access.
@@ -187,14 +188,14 @@ from llama_index.core.workflow import Context
 @step
 async def query(self, ctx: Context, ev: MyEvent) -> StopEvent:
     # retrieve from context
-    query = ctx.data.get("query")
+    query = await ctx.get("query")
 
     # do something with context and event
     val = ...
     result = ...
 
     # store in context
-    ctx.data["key"] = val
+    await ctx.set("key", val)
 
     return StopEvent(result=result)
 ```
@@ -234,7 +235,7 @@ Using `ctx.collect_events()` we can buffer and wait for ALL expected events to a
 
 ## Manually Triggering Events
 
-Normally, events are triggered by returning another event during a step. However, events can also be manually dispatched using the `ctx.session.send_event(event)` method within a workflow.
+Normally, events are triggered by returning another event during a step. However, events can also be manually dispatched using the `ctx.send_event(event)` method within a workflow.
 
 Here is a short toy example showing how this would be used:
 
@@ -259,8 +260,8 @@ class MyWorkflow(Workflow):
     async def dispatch_step(
         self, ctx: Context, ev: StartEvent
     ) -> MyEvent | GatherEvent:
-        ctx.session.send_event(MyEvent())
-        ctx.session.send_event(MyEvent())
+        ctx.send_event(MyEvent())
+        ctx.send_event(MyEvent())
 
         return GatherEvent()
 
@@ -280,6 +281,131 @@ class MyWorkflow(Workflow):
         return StopEvent(result=events)
 ```
 
+## Streaming Events
+
+You can also iterate over events as they come in. This is useful for streaming purposes, showing progress, or for debugging.
+
+```python
+w = MyWorkflow(...)
+
+handler = w.run(topic="Pirates")
+
+async for event in handler.stream_events():
+    print(event)
+
+result = await handler
+```
+
+## Retry steps execution in case of failures
+
+A step that fails its execution might result in the failure of the entire workflow, but oftentimes errors are
+expected and the execution can be safely retried. Think of a HTTP request that times out because of a transient
+congestion of the network, or an external API call that hits a rate limiter.
+
+For all those situation where you want the step to try again, you can use a "Retry Policy". A retry policy is an object
+that instructs the workflow to execute a step multiple times, dictating how much time has to pass before a new attempt.
+Policies take into consideration how much time passed since the first failure, how many consecutive failures happened
+and which was the last error occurred.
+
+To set a policy for a specific step, all you have to do is passing a policy object to the `@step` decorator:
+
+
+```python
+from llama_index.core.workflow.retry_policy import ConstantDelayRetryPolicy
+
+
+class MyWorkflow(Workflow):
+    # ...more workflow definition...
+
+    # This policy will retry this step on failure every 5 seconds for at most 10 times
+    @step(retry_policy=ConstantDelayRetryPolicy(delay=5, maximum_attempts=10))
+    async def flaky_step(self, ctx: Context, ev: StartEvent) -> StopEvent:
+        result = flaky_call()  # this might raise
+        return StopEvent(result=result)
+```
+
+You can see the [API docs](../../api_reference/workflow/retry_policy/) for a detailed description of the policies
+available in the framework. If you can't find a policy that's suitable for your use case, you can easily write a
+custom one. The only requirement for custom policies is to write a Python class that respects the `RetryPolicy`
+protocol. In other words, your custom policy class must have a method with the following signature:
+
+```python
+def next(
+    self, elapsed_time: float, attempts: int, error: Exception
+) -> Optional[float]:
+    ...
+```
+
+For example, this is a retry policy that's excited about the weekend and only retries a step if it's Friday:
+
+```python
+from datetime import datetime
+
+
+class RetryOnFridayPolicy:
+    def next(
+        self, elapsed_time: float, attempts: int, error: Exception
+    ) -> Optional[float]:
+        if datetime.today().strftime("%A") == "Friday":
+            # retry in 5 seconds
+            return 5
+        # tell the workflow we don't want to retry
+        return None
+```
+
+## Human-in-the-loop
+
+Since workflows are so flexible, there are many possible ways to implement human-in-the-loop patterns.
+
+The easiest way to implement a human-in-the-loop is to use the `InputRequiredEvent` and `HumanResponseEvent` events during event streaming.
+
+```python
+class HumanInTheLoopWorkflow(Workflow):
+    @step
+    async def step1(self, ev: StartEvent) -> InputRequiredEvent:
+        return InputRequiredEvent(prefix="Enter a number: ")
+
+    @step
+    async def step2(self, ev: HumanResponseEvent) -> StopEvent:
+        return StopEvent(result=ev.response)
+
+
+# workflow should work with streaming
+workflow = HumanInTheLoopWorkflow()
+
+handler = workflow.run()
+async for event in handler.stream_events():
+    if isinstance(event, InputRequiredEvent):
+        # here, we can handle human input however you want
+        # this means using input(), websockets, accessing async state, etc.
+        # here, we just use input()
+        response = input(event.prefix)
+        handler.ctx.send_event(HumanResponseEvent(response=response))
+
+final_result = await handler
+```
+
+Here, the workflow will wait until the `HumanResponseEvent` is emitted.
+
+Also note that you can break out of the loop, and resume it later. This is useful if you want to pause the workflow to wait for a human response, but continue the workflow later.
+
+```python
+handler = workflow.run()
+async for event in handler.stream_events():
+    if isinstance(event, InputRequiredEvent):
+        break
+
+# now we handle the human response
+response = input(event.prefix)
+handler.ctx.send_event(HumanResponseEvent(response=response))
+
+# now we resume the workflow streaming
+async for event in handler.stream_events():
+    continue
+
+final_result = await handler
+```
+
 ## Stepwise Execution
 
 Workflows have built-in utilities for stepwise execution, allowing you to control execution and debug state as things progress.
@@ -288,14 +414,16 @@ Workflows have built-in utilities for stepwise execution, allowing you to contro
 w = JokeFlow(...)
 
 # Kick off the workflow
-w.run_step(topic="Pirates")
+handler = w.run(topic="Pirates")
 
 # Iterate until done
-while not w.is_done():
-    w.run_step()
+async for _ in handler:
+    # inspect context
+    # val = await handler.ctx.get("key")
+    continue
 
 # Get the final result
-result = w.get_result()
+result = await handler
 ```
 
 ## Decorating non-class Functions
@@ -344,22 +472,64 @@ async def critique_joke(ev: JokeEvent) -> StopEvent:
     return StopEvent(result=str(response))
 ```
 
+## Maintaining Context Across Runs
+
+As you have seen, workflows have a `Context` object that can be used to maintain state across steps.
+
+If you want to maintain state across multiple runs of a workflow, you can pass a previous context into the `.run()` method.
+
+```python
+handler = w.run()
+result = await handler
+
+# continue with next run
+handler = w.run(ctx=handler.ctx)
+result = await handler
+```
+
+## Deploying a Workflow
+
+You can deploy a workflow as a multi-agent service with [llama_deploy](../../module_guides/workflow/deployment.md) ([repo](https://github.com/run-llama/llama_deploy)). Each agent service is orchestrated via a control plane and communicates via a message queue. Deploy locally or on Kubernetes.
+
 ## Examples
 
-You can find many useful examples of using workflows in the notebooks below:
+To help you become more familiar with the workflow concept and its features, LlamaIndex documentation offers example
+notebooks that you can run for hands-on learning:
 
-- [Citation Query Engine](../../examples/workflow/citation_query_engine.ipynb)
-- [Common Workflow Patterns](../../examples/workflow/workflows_cookbook.ipynb)
-- [Corrective RAG](../../examples/workflow/corrective_rag_pack.ipynb)
-- [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb)
+- [Common Workflow Patterns](../../examples/workflow/workflows_cookbook.ipynb) walks you through common usage patterns
+like looping and state management using simple workflows. It's usually a great place to start.
+- [RAG + Reranking](../../examples/workflow/rag.ipynb) shows how to implement a real-world use case with a fairly
+simple workflow that performs both ingestion and querying.
+- [Citation Query Engine](../../examples/workflow/citation_query_engine.ipynb) similar to RAG + Reranking, the
+notebook focuses on how to implement intermediate steps in between retrieval and generation. A good example of how to
+use the [`Context`](#working-with-global-context-state) object in a workflow.
+- [Corrective RAG](../../examples/workflow/corrective_rag_pack.ipynb) adds some more complexity on top of a RAG
+workflow, showcasing how to query a web search engine after an evaluation step.
+- [Utilizing Concurrency](../../examples/workflow/parallel_execution.ipynb) explains how to manage the parallel
+execution of steps in a workflow, something that's important to know as your workflows grow in complexity.
+
+RAG applications are easy to understand and offer a great opportunity to learn the basics of workflows. However, more complex agentic scenarios involving tool calling, memory, and routing are where workflows excel.
+
+The examples below highlight some of these use-cases.
+
+- [ReAct Agent](../../examples/workflow/react_agent.ipynb) is obviously the perfect example to show how to implement
+tools in a workflow.
+- [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb) is a great example of how to use the
+LlamaIndex framework primitives in a workflow, keeping it small and tidy even in complex scenarios like function
+calling.
+- [Human In The Loop: Story Crafting](../../examples/workflow/human_in_the_loop_story_crafting.ipynb) is a powerful
+example showing how workflow runs can be interactive and stateful. In this case, to collect input from a human.
+- [Reliable Structured Generation](../../examples/workflow/reflection.ipynb) shows how to implement loops in a
+workflow, in this case to improve structured output through reflection.
+
+Last but not least, a few more advanced use cases that demonstrate how workflows can be extremely handy if you need
+to quickly implement prototypes, for example from literature:
+
+- [Advanced Text-to-SQL](../../examples/workflow/advanced_text_to_sql.ipynb)
 - [JSON Query Engine](../../examples/workflow/JSONalyze_query_engine.ipynb)
 - [Long RAG](../../examples/workflow/long_rag_pack.ipynb)
 - [Multi-Step Query Engine](../../examples/workflow/multi_step_query_engine.ipynb)
 - [Multi-Strategy Workflow](../../examples/workflow/multi_strategy_workflow.ipynb)
-- [RAG + Reranking](../../examples/workflow/rag.ipynb)
-- [ReAct Agent](../../examples/workflow/react_agent.ipynb)
-- [Reliable Structured Generation](../../examples/workflow/reflection.ipynb)
 - [Router Query Engine](../../examples/workflow/router_query_engine.ipynb)
 - [Self Discover Workflow](../../examples/workflow/self_discover_workflow.ipynb)
 - [Sub-Question Query Engine](../../examples/workflow/sub_question_query_engine.ipynb)
-- [Utilizing Concurrency](../../examples/workflow/parallel_execution.ipynb)

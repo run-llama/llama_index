@@ -1,9 +1,11 @@
+from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     FilterCondition,
     FilterOperator,
     MetadataFilters,
     MetadataFilter,
+    VectorStoreQuery,
 )
 from llama_index.vector_stores.milvus import MilvusVectorStore
 from llama_index.vector_stores.milvus.base import _to_milvus_filter
@@ -177,3 +179,24 @@ def test_to_milvus_filter_with_multiple_filters():
     )
     expr = _to_milvus_filter(filters)
     assert expr == "(a < 1 or a > 10)"
+
+
+def test_milvus_vector_store():
+    vector_store = MilvusVectorStore(
+        dim=1536,
+        collection_name="test_collection",
+        embedding_field="embedding",
+        id_field="id",
+        similarity_metric="COSINE",
+        overwrite=True,
+    )
+
+    node = TextNode(text="Hello world", embedding=[0.5] * 1536)
+
+    vector_store.add([node])
+
+    result = vector_store.query(
+        VectorStoreQuery(query_embedding=[0.5] * 1536, similarity_top_k=1)
+    )
+    assert len(result.nodes) == 1
+    assert result.nodes[0].text == "Hello world"

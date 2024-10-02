@@ -49,8 +49,8 @@ class Replicate(CustomLLM):
     temperature: float = Field(
         default=DEFAULT_REPLICATE_TEMP,
         description="The temperature to use for sampling.",
-        gte=0.01,
-        lte=1.0,
+        ge=0.01,
+        le=1.0,
     )
     image: str = Field(
         default="", description="The image file for multimodal model to use. (optional)"

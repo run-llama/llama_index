@@ -39,40 +39,6 @@ from llama_index.core.base.query_pipeline.query import (
     OutputKeys,
     QueryComponent,
 )
-import re
-
-
-def _escape_braces(text: str) -> str:
-    """
-    Escape braces in text.
-    Only captures template variables, skips already escaped braces.
-    """
-
-    def replace(match):
-        if match.group(0).startswith("{{") and match.group(0).endswith("}}"):
-            return match.group(0)  # Already escaped, return as is
-        return "{{" + match.group(1) + "}}"
-
-    pattern = r"(?<!\{)\{([^{}]+?)\}(?!\})"
-    return re.sub(pattern, replace, text)
-
-
-def _escape_json(messages: Sequence[ChatMessage]) -> Sequence[ChatMessage]:
-    """Escape JSON in messages."""
-    new_messages = []
-    for message in messages:
-        if isinstance(message.content, str):
-            escaped_msg = _escape_braces(message.content)
-            new_messages.append(
-                ChatMessage(
-                    role=message.role,
-                    content=escaped_msg,
-                    additional_kwargs=message.additional_kwargs,
-                )
-            )
-        else:
-            new_messages.append(message)
-    return new_messages
 
 
 class StructuredLLM(LLM):
@@ -104,10 +70,10 @@ class StructuredLLM(LLM):
         # make this work with our FunctionCallingProgram, even though
         # the messages don't technically have any variables (they are already formatted)
 
-        chat_prompt = ChatPromptTemplate(message_templates=_escape_json(messages))
+        chat_prompt = ChatPromptTemplate(message_templates=messages)
 
         output = self.llm.structured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt
+            output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
         return ChatResponse(
             message=ChatMessage(
@@ -120,10 +86,10 @@ class StructuredLLM(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        chat_prompt = ChatPromptTemplate(message_templates=_escape_json(messages))
+        chat_prompt = ChatPromptTemplate(message_templates=messages)
 
         stream_output = self.llm.stream_structured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt, **kwargs
+            output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
         for partial_output in stream_output:
             yield ChatResponse(
@@ -158,10 +124,10 @@ class StructuredLLM(LLM):
         # make this work with our FunctionCallingProgram, even though
         # the messages don't technically have any variables (they are already formatted)
 
-        chat_prompt = ChatPromptTemplate(message_templates=_escape_json(messages))
+        chat_prompt = ChatPromptTemplate(message_templates=messages)
 
         output = await self.llm.astructured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt
+            output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
         return ChatResponse(
             message=ChatMessage(
@@ -179,10 +145,10 @@ class StructuredLLM(LLM):
         """Async stream chat endpoint for LLM."""
 
         async def gen() -> ChatResponseAsyncGen:
-            chat_prompt = ChatPromptTemplate(message_templates=_escape_json(messages))
+            chat_prompt = ChatPromptTemplate(message_templates=messages)
 
             stream_output = await self.llm.astream_structured_predict(
-                output_cls=self.output_cls, prompt=chat_prompt, **kwargs
+                output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
             )
             async for partial_output in stream_output:
                 yield ChatResponse(
@@ -210,11 +176,12 @@ class StructuredLLM(LLM):
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return query component."""
+        base_component: BaseLLMComponent
         if self.metadata.is_chat_model:
             base_component = LLMChatComponent(llm=self, **kwargs)
         else:
             base_component = LLMCompleteComponent(llm=self, **kwargs)
-        # llm_component = self.llm.as_query_component()
+
         return StructuredLLMComponent(llm_component=base_component)
 
 
@@ -250,7 +217,7 @@ class StructuredLLMComponent(QueryComponent):
 
     async def _arun_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        output = await self.llm_component.arun_component(**kwargs)["output"]
+        output = (await self.llm_component.arun_component(**kwargs))["output"]
         # NOTE: can either be a CompletionResponse or ChatResponse
         # other types are not supported at the moment
         if isinstance(output, CompletionResponse):

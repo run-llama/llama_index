@@ -133,7 +133,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             cur_response = response_builder.get_response(
                 query_str, [node_text], prev_response=prev_response
             )
-            cur_response = cast(str, cur_response)
+            cur_response = str(cur_response)
             logger.debug(f">[Level {level}] Current answer response: {cur_response} ")
         else:
             cur_response = self._query_level(
@@ -154,7 +154,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             )
 
             logger.debug(f">[Level {level}] Current refined response: {cur_response} ")
-            return cur_response
+            return str(cur_response)
 
     def _query_level(
         self,
@@ -182,6 +182,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
                 prompt=query_template,
                 num_chunks=len(cur_node_list),
+                llm=self._llm,
             )
             numbered_node_text = get_numbered_text_from_nodes(
                 cur_node_list, text_splitter=text_splitter
@@ -201,6 +202,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
                 prompt=query_template_multiple,
                 num_chunks=len(cur_node_list),
+                llm=self._llm,
             )
             numbered_node_text = get_numbered_text_from_nodes(
                 cur_node_list, text_splitter=text_splitter
@@ -296,6 +298,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
                 prompt=query_template,
                 num_chunks=len(cur_node_list),
+                llm=self._llm,
             )
             numbered_node_text = get_numbered_text_from_nodes(
                 cur_node_list, text_splitter=text_splitter
@@ -315,6 +318,7 @@ class TreeSelectLeafRetriever(BaseRetriever):
             text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
                 prompt=query_template_multiple,
                 num_chunks=len(cur_node_list),
+                llm=self._llm,
             )
             numbered_node_text = get_numbered_text_from_nodes(
                 cur_node_list, text_splitter=text_splitter

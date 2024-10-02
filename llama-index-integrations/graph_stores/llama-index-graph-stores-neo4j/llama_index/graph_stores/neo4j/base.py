@@ -249,7 +249,33 @@ class Neo4jGraphStore(GraphStore):
         logger.debug(f"get_schema() schema:\n{self.schema}")
         return self.schema
 
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
-        with self._driver.session(database=self._database) as session:
-            result = session.run(query, param_map)
-            return [d.data() for d in result]
+    def query(self, query: str, param_map: Optional[Dict[str, Any]] = None) -> Any:
+        param_map = param_map or {}
+        try:
+            data, _, _ = self._driver.execute_query(
+                query, database=self._database, parameters_=param_map
+            )
+            return [r.data() for r in data]
+        except neo4j.exceptions.Neo4jError as e:
+            if not (
+                (
+                    (  # isCallInTransactionError
+                        e.code == "Neo.DatabaseError.Statement.ExecutionFailed"
+                        or e.code
+                        == "Neo.DatabaseError.Transaction.TransactionStartFailed"
+                    )
+                    and "in an implicit transaction" in e.message
+                )
+                or (  # isPeriodicCommitError
+                    e.code == "Neo.ClientError.Statement.SemanticError"
+                    and (
+                        "in an open transaction is not possible" in e.message
+                        or "tried to execute in an explicit transaction" in e.message
+                    )
+                )
+            ):
+                raise
+        # Fallback to allow implicit transactions
+        with self._driver.session() as session:
+            data = session.run(neo4j.Query(text=query), param_map)
+            return [r.data() for r in data]

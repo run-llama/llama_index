@@ -68,7 +68,7 @@ class TreeSummarize(BaseSynthesizer):
         summary_template = self._summary_template.partial_format(query_str=query_str)
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._prompt_helper.repack(
-            summary_template, text_chunks=text_chunks
+            summary_template, text_chunks=text_chunks, llm=self._llm
         )
 
         if self._verbose:
@@ -89,7 +89,7 @@ class TreeSummarize(BaseSynthesizer):
                         **response_kwargs,
                     )
                 else:
-                    response = await self._llm.astructured_predict(
+                    response = await self._llm.astructured_predict(  # type: ignore
                         self._output_cls,
                         summary_template,
                         context_str=text_chunks[0],
@@ -112,7 +112,7 @@ class TreeSummarize(BaseSynthesizer):
                 ]
             else:
                 tasks = [
-                    self._llm.astructured_predict(
+                    self._llm.astructured_predict(  # type: ignore
                         self._output_cls,
                         summary_template,
                         context_str=text_chunk,
@@ -144,7 +144,7 @@ class TreeSummarize(BaseSynthesizer):
         summary_template = self._summary_template.partial_format(query_str=query_str)
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._prompt_helper.repack(
-            summary_template, text_chunks=text_chunks
+            summary_template, text_chunks=text_chunks, llm=self._llm
         )
 
         if self._verbose:
@@ -165,7 +165,7 @@ class TreeSummarize(BaseSynthesizer):
                         **response_kwargs,
                     )
                 else:
-                    response = self._llm.structured_predict(
+                    response = self._llm.structured_predict(  # type: ignore
                         self._output_cls,
                         summary_template,
                         context_str=text_chunks[0],
@@ -188,7 +188,7 @@ class TreeSummarize(BaseSynthesizer):
                     ]
                 else:
                     tasks = [
-                        self._llm.astructured_predict(
+                        self._llm.astructured_predict(  # type: ignore
                             self._output_cls,
                             summary_template,
                             context_str=text_chunk,
@@ -217,7 +217,7 @@ class TreeSummarize(BaseSynthesizer):
                     ]
                 else:
                     summaries = [
-                        self._llm.structured_predict(
+                        self._llm.structured_predict(  # type: ignore
                             self._output_cls,
                             summary_template,
                             context_str=text_chunk,

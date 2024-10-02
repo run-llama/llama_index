@@ -22,38 +22,38 @@ class DataSink(BaseModel):
     )
 
 
-def build_conifurable_data_sink_enum():
+class ConfigurableComponent(Enum):
+    @classmethod
+    def from_component(
+        cls, component: BasePydanticVectorStore
+    ) -> "ConfigurableComponent":
+        component_class = type(component)
+        for component_type in cls:
+            if component_type.value.component_type == component_class:
+                return component_type
+        raise ValueError(
+            f"Component {component} is not a supported data sink component."
+        )
+
+    def build_configured_data_sink(
+        self, component: BasePydanticVectorStore
+    ) -> "ConfiguredDataSink":
+        component_type = self.value.component_type
+        if not isinstance(component, component_type):
+            raise ValueError(
+                f"The enum value {self} is not compatible with component of "
+                f"type {type(component)}"
+            )
+        return ConfiguredDataSink[component_type](  # type: ignore
+            component=component, name=self.value.name
+        )
+
+
+def build_conifurable_data_sink_enum() -> ConfigurableComponent:
     """
     Build an enum of configurable data sinks.
     But conditional on if the corresponding vector store is available.
     """
-
-    class ConfigurableComponent(Enum):
-        @classmethod
-        def from_component(
-            cls, component: BasePydanticVectorStore
-        ) -> "ConfigurableDataSinks":
-            component_class = type(component)
-            for component_type in cls:
-                if component_type.value.component_type == component_class:
-                    return component_type
-            raise ValueError(
-                f"Component {component} is not a supported data sink component."
-            )
-
-        def build_configured_data_sink(
-            self, component: BasePydanticVectorStore
-        ) -> "ConfiguredDataSink":
-            component_type = self.value.component_type
-            if not isinstance(component, component_type):
-                raise ValueError(
-                    f"The enum value {self} is not compatible with component of "
-                    f"type {type(component)}"
-                )
-            return ConfiguredDataSink[component_type](  # type: ignore
-                component=component, name=self.value.name
-            )
-
     enum_members = []
 
     try:
@@ -141,7 +141,7 @@ def build_conifurable_data_sink_enum():
     except (ImportError, ValidationError):
         pass
 
-    return ConfigurableComponent("ConfigurableDataSinks", enum_members)
+    return ConfigurableComponent("ConfigurableDataSinks", enum_members)  # type: ignore
 
 
 ConfigurableDataSinks = build_conifurable_data_sink_enum()
@@ -176,5 +176,5 @@ class ConfiguredDataSink(BaseModel, Generic[T]):
         ).build_configured_data_sink(component)
 
     @property
-    def configurable_data_sink_type(self) -> ConfigurableDataSinks:
+    def configurable_data_sink_type(self) -> ConfigurableDataSinks:  # type: ignore
         return ConfigurableDataSinks.from_component(self.component)
