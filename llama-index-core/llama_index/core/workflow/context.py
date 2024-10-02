@@ -30,6 +30,7 @@ class Context:
         stepwise: bool = False,
     ) -> None:
         self.stepwise = stepwise
+        self.is_running = False
 
         self._workflow = workflow
         # Broker machinery
@@ -107,6 +108,7 @@ class Context:
             },
             "accepted_events": self._accepted_events,
             "broker_log": [serializer.serialize(ev) for ev in self._broker_log],
+            "is_running": self.is_running,
         }
 
     @classmethod
@@ -133,6 +135,7 @@ class Context:
         }
         context._accepted_events = data["accepted_events"]
         context._broker_log = [serializer.deserialize(ev) for ev in data["broker_log"]]
+        context.is_running = data["is_running"]
         return context
 
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:

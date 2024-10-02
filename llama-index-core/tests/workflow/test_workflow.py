@@ -533,7 +533,10 @@ async def test_workflow_context_to_dict_mid_run(workflow):
     new_ctx = Context.from_dict(workflow, data)
 
     # continue from the second step
-    new_handler = workflow.run(ctx=new_ctx, stepwise=True)
+    new_handler = workflow.run(
+        ctx=new_ctx,
+        stepwise=True,
+    )
 
     # run the second step
     ev = await new_handler.run_step()
@@ -544,7 +547,7 @@ async def test_workflow_context_to_dict_mid_run(workflow):
     # run third step
     ev = await new_handler.run_step()
     assert isinstance(ev, StopEvent)
-    assert new_handler.is_done()
+    assert not new_handler.is_done()
     new_handler.ctx.send_event(ev)
 
     # Let the workflow finish

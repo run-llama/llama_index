@@ -338,8 +338,12 @@ class Workflow(metaclass=WorkflowMeta):
             if self._sem:
                 await self._sem.acquire()
             try:
-                # Send the first event
-                ctx.send_event(StartEvent(**kwargs))
+                if not ctx.is_running:
+                    # Send the first event
+                    ctx.send_event(StartEvent(**kwargs))
+
+                    # the context is now running
+                    ctx.is_running = True
 
                 done, unfinished = await asyncio.wait(
                     ctx._tasks,
@@ -363,6 +367,9 @@ class Workflow(metaclass=WorkflowMeta):
 
                 # wait for cancelled tasks to cleanup
                 await asyncio.gather(*unfinished, return_exceptions=True)
+
+                # the context is no longer running
+                ctx.is_running = False
 
                 if exception_raised:
                     ctx.write_event_to_stream(StopEvent())
