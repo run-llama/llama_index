@@ -5,9 +5,13 @@ from typing import Type
 
 import pytest
 
+from llama_index.core import MockEmbedding
+from llama_index.core.llms.mock import MockLLM
 from llama_index.core.workflow.decorators import step
+from llama_index.core.workflow.events import StartEvent, StopEvent
 from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.events import (
+    Event,
     InputRequiredEvent,
     HumanResponseEvent,
     StartEvent,
@@ -21,8 +25,17 @@ from llama_index.core.workflow.workflow import (
     WorkflowRuntimeError,
     WorkflowCancelledByUser,
 )
+from llama_index.core.workflow.context_serializers import JsonPickleSerializer
 
 from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
+
+
+class TestEvent(Event):
+    name: str
+
+
+def test_fn():
+    print("test_fn")
 
 
 @pytest.mark.asyncio()
@@ -448,6 +461,124 @@ async def test_workflow_continue_context():
 
 
 @pytest.mark.asyncio()
+async def test_workflow_pickle():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            cur_step = await ctx.get("step", default=0)
+            await ctx.set("step", cur_step + 1)
+            await ctx.set("embedding", MockEmbedding(embed_dim=cur_step))
+            await ctx.set("llm", MockLLM(max_tokens=cur_step))
+            await ctx.set("test_fn", test_fn)
+            return StopEvent(result="Done")
+
+    wf = DummyWorkflow()
+    handler = wf.run()
+    _ = await handler
+
+    # by default, we can't pickle the LLM/embedding object
+    with pytest.raises(ValueError):
+        state_dict = handler.ctx.to_dict()
+
+    # if we allow pickle, then we can pickle the LLM/embedding object
+    state_dict = handler.ctx.to_dict(serializer=JsonPickleSerializer())
+    new_handler = WorkflowHandler(
+        ctx=Context.from_dict(wf, state_dict, serializer=JsonPickleSerializer())
+    )
+
+    # check that the step count is the same
+    cur_step = await handler.ctx.get("step")
+    new_step = await new_handler.ctx.get("step")
+    assert new_step == cur_step
+
+    # check that the embedding is the same
+    embedding = await handler.ctx.get("embedding")
+    new_embedding = await new_handler.ctx.get("embedding")
+    assert new_embedding.embed_dim == embedding.embed_dim
+
+    # check that the llm is the same
+    llm = await handler.ctx.get("llm")
+    new_llm = await new_handler.ctx.get("llm")
+    assert new_llm.max_tokens == llm.max_tokens
+
+    handler = wf.run(ctx=new_handler.ctx)
+    _ = await handler
+
+    # check that the step count is incremented
+    assert await handler.ctx.get("step") == cur_step + 1
+
+    # check that the embedding is the same
+    embedding = await handler.ctx.get("embedding")
+    new_embedding = await new_handler.ctx.get("embedding")
+    assert new_embedding.embed_dim == embedding.embed_dim
+
+    # check that the llm is the same
+    llm = await handler.ctx.get("llm")
+    new_llm = await new_handler.ctx.get("llm")
+    assert new_llm.max_tokens == llm.max_tokens
+
+
+@pytest.mark.asyncio()
+async def test_workflow_context_to_dict_mid_run(workflow):
+    handler = workflow.run(stepwise=True)
+
+    event = await handler.run_step()
+    assert isinstance(event, OneTestEvent)
+    assert not handler.is_done()
+    handler.ctx.send_event(event)
+
+    # get the context dict
+    data = handler.ctx.to_dict()
+
+    new_ctx = Context.from_dict(workflow, data)
+
+    # continue from the second step
+    new_handler = workflow.run(
+        ctx=new_ctx,
+        stepwise=True,
+    )
+
+    # run the second step
+    ev = await new_handler.run_step()
+    assert isinstance(ev, LastEvent)
+    assert not new_handler.is_done()
+    new_handler.ctx.send_event(ev)
+
+    # run third step
+    ev = await new_handler.run_step()
+    assert isinstance(ev, StopEvent)
+    assert not new_handler.is_done()
+    new_handler.ctx.send_event(ev)
+
+    # Let the workflow finish
+    ev = await new_handler.run_step()
+    assert ev is None
+
+    result = await new_handler
+    assert new_handler.is_done()
+    assert result == "Workflow completed"
+
+
+@pytest.mark.asyncio()
+async def test_workflow_context_to_dict(workflow):
+    handler = workflow.run()
+    ctx = handler.ctx
+
+    ctx.send_event(TestEvent(name="test"))
+
+    # get the context dict
+    data = ctx.to_dict()
+
+    # finish workflow
+    await handler
+
+    new_ctx = Context.from_dict(workflow, data)
+
+    print(new_ctx._queues)
+    assert new_ctx._queues["start_step"].get_nowait().name == "test"
+
+
+@pytest.mark.asyncio()
 async def test_human_in_the_loop():
     class HumanInTheLoopWorkflow(Workflow):
         @step
@@ -510,6 +641,7 @@ class NumConcurrentRunsException(Exception):
     pass
 
 
+@pytest.mark.asyncio()
 @pytest.mark.parametrize(
     (
         "workflow",

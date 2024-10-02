@@ -83,6 +83,9 @@ class WorkflowHandler(asyncio.Future):
                         t.cancel()
                         await asyncio.sleep(0)
 
+                    # the context is no longer running
+                    self.ctx.is_running = False
+
                     if exception_raised:
                         raise exception_raised
 

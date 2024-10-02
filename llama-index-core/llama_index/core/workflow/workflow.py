@@ -59,15 +59,20 @@ class Workflow(metaclass=WorkflowMeta):
         """Create an instance of the workflow.
 
         Args:
-            timeout: number of seconds after the workflow execution will be halted, raising a `WorkflowTimeoutError`
+            timeout:
+                Number of seconds after the workflow execution will be halted, raising a `WorkflowTimeoutError`
                 exception. If set to `None`, the timeout will be disabled.
-            disable_validaton: whether or not the workflow should be validated before running. In case the workflow is
+            disable_validaton:
+                Whether or not the workflow should be validated before running. In case the workflow is
                 misconfigured, a call to `run` will raise a `WorkflowValidationError` exception explaining the details
                 of the problem.
-            verbose: whether or not the workflow should print additional informative messages during execution.
-            service_manager: The instance of the `ServiceManager` used to make nested workflows available to this
+            verbose:
+                Whether or not the workflow should print additional informative messages during execution.
+            service_manager:
+                The instance of the `ServiceManager` used to make nested workflows available to this
                 workflow instance. The default value is the best choice unless you're customizing the workflow runtime.
-            num_concurrent_runs: maximum number of .run() executions occurring simultaneously. If set to `None`, there
+            num_concurrent_runs:
+                maximum number of .run() executions occurring simultaneously. If set to `None`, there
                 is no limit to this number.
         """
         # Configuration
@@ -164,15 +169,16 @@ class Workflow(metaclass=WorkflowMeta):
         else:
             # clean up the context from the previous run
             ctx._tasks = set()
-            ctx._queues = {}
-            ctx._step_flags = {}
             ctx._retval = None
             ctx._step_event_holding = None
             ctx._cancel_flag.clear()
 
         for name, step_func in self._get_steps().items():
-            ctx._queues[name] = asyncio.Queue()
-            ctx._step_flags[name] = asyncio.Event()
+            if name not in ctx._queues:
+                ctx._queues[name] = asyncio.Queue()
+
+            if name not in ctx._step_flags:
+                ctx._step_flags[name] = asyncio.Event()
 
             # At this point, step_func is guaranteed to have the `__step_config` attribute
             step_config: StepConfig = getattr(step_func, "__step_config")
@@ -332,8 +338,12 @@ class Workflow(metaclass=WorkflowMeta):
             if self._sem:
                 await self._sem.acquire()
             try:
-                # Send the first event
-                ctx.send_event(StartEvent(**kwargs))
+                if not ctx.is_running:
+                    # Send the first event
+                    ctx.send_event(StartEvent(**kwargs))
+
+                    # the context is now running
+                    ctx.is_running = True
 
                 done, unfinished = await asyncio.wait(
                     ctx._tasks,
@@ -357,6 +367,9 @@ class Workflow(metaclass=WorkflowMeta):
 
                 # wait for cancelled tasks to cleanup
                 await asyncio.gather(*unfinished, return_exceptions=True)
+
+                # the context is no longer running
+                ctx.is_running = False
 
                 if exception_raised:
                     ctx.write_event_to_stream(StopEvent())

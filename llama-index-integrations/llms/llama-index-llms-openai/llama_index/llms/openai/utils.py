@@ -67,6 +67,7 @@ GPT4_MODELS: Dict[str, int] = {
 
 AZURE_TURBO_MODELS: Dict[str, int] = {
     "gpt-4o": 128000,
+    "gpt-4o-mini": 128000,
     "gpt-35-turbo-16k": 16384,
     "gpt-35-turbo": 4096,
     # 0125 (2024) model (JSON mode)
