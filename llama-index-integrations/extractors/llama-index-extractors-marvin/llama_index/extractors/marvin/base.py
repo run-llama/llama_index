@@ -1,19 +1,13 @@
 from typing import (
-    TYPE_CHECKING,
     Any,
     Dict,
     Iterable,
     List,
-    Optional,
     Sequence,
     Type,
-    cast,
 )
 
-if TYPE_CHECKING:
-    from marvin import ai_model
-
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from pydantic import BaseModel, Field
 from llama_index.core.extractors.interface import BaseExtractor
 from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.utils import get_tqdm_iterable
@@ -21,24 +15,20 @@ from llama_index.core.utils import get_tqdm_iterable
 
 class MarvinMetadataExtractor(BaseExtractor):
     # Forward reference to handle circular imports
-    marvin_model: Type["ai_model"] = Field(
-        description="The Marvin model to use for extracting custom metadata"
-    )
-    llm_model_string: Optional[str] = Field(
-        description="The LLM model string to use for extracting custom metadata"
+    marvin_model: Type[BaseModel] = Field(
+        description="The target pydantic model to cast the metadata into."
     )
 
     """Metadata extractor for custom metadata using Marvin.
     Node-level extractor. Extracts
     `marvin_metadata` metadata field.
     Args:
-        marvin_model: Marvin model to use for extracting metadata
-        llm_model_string: (optional) LLM model string to use for extracting metadata
+        marvin_model: The target pydantic model to cast the metadata into.
     Usage:
         #create extractor list
         extractors = [
             TitleExtractor(nodes=1, llm=llm),
-            MarvinMetadataExtractor(marvin_model=YourMarvinMetadataModel),
+            MarvinMetadataExtractor(marvin_model=YourMetadataModel),
         ]
 
         #create node parser to parse nodes from document
@@ -55,31 +45,18 @@ class MarvinMetadataExtractor(BaseExtractor):
     def __init__(
         self,
         marvin_model: Type[BaseModel],
-        llm_model_string: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
-        import marvin
-        from marvin import ai_model
-
-        if not issubclass(marvin_model, ai_model):
-            raise ValueError("marvin_model must be a subclass of ai_model")
-
-        if llm_model_string:
-            marvin.settings.llm_model = llm_model_string
-
-        super().__init__(
-            marvin_model=marvin_model, llm_model_string=llm_model_string, **kwargs
-        )
+        super().__init__(marvin_model=marvin_model, **kwargs)
 
     @classmethod
     def class_name(cls) -> str:
         return "MarvinEntityExtractor"
 
     async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        from marvin import ai_model
+        from marvin import cast_async
 
-        ai_model = cast(ai_model, self.marvin_model)
         metadata_list: List[Dict] = []
 
         nodes_queue: Iterable[BaseNode] = get_tqdm_iterable(
@@ -90,8 +67,7 @@ class MarvinMetadataExtractor(BaseExtractor):
                 metadata_list.append({})
                 continue
 
-            # TODO: Does marvin support async?
-            metadata = ai_model(node.get_content())
+            metadata = await cast_async(node.get_content(), target=self.marvin_model)
 
-            metadata_list.append({"marvin_metadata": metadata.dict()})
+            metadata_list.append({"marvin_metadata": metadata.model_dump()})
         return metadata_list

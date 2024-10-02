@@ -67,7 +67,7 @@ class BedrockConverse(FunctionCallingLLM):
             aws_access_key_id="AWS Access Key ID to use",
             aws_secret_access_key="AWS Secret Access Key to use",
             aws_session_token="AWS Session Token to use",
-            aws_region_name="AWS Region to use, eg. us-east-1",
+            region_name="AWS Region to use, eg. us-east-1",
         )
 
         resp = llm.complete("Paul Graham is ")
@@ -79,8 +79,8 @@ class BedrockConverse(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
     profile_name: Optional[str] = Field(
@@ -157,6 +157,29 @@ class BedrockConverse(FunctionCallingLLM):
             "aws_session_token": aws_session_token,
             "botocore_session": botocore_session,
         }
+
+        super().__init__(
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
+            timeout=timeout,
+            max_retries=max_retries,
+            model=model,
+            callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+            profile_name=profile_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+            region_name=region_name,
+            botocore_session=botocore_session,
+            botocore_config=botocore_config,
+        )
+
         self._config = None
         try:
             import boto3
@@ -190,21 +213,6 @@ class BedrockConverse(FunctionCallingLLM):
             self._client = session.client("bedrock-runtime", config=self._config)
         else:
             self._client = session.client("bedrock", config=self._config)
-
-        super().__init__(
-            temperature=temperature,
-            max_tokens=max_tokens,
-            additional_kwargs=additional_kwargs,
-            timeout=timeout,
-            max_retries=max_retries,
-            model=model,
-            callback_manager=callback_manager,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-            output_parser=output_parser,
-        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -459,7 +467,7 @@ class BedrockConverse(FunctionCallingLLM):
         async def gen() -> ChatResponseAsyncGen:
             content = {}
             role = MessageRole.ASSISTANT
-            for chunk in response["stream"]:
+            async for chunk in response["stream"]:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)

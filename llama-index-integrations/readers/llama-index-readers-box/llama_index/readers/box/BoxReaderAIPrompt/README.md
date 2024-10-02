@@ -37,10 +37,8 @@ reader = BoxReaderAIPrompt(box_client=client)
 
 Extracts data from Box files using a custom AI prompt and creates Document objects.
 
-This method utilizes a user-provided AI prompt to potentially extract
-more specific data from the Box files compared to pre-configured AI
-services like Box AI Extract. It then creates Document objects containing
-the extracted data along with file metadata.
+This method utilizes a user-provided AI prompt to extract data from the Box files.
+It then creates Document objects containing the extracted data along with file metadata.
 
 #### Args:
 

@@ -52,6 +52,7 @@ FOLDER_NAME_TO_LABEL = {
     "./examples/transforms": "Transforms",
     "./examples/usecases": "Use Cases",
     "./examples/vector_stores": "Vector Stores",
+    "./examples/workflow": "Workflow",
 }
 
 # integration config
@@ -92,8 +93,11 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "response_synthesizers": "Response Synthesizers",
     "retrievers": "Retrievers",
     "schema": "Schema",
+    "selectors": "Selectors",
+    "sparse_embeddings": "Sparse Embeddings",
     "storage": "Storage",
     "tools": "Tools",
+    "workflow": "Workflow",
 }
 API_REF_TEMPLATE = """::: {import_path}
     options:

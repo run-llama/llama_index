@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, List, NamedTuple, Optional, Type, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, TYPE_CHECKING
 
 import asyncpg  # noqa
 import pgvector  # noqa
@@ -22,6 +22,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.sql.selectable import Select
 
 
 class DBEmbeddingRow(NamedTuple):
@@ -131,13 +134,11 @@ class PGVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    from sqlalchemy.sql.selectable import Select
-
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
 
     connection_string: str
-    async_connection_string: Union[str, sqlalchemy.engine.URL]
+    async_connection_string: str
     table_name: str
     schema_name: str
     embed_dim: int
@@ -147,6 +148,9 @@ class PGVectorStore(BasePydanticVectorStore):
     perform_setup: bool
     debug: bool
     use_jsonb: bool
+    create_engine_kwargs: Dict
+
+    hnsw_kwargs: Optional[Dict[str, Any]]
 
     _base: Any = PrivateAttr()
     _table_class: Any = PrivateAttr()
@@ -169,7 +173,28 @@ class PGVectorStore(BasePydanticVectorStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        hnsw_kwargs: Optional[Dict[str, Any]] = None,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
+        """Constructor.
+
+        Args:
+            connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to postgres db.
+            async_connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to async pg db.
+            table_name (str): Table name.
+            schema_name (str): Schema name.
+            hybrid_search (bool, optional): Enable hybrid search. Defaults to False.
+            text_search_config (str, optional): Text search configuration. Defaults to "english".
+            embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
+            cache_ok (bool, optional): Enable cache. Defaults to False.
+            perform_setup (bool, optional): If db should be set up. Defaults to True.
+            debug (bool, optional): Debug mode. Defaults to False.
+            use_jsonb (bool, optional): Use JSONB instead of JSON. Defaults to False.
+            hnsw_kwargs (Optional[Dict[str, Any]], optional): HNSW kwargs, a dict that
+                contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
+                which turns off HNSW search.
+            create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
+        """
         table_name = table_name.lower()
         schema_name = schema_name.lower()
 
@@ -181,6 +206,22 @@ class PGVectorStore(BasePydanticVectorStore):
 
         from sqlalchemy.orm import declarative_base
 
+        super().__init__(
+            connection_string=str(connection_string),
+            async_connection_string=str(async_connection_string),
+            table_name=table_name,
+            schema_name=schema_name,
+            hybrid_search=hybrid_search,
+            text_search_config=text_search_config,
+            embed_dim=embed_dim,
+            cache_ok=cache_ok,
+            perform_setup=perform_setup,
+            debug=debug,
+            use_jsonb=use_jsonb,
+            hnsw_kwargs=hnsw_kwargs,
+            create_engine_kwargs=create_engine_kwargs or {},
+        )
+
         # sqlalchemy model
         self._base = declarative_base()
         self._table_class = get_data_model(
@@ -191,20 +232,6 @@ class PGVectorStore(BasePydanticVectorStore):
             text_search_config,
             cache_ok,
             embed_dim=embed_dim,
-            use_jsonb=use_jsonb,
-        )
-
-        super().__init__(
-            connection_string=connection_string,
-            async_connection_string=async_connection_string,
-            table_name=table_name,
-            schema_name=schema_name,
-            hybrid_search=hybrid_search,
-            text_search_config=text_search_config,
-            embed_dim=embed_dim,
-            cache_ok=cache_ok,
-            perform_setup=perform_setup,
-            debug=debug,
             use_jsonb=use_jsonb,
         )
 
@@ -240,8 +267,36 @@ class PGVectorStore(BasePydanticVectorStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        hnsw_kwargs: Optional[Dict[str, Any]] = None,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "PGVectorStore":
-        """Return connection string from database parameters."""
+        """Construct from params.
+
+        Args:
+            host (Optional[str], optional): Host of postgres connection. Defaults to None.
+            port (Optional[str], optional): Port of postgres connection. Defaults to None.
+            database (Optional[str], optional): Postgres DB name. Defaults to None.
+            user (Optional[str], optional): Postgres username. Defaults to None.
+            password (Optional[str], optional): Postgres password. Defaults to None.
+            table_name (str): Table name. Defaults to "llamaindex".
+            schema_name (str): Schema name. Defaults to "public".
+            connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to postgres db
+            async_connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to async pg db
+            hybrid_search (bool, optional): Enable hybrid search. Defaults to False.
+            text_search_config (str, optional): Text search configuration. Defaults to "english".
+            embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
+            cache_ok (bool, optional): Enable cache. Defaults to False.
+            perform_setup (bool, optional): If db should be set up. Defaults to True.
+            debug (bool, optional): Debug mode. Defaults to False.
+            use_jsonb (bool, optional): Use JSONB instead of JSON. Defaults to False.
+            hnsw_kwargs (Optional[Dict[str, Any]], optional): HNSW kwargs, a dict that
+                contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
+                which turns off HNSW search.
+            create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
+
+        Returns:
+            PGVectorStore: Instance of PGVectorStore constructed from params.
+        """
         conn_str = (
             connection_string
             or f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
@@ -261,6 +316,8 @@ class PGVectorStore(BasePydanticVectorStore):
             perform_setup=perform_setup,
             debug=debug,
             use_jsonb=use_jsonb,
+            hnsw_kwargs=hnsw_kwargs,
+            create_engine_kwargs=create_engine_kwargs,
         )
 
     @property
@@ -274,10 +331,14 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
 
-        self._engine = create_engine(self.connection_string, echo=self.debug)
+        self._engine = create_engine(
+            self.connection_string, echo=self.debug, **self.create_engine_kwargs
+        )
         self._session = sessionmaker(self._engine)
 
-        self._async_engine = create_async_engine(self.async_connection_string)
+        self._async_engine = create_async_engine(
+            self.async_connection_string, **self.create_engine_kwargs
+        )
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
     def _create_schema_if_not_exists(self) -> None:
@@ -313,6 +374,30 @@ class PGVectorStore(BasePydanticVectorStore):
             session.execute(statement)
             session.commit()
 
+    def _create_hnsw_index(self) -> None:
+        import sqlalchemy
+
+        if (
+            "hnsw_ef_construction" not in self.hnsw_kwargs
+            or "hnsw_m" not in self.hnsw_kwargs
+        ):
+            raise ValueError(
+                "Make sure hnsw_ef_search, hnsw_ef_construction, and hnsw_m are in hnsw_kwargs."
+            )
+
+        hnsw_ef_construction = self.hnsw_kwargs.pop("hnsw_ef_construction")
+        hnsw_m = self.hnsw_kwargs.pop("hnsw_m")
+        hnsw_dist_method = self.hnsw_kwargs.pop("hnsw_dist_method", "vector_cosine_ops")
+
+        index_name = f"{self._table_class.__tablename__}_embedding_idx"
+
+        with self._session() as session, session.begin():
+            statement = sqlalchemy.text(
+                f"CREATE INDEX IF NOT EXISTS {index_name} ON {self.schema_name}.{self._table_class.__tablename__} USING hnsw (embedding {hnsw_dist_method}) WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
+            )
+            session.execute(statement)
+            session.commit()
+
     def _initialize(self) -> None:
         if not self._is_initialized:
             self._connect()
@@ -320,6 +405,8 @@ class PGVectorStore(BasePydanticVectorStore):
                 self._create_extension()
                 self._create_schema_if_not_exists()
                 self._create_tables_if_not_exists()
+                if self.hnsw_kwargs is not None:
+                    self._create_hnsw_index()
             self._is_initialized = True
 
     def _node_to_table_row(self, node: BaseNode) -> Any:
@@ -375,6 +462,8 @@ class PGVectorStore(BasePydanticVectorStore):
             return "NOT IN"
         elif operator == FilterOperator.CONTAINS:
             return "@>"
+        elif operator == FilterOperator.TEXT_MATCH:
+            return "LIKE"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
@@ -400,6 +489,13 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"metadata_::jsonb->'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"'[\"{filter_.value}\"]'"
+            )
+        elif filter_.operator == FilterOperator.TEXT_MATCH:
+            # Where the operator is text_match, we need to wrap the filter in '%' characters
+            return text(
+                f"metadata_->>'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"'%{filter_.value}%'"
             )
         else:
             # Check if value is a number. If so, cast the metadata value to a float
@@ -448,7 +544,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def _apply_filters_and_limit(
         self,
-        stmt: Select,
+        stmt: "Select",
         limit: int,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:
@@ -493,8 +589,10 @@ class PGVectorStore(BasePydanticVectorStore):
                     text(f"SET ivfflat.probes = :ivfflat_probes"),
                     {"ivfflat_probes": ivfflat_probes},
                 )
-            if kwargs.get("hnsw_ef_search"):
-                hnsw_ef_search = kwargs.get("hnsw_ef_search")
+            if self.hnsw_kwargs:
+                hnsw_ef_search = (
+                    kwargs.get("hnsw_ef_search") or self.hnsw_kwargs["hnsw_ef_search"]
+                )
                 session.execute(
                     text(f"SET hnsw.ef_search = :hnsw_ef_search"),
                     {"hnsw_ef_search": hnsw_ef_search},
@@ -524,11 +622,12 @@ class PGVectorStore(BasePydanticVectorStore):
         async with self._async_session() as async_session, async_session.begin():
             from sqlalchemy import text
 
-            if kwargs.get("hnsw_ef_search"):
-                hnsw_ef_search = kwargs.get("hnsw_ef_search")
+            if self.hnsw_kwargs:
+                hnsw_ef_search = (
+                    kwargs.get("hnsw_ef_search") or self.hnsw_kwargs["hnsw_ef_search"]
+                )
                 await async_session.execute(
-                    text(f"SET hnsw.ef_search = :hnsw_ef_search"),
-                    {"hnsw_ef_search": hnsw_ef_search},
+                    text(f"SET hnsw.ef_search = {hnsw_ef_search}"),
                 )
             if kwargs.get("ivfflat_probes"):
                 ivfflat_probes = kwargs.get("ivfflat_probes")
@@ -853,6 +952,58 @@ class PGVectorStore(BasePydanticVectorStore):
 
             await async_session.execute(stmt)
             await async_session.commit()
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from vector store."""
+        assert (
+            node_ids is not None or filters is not None
+        ), "Either node_ids or filters must be provided"
+
+        self._initialize()
+        from sqlalchemy import select
+
+        stmt = select(
+            self._table_class.node_id,
+            self._table_class.text,
+            self._table_class.metadata_,
+            self._table_class.embedding,
+        )
+
+        if node_ids:
+            stmt = stmt.where(self._table_class.node_id.in_(node_ids))
+
+        if filters:
+            filter_clause = self._recursively_apply_filters(filters)
+            stmt = stmt.where(filter_clause)
+
+        nodes: List[BaseNode] = []
+
+        with self._session() as session, session.begin():
+            res = session.execute(stmt).fetchall()
+            for item in res:
+                node_id = item.node_id
+                text = item.text
+                metadata = item.metadata_
+                embedding = item.embedding
+
+                try:
+                    node = metadata_dict_to_node(metadata)
+                    node.set_content(str(text))
+                    node.embedding = embedding
+                except Exception:
+                    node = TextNode(
+                        id_=node_id,
+                        text=text,
+                        metadata=metadata,
+                        embedding=embedding,
+                    )
+                nodes.append(node)
+
+        return nodes
 
 
 def _dedup_results(results: List[DBEmbeddingRow]) -> List[DBEmbeddingRow]:

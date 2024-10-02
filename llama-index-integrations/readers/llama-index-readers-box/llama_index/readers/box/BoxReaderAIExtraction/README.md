@@ -4,7 +4,7 @@ A reader class for loading data from Box files using Box AI Extract.
 
 This class inherits from the `BoxReaderBase` class and specializes in
 processing data from Box files using Box AI Extract. It utilizes the
-provided BoxClient object to interact with the Box API and extracts
+provided `BoxClient` object to interact with the Box API and extracts
 data based on a specified AI prompt.
 
 > [!IMPORTANT]

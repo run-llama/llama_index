@@ -16,12 +16,7 @@ from llama_index.core.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.core.schema import NodeWithScore, QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -46,11 +41,8 @@ class RetrieverQueryEngine(BaseQueryEngine):
     ) -> None:
         self._retriever = retriever
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            llm=llm_from_settings_or_context(Settings, retriever.get_service_context()),
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(
-                Settings, retriever.get_service_context()
-            ),
+            llm=Settings.llm,
+            callback_manager=callback_manager or Settings.callback_manager,
         )
 
         self._node_postprocessors = node_postprocessors or []
@@ -72,6 +64,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
         llm: Optional[LLM] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        callback_manager: Optional[CallbackManager] = None,
         # response synthesizer args
         response_mode: ResponseMode = ResponseMode.COMPACT,
         text_qa_template: Optional[BasePromptTemplate] = None,
@@ -81,17 +74,15 @@ class RetrieverQueryEngine(BaseQueryEngine):
         output_cls: Optional[BaseModel] = None,
         use_async: bool = False,
         streaming: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "RetrieverQueryEngine":
         """Initialize a RetrieverQueryEngine object.".
 
         Args:
             retriever (BaseRetriever): A retriever object.
-            service_context (Optional[ServiceContext]): A ServiceContext object.
             node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
                 node postprocessors.
+            callback_manager (Optional[CallbackManager]): A callback manager.
             verbose (bool): Whether to print out debug info.
             response_mode (ResponseMode): A ResponseMode object.
             text_qa_template (Optional[BasePromptTemplate]): A BasePromptTemplate
@@ -105,11 +96,10 @@ class RetrieverQueryEngine(BaseQueryEngine):
                 object.
 
         """
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
 
         response_synthesizer = response_synthesizer or get_response_synthesizer(
             llm=llm,
-            service_context=service_context,
             text_qa_template=text_qa_template,
             refine_template=refine_template,
             summary_template=summary_template,
@@ -120,9 +110,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             streaming=streaming,
         )
 
-        callback_manager = callback_manager_from_settings_or_context(
-            Settings, service_context
-        )
+        callback_manager = callback_manager or Settings.callback_manager
 
         return cls(
             retriever=retriever,

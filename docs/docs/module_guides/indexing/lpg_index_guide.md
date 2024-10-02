@@ -339,7 +339,7 @@ To illustrate how this works, here is a small example:
 
 ```python
 # NOTE: current v1 is needed
-from pydantic.v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from llama_index.core.indices.property_graph import CypherTemplateRetriever
 
 # write a query with template params
@@ -369,12 +369,13 @@ template_retriever = CypherTemplateRetriever(
 
 Currently, supported graph stores for property graphs include:
 
-|                     | In-Memory | Native Embedding Support | Async | Server or disk based? |
-|---------------------|-----------|--------------------------|-------|-----------------------|
-| SimplePropertyGraphStore | ✅         | ❌                        | ❌     | Disk                  |
-| Neo4jPropertyGraphStore  | ❌         | ✅                        | ❌     | Server                |
-| NebulaPropertyGraphStore | ❌         | ❌                        | ❌     | Server                |
-| TiDBPropertyGraphStore   | ❌         | ✅                        | ❌     | Server                |
+|                              | In-Memory  | Native Embedding Support | Async | Server or disk based? |
+|------------------------------|------------|--------------------------|-------|-----------------------|
+| SimplePropertyGraphStore     | ✅         | ❌                       | ❌    | Disk                  |
+| Neo4jPropertyGraphStore      | ❌         | ✅                       | ❌    | Server                |
+| NebulaPropertyGraphStore     | ❌         | ❌                       | ❌    | Server                |
+| TiDBPropertyGraphStore       | ❌         | ✅                       | ❌    | Server                |
+| FalkorDBPropertyGraphStore   | ❌         | ✅                       | ❌    | Server                |
 
 ### Saving to/from disk
 

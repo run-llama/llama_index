@@ -51,8 +51,8 @@ class Evaluation(BaseModel):
 
     score: int = Field(
         description="Score of the reflection indicating **correctness**. Integer from 1-10",
-        lte=10,
-        gte=0,
+        le=10,
+        ge=0,
     )
     is_done: bool = Field(
         False, description="Whether the answer is found yet (**completeness**)."

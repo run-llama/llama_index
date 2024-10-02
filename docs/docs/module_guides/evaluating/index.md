@@ -32,7 +32,7 @@ These evaluation modules are in the following forms:
 
 #### Question Generation
 
-In addition to evaluating queries, LlamaIndex can also use your data to generate questions to evaluate on. This means that you can automatically generate questions, and then run an evaluation pipeline to test if the LLM can actually answer questions accurately using your data.
+In addition to evaluating queries, LlamaIndex can also use your data to generate questions to evaluate on. This means that you can automatically generate questions, and then run an evaluation flow to test if the LLM can actually answer questions accurately using your data.
 
 ### Retrieval Evaluation
 

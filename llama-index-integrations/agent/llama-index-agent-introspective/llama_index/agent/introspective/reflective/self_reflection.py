@@ -146,14 +146,13 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         **kwargs: Any,
     ) -> None:
         """__init__."""
-        self._llm = llm
-        self._verbose = verbose
-
         super().__init__(
             callback_manager=callback_manager or CallbackManager([]),
             max_iterations=max_iterations,
             **kwargs,
         )
+        self._llm = llm
+        self._verbose = verbose
 
     @classmethod
     def from_defaults(
@@ -224,7 +223,7 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         )
 
         if self._verbose:
-            print(f"> Reflection: {reflection.dict()}")
+            print(f"> Reflection: {reflection.model_dump()}")
 
         # end state: return user message
         reflection_output_str = (
@@ -270,7 +269,9 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         reflection, reflection_msg = self._reflect(chat_history=messages)
         is_done = reflection.is_done
 
-        critique_msg = ChatMessage(role=MessageRole.USER, content=reflection_msg)
+        critique_msg = ChatMessage(
+            role=MessageRole.USER, content=reflection_msg.content
+        )
         task.extra_state["new_memory"].put(critique_msg)
 
         # correction phase
@@ -340,7 +341,7 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         )
 
         if self._verbose:
-            print(f"> Reflection: {reflection.dict()}")
+            print(f"> Reflection: {reflection.model_dump()}")
 
         # end state: return user message
         reflection_output_str = (
@@ -387,7 +388,9 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         reflection, reflection_msg = await self._areflect(chat_history=messages)
         is_done = reflection.is_done
 
-        critique_msg = ChatMessage(role=MessageRole.USER, content=reflection_msg)
+        critique_msg = ChatMessage(
+            role=MessageRole.USER, content=reflection_msg.content
+        )
         task.extra_state["new_memory"].put(critique_msg)
 
         # correction phase

@@ -4,7 +4,6 @@ import pytest
 from llama_index.core.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.core.response_synthesizers import get_response_synthesizer
 from llama_index.core.schema import Document
-from llama_index.core.service_context import ServiceContext
 from tests.mock_utils.mock_prompts import MOCK_REFINE_PROMPT, MOCK_TEXT_QA_PROMPT
 
 
@@ -20,17 +19,15 @@ def docs() -> List[Document]:
 
 @pytest.fixture()
 def index(
-    docs: List[Document], mock_service_context: ServiceContext
+    docs: List[Document], patch_llm_predictor, mock_embed_model
 ) -> DocumentSummaryIndex:
     response_synthesizer = get_response_synthesizer(
-        llm=mock_service_context.llm,
         text_qa_template=MOCK_TEXT_QA_PROMPT,
         refine_template=MOCK_REFINE_PROMPT,
-        callback_manager=mock_service_context.callback_manager,
     )
     return DocumentSummaryIndex.from_documents(
         docs,
-        service_context=mock_service_context,
         response_synthesizer=response_synthesizer,
         summary_query="summary_query",
+        embed_model=mock_embed_model,
     )

@@ -6,14 +6,14 @@ This is a quick guide to the high-level concepts you'll encounter frequently whe
 
 There are endless use cases for data-backed LLM applications but they can be roughly grouped into four categories:
 
-[**Structured Data Extraction**](../use_cases/extraction/)
+[**Structured Data Extraction**](../use_cases/extraction.md/)
 Pydantic extractors allow you to specify a precise data structure to extract from your data and use LLMs to fill in the missing pieces in a type-safe way. This is useful for extracting structured data from unstructured sources like PDFs, websites, and more, and is key to automating workflows.
 
 [**Query Engines**](../module_guides/deploying/query_engine/index.md):
-A query engine is an end-to-end pipeline that allows you to ask questions over your data. It takes in a natural language query, and returns a response, along with reference context retrieved and passed to the LLM.
+A query engine is an end-to-end flow that allows you to ask questions over your data. It takes in a natural language query, and returns a response, along with reference context retrieved and passed to the LLM.
 
 [**Chat Engines**](../module_guides/deploying/chat_engines/index.md):
-A chat engine is an end-to-end pipeline for having a conversation with your data (multiple back-and-forth instead of a single question-and-answer).
+A chat engine is an end-to-end flow for having a conversation with your data (multiple back-and-forth instead of a single question-and-answer).
 
 [**Agents**](../module_guides/deploying/agents/index.md):
 An agent is an automated decision-maker powered by an LLM that interacts with the world via a set of [tools](../module_guides/deploying/agents/tools.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps. This gives it additional flexibility to tackle more complex tasks.
@@ -35,7 +35,7 @@ Even if what you're building is a chatbot or an agent, you'll want to know RAG t
 
 There are five key stages within RAG, which in turn will be a part of most larger applications you build. These are:
 
-- **Loading**: this refers to getting your data from where it lives -- whether it's text files, PDFs, another website, a database, or an API -- into your pipeline. [LlamaHub](https://llamahub.ai/) provides hundreds of connectors to choose from.
+- **Loading**: this refers to getting your data from where it lives -- whether it's text files, PDFs, another website, a database, or an API -- into your workflow. [LlamaHub](https://llamahub.ai/) provides hundreds of connectors to choose from.
 
 - **Indexing**: this means creating a data structure that allows for querying the data. For LLMs this nearly always means creating `vector embeddings`, numerical representations of the meaning of your data, as well as numerous other metadata strategies to make it easy to accurately find contextually relevant data.
 
@@ -43,7 +43,7 @@ There are five key stages within RAG, which in turn will be a part of most large
 
 - **Querying**: for any given indexing strategy there are many ways you can utilize LLMs and LlamaIndex data structures to query, including sub-queries, multi-step queries and hybrid strategies.
 
-- **Evaluation**: a critical step in any pipeline is checking how effective it is relative to other strategies, or when you make changes. Evaluation provides objective measures of how accurate, faithful and fast your responses to queries are.
+- **Evaluation**: a critical step in any flow is checking how effective it is relative to other strategies, or when you make changes. Evaluation provides objective measures of how accurate, faithful and fast your responses to queries are.
 
 ![](../_static/getting_started/stages.png)
 

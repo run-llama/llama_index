@@ -14,6 +14,7 @@ from llama_index.llms.upstage.utils import (
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.bridge.pydantic import ConfigDict
 from tokenizers import Tokenizer
 from pydantic import Field, PrivateAttr
 from openai import OpenAI as SyncOpenAI
@@ -43,14 +44,15 @@ class Upstage(OpenAI):
         ```
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
     model: str = Field(
         default=DEFAULT_UPSTAGE_MODEL, description="The Upstage model to use."
     )
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate."
@@ -61,17 +63,17 @@ class Upstage(OpenAI):
     top_logprobs: int = Field(
         description="The number of top token logprobs to return.",
         default=0,
-        gte=0,
-        lte=20,
+        ge=0,
+        le=20,
     )
     additional_kwargs: Dict[str, Any] = Field(
         description="Additional kwargs for the Upstage API.", default_factory=dict
     )
     max_retries: int = Field(
-        description="The maximum number of API retries.", default=3, gte=0
+        description="The maximum number of API retries.", default=3, ge=0
     )
     timeout: float = Field(
-        description="The timeout, in seconds, for API requests.", default=60.0, gte=0.0
+        description="The timeout, in seconds, for API requests.", default=60.0, ge=0.0
     )
     reuse_client: bool = Field(
         description=(

@@ -56,7 +56,7 @@ def resolve_embed_model(
             )  # pants: no-infer-dep
 
             embed_model = OpenAIEmbedding()
-            validate_openai_api_key(embed_model.api_key)
+            validate_openai_api_key(embed_model.api_key)  # type: ignore
         except ImportError:
             raise ImportError(
                 "`llama-index-embeddings-openai` package not found, "
@@ -132,6 +132,8 @@ def resolve_embed_model(
     if embed_model is None:
         print("Embeddings have been explicitly disabled. Using MockEmbedding.")
         embed_model = MockEmbedding(embed_dim=1)
+
+    assert isinstance(embed_model, BaseEmbedding)
 
     embed_model.callback_manager = callback_manager or Settings.callback_manager
 

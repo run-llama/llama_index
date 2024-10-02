@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import (
     Any,
+    List,
     Sequence,
 )
 
@@ -13,11 +14,12 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
+    TextBlock,
 )
 from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
 )
-from llama_index.core.bridge.pydantic import Field, validator
+from llama_index.core.bridge.pydantic import Field, model_validator, ConfigDict
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseComponent
@@ -26,18 +28,16 @@ from llama_index.core.schema import BaseComponent
 class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     """BaseLLM interface."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: CallbackManager = Field(
-        default_factory=CallbackManager, exclude=True
+        default_factory=lambda: CallbackManager([]), exclude=True
     )
 
-    class Config:
-        arbitrary_types_allowed = True
-
-    @validator("callback_manager", pre=True)
-    def _validate_callback_manager(cls, v: CallbackManager) -> CallbackManager:
-        if v is None:
-            return CallbackManager([])
-        return v
+    @model_validator(mode="after")
+    def check_callback_manager(self) -> "BaseLLM":
+        if self.callback_manager is None:
+            self.callback_manager = CallbackManager([])
+        return self
 
     @property
     @abstractmethod
@@ -47,6 +47,26 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
         Returns:
             LLMMetadata: LLM metadata containing various information about the LLM.
         """
+
+    def convert_chat_messages(self, messages: Sequence[ChatMessage]) -> List[Any]:
+        """Convert chat messages to an LLM specific message format."""
+        converted_messages = []
+        for message in messages:
+            if isinstance(message.content, str):
+                converted_messages.append(message)
+            elif isinstance(message.content, List):
+                content_string = ""
+                for block in message.content:
+                    if isinstance(block, TextBlock):
+                        content_string += block.text
+                    else:
+                        raise ValueError("LLM only supports text inputs")
+                message.content = content_string
+                converted_messages.append(message)
+            else:
+                raise ValueError(f"Invalid message content: {message.content!s}")
+
+        return converted_messages
 
     @abstractmethod
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:

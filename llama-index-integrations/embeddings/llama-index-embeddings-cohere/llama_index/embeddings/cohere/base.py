@@ -108,7 +108,8 @@ class CohereEmbedding(BaseEmbedding):
     api_key: str = Field(description="The Cohere API key.")
     truncate: str = Field(description="Truncation type - START/ END/ NONE")
     input_type: Optional[str] = Field(
-        description="Model Input type. If not provided, search_document and search_query are used when needed."
+        default=None,
+        description="Model Input type. If not provided, search_document and search_query are used when needed.",
     )
     embedding_type: str = Field(
         description="Embedding type. If not provided float embedding_type is used when needed."

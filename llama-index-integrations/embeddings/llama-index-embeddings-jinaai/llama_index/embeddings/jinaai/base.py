@@ -16,7 +16,7 @@ from llama_index.core.schema import ImageType
 
 MAX_BATCH_SIZE = 2048
 
-API_URL = "https://api.jina.ai/v1/embeddings"
+DEFAULT_JINA_AI_API_URL = "https://api.jina.ai/v1"
 
 VALID_ENCODING = ["float", "ubinary", "binary"]
 
@@ -24,10 +24,12 @@ VALID_ENCODING = ["float", "ubinary", "binary"]
 class _JinaAPICaller:
     def __init__(
         self,
-        model: str = "jina-embeddings-v2-base-en",
+        model: str = "jina-embeddings-v3",
+        base_url: str = DEFAULT_JINA_AI_API_URL,
         api_key: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
+        self.api_url = f"{base_url}/embeddings"
         self.api_key = get_from_param_or_env("api_key", api_key, "JINAAI_API_KEY", "")
         self.model = model
         self._session = requests.Session()
@@ -35,12 +37,31 @@ class _JinaAPICaller:
             {"Authorization": f"Bearer {api_key}", "Accept-Encoding": "identity"}
         )
 
-    def get_embeddings(self, input, encoding_type: str = "float") -> List[List[float]]:
+    def get_embeddings(
+        self,
+        input,
+        encoding_type: str = "float",
+        task: Optional[str] = None,
+        dimensions: Optional[int] = None,
+        late_chunking: Optional[bool] = None,
+    ) -> List[List[float]]:
         """Get embeddings."""
         # Call Jina AI Embedding API
+        input_json = {
+            "input": input,
+            "model": self.model,
+            "encoding_type": encoding_type,
+        }
+        if task is not None:
+            input_json["task"] = task
+        if dimensions is not None:
+            input_json["dimensions"] = dimensions
+        if late_chunking is not None:
+            input_json["late_chunking"] = late_chunking
+
         resp = self._session.post(  # type: ignore
-            API_URL,
-            json={"input": input, "model": self.model, "encoding_type": encoding_type},
+            self.api_url,
+            json=input_json,
         ).json()
         if "data" not in resp:
             raise RuntimeError(resp["detail"])
@@ -66,7 +87,12 @@ class _JinaAPICaller:
         return [result["embedding"] for result in sorted_embeddings]
 
     async def aget_embeddings(
-        self, input, encoding_type: str = "float"
+        self,
+        input,
+        encoding_type: str = "float",
+        task: Optional[str] = None,
+        dimensions: Optional[int] = None,
+        late_chunking: Optional[bool] = None,
     ) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         import aiohttp
@@ -76,13 +102,21 @@ class _JinaAPICaller:
                 "Authorization": f"Bearer {self.api_key}",
                 "Accept-Encoding": "identity",
             }
+            input_json = {
+                "input": input,
+                "model": self.model,
+                "encoding_type": encoding_type,
+            }
+            if task is not None:
+                input_json["task"] = task
+            if dimensions is not None:
+                input_json["dimensions"] = dimensions
+            if late_chunking is not None:
+                input_json["late_chunking"] = late_chunking
+
             async with session.post(
-                f"{API_URL}",
-                json={
-                    "input": input,
-                    "model": self.model,
-                    "encoding_type": encoding_type,
-                },
+                self.api_url,
+                json=input_json,
                 headers=headers,
             ) as response:
                 resp = await response.json()
@@ -128,27 +162,31 @@ class JinaEmbedding(MultiModalEmbedding):
 
     Args:
         model (str): Model for embedding.
-            Defaults to `jina-embeddings-v2-base-en`
+            Defaults to `jina-embeddings-v3`
     """
 
-    api_key: str = Field(default=None, description="The JinaAI API key.")
+    api_key: Optional[str] = Field(default=None, description="The JinaAI API key.")
     model: str = Field(
-        default="jina-embeddings-v2-base-en",
+        default="jina-embeddings-v3",
         description="The model to use when calling Jina AI API",
     )
 
     _encoding_queries: str = PrivateAttr()
     _encoding_documents: str = PrivateAttr()
+    _task: str = PrivateAttr()
     _api: Any = PrivateAttr()
 
     def __init__(
         self,
-        model: str = "jina-embeddings-v2-base-en",
+        model: str = "jina-embeddings-v3",
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         encoding_queries: Optional[str] = None,
         encoding_documents: Optional[str] = None,
+        task: Optional[str] = None,
+        dimensions: Optional[int] = None,
+        late_chunking: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -160,6 +198,9 @@ class JinaEmbedding(MultiModalEmbedding):
         )
         self._encoding_queries = encoding_queries or "float"
         self._encoding_documents = encoding_documents or "float"
+        self._task = task
+        self._dimensions = dimensions
+        self._late_chunking = late_chunking
 
         assert (
             self._encoding_documents in VALID_ENCODING
@@ -177,13 +218,21 @@ class JinaEmbedding(MultiModalEmbedding):
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         return self._api.get_embeddings(
-            input=[query], encoding_type=self._encoding_queries
+            input=[query],
+            encoding_type=self._encoding_queries,
+            task=self._task,
+            dimensions=self._dimensions,
+            late_chunking=self._late_chunking,
         )[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
         result = await self._api.aget_embeddings(
-            input=[query], encoding_type=self._encoding_queries
+            input=[query],
+            encoding_type=self._encoding_queries,
+            task=self._task,
+            dimensions=self._dimensions,
+            late_chunking=self._late_chunking,
         )
         return result[0]
 
@@ -198,7 +247,11 @@ class JinaEmbedding(MultiModalEmbedding):
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         return self._api.get_embeddings(
-            input=texts, encoding_type=self._encoding_documents
+            input=texts,
+            encoding_type=self._encoding_documents,
+            task=self._task,
+            dimensions=self._dimensions,
+            late_chunking=self._late_chunking,
         )
 
     async def _aget_text_embeddings(
@@ -206,7 +259,11 @@ class JinaEmbedding(MultiModalEmbedding):
         texts: List[str],
     ) -> List[List[float]]:
         return await self._api.aget_embeddings(
-            input=texts, encoding_type=self._encoding_documents
+            input=texts,
+            encoding_type=self._encoding_documents,
+            task=self._task,
+            dimensions=self._dimensions,
+            late_chunking=self._late_chunking,
         )
 
     def _get_image_embedding(self, img_file_path: ImageType) -> List[float]:

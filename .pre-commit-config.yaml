@@ -96,6 +96,7 @@ repos:
           (\/.*?\.[\w:]+)/poetry.lock
         args:
           [
+            "--skip=*/algolia.js",
             "--ignore-words-list",
             "astroid,gallary,momento,narl,ot,rouge,nin,gere,asend",
           ]

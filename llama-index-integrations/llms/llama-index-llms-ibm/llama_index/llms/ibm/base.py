@@ -14,16 +14,14 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.core.bridge.pydantic import (
+    ConfigDict,
     Field,
     PrivateAttr,
 )
 
 # Import SecretStr directly from pydantic
 # since there is not one in llama_index.core.bridge.pydantic
-try:
-    from pydantic.v1 import SecretStr
-except ImportError:
-    from pydantic import SecretStr
+from pydantic import SecretStr
 
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
@@ -60,10 +58,10 @@ class WatsonxLLM(CustomLLM):
     """
 
     model_id: Optional[str] = Field(
-        default=None, description="Type of model to use.", allow_mutation=False
+        default=None, description="Type of model to use.", frozen=True
     )
     deployment_id: Optional[str] = Field(
-        default=None, description="Id of deployed model to use.", allow_mutation=False
+        default=None, description="Id of deployed model to use.", frozen=True
     )
 
     temperature: Optional[float] = Field(
@@ -82,43 +80,43 @@ class WatsonxLLM(CustomLLM):
     project_id: Optional[str] = Field(
         default=None,
         description="ID of the Watson Studio project.",
-        allow_mutation=False,
+        frozen=True,
     )
 
     space_id: Optional[str] = Field(
-        default=None, description="ID of the Watson Studio space.", allow_mutation=False
+        default=None, description="ID of the Watson Studio space.", frozen=True
     )
 
     url: Optional[SecretStr] = Field(
         default=None,
         description="Url to Watson Machine Learning or CPD instance",
-        allow_mutation=False,
+        frozen=True,
     )
 
     apikey: Optional[SecretStr] = Field(
         default=None,
         description="Apikey to Watson Machine Learning or CPD instance",
-        allow_mutation=False,
+        frozen=True,
     )
 
     token: Optional[SecretStr] = Field(
-        default=None, description="Token to CPD instance", allow_mutation=False
+        default=None, description="Token to CPD instance", frozen=True
     )
 
     password: Optional[SecretStr] = Field(
-        default=None, description="Password to CPD instance", allow_mutation=False
+        default=None, description="Password to CPD instance", frozen=True
     )
 
     username: Optional[SecretStr] = Field(
-        default=None, description="Username to CPD instance", allow_mutation=False
+        default=None, description="Username to CPD instance", frozen=True
     )
 
     instance_id: Optional[SecretStr] = Field(
-        default=None, description="Instance_id of CPD instance", allow_mutation=False
+        default=None, description="Instance_id of CPD instance", frozen=True
     )
 
     version: Optional[SecretStr] = Field(
-        default=None, description="Version of CPD instance", allow_mutation=False
+        default=None, description="Version of CPD instance", frozen=True
     )
 
     verify: Union[str, bool, None] = Field(
@@ -130,11 +128,11 @@ class WatsonxLLM(CustomLLM):
         True - default path to truststore will be taken
         False - no verification will be made
         """,
-        allow_mutation=False,
+        frozen=True,
     )
 
     validate_model: bool = Field(
-        default=True, description="Model id validation", allow_mutation=False
+        default=True, description="Model id validation", frozen=True
     )
 
     _model: ModelInference = PrivateAttr()
@@ -171,7 +169,6 @@ class WatsonxLLM(CustomLLM):
         """
         callback_manager = callback_manager or CallbackManager([])
         additional_params = additional_params or {}
-        self._context_window = kwargs.get("context_window")
 
         creds = (
             resolve_watsonx_credentials(
@@ -207,6 +204,7 @@ class WatsonxLLM(CustomLLM):
             callback_manager=callback_manager,
             **kwargs,
         )
+        self._context_window = kwargs.get("context_window")
 
         generation_params = {}
         if self.temperature is not None:
@@ -247,8 +245,7 @@ class WatsonxLLM(CustomLLM):
         self._model_info = None
         self._deployment_info = None
 
-    class Config:
-        validate_assignment = True
+    model_config = ConfigDict(protected_namespaces=(), validate_assignment=True)
 
     @property
     def model_info(self):

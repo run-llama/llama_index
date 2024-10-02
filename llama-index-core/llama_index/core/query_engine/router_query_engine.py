@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, List, Optional, Sequence, Any
+from typing import Callable, Generator, List, Optional, Sequence, Any
 
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -10,6 +10,7 @@ from llama_index.core.base.response.schema import (
     PydanticResponse,
     Response,
     StreamingResponse,
+    AsyncStreamingResponse,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.callbacks.base import CallbackManager
@@ -23,12 +24,7 @@ from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.core.response_synthesizers import TreeSummarize
 from llama_index.core.schema import BaseNode, QueryBundle
 from llama_index.core.selectors.utils import get_selector_from_llm
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.tools.query_engine import QueryEngineTool
 from llama_index.core.tools.types import ToolMetadata
 from llama_index.core.utils import print_text
@@ -47,6 +43,8 @@ def combine_responses(
     for response in responses:
         if isinstance(response, (StreamingResponse, PydanticResponse)):
             response_obj = response.get_response()
+        elif isinstance(response, AsyncStreamingResponse):
+            raise ValueError("AsyncStreamingResponse not supported in sync code.")
         else:
             response_obj = response
         source_nodes.extend(response_obj.source_nodes)
@@ -58,8 +56,10 @@ def combine_responses(
         return Response(response=summary, source_nodes=source_nodes)
     elif isinstance(summary, BaseModel):
         return PydanticResponse(response=summary, source_nodes=source_nodes)
-    else:
+    elif isinstance(summary, Generator):
         return StreamingResponse(response_gen=summary, source_nodes=source_nodes)
+    else:
+        return AsyncStreamingResponse(response_gen=summary, source_nodes=source_nodes)
 
 
 async def acombine_responses(
@@ -73,6 +73,8 @@ async def acombine_responses(
     for response in responses:
         if isinstance(response, (StreamingResponse, PydanticResponse)):
             response_obj = response.get_response()
+        elif isinstance(response, AsyncStreamingResponse):
+            response_obj = await response.get_response()
         else:
             response_obj = response
         source_nodes.extend(response_obj.source_nodes)
@@ -84,8 +86,10 @@ async def acombine_responses(
         return Response(response=summary, source_nodes=source_nodes)
     elif isinstance(summary, BaseModel):
         return PydanticResponse(response=summary, source_nodes=source_nodes)
-    else:
+    elif isinstance(summary, Generator):
         return StreamingResponse(response_gen=summary, source_nodes=source_nodes)
+    else:
+        return AsyncStreamingResponse(response_gen=summary, source_nodes=source_nodes)
 
 
 class RouterQueryEngine(BaseQueryEngine):
@@ -99,7 +103,6 @@ class RouterQueryEngine(BaseQueryEngine):
         query_engine_tools (Sequence[QueryEngineTool]): A sequence of candidate
             query engines. They must be wrapped as tools to expose metadata to
             the selector.
-        service_context (Optional[ServiceContext]): A service context.
         summarizer (Optional[TreeSummarize]): Tree summarizer to summarize sub-results.
 
     """
@@ -111,25 +114,18 @@ class RouterQueryEngine(BaseQueryEngine):
         llm: Optional[LLM] = None,
         summarizer: Optional[TreeSummarize] = None,
         verbose: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> None:
-        self._llm = llm or llm_from_settings_or_context(Settings, llm)
+        self._llm = llm or Settings.llm
         self._selector = selector
         self._query_engines = [x.query_engine for x in query_engine_tools]
         self._metadatas = [x.metadata for x in query_engine_tools]
         self._summarizer = summarizer or TreeSummarize(
             llm=self._llm,
-            service_context=service_context,
             summary_template=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
         )
         self._verbose = verbose
 
-        super().__init__(
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, service_context
-            )
-        )
+        super().__init__(callback_manager=Settings.callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
@@ -144,11 +140,9 @@ class RouterQueryEngine(BaseQueryEngine):
         selector: Optional[BaseSelector] = None,
         summarizer: Optional[TreeSummarize] = None,
         select_multi: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "RouterQueryEngine":
-        llm = llm or llm_from_settings_or_context(Settings, llm)
+        llm = llm or Settings.llm
 
         selector = selector or get_selector_from_llm(llm, is_multi=select_multi)
 
@@ -158,7 +152,6 @@ class RouterQueryEngine(BaseQueryEngine):
             selector,
             query_engine_tools,
             llm=llm,
-            service_context=service_context,
             summarizer=summarizer,
             **kwargs,
         )
@@ -325,7 +318,6 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
     Args:
         retriever (ObjectRetriever): A retriever that retrieves a set of
             query engine tools.
-        service_context (Optional[ServiceContext]): A service context.
         summarizer (Optional[TreeSummarize]): Tree summarizer to summarize sub-results.
 
     """
@@ -334,19 +326,16 @@ class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
         self,
         retriever: ObjectRetriever[QueryEngineTool],
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         summarizer: Optional[TreeSummarize] = None,
     ) -> None:
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
         self._summarizer = summarizer or TreeSummarize(
             llm=llm,
             summary_template=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
         )
         self._retriever = retriever
 
-        super().__init__(
-            callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        super().__init__(Settings.callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""

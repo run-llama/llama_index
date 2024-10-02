@@ -253,10 +253,8 @@ class OpenAIEmbedding(BaseEmbedding):
         default=DEFAULT_OPENAI_API_VERSION, description="The version for OpenAI API."
     )
 
-    max_retries: int = Field(
-        default=10, description="Maximum number of retries.", gte=0
-    )
-    timeout: float = Field(default=60.0, description="Timeout for each request.", gte=0)
+    max_retries: int = Field(default=10, description="Maximum number of retries.", ge=0)
+    timeout: float = Field(default=60.0, description="Timeout for each request.", ge=0)
     default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
     )
@@ -312,12 +310,12 @@ class OpenAIEmbedding(BaseEmbedding):
             api_version=api_version,
         )
 
-        self._query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
-        self._text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
+        query_engine = get_engine(mode, model, _QUERY_MODE_MODEL_DICT)
+        text_engine = get_engine(mode, model, _TEXT_MODE_MODEL_DICT)
 
         if "model_name" in kwargs:
             model_name = kwargs.pop("model_name")
-            self._query_engine = self._text_engine = model_name
+            query_engine = text_engine = model_name
         else:
             model_name = model
 
@@ -337,6 +335,8 @@ class OpenAIEmbedding(BaseEmbedding):
             num_workers=num_workers,
             **kwargs,
         )
+        self._query_engine = query_engine
+        self._text_engine = text_engine
 
         self._client = None
         self._aclient = None

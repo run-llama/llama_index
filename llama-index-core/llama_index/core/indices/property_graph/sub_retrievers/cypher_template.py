@@ -41,7 +41,9 @@ class CypherTemplateRetriever(BasePGRetriever):
         self.output_cls = output_cls
         self.cypher_query = cypher_query
 
-        super().__init__(graph_store=graph_store, include_text=False)
+        super().__init__(
+            graph_store=graph_store, include_text=False, include_properties=False
+        )
 
     def retrieve_from_graph(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         question = query_bundle.query_str
@@ -52,7 +54,7 @@ class CypherTemplateRetriever(BasePGRetriever):
 
         cypher_response = self._graph_store.structured_query(
             self.cypher_query,
-            param_map=response.dict(),
+            param_map=response.model_dump(),
         )
 
         return [
@@ -75,7 +77,7 @@ class CypherTemplateRetriever(BasePGRetriever):
 
         cypher_response = await self._graph_store.astructured_query(
             self.cypher_query,
-            param_map=response.dict(),
+            param_map=response.model_dump(),
         )
 
         return [

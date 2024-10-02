@@ -1,7 +1,18 @@
 """Azure AI model inference chat completions client."""
 
 import json
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
+import logging
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    TYPE_CHECKING,
+)
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -14,7 +25,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel, ConfigDict
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import (
@@ -41,11 +52,14 @@ if TYPE_CHECKING:
     from azure.core.credentials import TokenCredential
 
 from azure.core.credentials import AzureKeyCredential
+from azure.core.exceptions import HttpResponseError
 from azure.ai.inference.models import (
     ChatCompletionsToolCall,
     ChatRequestMessage,
     ChatResponseMessage,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def to_inference_message(
@@ -72,6 +86,25 @@ def to_inference_message(
         )
         new_messages.append(ChatRequestMessage(message_dict))
     return new_messages
+
+
+def to_inference_tool(metadata: Type[BaseModel]) -> Dict[str, Any]:
+    """Converts a tool metadata to a tool dict for Azure AI model inference.
+
+    Args:
+        tool_metadata (Type[ToolMedata]): The metadata of the tool to convert.
+
+    Returns:
+        Dict[str, Any]: The converted tool dict.
+    """
+    return {
+        "type": "function",
+        "function": {
+            "name": metadata.name,
+            "description": metadata.description,
+            "parameters": metadata.get_parameters_dict(),
+        },
+    }
 
 
 def from_inference_message(message: ChatResponseMessage) -> ChatMessage:
@@ -146,6 +179,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         ```
     """
 
+    model_config = ConfigDict(protected_namespaces=())
     model_name: Optional[str] = Field(
         default=None,
         description="The model id to use. Optional for endpoints running a single model.",
@@ -153,8 +187,8 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: Optional[int] = Field(
         default=None,
@@ -163,7 +197,8 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     )
     seed: str = Field(default=None, description="The random seed to use for sampling.")
     model_kwargs: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional kwargs model parameters."
+        default_factory=dict,
+        description="Additional kwargs model parameters.",
     )
 
     _client: ChatCompletionsClient = PrivateAttr()
@@ -216,6 +251,19 @@ class AzureAICompletionsModel(FunctionCallingLLM):
                 "Pass the credential as a parameter or set the AZURE_INFERENCE_CREDENTIAL"
             )
 
+        super().__init__(
+            model_name=model_name,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+            **kwargs,
+        )
+
         self._client = ChatCompletionsClient(
             endpoint=endpoint,
             credential=credential,
@@ -230,19 +278,6 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             **client_kwargs,
         )
 
-        super().__init__(
-            model_name=model_name,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            callback_manager=callback_manager,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-            output_parser=output_parser,
-            **kwargs,
-        )
-
     @classmethod
     def class_name(cls) -> str:
         return "AzureAICompletionsModel"
@@ -250,11 +285,25 @@ class AzureAICompletionsModel(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         if not self._model_name:
-            model_info = self._client.get_model_info()
-            if model_info:
-                self._model_name = model_info.get("model_name", None)
-                self._model_type = model_info.get("model_type", None)
-                self._model_provider = model_info.get("model_provider_name", None)
+            model_info = None
+            try:
+                # Get model info from the endpoint. This method may not be supported by all
+                # endpoints.
+                model_info = self._client.get_model_info()
+            except HttpResponseError:
+                logger.warning(
+                    f"Endpoint '{self._client._config.endpoint}' does not support model metadata retrieval. "
+                    "Failed to get model info for method `metadata()`."
+                )
+            finally:
+                if model_info:
+                    self._model_name = model_info.get("model_name", None)
+                    self._model_type = model_info.get("model_type", None)
+                    self._model_provider = model_info.get("model_provider_name", None)
+                else:
+                    self._model_name = self.model_name or "unknown"
+                    self._model_type = "unknown"
+                    self._model_provider = "unknown"
 
         return LLMMetadata(
             is_chat_model=self._model_type == "chat-completions",
@@ -492,3 +541,27 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             )
 
         return tool_selections
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Prepare the arguments needed to let the LLM chat with tools."""
+        chat_history = chat_history or []
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+            chat_history.append(user_msg)
+
+        tool_dicts = [to_inference_tool(tool.metadata) for tool in tools]
+
+        return {
+            "messages": chat_history,
+            "tools": tool_dicts or None,
+            **kwargs,
+        }

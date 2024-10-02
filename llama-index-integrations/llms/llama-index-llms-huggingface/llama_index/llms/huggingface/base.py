@@ -198,7 +198,7 @@ class HuggingFaceLLM(CustomLLM):
     is_chat_model: bool = Field(
         default=False,
         description=(
-            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            LLMMetadata.model_fields["is_chat_model"].description
             + " Be sure to verify that you either pass an appropriate tokenizer "
             "that can convert prompts to properly formatted chat messages or a "
             "`messages_to_prompt` that does so."
@@ -234,12 +234,12 @@ class HuggingFaceLLM(CustomLLM):
     ) -> None:
         """Initialize params."""
         model_kwargs = model_kwargs or {}
-        self._model = model or AutoModelForCausalLM.from_pretrained(
+        model = model or AutoModelForCausalLM.from_pretrained(
             model_name, device_map=device_map, **model_kwargs
         )
 
         # check context_window
-        config_dict = self._model.config.to_dict()
+        config_dict = model.config.to_dict()
         model_context_window = int(
             config_dict.get("max_position_embeddings", context_window)
         )
@@ -255,13 +255,13 @@ class HuggingFaceLLM(CustomLLM):
         if "max_length" not in tokenizer_kwargs:
             tokenizer_kwargs["max_length"] = context_window
 
-        self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(
+        tokenizer = tokenizer or AutoTokenizer.from_pretrained(
             tokenizer_name, **tokenizer_kwargs
         )
 
-        if self._tokenizer.name_or_path != model_name:
+        if tokenizer.name_or_path != model.name_or_path:
             logger.warning(
-                f"The model `{model_name}` and tokenizer `{self._tokenizer.name_or_path}` "
+                f"The model `{model.name_or_path}` and tokenizer `{tokenizer.name_or_path}` "
                 f"are different, please ensure that they are compatible."
             )
 
@@ -280,7 +280,7 @@ class HuggingFaceLLM(CustomLLM):
                         return True
                 return False
 
-        self._stopping_criteria = StoppingCriteriaList([StopOnTokens()])
+        stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
         if isinstance(query_wrapper_prompt, str):
             query_wrapper_prompt = PromptTemplate(query_wrapper_prompt)
@@ -308,6 +308,10 @@ class HuggingFaceLLM(CustomLLM):
             output_parser=output_parser,
         )
 
+        self._model = model
+        self._tokenizer = tokenizer
+        self._stopping_criteria = stopping_criteria
+
     @classmethod
     def class_name(cls) -> str:
         return "HuggingFace_LLM"
@@ -329,8 +333,9 @@ class HuggingFaceLLM(CustomLLM):
                 {"role": message.role.value, "content": message.content}
                 for message in messages
             ]
-            tokens = self._tokenizer.apply_chat_template(messages_dict)
-            return self._tokenizer.decode(tokens)
+            return self._tokenizer.apply_chat_template(
+                messages_dict, tokenize=False, add_generation_prompt=True
+            )
 
         return generic_messages_to_prompt(messages)
 
@@ -343,7 +348,9 @@ class HuggingFaceLLM(CustomLLM):
         if not formatted:
             if self.query_wrapper_prompt:
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
-            if self.system_prompt:
+            if self.completion_to_prompt:
+                full_prompt = self.completion_to_prompt(full_prompt)
+            elif self.system_prompt:
                 full_prompt = f"{self.system_prompt} {full_prompt}"
 
         inputs = self._tokenizer(full_prompt, return_tensors="pt")
@@ -533,18 +540,18 @@ class HuggingFaceInferenceAPI(CustomLLM):
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description=(
-            LLMMetadata.__fields__["context_window"].field_info.description
+            LLMMetadata.model_fields["context_window"].description
             + " This may be looked up in a model's `config.json`."
         ),
     )
     num_output: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
-        description=LLMMetadata.__fields__["num_output"].field_info.description,
+        description=LLMMetadata.model_fields["num_output"].description,
     )
     is_chat_model: bool = Field(
         default=False,
         description=(
-            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            LLMMetadata.model_fields["is_chat_model"].description
             + " Unless chat templating is intentionally applied, Hugging Face models"
             " are not chat models."
         ),
@@ -552,7 +559,7 @@ class HuggingFaceInferenceAPI(CustomLLM):
     is_function_calling_model: bool = Field(
         default=False,
         description=(
-            LLMMetadata.__fields__["is_function_calling_model"].field_info.description
+            LLMMetadata.model_fields["is_function_calling_model"].description
             + " As of 10/17/2023, Hugging Face doesn't support function calling"
             " messages."
         ),
@@ -701,8 +708,8 @@ class TextGenerationInference(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description=("The temperature to use for sampling."),
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
@@ -717,10 +724,10 @@ class TextGenerationInference(FunctionCallingLLM):
         ),
     )
     timeout: float = Field(
-        default=120, description=("The timeout to use in seconds."), gte=0
+        default=120, description=("The timeout to use in seconds."), ge=0
     )
     max_retries: int = Field(
-        default=5, description=("The maximum number of API retries."), gte=0
+        default=5, description=("The maximum number of API retries."), ge=0
     )
     headers: Optional[Dict[str, str]] = Field(
         default=None,
@@ -750,7 +757,7 @@ class TextGenerationInference(FunctionCallingLLM):
     is_chat_model: bool = Field(
         default=True,
         description=(
-            LLMMetadata.__fields__["is_chat_model"].field_info.description
+            LLMMetadata.model_fields["is_chat_model"].description
             + " TGI makes use of chat templating,"
             " function call is available only for '/v1/chat/completions' route"
             " of TGI endpoint"
@@ -759,7 +766,7 @@ class TextGenerationInference(FunctionCallingLLM):
     is_function_calling_model: bool = Field(
         default=False,
         description=(
-            LLMMetadata.__fields__["is_function_calling_model"].field_info.description
+            LLMMetadata.model_fields["is_function_calling_model"].description
             + " 'text-generation-inference' supports function call"
             " starting from v1.4.3"
         ),

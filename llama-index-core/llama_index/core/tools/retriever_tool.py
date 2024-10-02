@@ -80,14 +80,14 @@ class RetrieverTool(AsyncBaseTool):
         docs = self._apply_node_postprocessors(docs, QueryBundle(query_str))
         content = ""
         for doc in docs:
-            node_copy = doc.node.copy()
+            node_copy = doc.node.model_copy()
             node_copy.text_template = "{metadata_str}\n{content}"
             node_copy.metadata_template = "{key} = {value}"
             content += node_copy.get_content(MetadataMode.LLM) + "\n\n"
         return ToolOutput(
             content=content,
             tool_name=self.metadata.name,
-            raw_input={"input": input},
+            raw_input={"input": query_str},
             raw_output=docs,
         )
 
@@ -105,14 +105,14 @@ class RetrieverTool(AsyncBaseTool):
         content = ""
         docs = self._apply_node_postprocessors(docs, QueryBundle(query_str))
         for doc in docs:
-            node_copy = doc.node.copy()
+            node_copy = doc.node.model_copy()
             node_copy.text_template = "{metadata_str}\n{content}"
             node_copy.metadata_template = "{key} = {value}"
             content += node_copy.get_content(MetadataMode.LLM) + "\n\n"
         return ToolOutput(
             content=content,
             tool_name=self.metadata.name,
-            raw_input={"input": input},
+            raw_input={"input": query_str},
             raw_output=docs,
         )
 

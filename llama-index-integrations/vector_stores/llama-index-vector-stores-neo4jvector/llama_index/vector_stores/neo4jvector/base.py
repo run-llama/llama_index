@@ -18,7 +18,6 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-from neo4j.exceptions import CypherSyntaxError
 
 _logger = logging.getLogger(__name__)
 
@@ -200,7 +199,7 @@ class Neo4jVectorStore(BasePydanticVectorStore):
     """
 
     stores_text: bool = True
-    flat_metadata = True
+    flat_metadata: bool = True
 
     distance_strategy: str
     index_name: str
@@ -384,9 +383,9 @@ class Neo4jVectorStore(BasePydanticVectorStore):
             self.index_name = index_information[0]["name"]
             self.node_label = index_information[0]["labelsOrTypes"][0]
             self.embedding_node_property = index_information[0]["properties"][0]
-            self.embedding_dimension = index_information[0]["options"]["indexConfig"][
-                "vector.dimensions"
-            ]
+            index_config = index_information[0]["options"]["indexConfig"]
+            if "vector.dimensions" in index_config:
+                self.embedding_dimension = index_config["vector.dimensions"]
 
             return True
         except IndexError:
@@ -436,26 +435,39 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         self.database_query(fts_index_query)
 
     def database_query(
-        self, query: str, params: Optional[dict] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        This method sends a Cypher query to the connected Neo4j database
-        and returns the results as a list of dictionaries.
-
-        Args:
-            query (str): The Cypher query to execute.
-            params (dict, optional): Dictionary of query parameters. Defaults to {}.
-
-        Returns:
-            List[Dict[str, Any]]: List of dictionaries containing the query results.
-        """
+        self,
+        query: str,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Any:
         params = params or {}
-        with self._driver.session(database=self._database) as session:
-            try:
-                data = session.run(query, params)
-                return [r.data() for r in data]
-            except CypherSyntaxError as e:
-                raise ValueError(f"Cypher Statement is not valid\n{e}")
+        try:
+            data, _, _ = self._driver.execute_query(
+                query, database=self._database, parameters_=params
+            )
+            return [r.data() for r in data]
+        except neo4j.exceptions.Neo4jError as e:
+            if not (
+                (
+                    (  # isCallInTransactionError
+                        e.code == "Neo.DatabaseError.Statement.ExecutionFailed"
+                        or e.code
+                        == "Neo.DatabaseError.Transaction.TransactionStartFailed"
+                    )
+                    and "in an implicit transaction" in e.message
+                )
+                or (  # isPeriodicCommitError
+                    e.code == "Neo.ClientError.Statement.SemanticError"
+                    and (
+                        "in an open transaction is not possible" in e.message
+                        or "tried to execute in an explicit transaction" in e.message
+                    )
+                )
+            ):
+                raise
+        # Fallback to allow implicit transactions
+        with self._driver.session() as session:
+            data = session.run(neo4j.Query(text=query), params)
+            return [r.data() for r in data]
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         ids = [r.node_id for r in nodes]
@@ -500,9 +512,12 @@ class Neo4jVectorStore(BasePydanticVectorStore):
             base_index_query = parallel_query + (
                 f"MATCH (n:`{self.node_label}`) WHERE "
                 f"n.`{self.embedding_node_property}` IS NOT NULL AND "
-                f"size(n.`{self.embedding_node_property}`) = "
-                f"toInteger({self.embedding_dimension}) AND "
             )
+            if self.embedding_dimension:
+                base_index_query += (
+                    f"size(n.`{self.embedding_node_property}`) = "
+                    f"toInteger({self.embedding_dimension}) AND "
+                )
             base_cosine_query = (
                 " WITH n as node, vector.similarity.cosine("
                 f"n.`{self.embedding_node_property}`, "

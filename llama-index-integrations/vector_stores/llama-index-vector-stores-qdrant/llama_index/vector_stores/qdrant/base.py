@@ -44,9 +44,12 @@ from qdrant_client.http.models import (
     MatchText,
     MatchValue,
     Payload,
+    PayloadField,
     Range,
     HasIdCondition,
+    IsEmptyCondition,
 )
+from qdrant_client.qdrant_fastembed import IDF_EMBEDDING_MODELS
 
 logger = logging.getLogger(__name__)
 import_err_msg = (
@@ -148,6 +151,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        super().__init__(
+            collection_name=collection_name,
+            url=url,
+            api_key=api_key,
+            batch_size=batch_size,
+            parallel=parallel,
+            max_retries=max_retries,
+            client_kwargs=client_kwargs or {},
+            enable_hybrid=enable_hybrid,
+            index_doc_id=index_doc_id,
+            fastembed_sparse_model=fastembed_sparse_model,
+        )
+
         if (
             client is None
             and aclient is None
@@ -200,19 +216,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
         self._sparse_config = sparse_config
         self._dense_config = dense_config
         self._quantization_config = quantization_config
-
-        super().__init__(
-            collection_name=collection_name,
-            url=url,
-            api_key=api_key,
-            batch_size=batch_size,
-            parallel=parallel,
-            max_retries=max_retries,
-            client_kwargs=client_kwargs or {},
-            enable_hybrid=enable_hybrid,
-            index_doc_id=index_doc_id,
-            fastembed_sparse_model=fastembed_sparse_model,
-        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -434,6 +437,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Raises:
             ValueError: If trying to using async methods without aclient
         """
+        from qdrant_client.http.exceptions import UnexpectedResponse
+
         collection_initialized = await self._acollection_exists(self.collection_name)
 
         if len(nodes) > 0 and not collection_initialized:
@@ -445,14 +450,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_vector_name = await self.asparse_vector_name()
         points, ids = self._build_points(nodes, sparse_vector_name)
 
-        await self._aclient.upload_points(
-            collection_name=self.collection_name,
-            points=points,
-            batch_size=self.batch_size,
-            parallel=self.parallel,
-            max_retries=self.max_retries,
-            wait=True,
-        )
+        for batch in iter_batch(points, self.batch_size):
+            retries = 0
+            while retries < self.max_retries:
+                try:
+                    await self._aclient.upsert(
+                        collection_name=self.collection_name,
+                        points=batch,
+                    )
+                    break
+                except (RpcError, UnexpectedResponse) as exc:
+                    retries += 1
+                    if retries >= self.max_retries:
+                        raise exc  # noqa: TRY201
 
         return ids
 
@@ -597,8 +607,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             index=rest.SparseIndexParams(),
             modifier=(
                 rest.Modifier.IDF
-                if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
-                else rest.Modifier.NONE
+                if self.fastembed_sparse_model in IDF_EMBEDDING_MODELS
+                else None
             ),
         )
 
@@ -652,8 +662,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             index=rest.SparseIndexParams(),
             modifier=(
                 rest.Modifier.IDF
-                if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
-                else rest.Modifier.NONE
+                if self.fastembed_sparse_model in IDF_EMBEDDING_MODELS
+                else None
             ),
         )
 
@@ -1094,6 +1104,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         key=subfilter.key,
                         match=MatchExcept(**{"except": values}),
                     )
+                )
+            elif subfilter.operator == FilterOperator.IS_EMPTY:
+                # This condition will match all records where the field reports either does not exist, or has null or [] value.
+                # https://qdrant.tech/documentation/concepts/filtering/#is-empty
+                conditions.append(
+                    IsEmptyCondition(is_empty=PayloadField(key=subfilter.key))
                 )
 
         filter = Filter()

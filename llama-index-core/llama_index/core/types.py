@@ -6,17 +6,25 @@ from functools import partial
 from typing import (
     Any,
     AsyncGenerator,
+    Callable,
     Dict,
     Generator,
     Generic,
     List,
+    Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
 )
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
+)
+from llama_index.core.bridge.pydantic_core import CoreSchema, core_schema
 from llama_index.core.instrumentation import DispatcherSpanMixin
 
 Model = TypeVar("Model", bound=BaseModel)
@@ -30,11 +38,6 @@ RESPONSE_TEXT_TYPE = Union[BaseModel, str, TokenGen, TokenAsyncGen]
 # NOTE: this is necessary to make it compatible with pydantic
 class BaseOutputParser(DispatcherSpanMixin, ABC):
     """Output parser class."""
-
-    @classmethod
-    def __modify_schema__(cls, schema: Dict[str, Any]) -> None:
-        """Avoids serialization issues."""
-        schema.update(type="object", default={})
 
     @abstractmethod
     def parse(self, output: str) -> Any:
@@ -50,11 +53,26 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
         #       or the last message
         if messages:
             if messages[0].role == MessageRole.SYSTEM:
-                messages[0].content = self.format(messages[0].content or "")
+                message_content = messages[0].content or ""
+                messages[0].content = self.format(message_content)
             else:
-                messages[-1].content = self.format(messages[-1].content or "")
+                message_content = messages[-1].content or ""
+                messages[-1].content = self.format(message_content)
 
         return messages
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source: Type[Any], handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.any_schema()
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> Dict[str, Any]:
+        json_schema = handler(core_schema)
+        return handler.resolve_ref_schema(json_schema)
 
 
 class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
@@ -69,18 +87,20 @@ class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
         pass
 
     @abstractmethod
-    def __call__(self, *args: Any, **kwds: Any) -> Model:
+    def __call__(self, *args: Any, **kwargs: Any) -> Model:
         pass
 
-    async def acall(self, *args: Any, **kwds: Any) -> Model:
-        return self(*args, **kwds)
+    async def acall(self, *args: Any, **kwargs: Any) -> Model:
+        return self(*args, **kwargs)
 
-    def stream_call(self, *args: Any, **kwds: Any) -> Generator[Model, None, None]:
+    def stream_call(
+        self, *args: Any, **kwargs: Any
+    ) -> Generator[Union[Model, List[Model]], None, None]:
         raise NotImplementedError("stream_call is not supported by default.")
 
     async def astream_call(
-        self, *args: Any, **kwds: Any
-    ) -> AsyncGenerator[Model, None]:
+        self, *args: Any, **kwargs: Any
+    ) -> AsyncGenerator[Union[Model, List[Model]], None]:
         raise NotImplementedError("astream_call is not supported by default.")
 
 
@@ -101,14 +121,26 @@ class Thread(threading.Thread):
     """
 
     def __init__(
-        self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None
+        self,
+        group: Optional[Any] = None,
+        target: Optional[Callable[..., Any]] = None,
+        name: Optional[str] = None,
+        args: Tuple[Any, ...] = (),
+        kwargs: Optional[Dict[str, Any]] = None,
+        *,
+        daemon: Optional[bool] = None
     ) -> None:
+        if target is not None:
+            args = (
+                partial(target, *args, **(kwargs if isinstance(kwargs, dict) else {})),
+            )
+        else:
+            args = ()
+
         super().__init__(
             group=group,
             target=copy_context().run,
             name=name,
-            args=(
-                partial(target, *args, **(kwargs if isinstance(kwargs, dict) else {})),
-            ),
+            args=args,
             daemon=daemon,
         )

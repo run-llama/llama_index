@@ -54,7 +54,7 @@ class Vertex(FunctionCallingLLM):
         `pip install llama-index-llms-vertex`
 
         ```python
-        from llama_index.llms.openai import Vertex
+        from llama_index.llms.vertex import Vertex
 
         # Set up necessary variables
         credentials = {
@@ -92,6 +92,7 @@ class Vertex(FunctionCallingLLM):
     _is_chat_model: bool = PrivateAttr()
     _client: Any = PrivateAttr()
     _chat_client: Any = PrivateAttr()
+    _safety_settings: Dict[str, Any] = PrivateAttr()
 
     def __init__(
         self,
@@ -119,6 +120,23 @@ class Vertex(FunctionCallingLLM):
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
 
+        super().__init__(
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
+            max_retries=max_retries,
+            model=model,
+            examples=examples,
+            iscode=iscode,
+            callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+        )
+
+        self._safety_settings = safety_settings
         self._is_gemini = False
         self._is_chat_model = False
         if model in CHAT_MODELS:
@@ -142,28 +160,12 @@ class Vertex(FunctionCallingLLM):
 
             self._client = TextGenerationModel.from_pretrained(model)
         elif is_gemini_model(model):
-            self._client = create_gemini_client(model, safety_settings)
+            self._client = create_gemini_client(model, self._safety_settings)
             self._chat_client = self._client
             self._is_gemini = True
             self._is_chat_model = True
         else:
             raise (ValueError(f"Model {model} not found, please verify the model name"))
-
-        super().__init__(
-            temperature=temperature,
-            max_tokens=max_tokens,
-            additional_kwargs=additional_kwargs,
-            max_retries=max_retries,
-            model=model,
-            examples=examples,
-            iscode=iscode,
-            callback_manager=callback_manager,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-            output_parser=output_parser,
-        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -185,6 +187,7 @@ class Vertex(FunctionCallingLLM):
         base_kwargs = {
             "temperature": self.temperature,
             "max_output_tokens": self.max_tokens,
+            "safety_settings": self._safety_settings,
         }
         return {
             **base_kwargs,

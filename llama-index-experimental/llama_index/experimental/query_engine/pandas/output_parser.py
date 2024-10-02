@@ -29,8 +29,8 @@ def default_output_processor(
         )
         return output
 
-    local_vars = {"df": df}
-    global_vars = {"np": np, "pd": pd}
+    local_vars = {"df": df, "pd": pd}
+    global_vars = {"np": np}
 
     output = parse_code_markdown(output, only_last=True)[0]
 
@@ -49,10 +49,19 @@ def default_output_processor(
         try:
             # str(pd.dataframe) will truncate output by display.max_colwidth
             # set width temporarily to extract more text
+            current_max_colwidth = pd.get_option("display.max_colwidth")
+            current_max_rows = pd.get_option("display.max_rows")
+            current_max_columns = pd.get_option("display.max_columns")
             if "max_colwidth" in output_kwargs:
                 pd.set_option("display.max_colwidth", output_kwargs["max_colwidth"])
+            if "max_rows" in output_kwargs:
+                pd.set_option("display.max_rows", output_kwargs["max_rows"])
+            if "max_columns" in output_kwargs:
+                pd.set_option("display.max_columns", output_kwargs["max_columns"])
             output_str = str(safe_eval(module_end_str, global_vars, local_vars))
-            pd.reset_option("display.max_colwidth")
+            pd.set_option("display.max_colwidth", current_max_colwidth)
+            pd.set_option("display.max_rows", current_max_rows)
+            pd.set_option("display.max_columns", current_max_columns)
             return output_str
 
         except Exception:
