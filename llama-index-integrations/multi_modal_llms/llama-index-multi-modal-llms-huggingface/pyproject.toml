@@ -9,6 +9,13 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.multi_modal_llms.huggingface"
+
+[tool.llamahub.class_authors]
+HuggingFaceMultiModal = "M.Cihan Yalçın"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
