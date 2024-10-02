@@ -372,6 +372,24 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         #     "deletes nodes using the ref_doc_id of ingested documents."
         # )
 
+    async def async_delete_nodes(
+        self,
+        node_ids: List[str],
+        delete_from_docstore: bool = False,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete a list of nodes from the index.
+
+        Args:
+            node_ids (List[str]): A list of node_ids from the nodes to delete
+
+        """
+        await self._vector_store.async_delete_nodes(node_ids)
+        # raise NotImplementedError(
+        #     "Vector indices currently only support delete_ref_doc, which "
+        #     "deletes nodes using the ref_doc_id of ingested documents."
+        # )
+
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:

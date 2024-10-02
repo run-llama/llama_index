@@ -233,13 +233,19 @@ class RedisVectorStore(BasePydanticVectorStore):
         )  # Remove if present from VectorMemory to avoid serialization issues
         return key, mapping
 
+
     def delete_nodes(self, node_ids: list):
         for node_id in node_ids:
             self._redis_client.delete("_".join([self._prefix, str(node_id)]))
 
+
+    async def async_delete_nodes(self, node_ids: list):
+        for node_id in node_ids:
+            await self._redis_client_async.delete("_".join([self._prefix, str(node_id)]))            
+
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Delete nodes using with ref_doc_id.
+        Delete nodes using the ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.

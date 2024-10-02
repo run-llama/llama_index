@@ -19,7 +19,9 @@ class SQLTableSchema(BaseModel):
     full_table_name: str
     table_schema: Optional[str] = None
     context_str: Optional[str] = None
+    description: Optional[str] = None
     table_info: Optional[str] = None
+    tbl_uuid: Optional[str] = None
 
 
 class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
@@ -101,14 +103,14 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
                 metadata["context"] = table.context_str
 
             metadata["table_info"] = table.table_info
-            nodes.append(
-                TextNode(
+            node = TextNode(
                     text=table_text,
                     metadata=metadata,
                     excluded_embed_metadata_keys=["name", "context", "table_info"],
                     excluded_llm_metadata_keys=["context", "table_info"],
                 )
-            )
+            node.node_id = table.tbl_uuid
+            nodes.append(node)
         return nodes
 
     @property

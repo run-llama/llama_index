@@ -140,7 +140,7 @@ class VectorMemory(BaseMemory):
         nodes = await retriever.aretrieve(input or "")
 
         # retrieve underlying messages
-        return self._retrieve_messages(nodes=nodes)        
+        return self._retrieve_messages(nodes=nodes)
 
     def _retrieve_messages(self, nodes):
         return [
@@ -148,6 +148,7 @@ class VectorMemory(BaseMemory):
             for node in nodes
             for sub_dict in node.metadata["sub_dicts"]
         ]
+
     def _get_retriever(self):
         if input is None:
             return []
@@ -192,13 +193,13 @@ class VectorMemory(BaseMemory):
             # we already will have the last user message group committed to the
             # vector store index and so we don't need to override_last (i.e. see
             # logic in self.put().)
-            self.vector_index.delete_nodes([self.cur_batch_textnode.id_])
+            await self.vector_index.async_delete_nodes([self.cur_batch_textnode.id_])
 
         await self.vector_index.async_insert_nodes([self.cur_batch_textnode])
 
     def _put(self, message: ChatMessage) -> None:
         """Put chat history."""
-        
+
         if not self.batch_by_user_message or message.role in [
             MessageRole.USER,
             MessageRole.SYSTEM,
@@ -213,16 +214,15 @@ class VectorMemory(BaseMemory):
         else:
             self.cur_batch_textnode.text += " " + (sub_dict["content"] or "")
         self.cur_batch_textnode.metadata["sub_dicts"].append(sub_dict)
-        
+
     async def async_put(self, message: ChatMessage) -> None:
         self._put(message)
         await self._async_commit_node(override_last=True)
-        
 
     def put(self, message: ChatMessage) -> None:
         self._put(message)
         self._commit_node(override_last=True)
-        
+
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
         self.reset()
