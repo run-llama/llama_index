@@ -194,12 +194,12 @@ def test_milvus_filter_with_nested_filters():
             MetadataFilters(
                 filters=[
                     MetadataFilter(key="b", value=2, operator=FilterOperator.EQ),
-                    MetadataFilter(key="c", value=3, operator=FilterOperator.EQ)
+                    MetadataFilter(key="c", value=3, operator=FilterOperator.EQ),
                 ],
-                condition=FilterCondition.OR
-            )
+                condition=FilterCondition.OR,
+            ),
         ],
-        condition=FilterCondition.AND
+        condition=FilterCondition.AND,
     )
     expr = _to_milvus_filter(filters)
     assert expr == "(a == 1 and (b == 2 or c == 3))"

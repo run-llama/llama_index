@@ -107,7 +107,7 @@ def parse_standard_filters(standard_filters: MetadataFilters = None):
 
     for filter in standard_filters.filters:
         if isinstance(filter, MetadataFilters):
-            filters.append(f'({parse_standard_filters(filter)[1]})')
+            filters.append(f"({parse_standard_filters(filter)[1]})")
             continue
         filter_value = parse_filter_value(filter.value)
         if filter_value is None and filter.operator != FilterOperator.IS_EMPTY:
@@ -127,7 +127,7 @@ def parse_standard_filters(standard_filters: MetadataFilters = None):
             )
         elif filter.operator == FilterOperator.IS_EMPTY:
             # in Milvus, array_length(field_name) returns 0 if the field does not exist or is not an array
-            filters.append(f'array_length({filter.key!s}) == 0')
+            filters.append(f"array_length({filter.key!s}) == 0")
         elif filter.operator in [
             FilterOperator.EQ,
             FilterOperator.GT,
