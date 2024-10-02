@@ -41,26 +41,22 @@ class JsonSerializer(BaseSerializer):
         return json.dumps(value)
 
     def deserialize(self, value: str) -> Any:
-        try:
-            data = json.loads(value)
+        data = json.loads(value)
 
-            if (
-                isinstance(data, dict)
-                and data.get("__is_pydantic")
-                and data.get("qualified_name")
-            ):
-                module_class = import_module_from_qualified_name(data["qualified_name"])
-                return module_class.model_validate(data["value"])
-            elif (
-                isinstance(data, dict)
-                and data.get("__is_component")
-                and data.get("qualified_name")
-            ):
-                module_class = import_module_from_qualified_name(data["qualified_name"])
-                return module_class.from_dict(data["value"])
-        except Exception as e:
-            breakpoint()
-            print(e)
+        if (
+            isinstance(data, dict)
+            and data.get("__is_pydantic")
+            and data.get("qualified_name")
+        ):
+            module_class = import_module_from_qualified_name(data["qualified_name"])
+            return module_class.model_validate(data["value"])
+        elif (
+            isinstance(data, dict)
+            and data.get("__is_component")
+            and data.get("qualified_name")
+        ):
+            module_class = import_module_from_qualified_name(data["qualified_name"])
+            return module_class.from_dict(data["value"])
 
         return data
 
