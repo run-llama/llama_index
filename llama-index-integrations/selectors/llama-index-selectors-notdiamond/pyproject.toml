@@ -34,8 +34,7 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = ">=3.10.0,<3.12"
 llama-index-core = "^0.10.0"
-notdiamond = "^0.3.5"
-litellm = "^1.18.13"
+notdiamond = "^0.3.5,!=0.3.17"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
