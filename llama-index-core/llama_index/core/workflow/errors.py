@@ -12,3 +12,7 @@ class WorkflowRuntimeError(Exception):
 
 class WorkflowDone(Exception):
     pass
+
+
+class WorkflowCancelledByUser(Exception):
+    pass

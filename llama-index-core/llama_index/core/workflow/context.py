@@ -29,6 +29,7 @@ class Context:
         self._queues: Dict[str, asyncio.Queue] = {}
         self._tasks: Set[asyncio.Task] = set()
         self._broker_log: List[Event] = []
+        self._cancel_flag: asyncio.Event = asyncio.Event()
         self._step_flags: Dict[str, asyncio.Event] = {}
         self._step_event_holding: Optional[Event] = None
         self._step_lock: asyncio.Lock = asyncio.Lock()
