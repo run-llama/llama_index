@@ -19,11 +19,11 @@ class VertexEndpointEmbedding(BaseEmbedding):
     project_id: str = Field(description="GCP Project ID")
     location: str = Field(description="GCP Region for Vertex AI")
     endpoint_kwargs: Dict[str, Any] = Field(
-        default={},
+        default_factory=dict,
         description="Additional kwargs for the predict request.",
     )
     model_kwargs: Dict[str, Any] = Field(
-        default={},
+        default_factory=dict,
         description="kwargs to pass to the model.",
     )
     content_handler: BaseIOHandler = Field(
@@ -41,7 +41,7 @@ class VertexEndpointEmbedding(BaseEmbedding):
         description="Timeout for API requests in seconds.",
         ge=0,
     )
-    _client: Any = PrivateAttr()
+    _client: aiplatform.Endpoint = PrivateAttr()
     _verbose: bool = PrivateAttr()
 
     def __init__(
@@ -59,6 +59,18 @@ class VertexEndpointEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
     ):
+        super().__init__(
+            endpoint_id=endpoint_id,
+            embed_batch_size=embed_batch_size,
+            callback_manager=callback_manager,
+            project_id=project_id,
+            location=location,
+            content_handler=content_handler,
+            endpoint_kwargs=endpoint_kwargs or {},
+            model_kwargs=model_kwargs or {},
+            timeout=timeout,
+        )
+
         # Initialize the client
         if service_account_file:
             credentials = service_account.Credentials.from_service_account_file(
@@ -80,18 +92,6 @@ class VertexEndpointEmbedding(BaseEmbedding):
         except Exception as e:
             raise ValueError("Please verify the provided credentials.") from (e)
 
-        super().__init__(
-            endpoint_id=endpoint_id,
-            embed_batch_size=embed_batch_size,
-            callback_manager=callback_manager,
-            project_id=project_id,
-            location=location,
-            content_handler=content_handler,
-            endpoint_kwargs=endpoint_kwargs,
-            model_kwargs=model_kwargs,
-            timeout=timeout,
-            _verbose=verbose,
-        )
         self._verbose = verbose
 
     @classmethod
@@ -113,6 +113,23 @@ class VertexEndpointEmbedding(BaseEmbedding):
         # Assuming response contains the embeddings in a field called 'predictions'
         return self.content_handler.deserialize_output(response)
 
+    async def _aget_embedding(
+        self, payload: List[str], **kwargs: Any
+    ) -> List[Embedding]:
+        # Combine model kwargs with any additional kwargs passed to the function
+        endpoint_kwargs = {**self.endpoint_kwargs, **{"timeout": self.timeout}}
+        model_kwargs = {**self.model_kwargs, **kwargs}
+
+        # Directly send the input payload to the endpoint
+        response = await self._client.predict_async(
+            instances=self.content_handler.serialize_input(payload),
+            parameters=model_kwargs,
+            **endpoint_kwargs
+        )
+
+        # Assuming response contains the embeddings in a field called 'predictions'
+        return self.content_handler.deserialize_output(response)
+
     def _get_query_embedding(self, query: str, **kwargs: Any) -> Embedding:
         query = query.replace("\n", " ")
         return self._get_embedding([query], **kwargs)[0]
@@ -126,12 +143,15 @@ class VertexEndpointEmbedding(BaseEmbedding):
         return self._get_embedding(texts, **kwargs)
 
     async def _aget_query_embedding(self, query: str, **kwargs: Any) -> Embedding:
-        raise NotImplementedError
+        query = query.replace("\n", " ")
+        return await self._aget_embedding([query], **kwargs)[0]
 
     async def _aget_text_embedding(self, text: str, **kwargs: Any) -> Embedding:
-        raise NotImplementedError
+        text = text.replace("\n", " ")
+        return await self._aget_embedding([text], **kwargs)[0]
 
     async def _aget_text_embeddings(
         self, texts: List[str], **kwargs: Any
     ) -> List[Embedding]:
-        raise NotImplementedError
+        texts = [text.replace("\n", " ") for text in texts]
+        return await self._aget_embedding(texts, **kwargs)
