@@ -8,6 +8,8 @@ An index that is built on top of an existing vector store.
 import asyncio
 import logging
 from typing import Any, Dict, List, Optional, Sequence
+import warnings
+
 
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -299,9 +301,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         if any(
             node.get_content(metadata_mode=MetadataMode.EMBED) == "" for node in nodes
         ):
-            raise ValueError(
-                "Cannot build index from nodes with no content. "
-                "Please ensure all nodes have content."
+            raise warnings.warn(
+                "Some nodes are missing content. Proceeding with building the index, but this may cause issues during the retrieval stage. Please ensure all nodes have content before building the index."
             )
 
         return self._build_index_from_nodes(nodes, **insert_kwargs)
