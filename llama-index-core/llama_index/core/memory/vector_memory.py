@@ -130,6 +130,7 @@ class VectorMemory(BaseMemory):
         nodes = retriever.retrieve(input or "")
 
         # retrieve underlying messages
+        breakpoint()
         return self._retrieve_messages(nodes=nodes)
 
     async def aget(

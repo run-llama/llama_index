@@ -43,6 +43,7 @@ from redis.exceptions import RedisError
 from redis.exceptions import TimeoutError as RedisTimeoutError
 
 _logger = logging.getLogger(__name__)
+NO_DOCS = "No docs found on index"
 
 
 class RedisVectorStore(BasePydanticVectorStore):
@@ -173,8 +174,25 @@ class RedisVectorStore(BasePydanticVectorStore):
         Raises:
             ValueError: If the index already exists and overwrite is False.
         """
-        self._check_index(nodes=nodes)
+        await self._async_check_index(nodes=nodes)
         return await self._async_add(nodes=nodes)
+
+    async def _async_check_index(self, nodes):
+        # check to see if empty document list was passed
+        if len(nodes) == 0:
+            return []
+
+        # set vector dim for creation if index doesn't exist
+        self._index_args["dims"] = len(nodes[0].get_embedding())
+        exists = await self._async_index_exists()
+        if exists:
+            if self._overwrite:
+                self.delete_index()
+                self._create_index()
+            else:
+                logging.info(f"Adding document to existing index {self._index_name}")
+        else:
+            self._create_index()
 
     def _check_index(self, nodes):
         # check to see if empty document list was passed
@@ -210,7 +228,6 @@ class RedisVectorStore(BasePydanticVectorStore):
                 key, mapping = self._create_key_mapping(node=node, ids=ids)
                 await pipe.hset(key, mapping=mapping)  # type: ignore
             await pipe.execute()
-
         _logger.info(f"Added {len(ids)} documents to index {self._index_name}")
         return ids
 
@@ -233,15 +250,15 @@ class RedisVectorStore(BasePydanticVectorStore):
         )  # Remove if present from VectorMemory to avoid serialization issues
         return key, mapping
 
-
     def delete_nodes(self, node_ids: list):
         for node_id in node_ids:
             self._redis_client.delete("_".join([self._prefix, str(node_id)]))
 
-
     async def async_delete_nodes(self, node_ids: list):
         for node_id in node_ids:
-            await self._redis_client_async.delete("_".join([self._prefix, str(node_id)]))            
+            await self._redis_client_async.delete(
+                "_".join([self._prefix, str(node_id)])
+            )
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -291,11 +308,13 @@ class RedisVectorStore(BasePydanticVectorStore):
             ValueError: If no documents are found when querying the index.
         """
 
-        redis_query, query_params = self._prepare_query()
+        redis_query, query_params = self._prepare_query(query=query)
         results = self._run_query(redis_query=redis_query, query_params=query_params)
         return self._query_post_processing(results)
 
-    async def aquery(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
         """Query the index.
 
         Args:
@@ -312,8 +331,10 @@ class RedisVectorStore(BasePydanticVectorStore):
         """
 
         redis_query, query_params = self._prepare_query(query=query)
-        results = await self._arun_query(redis_query=redis_query, query_params=query_params)
-        return self._query_post_processing(results=results)        
+        results = await self._arun_query(
+            redis_query=redis_query, query_params=query_params
+        )
+        return self._query_post_processing(results=results)
 
     def _prepare_query(self, query: VectorStoreQuery):
         return_fields = [
@@ -376,8 +397,8 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         if len(results.docs) == 0:
             raise ValueError(
-                f"No docs found on index '{self._index_name}' with "
-                f"prefix '{self._prefix}' and filters '{filters}'. "
+                f"{NO_DOCS} '{self._index_name}' with "
+                f"prefix '{self._prefix}'. "
                 "* Did you originally create the index with a different prefix? "
                 "* Did you index your metadata fields when you created the index?"
             )
@@ -404,7 +425,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             scores.append(1 - float(doc.vector_score))
         _logger.info(f"Found {len(nodes)} results for query with id {ids}")
 
-        return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)  
+        return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
     def persist(
         self,
@@ -472,6 +493,13 @@ class RedisVectorStore(BasePydanticVectorStore):
     def _index_exists(self) -> bool:
         # use FT._LIST to check if index exists
         indices = convert_bytes(self._redis_client.execute_command("FT._LIST"))
+        return self._index_name in indices
+
+    async def _async_index_exists(self) -> bool:
+        # use FT._LIST to check if index exists
+        indices = convert_bytes(
+            await self._redis_client_async.execute_command("FT._LIST")
+        )
         return self._index_name in indices
 
     def _create_vector_field(
