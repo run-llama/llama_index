@@ -1,7 +1,7 @@
 import asyncio
 from functools import partial
 from contextlib import contextmanager
-from contextvars import ContextVar, Token
+from contextvars import Context, ContextVar, Token, copy_context
 from typing import Any, Callable, Generator, List, Optional, Dict, Protocol
 import inspect
 import uuid
@@ -255,6 +255,9 @@ class Dispatcher(BaseModel):
             tags = active_instrument_tags.get()
             result = None
 
+            # Copy the current context
+            context = copy_context()
+
             token = active_span_id.set(id_)
             parent_id = None if token.old_value is Token.MISSING else token.old_value
             self.span_enter(
@@ -270,6 +273,7 @@ class Dispatcher(BaseModel):
                 span_id: str,
                 bound_args: inspect.BoundArguments,
                 instance: Any,
+                context: Context,
             ) -> None:
                 try:
                     result = future.result()
@@ -287,7 +291,7 @@ class Dispatcher(BaseModel):
                     )
                     raise
                 finally:
-                    active_span_id.reset(token)
+                    context.run(active_span_id.reset, token)
 
             try:
                 result = func(*args, **kwargs)
@@ -300,6 +304,7 @@ class Dispatcher(BaseModel):
                             span_id=id_,
                             bound_args=bound_args,
                             instance=instance,
+                            context=context,
                         )
                     )
                     return new_future
