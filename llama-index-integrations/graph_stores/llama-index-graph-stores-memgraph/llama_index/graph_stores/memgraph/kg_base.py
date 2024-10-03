@@ -27,6 +27,7 @@ UNWIND end AS end_label
 RETURN DISTINCT {start: start[0], type: relationship_type, end: end_label} AS output
 """
 
+
 class MemgraphGraphStore(GraphStore):
     def __init__(
         self,
@@ -59,7 +60,7 @@ class MemgraphGraphStore(GraphStore):
                 "Please ensure that the username and password are correct"
             )
         # set schema
-        self.refresh_schema() 
+        self.refresh_schema()
 
         # create constraint
         self.query(
@@ -81,13 +82,12 @@ class MemgraphGraphStore(GraphStore):
     def client(self) -> Any:
         return self._driver
 
-    
     def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
         """Execute a Cypher query."""
         with self._driver.session(database=self._database) as session:
             result = session.run(query, param_map)
             return [record.data() for record in result]
-    
+
     def get(self, subj: str) -> List[List[str]]:
         """Get triplets."""
         query = f"""
@@ -99,7 +99,7 @@ class MemgraphGraphStore(GraphStore):
         with self._driver.session(database=self._database) as session:
             data = session.run(query, {"subj": subj})
             return [record.values() for record in data]
-    
+
     def get_rel_map(
         self, subjs: Optional[List[str]] = None, depth: int = 2
     ) -> Dict[str, List[List[str]]]:
@@ -124,7 +124,7 @@ class MemgraphGraphStore(GraphStore):
             rel_map[record["subj"]] = record["rels"]
 
         return rel_map
-    
+
     def upsert_triplet(self, subj: str, rel: str, obj: str) -> None:
         """Add triplet."""
         query = f"""
@@ -133,7 +133,7 @@ class MemgraphGraphStore(GraphStore):
             MERGE (n1)-[:`{rel.replace(" ", "_").upper()}`]->(n2)
         """
         self.query(query, {"subj": subj, "obj": obj})
-    
+
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
         query = f"""
@@ -147,17 +147,17 @@ class MemgraphGraphStore(GraphStore):
         """
         Refreshes the Memgraph graph schema information.
         """
-        node_properties = self.query(node_properties_query) 
+        node_properties = self.query(node_properties_query)
         relationships_properties = self.query(rel_properties_query)
         relationships = self.query(rel_query)
 
         self.schema = f"""
         Node properties are the following:
-        {[el for el in node_properties]}
+        {node_properties}
         Relationship properties are the following:
-        {[el for el in relationships_properties]}
+        {relationships_properties}
         The relationships are the following:
-        {[el for el in relationships]}
+        {relationships}
         """
 
     def get_schema(self, refresh: bool = False) -> str:

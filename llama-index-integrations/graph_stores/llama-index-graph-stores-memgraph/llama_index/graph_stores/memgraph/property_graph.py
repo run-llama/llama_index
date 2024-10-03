@@ -18,11 +18,13 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.core.vector_stores.types import VectorStoreQuery
 import neo4j
 
+
 def remove_empty_values(input_dict):
     """
     Remove entries with empty values from the dictionary.
     """
     return {key: value for key, value in input_dict.items() if value}
+
 
 BASE_ENTITY_LABEL = "__Entity__"
 BASE_NODE_LABEL = "__Node__"
@@ -36,10 +38,10 @@ CHUNK_SIZE = 1000
 LIMIT = 100
 
 node_properties_query = """
-MATCH (n) 
-UNWIND labels(n) AS label 
-WITH label, COUNT(n) AS count 
-CALL schema.node_type_properties() 
+MATCH (n)
+UNWIND labels(n) AS label
+WITH label, COUNT(n) AS count
+CALL schema.node_type_properties()
 YIELD propertyName, nodeLabels, propertyTypes
 WITH label, nodeLabels, count, collect({property: propertyName, type: propertyTypes[0]}) AS properties
 WHERE label IN nodeLabels
@@ -61,6 +63,7 @@ UNWIND start_labels AS start_label
 UNWIND end_labels AS end_label
 RETURN DISTINCT {start: start_label, type: relationship_type, end: end_label} AS output
 """
+
 
 class MemgraphPropertyGraphStore(PropertyGraphStore):
     r"""
@@ -123,12 +126,8 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             self.refresh_schema()
 
         # Create index for faster imports and retrieval
-        self.structured_query(
-            f"""CREATE INDEX ON :{BASE_NODE_LABEL}(id);"""
-        )
-        self.structured_query(
-            f"""CREATE INDEX ON :{BASE_ENTITY_LABEL}(id);"""
-        )
+        self.structured_query(f"""CREATE INDEX ON :{BASE_NODE_LABEL}(id);""")
+        self.structured_query(f"""CREATE INDEX ON :{BASE_ENTITY_LABEL}(id);""")
 
     @property
     def client(self):
@@ -155,26 +154,37 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         )
         node_properties = {}
         for el in node_query_results:
-            if el["output"]["labels"] in [*EXCLUDED_LABELS, BASE_ENTITY_LABEL, BASE_NODE_LABEL]:
+            if el["output"]["labels"] in [
+                *EXCLUDED_LABELS,
+                BASE_ENTITY_LABEL,
+                BASE_NODE_LABEL,
+            ]:
                 continue
 
             label = el["output"]["labels"]
             properties = el["output"]["properties"]
             if label in node_properties:
                 node_properties[label]["properties"].extend(
-                    prop for prop in properties if prop not in node_properties[label]["properties"]
+                    prop
+                    for prop in properties
+                    if prop not in node_properties[label]["properties"]
                 )
             else:
                 node_properties[label] = {"properties": properties}
 
-        node_properties = [{"labels": label, **value} for label, value in node_properties.items()]
+        node_properties = [
+            {"labels": label, **value} for label, value in node_properties.items()
+        ]
         rels_query_result = self.structured_query(
             rel_properties_query, param_map={"EXCLUDED_LABELS": EXCLUDED_RELS}
         )
         rel_properties = (
-            [el["output"] for el in rels_query_result 
-            if any(prop["property"] for prop in el["output"].get("properties", []))] 
-            if rels_query_result 
+            [
+                el["output"]
+                for el in rels_query_result
+                if any(prop["property"] for prop in el["output"].get("properties", []))
+            ]
+            if rels_query_result
             else []
         )
         rel_objs_query_result = self.structured_query(
@@ -188,10 +198,13 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             },
         )
         relationships = [
-            el["output"] for el in rel_objs_query_result 
-            if rel_objs_query_result and 
-            el["output"]["start"] not in [*EXCLUDED_LABELS, BASE_ENTITY_LABEL, BASE_NODE_LABEL] and 
-            el["output"]["end"] not in [*EXCLUDED_LABELS, BASE_ENTITY_LABEL, BASE_NODE_LABEL]
+            el["output"]
+            for el in rel_objs_query_result
+            if rel_objs_query_result
+            and el["output"]["start"]
+            not in [*EXCLUDED_LABELS, BASE_ENTITY_LABEL, BASE_NODE_LABEL]
+            and el["output"]["end"]
+            not in [*EXCLUDED_LABELS, BASE_ENTITY_LABEL, BASE_NODE_LABEL]
         ]
         self.structured_schema = {
             "node_props": {el["labels"]: el["properties"] for el in node_properties},
@@ -204,16 +217,24 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         schema_rels = self.structured_query(
             "MATCH ()-[r]->() RETURN TYPE(r) AS relationship_type, COUNT(r) AS count"
         )
-        schema_counts = [{
-            'nodes': [{'name': item['node'], 'count': item['count']} for item in schema_nodes],
-            'relationships': [{'name': item['relationship_type'], 'count': item['count']} for item in schema_rels]
-        }]
+        schema_counts = [
+            {
+                "nodes": [
+                    {"name": item["node"], "count": item["count"]}
+                    for item in schema_nodes
+                ],
+                "relationships": [
+                    {"name": item["relationship_type"], "count": item["count"]}
+                    for item in schema_rels
+                ],
+            }
+        ]
         # Update node info
         for node in schema_counts[0].get("nodes", []):
             # Skip bloom labels
             if node["name"] in EXCLUDED_LABELS:
                 continue
-            node_props = self.structured_schema["node_props"].get(node['name'])
+            node_props = self.structured_schema["node_props"].get(node["name"])
             if not node_props:  # The node has no properties
                 continue
 
@@ -225,7 +246,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             for prop in node_props:
                 if prop["property"] in enhanced_info:
                     prop.update(enhanced_info[prop["property"]])
-        
+
         # Update rel info
         for rel in schema_counts[0].get("relationships", []):
             if rel["name"] in EXCLUDED_RELS:
@@ -251,7 +272,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         # Lists to hold separated types
         entity_dicts: List[dict] = []
         chunk_dicts: List[dict] = []
-        
+
         # Sort by type
         for item in nodes:
             if isinstance(item, EntityNode):
@@ -264,7 +285,12 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             for index in range(0, len(chunk_dicts), CHUNK_SIZE):
                 chunked_params = chunk_dicts[index : index + CHUNK_SIZE]
                 for param in chunked_params:
-                    formatted_properties = ', '.join([f'{key}: {repr(value)}' for key, value in param["properties"].items()])
+                    formatted_properties = ", ".join(
+                        [
+                            f"{key}: {value!r}"
+                            for key, value in param["properties"].items()
+                        ]
+                    )
                     self.structured_query(
                         f"""
                         MERGE (c:{BASE_NODE_LABEL} {{id: '{param["id"]}'}})
@@ -278,7 +304,12 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             for index in range(0, len(entity_dicts), CHUNK_SIZE):
                 chunked_params = entity_dicts[index : index + CHUNK_SIZE]
                 for param in chunked_params:
-                    formatted_properties = ', '.join([f'{key}: {repr(value)}' for key, value in param["properties"].items()])
+                    formatted_properties = ", ".join(
+                        [
+                            f"{key}: {value!r}"
+                            for key, value in param["properties"].items()
+                        ]
+                    )
                     self.structured_query(
                         f"""
                         MERGE (e:{BASE_NODE_LABEL} {{id: '{param["id"]}'}})
@@ -288,8 +319,8 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         SET e :{param["label"]}
                         """
                     )
-                    triplet_source_id = param['properties'].get('triplet_source_id')
-                    if triplet_source_id:  
+                    triplet_source_id = param["properties"].get("triplet_source_id")
+                    if triplet_source_id:
                         self.structured_query(
                             f"""
                             MERGE (e:{BASE_NODE_LABEL} {{id: '{param["id"]}'}})
@@ -304,7 +335,9 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         for index in range(0, len(params), CHUNK_SIZE):
             chunked_params = params[index : index + CHUNK_SIZE]
             for param in chunked_params:
-                formatted_properties = ', '.join([f'{key}: {repr(value)}' for key, value in param["properties"].items()])
+                formatted_properties = ", ".join(
+                    [f"{key}: {value!r}" for key, value in param["properties"].items()]
+                )
 
                 self.structured_query(
                     f"""
@@ -342,16 +375,16 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             cypher_statement += " AND " + " AND ".join(prop_list)
 
         return_statement = """
-            RETURN 
-            e.id AS name, 
-            CASE 
-                WHEN labels(e)[0] IN ['__Entity__', '__Node__'] THEN 
-                    CASE 
-                        WHEN size(labels(e)) > 2 THEN labels(e)[2] 
-                        WHEN size(labels(e)) > 1 THEN labels(e)[1] 
-                        ELSE NULL 
+            RETURN
+            e.id AS name,
+            CASE
+                WHEN labels(e)[0] IN ['__Entity__', '__Node__'] THEN
+                    CASE
+                        WHEN size(labels(e)) > 2 THEN labels(e)[2]
+                        WHEN size(labels(e)) > 1 THEN labels(e)[1]
+                        ELSE NULL
                     END
-                ELSE labels(e)[0] 
+                ELSE labels(e)[0]
             END AS type,
             properties(e) AS properties
         """
@@ -378,7 +411,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         properties=remove_empty_values(record["properties"]),
                     )
                 )
-        
+
         return nodes
 
     def get_triplets(
@@ -418,52 +451,52 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
 
         if not (entity_names or properties or relation_names or ids):
             return_statement = """
-                WHERE NOT ANY(label IN labels(e) WHERE label = 'Chunk') 
-                RETURN type(r) as type, properties(r) as rel_prop, e.id as source_id, 
-                CASE 
-                    WHEN labels(e)[0] IN ['__Entity__', '__Node__'] THEN 
-                        CASE 
-                            WHEN size(labels(e)) > 2 THEN labels(e)[2] 
-                            WHEN size(labels(e)) > 1 THEN labels(e)[1] 
-                            ELSE NULL 
-                        END 
-                    ELSE labels(e)[0] 
-                END AS source_type, 
-                properties(e) AS source_properties, 
-                t.id as target_id, 
-                CASE 
-                    WHEN labels(t)[0] IN ['__Entity__', '__Node__'] THEN 
-                        CASE 
-                            WHEN size(labels(t)) > 2 THEN labels(t)[2] 
-                            WHEN size(labels(t)) > 1 THEN labels(t)[1] 
-                            ELSE NULL 
-                        END 
-                    ELSE labels(t)[0] 
+                WHERE NOT ANY(label IN labels(e) WHERE label = 'Chunk')
+                RETURN type(r) as type, properties(r) as rel_prop, e.id as source_id,
+                CASE
+                    WHEN labels(e)[0] IN ['__Entity__', '__Node__'] THEN
+                        CASE
+                            WHEN size(labels(e)) > 2 THEN labels(e)[2]
+                            WHEN size(labels(e)) > 1 THEN labels(e)[1]
+                            ELSE NULL
+                        END
+                    ELSE labels(e)[0]
+                END AS source_type,
+                properties(e) AS source_properties,
+                t.id as target_id,
+                CASE
+                    WHEN labels(t)[0] IN ['__Entity__', '__Node__'] THEN
+                        CASE
+                            WHEN size(labels(t)) > 2 THEN labels(t)[2]
+                            WHEN size(labels(t)) > 1 THEN labels(t)[1]
+                            ELSE NULL
+                        END
+                    ELSE labels(t)[0]
                 END AS target_type, properties(t) AS target_properties LIMIT 100;
             """
         else:
             return_statement = """
-            AND NOT ANY(label IN labels(e) WHERE label = 'Chunk') 
-                RETURN type(r) as type, properties(r) as rel_prop, e.id as source_id, 
-                CASE 
-                    WHEN labels(e)[0] IN ['__Entity__', '__Node__'] THEN 
-                        CASE 
-                            WHEN size(labels(e)) > 2 THEN labels(e)[2] 
-                            WHEN size(labels(e)) > 1 THEN labels(e)[1] 
-                            ELSE NULL 
-                        END 
-                    ELSE labels(e)[0] 
-                END AS source_type, 
-                properties(e) AS source_properties, 
-                t.id as target_id, 
-                CASE 
-                    WHEN labels(t)[0] IN ['__Entity__', '__Node__'] THEN 
-                        CASE 
-                            WHEN size(labels(t)) > 2 THEN labels(t)[2] 
-                            WHEN size(labels(t)) > 1 THEN labels(t)[1] 
-                            ELSE NULL 
-                        END 
-                    ELSE labels(t)[0] 
+            AND NOT ANY(label IN labels(e) WHERE label = 'Chunk')
+                RETURN type(r) as type, properties(r) as rel_prop, e.id as source_id,
+                CASE
+                    WHEN labels(e)[0] IN ['__Entity__', '__Node__'] THEN
+                        CASE
+                            WHEN size(labels(e)) > 2 THEN labels(e)[2]
+                            WHEN size(labels(e)) > 1 THEN labels(e)[1]
+                            ELSE NULL
+                        END
+                    ELSE labels(e)[0]
+                END AS source_type,
+                properties(e) AS source_properties,
+                t.id as target_id,
+                CASE
+                    WHEN labels(t)[0] IN ['__Entity__', '__Node__'] THEN
+                        CASE
+                            WHEN size(labels(t)) > 2 THEN labels(t)[2]
+                            WHEN size(labels(t)) > 1 THEN labels(t)[1]
+                            ELSE NULL
+                        END
+                    ELSE labels(t)[0]
                 END AS target_type, properties(t) AS target_properties LIMIT 100;
             """
 
@@ -493,7 +526,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         return triplets
 
     def get_rel_map(
-    self,
+        self,
         graph_nodes: List[LabelledNode],
         depth: int = 2,
         limit: int = 30,
@@ -519,27 +552,27 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                 endNode(rel) AS endNode,
                 idx
             LIMIT toInteger($limit)
-            RETURN source.id AS source_id, 
-                CASE 
-                    WHEN labels(source)[0] IN ['__Entity__', '__Node__'] THEN 
-                        CASE 
-                            WHEN size(labels(source)) > 2 THEN labels(source)[2] 
-                            WHEN size(labels(source)) > 1 THEN labels(source)[1] 
-                            ELSE NULL 
+            RETURN source.id AS source_id,
+                CASE
+                    WHEN labels(source)[0] IN ['__Entity__', '__Node__'] THEN
+                        CASE
+                            WHEN size(labels(source)) > 2 THEN labels(source)[2]
+                            WHEN size(labels(source)) > 1 THEN labels(source)[1]
+                            ELSE NULL
                         END
-                    ELSE labels(source)[0] 
+                    ELSE labels(source)[0]
                 END AS source_type,
                 properties(source) AS source_properties,
                 type,
                 rel_properties,
-                endNode.id AS target_id, 
-                CASE 
-                    WHEN labels(endNode)[0] IN ['__Entity__', '__Node__'] THEN 
-                        CASE 
-                            WHEN size(labels(endNode)) > 2 THEN labels(endNode)[2] 
-                            WHEN size(labels(endNode)) > 1 THEN labels(endNode)[1] ELSE NULL 
+                endNode.id AS target_id,
+                CASE
+                    WHEN labels(endNode)[0] IN ['__Entity__', '__Node__'] THEN
+                        CASE
+                            WHEN size(labels(endNode)) > 2 THEN labels(endNode)[2]
+                            WHEN size(labels(endNode)) > 1 THEN labels(endNode)[1] ELSE NULL
                         END
-                    ELSE labels(endNode)[0] 
+                    ELSE labels(endNode)[0]
                 END AS target_type,
                 properties(endNode) AS target_properties,
                 idx
@@ -587,7 +620,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         if self.sanitize_query_output:
             return [value_sanitize(el) for el in full_result]
         return full_result
-   
+
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> Tuple[List[LabelledNode], List[float]]:
@@ -722,8 +755,10 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         distinct_values = self.query(distinct_values_query)
 
                         # Extract values from the result set
-                        distinct_values = [record["value"] for record in distinct_values]
-                
+                        distinct_values = [
+                            record["value"] for record in distinct_values
+                        ]
+
                         return_clauses.append(
                             f"values: {distinct_values},"
                             f" distinct_count: {len(distinct_values)}"
@@ -788,7 +823,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         )
         # Combine all parts of the Cypher query
         return f"{match_clause}\n{with_clause}\n{return_clause}"
- 
+
     def get_schema(self, refresh: bool = False) -> Any:
         if refresh:
             self.refresh_schema()
