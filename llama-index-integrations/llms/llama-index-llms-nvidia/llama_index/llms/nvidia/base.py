@@ -8,16 +8,22 @@ from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
 
-from llama_index.llms.nvidia.utils import is_nvidia_function_calling_model
+from llama_index.llms.nvidia.utils import (
+    is_nvidia_function_calling_model,
+    is_chat_model,
+)
 
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from urllib.parse import urlparse, urlunparse
 
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    MessageRole,
+)
 
 from llama_index.core.llms.llm import ToolSelection
-
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -31,15 +37,11 @@ KNOWN_URLS = [
 ]
 
 
-def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
-    if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
-
-
 class Model(BaseModel):
     id: str
     base_model: Optional[str]
+    is_function_calling_model: Optional[bool] = False
+    is_chat_model: Optional[bool] = False
 
 
 class NVIDIA(OpenAILike, FunctionCallingLLM):
@@ -97,7 +99,7 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             api_key=api_key,
             api_base=base_url,
             max_tokens=max_tokens,
-            is_chat_model=True,
+            is_chat_model=is_chat_model(model),
             default_headers={"User-Agent": "llama-index-llms-nvidia"},
             is_function_calling_model=is_nvidia_function_calling_model(model),
             **kwargs,
@@ -161,6 +163,8 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             Model(
                 id=model.id,
                 base_model=getattr(model, "params", {}).get("root", None),
+                is_function_calling_model=is_nvidia_function_calling_model(model.id),
+                is_chat_model=is_chat_model(model.id),
             )
             for model in self._get_client().models.list().data
         ]
@@ -215,7 +219,7 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
 
     @property
     def _is_chat_model(self) -> bool:
-        return True
+        return is_chat_model(self.model)
 
     def _prepare_chat_with_tools(
         self,
@@ -244,18 +248,6 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             "tools": tool_specs or None,
             **kwargs,
         }
-
-    def _validate_chat_with_tools_response(
-        self,
-        response: ChatResponse,
-        tools: List["BaseTool"],
-        allow_parallel_tool_calls: bool = False,
-        **kwargs: Any,
-    ) -> ChatResponse:
-        """Validate the response from chat_with_tools."""
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-        return response
 
     def get_tool_calls_from_response(
         self,

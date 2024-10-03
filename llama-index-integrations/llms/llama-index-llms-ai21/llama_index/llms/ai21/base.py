@@ -75,16 +75,16 @@ class AI21(FunctionCallingLLM):
     temperature: float = Field(
         description="The temperature to use for sampling.",
         default=_DEFAULT_TEMPERATURE,
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     base_url: Optional[str] = Field(default=None, description="The base URL to use.")
     timeout: Optional[float] = Field(
-        default=None, description="The timeout to use in seconds.", gte=0
+        default=None, description="The timeout to use in seconds.", ge=0
     )
 
     max_retries: int = Field(
-        default=10, description="The maximum number of API retries.", gte=0
+        default=10, description="The maximum number of API retries.", ge=0
     )
 
     additional_kwargs: Dict[str, Any] = Field(

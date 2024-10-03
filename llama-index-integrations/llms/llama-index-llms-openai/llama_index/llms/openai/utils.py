@@ -29,6 +29,12 @@ DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
 DEFAULT_OPENAI_API_VERSION = ""
 
+O1_MODELS: Dict[str, int] = {
+    "o1-preview": 128000,
+    "o1-preview-2024-09-12": 128000,
+    "o1-mini": 128000,
+    "o1-mini-2024-09-12": 128000,
+}
 
 GPT4_MODELS: Dict[str, int] = {
     # stable model names:
@@ -61,6 +67,7 @@ GPT4_MODELS: Dict[str, int] = {
 
 AZURE_TURBO_MODELS: Dict[str, int] = {
     "gpt-4o": 128000,
+    "gpt-4o-mini": 128000,
     "gpt-35-turbo-16k": 16384,
     "gpt-35-turbo": 4096,
     # 0125 (2024) model (JSON mode)
@@ -109,6 +116,7 @@ GPT3_MODELS: Dict[str, int] = {
 }
 
 ALL_AVAILABLE_MODELS = {
+    **O1_MODELS,
     **GPT4_MODELS,
     **TURBO_MODELS,
     **GPT3_5_MODELS,
@@ -117,6 +125,7 @@ ALL_AVAILABLE_MODELS = {
 }
 
 CHAT_MODELS = {
+    **O1_MODELS,
     **GPT4_MODELS,
     **TURBO_MODELS,
     **AZURE_TURBO_MODELS,
@@ -220,17 +229,26 @@ def is_chat_model(model: str) -> bool:
 def is_function_calling_model(model: str) -> bool:
     is_chat_model_ = is_chat_model(model)
     is_old = "0314" in model or "0301" in model
-    return is_chat_model_ and not is_old
+
+    # TODO: This is temporary for openai's beta
+    is_o1_beta = "o1" in model
+
+    return is_chat_model_ and not is_old and not is_o1_beta
 
 
 def to_openai_message_dict(
-    message: ChatMessage, drop_none: bool = False
+    message: ChatMessage, drop_none: bool = False, model: Optional[str] = None
 ) -> ChatCompletionMessageParam:
     """Convert generic message to OpenAI message dict."""
     message_dict = {
         "role": message.role.value,
         "content": message.content,
     }
+
+    # TODO: O1 models do not support system prompts
+    if model is not None and model in O1_MODELS:
+        if message_dict["role"] == "system":
+            message_dict["role"] = "user"
 
     # NOTE: openai messages have additional arguments:
     # - function messages have `name`
@@ -247,11 +265,14 @@ def to_openai_message_dict(
 
 
 def to_openai_message_dicts(
-    messages: Sequence[ChatMessage], drop_none: bool = False
+    messages: Sequence[ChatMessage],
+    drop_none: bool = False,
+    model: Optional[str] = None,
 ) -> List[ChatCompletionMessageParam]:
     """Convert generic messages to OpenAI message dicts."""
     return [
-        to_openai_message_dict(message, drop_none=drop_none) for message in messages
+        to_openai_message_dict(message, drop_none=drop_none, model=model)
+        for message in messages
     ]
 
 
@@ -408,3 +429,14 @@ def validate_openai_api_key(api_key: Optional[str] = None) -> None:
 
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
+
+
+def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
+    """Resolve tool choice.
+
+    If tool_choice is a function name string, return the appropriate dict.
+    """
+    if isinstance(tool_choice, str) and tool_choice not in ["none", "auto", "required"]:
+        return {"type": "function", "function": {"name": tool_choice}}
+
+    return tool_choice

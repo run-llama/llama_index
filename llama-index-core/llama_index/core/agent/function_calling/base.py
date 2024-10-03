@@ -66,7 +66,6 @@ class FunctionCallingAgent(AgentRunner):
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
-            system_prompt=system_prompt,
             prefix_messages=prefix_messages,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
         )

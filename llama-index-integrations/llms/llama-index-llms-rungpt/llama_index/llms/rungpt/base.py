@@ -47,8 +47,8 @@ class RunGptLLM(LLM):
     temperature: float = Field(
         default=DEFAULT_RUNGPT_TEMP,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
