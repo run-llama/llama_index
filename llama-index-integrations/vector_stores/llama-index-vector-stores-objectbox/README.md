@@ -18,14 +18,14 @@ You can import the ObjectBox vector-store with `from llama_index.vector_stores.o
 from llama_index.vector_stores.objectbox import ObjectBoxVectorStore
 from objectbox import VectorDistanceType
 
-embedding_dim = 384 # size of the embeddings to be stored
+embedding_dim = 384  # size of the embeddings to be stored
 
 vector_store = ObjectBoxVectorStore(
     embedding_dim,
     distance_type=VectorDistanceType.COSINE,
     db_directory="obx_data",
     clear_db=False,
-    do_log=True
+    do_log=True,
 )
 ```
 
@@ -55,7 +55,6 @@ wget 'https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/exa
 This example will require a Gemini API key. You can get an API-key from the [Gemini developer console](https://aistudio.google.com/app/apikey). Execute the following Python script to generate an answer for `Who is Paul Graham?` from the text file,
 
 ```python
-
 from llama_index.llms.gemini import Gemini
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.vector_stores.objectbox import ObjectBoxVectorStore
@@ -85,20 +84,15 @@ vector_store = ObjectBoxVectorStore(
     distance_type=VectorDistanceType.COSINE,
     db_directory="obx_data",
     clear_db=False,
-    do_log=True
+    do_log=True,
 )
 
-storage_context = StorageContext.from_defaults(
-    vector_store=vector_store
-)
+storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
 Settings.llm = gemini_llm
 Settings.embed_model = hf_embedding
 
-index = VectorStoreIndex(
-    nodes=nodes,
-    storage_context=storage_context
-)
+index = VectorStoreIndex(nodes=nodes, storage_context=storage_context)
 
 query_engine = index.as_query_engine()
 response = query_engine.query("Who is Paul Graham?")

@@ -28,7 +28,7 @@ def vectorstore():
 
 @pytest.fixture()
 def node_embeddings() -> Sequence[BaseNode]:
-    text_nodes_with_embeddings = [
+    return [
         TextNode(
             id_="e8671c2d-8ee3-4f95-9730-7832f0115560",
             text="test1",
@@ -45,7 +45,6 @@ def node_embeddings() -> Sequence[BaseNode]:
             embedding=[-2.3, 1.2, -6.7],
         ),
     ]
-    return text_nodes_with_embeddings
 
 
 def test_add(vectorstore: ObjectBoxVectorStore, node_embeddings: Sequence[BaseNode]):

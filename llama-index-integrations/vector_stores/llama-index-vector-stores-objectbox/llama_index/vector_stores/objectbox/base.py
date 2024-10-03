@@ -93,14 +93,12 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
             db_directory=db_directory,
             clear_db=clear_db,
             do_log=do_log,
-            **data
+            **data,
         )
         self._entity_class = self._create_entity_class()
         self._store = self._create_box_store()
 
         self._box = self._store.box(self._entity_class)
-
-
 
     @property
     def client(self) -> Any:
@@ -120,7 +118,7 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
                         doc_id=node.ref_doc_id if node.ref_doc_id is not None else "",
                         text=node.get_content(metadata_mode=MetadataMode.NONE),
                         metadata=node.metadata,
-                        embeddings=node.embedding
+                        embeddings=node.embedding,
                     )
                 )
                 ids.append(node.node_id)
@@ -131,10 +129,8 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
                 )
             return ids
 
-
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         self._box.query(self._entity_class.doc_id.equals(ref_doc_id)).build().remove()
-
 
     def delete_nodes(
         self,
@@ -144,13 +140,15 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
     ) -> None:
         if filters is not None:
             raise NotImplementedError(
-                "ObjectBox does not yet support delete_nodes() with metadata filters - contact us if you need this feature")
+                "ObjectBox does not yet support delete_nodes() with metadata filters - contact us if you need this feature"
+            )
         if node_ids is not None:
-            query_obj = self._box.query(self._entity_class.node_id.equals("node_id").alias("node_id")).build()
+            query_obj = self._box.query(
+                self._entity_class.node_id.equals("node_id").alias("node_id")
+            ).build()
             for node_id in node_ids:
                 query_obj.set_parameter_alias_string("node_id", node_id)
                 query_obj.remove()
-
 
     def get_nodes(
         self,
@@ -159,11 +157,14 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
     ) -> List[BaseNode]:
         if filters is not None:
             raise NotImplementedError(
-                "ObjectBox does not yet support get_nodes() with metadata filters - contact us if you need this feature")
+                "ObjectBox does not yet support get_nodes() with metadata filters - contact us if you need this feature"
+            )
         if node_ids is not None:
             retrieved_nodes: list[BaseNode] = []
             with self._store.read_tx():
-                query_obj = self._box.query(self._entity_class.node_id.equals("node_id").alias("node_id")).build()
+                query_obj = self._box.query(
+                    self._entity_class.node_id.equals("node_id").alias("node_id")
+                ).build()
                 for node_id in node_ids:
                     try:
                         query_obj.set_parameter_alias_string("node_id", node_id)
@@ -184,11 +185,11 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
         else:
             raise ValueError("node_ids cannot be None")
 
-
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         if query.filters is not None:
             raise NotImplementedError(
-                "ObjectBox does not yet support query() with metadata filters - contact us if you need this feature")
+                "ObjectBox does not yet support query() with metadata filters - contact us if you need this feature"
+            )
 
         query_embedding = query.query_embedding
         n_results = query.similarity_top_k
@@ -211,9 +212,7 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
 
         for entity, score in results:
             node = TextNode(
-                text=entity.text,
-                id_=entity.node_id,
-                metadata=entity.metadata
+                text=entity.text, id_=entity.node_id, metadata=entity.metadata
             )
             ids.append(entity.node_id)
             nodes.append(node)
@@ -221,18 +220,14 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
-
     def count(self) -> int:
         return self._box.count()
-
 
     def clear(self) -> None:
         self._box.remove_all()
 
-
     def close(self):
         self._store.close()
-
 
     def _create_entity_class(self) -> Entity:
         """Dynamically define an Entity class according to the parameters."""
@@ -254,7 +249,7 @@ class ObjectBoxVectorStore(BasePydanticVectorStore):
         return VectorEntity
 
     def _create_box_store(self) -> Store:
-        """registering the VectorEntity model and setting up objectbox database"""
+        """Registering the VectorEntity model and setting up objectbox database."""
         db_path = DIRECTORY if self.db_directory is None else self.db_directory
         if self.clear_db and os.path.exists(db_path):
             shutil.rmtree(db_path)
