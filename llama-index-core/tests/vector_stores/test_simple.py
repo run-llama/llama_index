@@ -24,6 +24,7 @@ from llama_index.core.vector_stores.types import (
 _NODE_ID_WEIGHT_1_RANK_A = "AF3BE6C4-5F43-4D74-B075-6B0E07900DE8"
 _NODE_ID_WEIGHT_2_RANK_C = "7D9CD555-846C-445C-A9DD-F8924A01411D"
 _NODE_ID_WEIGHT_3_RANK_C = "452D24AB-F185-414C-A352-590B4B9EE51B"
+_NODE_ID_WEIGHT_4_RANK_D = "477C99A9-A529-4605-971B-2A514632C093"
 
 
 @pytest.fixture()
@@ -71,6 +72,18 @@ def _node_embeddings_for_test() -> List[TextNode]:
                 "rank": "c",
                 "quality": ["low", "medium", "high"],
                 "identifier": "6FTR78Ztl",
+            },
+        ),
+        TextNode(
+            text="",
+            id_=_NODE_ID_WEIGHT_4_RANK_D,
+            embedding=[0.0, 0.0],
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-3")},
+            metadata={
+                "weight": 4.0,
+                "rank": "d",
+                "quality": ["low"],
+                "identifier": "6FTR78Zll",
             },
         ),
     ]
