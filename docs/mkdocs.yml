@@ -134,10 +134,12 @@ nav:
       - Cookbooks:
           - ./examples/cookbooks/GraphRAG_v1.ipynb
           - ./examples/cookbooks/GraphRAG_v2.ipynb
+          - ./examples/cookbooks/airtrain.ipynb
           - ./examples/cookbooks/anthropic_haiku.ipynb
           - ./examples/cookbooks/cleanlab_tlm_rag.ipynb
           - ./examples/cookbooks/codestral.ipynb
           - ./examples/cookbooks/cohere_retriever_eval.ipynb
+          - ./examples/cookbooks/contextual_retrieval.ipynb
           - ./examples/cookbooks/crewai_llamaindex.ipynb
           - ./examples/cookbooks/llama3_cookbook.ipynb
           - ./examples/cookbooks/llama3_cookbook_groq.ipynb
@@ -300,6 +302,7 @@ nav:
           - ./examples/llm/ai21.ipynb
           - ./examples/llm/alephalpha.ipynb
           - ./examples/llm/anthropic.ipynb
+          - ./examples/llm/anthropic_prompt_caching.ipynb
           - ./examples/llm/anyscale.ipynb
           - ./examples/llm/azure_inference.ipynb
           - ./examples/llm/azure_openai.ipynb
@@ -1112,6 +1115,7 @@ nav:
           - ./api_reference/multi_modal_llms/azure_openai.md
           - ./api_reference/multi_modal_llms/dashscope.md
           - ./api_reference/multi_modal_llms/gemini.md
+          - ./api_reference/multi_modal_llms/huggingface.md
           - ./api_reference/multi_modal_llms/index.md
           - ./api_reference/multi_modal_llms/mistralai.md
           - ./api_reference/multi_modal_llms/ollama.md
@@ -1428,6 +1432,7 @@ nav:
               - ./api_reference/storage/chat_store/index.md
               - ./api_reference/storage/chat_store/redis.md
               - ./api_reference/storage/chat_store/simple.md
+              - ./api_reference/storage/chat_store/upstash.md
           - Docstore:
               - ./api_reference/storage/docstore/azure.md
               - ./api_reference/storage/docstore/dynamodb.md
@@ -2208,6 +2213,8 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-oracleai
             - ../llama-index-integrations/readers/llama-index-readers-oracleai
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-mistralai
+            - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-huggingface
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-upstash
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

@@ -1,8 +1,10 @@
 import asyncio
+import json
 import warnings
 from collections import defaultdict
 from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING, Set, Tuple
 
+from .context_serializers import BaseSerializer, JsonSerializer
 from .decorators import StepConfig
 from .events import Event
 from .errors import WorkflowRuntimeError
@@ -22,8 +24,14 @@ class Context:
     Both `set` and `get` operations on global data are governed by a lock, and considered coroutine-safe.
     """
 
-    def __init__(self, workflow: "Workflow", stepwise: bool = False) -> None:
+    def __init__(
+        self,
+        workflow: "Workflow",
+        stepwise: bool = False,
+    ) -> None:
         self.stepwise = stepwise
+        self.is_running = False
+
         self._workflow = workflow
         # Broker machinery
         self._queues: Dict[str, asyncio.Queue] = {}
@@ -48,6 +56,87 @@ class Context:
         self._globals: Dict[str, Any] = {}
         # Step-specific instance
         self._events_buffer: Dict[Type[Event], List[Event]] = defaultdict(list)
+
+    def _serialize_queue(self, queue: asyncio.Queue, serializer: BaseSerializer) -> str:
+        queue_items = list(queue._queue)  # type: ignore
+        queue_objs = [serializer.serialize(obj) for obj in queue_items]
+        return json.dumps(queue_objs)  # type: ignore
+
+    def _deserialize_queue(
+        self, queue_str: str, serializer: BaseSerializer
+    ) -> asyncio.Queue:
+        queue_objs = json.loads(queue_str)
+        queue = asyncio.Queue()  # type: ignore
+        for obj in queue_objs:
+            event_obj = serializer.deserialize(obj)
+            queue.put_nowait(event_obj)
+        return queue
+
+    def _serialize_globals(self, serializer: BaseSerializer) -> Dict[str, Any]:
+        serialized_globals = {}
+        for key, value in self._globals.items():
+            try:
+                serialized_globals[key] = serializer.serialize(value)
+            except Exception as e:
+                raise ValueError(f"Failed to serialize value for key {key}: {e}")
+        return serialized_globals
+
+    def _deserialize_globals(
+        self, serialized_globals: Dict[str, Any], serializer: BaseSerializer
+    ) -> Dict[str, Any]:
+        deserialized_globals = {}
+        for key, value in serialized_globals.items():
+            try:
+                deserialized_globals[key] = serializer.deserialize(value)
+            except Exception as e:
+                raise ValueError(f"Failed to deserialize value for key {key}: {e}")
+        return deserialized_globals
+
+    def to_dict(self, serializer: Optional[BaseSerializer] = None) -> Dict[str, Any]:
+        serializer = serializer or JsonSerializer()
+
+        return {
+            "globals": self._serialize_globals(serializer),
+            "streaming_queue": self._serialize_queue(self._streaming_queue, serializer),
+            "queues": {
+                k: self._serialize_queue(v, serializer) for k, v in self._queues.items()
+            },
+            "stepwise": self.stepwise,
+            "events_buffer": {
+                k: [serializer.serialize(ev) for ev in v]
+                for k, v in self._events_buffer.items()
+            },
+            "accepted_events": self._accepted_events,
+            "broker_log": [serializer.serialize(ev) for ev in self._broker_log],
+            "is_running": self.is_running,
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        workflow: "Workflow",
+        data: Dict[str, Any],
+        serializer: Optional[BaseSerializer] = None,
+    ) -> "Context":
+        serializer = serializer or JsonSerializer()
+
+        context = cls(workflow, stepwise=data["stepwise"])
+        context._globals = context._deserialize_globals(data["globals"], serializer)
+        context._queues = {
+            k: context._deserialize_queue(v, serializer)
+            for k, v in data["queues"].items()
+        }
+        context._streaming_queue = context._deserialize_queue(
+            data["streaming_queue"], serializer
+        )
+        context._events_buffer = {
+            k: [serializer.deserialize(ev) for ev in v]
+            for k, v in data["events_buffer"].items()
+        }
+        context._accepted_events = data["accepted_events"]
+        context._broker_log = [serializer.deserialize(ev) for ev in data["broker_log"]]
+        context.is_running = data["is_running"]
+        return context
 
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:
         """Store `value` into the Context under `key`.
