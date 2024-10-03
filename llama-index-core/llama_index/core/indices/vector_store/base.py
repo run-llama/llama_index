@@ -305,10 +305,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
 
         # Report if some nodes are missing content
         if len(content_nodes) != len(nodes):
-            print(
-                "Some nodes are missing content. Proceeding with building the index, "
-                "but this may cause issues during the retrieval stage. Please ensure all nodes have content before building the index."
-            )
+            print("Some nodes are missing content, skipping them...")
 
         return self._build_index_from_nodes(content_nodes, **insert_kwargs)
 
