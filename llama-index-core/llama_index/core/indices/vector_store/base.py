@@ -8,7 +8,6 @@ An index that is built on top of an existing vector store.
 import asyncio
 import logging
 from typing import Any, Dict, List, Optional, Sequence
-import warnings
 
 
 from llama_index.core.async_utils import run_async_tasks
@@ -297,15 +296,21 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             VectorStoreIndex only stores nodes in document store
             if vector store does not store text
         """
-        # raise an error if even one node has no content
-        if any(
-            node.get_content(metadata_mode=MetadataMode.EMBED) == "" for node in nodes
-        ):
-            raise warnings.warn(
-                "Some nodes are missing content. Proceeding with building the index, but this may cause issues during the retrieval stage. Please ensure all nodes have content before building the index."
+        # Filter out the nodes that don't have content
+        content_nodes = [
+            node
+            for node in nodes
+            if node.get_content(metadata_mode=MetadataMode.EMBED) != ""
+        ]
+
+        # Report if some nodes are missing content
+        if len(content_nodes) != len(nodes):
+            print(
+                "Some nodes are missing content. Proceeding with building the index, "
+                "but this may cause issues during the retrieval stage. Please ensure all nodes have content before building the index."
             )
 
-        return self._build_index_from_nodes(nodes, **insert_kwargs)
+        return self._build_index_from_nodes(content_nodes, **insert_kwargs)
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""
