@@ -11,10 +11,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.multi_modal_llms.huggingface"
+import_path = "llama_index.embeddings.vertex_endpoint"
 
 [tool.llamahub.class_authors]
-HuggingFaceMultiModal = "M.Cihan Yalçın"
+VertexEndpointEmbedding = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -24,21 +24,18 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["M.Cihan Yalçın <mcihan.yalcin@outlook.com>"]
-description = "llama-index multi_modal_llms HuggingFace integration by [Cihan Yalçın](https://www.linkedin.com/in/chanyalcin/)"
+authors = ["Mohannad <mouhanned.lassioued@gmail.com>"]
+description = "llama-index embeddings vertex_endpoint integration"
 license = "MIT"
-name = "llama-index-multi-modal-llms-huggingface"
+name = "llama-index-embeddings-vertex-endpoint"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.0"
-transformers = {extras = ["torch"], version = "^4.0"}
-qwen-vl-utils = ">=0.0.8"
-torchvision = "^0.19.1"
-Pillow = "^10.0.0"
+google-cloud-aiplatform = "^1.69.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
@@ -51,7 +48,6 @@ pylint = "2.15.10"
 pytest = "7.2.1"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
-torchvision = "0.19.1"
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"

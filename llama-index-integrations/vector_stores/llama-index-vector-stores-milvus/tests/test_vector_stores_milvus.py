@@ -128,6 +128,12 @@ def test_to_milvus_filter_with_various_operators():
     expr = _to_milvus_filter(filters)
     assert expr == "array_contains_all(a, [1, 2])"
 
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="a", value=None, operator=FilterOperator.IS_EMPTY)]
+    )
+    expr = _to_milvus_filter(filters)
+    assert expr == "array_length(a) == 0"
+
 
 def test_to_milvus_filter_with_string_value():
     filters = MetadataFilters(filters=[MetadataFilter(key="a", value="hello")])
@@ -179,6 +185,24 @@ def test_to_milvus_filter_with_multiple_filters():
     )
     expr = _to_milvus_filter(filters)
     assert expr == "(a < 1 or a > 10)"
+
+
+def test_milvus_filter_with_nested_filters():
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="a", value=1, operator=FilterOperator.EQ),
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(key="b", value=2, operator=FilterOperator.EQ),
+                    MetadataFilter(key="c", value=3, operator=FilterOperator.EQ),
+                ],
+                condition=FilterCondition.OR,
+            ),
+        ],
+        condition=FilterCondition.AND,
+    )
+    expr = _to_milvus_filter(filters)
+    assert expr == "(a == 1 and (b == 2 or c == 3))"
 
 
 def test_milvus_vector_store():

@@ -27,11 +27,11 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-redis"
 readme = "README.md"
-version = "0.3.3"
+version = "0.3.4"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-redisvl = "^0.3.2"
+redisvl = "^0.3.4"
 llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
