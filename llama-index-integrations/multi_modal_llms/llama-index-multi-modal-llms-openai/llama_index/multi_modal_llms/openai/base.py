@@ -28,6 +28,7 @@ from llama_index.llms.openai.utils import (
     from_openai_message,
     resolve_openai_credentials,
     to_openai_message_dicts,
+    update_tool_calls,
 )
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -61,12 +62,12 @@ class OpenAIMultiModal(MultiModalLLM):
     max_retries: int = Field(
         default=3,
         description="Maximum number of retries.",
-        gte=0,
+        ge=0,
     )
     timeout: float = Field(
         default=60.0,
         description="The timeout, in seconds, for API requests.",
-        gte=0,
+        ge=0,
     )
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
     api_base: str = Field(default=None, description="The base URL for OpenAI API.")
@@ -315,7 +316,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
                 additional_kwargs = {}
                 if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
+                    tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
@@ -471,7 +472,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
                 additional_kwargs = {}
                 if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
+                    tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(

@@ -43,8 +43,8 @@ class EntityExtractor(BaseExtractor):
     prediction_threshold: float = Field(
         default=0.5,
         description="The confidence threshold for accepting predictions.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     span_joiner: str = Field(
         default=" ", description="The separator between entity names."

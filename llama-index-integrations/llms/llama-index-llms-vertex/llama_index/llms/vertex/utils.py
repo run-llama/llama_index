@@ -47,6 +47,7 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
             | retry_if_exception_type(google.api_core.exceptions.ResourceExhausted)
             | retry_if_exception_type(google.api_core.exceptions.Aborted)
             | retry_if_exception_type(google.api_core.exceptions.DeadlineExceeded)
+            | retry_if_exception_type(google.api_core.exceptions.InternalServerError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -92,7 +93,10 @@ def completion_with_retry(
             generation_config = kwargs if kwargs else {}
 
             return generation.send_message(
-                prompt, stream=stream, tools=tools, generation_config=generation_config
+                prompt,
+                stream=stream,
+                tools=tools,
+                generation_config=generation_config,
             )
         elif chat:
             generation = client.start_chat(**params)
@@ -131,7 +135,9 @@ async def acompletion_with_retry(
             tools = to_gemini_tools(tools) if tools else []
             generation_config = kwargs if kwargs else {}
             return await generation.send_message_async(
-                prompt, tools=tools, generation_config=generation_config
+                prompt,
+                tools=tools,
+                generation_config=generation_config,
             )
         elif chat:
             generation = client.start_chat(**params)

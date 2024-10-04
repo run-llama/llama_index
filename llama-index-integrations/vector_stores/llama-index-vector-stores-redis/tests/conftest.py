@@ -1,3 +1,4 @@
+import time
 import pytest
 from typing import List
 from llama_index.core.schema import Document, TextNode
@@ -14,6 +15,9 @@ container = docker_client.containers.run(
     name="redis",
     ports={"6379/tcp": 6379, "8001/tcp": 8001},
 )
+
+# wait for redis to be ready
+time.sleep(2)
 
 
 @pytest.fixture(scope="session", autouse=True)

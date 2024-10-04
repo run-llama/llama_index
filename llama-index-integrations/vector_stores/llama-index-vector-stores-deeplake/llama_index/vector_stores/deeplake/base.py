@@ -22,12 +22,7 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
-try:
-    from deeplake.core.vectorstore.deeplake_vectorstore import VectorStore
-
-    DEEPLAKE_INSTALLED = True
-except ImportError:
-    DEEPLAKE_INSTALLED = False
+from deeplake.core.vectorstore.deeplake_vectorstore import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -111,12 +106,6 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
             ingestion_batch_size=ingestion_batch_size,
             num_workers=ingestion_num_workers,
         )
-
-        if not DEEPLAKE_INSTALLED:
-            raise ImportError(
-                "Could not import deeplake python package. "
-                "Please install it with `pip install deeplake`."
-            )
 
         self._vectorstore = VectorStore(
             path=dataset_path,

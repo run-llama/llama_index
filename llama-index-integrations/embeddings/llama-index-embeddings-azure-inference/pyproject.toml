@@ -28,7 +28,7 @@ license = "MIT"
 name = "llama-index-embeddings-azure-inference"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.1"
+version = "0.2.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

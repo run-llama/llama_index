@@ -2,6 +2,7 @@ import functools
 from typing import (
     TYPE_CHECKING,
     Any,
+    Generator,
     Awaitable,
     Callable,
     Dict,
@@ -49,8 +50,9 @@ from llama_index.core.llms.callbacks import (
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Model
 from llama_index.llms.openai.utils import (
+    O1_MODELS,
     OpenAIToolCall,
     create_retry_decorator,
     from_openai_completion_logprobs,
@@ -61,6 +63,11 @@ from llama_index.llms.openai.utils import (
     openai_modelname_to_contextsize,
     resolve_openai_credentials,
     to_openai_message_dicts,
+    resolve_tool_choice,
+    update_tool_calls,
+)
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
 )
 
 from openai import AsyncOpenAI, AzureOpenAI
@@ -71,6 +78,10 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCall,
 )
 from llama_index.core.llms.utils import parse_partial_json
+
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -158,8 +169,8 @@ class OpenAI(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate.",
@@ -172,8 +183,8 @@ class OpenAI(FunctionCallingLLM):
     top_logprobs: int = Field(
         description="The number of top token log probs to return.",
         default=0,
-        gte=0,
-        lte=20,
+        ge=0,
+        le=20,
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
@@ -181,12 +192,12 @@ class OpenAI(FunctionCallingLLM):
     max_retries: int = Field(
         default=3,
         description="The maximum number of API retries.",
-        gte=0,
+        ge=0,
     )
     timeout: float = Field(
         default=60.0,
         description="The timeout, in seconds, for API requests.",
-        gte=0,
+        ge=0,
     )
     default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
@@ -244,6 +255,10 @@ class OpenAI(FunctionCallingLLM):
             api_base=api_base,
             api_version=api_version,
         )
+
+        # TODO: Temp forced to 1.0 for o1
+        if model in O1_MODELS:
+            temperature = 1.0
 
         super().__init__(
             model=model,
@@ -323,6 +338,10 @@ class OpenAI(FunctionCallingLLM):
                 model=self._get_model_name()
             ),
             model_name=self.model,
+            # TODO: Temp for O1 beta
+            system_role=MessageRole.USER
+            if self.model in O1_MODELS
+            else MessageRole.SYSTEM,
         )
 
     @llm_chat_callback()
@@ -402,7 +421,7 @@ class OpenAI(FunctionCallingLLM):
     @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         if self.reuse_client:
             response = client.chat.completions.create(
@@ -432,59 +451,12 @@ class OpenAI(FunctionCallingLLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
-    def _update_tool_calls(
-        self,
-        tool_calls: List[ChoiceDeltaToolCall],
-        tool_calls_delta: Optional[List[ChoiceDeltaToolCall]],
-    ) -> List[ChoiceDeltaToolCall]:
-        """
-        Use the tool_calls_delta objects received from openai stream chunks
-        to update the running tool_calls object.
-
-        Args:
-            tool_calls (List[ChoiceDeltaToolCall]): the list of tool calls
-            tool_calls_delta (ChoiceDeltaToolCall): the delta to update tool_calls
-
-        Returns:
-            List[ChoiceDeltaToolCall]: the updated tool calls
-        """
-        # openai provides chunks consisting of tool_call deltas one tool at a time
-        if tool_calls_delta is None:
-            return tool_calls
-
-        tc_delta = tool_calls_delta[0]
-
-        if len(tool_calls) == 0:
-            tool_calls.append(tc_delta)
-        else:
-            # we need to either update latest tool_call or start a
-            # new tool_call (i.e., multiple tools in this turn) and
-            # accumulate that new tool_call with future delta chunks
-            t = tool_calls[-1]
-            if t.index != tc_delta.index:
-                # the start of a new tool call, so append to our running tool_calls list
-                tool_calls.append(tc_delta)
-            else:
-                # not the start of a new tool call, so update last item of tool_calls
-
-                # validations to get passed by mypy
-                assert t.function is not None
-                assert tc_delta.function is not None
-                assert t.function.arguments is not None
-                assert t.function.name is not None
-                assert t.id is not None
-
-                t.function.arguments += tc_delta.function.arguments or ""
-                t.function.name += tc_delta.function.name or ""
-                t.id += tc_delta.id or ""
-        return tool_calls
-
     @llm_retry_decorator
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -515,7 +487,7 @@ class OpenAI(FunctionCallingLLM):
 
                 additional_kwargs = {}
                 if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
+                    tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
@@ -690,7 +662,7 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         aclient = self._get_aclient()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         if self.reuse_client:
             response = await aclient.chat.completions.create(
@@ -723,7 +695,7 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         aclient = self._get_aclient()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
@@ -765,7 +737,7 @@ class OpenAI(FunctionCallingLLM):
 
                 additional_kwargs = {}
                 if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
+                    tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
@@ -856,9 +828,6 @@ class OpenAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
-        from llama_index.agent.openai.utils import resolve_tool_choice
-
-        # misralai uses the same openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
         # if strict is passed in, use, else default to the class-level attribute, else default to True`
@@ -940,3 +909,55 @@ class OpenAI(FunctionCallingLLM):
             )
 
         return tool_selections
+
+    @dispatcher.span
+    def structured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> BaseModel:
+        """Structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return super().structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+
+    @dispatcher.span
+    async def astructured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> BaseModel:
+        """Structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return await super().astructured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+
+    @dispatcher.span
+    def stream_structured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> Generator[Union[Model, List[Model]], None, None]:
+        """Stream structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+
+    @dispatcher.span
+    def stream_structured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> Generator[Union[Model, List[Model]], None, None]:
+        """Stream structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
