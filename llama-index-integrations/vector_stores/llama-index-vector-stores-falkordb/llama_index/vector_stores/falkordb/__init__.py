@@ -1,3 +1,3 @@
-from llama_index.vector_stores.falkordb import FalkorDBVectorStore
+from llama_index.vector_stores.falkordb.base import FalkorDBVectorStore
 
 __all__ = ["FalkorDBVectorStore"]

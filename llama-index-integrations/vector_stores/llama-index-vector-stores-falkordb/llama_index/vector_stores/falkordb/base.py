@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import logging
 
 from falkordb import FalkorDB
@@ -81,7 +81,7 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        url: str,
+        url: Optional[str] = None,
         database: str = "falkor",
         index_name: str = "vector",
         node_label: str = "Chunk",
@@ -89,6 +89,7 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
         text_node_property: str = "text",
         distance_strategy: str = "cosine",
         embedding_dimension: int = 1536,
+        driver: Optional[FalkorDB] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -103,7 +104,7 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
         if distance_strategy not in ["cosine", "euclidean"]:
             raise ValueError("distance_strategy must be either 'euclidean' or 'cosine'")
 
-        self._driver = FalkorDB.from_url(url).select_graph(database)
+        self._driver = driver or FalkorDB.from_url(url).select_graph(database)
         self._database = database
 
         # Inline check_if_not_null function

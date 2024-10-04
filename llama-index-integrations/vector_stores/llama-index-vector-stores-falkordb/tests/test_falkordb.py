@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from llama_index.core.schema import TextNode
 from llama_index.vector_stores.falkordb import FalkorDBVectorStore
-from llama_index.vector_stores.types import (
+from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     MetadataFilters,
     ExactMatchFilter,
@@ -50,7 +50,7 @@ def mock_falkordb():
 @pytest.fixture()
 def falkordb_store(mock_falkordb):
     return FalkorDBVectorStore(
-        url="bolt://localhost:7687",
+        driver=mock_falkordb,
         database="testdb",
         index_name="test_index",
         node_label="Chunk",
