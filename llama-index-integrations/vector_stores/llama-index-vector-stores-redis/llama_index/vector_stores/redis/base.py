@@ -292,6 +292,11 @@ class RedisVectorStore(BasePydanticVectorStore):
         _logger.info(f"Deleting index {self._index_name}")
         self._redis_client.ft(self._index_name).dropindex(delete_documents=True)
 
+    async def async_delete_index(self) -> None:
+        """Delete the index and all documents."""
+        _logger.info(f"Deleting index {self._index_name}")
+        await self._redis_client_async.ft(self._index_name).dropindex(delete_documents=True)        
+
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query the index.
 
