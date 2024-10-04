@@ -1,9 +1,7 @@
 import pytest
 from box_sdk_gen import BoxClient
-
-from llama_index.tools.box import BoxAIPromptToolSpec
 from llama_index.agent.openai import OpenAIAgent
-
+from llama_index.tools.box import BoxAIPromptToolSpec
 from tests.conftest import get_testing_data
 
 
