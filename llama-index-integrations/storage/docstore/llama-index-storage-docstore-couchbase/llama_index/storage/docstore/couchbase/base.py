@@ -1,10 +1,10 @@
 from typing import Optional
-from llama_index.core.storage.docstore.keyval_docstore import KVDocStore
+from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 from llama_index.storage.kvstore.couchbase import CouchbaseKVStore
 from llama_index.core.storage.docstore.types import DEFAULT_BATCH_SIZE
 
 
-class CouchbaseDocumentStore(KVDocStore):
+class CouchbaseDocumentStore(KVDocumentStore):
     """Couchbase Document (Node) store.
     A documents store for Document and Node objects using Couchbase.
     """
