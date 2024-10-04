@@ -1639,13 +1639,13 @@ files = [
 
 [[package]]
 name = "llama-cloud"
-version = "0.1.0"
+version = "0.1.2"
 description = ""
 optional = false
 python-versions = "<4,>=3.8"
 files = [
-    {file = "llama_cloud-0.1.0-py3-none-any.whl", hash = "sha256:e315046d856780d996886864cd315d5f216cd398b3bd3f005fcae393c66f5494"},
-    {file = "llama_cloud-0.1.0.tar.gz", hash = "sha256:8b31e1fb87f48c397c1a6415816cf37afcb4abe9fe7a5eb4101a2dc6d5c6ebbc"},
+    {file = "llama_cloud-0.1.2-py3-none-any.whl", hash = "sha256:f0ec61b88be689895cc4708b13db4503760e29c67131ec76b4d4583d81d571c5"},
+    {file = "llama_cloud-0.1.2.tar.gz", hash = "sha256:7c80747e9a7f32d4b739c2d5d4add7351f836d92e633d6ac03fa401896d33097"},
 ]
 
 [package.dependencies]
@@ -1686,13 +1686,13 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.11.15"
+version = "0.11.16"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.11.15-py3-none-any.whl", hash = "sha256:56537e4a744ffe8f782231a638c93fd3587234c7bd36bc8946b9b2c06ae3d4e9"},
-    {file = "llama_index_core-0.11.15.tar.gz", hash = "sha256:968cb311e806ccbc464a7a43a2d7465596d40e9378f8dceaa2c65985d6e1ca79"},
+    {file = "llama_index_core-0.11.16-py3-none-any.whl", hash = "sha256:099ba785e357506fd5a24c1a6b8fa5286366d6c71637649fab0f9126dcea842c"},
+    {file = "llama_index_core-0.11.16.tar.gz", hash = "sha256:232a5cebcc73b951d9c663bd30ed59de5356dbd8f9ab88024d19c88bdd1b3254"},
 ]
 
 [package.dependencies]
@@ -1789,13 +1789,13 @@ query-tools = ["guidance (>=0.0.64,<0.0.65)", "jsonpath-ng (>=1.6.0,<2.0.0)", "l
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.2.10"
+version = "0.2.11"
 description = "llama-index llms openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_llms_openai-0.2.10-py3-none-any.whl", hash = "sha256:f49b9b97423a83a57033ffe9e8135e13df128d20c1bfcd9bab3321b35f75a3ae"},
-    {file = "llama_index_llms_openai-0.2.10.tar.gz", hash = "sha256:10a693edbb1d7c85a0001cd9c04fff0b7e6c38f878ee08dc25e6f8228288259c"},
+    {file = "llama_index_llms_openai-0.2.11-py3-none-any.whl", hash = "sha256:6392c9c7de820dd6646064806b5531ed90ac43abf207746470e897f0754ea79c"},
+    {file = "llama_index_llms_openai-0.2.11.tar.gz", hash = "sha256:4850c5bfc76751015b4067e82e2082ccdbe69c5dfa60db76f091e1edb6cb246f"},
 ]
 
 [package.dependencies]
@@ -1804,18 +1804,18 @@ openai = ">=1.40.0,<2.0.0"
 
 [[package]]
 name = "llama-index-multi-modal-llms-openai"
-version = "0.2.1"
+version = "0.2.2"
 description = "llama-index multi-modal-llms openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_multi_modal_llms_openai-0.2.1-py3-none-any.whl", hash = "sha256:1c79e6af88d0838f258be412fa1c8bf7e5d9b2740e1bda6315bd3fa86876c7df"},
-    {file = "llama_index_multi_modal_llms_openai-0.2.1.tar.gz", hash = "sha256:1b5be691d5fa2861fd4b5a071883dc94d82db3e1c7ff686d84dd84048a354c7b"},
+    {file = "llama_index_multi_modal_llms_openai-0.2.2-py3-none-any.whl", hash = "sha256:81813c66c133aab0554b3bee60fe9673e84403dcc57c9fa95fb8be2d7c4c4cee"},
+    {file = "llama_index_multi_modal_llms_openai-0.2.2.tar.gz", hash = "sha256:c7205cfd9a23e2201db527ca3f8fa5ef4fb260ab6c9b15e79163630a916ee159"},
 ]
 
 [package.dependencies]
 llama-index-core = ">=0.11.0,<0.12.0"
-llama-index-llms-openai = ">=0.2.0,<0.3.0"
+llama-index-llms-openai = ">=0.2.11,<0.3.0"
 
 [[package]]
 name = "llama-index-program-openai"
@@ -1887,13 +1887,13 @@ llama-parse = ">=0.5.0"
 
 [[package]]
 name = "llama-parse"
-version = "0.5.6"
+version = "0.5.7"
 description = "Parse files into RAG-Optimized formats."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_parse-0.5.6-py3-none-any.whl", hash = "sha256:b0924202b0c077d2f70139b82640396e761da0d3bd3606ec50c8d5bab229d55e"},
-    {file = "llama_parse-0.5.6.tar.gz", hash = "sha256:3c74da1246c9bdd61d63b7fc212040ea2dbd218d47fc986a18e3974e64591b80"},
+    {file = "llama_parse-0.5.7-py3-none-any.whl", hash = "sha256:3ad4cc16b21817354beb8bef3c8dbbcad0850b2ca631f2825b637f708996bd29"},
+    {file = "llama_parse-0.5.7.tar.gz", hash = "sha256:b2a29dbce32b99342fb942d1c210abef0eea57df6f26666299039ef7a931feff"},
 ]
 
 [package.dependencies]
@@ -4204,13 +4204,13 @@ files = [
 
 [[package]]
 name = "types-docutils"
-version = "0.21.0.20240907"
+version = "0.21.0.20241004"
 description = "Typing stubs for docutils"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-docutils-0.21.0.20240907.tar.gz", hash = "sha256:5dd2aa5e2e06fcfa090020bc4115479b4dd28da3329ab708563ee29894bd3c0d"},
-    {file = "types_docutils-0.21.0.20240907-py3-none-any.whl", hash = "sha256:9c8ed6d90583944af00f6b5fa3aecc2101e20672f6b1a4a299c6bf7d1e47084d"},
+    {file = "types-docutils-0.21.0.20241004.tar.gz", hash = "sha256:9816fb4f33067ed22d24c776a411a430bc19318b1af8f373e5581702a07bc4bc"},
+    {file = "types_docutils-0.21.0.20241004-py3-none-any.whl", hash = "sha256:0d2ea594576e8d05c4ad83165da64a511e538f6ab405ab8347cd6b636c59f934"},
 ]
 
 [[package]]
@@ -4667,4 +4667,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "878a6baf31cd3e65309137daa3e6aec5707d59eb33b1bcb2b33e2317d536ebdb"
+content-hash = "c7ab0e3a46d1ed858d679a77981cb60fec8c4127cef7564ae51f96dfa9f09a6a"
