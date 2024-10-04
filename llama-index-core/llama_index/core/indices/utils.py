@@ -1,12 +1,14 @@
 """Utilities for GPT indices."""
+
 import logging
 import re
+from typing import Dict, List, Optional, Sequence, Set, Tuple
+
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.schema import BaseNode, ImageNode, MetadataMode
 from llama_index.core.utils import globals_helper, truncate_text
 from llama_index.core.vector_stores.types import VectorStoreQueryResult
-from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 _logger = logging.getLogger(__name__)
 
@@ -90,24 +92,31 @@ def default_parse_choice_select_answer_fn(
     answer_lines = answer.split("\n")
     answer_nums = []
     answer_relevances = []
-    for answer_line in answer_lines:
-        line_tokens = answer_line.split(",")
-        if len(line_tokens) != 2:
-            if not raise_error:
+    try:
+        for answer_line in answer_lines:
+            line_tokens = answer_line.split(",")
+            if len(line_tokens) != 2:
+                if not raise_error:
+                    continue
+                else:
+                    raise ValueError(
+                        f"Invalid answer line: {answer_line}. "
+                        "Answer line must be of the form: "
+                        "answer_num: <int>, answer_relevance: <float>"
+                    )
+            answer_num = int(line_tokens[0].split(":")[1].strip())
+            if answer_num > num_choices:
                 continue
-            else:
-                raise ValueError(
-                    f"Invalid answer line: {answer_line}. "
-                    "Answer line must be of the form: "
-                    "answer_num: <int>, answer_relevance: <float>"
-                )
-        answer_num = int(line_tokens[0].split(":")[1].strip())
-        if answer_num > num_choices:
-            continue
-        answer_nums.append(answer_num)
-        # extract just the first digits after the colon.
-        _answer_relevance = re.findall(r"\d+", line_tokens[1].split(":")[1].strip())[0]
-        answer_relevances.append(float(_answer_relevance))
+            answer_nums.append(answer_num)
+            # extract just the first digits after the colon.
+            _answer_relevance = re.findall(
+                r"\d+", line_tokens[1].split(":")[1].strip()
+            )[0]
+            answer_relevances.append(float(_answer_relevance))
+    except Exception as e:
+        _logger.error(f"Error in LLM Rerank: {e!s}")
+        for i in answer_lines:
+            _logger.error(i)
     return answer_nums, answer_relevances
 
 
