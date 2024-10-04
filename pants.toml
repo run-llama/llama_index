@@ -18,6 +18,18 @@ unmatched_build_file_globs = "error"
 [black]
 config = "./pyproject.toml"
 
+[coverage-py]
+fail_under = 50
+filter = [
+    'llama-index-core/',
+    'llama-index-experimental/',
+    'llama-index-finetuning/',
+    'llama-index-integrations/',
+    'llama-index-utils/',
+]
+global_report = false
+report = ["console", "html", "xml"]
+
 [python]
 interpreter_constraints = ["==3.10.*", "==3.11.*", "==3.12.*", "==3.9.*"]
 
@@ -27,3 +39,6 @@ ambiguity_resolution = "by_source_root"
 [source]
 marker_filenames = ["pyproject.toml"]
 root_patterns = ["*tests", "/"]
+
+[test]
+use_coverage = true
