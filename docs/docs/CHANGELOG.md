@@ -1,5 +1,31 @@
 # ChangeLog
 
+## [2024-10-03]
+
+### `llama-index-core` [0.11.16]
+
+- Treat non-dict tool JSON function arguments as empty (instead of unexpected raise) (#16316)
+- Fixing instrumentation for workflows (#16290)
+- (workaround) Suppress token detaching exception during workflow tracing (#16364)
+- Raise warning instead of error when nodes have no content (#16354)
+- Fix typo in BasePGRetriever causing graph context to not be added (#16357)
+
+### `llama-index-embeddings-vertex-endpoint` [0.1.0]
+
+- adding vertex endpoint embedding (#16351)
+
+### `llama-index-llms-fireworks` [0.2.1]
+
+- Adding support in FireworksAI for Meta 3.2 Models: 1b-instruct; 3b-instruct; 11b-vision; 90b-vision (#16349)
+
+### `llama-index-multi-modal-llms-openai` [0.2.1]
+
+- Refactor OpenAI `update_tool_calls` (#16309)
+
+### `llama-index-vector-stores-milvus` [0.2.7]
+
+- Add support for nested MetadataFilters and FilterOperator.IS_EMPTY (#16329)
+
 ## [2024-10-02]
 
 ### `llama-index-core` [0.11.15]
@@ -63,7 +89,7 @@
 
 ### `llama-index-vector-stores-milvus` [0.2.6]
 
-- milvus: always set self._collection (#16306)
+- milvus: always set self.\_collection (#16306)
 - Fix milvus collection creation with index_config (#16165)
 
 ### `llama-index-vector-stores-oracledb` [0.1.0]
