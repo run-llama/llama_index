@@ -8,20 +8,14 @@ ZyteSerp can be used to add organic search results from Google Search. It takes 
 
 `pip install llama-index-readers-zyte-serp`
 
-1. **Install zyte-api Package**: Ensure the `zyte-api` package is installed to use the ZyteSerpReader. Install it via pip with the following command:
-
-   ```bash
-   pip install zyte-api
-   ```
-
-2. **API Key**: Secure an API key from [Zyte](https://www.zyte.com/zyte-api/) to access the Zyte services.
+Secure an API key from [Zyte](https://www.zyte.com/zyte-api/) to access the Zyte services.
 
 ### Using ZyteSerpReader
 
-- **Initialization**: Initialize the ZyteWebReader by providing the API key, the desired mode of operation (`article`, `html-text`, or `html`), and any optional parameters for the Zyte API.
+- **Initialization**: Initialize the ZyteSerpReader by providing the API key and the option for extraction ("httpResponseBody" or "browserHtml").
 
   ```python
-  from llama_index.readers.zyte_serp import ZyteWebReader
+  from llama_index.readers.zyte_serp import ZyteSerpReader
 
   zyte_serp = ZyteSerpReader(
       api_key="your_api_key_here",
@@ -29,7 +23,7 @@ ZyteSerp can be used to add organic search results from Google Search. It takes 
   )
   ```
 
-- **Loading Data**: To load data, use the `load_data` method with the URLs you wish to process.
+- **Loading Data**: To load search results, use the `load_data` method with the query you wish to search.
 
 ```python
 documents = zyte_serp.load_data(query="llama index docs")
@@ -37,17 +31,32 @@ documents = zyte_serp.load_data(query="llama index docs")
 
 ### Example Usage
 
-Here is an example demonstrating how to initialize the ZyteWebReader, load document from a URL.
+Here is an example demonstrating how to initialize the ZyteSerpReader and get top search URLs.
+Further the content from these URLs can be loaded using ZyteWebReader in "article" mode to obtain just the article content from webpage.
 
 ```python
+from llama_index.readers.zyte_serp import ZyteSerpReader
+from llama_index.readers.web.zyte.base import ZyteWebReader
+
 # Initialize the ZyteSerpReader with your API key
 zyte_serp = ZyteSerpReader(
     api_key="your_api_key_here",  # Replace with your actual API key
 )
 
-# Load documents from Paul G
-documents = zyte_serp.load_data(urls="llama index docs")
+# Get the search results (URLs from google search results)
+search_urls = zyte_serp.load_data(query="llama index docs")
 
-# Display the document
+# Display the results
+print(search_urls)
+
+urls = [result.text for result in search_urls]
+
+# Initialize the ZyteWebReader to load the content from search results
+zyte_web = ZyteWebReader(
+    api_key="your_api_key_here",  # Replace with your actual API key
+    mode="article",
+)
+
+documents = zyte_web.load_data(urls)
 print(documents)
 ```
