@@ -200,10 +200,13 @@ class NVIDIAEmbedding(BaseEmbedding):
         """
         if self._is_hosted:
             if model_name not in MODEL_ENDPOINT_MAP:
-                raise ValueError(
-                    f"Model {model_name} is incompatible with client {self.class_name()}. "
-                    f"Please check `{self.class_name()}.available_models()`."
-                )
+                if model_name in [model.id for model in self._client.models.list()]:
+                    warnings.warn(f"Unable to determine validity of {model_name}")
+                else:
+                    raise ValueError(
+                        f"Model {model_name} is incompatible with client {self.class_name()}. "
+                        f"Please check `{self.class_name()}.available_models()`."
+                    )
         else:
             if model_name not in [model.id for model in self.available_models]:
                 raise ValueError(f"No locally hosted {model_name} was found.")

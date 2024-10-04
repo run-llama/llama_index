@@ -106,3 +106,12 @@ def test_model_incompatible_client_model() -> None:
     with pytest.raises(ValueError) as msg:
         NVIDIAEmbedding(api_key="BOGUS", model=model_name)
     assert err_msg == str(msg.value)
+
+
+def test_model_incompatible_client_known_model() -> None:
+    model_name = "google/deplot"
+    warn_msg = f"Unable to determine validity"
+    with pytest.warns(UserWarning) as msg:
+        NVIDIAEmbedding(api_key="BOGUS", model=model_name)
+    assert len(msg) == 1
+    assert warn_msg in str(msg[0].message)
