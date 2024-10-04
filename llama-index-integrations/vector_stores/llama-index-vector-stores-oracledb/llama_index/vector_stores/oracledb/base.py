@@ -534,7 +534,7 @@ class OraLlamaVS(BasePydanticVectorStore):
         return [node.node_id for node in nodes]
 
     @_handle_exceptions
-    def delete(self, doc_id: str, **kwargs: Any) -> None:
+    def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
         with self._client.cursor() as cursor:
             ddl = f"DELETE FROM {self.table_name} WHERE doc_id = :doc_id"
             cursor.execute(ddl, [doc_id])
