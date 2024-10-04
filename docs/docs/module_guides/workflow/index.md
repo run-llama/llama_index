@@ -280,6 +280,78 @@ class MyWorkflow(Workflow):
         return StopEvent(result=events)
 ```
 
+## Streaming Events
+
+You can also iterate over events as they come in. This is useful for streaming purposes, showing progress, or for debugging.
+
+```python
+w = MyWorkflow(...)
+
+handler = w.run(topic="Pirates")
+
+async for event in handler.stream_events():
+    print(event)
+
+result = await handler
+```
+
+## Retry steps execution in case of failures
+
+A step that fails its execution might result in the failure of the entire workflow, but oftentimes errors are
+expected and the execution can be safely retried. Think of a HTTP request that times out because of a transient
+congestion of the network, or an external API call that hits a rate limiter.
+
+For all those situation where you want the step to try again, you can use a "Retry Policy". A retry policy is an object
+that instructs the workflow to execute a step multiple times, dictating how much time has to pass before a new attempt.
+Policies take into consideration how much time passed since the first failure, how many consecutive failures happened
+and which was the last error occurred.
+
+To set a policy for a specific step, all you have to do is passing a policy object to the `@step` decorator:
+
+
+```python
+from llama_index.core.workflow.retry_policy import ConstantDelayRetryPolicy
+
+
+class MyWorkflow(Workflow):
+    # ...more workflow definition...
+
+    # This policy will retry this step on failure every 5 seconds for at most 10 times
+    @step(retry_policy=ConstantDelayRetryPolicy(delay=5, maximum_attempts=10))
+    async def flaky_step(self, ctx: Context, ev: StartEvent) -> StopEvent:
+        result = flaky_call()  # this might raise
+        return StopEvent(result=result)
+```
+
+You can see the [API docs](../../api_reference/workflow/retry_policy/) for a detailed description of the policies
+available in the framework. If you can't find a policy that's suitable for your use case, you can easily write a
+custom one. The only requirement for custom policies is to write a Python class that respects the `RetryPolicy`
+protocol. In other words, your custom policy class must have a method with the following signature:
+
+```python
+def next(
+    self, elapsed_time: float, attempts: int, error: Exception
+) -> Optional[float]:
+    ...
+```
+
+For example, this is a retry policy that's excited about the weekend and only retries a step if it's Friday:
+
+```python
+from datetime import datetime
+
+
+class RetryOnFridayPolicy:
+    def next(
+        self, elapsed_time: float, attempts: int, error: Exception
+    ) -> Optional[float]:
+        if datetime.today().strftime("%A") == "Friday":
+            # retry in 5 seconds
+            return 5
+        # tell the workflow we don't want to retry
+        return None
+```
+
 ## Stepwise Execution
 
 Workflows have built-in utilities for stepwise execution, allowing you to control execution and debug state as things progress.
@@ -288,14 +360,16 @@ Workflows have built-in utilities for stepwise execution, allowing you to contro
 w = JokeFlow(...)
 
 # Kick off the workflow
-w.run_step(topic="Pirates")
+handler = w.run(topic="Pirates")
 
 # Iterate until done
-while not w.is_done():
-    w.run_step()
+async for _ in handler:
+    # inspect context
+    # val = await handler.ctx.get("key")
+    continue
 
 # Get the final result
-result = w.get_result()
+result = await handler
 ```
 
 ## Decorating non-class Functions
@@ -344,6 +418,25 @@ async def critique_joke(ev: JokeEvent) -> StopEvent:
     return StopEvent(result=str(response))
 ```
 
+## Maintaining Context Across Runs
+
+As you have seen, workflows have a `Context` object that can be used to maintain state across steps.
+
+If you want to maintain state across multiple runs of a workflow, you can pass a previous context into the `.run()` method.
+
+```python
+handler = w.run()
+result = await handler
+
+# continue with next run
+handler = w.run(ctx=handler.ctx)
+result = await handler
+```
+
+## Deploying a Workflow
+
+You can deploy a workflow as a multi-agent service with [llama_deploy](../../module_guides/workflow/deployment.md) ([repo](https://github.com/run-llama/llama_deploy)). Each agent service is orchestrated via a control plane and communicates via a message queue. Deploy locally or on Kubernetes.
+
 ## Examples
 
 You can find many useful examples of using workflows in the notebooks below:
@@ -353,6 +446,7 @@ You can find many useful examples of using workflows in the notebooks below:
 - [Common Workflow Patterns](../../examples/workflow/workflows_cookbook.ipynb)
 - [Corrective RAG](../../examples/workflow/corrective_rag_pack.ipynb)
 - [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb)
+- [Human In The Loop: Story Crafting](../../examples/workflow/human_in_the_loop_story_crafting.ipynb)
 - [JSON Query Engine](../../examples/workflow/JSONalyze_query_engine.ipynb)
 - [Long RAG](../../examples/workflow/long_rag_pack.ipynb)
 - [Multi-Step Query Engine](../../examples/workflow/multi_step_query_engine.ipynb)

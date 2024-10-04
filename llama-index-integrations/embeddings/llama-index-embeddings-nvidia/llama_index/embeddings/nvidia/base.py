@@ -55,13 +55,13 @@ class NVIDIAEmbedding(BaseEmbedding):
     )
 
     timeout: float = Field(
-        default=120, description="The timeout for the API request in seconds.", gte=0
+        default=120, description="The timeout for the API request in seconds.", ge=0
     )
 
     max_retries: int = Field(
         default=5,
         description="The maximum number of retries for the API request.",
-        gte=0,
+        ge=0,
     )
 
     _client: Any = PrivateAttr()

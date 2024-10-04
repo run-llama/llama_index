@@ -175,13 +175,27 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
                 src, dst = "Entity", "Entity"
 
             rel_tbl_name = f"LINKS_{src}_{dst}"
+            # Connect entities to each other
+            self.connection.execute(
+                f"""
+                MATCH (a:{src} {{id: $source_id}}),
+                        (b:{dst} {{id: $target_id}})
+                MERGE (a)-[r:{rel_tbl_name} {{label: $label}}]->(b)
+                    SET r.triplet_source_id = $triplet_source_id
+                """,
+                parameters={
+                    "source_id": rel.source_id,
+                    "target_id": rel.target_id,
+                    "triplet_source_id": rel.properties.get("triplet_source_id"),
+                    "label": rel.label,
+                },
+            )
+            # Connect chunks to entities
             self.connection.execute(
                 f"""
                 MATCH (a:{src} {{id: $source_id}}),
                         (b:{dst} {{id: $target_id}}),
                         (c:Chunk {{id: $triplet_source_id}})
-                MERGE (a)-[r:{rel_tbl_name} {{label: $label}}]->(b)
-                    SET r.triplet_source_id = $triplet_source_id
                 MERGE (c)-[:LINKS_Chunk_{src} {{label: "MENTIONS"}}]->(a)
                 MERGE (c)-[:LINKS_Chunk_{dst} {{label: "MENTIONS"}}]->(b)
                 """,
@@ -189,7 +203,6 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
                     "source_id": rel.source_id,
                     "target_id": rel.target_id,
                     "triplet_source_id": rel.properties.get("triplet_source_id"),
-                    "label": rel.label,
                 },
             )
 

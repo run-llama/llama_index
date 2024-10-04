@@ -51,8 +51,8 @@ class Upstage(OpenAI):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate."
@@ -63,17 +63,17 @@ class Upstage(OpenAI):
     top_logprobs: int = Field(
         description="The number of top token logprobs to return.",
         default=0,
-        gte=0,
-        lte=20,
+        ge=0,
+        le=20,
     )
     additional_kwargs: Dict[str, Any] = Field(
         description="Additional kwargs for the Upstage API.", default_factory=dict
     )
     max_retries: int = Field(
-        description="The maximum number of API retries.", default=3, gte=0
+        description="The maximum number of API retries.", default=3, ge=0
     )
     timeout: float = Field(
-        description="The timeout, in seconds, for API requests.", default=60.0, gte=0.0
+        description="The timeout, in seconds, for API requests.", default=60.0, ge=0.0
     )
     reuse_client: bool = Field(
         description=(
