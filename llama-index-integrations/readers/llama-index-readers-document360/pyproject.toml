@@ -14,7 +14,7 @@ contains_example = true
 import_path = "llama_index.readers.document360"
 
 [tool.llamahub.class_authors]
-Document360 = "acousticdesk"
+Document360 = "PLACE-INC"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -24,7 +24,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["PLACE INC <robertom@redmantech.com>"]
 description = "llama-index readers document360 integration"
 license = "MIT"
 name = "llama-index-readers-document360"
@@ -34,7 +34,7 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

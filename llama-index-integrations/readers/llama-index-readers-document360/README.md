@@ -80,6 +80,8 @@ def handle_article_processing_started(article: Article):
     logging.info(f"Processing article: {article}")
 ```
 
+All the fields in the entities are marked as Optional. This is because the actual API responses from Document360 sometimes do not match the expected schema mentioned in the API documentation.
+
 ## Referencing errors
 
 ```py
