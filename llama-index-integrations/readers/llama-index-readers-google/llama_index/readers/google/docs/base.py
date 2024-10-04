@@ -103,6 +103,7 @@ class GoogleDocsReader(BasePydanticReader):
             Credentials, the obtained credential.
         """
         creds = None
+        port = 8080
         if os.path.exists("token.json"):
             creds = Credentials.from_authorized_user_file("token.json", SCOPES)
         # If there are no (valid) credentials available, let the user log in.
@@ -114,8 +115,7 @@ class GoogleDocsReader(BasePydanticReader):
                     "credentials.json", SCOPES
                 )
 
-                port = 8080
-                with open("credentials.json", "r") as json_file:
+                with open("credentials.json") as json_file:
                     client_config = json.load(json_file)
                     redirect_uris = client_config["web"].get("redirect_uris", [])
                     if len(redirect_uris) > 0:
