@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
 from typing import Any, Callable, Generator, List, Optional, Dict, Protocol
 import inspect
+import logging
 import uuid
 from deprecated import deprecated
 from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
@@ -19,6 +20,7 @@ import wrapt
 
 DISPATCHER_SPAN_DECORATED_ATTR = "__dispatcher_span_decorated__"
 
+_logger = logging.getLogger(__name__)
 
 # ContextVar for managing active instrument tags
 active_instrument_tags: ContextVar[Dict[str, Any]] = ContextVar(
@@ -291,7 +293,15 @@ class Dispatcher(BaseModel):
                     )
                     raise
                 finally:
-                    context.run(active_span_id.reset, token)
+                    try:
+                        context.run(active_span_id.reset, token)
+                    except ValueError as e:
+                        # TODO: Since the context is created in a sync context no in async task,
+                        # detaching the token raises an ValueError saying "token was created
+                        # in a different Context. We should figure out how to handle active spans
+                        # correctly, but for now just suppressing the error so it won't be
+                        # surfaced to the user.
+                        _logger.debug(f"Failed to reset active_span_id: {e}")
 
             try:
                 result = func(*args, **kwargs)
