@@ -64,6 +64,7 @@ from llama_index.llms.openai.utils import (
     resolve_openai_credentials,
     to_openai_message_dicts,
     resolve_tool_choice,
+    update_tool_calls,
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
@@ -450,53 +451,6 @@ class OpenAI(FunctionCallingLLM):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
-    def _update_tool_calls(
-        self,
-        tool_calls: List[ChoiceDeltaToolCall],
-        tool_calls_delta: Optional[List[ChoiceDeltaToolCall]],
-    ) -> List[ChoiceDeltaToolCall]:
-        """
-        Use the tool_calls_delta objects received from openai stream chunks
-        to update the running tool_calls object.
-
-        Args:
-            tool_calls (List[ChoiceDeltaToolCall]): the list of tool calls
-            tool_calls_delta (ChoiceDeltaToolCall): the delta to update tool_calls
-
-        Returns:
-            List[ChoiceDeltaToolCall]: the updated tool calls
-        """
-        # openai provides chunks consisting of tool_call deltas one tool at a time
-        if tool_calls_delta is None:
-            return tool_calls
-
-        tc_delta = tool_calls_delta[0]
-
-        if len(tool_calls) == 0:
-            tool_calls.append(tc_delta)
-        else:
-            # we need to either update latest tool_call or start a
-            # new tool_call (i.e., multiple tools in this turn) and
-            # accumulate that new tool_call with future delta chunks
-            t = tool_calls[-1]
-            if t.index != tc_delta.index:
-                # the start of a new tool call, so append to our running tool_calls list
-                tool_calls.append(tc_delta)
-            else:
-                # not the start of a new tool call, so update last item of tool_calls
-
-                # validations to get passed by mypy
-                assert t.function is not None
-                assert tc_delta.function is not None
-                assert t.function.arguments is not None
-                assert t.function.name is not None
-                assert t.id is not None
-
-                t.function.arguments += tc_delta.function.arguments or ""
-                t.function.name += tc_delta.function.name or ""
-                t.id += tc_delta.id or ""
-        return tool_calls
-
     @llm_retry_decorator
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -533,7 +487,7 @@ class OpenAI(FunctionCallingLLM):
 
                 additional_kwargs = {}
                 if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
+                    tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
@@ -783,7 +737,7 @@ class OpenAI(FunctionCallingLLM):
 
                 additional_kwargs = {}
                 if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
+                    tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
