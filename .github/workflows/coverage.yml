@@ -48,23 +48,24 @@ jobs:
           pants tailor --check :: -docs/::
       - name: Run coverage checks on changed packages
         run: |
-          CHANGED_TARGETS=$(pants list --changed-since='origin/main')
+          # Get the changed files
+          CHANGED_FILES=$(pants list --changed-since=origin/main)
 
-          # Convert targets to exact package paths for coverage filter
-          FILTER_PATTERNS="\"["
-          for target in $CHANGED_TARGETS; do
-            # Extract package path and convert to Python module format
-            package=$(echo $target | sed 's/\/\/\(.*\):.*/\1/' | sed 's/-/_/g' | grep "py$")
-            if [ -n "$package" ]; then
-              FILTER_PATTERNS="${FILTER_PATTERNS}'${package}',"
+          # Find which roots contain changed files
+          FILTER_PATTERNS="["
+          for file in $CHANGED_FILES; do
+            root=$(echo "$file" | cut -d'/' -f1,2,3)
+            if [[ ! "$FILTER_PATTERNS" =~ "$root" ]]; then
+              FILTER_PATTERNS="${FILTER_PATTERNS}'${root}',"
             fi
           done
 
-          FILTER_PATTERNS="${FILTER_PATTERNS}]\""
+          # remove the last comma and close the bracket
+          FILTER_PATTERNS="${FILTER_PATTERNS%,}]"
 
-          echo $FILTER_PATTERNS
+          echo "Coverage filter patterns: $FILTER_PATTERNS"
 
           pants --level=error --no-local-cache test \
             --test-use-coverage \
-            --coverage-py-filter=${FILTER_PATTERNS} \
-            $CHANGED_TARGETS
+            --changed-since=origin/main \
+            --coverage-py-filter="$FILTER_PATTERNS"
