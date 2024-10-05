@@ -1,72 +1,381 @@
-# This file is adapted from
-# https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/
-# llms/llama-index-llms-huggingface/llama_index/llms/huggingface/base.py
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 import logging
 from typing import Any, Callable, List, Optional, Sequence, Union
 
-import torch
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    ChatResponseGen,
-    CompletionResponse,
-    CompletionResponseGen,
-    LLMMetadata,
-)
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.bridge.pydantic import Field
+from llama_index.llms.huggingface.base import HuggingFaceLLM
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
     DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
 )
-from llama_index.core.llms.callbacks import (
-    llm_chat_callback,
-    llm_completion_callback,
-)
-from llama_index.core.llms.custom import CustomLLM
-
-from llama_index.core.base.llms.generic_utils import (
-    completion_response_to_chat_response,
-    stream_completion_response_to_chat_response,
-    messages_to_prompt as generic_messages_to_prompt,
-)
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.prompts.base import PromptTemplate
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
-from transformers import (
-    StoppingCriteria,
-    StoppingCriteriaList,
-)
-from transformers import AutoTokenizer, LlamaTokenizer
-#gaudi
+
 from llama_index.llms.gaudi.utils import initialize_model
-from llama_index.llms.huggingface import HuggingFaceLLM
 
-#DEFAULT_HUGGINGFACE_MODEL = "meta-llama/Llama-2-7b-chat-hf"
-DEFAULT_HUGGINGFACE_MODEL = "/home/ubuntu/jean/models/mistral"
+DEFAULT_HUGGINGFACE_MODEL = "Intel/neural-chat-7b-v3-1"
 
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    datefmt="%m/%d/%Y %H:%M:%S",
+    level=logging.INFO,
+)
 logger = logging.getLogger(__name__)
 
 
-class GaudiLLM(CustomLLM):
-    r"""Gaudi-LLM.
+class GaudiLLM(HuggingFaceLLM):
+    r"""GaudiLLM LLM.
 
-    Example:
-        .. code-block:: python
+    Examples:
+        `pip install llama-index-llms-gaudi`
 
-            from llama_index.llms.ipex_llm import GaudiLLM
-            llm = GaudiLLM(model_path="/path/to/llama/model")
+        ```python
+        from llama_index.llms.gaudi import GaudiLLM
+        import argparse
+        import os, logging
+
+        def setup_parser(parser):
+            # Arguments management
+            parser.add_argument(
+                "--device", "-d", type=str, choices=["hpu"], help="Device to run", default="hpu"
+            )
+            parser.add_argument(
+                "--model_name_or_path",
+                default=None,
+                type=str,
+                # required=True,
+                help="Path to pre-trained model (on the HF Hub or locally).",
+            )
+            parser.add_argument(
+                "--bf16",
+                default=True,
+                action="store_true",
+                help="Whether to perform generation in bf16 precision.",
+            )
+            parser.add_argument(
+                "--max_new_tokens", type=int, default=100, help="Number of tokens to generate."
+            )
+            parser.add_argument(
+                "--max_input_tokens",
+                type=int,
+                default=0,
+                help="If > 0 then pad and truncate the input sequences to this specified length of tokens. \
+                    if == 0, then truncate to 16 (original default) \
+                    if < 0, then do not truncate, use full input prompt",
+            )
+            parser.add_argument("--batch_size", type=int, default=1, help="Input batch size.")
+            parser.add_argument(
+                "--warmup",
+                type=int,
+                default=3,
+                help="Number of warmup iterations for benchmarking.",
+            )
+            parser.add_argument(
+                "--n_iterations",
+                type=int,
+                default=5,
+                help="Number of inference iterations for benchmarking.",
+            )
+            parser.add_argument(
+                "--local_rank", type=int, default=0, metavar="N", help="Local process rank."
+            )
+            parser.add_argument(
+                "--use_kv_cache",
+                default=True,
+                action="store_true",
+                help="Whether to use the key/value cache for decoding. It should speed up generation.",
+            )
+            parser.add_argument(
+                "--use_hpu_graphs",
+                default=True,
+                action="store_true",
+                help="Whether to use HPU graphs or not. Using HPU graphs should give better latencies.",
+            )
+            parser.add_argument(
+                "--dataset_name",
+                default=None,
+                type=str,
+                help="Optional argument if you want to assess your model on a given dataset of the HF Hub.",
+            )
+            parser.add_argument(
+                "--column_name",
+                default=None,
+                type=str,
+                help="If `--dataset_name` was given, this will be the name of the column to use as prompts for generation.",
+            )
+            parser.add_argument(
+                "--do_sample",
+                action="store_true",
+                help="Whether to use sampling for generation.",
+            )
+            parser.add_argument(
+                "--num_beams",
+                default=1,
+                type=int,
+                help="Number of beams used for beam search generation. 1 means greedy search will be performed.",
+            )
+            parser.add_argument(
+                "--trim_logits",
+                action="store_true",
+                help="Calculate logits only for the last token to save memory in the first step.",
+            )
+            parser.add_argument(
+                "--seed",
+                default=27,
+                type=int,
+                help="Seed to use for random generation. Useful to reproduce your runs with `--do_sample`.",
+            )
+            parser.add_argument(
+                "--profiling_warmup_steps",
+                default=0,
+                type=int,
+                help="Number of steps to ignore for profiling.",
+            )
+            parser.add_argument(
+                "--profiling_steps",
+                default=0,
+                type=int,
+                help="Number of steps to capture for profiling.",
+            )
+            parser.add_argument(
+                "--profiling_record_shapes",
+                default=False,
+                type=bool,
+                help="Record shapes when enabling profiling.",
+            )
+            parser.add_argument(
+                "--prompt",
+                default=None,
+                type=str,
+                nargs="*",
+                help='Optional argument to give a prompt of your choice as input. Can be a single string (eg: --prompt "Hello world"), or a list of space-separated strings (eg: --prompt "Hello world" "How are you?")',
+            )
+            parser.add_argument(
+                "--bad_words",
+                default=None,
+                type=str,
+                nargs="+",
+                help="Optional argument list of words that are not allowed to be generated.",
+            )
+            parser.add_argument(
+                "--force_words",
+                default=None,
+                type=str,
+                nargs="+",
+                help="Optional argument list of words that must be generated.",
+            )
+            parser.add_argument(
+                "--assistant_model",
+                default=None,
+                type=str,
+                help="Optional argument to give a path to a draft/assistant model for assisted decoding.",
+            )
+            parser.add_argument(
+                 "--peft_model",
+                default=None,
+                type=str,
+                help="Optional argument to give a path to a PEFT model.",
+            )
+            parser.add_argument("--num_return_sequences", type=int, default=1)
+            parser.add_argument(
+                "--token",
+                default=None,
+                type=str,
+                help="The token to use as HTTP bearer authorization for remote files. If not specified, will use the token "
+                "generated when running `huggingface-cli login` (stored in `~/.huggingface`).",
+            )
+            parser.add_argument(
+                "--model_revision",
+                default="main",
+                type=str,
+                help="The specific model version to use (can be a branch name, tag name or commit id).",
+            )
+            parser.add_argument(
+                "--attn_softmax_bf16",
+                action="store_true",
+                help="Whether to run attention softmax layer in lower precision provided that the model supports it and "
+                "is also running in lower precision.",
+            )
+            parser.add_argument(
+                "--output_dir",
+                default=None,
+                type=str,
+                help="Output directory to store results in.",
+            )
+            parser.add_argument(
+                "--bucket_size",
+                default=-1,
+                type=int,
+                help="Bucket size to maintain static shapes. If this number is negative (default is -1) \
+                    then we use `shape = prompt_length + max_new_tokens`. If a positive number is passed \
+                    we increase the bucket in steps of `bucket_size` instead of allocating to max (`prompt_length + max_new_tokens`).",
+            )
+            parser.add_argument(
+                "--bucket_internal",
+                action="store_true",
+                help="Split kv sequence into buckets in decode phase. It improves throughput when max_new_tokens is large.",
+            )
+            parser.add_argument(
+                "--dataset_max_samples",
+                default=-1,
+                type=int,
+                help="If a negative number is passed (default = -1) perform inference on the whole dataset, else use only `dataset_max_samples` samples.",
+            )
+            parser.add_argument(
+                "--limit_hpu_graphs",
+                action="store_true",
+                help="Skip HPU Graph usage for first token to save memory",
+            )
+            parser.add_argument(
+                "--reuse_cache",
+                action="store_true",
+                help="Whether to reuse key/value cache for decoding. It should save memory.",
+            )
+            parser.add_argument(
+                "--verbose_workers",
+                action="store_true",
+                help="Enable output from non-master workers",
+            )
+            parser.add_argument(
+                "--simulate_dyn_prompt",
+                default=None,
+                type=int,
+                nargs="*",
+                help="If empty, static prompt is used. If a comma separated list of integers is passed, we warmup and use those shapes for prompt length.",
+            )
+            parser.add_argument(
+                "--reduce_recompile",
+                action="store_true",
+                help="Preprocess on cpu, and some other optimizations. Useful to prevent recompilations when using dynamic prompts (simulate_dyn_prompt)",
+            )
+            parser.add_argument(
+                "--use_flash_attention",
+                action="store_true",
+                help="Whether to enable Habana Flash Attention, provided that the model supports it.",
+            )
+            parser.add_argument(
+                "--flash_attention_recompute",
+                action="store_true",
+                help="Whether to enable Habana Flash Attention in recompute mode on first token generation. This gives an opportunity of splitting graph internally which helps reduce memory consumption.",
+            )
+            parser.add_argument(
+                "--flash_attention_causal_mask",
+                action="store_true",
+                help="Whether to enable Habana Flash Attention in causal mode on first token generation.",
+            )
+            parser.add_argument(
+                "--flash_attention_fast_softmax",
+                action="store_true",
+                help="Whether to enable Habana Flash Attention in fast softmax mode.",
+            )
+            parser.add_argument(
+                "--book_source",
+                action="store_true",
+                help="Whether to use project Guttenberg books data as input. Useful for testing large sequence lengths.",
+            )
+            parser.add_argument(
+                "--torch_compile",
+                action="store_true",
+                help="Whether to use torch compiled model or not.",
+            )
+            parser.add_argument(
+                "--ignore_eos",
+                default=True,
+                action=argparse.BooleanOptionalAction,
+                help="Whether to ignore eos, set False to disable it",
+            )
+            parser.add_argument(
+                "--temperature",
+                default=1.0,
+                type=float,
+                help="Temperature value for text generation",
+            )
+            parser.add_argument(
+                "--top_p",
+                default=1.0,
+                type=float,
+                help="Top_p value for generating text via sampling",
+            )
+            parser.add_argument(
+                "--const_serialization_path",
+                "--csp",
+                type=str,
+                help="Path to serialize const params. Const params will be held on disk memory instead of being allocated on host memory.",
+            )
+            parser.add_argument(
+                "--disk_offload",
+                action="store_true",
+                help="Whether to enable device map auto. In case no space left on cpu, weights will be offloaded to disk.",
+            )
+            parser.add_argument(
+                "--trust_remote_code",
+                action="store_true",
+                help="Whether or not to allow for custom models defined on the Hub in their own modeling files.",
+            )
+            args = parser.parse_args()
+
+            if args.torch_compile:
+                args.use_hpu_graphs = False
+
+            if not args.use_hpu_graphs:
+                args.limit_hpu_graphs = False
+
+            args.quant_config = os.getenv("QUANT_CONFIG", "")
+            if args.quant_config == "" and args.disk_offload:
+                logger.warning(
+                    "`--disk_offload` was tested only with fp8, it may not work with full precision. If error raises try to remove the --disk_offload flag."
+                )
+            return args
+
+        def messages_to_prompt(messages):
+            prompt = ""
+            for message in messages:
+                if message.role == 'system':
+                prompt += f"<|system|>\n{message.content}</s>\n"
+                elif message.role == 'user':
+                prompt += f"<|user|>\n{message.content}</s>\n"
+                elif message.role == 'assistant':
+                prompt += f"<|assistant|>\n{message.content}</s>\n"
+
+            # ensure we start with a system prompt, insert blank if needed
+            if not prompt.startswith("<|system|>\n"):
+                prompt = "<|system|>\n</s>\n" + prompt
+
+            # add final assistant prompt
+            prompt = prompt + "<|assistant|>\n"
+
+            return prompt
+
+        def completion_to_prompt(completion):
+            return f"<|system|>\n</s>\n<|user|>\n{completion}</s>\n<|assistant|>\n"
+
+        import torch
+        from llama_index.core.prompts import PromptTemplate
+        from llama_index.llms.optimum-intel import GaudiLLM
+
+        parser = argparse.ArgumentParser(description="GaudiLLM Basic Usage Example")
+        args = setup_parser(parser)
+        args.model_name_or_path = "HuggingFaceH4/zephyr-7b-alpha"
+
+        llm = GaudiLLM(
+            args=args,
+            logger=logger,
+            model_name="HuggingFaceH4/zephyr-7b-alpha",
+            tokenizer_name="HuggingFaceH4/zephyr-7b-alpha",
+            query_wrapper_prompt=PromptTemplate(
+                "<|system|>\n</s>\n<|user|>\n{query_str}</s>\n<|assistant|>\n"
+            ),
+            context_window=3900,
+            max_new_tokens=256,
+            generate_kwargs={"temperature": 0.7, "top_k": 50, "top_p": 0.95},
+            messages_to_prompt=messages_to_prompt,
+            device_map="auto",
+        )
+
+        response = llm.complete("What is the meaning of life?")
+        print(str(response))
+        ```
     """
 
     model_name: str = Field(
@@ -76,24 +385,6 @@ class GaudiLLM(CustomLLM):
             "Unused if `model` is passed in directly."
         ),
     )
-    context_window: int = Field(
-        default=DEFAULT_CONTEXT_WINDOW,
-        description="The maximum number of tokens available for input.",
-        gt=0,
-    )
-    max_new_tokens: int = Field(
-        default=DEFAULT_NUM_OUTPUTS,
-        description="The maximum number of tokens to generate.",
-        gt=0,
-    )
-    query_wrapper_prompt: PromptTemplate = Field(
-        default=PromptTemplate("{query_str}"),
-        description=(
-            "The query wrapper prompt, containing the query placeholder. "
-            "The model card on HuggingFace should specify if this is needed. "
-            "Should contain a `{query_str}` placeholder."
-        ),
-    )
     tokenizer_name: str = Field(
         default=DEFAULT_HUGGINGFACE_MODEL,
         description=(
@@ -101,47 +392,11 @@ class GaudiLLM(CustomLLM):
             "Unused if `tokenizer` is passed in directly."
         ),
     )
-    device_map: str = Field(
-        default="cpu", description="The device_map to use. Defaults to 'cpu'."
-    )
-    stopping_ids: List[int] = Field(
-        default_factory=list,
-        description=(
-            "The stopping ids to use. "
-            "Generation stops when these token IDs are predicted."
-        ),
-    )
-    tokenizer_outputs_to_remove: list = Field(
-        default_factory=list,
-        description=(
-            "The outputs to remove from the tokenizer. "
-            "Sometimes huggingface tokenizers return extra inputs that cause errors."
-        ),
-    )
-    tokenizer_kwargs: dict = Field(
-        default_factory=dict, description="The kwargs to pass to the tokenizer."
-    )
-    model_kwargs: dict = Field(
-        default_factory=dict,
-        description="The kwargs to pass to the model during initialization.",
-    )
-    generate_kwargs: dict = Field(
-        default_factory=dict,
-        description="The kwargs to pass to the model during generation.",
-    )
-    is_chat_model: bool = Field(
-        default=False,
-        description=" Be sure to verify that you either pass an appropriate tokenizer "
-                    "that can convert prompts to properly formatted chat messages or a "
-                                "`messages_to_prompt` that does so.",
-    )
-
-    _model: Any = PrivateAttr()
-    _tokenizer: Any = PrivateAttr()
-    _stopping_criteria: Any = PrivateAttr()
 
     def __init__(
-        self, args, logger,
+        self,
+        args,
+        logger,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
         query_wrapper_prompt: Union[str, PromptTemplate] = "{query_str}",
@@ -163,77 +418,10 @@ class GaudiLLM(CustomLLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        """
-        Construct GaudiLLM.
-
-        Args:
-            context_window: The maximum number of tokens available for input.
-            max_new_tokens: The maximum number of tokens to generate.
-            tokenizer_name: The name of the tokenizer to use from HuggingFace.
-                        Unused if `tokenizer` is passed in directly.
-            model_name: The model name to use from HuggingFace.
-                        Unused if `model` is passed in directly.
-            model: The HuggingFace model.
-            tokenizer: The tokenizer.
-            device_map: The device_map to use. Defaults to 'auto'.
-            stopping_ids: The stopping ids to use.
-                        Generation stops when these token IDs are predicted.
-            tokenizer_kwargs: The kwargs to pass to the tokenizer.
-            tokenizer_outputs_to_remove: The outputs to remove from the tokenizer.
-                        Sometimes huggingface tokenizers return extra inputs that cause errors.
-            model_kwargs: The kwargs to pass to the model during initialization.
-            generate_kwargs: The kwargs to pass to the model during generation.
-            is_chat_model: Whether the model is `chat`
-            callback_manager: Callback manager.
-            messages_to_prompt: Function to convert messages to prompt.
-            completion_to_prompt: Function to convert messages to prompt.
-            pydantic_program_mode: DEFAULT.
-            output_parser: BaseOutputParser.
-
-        Returns:
-            None.
-        """
+        """Initialize params."""
         model_kwargs = model_kwargs or {}
 
-        model, _, tokenizer, _= initialize_model(args, logger)
-
-        # check context_window
-        config_dict = model.config.to_dict()
-        model_context_window = int(
-            config_dict.get("max_position_embeddings", context_window)
-        )
-        if model_context_window and model_context_window < context_window:
-            logger.warning(
-                f"Supplied context_window {context_window} is greater "
-                f"than the model's max input size {model_context_window}. "
-                "Disable this warning by setting a lower context_window."
-            )
-            context_window = model_context_window
-
-
-        # setup stopping criteria
-        stopping_ids_list = stopping_ids or []
-
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token
-
-        class StopOnTokens(StoppingCriteria):
-            def __call__(
-                self,
-                input_ids: torch.LongTensor,
-                scores: torch.FloatTensor,
-                **kwargs: Any,
-            ) -> bool:
-                for stop_id in stopping_ids_list:
-                    if input_ids[0][-1] == stop_id:
-                        return True
-                return False
-
-        stopping_criteria = StoppingCriteriaList([StopOnTokens()])
-        if isinstance(query_wrapper_prompt, str):
-            query_wrapper_prompt = PromptTemplate(query_wrapper_prompt)
-
-        messages_to_prompt = messages_to_prompt or self._tokenizer_messages_to_prompt
+        model, _, tokenizer, _ = initialize_model(args, logger)
 
         super().__init__(
             context_window=context_window,
@@ -241,6 +429,8 @@ class GaudiLLM(CustomLLM):
             query_wrapper_prompt=query_wrapper_prompt,
             tokenizer_name=tokenizer_name,
             model_name=model_name,
+            model=model,
+            tokenizer=tokenizer,
             device_map=device_map,
             stopping_ids=stopping_ids or [],
             tokenizer_kwargs=tokenizer_kwargs or {},
@@ -256,130 +446,6 @@ class GaudiLLM(CustomLLM):
             output_parser=output_parser,
         )
 
-        self._model = model
-        self._tokenizer = tokenizer
-        self._stopping_criteria = stopping_criteria
-
     @classmethod
     def class_name(cls) -> str:
         return "GaudiLLM"
-
-    @property
-    def metadata(self) -> LLMMetadata:
-        """LLM metadata."""
-        return LLMMetadata(
-            context_window=self.context_window,
-            num_output=self.max_new_tokens,
-            model_name=self.model_name,
-            is_chat_model=self.is_chat_model,
-        )
-
-    def _tokenizer_messages_to_prompt(self, messages: Sequence[ChatMessage]) -> str:
-        if hasattr(self._tokenizer, "apply_chat_template"):
-            messages_dict = [
-                {"role": message.role.value, "content": message.content}
-                for message in messages
-            ]
-            tokens = self._tokenizer.apply_chat_template(messages_dict)
-            return self._tokenizer.decode(tokens)
-
-        return generic_messages_to_prompt(messages)
-
-    @llm_completion_callback()
-    def complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
-        """
-        Complete by LLM.
-
-        Args:
-            prompt: Prompt for completion.
-            formatted: Whether the prompt is formatted by wrapper.
-            kwargs: Other kwargs for complete.
-
-        Returns:
-            CompletionReponse after generation.
-        """
-        if not formatted:
-            prompt = self.completion_to_prompt(prompt)
-        input_ids = self._tokenizer(prompt, return_tensors="pt")
-        input_ids = input_ids.to(self._model.device)
-        # remove keys from the tokenizer if needed, to avoid HF errors
-        for key in self.tokenizer_outputs_to_remove:
-            if key in input_ids:
-                input_ids.pop(key, None)
-        tokens = self._model.generate(
-            **input_ids,
-            max_new_tokens=self.max_new_tokens,
-            stopping_criteria=self._stopping_criteria,
-            pad_token_id=self._tokenizer.pad_token_id,
-            **self.generate_kwargs,
-        )
-        completion_tokens = tokens[0][input_ids["input_ids"].size(1) :]
-        completion = self._tokenizer.decode(completion_tokens, skip_special_tokens=True)
-
-        return CompletionResponse(text=completion, raw={"model_output": tokens})
-
-    @llm_completion_callback()
-    def stream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponseGen:
-        """
-        Complete by LLM in stream.
-
-        Args:
-            prompt: Prompt for completion.
-            formatted: Whether the prompt is formatted by wrapper.
-            kwargs: Other kwargs for complete.
-
-        Returns:
-            CompletionReponse after generation.
-        """
-        from transformers import TextIteratorStreamer
-
-        if not formatted:
-            prompt = self.completion_to_prompt(prompt)
-
-        input_ids = self._tokenizer.encode(prompt, return_tensors="pt")
-        input_ids = input_ids.to(self._model.device)
-
-        for key in self.tokenizer_outputs_to_remove:
-            if key in input_ids:
-                input_ids.pop(key, None)
-
-        streamer = TextIteratorStreamer(
-            self._tokenizer, skip_prompt=True, skip_special_tokens=True
-        )
-        generation_kwargs = dict(
-            input_ids=input_ids,
-            streamer=streamer,
-            max_new_tokens=self.max_new_tokens,
-            stopping_criteria=self._stopping_criteria,
-            pad_token_id=self._tokenizer.pad_token_id,
-            **self.generate_kwargs,
-        )
-        thread = Thread(target=self._model.generate, kwargs=generation_kwargs)
-        thread.start()
-
-        # create generator based off of streamer
-        def gen() -> CompletionResponseGen:
-            text = ""
-            for x in streamer:
-                text += x
-                yield CompletionResponse(text=text, delta=x)
-
-        return gen()
-
-    @llm_chat_callback()
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        prompt = self.messages_to_prompt(messages)
-        completion_response = self.complete(prompt, formatted=True, **kwargs)
-        return completion_response_to_chat_response(completion_response)
-
-    @llm_chat_callback()
-    def stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
-        prompt = self.messages_to_prompt(messages)
-        completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
-        return stream_completion_response_to_chat_response(completion_response)

@@ -27,4 +27,3 @@ python basic.py
 > ```bash
 > pip install -U transformers tokenizers
 > ```
-
