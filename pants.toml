@@ -20,13 +20,6 @@ config = "./pyproject.toml"
 
 [coverage-py]
 fail_under = 50
-filter = [
-    'llama-index-core/',
-    'llama-index-experimental/',
-    'llama-index-finetuning/',
-    'llama-index-integrations/',
-    'llama-index-utils/',
-]
 global_report = false
 report = ["console", "html", "xml"]
 
