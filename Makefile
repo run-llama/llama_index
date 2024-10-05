@@ -13,9 +13,6 @@ lint:	## Run linters: pre-commit (black, ruff, codespell) and mypy
 test:	## Run tests via pants
 	pants --level=error --no-local-cache --changed-since=origin/main --changed-dependents=transitive --no-test-use-coverage test
 
-test-coverage:	## Run tests for changed files only to collect coverage
-	pants --level=error --no-local-cache --changed-since=origin/main --test-use-coverage test
-
 test-core:	## Run tests via pants
 	pants --no-local-cache test llama-index-core/::
 
