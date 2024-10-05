@@ -11,7 +11,10 @@ lint:	## Run linters: pre-commit (black, ruff, codespell) and mypy
 	pre-commit install && git ls-files | xargs pre-commit run --show-diff-on-failure --files
 
 test:	## Run tests via pants
-	pants --level=error --no-local-cache --changed-since=origin/main --changed-dependents=transitive test
+	pants --level=error --no-local-cache --changed-since=origin/main --changed-dependents=transitive --use-coverage=false test
+
+test-coverage:	## Run tests for changed files only to collect coverage
+	pants --level=error --no-local-cache --changed-since=origin/main --use-coverage=true test
 
 test-core:	## Run tests via pants
 	pants --no-local-cache test llama-index-core/::
