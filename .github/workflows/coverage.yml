@@ -49,7 +49,7 @@ jobs:
       - name: Run coverage checks on changed packages
         run: |
           # Get the list of changed targets
-          CHANGED_TARGETS=$(pants list --changed-since=${{ github.event.pull_request.base.sha || 'origin/main' }} '**:*')
+          CHANGED_TARGETS=$(pants list --changed-since='origin/main')
 
           # Convert the targets into coverage filter patterns
           FILTER_PATTERNS=""
@@ -63,6 +63,6 @@ jobs:
           done
 
           # Run coverage checks with the dynamic filter
-          pants --level=error --no-local-cache --changed-since=${{ github.event.pull_request.base.sha || 'origin/main' }} test \
+          pants --level=error --no-local-cache --changed-since='origin/main' test \
             --test-use-coverage \
             --coverage-py-filter="$FILTER_PATTERNS"
