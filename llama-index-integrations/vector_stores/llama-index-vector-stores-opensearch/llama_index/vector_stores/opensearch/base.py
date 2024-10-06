@@ -325,7 +325,6 @@ class OpensearchVectorClient:
 
         if filters:
             # filter key must be added only when filtering to avoid "filter doesn't support values of type: START_ARRAY" exception
-            print(filters)
             query["query"]["knn"][vector_field]["filter"] = filters
         return query
 
