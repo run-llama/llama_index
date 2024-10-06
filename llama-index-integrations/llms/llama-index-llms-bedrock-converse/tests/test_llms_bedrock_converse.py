@@ -20,12 +20,9 @@ messages = [ChatMessage(role=MessageRole.USER, content="Test")]
 prompt = "Test"
 
 
-class MockThrottlingException(Exception):
-    pass
-
-
 class MockExceptions:
-    ThrottlingException = MockThrottlingException
+    class ThrottlingException(Exception):
+        pass
 
 
 class AsyncMockClient:
