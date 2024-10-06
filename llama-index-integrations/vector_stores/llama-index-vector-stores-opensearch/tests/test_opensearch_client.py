@@ -5,6 +5,7 @@ import time
 import uuid
 from datetime import datetime
 from typing import List, Generator, Set
+from unittest import mock
 
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.opensearch import (
@@ -787,8 +788,9 @@ def test_filter_nested(
 def test_filter_array_of_strings(
     os_stores: List[OpensearchVectorStore], insert_document
 ):
-    """Test that OpensearchVectorStore correctly applies FilterOperator.CONTAINS in filters. Should only match
-    exact substring matches.
+    """Test that OpensearchVectorStore correctly applies Filter.Operator.IN filters
+    when the filter value is an array of strings. Should only match all members
+    of the input array exist in the field.
     """
     for os_store in os_stores:
         for metadata, id_ in [
@@ -817,3 +819,34 @@ def test_filter_array_of_strings(
 
         doc_ids = {node.id_ for node in query_result.nodes}
         assert doc_ids == {"match1", "match2"}
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_efficient_filtering_used_when_enabled(os_stores: List[OpensearchVectorStore]):
+    """Test that efficient filtering is used when the engine and opensearch version supports it."""
+    os_store = os_stores[0]
+
+    with mock.patch.object(
+        os_store.client, "_default_approximate_search_query"
+    ) as patched_default_approximate_search_query:
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="location",
+                    value=["Nevada", "California", "Illinois"],
+                    operator=FilterOperator.IN,
+                )
+            ]
+        )
+        os_store.client._efficient_filtering_enabled = False
+        os_store.client._method["engine"] = "lucene"
+        os_store.client._knn_search_query(
+            embedding_field="embedding", query_embedding=[1], k=20, filters=filters
+        )
+        assert not patched_default_approximate_search_query.called
+
+        os_store.client._efficient_filtering_enabled = True
+        os_store.client._knn_search_query(
+            embedding_field="embedding", query_embedding=[1], k=20, filters=filters
+        )
+        assert patched_default_approximate_search_query.called

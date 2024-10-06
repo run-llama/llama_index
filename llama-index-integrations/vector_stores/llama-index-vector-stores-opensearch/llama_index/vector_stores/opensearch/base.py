@@ -120,6 +120,10 @@ class OpensearchVectorClient:
         self._os_async_client = self._get_async_opensearch_client(
             self._endpoint, **kwargs
         )
+        self._os_version = self._get_opensearch_version()
+        self._efficient_filtering_enabled = self._is_efficient_filtering_enabled(
+            self._os_version
+        )
         not_found_error = self._import_not_found_error()
 
         try:
@@ -192,6 +196,10 @@ class OpensearchVectorClient:
                 f"Got error: {e} "
             )
         return client
+
+    def _get_opensearch_version(self) -> str:
+        info = self._os_client.info()
+        return info["version"]["number"]
 
     def _bulk_ingest_embeddings(
         self,
@@ -441,10 +449,21 @@ class OpensearchVectorClient:
         """
         filters = self._parse_filters(filters)
 
-        if search_method == "approximate" and self._method["engine"] in [
-            "lucene",
-            "faiss",
-        ]:
+        if not filters:
+            search_query = self._default_approximate_search_query(
+                query_embedding,
+                k,
+                vector_field=embedding_field,
+            )
+        elif (
+            search_method == "approximate"
+            and self._method["engine"]
+            in [
+                "lucene",
+                "faiss",
+            ]
+            and self._efficient_filtering_enabled
+        ):
             # if engine is lucene or faiss, opensearch recommends efficient-kNN filtering.
             search_query = self._default_approximate_search_query(
                 query_embedding,
@@ -595,6 +614,11 @@ class OpensearchVectorClient:
         ):
             return True
         return False
+
+    def _is_efficient_filtering_enabled(self, os_version: str) -> bool:
+        """Check if kNN with efficient filtering is enabled."""
+        major, minor, patch = os_version.split(".")
+        return int(major) >= 2 and int(minor) >= 9
 
     def index_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """Store results in the index."""
