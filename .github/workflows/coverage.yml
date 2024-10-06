@@ -1,0 +1,71 @@
+name: Check Coverage
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  POETRY_VERSION: "1.8.3"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest-unit-tester
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9"]
+    steps:
+      - name: clear space
+        env:
+          CI: true
+        shell: bash
+        run: rm -rf /opt/hostedtoolcache/*
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: update rustc
+        run: rustup update stable
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "poetry"
+          cache-dependency-path: "**/poetry.lock"
+      - uses: pantsbuild/actions/init-pants@v5-scie-pants
+        with:
+          # v0 makes it easy to bust the cache if needed
+          # just increase the integer to start with a fresh cache
+          gha-cache-key: v1-py${{ matrix.python_version }}
+          named-caches-hash: v1-py${{ matrix.python_version }}
+          pants-python-version: ${{ matrix.python-version }}
+          pants-ci-config: pants.toml
+      - name: Check BUILD files
+        run: |
+          pants tailor --check :: -docs/::
+      - name: Run coverage checks on changed packages
+        run: |
+          # Get the changed files
+          CHANGED_FILES=$(pants list --changed-since=origin/main)
+
+          # Find which roots contain changed files
+          FILTER_PATTERNS="["
+          for file in $CHANGED_FILES; do
+            root=$(echo "$file" | cut -d'/' -f1,2,3)
+            if [[ ! "$FILTER_PATTERNS" =~ "$root" ]]; then
+              FILTER_PATTERNS="${FILTER_PATTERNS}'${root}',"
+            fi
+          done
+
+          # remove the last comma and close the bracket
+          FILTER_PATTERNS="${FILTER_PATTERNS%,}]"
+
+          echo "Coverage filter patterns: $FILTER_PATTERNS"
+
+          pants --level=error --no-local-cache test \
+            --test-use-coverage \
+            --changed-since=origin/main \
+            --coverage-py-filter="$FILTER_PATTERNS"
