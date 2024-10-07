@@ -800,6 +800,7 @@ nav:
           - ./module_guides/observability/index.md
           - ./module_guides/observability/instrumentation.md
       - Settings: ./module_guides/supporting_modules/settings.md
+      - Llama Deploy: ./module_guides/llama_deploy
   - Advanced Topics:
       - ./optimizing/production_rag.md
       - ./optimizing/basic_strategies/basic_strategies.md
@@ -1604,6 +1605,8 @@ nav:
           - ./api_reference/workflow/events.md
           - ./api_reference/workflow/retry_policy.md
           - ./api_reference/workflow/workflow.md
+      - Llama Deploy:
+          - ./api_reference/llama_deploy
   - Open-Source Community:
       - Integrations: ./community/integrations.md
       - Full Stack Projects: ./community/full_stack_projects.md
