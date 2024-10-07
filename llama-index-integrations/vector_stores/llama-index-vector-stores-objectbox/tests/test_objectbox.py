@@ -103,5 +103,7 @@ def remove_test_dir(test_dir: str):
 def auto_cleanup(vectorstore: ObjectBoxVectorStore):
     yield  # run the test function
     vectorstore.close()
-    os.remove("llama_index/vector_stores/objectbox/objectbox-model.json")
+    os.remove(
+        "llama-index-integrations/vector_stores/llama-index-vector-stores-objectbox/llama_index/vector_stores/objectbox/objectbox-model.json"
+    )
     remove_test_dir("objectbox")
