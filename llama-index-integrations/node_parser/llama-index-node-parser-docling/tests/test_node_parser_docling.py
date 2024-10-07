@@ -5,29 +5,26 @@ from llama_index.core.schema import Document as LIDocument
 from llama_index.node_parser.docling import DoclingNodeParser
 from llama_index.core.schema import BaseNode
 
-in_json_str = """{
-  "name": "foo",
-  "description": {
-    "logs": []
-  },
-  "main_text": [
+in_json_str = json.dumps(
     {
-      "text": "Test subtitle",
-      "type": "subtitle-level-1",
-      "name": "Section-header"
-    },
-    {
-      "text": "This is a test paragraph.",
-      "type": "paragraph",
-      "name": "Text"
+        "id_": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3",
+        "embedding": None,
+        "metadata": {
+            "dl_doc_hash": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3"
+        },
+        "excluded_embed_metadata_keys": ["dl_doc_hash"],
+        "excluded_llm_metadata_keys": ["dl_doc_hash"],
+        "relationships": {},
+        "text": '{"_name":"","type":"pdf-document","description":{"title":null,"abstract":null,"authors":null,"affiliations":null,"subjects":null,"keywords":null,"publication_date":null,"languages":null,"license":null,"publishers":null,"url_refs":null,"references":null,"publication":null,"reference_count":null,"citation_count":null,"citation_date":null,"advanced":null,"analytics":null,"logs":[],"collection":null,"acquisition":null},"file-info":{"filename":"","filename-prov":null,"document-hash":"129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3","#-pages":null,"collection-name":null,"description":null,"page-hashes":null},"main-text":[{"text":"A duckling is a young duck in downy plumage[1] or baby duck,[2] but in the food trade a young domestic duck which has just reached adult size and bulk and its meat is still fully tender, is sometimes labelled as a duckling.","type":"paragraph","name":"text","font":null,"prov":[{"bbox":[1.0,2.0,3.0,4.0],"page":1,"span":[0,1],"__ref_s3_data":null}]},{"text":"A male is called a drake and the female is called a duck, or in ornithology a hen.","type":"paragraph","name":"text","font":null,"prov":[{"bbox":[1.0,2.0,3.0,4.0],"page":1,"span":[0,2],"__ref_s3_data":null}]}],"figures":null,"tables":null,"bitmaps":null,"equations":null,"footnotes":null,"page-dimensions":null,"page-footers":null,"page-headers":null,"_s3_data":null,"identifiers":null}',
+        "mimetype": "text/plain",
+        "start_char_idx": None,
+        "end_char_idx": None,
+        "text_template": "{metadata_str}\n\n{content}",
+        "metadata_template": "{key}: {value}",
+        "metadata_seperator": "\n",
+        "class_name": "Document",
     }
-  ],
-  "file-info": {
-    "filename": "foo.pdf",
-    "document-hash": "123"
-  }
-}
-"""
+)
 
 out_get_nodes = {
     "root": [
@@ -202,9 +199,7 @@ def test_parse_nodes():
 
 
 def test_get_nodes_from_docs():
-    with open(ROOT_DIR_PATH / "data" / "inp_li_doc.json") as f:
-        data_json = f.read()
-    li_doc = LIDocument.from_json(data_json)
+    li_doc = LIDocument.from_json(in_json_str)
     node_parser = DoclingNodeParser(
         id_func=_deterministic_id_func,
     )
