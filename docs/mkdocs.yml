@@ -946,6 +946,80 @@ nav:
           - ./api_reference/instrumentation/index.md
           - ./api_reference/instrumentation/span_handlers.md
           - ./api_reference/instrumentation/span_types.md
+      - Llama Datasets:
+          - ./api_reference/llama_dataset/index.md
+      - Llama Deploy:
+          - ./api_reference/llama_deploy
+      - Llama Packs:
+          - ./api_reference/packs/agent_search_retriever.md
+          - ./api_reference/packs/agents_coa.md
+          - ./api_reference/packs/agents_lats.md
+          - ./api_reference/packs/agents_llm_compiler.md
+          - ./api_reference/packs/amazon_product_extraction.md
+          - ./api_reference/packs/arize_phoenix_query_engine.md
+          - ./api_reference/packs/auto_merging_retriever.md
+          - ./api_reference/packs/chroma_autoretrieval.md
+          - ./api_reference/packs/code_hierarchy.md
+          - ./api_reference/packs/cogniswitch_agent.md
+          - ./api_reference/packs/cohere_citation_chat.md
+          - ./api_reference/packs/corrective_rag.md
+          - ./api_reference/packs/deeplake_deepmemory_retriever.md
+          - ./api_reference/packs/deeplake_multimodal_retrieval.md
+          - ./api_reference/packs/dense_x_retrieval.md
+          - ./api_reference/packs/diff_private_simple_dataset.md
+          - ./api_reference/packs/docugami_kg_rag.md
+          - ./api_reference/packs/evaluator_benchmarker.md
+          - ./api_reference/packs/finchat.md
+          - ./api_reference/packs/fusion_retriever.md
+          - ./api_reference/packs/fuzzy_citation.md
+          - ./api_reference/packs/gmail_openai_agent.md
+          - ./api_reference/packs/gradio_agent_chat.md
+          - ./api_reference/packs/gradio_react_agent_chatbot.md
+          - ./api_reference/packs/index.md
+          - ./api_reference/packs/infer_retrieve_rerank.md
+          - ./api_reference/packs/koda_retriever.md
+          - ./api_reference/packs/llama_dataset_metadata.md
+          - ./api_reference/packs/llama_guard_moderator.md
+          - ./api_reference/packs/llava_completion.md
+          - ./api_reference/packs/longrag.md
+          - ./api_reference/packs/mixture_of_agents.md
+          - ./api_reference/packs/multi_document_agents.md
+          - ./api_reference/packs/multi_tenancy_rag.md
+          - ./api_reference/packs/multidoc_autoretrieval.md
+          - ./api_reference/packs/nebulagraph_query_engine.md
+          - ./api_reference/packs/neo4j_query_engine.md
+          - ./api_reference/packs/node_parser_semantic_chunking.md
+          - ./api_reference/packs/ollama_query_engine.md
+          - ./api_reference/packs/panel_chatbot.md
+          - ./api_reference/packs/query_understanding_agent.md
+          - ./api_reference/packs/raft_dataset.md
+          - ./api_reference/packs/rag_cli_local.md
+          - ./api_reference/packs/rag_evaluator.md
+          - ./api_reference/packs/rag_fusion_query_pipeline.md
+          - ./api_reference/packs/ragatouille_retriever.md
+          - ./api_reference/packs/raptor.md
+          - ./api_reference/packs/recursive_retriever.md
+          - ./api_reference/packs/redis_ingestion_pipeline.md
+          - ./api_reference/packs/resume_screener.md
+          - ./api_reference/packs/retry_engine_weaviate.md
+          - ./api_reference/packs/searchain.md
+          - ./api_reference/packs/secgpt.md
+          - ./api_reference/packs/self_discover.md
+          - ./api_reference/packs/self_rag.md
+          - ./api_reference/packs/sentence_window_retriever.md
+          - ./api_reference/packs/snowflake_query_engine.md
+          - ./api_reference/packs/stock_market_data_query_engine.md
+          - ./api_reference/packs/streamlit_chatbot.md
+          - ./api_reference/packs/sub_question_weaviate.md
+          - ./api_reference/packs/subdoc_summary.md
+          - ./api_reference/packs/tables.md
+          - ./api_reference/packs/timescale_vector_autoretrieval.md
+          - ./api_reference/packs/trulens_eval_packs.md
+          - ./api_reference/packs/vanna.md
+          - ./api_reference/packs/vectara_rag.md
+          - ./api_reference/packs/voyage_query_engine.md
+          - ./api_reference/packs/zenguard.md
+          - ./api_reference/packs/zephyr_query_engine.md
       - LLMs:
           - ./api_reference/llms/OptimumIntelLLM.md
           - ./api_reference/llms/ai21.md
@@ -1026,78 +1100,6 @@ nav:
           - ./api_reference/llms/xinference.md
           - ./api_reference/llms/yi.md
           - ./api_reference/llms/you.md
-      - Llama Datasets:
-          - ./api_reference/llama_dataset/index.md
-      - Llama Packs:
-          - ./api_reference/packs/agent_search_retriever.md
-          - ./api_reference/packs/agents_coa.md
-          - ./api_reference/packs/agents_lats.md
-          - ./api_reference/packs/agents_llm_compiler.md
-          - ./api_reference/packs/amazon_product_extraction.md
-          - ./api_reference/packs/arize_phoenix_query_engine.md
-          - ./api_reference/packs/auto_merging_retriever.md
-          - ./api_reference/packs/chroma_autoretrieval.md
-          - ./api_reference/packs/code_hierarchy.md
-          - ./api_reference/packs/cogniswitch_agent.md
-          - ./api_reference/packs/cohere_citation_chat.md
-          - ./api_reference/packs/corrective_rag.md
-          - ./api_reference/packs/deeplake_deepmemory_retriever.md
-          - ./api_reference/packs/deeplake_multimodal_retrieval.md
-          - ./api_reference/packs/dense_x_retrieval.md
-          - ./api_reference/packs/diff_private_simple_dataset.md
-          - ./api_reference/packs/docugami_kg_rag.md
-          - ./api_reference/packs/evaluator_benchmarker.md
-          - ./api_reference/packs/finchat.md
-          - ./api_reference/packs/fusion_retriever.md
-          - ./api_reference/packs/fuzzy_citation.md
-          - ./api_reference/packs/gmail_openai_agent.md
-          - ./api_reference/packs/gradio_agent_chat.md
-          - ./api_reference/packs/gradio_react_agent_chatbot.md
-          - ./api_reference/packs/index.md
-          - ./api_reference/packs/infer_retrieve_rerank.md
-          - ./api_reference/packs/koda_retriever.md
-          - ./api_reference/packs/llama_dataset_metadata.md
-          - ./api_reference/packs/llama_guard_moderator.md
-          - ./api_reference/packs/llava_completion.md
-          - ./api_reference/packs/longrag.md
-          - ./api_reference/packs/mixture_of_agents.md
-          - ./api_reference/packs/multi_document_agents.md
-          - ./api_reference/packs/multi_tenancy_rag.md
-          - ./api_reference/packs/multidoc_autoretrieval.md
-          - ./api_reference/packs/nebulagraph_query_engine.md
-          - ./api_reference/packs/neo4j_query_engine.md
-          - ./api_reference/packs/node_parser_semantic_chunking.md
-          - ./api_reference/packs/ollama_query_engine.md
-          - ./api_reference/packs/panel_chatbot.md
-          - ./api_reference/packs/query_understanding_agent.md
-          - ./api_reference/packs/raft_dataset.md
-          - ./api_reference/packs/rag_cli_local.md
-          - ./api_reference/packs/rag_evaluator.md
-          - ./api_reference/packs/rag_fusion_query_pipeline.md
-          - ./api_reference/packs/ragatouille_retriever.md
-          - ./api_reference/packs/raptor.md
-          - ./api_reference/packs/recursive_retriever.md
-          - ./api_reference/packs/redis_ingestion_pipeline.md
-          - ./api_reference/packs/resume_screener.md
-          - ./api_reference/packs/retry_engine_weaviate.md
-          - ./api_reference/packs/searchain.md
-          - ./api_reference/packs/secgpt.md
-          - ./api_reference/packs/self_discover.md
-          - ./api_reference/packs/self_rag.md
-          - ./api_reference/packs/sentence_window_retriever.md
-          - ./api_reference/packs/snowflake_query_engine.md
-          - ./api_reference/packs/stock_market_data_query_engine.md
-          - ./api_reference/packs/streamlit_chatbot.md
-          - ./api_reference/packs/sub_question_weaviate.md
-          - ./api_reference/packs/subdoc_summary.md
-          - ./api_reference/packs/tables.md
-          - ./api_reference/packs/timescale_vector_autoretrieval.md
-          - ./api_reference/packs/trulens_eval_packs.md
-          - ./api_reference/packs/vanna.md
-          - ./api_reference/packs/vectara_rag.md
-          - ./api_reference/packs/voyage_query_engine.md
-          - ./api_reference/packs/zenguard.md
-          - ./api_reference/packs/zephyr_query_engine.md
       - Memory:
           - ./api_reference/memory/chat_memory_buffer.md
           - ./api_reference/memory/index.md
@@ -1605,8 +1607,6 @@ nav:
           - ./api_reference/workflow/events.md
           - ./api_reference/workflow/retry_policy.md
           - ./api_reference/workflow/workflow.md
-      - Llama Deploy:
-          - ./api_reference/llama_deploy
   - Open-Source Community:
       - Integrations: ./community/integrations.md
       - Full Stack Projects: ./community/full_stack_projects.md
@@ -1625,8 +1625,8 @@ nav:
 plugins:
   - search
   - include_dir_to_nav
-  - mkdocs-jupyter:
-      execute: false
+  #   - mkdocs-jupyter:
+  #       execute: false
   - mkdocstrings:
       handlers:
         python:
