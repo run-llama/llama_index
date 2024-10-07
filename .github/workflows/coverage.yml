@@ -59,7 +59,7 @@ jobs:
             root="$file"
             # Keep going up the directory tree until we find a directory containing a marker file
             # (e.g., 'pyproject.toml' for python projects)
-            while [[ ! -f "$root/pyproject.toml" && "$root" != "." && "$root" != "/" ]]; do
+            while [[ ! -f "$root/pyproject.toml" && "$root" != "." && "$root" != "/" && "$root" != "./" ]]; do
               root=$(dirname "$root")
             done
 
