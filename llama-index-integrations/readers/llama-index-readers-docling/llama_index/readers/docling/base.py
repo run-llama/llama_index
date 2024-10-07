@@ -57,13 +57,12 @@ class DoclingReader(BasePydanticReader):
         for source in file_paths:
             dl_doc = self.doc_converter.convert_single(source).output
             text: str
-            match self.export_type:
-                case self.ExportType.MARKDOWN:
-                    text = dl_doc.export_to_markdown()
-                case self.ExportType.JSON:
-                    text = dl_doc.model_dump_json()
-                case _:
-                    raise ValueError(f"Unexpected export type: {self.export_type}")
+            if self.export_type == self.ExportType.MARKDOWN:
+                text = dl_doc.export_to_markdown()
+            elif self.export_type == self.ExportType.JSON:
+                text = dl_doc.model_dump_json()
+            else:
+                raise ValueError(f"Unexpected export type: {self.export_type}")
             origin = str(source) if isinstance(source, Path) else source
             doc_kwargs = {}
             if self.doc_id_generator:
