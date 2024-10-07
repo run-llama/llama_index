@@ -14,7 +14,12 @@ from typing import (
     Any,
 )
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    ConfigDict,
+    field_serializer,
+)
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.schema import ImageType
 
@@ -95,7 +100,8 @@ class ChatMessage(BaseModel):
         return cls(role=role, content=content, **kwargs)
 
     def _recursive_serialization(self, value: Any) -> Any:
-        if isinstance(value, (V1BaseModel, V2BaseModel)):
+        if isinstance(value, V2BaseModel):
+            value.model_rebuild()  # ensures all fields are initialized and serializable
             return value.model_dump()  # type: ignore
         if isinstance(value, dict):
             return {
@@ -106,22 +112,12 @@ class ChatMessage(BaseModel):
             return [self._recursive_serialization(item) for item in value]
         return value
 
+    @field_serializer("additional_kwargs", check_fields=False)
+    def serialize_additional_kwargs(self, value: Any, _info: Any) -> Any:
+        return self._recursive_serialization(value)
+
     def dict(self, **kwargs: Any) -> Dict[str, Any]:
         return self.model_dump(**kwargs)
-
-    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
-        # ensure all additional_kwargs are serializable
-        msg = super().model_dump(**kwargs)
-
-        for key, value in msg.get("additional_kwargs", {}).items():
-            value = self._recursive_serialization(value)
-            if not isinstance(value, (str, int, float, bool, dict, list, type(None))):
-                raise ValueError(
-                    f"Failed to serialize additional_kwargs value: {value}"
-                )
-            msg["additional_kwargs"][key] = value
-
-        return msg
 
 
 class LogProb(BaseModel):
