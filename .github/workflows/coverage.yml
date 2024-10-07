@@ -63,7 +63,7 @@ jobs:
               root=$(dirname "$root")
             done
 
-            if [[ ! "$FILTER_PATTERNS" =~ "$root" ]]; then
+            if [[ "$root" != "." && "$root" != "/" && "$root" != "./" && ! "$FILTER_PATTERNS" =~ "$root" ]]; then
               FILTER_PATTERNS="${FILTER_PATTERNS}'${root}',"
               CHANGED_ROOTS="${CHANGED_ROOTS} ${root}/::"
             fi
