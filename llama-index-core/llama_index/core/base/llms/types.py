@@ -100,7 +100,7 @@ class ChatMessage(BaseModel):
         return cls(role=role, content=content, **kwargs)
 
     def _recursive_serialization(self, value: Any) -> Any:
-        if isinstance(value, (V1BaseModel, V2BaseModel)):
+        if isinstance(value, V2BaseModel):
             value.model_rebuild()  # ensures all fields are initialized and serializable
             return value.model_dump()  # type: ignore
         if isinstance(value, dict):
