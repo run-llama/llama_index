@@ -17,7 +17,7 @@ def mock_unknown_urls(httpx_mock: HTTPXMock, base_url: str):
     mock_response = {
         "data": [
             {
-                "id": "dummy",
+                "id": "meta/llama3-8b-instruct",
                 "object": "model",
                 "created": 1234567890,
                 "owned_by": "OWNER",
@@ -63,16 +63,18 @@ def test_mode_switch_nim_with_url_deprecated():
 
 @pytest.mark.parametrize("base_url", ["https://test_url/v1/"])
 def test_mode_switch_param_setting_deprecated(base_url):
-    instance = Interface(model="dummy")
+    instance = Interface(model="meta/llama3-8b-instruct")
 
     with pytest.warns(DeprecationWarning):
         instance1 = instance.mode("nim", base_url=base_url)
-    assert instance1.model == "dummy"
+    assert instance1.model == "meta/llama3-8b-instruct"
     assert str(instance1.api_base) == base_url
 
     with pytest.warns(DeprecationWarning):
-        instance2 = instance1.mode("nvidia", api_key="test", model="dummy-2")
-    assert instance2.model == "dummy-2"
+        instance2 = instance1.mode(
+            "nvidia", api_key="test", model="meta/llama3-15b-instruct"
+        )
+    assert instance2.model == "meta/llama3-15b-instruct"
     assert str(instance2.api_base) == BASE_URL
     assert instance2.api_key == "test"
 
