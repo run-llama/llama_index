@@ -75,7 +75,7 @@ jobs:
           echo "Coverage filter patterns: $FILTER_PATTERNS"
           echo "Changed roots: $CHANGED_ROOTS"
 
-          pants --no-local-cache test \
+          pants --level=error --no-local-cache test \
             --test-use-coverage \
             --coverage-py-filter="${FILTER_PATTERNS}" \
             ${CHANGED_ROOTS}

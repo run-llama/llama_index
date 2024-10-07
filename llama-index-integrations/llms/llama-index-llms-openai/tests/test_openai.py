@@ -453,7 +453,24 @@ def test_ensure_chat_message_is_serializable(MockSyncOpenAI: MagicMock) -> None:
         message = ChatMessage(role="user", content="test message")
 
         response = llm.chat([message])
+        response.message.additional_kwargs["test"] = ChatCompletionChunk(
+            id="chatcmpl-6ptKyqKOGXZT6iQnqiXAH8adNLUzD",
+            object="chat.completion.chunk",
+            created=1677825464,
+            model="gpt-3.5-turbo-0301",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(role="assistant", content="test"),
+                    finish_reason=None,
+                    index=0,
+                )
+            ],
+        )
         data = response.message.dict()
         assert isinstance(data, dict)
         assert isinstance(data["additional_kwargs"], dict)
-        assert isinstance(data["additional_kwargs"]["total_tokens"], int)
+        assert isinstance(data["additional_kwargs"]["test"]["choices"], list)
+        assert (
+            data["additional_kwargs"]["test"]["choices"][0]["delta"]["content"]
+            == "test"
+        )
