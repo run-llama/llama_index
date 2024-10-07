@@ -44,6 +44,7 @@ class ZyteWebReader(BasePydanticReader):
     mode: str
     n_conn: int
     download_kwargs: Optional[dict]
+    continue_on_failure: bool
 
     def __init__(
         self,
@@ -51,10 +52,15 @@ class ZyteWebReader(BasePydanticReader):
         mode: Literal["article", "html", "html-text"] = "article",
         n_conn: int = 15,
         download_kwargs: Optional[Dict[str, Any]] = None,
+        continue_on_failure: bool = True,
     ) -> None:
         """Initialize with file path."""
         super().__init__(
-            api_key=api_key, mode=mode, n_conn=n_conn, download_kwargs=download_kwargs
+            api_key=api_key,
+            mode=mode,
+            n_conn=n_conn,
+            download_kwargs=download_kwargs,
+            continue_on_failure=continue_on_failure,
         )
         try:
             from zyte_api import AsyncZyteAPI
@@ -81,12 +87,14 @@ class ZyteWebReader(BasePydanticReader):
         return "ZyteWebReader"
 
     def _zyte_html_option(self) -> str:
-        if "browserHtml" in self.download_kwargs:
+        if self.download_kwargs and "browserHtml" in self.download_kwargs:
             return "browserHtml"
         return "httpResponseBody"
 
     def _get_article(self, page: Dict) -> str:
-        return page["article"]["headline"] + "\n\n" + page["article"]["articleBody"]
+        headline = page["article"].get("headline", "")
+        article_body = page["article"].get("articleBody", "")
+        return headline + "\n\n" + article_body
 
     def _zyte_request_params(self, url: str) -> dict:
         request_params: Dict[str, Any] = {"url": url}
