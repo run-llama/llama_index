@@ -488,7 +488,8 @@ class OpenAI(FunctionCallingLLM):
                 additional_kwargs = {}
                 if is_function:
                     tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
-                    additional_kwargs["tool_calls"] = tool_calls
+                    if tool_calls:
+                        additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -738,7 +739,8 @@ class OpenAI(FunctionCallingLLM):
                 additional_kwargs = {}
                 if is_function:
                     tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
-                    additional_kwargs["tool_calls"] = tool_calls
+                    if tool_calls:
+                        additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
                     message=ChatMessage(
