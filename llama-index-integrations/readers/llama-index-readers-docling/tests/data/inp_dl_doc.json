@@ -1,0 +1,22 @@
+{
+  "name": "foo",
+  "description": {
+    "logs": []
+  },
+  "main_text": [
+    {
+      "text": "Test subtitle",
+      "type": "subtitle-level-1",
+      "name": "Section-header"
+    },
+    {
+      "text": "This is a test paragraph.",
+      "type": "paragraph",
+      "name": "Text"
+    }
+  ],
+  "file-info": {
+    "filename": "foo.pdf",
+    "document-hash": "123"
+  }
+}
