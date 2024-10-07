@@ -52,11 +52,13 @@ jobs:
           CHANGED_FILES=$(pants list --changed-since=origin/main)
 
           # Find which roots contain changed files
+          CHANGED_ROOTS=""
           FILTER_PATTERNS="["
           for file in $CHANGED_FILES; do
             root=$(echo "$file" | cut -d'/' -f1,2,3)
             if [[ ! "$FILTER_PATTERNS" =~ "$root" ]]; then
               FILTER_PATTERNS="${FILTER_PATTERNS}'${root}',"
+              CHANGED_ROOTS="${CHANGED_ROOTS} ${root}/::"
             fi
           done
 
@@ -64,8 +66,9 @@ jobs:
           FILTER_PATTERNS="${FILTER_PATTERNS%,}]"
 
           echo "Coverage filter patterns: $FILTER_PATTERNS"
+          echo "Changed roots: $CHANGED_ROOTS"
 
-          pants --level=error --no-local-cache test \
+          pants --no-local-cache test \
             --test-use-coverage \
-            --changed-since=origin/main \
-            --coverage-py-filter="$FILTER_PATTERNS"
+            --coverage-py-filter="${FILTER_PATTERNS}" \
+            ${CHANGED_ROOTS}
