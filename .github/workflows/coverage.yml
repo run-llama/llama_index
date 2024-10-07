@@ -55,7 +55,14 @@ jobs:
           CHANGED_ROOTS=""
           FILTER_PATTERNS="["
           for file in $CHANGED_FILES; do
-            root=$(echo "$file" | cut -d'/' -f1,2,3)
+            # Start with the full path
+            root="$file"
+            # Keep going up the directory tree until we find a directory containing a marker file
+            # (e.g., 'pyproject.toml' for python projects)
+            while [[ ! -f "$root/pyproject.toml" && "$root" != "." && "$root" != "/" ]]; do
+              root=$(dirname "$root")
+            done
+
             if [[ ! "$FILTER_PATTERNS" =~ "$root" ]]; then
               FILTER_PATTERNS="${FILTER_PATTERNS}'${root}',"
               CHANGED_ROOTS="${CHANGED_ROOTS} ${root}/::"
