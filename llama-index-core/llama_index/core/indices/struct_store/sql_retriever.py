@@ -447,4 +447,4 @@ class SQLTableRetriever:
             else:
                 logger.warn("Missing table info")
 
-        return "\n\n".join(context_strs)
+        return context_strs
