@@ -7,7 +7,7 @@ from typing import Optional
 import logging
 import pandas as pd
 
-from nl_dataframe_retriever import NLDataframeRetriever
+from llama_index.experimental.retrievers.natrual_language import NLDataframeRetriever
 
 logger = logging.getLogger(__name__)
 
