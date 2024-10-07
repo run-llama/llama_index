@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.embeddings.gemini"
+import_path = "llama_index.storage.kvstore.azurecosmosnosql"
 
 [tool.llamahub.class_authors]
-GeminiEmbedding = "llama-index"
+AzureCosmosNoSqlKVStore = "Aayush"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,17 +21,18 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index embeddings gemini integration"
+authors = ["Aayush Kataria <aayushkataria3011@gmail.com>"]
+description = "llama-index storage-kv-store azure cosmosdb nosql integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-embeddings-gemini"
+name = "llama-index-storage-kv-store-azurecosmosnosql"
 readme = "README.md"
-version = "0.2.1"
+version = "1.0.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-google-generativeai = "^0.5.2"
+python = ">=3.8.1,<4.0"
+azure-cosmos = "^4.7.0"
+azure-identity = "^1.7.1"
 llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
