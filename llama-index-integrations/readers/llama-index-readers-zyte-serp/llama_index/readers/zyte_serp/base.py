@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Optional
 from pydantic import Field
 
 from llama_index.core.readers.base import BasePydanticReader
@@ -10,8 +10,8 @@ class ZyteSerpReader(BasePydanticReader):
 
     Args:
         api_key: Zyte API key.
-        extract_from: Determines the mode while extracting the .
-            It can take one of the following values: 'html', 'html-text', 'article'
+        extract_from: Determines the mode while extracting the search results.
+            It can take one of the following values: 'httpResponseBody', 'browserHtml'
 
     Example:
         .. code-block:: python
@@ -26,33 +26,26 @@ class ZyteSerpReader(BasePydanticReader):
             )
 
     Zyte-API reference:
-        https://www.zyte.com/zyte-api/
+        https://docs.zyte.com/zyte-api/get-started.html
 
     """
 
     client: Optional[object] = Field(None)
     api_key: str
-    extract_from: str
+    extract_from: Optional[str]
 
     def __init__(
         self,
         api_key: str,
-        extract_from: Literal["httpResponseBody", "browserHtml"] = "httpResponseBody",
+        extract_from: Optional[str] = None,
     ) -> None:
         """Initialize with file path."""
         super().__init__(
             api_key=api_key,
             extract_from=extract_from,
         )
-        try:
-            from zyte_api import ZyteAPI
-            from zyte_api.utils import USER_AGENT as PYTHON_ZYTE_API_USER_AGENT
-
-        except ImportError:
-            raise ImportError(
-                "zyte-api package not found, please install it with "
-                "`pip install zyte-api`"
-            )
+        from zyte_api import ZyteAPI
+        from zyte_api.utils import USER_AGENT as PYTHON_ZYTE_API_USER_AGENT
 
         user_agent = f"llama-index-zyte-api/{PYTHON_ZYTE_API_USER_AGENT}"
         self.client = ZyteAPI(
@@ -61,16 +54,19 @@ class ZyteSerpReader(BasePydanticReader):
         )
 
     def _serp_url(self, query: str):
+        from urllib.parse import quote_plus
+
         base_url = "https://www.google.com/search?q="
-        return base_url + query.replace(" ", "+")
+        return base_url + quote_plus(query)
 
     def load_data(self, query: str):
         serp_url = self._serp_url(query)
         serp_request = {
             "url": serp_url,
             "serp": True,
-            "serpOptions": {"extractFrom": self.extract_from},
         }
+        if self.extract_from:
+            serp_request.update({"serpOptions": {"extractFrom": self.extract_from}})
         results = self.client.get(serp_request)
         docs = []
         for result in results["serp"]["organicResults"]:
