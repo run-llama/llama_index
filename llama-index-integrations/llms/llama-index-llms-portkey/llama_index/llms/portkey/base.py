@@ -2,7 +2,7 @@
 Portkey integration with Llama_index for enhanced monitoring.
 """
 
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union, cast
+from typing import Any, Callable, List, Optional, Sequence, Union, cast
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -23,19 +23,20 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.portkey.utils import (
-    IMPORT_ERROR_MESSAGE,
     generate_llm_metadata,
     get_llm,
     is_chat_model,
 )
 
-if TYPE_CHECKING:
-    from portkey import (
-        LLMOptions,
-        Modes,
-        ModesLiteral,
-        PortkeyResponse,
-    )
+import portkey
+from portkey import (
+    Config,
+    LLMOptions,
+    Message,
+    Modes,
+    ModesLiteral,
+    PortkeyResponse,
+)
 
 DEFAULT_PORTKEY_MODEL = "gpt-3.5-turbo"
 
@@ -91,16 +92,16 @@ class Portkey(CustomLLM):
     )
 
     model: Optional[str] = Field(default=DEFAULT_PORTKEY_MODEL)
-    llm: "LLMOptions" = Field(description="LLM parameter", default_factory=dict)
+    llm: LLMOptions = Field(description="LLM parameter", default_factory=dict)
 
-    llms: List["LLMOptions"] = Field(description="LLM parameters", default_factory=list)
+    llms: List[LLMOptions] = Field(description="LLM parameters", default_factory=list)
 
     _client: Any = PrivateAttr()
 
     def __init__(
         self,
         *,
-        mode: Union["Modes", "ModesLiteral"],
+        mode: Union[Modes, ModesLiteral],
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         system_prompt: Optional[str] = None,
@@ -119,11 +120,6 @@ class Portkey(CustomLLM):
             base_url (Optional[str]): The Base url to the self hosted rubeus \
                 (the opensource version of portkey) or any other self hosted server.
         """
-        try:
-            import portkey
-        except ImportError as exc:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
-
         super().__init__(
             base_url=base_url,
             api_key=api_key,
@@ -150,9 +146,7 @@ class Portkey(CustomLLM):
         """LLM metadata."""
         return generate_llm_metadata(self.llms[0])
 
-    def add_llms(
-        self, llm_params: Union["LLMOptions", List["LLMOptions"]]
-    ) -> "Portkey":
+    def add_llms(self, llm_params: Union[LLMOptions, List[LLMOptions]]) -> "Portkey":
         """
         Adds the specified LLM parameters to the list of LLMs. This may be used for
         fallbacks or load-balancing as specified in the mode.
@@ -180,10 +174,6 @@ class Portkey(CustomLLM):
         Returns:
             self
         """
-        try:
-            from portkey import LLMOptions
-        except ImportError as exc:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         if isinstance(llm_params, LLMOptions):
             llm_params = [llm_params]
         self.llms.extend(llm_params)
@@ -232,10 +222,6 @@ class Portkey(CustomLLM):
         return stream_chat_fn(messages, **kwargs)
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        try:
-            from portkey import Config, Message
-        except ImportError as exc:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         _messages = cast(
             List[Message],
             [{"role": i.role.value, "content": i.content} for i in messages],
@@ -250,11 +236,6 @@ class Portkey(CustomLLM):
         return ChatResponse(message=message, raw=response)
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        try:
-            from portkey import Config
-        except ImportError as exc:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
-
         config = Config(llms=self.llms)
         response = self._client.Completions.create(prompt=prompt, config=config)
         text = response.choices[0].text
@@ -263,10 +244,6 @@ class Portkey(CustomLLM):
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        try:
-            from portkey import Config, Message
-        except ImportError as exc:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
         _messages = cast(
             List[Message],
             [{"role": i.role.value, "content": i.content} for i in messages],
@@ -317,11 +294,6 @@ class Portkey(CustomLLM):
         return gen()
 
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        try:
-            from portkey import Config
-        except ImportError as exc:
-            raise ImportError(IMPORT_ERROR_MESSAGE) from exc
-
         config = Config(llms=self.llms)
         response = self._client.Completions.create(
             prompt=prompt, config=config, stream=True, **kwargs
@@ -350,5 +322,5 @@ class Portkey(CustomLLM):
         """
         return is_chat_model(self.model or "")
 
-    def _get_llm(self, response: "PortkeyResponse") -> "LLMOptions":
+    def _get_llm(self, response: PortkeyResponse) -> LLMOptions:
         return get_llm(response, self.llms)
