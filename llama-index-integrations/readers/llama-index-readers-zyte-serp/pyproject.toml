@@ -5,12 +5,13 @@ requires = ["poetry-core"]
 [tool.codespell]
 check-filenames = true
 check-hidden = true
-# [tool.llamahub]
-contains_example = false
-import_path = "llama_index.readers.zyte_serp"
 # Feel free to un-skip examples, and experimental, you will just need to
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.zyte_serp"
 
 [tool.llamahub.class_authors]
 ZyteSerpReader = "rakeshmehta0308"
