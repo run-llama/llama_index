@@ -93,6 +93,7 @@ urllib3 = "2.2.2"
 watchdog = "4.0.0"
 wcwidth = "0.2.13"
 webencodings = "0.5.1"
+mkdocs-github-admonitions-plugin = "^0.0.2"
 
 [tool.poetry.scripts]
 merge-llama-deploy-docs = "scripts.merge_llama_deploy_docs:main"

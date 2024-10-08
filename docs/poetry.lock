@@ -1516,6 +1516,24 @@ markupsafe = ">=2.0.1"
 mkdocs = ">=1.1"
 
 [[package]]
+name = "mkdocs-github-admonitions-plugin"
+version = "0.0.2"
+description = "Convert GitHub admonitions to mkdocs syntax when building docs."
+optional = false
+python-versions = ">=3.10"
+files = [
+    {file = "mkdocs_github_admonitions_plugin-0.0.2-py3-none-any.whl", hash = "sha256:2876f311e3b537f2df1cf0a732701381bdbd409b9924a004f82d1d2dc8c4f068"},
+    {file = "mkdocs_github_admonitions_plugin-0.0.2.tar.gz", hash = "sha256:459bdce3a95cf70d93eac2d1af0bc4b6ee851c679f8e2bc8940454292bd4e5b4"},
+]
+
+[package.dependencies]
+mkdocs = "*"
+
+[package.extras]
+dev = ["pytest"]
+docs = ["mkdocs-material"]
+
+[[package]]
 name = "mkdocs-include-dir-to-nav"
 version = "1.2.0"
 description = "A MkDocs plugin include all file in dir to navigation"
@@ -3591,4 +3609,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "8a68a3447a8791ce343d5477d7342d0e9d7248b4904fb4f32aea3aefdd308974"
+content-hash = "b2762ae054ddc96037b689b10a4a04886e3eddb9121198fd55f5d8220bd3d677"
