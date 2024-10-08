@@ -57,11 +57,11 @@ FOLDER_NAME_TO_LABEL = {
 
 # integration config
 INTEGRATION_FOLDERS = [
-    # "llama-index-networks",
-    # "llama-index-finetuning",
-    "llama-index-packs",
-    "llama-index-integrations",
-    # "llama-index-cli",
+    # "../llama-index-networks",
+    # "../llama-index-finetuning",
+    "../llama-index-packs",
+    "../llama-index-integrations",
+    # "../llama-index-cli",
 ]
 INTEGRATION_FOLDER_TO_LABEL = {
     "finetuning": "Fine-tuning",
@@ -321,11 +321,11 @@ def main():
             api_ref_idx = idx
             break
 
-    for root, dirs, files in os.walk("docs/docs/api_reference"):
+    for root, _, files in os.walk("docs/api_reference"):
         for file in files:
             if file.endswith(".md"):
                 toc_path_name = os.path.join(
-                    root.replace("docs/docs/api_reference", "./api_reference"),
+                    root.replace("docs/api_reference", "./api_reference"),
                     file,
                 )
 
@@ -450,9 +450,9 @@ def main():
         yaml.dump(mkdocs, f)
 
     # copy over extra files
-    os.system("cp ../CHANGELOG.md docs/CHANGELOG.md")
-    os.system("cp ../CONTRIBUTING.md docs/CONTRIBUTING.md")
-    os.system("cp README.md docs/DOCS_README.md")
+    os.system("cp ../CHANGELOG.md ./docs/CHANGELOG.md")
+    os.system("cp ../CONTRIBUTING.md ./docs/CONTRIBUTING.md")
+    os.system("cp ./README.md ./docs/DOCS_README.md")
 
 
 if __name__ == "__main__":

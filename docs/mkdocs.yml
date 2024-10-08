@@ -83,6 +83,45 @@ nav:
   - Examples:
       - ./examples/index.md
       - Agents:
+          - ./docs/examples/agent/Chatbot_SEC.ipynb
+          - ./docs/examples/agent/agent_builder.ipynb
+          - ./docs/examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.ipynb
+          - ./docs/examples/agent/agent_runner/agent_runner.ipynb
+          - ./docs/examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
+          - ./docs/examples/agent/agent_runner/query_pipeline_agent.ipynb
+          - ./docs/examples/agent/agentic_rag_using_vertex_ai.ipynb
+          - ./docs/examples/agent/agentic_rag_with_llamaindex_and_vertexai_managed_index.ipynb
+          - ./docs/examples/agent/anthropic_agent.ipynb
+          - ./docs/examples/agent/bedrock_converse_agent.ipynb
+          - ./docs/examples/agent/coa_agent.ipynb
+          - ./docs/examples/agent/custom_agent.ipynb
+          - ./docs/examples/agent/dashscope_agent.ipynb
+          - ./docs/examples/agent/introspective_agent_toxicity_reduction.ipynb
+          - ./docs/examples/agent/lats_agent.ipynb
+          - ./docs/examples/agent/llm_compiler.ipynb
+          - ./docs/examples/agent/memory/composable_memory.ipynb
+          - ./docs/examples/agent/memory/vector_memory.ipynb
+          - ./docs/examples/agent/mistral_agent.ipynb
+          - ./docs/examples/agent/multi_document_agents-v1.ipynb
+          - ./docs/examples/agent/multi_document_agents.ipynb
+          - ./docs/examples/agent/nvidia_agent.ipynb
+          - ./docs/examples/agent/openai_agent.ipynb
+          - ./docs/examples/agent/openai_agent_context_retrieval.ipynb
+          - ./docs/examples/agent/openai_agent_lengthy_tools.ipynb
+          - ./docs/examples/agent/openai_agent_parallel_function_calling.ipynb
+          - ./docs/examples/agent/openai_agent_query_cookbook.ipynb
+          - ./docs/examples/agent/openai_agent_query_plan.ipynb
+          - ./docs/examples/agent/openai_agent_retrieval.ipynb
+          - ./docs/examples/agent/openai_agent_tool_call_parser.ipynb
+          - ./docs/examples/agent/openai_agent_with_query_engine.ipynb
+          - ./docs/examples/agent/openai_assistant_agent.ipynb
+          - ./docs/examples/agent/openai_assistant_query_cookbook.ipynb
+          - ./docs/examples/agent/openai_forced_function_call.ipynb
+          - ./docs/examples/agent/openai_retrieval_benchmark.ipynb
+          - ./docs/examples/agent/react_agent.ipynb
+          - ./docs/examples/agent/react_agent_with_query_engine.ipynb
+          - ./docs/examples/agent/return_direct_agent.ipynb
+          - ./docs/examples/agent/structured_planner.ipynb
           - ./examples/agent/Chatbot_SEC.ipynb
           - ./examples/agent/agent_builder.ipynb
           - ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.ipynb
@@ -123,6 +162,14 @@ nav:
           - ./examples/agent/return_direct_agent.ipynb
           - ./examples/agent/structured_planner.ipynb
       - Chat Engines:
+          - ./docs/examples/chat_engine/chat_engine_best.ipynb
+          - ./docs/examples/chat_engine/chat_engine_condense_plus_context.ipynb
+          - ./docs/examples/chat_engine/chat_engine_condense_question.ipynb
+          - ./docs/examples/chat_engine/chat_engine_context.ipynb
+          - ./docs/examples/chat_engine/chat_engine_openai.ipynb
+          - ./docs/examples/chat_engine/chat_engine_personality.ipynb
+          - ./docs/examples/chat_engine/chat_engine_react.ipynb
+          - ./docs/examples/chat_engine/chat_engine_repl.ipynb
           - ./examples/chat_engine/chat_engine_best.ipynb
           - ./examples/chat_engine/chat_engine_condense_plus_context.ipynb
           - ./examples/chat_engine/chat_engine_condense_question.ipynb
@@ -132,6 +179,32 @@ nav:
           - ./examples/chat_engine/chat_engine_react.ipynb
           - ./examples/chat_engine/chat_engine_repl.ipynb
       - Cookbooks:
+          - ./docs/examples/cookbooks/GraphRAG_v1.ipynb
+          - ./docs/examples/cookbooks/GraphRAG_v2.ipynb
+          - ./docs/examples/cookbooks/airtrain.ipynb
+          - ./docs/examples/cookbooks/anthropic_haiku.ipynb
+          - ./docs/examples/cookbooks/cleanlab_tlm_rag.ipynb
+          - ./docs/examples/cookbooks/codestral.ipynb
+          - ./docs/examples/cookbooks/cohere_retriever_eval.ipynb
+          - ./docs/examples/cookbooks/contextual_retrieval.ipynb
+          - ./docs/examples/cookbooks/crewai_llamaindex.ipynb
+          - ./docs/examples/cookbooks/llama3_cookbook.ipynb
+          - ./docs/examples/cookbooks/llama3_cookbook_groq.ipynb
+          - ./docs/examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
+          - ./docs/examples/cookbooks/mistralai.ipynb
+          - ./docs/examples/cookbooks/mixedbread_reranker.ipynb
+          - ./docs/examples/cookbooks/mongodb_retrieval_strategies.ipynb
+          - ./docs/examples/cookbooks/oracleai_demo.ipynb
+          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-2/Components_Of_LlamaIndex.ipynb
+          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-3/Evaluating_RAG_Systems.ipynb
+          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-4/Ingestion_Pipeline.ipynb
+          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-4/Metadata_Extraction.ipynb
+          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-5/Observability.ipynb
+          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-6/Agents.ipynb
+          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-6/Router_And_SubQuestion_QueryEngine.ipynb
+          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-7/Multi_Modal_RAG_System.ipynb
+          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-8/Advanced_RAG_with_LlamaParse.ipynb
+          - ./docs/examples/cookbooks/prometheus2_cookbook.ipynb
           - ./examples/cookbooks/GraphRAG_v1.ipynb
           - ./examples/cookbooks/GraphRAG_v2.ipynb
           - ./examples/cookbooks/airtrain.ipynb
@@ -159,6 +232,14 @@ nav:
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-8/Advanced_RAG_with_LlamaParse.ipynb
           - ./examples/cookbooks/prometheus2_cookbook.ipynb
       - Customization:
+          - ./docs/examples/customization/llms/AzureOpenAI.ipynb
+          - ./docs/examples/customization/llms/SimpleIndexDemo-ChatGPT.ipynb
+          - ./docs/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
+          - ./docs/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
+          - ./docs/examples/customization/prompts/chat_prompts.ipynb
+          - ./docs/examples/customization/prompts/completion_prompts.ipynb
+          - ./docs/examples/customization/streaming/SimpleIndexDemo-streaming.ipynb
+          - ./docs/examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb
           - ./examples/customization/llms/AzureOpenAI.ipynb
           - ./examples/customization/llms/SimpleIndexDemo-ChatGPT.ipynb
           - ./examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
@@ -168,6 +249,41 @@ nav:
           - ./examples/customization/streaming/SimpleIndexDemo-streaming.ipynb
           - ./examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb
       - Data Connectors:
+          - ./docs/examples/data_connectors/ChromaDemo.ipynb
+          - ./docs/examples/data_connectors/DashvectorReaderDemo.ipynb
+          - ./docs/examples/data_connectors/DatabaseReaderDemo.ipynb
+          - ./docs/examples/data_connectors/DeepLakeReader.ipynb
+          - ./docs/examples/data_connectors/DiscordDemo.ipynb
+          - ./docs/examples/data_connectors/DoclingReaderDemo.ipynb
+          - ./docs/examples/data_connectors/FaissDemo.ipynb
+          - ./docs/examples/data_connectors/GithubRepositoryReaderDemo.ipynb
+          - ./docs/examples/data_connectors/GoogleChatDemo.ipynb
+          - ./docs/examples/data_connectors/GoogleDocsDemo.ipynb
+          - ./docs/examples/data_connectors/GoogleDriveDemo.ipynb
+          - ./docs/examples/data_connectors/GoogleMapsTextSearchReaderDemo.ipynb
+          - ./docs/examples/data_connectors/GoogleSheetsDemo.ipynb
+          - ./docs/examples/data_connectors/MakeDemo.ipynb
+          - ./docs/examples/data_connectors/MboxReaderDemo.ipynb
+          - ./docs/examples/data_connectors/MilvusReaderDemo.ipynb
+          - ./docs/examples/data_connectors/MongoDemo.ipynb
+          - ./docs/examples/data_connectors/MyScaleReaderDemo.ipynb
+          - ./docs/examples/data_connectors/NotionDemo.ipynb
+          - ./docs/examples/data_connectors/ObsidianReaderDemo.ipynb
+          - ./docs/examples/data_connectors/PathwayReaderDemo.ipynb
+          - ./docs/examples/data_connectors/PineconeDemo.ipynb
+          - ./docs/examples/data_connectors/PreprocessReaderDemo.ipynb
+          - ./docs/examples/data_connectors/PsychicDemo.ipynb
+          - ./docs/examples/data_connectors/QdrantDemo.ipynb
+          - ./docs/examples/data_connectors/SlackDemo.ipynb
+          - ./docs/examples/data_connectors/TwitterDemo.ipynb
+          - ./docs/examples/data_connectors/WeaviateDemo.ipynb
+          - ./docs/examples/data_connectors/WebPageDemo.ipynb
+          - ./docs/examples/data_connectors/deplot/DeplotReader.ipynb
+          - ./docs/examples/data_connectors/html_tag_reader.ipynb
+          - ./docs/examples/data_connectors/oracleai.ipynb
+          - ./docs/examples/data_connectors/simple_directory_reader.ipynb
+          - ./docs/examples/data_connectors/simple_directory_reader_parallel.ipynb
+          - ./docs/examples/data_connectors/simple_directory_reader_remote_fs.ipynb
           - ./examples/data_connectors/ChromaDemo.ipynb
           - ./examples/data_connectors/DashvectorReaderDemo.ipynb
           - ./examples/data_connectors/DatabaseReaderDemo.ipynb
@@ -203,8 +319,15 @@ nav:
           - ./examples/data_connectors/simple_directory_reader_parallel.ipynb
           - ./examples/data_connectors/simple_directory_reader_remote_fs.ipynb
       - Discover LlamaIndex:
+          - ./docs/examples/discover_llamaindex/document_management/Discord_Thread_Management.ipynb
           - ./examples/discover_llamaindex/document_management/Discord_Thread_Management.ipynb
       - Docstores:
+          - ./docs/examples/docstore/AzureDocstoreDemo.ipynb
+          - ./docs/examples/docstore/DocstoreDemo.ipynb
+          - ./docs/examples/docstore/DynamoDBDocstoreDemo.ipynb
+          - ./docs/examples/docstore/FirestoreDemo.ipynb
+          - ./docs/examples/docstore/MongoDocstoreDemo.ipynb
+          - ./docs/examples/docstore/RedisDocstoreIndexStoreDemo.ipynb
           - ./examples/docstore/AzureDocstoreDemo.ipynb
           - ./examples/docstore/DocstoreDemo.ipynb
           - ./examples/docstore/DynamoDBDocstoreDemo.ipynb
@@ -212,6 +335,52 @@ nav:
           - ./examples/docstore/MongoDocstoreDemo.ipynb
           - ./examples/docstore/RedisDocstoreIndexStoreDemo.ipynb
       - Embeddings:
+          - ./docs/examples/embeddings/Anyscale.ipynb
+          - ./docs/examples/embeddings/Langchain.ipynb
+          - ./docs/examples/embeddings/OpenAI.ipynb
+          - ./docs/examples/embeddings/alephalpha.ipynb
+          - ./docs/examples/embeddings/bedrock.ipynb
+          - ./docs/examples/embeddings/clarifai.ipynb
+          - ./docs/examples/embeddings/cloudflare_workersai.ipynb
+          - ./docs/examples/embeddings/cohereai.ipynb
+          - ./docs/examples/embeddings/custom_embeddings.ipynb
+          - ./docs/examples/embeddings/dashscope_embeddings.ipynb
+          - ./docs/examples/embeddings/databricks.ipynb
+          - ./docs/examples/embeddings/deepinfra.ipynb
+          - ./docs/examples/embeddings/elasticsearch.ipynb
+          - ./docs/examples/embeddings/fastembed.ipynb
+          - ./docs/examples/embeddings/fireworks.ipynb
+          - ./docs/examples/embeddings/gemini.ipynb
+          - ./docs/examples/embeddings/gigachat.ipynb
+          - ./docs/examples/embeddings/google_palm.ipynb
+          - ./docs/examples/embeddings/huggingface.ipynb
+          - ./docs/examples/embeddings/ibm_watsonx.ipynb
+          - ./docs/examples/embeddings/ipex_llm.ipynb
+          - ./docs/examples/embeddings/ipex_llm_gpu.ipynb
+          - ./docs/examples/embeddings/itrex.ipynb
+          - ./docs/examples/embeddings/jina_embeddings.ipynb
+          - ./docs/examples/embeddings/jinaai_embeddings.ipynb
+          - ./docs/examples/embeddings/llamafile.ipynb
+          - ./docs/examples/embeddings/llm_rails.ipynb
+          - ./docs/examples/embeddings/mistralai.ipynb
+          - ./docs/examples/embeddings/mixedbreadai.ipynb
+          - ./docs/examples/embeddings/nomic.ipynb
+          - ./docs/examples/embeddings/nvidia.ipynb
+          - ./docs/examples/embeddings/oci_genai.ipynb
+          - ./docs/examples/embeddings/octoai.ipynb
+          - ./docs/examples/embeddings/ollama_embedding.ipynb
+          - ./docs/examples/embeddings/openvino.ipynb
+          - ./docs/examples/embeddings/optimum_intel.ipynb
+          - ./docs/examples/embeddings/oracleai.ipynb
+          - ./docs/examples/embeddings/premai.ipynb
+          - ./docs/examples/embeddings/sagemaker_embedding_endpoint.ipynb
+          - ./docs/examples/embeddings/text_embedding_inference.ipynb
+          - ./docs/examples/embeddings/textembed.ipynb
+          - ./docs/examples/embeddings/together.ipynb
+          - ./docs/examples/embeddings/upstage.ipynb
+          - ./docs/examples/embeddings/vertex_embedding_endpoint.ipynb
+          - ./docs/examples/embeddings/voyageai.ipynb
+          - ./docs/examples/embeddings/yandexgpt.ipynb
           - ./examples/embeddings/Anyscale.ipynb
           - ./examples/embeddings/Langchain.ipynb
           - ./examples/embeddings/OpenAI.ipynb
@@ -259,6 +428,27 @@ nav:
           - ./examples/embeddings/voyageai.ipynb
           - ./examples/embeddings/yandexgpt.ipynb
       - Evaluation:
+          - ./docs/examples/evaluation/BeirEvaluation.ipynb
+          - ./docs/examples/evaluation/Deepeval.ipynb
+          - ./docs/examples/evaluation/HotpotQADistractor.ipynb
+          - ./docs/examples/evaluation/QuestionGeneration.ipynb
+          - ./docs/examples/evaluation/RAGChecker.ipynb
+          - ./docs/examples/evaluation/RetryQuery.ipynb
+          - ./docs/examples/evaluation/TonicValidateEvaluators.ipynb
+          - ./docs/examples/evaluation/UpTrain.ipynb
+          - ./docs/examples/evaluation/answer_and_context_relevancy.ipynb
+          - ./docs/examples/evaluation/batch_eval.ipynb
+          - ./docs/examples/evaluation/correctness_eval.ipynb
+          - ./docs/examples/evaluation/faithfulness_eval.ipynb
+          - ./docs/examples/evaluation/guideline_eval.ipynb
+          - ./docs/examples/evaluation/mt_bench_human_judgement.ipynb
+          - ./docs/examples/evaluation/mt_bench_single_grading.ipynb
+          - ./docs/examples/evaluation/multi_modal/multi_modal_rag_evaluation.ipynb
+          - ./docs/examples/evaluation/pairwise_eval.ipynb
+          - ./docs/examples/evaluation/prometheus_evaluation.ipynb
+          - ./docs/examples/evaluation/relevancy_eval.ipynb
+          - ./docs/examples/evaluation/retrieval/retriever_eval.ipynb
+          - ./docs/examples/evaluation/semantic_similarity_eval.ipynb
           - ./examples/evaluation/BeirEvaluation.ipynb
           - ./examples/evaluation/Deepeval.ipynb
           - ./examples/evaluation/HotpotQADistractor.ipynb
@@ -281,6 +471,18 @@ nav:
           - ./examples/evaluation/retrieval/retriever_eval.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
       - Finetuning:
+          - ./docs/examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning.ipynb
+          - ./docs/examples/finetuning/embeddings/finetune_corpus_embedding.ipynb
+          - ./docs/examples/finetuning/embeddings/finetune_embedding.ipynb
+          - ./docs/examples/finetuning/embeddings/finetune_embedding_adapter.ipynb
+          - ./docs/examples/finetuning/llm_judge/correctness/finetune_llm_judge_single_grading_correctness.ipynb
+          - ./docs/examples/finetuning/llm_judge/pairwise/finetune_llm_judge.ipynb
+          - ./docs/examples/finetuning/mistralai_fine_tuning.ipynb
+          - ./docs/examples/finetuning/openai_fine_tuning.ipynb
+          - ./docs/examples/finetuning/openai_fine_tuning_functions.ipynb
+          - ./docs/examples/finetuning/react_agent/react_agent_finetune.ipynb
+          - ./docs/examples/finetuning/rerankers/cohere_custom_reranker.ipynb
+          - ./docs/examples/finetuning/router/router_finetune.ipynb
           - ./examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning.ipynb
           - ./examples/finetuning/embeddings/finetune_corpus_embedding.ipynb
           - ./examples/finetuning/embeddings/finetune_embedding.ipynb
@@ -294,6 +496,12 @@ nav:
           - ./examples/finetuning/rerankers/cohere_custom_reranker.ipynb
           - ./examples/finetuning/router/router_finetune.ipynb
       - Ingestion:
+          - ./docs/examples/ingestion/advanced_ingestion_pipeline.ipynb
+          - ./docs/examples/ingestion/async_ingestion_pipeline.ipynb
+          - ./docs/examples/ingestion/document_management_pipeline.ipynb
+          - ./docs/examples/ingestion/ingestion_gdrive.ipynb
+          - ./docs/examples/ingestion/parallel_execution_ingestion_pipeline.ipynb
+          - ./docs/examples/ingestion/redis_ingestion_pipeline.ipynb
           - ./examples/ingestion/advanced_ingestion_pipeline.ipynb
           - ./examples/ingestion/async_ingestion_pipeline.ipynb
           - ./examples/ingestion/document_management_pipeline.ipynb
@@ -301,6 +509,84 @@ nav:
           - ./examples/ingestion/parallel_execution_ingestion_pipeline.ipynb
           - ./examples/ingestion/redis_ingestion_pipeline.ipynb
       - LLMs:
+          - ./docs/examples/llm/ai21.ipynb
+          - ./docs/examples/llm/alephalpha.ipynb
+          - ./docs/examples/llm/anthropic.ipynb
+          - ./docs/examples/llm/anthropic_prompt_caching.ipynb
+          - ./docs/examples/llm/anyscale.ipynb
+          - ./docs/examples/llm/azure_inference.ipynb
+          - ./docs/examples/llm/azure_openai.ipynb
+          - ./docs/examples/llm/bedrock.ipynb
+          - ./docs/examples/llm/bedrock_converse.ipynb
+          - ./docs/examples/llm/cerebras.ipynb
+          - ./docs/examples/llm/clarifai.ipynb
+          - ./docs/examples/llm/cleanlab.ipynb
+          - ./docs/examples/llm/cohere.ipynb
+          - ./docs/examples/llm/dashscope.ipynb
+          - ./docs/examples/llm/databricks.ipynb
+          - ./docs/examples/llm/deepinfra.ipynb
+          - ./docs/examples/llm/everlyai.ipynb
+          - ./docs/examples/llm/fireworks.ipynb
+          - ./docs/examples/llm/fireworks_cookbook.ipynb
+          - ./docs/examples/llm/friendli.ipynb
+          - ./docs/examples/llm/gemini.ipynb
+          - ./docs/examples/llm/groq.ipynb
+          - ./docs/examples/llm/huggingface.ipynb
+          - ./docs/examples/llm/ibm_watsonx.ipynb
+          - ./docs/examples/llm/ipex_llm.ipynb
+          - ./docs/examples/llm/ipex_llm_gpu.ipynb
+          - ./docs/examples/llm/konko.ipynb
+          - ./docs/examples/llm/langchain.ipynb
+          - ./docs/examples/llm/litellm.ipynb
+          - ./docs/examples/llm/llama_2.ipynb
+          - ./docs/examples/llm/llama_2_llama_cpp.ipynb
+          - ./docs/examples/llm/llama_2_rap_battle.ipynb
+          - ./docs/examples/llm/llama_api.ipynb
+          - ./docs/examples/llm/llamafile.ipynb
+          - ./docs/examples/llm/llm_predictor.ipynb
+          - ./docs/examples/llm/lmstudio.ipynb
+          - ./docs/examples/llm/localai.ipynb
+          - ./docs/examples/llm/maritalk.ipynb
+          - ./docs/examples/llm/mistral_rs.ipynb
+          - ./docs/examples/llm/mistralai.ipynb
+          - ./docs/examples/llm/modelscope.ipynb
+          - ./docs/examples/llm/monsterapi.ipynb
+          - ./docs/examples/llm/mymagic.ipynb
+          - ./docs/examples/llm/neutrino.ipynb
+          - ./docs/examples/llm/nvidia.ipynb
+          - ./docs/examples/llm/nvidia_nim.ipynb
+          - ./docs/examples/llm/nvidia_tensorrt.ipynb
+          - ./docs/examples/llm/nvidia_text_completion.ipynb
+          - ./docs/examples/llm/nvidia_triton.ipynb
+          - ./docs/examples/llm/oci_genai.ipynb
+          - ./docs/examples/llm/octoai.ipynb
+          - ./docs/examples/llm/ollama.ipynb
+          - ./docs/examples/llm/ollama_gemma.ipynb
+          - ./docs/examples/llm/openai.ipynb
+          - ./docs/examples/llm/openai_json_vs_function_calling.ipynb
+          - ./docs/examples/llm/openllm.ipynb
+          - ./docs/examples/llm/openrouter.ipynb
+          - ./docs/examples/llm/openvino.ipynb
+          - ./docs/examples/llm/optimum_intel.ipynb
+          - ./docs/examples/llm/paieas.ipynb
+          - ./docs/examples/llm/palm.ipynb
+          - ./docs/examples/llm/perplexity.ipynb
+          - ./docs/examples/llm/portkey.ipynb
+          - ./docs/examples/llm/predibase.ipynb
+          - ./docs/examples/llm/premai.ipynb
+          - ./docs/examples/llm/qianfan.ipynb
+          - ./docs/examples/llm/rungpt.ipynb
+          - ./docs/examples/llm/sagemaker_endpoint_llm.ipynb
+          - ./docs/examples/llm/sambanova.ipynb
+          - ./docs/examples/llm/solar.ipynb
+          - ./docs/examples/llm/together.ipynb
+          - ./docs/examples/llm/unify.ipynb
+          - ./docs/examples/llm/upstage.ipynb
+          - ./docs/examples/llm/vertex.ipynb
+          - ./docs/examples/llm/vicuna.ipynb
+          - ./docs/examples/llm/vllm.ipynb
+          - ./docs/examples/llm/xinference_local_deployment.ipynb
+          - ./docs/examples/llm/yi.ipynb
           - ./examples/llm/ai21.ipynb
           - ./examples/llm/alephalpha.ipynb
           - ./examples/llm/anthropic.ipynb
@@ -380,16 +666,32 @@ nav:
           - ./examples/llm/xinference_local_deployment.ipynb
           - ./examples/llm/yi.ipynb
       - Llama Datasets:
+          - ./docs/examples/llama_dataset/downloading_llama_datasets.ipynb
+          - ./docs/examples/llama_dataset/labelled-rag-datasets.ipynb
+          - ./docs/examples/llama_dataset/ragdataset_submission_template.ipynb
+          - ./docs/examples/llama_dataset/uploading_llama_dataset.ipynb
           - ./examples/llama_dataset/downloading_llama_datasets.ipynb
           - ./examples/llama_dataset/labelled-rag-datasets.ipynb
           - ./examples/llama_dataset/ragdataset_submission_template.ipynb
           - ./examples/llama_dataset/uploading_llama_dataset.ipynb
       - Llama Hub:
+          - ./docs/examples/llama_hub/llama_hub.ipynb
+          - ./docs/examples/llama_hub/llama_pack_ollama.ipynb
+          - ./docs/examples/llama_hub/llama_pack_resume.ipynb
+          - ./docs/examples/llama_hub/llama_packs_example.ipynb
           - ./examples/llama_hub/llama_hub.ipynb
           - ./examples/llama_hub/llama_pack_ollama.ipynb
           - ./examples/llama_hub/llama_pack_resume.ipynb
           - ./examples/llama_hub/llama_packs_example.ipynb
       - Low Level:
+          - ./docs/examples/low_level/evaluation.ipynb
+          - ./docs/examples/low_level/fusion_retriever.ipynb
+          - ./docs/examples/low_level/ingestion.ipynb
+          - ./docs/examples/low_level/oss_ingestion_retrieval.ipynb
+          - ./docs/examples/low_level/response_synthesis.ipynb
+          - ./docs/examples/low_level/retrieval.ipynb
+          - ./docs/examples/low_level/router.ipynb
+          - ./docs/examples/low_level/vector_store.ipynb
           - ./examples/low_level/evaluation.ipynb
           - ./examples/low_level/fusion_retriever.ipynb
           - ./examples/low_level/ingestion.ipynb
@@ -399,6 +701,13 @@ nav:
           - ./examples/low_level/router.ipynb
           - ./examples/low_level/vector_store.ipynb
       - Managed Indexes:
+          - ./docs/examples/managed/BGEM3Demo.ipynb
+          - ./docs/examples/managed/GoogleDemo.ipynb
+          - ./docs/examples/managed/PostgresMLDemo.ipynb
+          - ./docs/examples/managed/VertexAIDemo.ipynb
+          - ./docs/examples/managed/manage_retrieval_benchmark.ipynb
+          - ./docs/examples/managed/vectaraDemo.ipynb
+          - ./docs/examples/managed/zcpDemo.ipynb
           - ./examples/managed/BGEM3Demo.ipynb
           - ./examples/managed/GoogleDemo.ipynb
           - ./examples/managed/PostgresMLDemo.ipynb
@@ -407,12 +716,39 @@ nav:
           - ./examples/managed/vectaraDemo.ipynb
           - ./examples/managed/zcpDemo.ipynb
       - Metadata Extractors:
+          - ./docs/examples/metadata_extraction/EntityExtractionClimate.ipynb
+          - ./docs/examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb
+          - ./docs/examples/metadata_extraction/MetadataExtractionSEC.ipynb
+          - ./docs/examples/metadata_extraction/MetadataExtraction_LLMSurvey.ipynb
+          - ./docs/examples/metadata_extraction/PydanticExtractor.ipynb
           - ./examples/metadata_extraction/EntityExtractionClimate.ipynb
           - ./examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb
           - ./examples/metadata_extraction/MetadataExtractionSEC.ipynb
           - ./examples/metadata_extraction/MetadataExtraction_LLMSurvey.ipynb
           - ./examples/metadata_extraction/PydanticExtractor.ipynb
       - Multi-Modal:
+          - ./docs/examples/multi_modal/ChromaMultiModalDemo.ipynb
+          - ./docs/examples/multi_modal/anthropic_multi_modal.ipynb
+          - ./docs/examples/multi_modal/azure_openai_multi_modal.ipynb
+          - ./docs/examples/multi_modal/dashscope_multi_modal.ipynb
+          - ./docs/examples/multi_modal/gemini.ipynb
+          - ./docs/examples/multi_modal/gpt4o_mm_structured_outputs.ipynb
+          - ./docs/examples/multi_modal/gpt4v_experiments_cot.ipynb
+          - ./docs/examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
+          - ./docs/examples/multi_modal/image_to_image_retrieval.ipynb
+          - ./docs/examples/multi_modal/llava_demo.ipynb
+          - ./docs/examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
+          - ./docs/examples/multi_modal/mistral_multi_modal.ipynb
+          - ./docs/examples/multi_modal/mm_agent.ipynb
+          - ./docs/examples/multi_modal/multi_modal_pydantic.ipynb
+          - ./docs/examples/multi_modal/multi_modal_rag_nomic.ipynb
+          - ./docs/examples/multi_modal/multi_modal_retrieval.ipynb
+          - ./docs/examples/multi_modal/multi_modal_video_RAG.ipynb
+          - ./docs/examples/multi_modal/multi_modal_videorag_videodb.ipynb
+          - ./docs/examples/multi_modal/ollama_cookbook.ipynb
+          - ./docs/examples/multi_modal/openai_multi_modal.ipynb
+          - ./docs/examples/multi_modal/replicate_multi_modal.ipynb
+          - ./docs/examples/multi_modal/structured_image_retrieval.ipynb
           - ./examples/multi_modal/ChromaMultiModalDemo.ipynb
           - ./examples/multi_modal/anthropic_multi_modal.ipynb
           - ./examples/multi_modal/azure_openai_multi_modal.ipynb
@@ -436,12 +772,37 @@ nav:
           - ./examples/multi_modal/replicate_multi_modal.ipynb
           - ./examples/multi_modal/structured_image_retrieval.ipynb
       - Multi-Tenancy:
+          - ./docs/examples/multi_tenancy/multi_tenancy_rag.ipynb
           - ./examples/multi_tenancy/multi_tenancy_rag.ipynb
       - Node Parsers & Text Splitters:
+          - ./docs/examples/node_parsers/semantic_chunking.ipynb
+          - ./docs/examples/node_parsers/semantic_double_merging_chunking.ipynb
+          - ./docs/examples/node_parsers/topic_parser.ipynb
           - ./examples/node_parsers/semantic_chunking.ipynb
           - ./examples/node_parsers/semantic_double_merging_chunking.ipynb
           - ./examples/node_parsers/topic_parser.ipynb
       - Node Postprocessors:
+          - ./docs/examples/node_postprocessor/CohereRerank.ipynb
+          - ./docs/examples/node_postprocessor/ColbertRerank.ipynb
+          - ./docs/examples/node_postprocessor/FileNodeProcessors.ipynb
+          - ./docs/examples/node_postprocessor/FlagEmbeddingReranker.ipynb
+          - ./docs/examples/node_postprocessor/JinaRerank.ipynb
+          - ./docs/examples/node_postprocessor/LLMReranker-Gatsby.ipynb
+          - ./docs/examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb
+          - ./docs/examples/node_postprocessor/LongContextReorder.ipynb
+          - ./docs/examples/node_postprocessor/MetadataReplacementDemo.ipynb
+          - ./docs/examples/node_postprocessor/MixedbreadAIRerank.ipynb
+          - ./docs/examples/node_postprocessor/NVIDIARerank.ipynb
+          - ./docs/examples/node_postprocessor/OptimizerDemo.ipynb
+          - ./docs/examples/node_postprocessor/PII.ipynb
+          - ./docs/examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb
+          - ./docs/examples/node_postprocessor/RecencyPostprocessorDemo.ipynb
+          - ./docs/examples/node_postprocessor/SentenceTransformerRerank.ipynb
+          - ./docs/examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
+          - ./docs/examples/node_postprocessor/VoyageAIRerank.ipynb
+          - ./docs/examples/node_postprocessor/openvino_rerank.ipynb
+          - ./docs/examples/node_postprocessor/rankGPT.ipynb
+          - ./docs/examples/node_postprocessor/rankLLM.ipynb
           - ./examples/node_postprocessor/CohereRerank.ipynb
           - ./examples/node_postprocessor/ColbertRerank.ipynb
           - ./examples/node_postprocessor/FileNodeProcessors.ipynb
@@ -464,8 +825,22 @@ nav:
           - ./examples/node_postprocessor/rankGPT.ipynb
           - ./examples/node_postprocessor/rankLLM.ipynb
       - Object Stores:
+          - ./docs/examples/objects/object_index.ipynb
           - ./examples/objects/object_index.ipynb
       - Observability:
+          - ./docs/examples/observability/AimCallback.ipynb
+          - ./docs/examples/observability/HoneyHiveLlamaIndexTracer.ipynb
+          - ./docs/examples/observability/LangfuseCallbackHandler.ipynb
+          - ./docs/examples/observability/LangfuseMistralPostHog.ipynb
+          - ./docs/examples/observability/LlamaDebugHandler.ipynb
+          - ./docs/examples/observability/MLflow.ipynb
+          - ./docs/examples/observability/OpenInferenceCallback.ipynb
+          - ./docs/examples/observability/OpenLLMetry.ipynb
+          - ./docs/examples/observability/OpikCallback.ipynb
+          - ./docs/examples/observability/PromptLayerHandler.ipynb
+          - ./docs/examples/observability/TokenCountingHandler.ipynb
+          - ./docs/examples/observability/UpTrainCallback.ipynb
+          - ./docs/examples/observability/WandbCallbackHandler.ipynb
           - ./examples/observability/AimCallback.ipynb
           - ./examples/observability/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/observability/LangfuseCallbackHandler.ipynb
@@ -480,6 +855,19 @@ nav:
           - ./examples/observability/UpTrainCallback.ipynb
           - ./examples/observability/WandbCallbackHandler.ipynb
       - Output Parsers:
+          - ./docs/examples/output_parsing/GuardrailsDemo.ipynb
+          - ./docs/examples/output_parsing/LangchainOutputParserDemo.ipynb
+          - ./docs/examples/output_parsing/df_program.ipynb
+          - ./docs/examples/output_parsing/evaporate_program.ipynb
+          - ./docs/examples/output_parsing/function_program.ipynb
+          - ./docs/examples/output_parsing/guidance_pydantic_program.ipynb
+          - ./docs/examples/output_parsing/guidance_sub_question.ipynb
+          - ./docs/examples/output_parsing/llm_program.ipynb
+          - ./docs/examples/output_parsing/lmformatenforcer_pydantic_program.ipynb
+          - ./docs/examples/output_parsing/lmformatenforcer_regular_expressions.ipynb
+          - ./docs/examples/output_parsing/nvidia_output_parsing.ipynb
+          - ./docs/examples/output_parsing/openai_pydantic_program.ipynb
+          - ./docs/examples/output_parsing/openai_sub_question.ipynb
           - ./examples/output_parsing/GuardrailsDemo.ipynb
           - ./examples/output_parsing/LangchainOutputParserDemo.ipynb
           - ./examples/output_parsing/df_program.ipynb
@@ -494,8 +882,14 @@ nav:
           - ./examples/output_parsing/openai_pydantic_program.ipynb
           - ./examples/output_parsing/openai_sub_question.ipynb
       - Param Optimizer:
+          - ./docs/examples/param_optimizer/param_optimizer.ipynb
           - ./examples/param_optimizer/param_optimizer.ipynb
       - Prompts:
+          - ./docs/examples/prompts/advanced_prompts.ipynb
+          - ./docs/examples/prompts/emotion_prompt.ipynb
+          - ./docs/examples/prompts/prompt_mixin.ipynb
+          - ./docs/examples/prompts/prompt_optimization.ipynb
+          - ./docs/examples/prompts/prompts_rag.ipynb
           - ./examples/prompts/advanced_prompts.ipynb
           - ./examples/prompts/emotion_prompt.ipynb
           - ./examples/prompts/prompt_mixin.ipynb
@@ -508,6 +902,30 @@ nav:
           - ./examples/property_graph/property_graph_custom_retriever.ipynb
           - ./examples/property_graph/property_graph_neo4j.ipynb
       - Query Engines:
+          - ./docs/examples/query_engine/CustomRetrievers.ipynb
+          - ./docs/examples/query_engine/JSONalyze_query_engine.ipynb
+          - ./docs/examples/query_engine/JointQASummary.ipynb
+          - ./docs/examples/query_engine/RetrieverRouterQueryEngine.ipynb
+          - ./docs/examples/query_engine/RouterQueryEngine.ipynb
+          - ./docs/examples/query_engine/SQLAutoVectorQueryEngine.ipynb
+          - ./docs/examples/query_engine/SQLJoinQueryEngine.ipynb
+          - ./docs/examples/query_engine/SQLRouterQueryEngine.ipynb
+          - ./docs/examples/query_engine/citation_query_engine.ipynb
+          - ./docs/examples/query_engine/cogniswitch_query_engine.ipynb
+          - ./docs/examples/query_engine/custom_query_engine.ipynb
+          - ./docs/examples/query_engine/ensemble_query_engine.ipynb
+          - ./docs/examples/query_engine/flare_query_engine.ipynb
+          - ./docs/examples/query_engine/json_query_engine.ipynb
+          - ./docs/examples/query_engine/knowledge_graph_query_engine.ipynb
+          - ./docs/examples/query_engine/knowledge_graph_rag_query_engine.ipynb
+          - ./docs/examples/query_engine/multi_doc_auto_retrieval/multi_doc_auto_retrieval.ipynb
+          - ./docs/examples/query_engine/pandas_query_engine.ipynb
+          - ./docs/examples/query_engine/pdf_tables/recursive_retriever.ipynb
+          - ./docs/examples/query_engine/pgvector_sql_query_engine.ipynb
+          - ./docs/examples/query_engine/pydantic_query_engine.ipynb
+          - ./docs/examples/query_engine/recursive_retriever_agents.ipynb
+          - ./docs/examples/query_engine/sec_tables/tesla_10q_table.ipynb
+          - ./docs/examples/query_engine/sub_question_query_engine.ipynb
           - ./examples/query_engine/CustomRetrievers.ipynb
           - ./examples/query_engine/JSONalyze_query_engine.ipynb
           - ./examples/query_engine/JointQASummary.ipynb
@@ -533,6 +951,12 @@ nav:
           - ./examples/query_engine/sec_tables/tesla_10q_table.ipynb
           - ./examples/query_engine/sub_question_query_engine.ipynb
       - Query Pipeline:
+          - ./docs/examples/pipeline/query_pipeline.ipynb
+          - ./docs/examples/pipeline/query_pipeline_async.ipynb
+          - ./docs/examples/pipeline/query_pipeline_memory.ipynb
+          - ./docs/examples/pipeline/query_pipeline_pandas.ipynb
+          - ./docs/examples/pipeline/query_pipeline_routing.ipynb
+          - ./docs/examples/pipeline/query_pipeline_sql.ipynb
           - ./examples/pipeline/query_pipeline.ipynb
           - ./examples/pipeline/query_pipeline_async.ipynb
           - ./examples/pipeline/query_pipeline_memory.ipynb
@@ -540,10 +964,19 @@ nav:
           - ./examples/pipeline/query_pipeline_routing.ipynb
           - ./examples/pipeline/query_pipeline_sql.ipynb
       - Query Transformations:
+          - ./docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb
+          - ./docs/examples/query_transformations/SimpleIndexDemo-multistep.ipynb
+          - ./docs/examples/query_transformations/query_transform_cookbook.ipynb
           - ./examples/query_transformations/HyDEQueryTransformDemo.ipynb
           - ./examples/query_transformations/SimpleIndexDemo-multistep.ipynb
           - ./examples/query_transformations/query_transform_cookbook.ipynb
       - Response Synthesizers:
+          - ./docs/examples/response_synthesizers/custom_prompt_synthesizer.ipynb
+          - ./docs/examples/response_synthesizers/long_context_test.ipynb
+          - ./docs/examples/response_synthesizers/pydantic_tree_summarize.ipynb
+          - ./docs/examples/response_synthesizers/refine.ipynb
+          - ./docs/examples/response_synthesizers/structured_refine.ipynb
+          - ./docs/examples/response_synthesizers/tree_summarize.ipynb
           - ./examples/response_synthesizers/custom_prompt_synthesizer.ipynb
           - ./examples/response_synthesizers/long_context_test.ipynb
           - ./examples/response_synthesizers/pydantic_tree_summarize.ipynb
@@ -551,6 +984,25 @@ nav:
           - ./examples/response_synthesizers/structured_refine.ipynb
           - ./examples/response_synthesizers/tree_summarize.ipynb
       - Retrievers:
+          - ./docs/examples/retrievers/auto_merging_retriever.ipynb
+          - ./docs/examples/retrievers/auto_vs_recursive_retriever.ipynb
+          - ./docs/examples/retrievers/bedrock_retriever.ipynb
+          - ./docs/examples/retrievers/bm25_retriever.ipynb
+          - ./docs/examples/retrievers/composable_retrievers.ipynb
+          - ./docs/examples/retrievers/deep_memory.ipynb
+          - ./docs/examples/retrievers/ensemble_retrieval.ipynb
+          - ./docs/examples/retrievers/multi_doc_together_hybrid.ipynb
+          - ./docs/examples/retrievers/pathway_retriever.ipynb
+          - ./docs/examples/retrievers/reciprocal_rerank_fusion.ipynb
+          - ./docs/examples/retrievers/recurisve_retriever_nodes_braintrust.ipynb
+          - ./docs/examples/retrievers/recursive_retriever_nodes.ipynb
+          - ./docs/examples/retrievers/relative_score_dist_fusion.ipynb
+          - ./docs/examples/retrievers/router_retriever.ipynb
+          - ./docs/examples/retrievers/simple_fusion.ipynb
+          - ./docs/examples/retrievers/vectara_auto_retriever.ipynb
+          - ./docs/examples/retrievers/vertex_ai_search_retriever.ipynb
+          - ./docs/examples/retrievers/videodb_retriever.ipynb
+          - ./docs/examples/retrievers/you_retriever.ipynb
           - ./examples/retrievers/auto_merging_retriever.ipynb
           - ./examples/retrievers/auto_vs_recursive_retriever.ipynb
           - ./examples/retrievers/bedrock_retriever.ipynb
@@ -571,18 +1023,118 @@ nav:
           - ./examples/retrievers/videodb_retriever.ipynb
           - ./examples/retrievers/you_retriever.ipynb
       - Tools:
+          - ./docs/examples/tools/OnDemandLoaderTool.ipynb
+          - ./docs/examples/tools/azure_code_interpreter.ipynb
+          - ./docs/examples/tools/cassandra.ipynb
+          - ./docs/examples/tools/eval_query_engine_tool.ipynb
           - ./examples/tools/OnDemandLoaderTool.ipynb
           - ./examples/tools/azure_code_interpreter.ipynb
           - ./examples/tools/cassandra.ipynb
           - ./examples/tools/eval_query_engine_tool.ipynb
       - Transforms:
+          - ./docs/examples/transforms/TransformsEval.ipynb
           - ./examples/transforms/TransformsEval.ipynb
       - Use Cases:
+          - ./docs/examples/usecases/10k_sub_question.ipynb
+          - ./docs/examples/usecases/10q_sub_question.ipynb
+          - ./docs/examples/usecases/email_data_extraction.ipynb
+          - ./docs/examples/usecases/github_issue_analysis.ipynb
           - ./examples/usecases/10k_sub_question.ipynb
           - ./examples/usecases/10q_sub_question.ipynb
           - ./examples/usecases/email_data_extraction.ipynb
           - ./examples/usecases/github_issue_analysis.ipynb
       - Vector Stores:
+          - ./docs/examples/vector_stores/AWSDocDBDemo.ipynb
+          - ./docs/examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb
+          - ./docs/examples/vector_stores/AmazonNeptuneVectorDemo.ipynb
+          - ./docs/examples/vector_stores/AnalyticDBDemo.ipynb
+          - ./docs/examples/vector_stores/AstraDBIndexDemo.ipynb
+          - ./docs/examples/vector_stores/AsyncIndexCreationDemo.ipynb
+          - ./docs/examples/vector_stores/AwadbDemo.ipynb
+          - ./docs/examples/vector_stores/AzureAISearchIndexDemo.ipynb
+          - ./docs/examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb
+          - ./docs/examples/vector_stores/AzureCosmosDBNoSqlDemo.ipynb
+          - ./docs/examples/vector_stores/BagelAutoRetriever.ipynb
+          - ./docs/examples/vector_stores/BagelIndexDemo.ipynb
+          - ./docs/examples/vector_stores/BaiduVectorDBIndexDemo.ipynb
+          - ./docs/examples/vector_stores/CassandraIndexDemo.ipynb
+          - ./docs/examples/vector_stores/ChromaFireworksNomic.ipynb
+          - ./docs/examples/vector_stores/ChromaIndexDemo.ipynb
+          - ./docs/examples/vector_stores/ClickHouseIndexDemo.ipynb
+          - ./docs/examples/vector_stores/CouchbaseVectorStoreDemo.ipynb
+          - ./docs/examples/vector_stores/DashvectorIndexDemo.ipynb
+          - ./docs/examples/vector_stores/DatabricksVectorSearchDemo.ipynb
+          - ./docs/examples/vector_stores/DeepLakeIndexDemo.ipynb
+          - ./docs/examples/vector_stores/DocArrayHnswIndexDemo.ipynb
+          - ./docs/examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
+          - ./docs/examples/vector_stores/DuckDBDemo.ipynb
+          - ./docs/examples/vector_stores/ElasticsearchIndexDemo.ipynb
+          - ./docs/examples/vector_stores/Elasticsearch_demo.ipynb
+          - ./docs/examples/vector_stores/EpsillaIndexDemo.ipynb
+          - ./docs/examples/vector_stores/FaissIndexDemo.ipynb
+          - ./docs/examples/vector_stores/FirestoreVectorStore.ipynb
+          - ./docs/examples/vector_stores/HologresDemo.ipynb
+          - ./docs/examples/vector_stores/JaguarIndexDemo.ipynb
+          - ./docs/examples/vector_stores/KDBAI_Advanced_RAG_Demo.ipynb
+          - ./docs/examples/vector_stores/LanceDBIndexDemo.ipynb
+          - ./docs/examples/vector_stores/LanternAutoRetriever.ipynb
+          - ./docs/examples/vector_stores/LanternIndexDemo.ipynb
+          - ./docs/examples/vector_stores/LindormDemo.ipynb
+          - ./docs/examples/vector_stores/MetalIndexDemo.ipynb
+          - ./docs/examples/vector_stores/MilvusHybridIndexDemo.ipynb
+          - ./docs/examples/vector_stores/MilvusIndexDemo.ipynb
+          - ./docs/examples/vector_stores/MilvusOperatorFunctionDemo.ipynb
+          - ./docs/examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
+          - ./docs/examples/vector_stores/MongoDBAtlasVectorSearchRAGFireworks.ipynb
+          - ./docs/examples/vector_stores/MongoDBAtlasVectorSearchRAGOpenAI.ipynb
+          - ./docs/examples/vector_stores/MyScaleIndexDemo.ipynb
+          - ./docs/examples/vector_stores/Neo4jVectorDemo.ipynb
+          - ./docs/examples/vector_stores/ObjectBoxIndexDemo.ipynb
+          - ./docs/examples/vector_stores/OpensearchDemo.ipynb
+          - ./docs/examples/vector_stores/PGVectoRsDemo.ipynb
+          - ./docs/examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
+          - ./docs/examples/vector_stores/PineconeIndexDemo.ipynb
+          - ./docs/examples/vector_stores/QdrantIndexDemo.ipynb
+          - ./docs/examples/vector_stores/Qdrant_metadata_filter.ipynb
+          - ./docs/examples/vector_stores/Qdrant_using_qdrant_filters.ipynb
+          - ./docs/examples/vector_stores/RedisIndexDemo.ipynb
+          - ./docs/examples/vector_stores/RelytDemo.ipynb
+          - ./docs/examples/vector_stores/RocksetIndexDemo.ipynb
+          - ./docs/examples/vector_stores/SimpleIndexDemo.ipynb
+          - ./docs/examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb
+          - ./docs/examples/vector_stores/SimpleIndexDemoLlama2.ipynb
+          - ./docs/examples/vector_stores/SimpleIndexDemoMMR.ipynb
+          - ./docs/examples/vector_stores/SimpleIndexOnS3.ipynb
+          - ./docs/examples/vector_stores/SupabaseVectorIndexDemo.ipynb
+          - ./docs/examples/vector_stores/TablestoreDemo.ipynb
+          - ./docs/examples/vector_stores/TairIndexDemo.ipynb
+          - ./docs/examples/vector_stores/TencentVectorDBIndexDemo.ipynb
+          - ./docs/examples/vector_stores/TiDBVector.ipynb
+          - ./docs/examples/vector_stores/Timescalevector.ipynb
+          - ./docs/examples/vector_stores/TxtaiIndexDemo.ipynb
+          - ./docs/examples/vector_stores/TypesenseDemo.ipynb
+          - ./docs/examples/vector_stores/UpstashVectorDemo.ipynb
+          - ./docs/examples/vector_stores/VearchDemo.ipynb
+          - ./docs/examples/vector_stores/VertexAIVectorSearchDemo.ipynb
+          - ./docs/examples/vector_stores/VespaIndexDemo.ipynb
+          - ./docs/examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb
+          - ./docs/examples/vector_stores/WeaviateIndexDemo.ipynb
+          - ./docs/examples/vector_stores/WeaviateIndex_auto_retriever.ipynb
+          - ./docs/examples/vector_stores/WeaviateIndex_metadata_filter.ipynb
+          - ./docs/examples/vector_stores/WordLiftDemo.ipynb
+          - ./docs/examples/vector_stores/ZepIndexDemo.ipynb
+          - ./docs/examples/vector_stores/chroma_auto_retriever.ipynb
+          - ./docs/examples/vector_stores/chroma_metadata_filter.ipynb
+          - ./docs/examples/vector_stores/elasticsearch_auto_retriever.ipynb
+          - ./docs/examples/vector_stores/existing_data/pinecone_existing_data.ipynb
+          - ./docs/examples/vector_stores/existing_data/weaviate_existing_data.ipynb
+          - ./docs/examples/vector_stores/neo4j_metadata_filter.ipynb
+          - ./docs/examples/vector_stores/orallamavs.ipynb
+          - ./docs/examples/vector_stores/pinecone_auto_retriever.ipynb
+          - ./docs/examples/vector_stores/pinecone_metadata_filter.ipynb
+          - ./docs/examples/vector_stores/postgres.ipynb
+          - ./docs/examples/vector_stores/qdrant_bm42.ipynb
+          - ./docs/examples/vector_stores/qdrant_hybrid.ipynb
           - ./examples/vector_stores/AWSDocDBDemo.ipynb
           - ./examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb
           - ./examples/vector_stores/AmazonNeptuneVectorDemo.ipynb
@@ -674,6 +1226,23 @@ nav:
           - ./examples/vector_stores/qdrant_bm42.ipynb
           - ./examples/vector_stores/qdrant_hybrid.ipynb
       - Workflow:
+          - ./docs/examples/workflow/JSONalyze_query_engine.ipynb
+          - ./docs/examples/workflow/advanced_text_to_sql.ipynb
+          - ./docs/examples/workflow/citation_query_engine.ipynb
+          - ./docs/examples/workflow/corrective_rag_pack.ipynb
+          - ./docs/examples/workflow/function_calling_agent.ipynb
+          - ./docs/examples/workflow/human_in_the_loop_story_crafting.ipynb
+          - ./docs/examples/workflow/long_rag_pack.ipynb
+          - ./docs/examples/workflow/multi_step_query_engine.ipynb
+          - ./docs/examples/workflow/multi_strategy_workflow.ipynb
+          - ./docs/examples/workflow/parallel_execution.ipynb
+          - ./docs/examples/workflow/rag.ipynb
+          - ./docs/examples/workflow/react_agent.ipynb
+          - ./docs/examples/workflow/reflection.ipynb
+          - ./docs/examples/workflow/router_query_engine.ipynb
+          - ./docs/examples/workflow/self_discover_workflow.ipynb
+          - ./docs/examples/workflow/sub_question_query_engine.ipynb
+          - ./docs/examples/workflow/workflows_cookbook.ipynb
           - ./examples/workflow/.ipynb_checkpoints/human_in_the_loop_story_crafting-checkpoint.ipynb
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
@@ -947,80 +1516,6 @@ nav:
           - ./api_reference/instrumentation/index.md
           - ./api_reference/instrumentation/span_handlers.md
           - ./api_reference/instrumentation/span_types.md
-      - Llama Datasets:
-          - ./api_reference/llama_dataset/index.md
-      - Llama Deploy:
-          - ./api_reference/llama_deploy
-      - Llama Packs:
-          - ./api_reference/packs/agent_search_retriever.md
-          - ./api_reference/packs/agents_coa.md
-          - ./api_reference/packs/agents_lats.md
-          - ./api_reference/packs/agents_llm_compiler.md
-          - ./api_reference/packs/amazon_product_extraction.md
-          - ./api_reference/packs/arize_phoenix_query_engine.md
-          - ./api_reference/packs/auto_merging_retriever.md
-          - ./api_reference/packs/chroma_autoretrieval.md
-          - ./api_reference/packs/code_hierarchy.md
-          - ./api_reference/packs/cogniswitch_agent.md
-          - ./api_reference/packs/cohere_citation_chat.md
-          - ./api_reference/packs/corrective_rag.md
-          - ./api_reference/packs/deeplake_deepmemory_retriever.md
-          - ./api_reference/packs/deeplake_multimodal_retrieval.md
-          - ./api_reference/packs/dense_x_retrieval.md
-          - ./api_reference/packs/diff_private_simple_dataset.md
-          - ./api_reference/packs/docugami_kg_rag.md
-          - ./api_reference/packs/evaluator_benchmarker.md
-          - ./api_reference/packs/finchat.md
-          - ./api_reference/packs/fusion_retriever.md
-          - ./api_reference/packs/fuzzy_citation.md
-          - ./api_reference/packs/gmail_openai_agent.md
-          - ./api_reference/packs/gradio_agent_chat.md
-          - ./api_reference/packs/gradio_react_agent_chatbot.md
-          - ./api_reference/packs/index.md
-          - ./api_reference/packs/infer_retrieve_rerank.md
-          - ./api_reference/packs/koda_retriever.md
-          - ./api_reference/packs/llama_dataset_metadata.md
-          - ./api_reference/packs/llama_guard_moderator.md
-          - ./api_reference/packs/llava_completion.md
-          - ./api_reference/packs/longrag.md
-          - ./api_reference/packs/mixture_of_agents.md
-          - ./api_reference/packs/multi_document_agents.md
-          - ./api_reference/packs/multi_tenancy_rag.md
-          - ./api_reference/packs/multidoc_autoretrieval.md
-          - ./api_reference/packs/nebulagraph_query_engine.md
-          - ./api_reference/packs/neo4j_query_engine.md
-          - ./api_reference/packs/node_parser_semantic_chunking.md
-          - ./api_reference/packs/ollama_query_engine.md
-          - ./api_reference/packs/panel_chatbot.md
-          - ./api_reference/packs/query_understanding_agent.md
-          - ./api_reference/packs/raft_dataset.md
-          - ./api_reference/packs/rag_cli_local.md
-          - ./api_reference/packs/rag_evaluator.md
-          - ./api_reference/packs/rag_fusion_query_pipeline.md
-          - ./api_reference/packs/ragatouille_retriever.md
-          - ./api_reference/packs/raptor.md
-          - ./api_reference/packs/recursive_retriever.md
-          - ./api_reference/packs/redis_ingestion_pipeline.md
-          - ./api_reference/packs/resume_screener.md
-          - ./api_reference/packs/retry_engine_weaviate.md
-          - ./api_reference/packs/searchain.md
-          - ./api_reference/packs/secgpt.md
-          - ./api_reference/packs/self_discover.md
-          - ./api_reference/packs/self_rag.md
-          - ./api_reference/packs/sentence_window_retriever.md
-          - ./api_reference/packs/snowflake_query_engine.md
-          - ./api_reference/packs/stock_market_data_query_engine.md
-          - ./api_reference/packs/streamlit_chatbot.md
-          - ./api_reference/packs/sub_question_weaviate.md
-          - ./api_reference/packs/subdoc_summary.md
-          - ./api_reference/packs/tables.md
-          - ./api_reference/packs/timescale_vector_autoretrieval.md
-          - ./api_reference/packs/trulens_eval_packs.md
-          - ./api_reference/packs/vanna.md
-          - ./api_reference/packs/vectara_rag.md
-          - ./api_reference/packs/voyage_query_engine.md
-          - ./api_reference/packs/zenguard.md
-          - ./api_reference/packs/zephyr_query_engine.md
       - LLMs:
           - ./api_reference/llms/OptimumIntelLLM.md
           - ./api_reference/llms/ai21.md
@@ -1101,6 +1596,80 @@ nav:
           - ./api_reference/llms/xinference.md
           - ./api_reference/llms/yi.md
           - ./api_reference/llms/you.md
+      - Llama Datasets:
+          - ./api_reference/llama_dataset/index.md
+      - Llama Deploy:
+          - ./api_reference/llama_deploy
+      - Llama Packs:
+          - ./api_reference/packs/agent_search_retriever.md
+          - ./api_reference/packs/agents_coa.md
+          - ./api_reference/packs/agents_lats.md
+          - ./api_reference/packs/agents_llm_compiler.md
+          - ./api_reference/packs/amazon_product_extraction.md
+          - ./api_reference/packs/arize_phoenix_query_engine.md
+          - ./api_reference/packs/auto_merging_retriever.md
+          - ./api_reference/packs/chroma_autoretrieval.md
+          - ./api_reference/packs/code_hierarchy.md
+          - ./api_reference/packs/cogniswitch_agent.md
+          - ./api_reference/packs/cohere_citation_chat.md
+          - ./api_reference/packs/corrective_rag.md
+          - ./api_reference/packs/deeplake_deepmemory_retriever.md
+          - ./api_reference/packs/deeplake_multimodal_retrieval.md
+          - ./api_reference/packs/dense_x_retrieval.md
+          - ./api_reference/packs/diff_private_simple_dataset.md
+          - ./api_reference/packs/docugami_kg_rag.md
+          - ./api_reference/packs/evaluator_benchmarker.md
+          - ./api_reference/packs/finchat.md
+          - ./api_reference/packs/fusion_retriever.md
+          - ./api_reference/packs/fuzzy_citation.md
+          - ./api_reference/packs/gmail_openai_agent.md
+          - ./api_reference/packs/gradio_agent_chat.md
+          - ./api_reference/packs/gradio_react_agent_chatbot.md
+          - ./api_reference/packs/index.md
+          - ./api_reference/packs/infer_retrieve_rerank.md
+          - ./api_reference/packs/koda_retriever.md
+          - ./api_reference/packs/llama_dataset_metadata.md
+          - ./api_reference/packs/llama_guard_moderator.md
+          - ./api_reference/packs/llava_completion.md
+          - ./api_reference/packs/longrag.md
+          - ./api_reference/packs/mixture_of_agents.md
+          - ./api_reference/packs/multi_document_agents.md
+          - ./api_reference/packs/multi_tenancy_rag.md
+          - ./api_reference/packs/multidoc_autoretrieval.md
+          - ./api_reference/packs/nebulagraph_query_engine.md
+          - ./api_reference/packs/neo4j_query_engine.md
+          - ./api_reference/packs/node_parser_semantic_chunking.md
+          - ./api_reference/packs/ollama_query_engine.md
+          - ./api_reference/packs/panel_chatbot.md
+          - ./api_reference/packs/query_understanding_agent.md
+          - ./api_reference/packs/raft_dataset.md
+          - ./api_reference/packs/rag_cli_local.md
+          - ./api_reference/packs/rag_evaluator.md
+          - ./api_reference/packs/rag_fusion_query_pipeline.md
+          - ./api_reference/packs/ragatouille_retriever.md
+          - ./api_reference/packs/raptor.md
+          - ./api_reference/packs/recursive_retriever.md
+          - ./api_reference/packs/redis_ingestion_pipeline.md
+          - ./api_reference/packs/resume_screener.md
+          - ./api_reference/packs/retry_engine_weaviate.md
+          - ./api_reference/packs/searchain.md
+          - ./api_reference/packs/secgpt.md
+          - ./api_reference/packs/self_discover.md
+          - ./api_reference/packs/self_rag.md
+          - ./api_reference/packs/sentence_window_retriever.md
+          - ./api_reference/packs/snowflake_query_engine.md
+          - ./api_reference/packs/stock_market_data_query_engine.md
+          - ./api_reference/packs/streamlit_chatbot.md
+          - ./api_reference/packs/sub_question_weaviate.md
+          - ./api_reference/packs/subdoc_summary.md
+          - ./api_reference/packs/tables.md
+          - ./api_reference/packs/timescale_vector_autoretrieval.md
+          - ./api_reference/packs/trulens_eval_packs.md
+          - ./api_reference/packs/vanna.md
+          - ./api_reference/packs/vectara_rag.md
+          - ./api_reference/packs/voyage_query_engine.md
+          - ./api_reference/packs/zenguard.md
+          - ./api_reference/packs/zephyr_query_engine.md
       - Memory:
           - ./api_reference/memory/chat_memory_buffer.md
           - ./api_reference/memory/index.md
@@ -1131,6 +1700,7 @@ nav:
       - Node Parsers & Text Splitters:
           - ./api_reference/node_parser/alibabacloud_aisearch.md
           - ./api_reference/node_parser/dashscope.md
+          - ./api_reference/node_parser/docling.md
           - ./api_reference/node_parser/topic.md
           - ./api_reference/node_parsers/code.md
           - ./api_reference/node_parsers/hierarchical.md
@@ -1281,6 +1851,7 @@ nav:
           - ./api_reference/readers/database.md
           - ./api_reference/readers/deeplake.md
           - ./api_reference/readers/discord.md
+          - ./api_reference/readers/docling.md
           - ./api_reference/readers/docstring_walker.md
           - ./api_reference/readers/docugami.md
           - ./api_reference/readers/earnings_call_transcript.md
@@ -1435,6 +2006,7 @@ nav:
       - Storage:
           - Chat Store:
               - ./api_reference/storage/chat_store/azure.md
+              - ./api_reference/storage/chat_store/azurecosmosnosql.md
               - ./api_reference/storage/chat_store/dynamodb.md
               - ./api_reference/storage/chat_store/index.md
               - ./api_reference/storage/chat_store/redis.md
@@ -1461,6 +2033,7 @@ nav:
               - ./api_reference/storage/graph_stores/tidb.md
           - Index Store:
               - ./api_reference/storage/index_store/azure.md
+              - ./api_reference/storage/index_store/azurecosmosnosql.md
               - ./api_reference/storage/index_store/dynamodb.md
               - ./api_reference/storage/index_store/elasticsearch.md
               - ./api_reference/storage/index_store/firestore.md
@@ -1471,6 +2044,7 @@ nav:
               - ./api_reference/storage/index_store/simple.md
           - Kvstore:
               - ./api_reference/storage/kvstore/azure.md
+              - ./api_reference/storage/kvstore/azurecosmosnosql.md
               - ./api_reference/storage/kvstore/dynamodb.md
               - ./api_reference/storage/kvstore/elasticsearch.md
               - ./api_reference/storage/kvstore/firestore.md
@@ -1523,6 +2097,7 @@ nav:
               - ./api_reference/storage/vector_store/myscale.md
               - ./api_reference/storage/vector_store/neo4jvector.md
               - ./api_reference/storage/vector_store/neptune.md
+              - ./api_reference/storage/vector_store/objectbox.md
               - ./api_reference/storage/vector_store/opensearch.md
               - ./api_reference/storage/vector_store/oracledb.md
               - ./api_reference/storage/vector_store/pgvecto_rs.md
@@ -1624,9 +2199,9 @@ nav:
       - LlamaCloud: ./llama_cloud/index.md
       - LlamaParse: ./llama_cloud/llama_parse.md
 plugins:
-  - search:
-  - include_dir_to_nav:
-  - gh-admonitions:
+  - search: null
+  - include_dir_to_nav: null
+  - gh-admonitions: null
   - mkdocs-jupyter:
       execute: false
   - mkdocstrings:
@@ -2224,6 +2799,580 @@ plugins:
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-huggingface
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-upstash
             - ../llama-index-integrations/embeddings/llama-index-embeddings-vertex-endpoint
+            - ../../llama-index-packs/llama-index-packs-retry-engine-weaviate
+            - ../../llama-index-packs/llama-index-packs-llava-completion
+            - ../../llama-index-packs/llama-index-packs-zephyr-query-engine
+            - ../../llama-index-packs/llama-index-packs-timescale-vector-autoretrieval
+            - ../../llama-index-packs/llama-index-packs-corrective-rag
+            - ../../llama-index-packs/llama-index-packs-multi-document-agents
+            - ../../llama-index-packs/llama-index-packs-query-understanding-agent
+            - ../../llama-index-packs/llama-index-packs-multidoc-autoretrieval
+            - ../../llama-index-packs/llama-index-packs-gmail-openai-agent
+            - ../../llama-index-packs/llama-index-packs-neo4j-query-engine
+            - ../../llama-index-packs/llama-index-packs-searchain
+            - ../../llama-index-packs/llama-index-packs-chroma-autoretrieval
+            - ../../llama-index-packs/llama-index-packs-resume-screener
+            - ../../llama-index-packs/llama-index-packs-docugami-kg-rag
+            - ../../llama-index-packs/llama-index-packs-trulens-eval-packs
+            - ../../llama-index-packs/llama-index-packs-evaluator-benchmarker
+            - ../../llama-index-packs/llama-index-packs-secgpt
+            - ../../llama-index-packs/llama-index-packs-vanna
+            - ../../llama-index-packs/llama-index-packs-mixture-of-agents
+            - ../../llama-index-packs/llama-index-packs-rag-fusion-query-pipeline
+            - ../../llama-index-packs/llama-index-packs-llama-guard-moderator
+            - ../../llama-index-packs/llama-index-packs-snowflake-query-engine
+            - ../../llama-index-packs/llama-index-packs-self-rag
+            - ../../llama-index-packs/llama-index-packs-self-discover
+            - ../../llama-index-packs/llama-index-packs-raptor
+            - ../../llama-index-packs/llama-index-packs-llama-dataset-metadata
+            - ../../llama-index-packs/llama-index-packs-zenguard
+            - ../../llama-index-packs/llama-index-packs-stock-market-data-query-engine
+            - ../../llama-index-packs/llama-index-packs-rag-evaluator
+            - ../../llama-index-packs/llama-index-packs-arize-phoenix-query-engine
+            - ../../llama-index-packs/llama-index-packs-panel-chatbot
+            - ../../llama-index-packs/llama-index-packs-code-hierarchy
+            - ../../llama-index-packs/llama-index-packs-rag-cli-local
+            - ../../llama-index-packs/llama-index-packs-multi-tenancy-rag
+            - ../../llama-index-packs/llama-index-packs-streamlit-chatbot
+            - ../../llama-index-packs/llama-index-packs-vectara-rag
+            - ../../llama-index-packs/llama-index-packs-agents-coa
+            - ../../llama-index-packs/llama-index-packs-tables
+            - ../../llama-index-packs/llama-index-packs-node-parser-semantic-chunking
+            - ../../llama-index-packs/llama-index-packs-redis-ingestion-pipeline
+            - ../../llama-index-packs/llama-index-packs-dense-x-retrieval
+            - ../../llama-index-packs/llama-index-packs-auto-merging-retriever
+            - ../../llama-index-packs/llama-index-packs-agents-llm-compiler
+            - ../../llama-index-packs/llama-index-packs-gradio-react-agent-chatbot
+            - ../../llama-index-packs/llama-index-packs-sub-question-weaviate
+            - ../../llama-index-packs/llama-index-packs-cohere-citation-chat
+            - ../../llama-index-packs/llama-index-packs-raft-dataset
+            - ../../llama-index-packs/llama-index-packs-deeplake-deepmemory-retriever
+            - ../../llama-index-packs/llama-index-packs-nebulagraph-query-engine
+            - ../../llama-index-packs/llama-index-packs-diff-private-simple-dataset
+            - ../../llama-index-packs/llama-index-packs-voyage-query-engine
+            - ../../llama-index-packs/llama-index-packs-longrag
+            - ../../llama-index-packs/llama-index-packs-infer-retrieve-rerank
+            - ../../llama-index-packs/llama-index-packs-agents-lats
+            - ../../llama-index-packs/llama-index-packs-koda-retriever
+            - ../../llama-index-packs/llama-index-packs-subdoc-summary
+            - ../../llama-index-packs/llama-index-packs-sentence-window-retriever
+            - ../../llama-index-packs/llama-index-packs-recursive-retriever
+            - ../../llama-index-packs/llama-index-packs-amazon-product-extraction
+            - ../../llama-index-packs/llama-index-packs-cogniswitch-agent
+            - ../../llama-index-packs/llama-index-packs-ollama-query-engine
+            - ../../llama-index-packs/llama-index-packs-ragatouille-retriever
+            - ../../llama-index-packs/llama-index-packs-fuzzy-citation
+            - ../../llama-index-packs/llama-index-packs-deeplake-multimodal-retrieval
+            - ../../llama-index-packs/llama-index-packs-gradio-agent-chat
+            - ../../llama-index-packs/llama-index-packs-agent-search-retriever
+            - ../../llama-index-packs/llama-index-packs-fusion-retriever
+            - ../../llama-index-packs/llama-index-packs-finchat
+            - ../../llama-index-integrations/sparse_embeddings/llama-index-sparse-embeddings-fastembed
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-singlestoredb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-qdrant
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-pinecone
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-awsdocdb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-duckdb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-supabase
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-upstash
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-lancedb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-elasticsearch
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-postgres
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-vertexaivectorsearch
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-lindorm
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-cassandra
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-tablestore
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-zep
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-rocksetdb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-myscale
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-kdbai
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-alibabacloud-opensearch
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-tencentvectordb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-milvus
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-analyticdb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-oracledb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-neo4jvector
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-deeplake
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-couchbase
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-weaviate
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-baiduvectordb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-timescalevector
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-dashvector
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-jaguar
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-faiss
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-azureaisearch
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-mongodb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-astra-db
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-chroma
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-vearch
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-bagel
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-neptune
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-clickhouse
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-txtai
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-epsilla
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-lantern
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-relyt
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-firestore
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-hologres
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-awadb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-mariadb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-wordlift
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-databricks
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-azurecosmosmongo
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-typesense
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-pgvecto-rs
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-opensearch
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-tidbvector
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-objectbox
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-docarray
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-dynamodb
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-chatgpt-plugin
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-azurecosmosnosql
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-tair
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-redis
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-google
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-vespa
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-metal
+            - ../../llama-index-integrations/retrievers/llama-index-retrievers-duckdb-retriever
+            - ../../llama-index-integrations/retrievers/llama-index-retrievers-pathway
+            - ../../llama-index-integrations/retrievers/llama-index-retrievers-bedrock
+            - ../../llama-index-integrations/retrievers/llama-index-retrievers-mongodb-atlas-bm25-retriever
+            - ../../llama-index-integrations/retrievers/llama-index-retrievers-bm25
+            - ../../llama-index-integrations/retrievers/llama-index-retrievers-videodb
+            - ../../llama-index-integrations/retrievers/llama-index-retrievers-vertexai-search
+            - ../../llama-index-integrations/retrievers/llama-index-retrievers-you
+            - ../../llama-index-integrations/indices/llama-index-indices-managed-dashscope
+            - ../../llama-index-integrations/indices/llama-index-indices-managed-postgresml
+            - ../../llama-index-integrations/indices/llama-index-indices-managed-zilliz
+            - ../../llama-index-integrations/indices/llama-index-indices-managed-llama-cloud
+            - ../../llama-index-integrations/indices/llama-index-indices-managed-bge-m3
+            - ../../llama-index-integrations/indices/llama-index-indices-managed-colbert
+            - ../../llama-index-integrations/indices/llama-index-indices-managed-vectara
+            - ../../llama-index-integrations/indices/llama-index-indices-managed-google
+            - ../../llama-index-integrations/indices/llama-index-indices-managed-vertexai
+            - ../../llama-index-integrations/tools/llama-index-tools-salesforce
+            - ../../llama-index-integrations/tools/llama-index-tools-python-file
+            - ../../llama-index-integrations/tools/llama-index-tools-jina
+            - ../../llama-index-integrations/tools/llama-index-tools-ionic-shopping
+            - ../../llama-index-integrations/tools/llama-index-tools-text-to-image
+            - ../../llama-index-integrations/tools/llama-index-tools-openapi
+            - ../../llama-index-integrations/tools/llama-index-tools-passio-nutrition-ai
+            - ../../llama-index-integrations/tools/llama-index-tools-shopify
+            - ../../llama-index-integrations/tools/llama-index-tools-metaphor
+            - ../../llama-index-integrations/tools/llama-index-tools-zapier
+            - ../../llama-index-integrations/tools/llama-index-tools-wikipedia
+            - ../../llama-index-integrations/tools/llama-index-tools-google
+            - ../../llama-index-integrations/tools/llama-index-tools-azure-translate
+            - ../../llama-index-integrations/tools/llama-index-tools-multion
+            - ../../llama-index-integrations/tools/llama-index-tools-database
+            - ../../llama-index-integrations/tools/llama-index-tools-chatgpt-plugin
+            - ../../llama-index-integrations/tools/llama-index-tools-neo4j
+            - ../../llama-index-integrations/tools/llama-index-tools-bing-search
+            - ../../llama-index-integrations/tools/llama-index-tools-yahoo-finance
+            - ../../llama-index-integrations/tools/llama-index-tools-exa
+            - ../../llama-index-integrations/tools/llama-index-tools-duckduckgo
+            - ../../llama-index-integrations/tools/llama-index-tools-cogniswitch
+            - ../../llama-index-integrations/tools/llama-index-tools-azure-cv
+            - ../../llama-index-integrations/tools/llama-index-tools-notion
+            - ../../llama-index-integrations/tools/llama-index-tools-yelp
+            - ../../llama-index-integrations/tools/llama-index-tools-finance
+            - ../../llama-index-integrations/tools/llama-index-tools-weather
+            - ../../llama-index-integrations/tools/llama-index-tools-brave-search
+            - ../../llama-index-integrations/tools/llama-index-tools-azure-speech
+            - ../../llama-index-integrations/tools/llama-index-tools-wolfram-alpha
+            - ../../llama-index-integrations/tools/llama-index-tools-slack
+            - ../../llama-index-integrations/tools/llama-index-tools-tavily-research
+            - ../../llama-index-integrations/tools/llama-index-tools-arxiv
+            - ../../llama-index-integrations/tools/llama-index-tools-vector-db
+            - ../../llama-index-integrations/tools/llama-index-tools-azure-code-interpreter
+            - ../../llama-index-integrations/tools/llama-index-tools-code-interpreter
+            - ../../llama-index-integrations/tools/llama-index-tools-waii
+            - ../../llama-index-integrations/tools/llama-index-tools-requests
+            - ../../llama-index-integrations/tools/llama-index-tools-cassandra
+            - ../../llama-index-integrations/tools/llama-index-tools-openai
+            - ../../llama-index-integrations/tools/llama-index-tools-box
+            - ../../llama-index-integrations/tools/llama-index-tools-graphql
+            - ../../llama-index-integrations/tools/llama-index-tools-playgrounds
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-clip
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-anyscale
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-llm-rails
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-openvino
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-ibm
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-adapter
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-databricks
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-together
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-nvidia
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-ipex-llm
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-xinference
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-alibabacloud-aisearch
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-octoai
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-voyageai
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-dashscope
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-vertex
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-huggingface
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-ollama
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-vertex-endpoint
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-sagemaker-endpoint
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-premai
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-premai/llama_index/embeddings/premai
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-cloudflare-workersai
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-llamafile
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-azure-inference
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-openai
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-cohere
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-litellm
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-api
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-alephalpha
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-optimum-intel
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-jinaai
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-nomic
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-gemini
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-fastembed
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-fireworks
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-instructor
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-optimum
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-deepinfra
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-upstage
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-langchain
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-yandexgpt
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-google
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-gigachat
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-oracleai
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-mistralai
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-textembed
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-huggingface-itrex
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-bedrock
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-clarifai
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-elasticsearch
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-azure-openai
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-mixedbreadai
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-text-embeddings-inference
+            - ../../llama-index-integrations/embeddings/llama-index-embeddings-oci-genai
+            - ../../llama-index-integrations/node_parser/llama-index-node-parser-relational-dashscope
+            - ../../llama-index-integrations/node_parser/llama-index-node-parser-topic
+            - ../../llama-index-integrations/node_parser/llama-index-node-parser-docling
+            - ../../llama-index-integrations/node_parser/llama-index-node-parser-alibabacloud-aisearch
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-uptrain
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-deepeval
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-openinference
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-wandb
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-argilla
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-honeyhive
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-langfuse
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-opik
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-arize-phoenix
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-literalai
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-aim
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-agentops
+            - ../../llama-index-integrations/callbacks/llama-index-callbacks-promptlayer
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-jinaai-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-colbert-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-sbert-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-xinference-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-voyageai-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-longllmlingua
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-rankgpt-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-alibabacloud-aisearch-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-openvino-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-cohere-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-presidio
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-flag-embedding-reranker
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-tei-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-mixedbreadai-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-nvidia-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-dashscope-rerank
+            - ../../llama-index-integrations/postprocessor/llama-index-postprocessor-rankllm-rerank
+            - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-neptune
+            - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-tidb
+            - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-neo4j
+            - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-falkordb
+            - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-kuzu
+            - ../../llama-index-integrations/graph_stores/llama-index-graph-stores-nebula
+            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-openai
+            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-mistralai
+            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-ollama
+            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-azure-openai
+            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-replicate
+            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-gemini
+            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-anthropic
+            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-dashscope
+            - ../../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-huggingface
+            - ../../llama-index-integrations/agent/llama-index-agent-llm-compiler
+            - ../../llama-index-integrations/agent/llama-index-agent-openai
+            - ../../llama-index-integrations/agent/llama-index-agent-openai-legacy
+            - ../../llama-index-integrations/agent/llama-index-agent-dashscope
+            - ../../llama-index-integrations/agent/llama-index-agent-introspective
+            - ../../llama-index-integrations/agent/llama-index-agent-lats
+            - ../../llama-index-integrations/agent/llama-index-agent-coa
+            - ../../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-azurecosmosnosql
+            - ../../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-postgres
+            - ../../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-azure
+            - ../../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-redis
+            - ../../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-firestore
+            - ../../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-mongodb
+            - ../../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-s3
+            - ../../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-elasticsearch
+            - ../../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-dynamodb
+            - ../../llama-index-integrations/storage/docstore/llama-index-storage-docstore-dynamodb
+            - ../../llama-index-integrations/storage/docstore/llama-index-storage-docstore-elasticsearch
+            - ../../llama-index-integrations/storage/docstore/llama-index-storage-docstore-mongodb
+            - ../../llama-index-integrations/storage/docstore/llama-index-storage-docstore-azurecosmosnosql
+            - ../../llama-index-integrations/storage/docstore/llama-index-storage-docstore-firestore
+            - ../../llama-index-integrations/storage/docstore/llama-index-storage-docstore-redis
+            - ../../llama-index-integrations/storage/docstore/llama-index-storage-docstore-azure
+            - ../../llama-index-integrations/storage/docstore/llama-index-storage-docstore-postgres
+            - ../../llama-index-integrations/storage/index_store/llama-index-storage-index-store-postgres
+            - ../../llama-index-integrations/storage/index_store/llama-index-storage-index-store-dynamodb
+            - ../../llama-index-integrations/storage/index_store/llama-index-storage-index-store-elasticsearch
+            - ../../llama-index-integrations/storage/index_store/llama-index-storage-index-store-firestore
+            - ../../llama-index-integrations/storage/index_store/llama-index-storage-index-store-mongodb
+            - ../../llama-index-integrations/storage/index_store/llama-index-storage-index-store-azurecosmosnosql
+            - ../../llama-index-integrations/storage/index_store/llama-index-storage-index-store-azure
+            - ../../llama-index-integrations/storage/index_store/llama-index-storage-index-store-redis
+            - ../../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-upstash
+            - ../../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-dynamodb
+            - ../../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-redis
+            - ../../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-azure
+            - ../../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-azurecosmosnosql
+            - ../../llama-index-integrations/output_parsers/llama-index-output-parsers-langchain
+            - ../../llama-index-integrations/output_parsers/llama-index-output-parsers-guardrails
+            - ../../llama-index-integrations/program/llama-index-program-openai
+            - ../../llama-index-integrations/program/llama-index-program-lmformatenforcer
+            - ../../llama-index-integrations/program/llama-index-program-guidance
+            - ../../llama-index-integrations/program/llama-index-program-evaporate
+            - ../../llama-index-integrations/response_synthesizers/llama-index-response-synthesizers-google
+            - ../../llama-index-integrations/evaluation/llama-index-evaluation-tonic-validate
+            - ../../llama-index-integrations/readers/llama-index-readers-llama-parse
+            - ../../llama-index-integrations/readers/llama-index-readers-gcs
+            - ../../llama-index-integrations/readers/llama-index-readers-docugami
+            - ../../llama-index-integrations/readers/llama-index-readers-slack
+            - ../../llama-index-integrations/readers/llama-index-readers-youtube-transcript
+            - ../../llama-index-integrations/readers/llama-index-readers-mbox
+            - ../../llama-index-integrations/readers/llama-index-readers-stackoverflow
+            - ../../llama-index-integrations/readers/llama-index-readers-pdb
+            - ../../llama-index-integrations/readers/llama-index-readers-snowflake
+            - ../../llama-index-integrations/readers/llama-index-readers-discord
+            - ../../llama-index-integrations/readers/llama-index-readers-earnings-call-transcript
+            - ../../llama-index-integrations/readers/llama-index-readers-couchdb
+            - ../../llama-index-integrations/readers/llama-index-readers-singlestore
+            - ../../llama-index-integrations/readers/llama-index-readers-json
+            - ../../llama-index-integrations/readers/llama-index-readers-trello
+            - ../../llama-index-integrations/readers/llama-index-readers-jaguar
+            - ../../llama-index-integrations/readers/llama-index-readers-jira
+            - ../../llama-index-integrations/readers/llama-index-readers-pdf-table
+            - ../../llama-index-integrations/readers/llama-index-readers-kibela
+            - ../../llama-index-integrations/readers/llama-index-readers-dashvector
+            - ../../llama-index-integrations/readers/llama-index-readers-bilibili
+            - ../../llama-index-integrations/readers/llama-index-readers-smart-pdf-loader
+            - ../../llama-index-integrations/readers/llama-index-readers-agent-search
+            - ../../llama-index-integrations/readers/llama-index-readers-macrometa-gdn
+            - ../../llama-index-integrations/readers/llama-index-readers-twitter
+            - ../../llama-index-integrations/readers/llama-index-readers-astra-db
+            - ../../llama-index-integrations/readers/llama-index-readers-opendal
+            - ../../llama-index-integrations/readers/llama-index-readers-azstorage-blob
+            - ../../llama-index-integrations/readers/llama-index-readers-readwise
+            - ../../llama-index-integrations/readers/llama-index-readers-genius
+            - ../../llama-index-integrations/readers/llama-index-readers-apify
+            - ../../llama-index-integrations/readers/llama-index-readers-athena
+            - ../../llama-index-integrations/readers/llama-index-readers-alibabacloud-aisearch
+            - ../../llama-index-integrations/readers/llama-index-readers-database
+            - ../../llama-index-integrations/readers/llama-index-readers-remote
+            - ../../llama-index-integrations/readers/llama-index-readers-asana
+            - ../../llama-index-integrations/readers/llama-index-readers-toggl
+            - ../../llama-index-integrations/readers/llama-index-readers-hive
+            - ../../llama-index-integrations/readers/llama-index-readers-docstring-walker
+            - ../../llama-index-integrations/readers/llama-index-readers-airbyte-salesforce
+            - ../../llama-index-integrations/readers/llama-index-readers-pdf-marker
+            - ../../llama-index-integrations/readers/llama-index-readers-stripe-docs
+            - ../../llama-index-integrations/readers/llama-index-readers-milvus
+            - ../../llama-index-integrations/readers/llama-index-readers-nougat-ocr
+            - ../../llama-index-integrations/readers/llama-index-readers-assemblyai
+            - ../../llama-index-integrations/readers/llama-index-readers-graphdb-cypher
+            - ../../llama-index-integrations/readers/llama-index-readers-confluence
+            - ../../llama-index-integrations/readers/llama-index-readers-openapi
+            - ../../llama-index-integrations/readers/llama-index-readers-lilac
+            - ../../llama-index-integrations/readers/llama-index-readers-github
+            - ../../llama-index-integrations/readers/llama-index-readers-wikipedia
+            - ../../llama-index-integrations/readers/llama-index-readers-mongodb
+            - ../../llama-index-integrations/readers/llama-index-readers-iceberg
+            - ../../llama-index-integrations/readers/llama-index-readers-notion
+            - ../../llama-index-integrations/readers/llama-index-readers-wordpress
+            - ../../llama-index-integrations/readers/llama-index-readers-airbyte-typeform
+            - ../../llama-index-integrations/readers/llama-index-readers-docling
+            - ../../llama-index-integrations/readers/llama-index-readers-airbyte-zendesk-support
+            - ../../llama-index-integrations/readers/llama-index-readers-firestore
+            - ../../llama-index-integrations/readers/llama-index-readers-microsoft-outlook
+            - ../../llama-index-integrations/readers/llama-index-readers-s3
+            - ../../llama-index-integrations/readers/llama-index-readers-semanticscholar
+            - ../../llama-index-integrations/readers/llama-index-readers-wordlift
+            - ../../llama-index-integrations/readers/llama-index-readers-spotify
+            - ../../llama-index-integrations/readers/llama-index-readers-airbyte-cdk
+            - ../../llama-index-integrations/readers/llama-index-readers-qdrant
+            - ../../llama-index-integrations/readers/llama-index-readers-quip
+            - ../../llama-index-integrations/readers/llama-index-readers-feedly-rss
+            - ../../llama-index-integrations/readers/llama-index-readers-airbyte-shopify
+            - ../../llama-index-integrations/readers/llama-index-readers-elasticsearch
+            - ../../llama-index-integrations/readers/llama-index-readers-rayyan
+            - ../../llama-index-integrations/readers/llama-index-readers-firebase-realtimedb
+            - ../../llama-index-integrations/readers/llama-index-readers-pebblo
+            - ../../llama-index-integrations/readers/llama-index-readers-remote-depth
+            - ../../llama-index-integrations/readers/llama-index-readers-azure-devops
+            - ../../llama-index-integrations/readers/llama-index-readers-make-com
+            - ../../llama-index-integrations/readers/llama-index-readers-arango-db
+            - ../../llama-index-integrations/readers/llama-index-readers-mangadex
+            - ../../llama-index-integrations/readers/llama-index-readers-intercom
+            - ../../llama-index-integrations/readers/llama-index-readers-airbyte-gong
+            - ../../llama-index-integrations/readers/llama-index-readers-reddit
+            - ../../llama-index-integrations/readers/llama-index-readers-faiss
+            - ../../llama-index-integrations/readers/llama-index-readers-dad-jokes
+            - ../../llama-index-integrations/readers/llama-index-readers-patentsview
+            - ../../llama-index-integrations/readers/llama-index-readers-myscale
+            - ../../llama-index-integrations/readers/llama-index-readers-guru
+            - ../../llama-index-integrations/readers/llama-index-readers-linear
+            - ../../llama-index-integrations/readers/llama-index-readers-feishu-wiki
+            - ../../llama-index-integrations/readers/llama-index-readers-telegram
+            - ../../llama-index-integrations/readers/llama-index-readers-steamship
+            - ../../llama-index-integrations/readers/llama-index-readers-maps
+            - ../../llama-index-integrations/readers/llama-index-readers-pathway
+            - ../../llama-index-integrations/readers/llama-index-readers-airbyte-hubspot
+            - ../../llama-index-integrations/readers/llama-index-readers-hatena-blog
+            - ../../llama-index-integrations/readers/llama-index-readers-sec-filings
+            - ../../llama-index-integrations/readers/llama-index-readers-joplin
+            - ../../llama-index-integrations/readers/llama-index-readers-graphql
+            - ../../llama-index-integrations/readers/llama-index-readers-bagel
+            - ../../llama-index-integrations/readers/llama-index-readers-preprocess
+            - ../../llama-index-integrations/readers/llama-index-readers-google
+            - ../../llama-index-integrations/readers/llama-index-readers-feishu-docs
+            - ../../llama-index-integrations/readers/llama-index-readers-couchbase
+            - ../../llama-index-integrations/readers/llama-index-readers-openalex
+            - ../../llama-index-integrations/readers/llama-index-readers-dashscope
+            - ../../llama-index-integrations/readers/llama-index-readers-txtai
+            - ../../llama-index-integrations/readers/llama-index-readers-azcognitive-search
+            - ../../llama-index-integrations/readers/llama-index-readers-pandas-ai
+            - ../../llama-index-integrations/readers/llama-index-readers-airtable
+            - ../../llama-index-integrations/readers/llama-index-readers-string-iterable
+            - ../../llama-index-integrations/readers/llama-index-readers-zulip
+            - ../../llama-index-integrations/readers/llama-index-readers-readme
+            - ../../llama-index-integrations/readers/llama-index-readers-zendesk
+            - ../../llama-index-integrations/readers/llama-index-readers-bitbucket
+            - ../../llama-index-integrations/readers/llama-index-readers-web
+            - ../../llama-index-integrations/readers/llama-index-readers-hubspot
+            - ../../llama-index-integrations/readers/llama-index-readers-file
+            - ../../llama-index-integrations/readers/llama-index-readers-kaltura
+            - ../../llama-index-integrations/readers/llama-index-readers-awadb
+            - ../../llama-index-integrations/readers/llama-index-readers-imdb-review
+            - ../../llama-index-integrations/readers/llama-index-readers-opensearch
+            - ../../llama-index-integrations/readers/llama-index-readers-microsoft-sharepoint
+            - ../../llama-index-integrations/readers/llama-index-readers-minio
+            - ../../llama-index-integrations/readers/llama-index-readers-mangoapps-guides
+            - ../../llama-index-integrations/readers/llama-index-readers-gpt-repo
+            - ../../llama-index-integrations/readers/llama-index-readers-microsoft-onedrive
+            - ../../llama-index-integrations/readers/llama-index-readers-huggingface-fs
+            - ../../llama-index-integrations/readers/llama-index-readers-weaviate
+            - ../../llama-index-integrations/readers/llama-index-readers-deeplake
+            - ../../llama-index-integrations/readers/llama-index-readers-structured-data
+            - ../../llama-index-integrations/readers/llama-index-readers-youtube-metadata
+            - ../../llama-index-integrations/readers/llama-index-readers-whatsapp
+            - ../../llama-index-integrations/readers/llama-index-readers-oracleai
+            - ../../llama-index-integrations/readers/llama-index-readers-mondaydotcom
+            - ../../llama-index-integrations/readers/llama-index-readers-box
+            - ../../llama-index-integrations/readers/llama-index-readers-airbyte-stripe
+            - ../../llama-index-integrations/readers/llama-index-readers-snscrape-twitter
+            - ../../llama-index-integrations/readers/llama-index-readers-papers
+            - ../../llama-index-integrations/readers/llama-index-readers-obsidian
+            - ../../llama-index-integrations/readers/llama-index-readers-upstage
+            - ../../llama-index-integrations/readers/llama-index-readers-zep
+            - ../../llama-index-integrations/readers/llama-index-readers-memos
+            - ../../llama-index-integrations/readers/llama-index-readers-psychic
+            - ../../llama-index-integrations/readers/llama-index-readers-chroma
+            - ../../llama-index-integrations/readers/llama-index-readers-weather
+            - ../../llama-index-integrations/readers/llama-index-readers-chatgpt-plugin
+            - ../../llama-index-integrations/readers/llama-index-readers-hwp
+            - ../../llama-index-integrations/readers/llama-index-readers-gitlab
+            - ../../llama-index-integrations/readers/llama-index-readers-clickhouse
+            - ../../llama-index-integrations/readers/llama-index-readers-metal
+            - ../../llama-index-integrations/readers/llama-index-readers-boarddocs
+            - ../../llama-index-integrations/question_gen/llama-index-question-gen-guidance
+            - ../../llama-index-integrations/question_gen/llama-index-question-gen-openai
+            - ../../llama-index-integrations/llms/llama-index-llms-gigachat
+            - ../../llama-index-integrations/llms/llama-index-llms-alephalpha
+            - ../../llama-index-integrations/llms/llama-index-llms-palm
+            - ../../llama-index-integrations/llms/llama-index-llms-cohere
+            - ../../llama-index-integrations/llms/llama-index-llms-nvidia-triton
+            - ../../llama-index-integrations/llms/llama-index-llms-ai21
+            - ../../llama-index-integrations/llms/llama-index-llms-solar
+            - ../../llama-index-integrations/llms/llama-index-llms-bedrock
+            - ../../llama-index-integrations/llms/llama-index-llms-huggingface
+            - ../../llama-index-integrations/llms/llama-index-llms-azure-openai
+            - ../../llama-index-integrations/llms/llama-index-llms-dashscope
+            - ../../llama-index-integrations/llms/llama-index-llms-nvidia-tensorrt
+            - ../../llama-index-integrations/llms/llama-index-llms-anthropic
+            - ../../llama-index-integrations/llms/llama-index-llms-unify
+            - ../../llama-index-integrations/llms/llama-index-llms-gemini
+            - ../../llama-index-integrations/llms/llama-index-llms-friendli
+            - ../../llama-index-integrations/llms/llama-index-llms-clarifai
+            - ../../llama-index-integrations/llms/llama-index-llms-llama-api
+            - ../../llama-index-integrations/llms/llama-index-llms-mymagic
+            - ../../llama-index-integrations/llms/llama-index-llms-cerebras
+            - ../../llama-index-integrations/llms/llama-index-llms-llama-cpp
+            - ../../llama-index-integrations/llms/llama-index-llms-optimum-intel
+            - ../../llama-index-integrations/llms/llama-index-llms-perplexity
+            - ../../llama-index-integrations/llms/llama-index-llms-upstage
+            - ../../llama-index-integrations/llms/llama-index-llms-rungpt
+            - ../../llama-index-integrations/llms/llama-index-llms-azure-inference
+            - ../../llama-index-integrations/llms/llama-index-llms-modelscope
+            - ../../llama-index-integrations/llms/llama-index-llms-yi
+            - ../../llama-index-integrations/llms/llama-index-llms-replicate
+            - ../../llama-index-integrations/llms/llama-index-llms-openai-like
+            - ../../llama-index-integrations/llms/llama-index-llms-llamafile
+            - ../../llama-index-integrations/llms/llama-index-llms-konko
+            - ../../llama-index-integrations/llms/llama-index-llms-alibabacloud-aisearch
+            - ../../llama-index-integrations/llms/llama-index-llms-openllm
+            - ../../llama-index-integrations/llms/llama-index-llms-litellm
+            - ../../llama-index-integrations/llms/llama-index-llms-databricks
+            - ../../llama-index-integrations/llms/llama-index-llms-sagemaker-endpoint
+            - ../../llama-index-integrations/llms/llama-index-llms-portkey
+            - ../../llama-index-integrations/llms/llama-index-llms-bedrock-converse
+            - ../../llama-index-integrations/llms/llama-index-llms-nvidia
+            - ../../llama-index-integrations/llms/llama-index-llms-vllm
+            - ../../llama-index-integrations/llms/llama-index-llms-maritalk
+            - ../../llama-index-integrations/llms/llama-index-llms-groq
+            - ../../llama-index-integrations/llms/llama-index-llms-neutrino
+            - ../../llama-index-integrations/llms/llama-index-llms-monsterapi
+            - ../../llama-index-integrations/llms/llama-index-llms-predibase
+            - ../../llama-index-integrations/llms/llama-index-llms-octoai
+            - ../../llama-index-integrations/llms/llama-index-llms-openvino
+            - ../../llama-index-integrations/llms/llama-index-llms-deepinfra
+            - ../../llama-index-integrations/llms/llama-index-llms-huggingface-api
+            - ../../llama-index-integrations/llms/llama-index-llms-xinference
+            - ../../llama-index-integrations/llms/llama-index-llms-fireworks
+            - ../../llama-index-integrations/llms/llama-index-llms-ibm
+            - ../../llama-index-integrations/llms/llama-index-llms-mistralai
+            - ../../llama-index-integrations/llms/llama-index-llms-paieas
+            - ../../llama-index-integrations/llms/llama-index-llms-anyscale
+            - ../../llama-index-integrations/llms/llama-index-llms-vertex
+            - ../../llama-index-integrations/llms/llama-index-llms-mistral-rs
+            - ../../llama-index-integrations/llms/llama-index-llms-mlx
+            - ../../llama-index-integrations/llms/llama-index-llms-localai
+            - ../../llama-index-integrations/llms/llama-index-llms-together
+            - ../../llama-index-integrations/llms/llama-index-llms-ipex-llm
+            - ../../llama-index-integrations/llms/llama-index-llms-ollama
+            - ../../llama-index-integrations/llms/llama-index-llms-qianfan
+            - ../../llama-index-integrations/llms/llama-index-llms-langchain
+            - ../../llama-index-integrations/llms/llama-index-llms-cleanlab
+            - ../../llama-index-integrations/llms/llama-index-llms-oci-genai
+            - ../../llama-index-integrations/llms/llama-index-llms-everlyai
+            - ../../llama-index-integrations/llms/llama-index-llms-premai
+            - ../../llama-index-integrations/llms/llama-index-llms-openrouter
+            - ../../llama-index-integrations/llms/llama-index-llms-you
+            - ../../llama-index-integrations/llms/llama-index-llms-text-generation-inference
+            - ../../llama-index-integrations/llms/llama-index-llms-openai
+            - ../../llama-index-integrations/llms/llama-index-llms-sambanova
+            - ../../llama-index-integrations/llms/llama-index-llms-lmstudio
+            - ../../llama-index-integrations/extractors/llama-index-extractors-entity
+            - ../../llama-index-integrations/extractors/llama-index-extractors-relik
+            - ../../llama-index-integrations/extractors/llama-index-extractors-marvin
+            - ../../llama-index-integrations/selectors/llama-index-selectors-notdiamond
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
