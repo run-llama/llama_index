@@ -25,18 +25,16 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-finetuning"
 readme = "README.md"
-version = "0.2.0"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.10,<4.0"
 llama-index-core = "^0.11.0"
-llama-index-llms-openai = "^0.2.0"
+llama-index-llms-azure-openai = "^0.2.0"
 llama-index-llms-mistralai = "^0.2.0"
 llama-index-postprocessor-cohere-rerank = "^0.2.0"
 llama-index-embeddings-adapter = "^0.2.0"
-sentence-transformers = "^2.3.0"
-tenacity = ">=8.2.0,<8.4.0"
-llama-index-llms-azure-openai = "^0.2.0"
+sentence-transformers = ">=2.3.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

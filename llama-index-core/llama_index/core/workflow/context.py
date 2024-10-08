@@ -22,7 +22,8 @@ class Context:
     Both `set` and `get` operations on global data are governed by a lock, and considered coroutine-safe.
     """
 
-    def __init__(self, workflow: "Workflow") -> None:
+    def __init__(self, workflow: "Workflow", stepwise: bool = False) -> None:
+        self.stepwise = stepwise
         self._workflow = workflow
         # Broker machinery
         self._queues: Dict[str, asyncio.Queue] = {}
@@ -77,7 +78,7 @@ class Context:
         raise ValueError(msg)
 
     @property
-    def data(self):
+    def data(self) -> Dict[str, Any]:
         """This property is provided for backward compatibility.
 
         Use `get` and `set` instead.

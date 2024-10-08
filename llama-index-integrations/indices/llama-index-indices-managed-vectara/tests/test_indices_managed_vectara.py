@@ -231,3 +231,16 @@ def test_citations(vectara2) -> None:
     res = query_engine.query("Describe Paul's early life and career.")
     summary = res.response
     assert re.search(r"\[\d+\]", summary)
+
+    # test citations with url pattern only (no text pattern)
+    query_engine = vectara2.as_query_engine(
+        similarity_top_k=10,
+        summary_num_results=7,
+        summary_prompt_name="vectara-summary-ext-24-05-med-omni",
+        citations_style="markdown",
+        citations_url_pattern="{doc.url}",
+    )
+    res = query_engine.query("Describe Paul's early life and career.")
+    summary = res.response
+    assert "https://www.paulgraham.com/worked.html" in summary
+    assert re.search(r"\[\d+\]", summary)

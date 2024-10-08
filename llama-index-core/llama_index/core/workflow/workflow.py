@@ -1,7 +1,8 @@
 import asyncio
 import functools
+import time
 import warnings
-from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set
+from typing import Any, Callable, Dict, Optional, AsyncGenerator, Set, Tuple
 
 from llama_index.core.instrumentation import get_dispatcher
 
@@ -15,18 +16,32 @@ from .utils import (
     get_steps_from_instance,
     ServiceDefinition,
 )
+from .handler import WorkflowHandler
 
 
 dispatcher = get_dispatcher(__name__)
 
 
-class _WorkflowMeta(type):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self._step_functions: Dict[str, Callable] = {}
+class WorkflowMeta(type):
+    def __init__(cls, name: str, bases: Tuple[type, ...], dct: Dict[str, Any]) -> None:
+        super().__init__(name, bases, dct)
+        cls._step_functions: Dict[str, Callable] = {}
 
 
-class Workflow(metaclass=_WorkflowMeta):
+class Workflow(metaclass=WorkflowMeta):
+    """An event-driven abstraction used to orchestrate the execution of different components called "steps".
+
+    Each step is responsible for handling certain event types and possibly emitting new events. Steps can be "bound"
+    when they are defined as methods of the `Workflow` class itself, or "unbound" when they are defined as free
+    functions. To define a step, the method or function must be decorated with the `@step` decorator.
+
+    Workflows provide basic validation to catch potential runtime errors as soon as possible. Validation happens once,
+    when the workflow starts, and does not produce much overhead. It can be disabled in any case.
+
+    Use an instance of a `Workflow` class to run a workflow and stream events produced during execution. Workflows
+    can be run step-by-step, by calling the `run_step` function multiple times until completion.
+    """
+
     def __init__(
         self,
         timeout: Optional[float] = 10.0,
@@ -34,6 +49,18 @@ class Workflow(metaclass=_WorkflowMeta):
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
     ) -> None:
+        """Create an instance of the workflow.
+
+        Args:
+            timeout: number of seconds after the workflow execution will be halted, raising a `WorkflowTimeoutError`
+                exception. If set to `None`, the timeout will be disabled.
+            disable_validaton: whether or not the workflow should be validated before running. In case the workflow is
+                misconfigured, a call to `run` will raise a `WorkflowValidationError` exception explaining the details
+                of the problem.
+            verbose: whether or not the workflow should print additional informative messages during execution.
+            service_manager: The instance of the `ServiceManager` used to make nested workflows available to this
+                workflow instance. The default value is the best choice unless you're customizing the workflow runtime.
+        """
         # Configuration
         self._timeout = timeout
         self._verbose = verbose
@@ -45,6 +72,19 @@ class Workflow(metaclass=_WorkflowMeta):
         self._service_manager = service_manager or ServiceManager()
 
     async def stream_events(self) -> AsyncGenerator[Event, None]:
+        """Returns an async generator to consume any event that workflow steps decide to stream.
+
+        To be able to use this generator, the usual pattern is to wrap the `run` call in a background task using
+        `asyncio.create_task`, then enter a for loop like this:
+
+            wf = StreamingWorkflow()
+            r = asyncio.create_task(wf.run())
+
+            async for ev in wf.stream_events():
+                print(ev)
+
+            await r
+        """
         # In the typical streaming use case, `run()` is not awaited but wrapped in a asyncio.Task. Since we'll be
         # consuming events produced by `run()`, we must give its Task the chance to run before entering the dequeueing
         # loop.
@@ -66,6 +106,9 @@ class Workflow(metaclass=_WorkflowMeta):
                 break
 
             yield ev
+
+        # remove context to free up room for the next stream_events call
+        self._contexts.remove(ctx)
 
     @classmethod
     def add_step(cls, func: Callable) -> None:
@@ -95,19 +138,27 @@ class Workflow(metaclass=_WorkflowMeta):
 
     def _get_steps(self) -> Dict[str, Callable]:
         """Returns all the steps, whether defined as methods or free functions."""
-        return {**get_steps_from_instance(self), **self._step_functions}
+        return {**get_steps_from_instance(self), **self._step_functions}  # type: ignore[attr-defined]
 
-    def _start(self, stepwise: bool = False) -> Context:
+    def _start(self, stepwise: bool = False, ctx: Optional[Context] = None) -> Context:
         """Sets up the queues and tasks for each declared step.
 
         This method also launches each step as an async task.
         """
-        ctx = Context(self)
-        self._contexts.add(ctx)
+        if ctx is None:
+            ctx = Context(self, stepwise=stepwise)
+            self._contexts.add(ctx)
+        else:
+            # clean up the context from the previous run
+            ctx._tasks = set()
+            ctx._queues = {}
+            ctx._step_flags = {}
+            ctx._retval = None
 
         for name, step_func in self._get_steps().items():
             ctx._queues[name] = asyncio.Queue()
             ctx._step_flags[name] = asyncio.Event()
+
             # At this point, step_func is guaranteed to have the `__step_config` attribute
             step_config: StepConfig = getattr(step_func, "__step_config")
 
@@ -134,7 +185,7 @@ class Workflow(metaclass=_WorkflowMeta):
                         print(f"Running step {name}")
 
                     # run step
-                    kwargs = {}
+                    kwargs: Dict[str, Any] = {}
                     if config.context_parameter:
                         kwargs[config.context_parameter] = ctx
                     for service_definition in config.requested_services:
@@ -144,12 +195,36 @@ class Workflow(metaclass=_WorkflowMeta):
                         kwargs[service_definition.name] = service
                     kwargs[config.event_name] = ev
 
-                    # - check if its async or not
-                    # - if not async, run it in an executor
+                    # wrap the step with instrumentation
                     instrumented_step = dispatcher.span(step)
 
+                    # - check if its async or not
+                    # - if not async, run it in an executor
                     if asyncio.iscoroutinefunction(step):
-                        new_ev = await instrumented_step(**kwargs)
+                        retry_start_at = time.time()
+                        attempts = 0
+                        while True:
+                            try:
+                                new_ev = await instrumented_step(**kwargs)
+                                break  # exit the retrying loop
+                            except Exception as e:
+                                if config.retry_policy is None:
+                                    raise e from None
+
+                                delay = config.retry_policy.next(
+                                    retry_start_at + time.time(), attempts, e
+                                )
+                                if delay is None:
+                                    # We're done retrying
+                                    raise e from None
+
+                                attempts += 1
+                                if self._verbose:
+                                    print(
+                                        f"Step {name} produced an error, retry in {delay} seconds"
+                                    )
+                                await asyncio.sleep(delay)
+
                     else:
                         run_task = functools.partial(instrumented_step, **kwargs)
                         new_ev = await asyncio.get_event_loop().run_in_executor(
@@ -183,6 +258,7 @@ class Workflow(metaclass=_WorkflowMeta):
                         name=name,
                     )
                 )
+
         return ctx
 
     def send_event(self, message: Event, step: Optional[str] = None) -> None:
@@ -202,73 +278,72 @@ class Workflow(metaclass=_WorkflowMeta):
         ctx.send_event(message=message, step=step)
 
     @dispatcher.span
-    async def run(self, **kwargs: Any) -> str:
-        """Runs the workflow until completion.
-
-        Works by
-        1. validating the workflow
-        2. starting the workflow by setting up the queues and tasks
-        3. sending a StartEvent to kick things off
-        4. waiting for all tasks to finish or be cancelled
-        """
+    def run(
+        self, ctx: Optional[Context] = None, stepwise: bool = False, **kwargs: Any
+    ) -> WorkflowHandler:
+        """Runs the workflow until completion."""
         # Validate the workflow if needed
         self._validate()
 
-        # Start the machinery in a new Context
-        ctx = self._start()
+        # Start the machinery in a new Context or use the provided one
+        ctx = self._start(ctx=ctx, stepwise=stepwise)
 
-        # Send the first event
-        ctx.send_event(StartEvent(**kwargs))
+        result = WorkflowHandler(ctx=ctx)
 
-        done, unfinished = await asyncio.wait(
-            ctx._tasks, timeout=self._timeout, return_when=asyncio.FIRST_EXCEPTION
-        )
+        async def _run_workflow() -> None:
+            try:
+                # Send the first event
+                ctx.send_event(StartEvent(**kwargs))
 
-        we_done = False
-        exception_raised = None
-        # A task that raised an exception will be returned in the `done` set
-        for task in done:
-            # Check if any exception was raised from a step function
-            e = task.exception()
-            # If the error was of type WorkflowDone, the _done step run successfully
-            if type(e) == WorkflowDone:
-                we_done = True
-            # In any other case, we will re-raise after cleaning up.
-            # Since wait() is called with return_when=asyncio.FIRST_EXCEPTION,
-            # we can assume exception_raised will be only one.
-            elif e is not None:
-                exception_raised = e
-                break
+                done, unfinished = await asyncio.wait(
+                    ctx._tasks,
+                    timeout=self._timeout,
+                    return_when=asyncio.FIRST_EXCEPTION,
+                )
 
-        # Cancel any pending tasks
-        for t in unfinished:
-            t.cancel()
-            await asyncio.sleep(0)
+                we_done = False
+                exception_raised = None
+                for task in done:
+                    e = task.exception()
+                    if type(e) == WorkflowDone:
+                        we_done = True
+                    elif e is not None:
+                        exception_raised = e
+                        break
 
-        # Bubble up the error if any step raised an exception
-        if exception_raised:
-            # Make sure to stop streaming, in case the workflow terminated abnormally
-            ctx.write_event_to_stream(StopEvent())
-            raise exception_raised
+                # Cancel any pending tasks
+                for t in unfinished:
+                    t.cancel()
+                    await asyncio.sleep(0)
 
-        # Raise WorkflowTimeoutError if the workflow timed out
-        if not we_done:
-            msg = f"Operation timed out after {self._timeout} seconds"
-            raise WorkflowTimeoutError(msg)
+                if exception_raised:
+                    ctx.write_event_to_stream(StopEvent())
+                    raise exception_raised
 
-        return ctx._retval
+                if not we_done:
+                    msg = f"Operation timed out after {self._timeout} seconds"
+                    raise WorkflowTimeoutError(msg)
+
+                result.set_result(ctx._retval)
+            except Exception as e:
+                result.set_exception(e)
+            finally:
+                ctx.write_event_to_stream(StopEvent())
+
+        asyncio.create_task(_run_workflow())
+        return result
 
     @dispatcher.span
-    async def run_step(self, **kwargs: Any) -> Optional[str]:
-        """Runs the workflow stepwise until completion.
+    async def run_step(self, **kwargs: Any) -> Optional[Any]:
+        """Runs the workflow stepwise until completion."""
+        warnings.warn(
+            "run_step() is deprecated, use `workflow.run(stepwise=True)` instead.\n"
+            "handler = workflow.run(stepwise=True)\n"
+            "while not handler.is_done():\n"
+            "    result = await handler.run_step()\n"
+            "    print(result)\n"
+        )
 
-        Works by
-        1. Validating and setting up the queues and tasks if the first step hasn't been started
-        2. Sending a StartEvent to kick things off
-        3. Sets the flag for all steps to run once (if they can run)
-        4. Waiting for the next step(s) to finish
-        5. Returning the result if the workflow is done
-        """
         # Check if we need to start a new session
         if self._stepwise_context is None:
             self._validate()

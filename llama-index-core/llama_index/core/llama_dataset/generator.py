@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 import warnings
-from typing import List, Optional
+from typing import List, Sequence, Optional
 
 from llama_index.core import Document, SummaryIndex
 from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs, asyncio_run
@@ -91,7 +91,7 @@ class RagDatasetGenerator(PromptMixin):
     @classmethod
     def from_documents(
         cls,
-        documents: List[Document],
+        documents: Sequence[Document],
         llm: Optional[LLM] = None,
         transformations: Optional[List[TransformComponent]] = None,
         num_questions_per_chunk: int = 3,
@@ -115,7 +115,6 @@ class RagDatasetGenerator(PromptMixin):
         required_keywords = required_keywords or []
         exclude_keywords = exclude_keywords or []
         node_postprocessor = KeywordNodePostprocessor(
-            llm=llm,
             required_keywords=required_keywords,
             exclude_keywords=exclude_keywords,
         )
@@ -148,7 +147,7 @@ class RagDatasetGenerator(PromptMixin):
                 [
                     Document(
                         text=node.get_content(metadata_mode=self._metadata_mode),
-                        metadata=node.metadata,
+                        metadata=node.metadata,  # type: ignore
                         excluded_llm_metadata_keys=node.excluded_llm_metadata_keys,
                         excluded_embed_metadata_keys=node.excluded_embed_metadata_keys,
                         relationships=node.relationships,
@@ -185,7 +184,7 @@ class RagDatasetGenerator(PromptMixin):
                 )
 
             index = summary_indices[idx]
-            reference_context = nodes[idx].text
+            reference_context = nodes[idx].get_content(metadata_mode=MetadataMode.NONE)
             model_name = self._llm.metadata.model_name
             created_by = CreatedBy(type=CreatedByType.AI, model_name=model_name)
             if labelled:

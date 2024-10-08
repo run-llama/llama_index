@@ -147,7 +147,7 @@ class ParallelAgentRunner(BaseAgentRunner):
             and task_state.completed_steps[-1].is_last
         ]
 
-    def get_task_output(self, task_id: str) -> TaskStepOutput:
+    def get_task_output(self, task_id: str, **kwargs: Any) -> TaskStepOutput:
         """Get task output."""
         task_state = self.state.task_dict[task_id]
         if len(task_state.completed_steps) == 0:
@@ -469,9 +469,9 @@ class ParallelAgentRunner(BaseAgentRunner):
             chat_response = self._chat(
                 message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
             )
-            assert isinstance(chat_response, StreamingAgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
-        return chat_response
+
+        return chat_response  # type: ignore
 
     @trace_method("chat")
     async def astream_chat(
@@ -487,9 +487,9 @@ class ParallelAgentRunner(BaseAgentRunner):
             chat_response = await self._achat(
                 message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
             )
-            assert isinstance(chat_response, StreamingAgentChatResponse)
+
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
-        return chat_response
+        return chat_response  # type: ignore
 
     def undo_step(self, task_id: str) -> None:
         """Undo previous step."""

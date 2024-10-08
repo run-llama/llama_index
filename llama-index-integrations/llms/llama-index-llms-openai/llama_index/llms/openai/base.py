@@ -2,6 +2,7 @@ import functools
 from typing import (
     TYPE_CHECKING,
     Any,
+    Generator,
     Awaitable,
     Callable,
     Dict,
@@ -49,8 +50,9 @@ from llama_index.core.llms.callbacks import (
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Model
 from llama_index.llms.openai.utils import (
+    O1_MODELS,
     OpenAIToolCall,
     create_retry_decorator,
     from_openai_completion_logprobs,
@@ -61,6 +63,10 @@ from llama_index.llms.openai.utils import (
     openai_modelname_to_contextsize,
     resolve_openai_credentials,
     to_openai_message_dicts,
+    resolve_tool_choice,
+)
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
 )
 
 from openai import AsyncOpenAI, AzureOpenAI
@@ -71,6 +77,10 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCall,
 )
 from llama_index.core.llms.utils import parse_partial_json
+
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -158,8 +168,8 @@ class OpenAI(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate.",
@@ -172,8 +182,8 @@ class OpenAI(FunctionCallingLLM):
     top_logprobs: int = Field(
         description="The number of top token log probs to return.",
         default=0,
-        gte=0,
-        lte=20,
+        ge=0,
+        le=20,
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the OpenAI API."
@@ -181,12 +191,12 @@ class OpenAI(FunctionCallingLLM):
     max_retries: int = Field(
         default=3,
         description="The maximum number of API retries.",
-        gte=0,
+        ge=0,
     )
     timeout: float = Field(
         default=60.0,
         description="The timeout, in seconds, for API requests.",
-        gte=0,
+        ge=0,
     )
     default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
@@ -244,6 +254,10 @@ class OpenAI(FunctionCallingLLM):
             api_base=api_base,
             api_version=api_version,
         )
+
+        # TODO: Temp forced to 1.0 for o1
+        if model in O1_MODELS:
+            temperature = 1.0
 
         super().__init__(
             model=model,
@@ -323,6 +337,10 @@ class OpenAI(FunctionCallingLLM):
                 model=self._get_model_name()
             ),
             model_name=self.model,
+            # TODO: Temp for O1 beta
+            system_role=MessageRole.USER
+            if self.model in O1_MODELS
+            else MessageRole.SYSTEM,
         )
 
     @llm_chat_callback()
@@ -402,7 +420,7 @@ class OpenAI(FunctionCallingLLM):
     @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         if self.reuse_client:
             response = client.chat.completions.create(
@@ -484,7 +502,7 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -574,7 +592,7 @@ class OpenAI(FunctionCallingLLM):
             text = ""
             for response in client.completions.create(
                 prompt=prompt,
-                **kwargs,
+                **all_kwargs,
             ):
                 if len(response.choices) > 0:
                     delta = response.choices[0].text
@@ -690,7 +708,7 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         aclient = self._get_aclient()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         if self.reuse_client:
             response = await aclient.chat.completions.create(
@@ -723,7 +741,7 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         aclient = self._get_aclient()
-        message_dicts = to_openai_message_dicts(messages)
+        message_dicts = to_openai_message_dicts(messages, model=self.model)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
@@ -856,9 +874,6 @@ class OpenAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
-        from llama_index.agent.openai.utils import resolve_tool_choice
-
-        # misralai uses the same openai tool format
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
         # if strict is passed in, use, else default to the class-level attribute, else default to True`
@@ -940,3 +955,55 @@ class OpenAI(FunctionCallingLLM):
             )
 
         return tool_selections
+
+    @dispatcher.span
+    def structured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> BaseModel:
+        """Structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return super().structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+
+    @dispatcher.span
+    async def astructured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> BaseModel:
+        """Structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return await super().astructured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+
+    @dispatcher.span
+    def stream_structured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> Generator[Union[Model, List[Model]], None, None]:
+        """Stream structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+
+    @dispatcher.span
+    def stream_structured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> Generator[Union[Model, List[Model]], None, None]:
+        """Stream structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)

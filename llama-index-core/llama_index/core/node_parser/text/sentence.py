@@ -55,7 +55,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
     paragraph_separator: str = Field(
         default=DEFAULT_PARAGRAPH_SEP, description="Separator between paragraphs."
     )
-    secondary_chunking_regex: str = Field(
+    secondary_chunking_regex: Optional[str] = Field(
         default=CHUNKING_REGEX, description="Backup regex for splitting into sentences."
     )
 
@@ -72,7 +72,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         tokenizer: Optional[Callable] = None,
         paragraph_separator: str = DEFAULT_PARAGRAPH_SEP,
         chunking_tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
-        secondary_chunking_regex: str = CHUNKING_REGEX,
+        secondary_chunking_regex: Optional[str] = CHUNKING_REGEX,
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
@@ -107,11 +107,17 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             self._chunking_tokenizer_fn,
         ]
 
-        self._sub_sentence_split_fns = [
-            split_by_regex(secondary_chunking_regex),
-            split_by_sep(separator),
-            split_by_char(),
-        ]
+        if secondary_chunking_regex:
+            self._sub_sentence_split_fns = [
+                split_by_regex(secondary_chunking_regex),
+                split_by_sep(separator),
+                split_by_char(),
+            ]
+        else:
+            self._sub_sentence_split_fns = [
+                split_by_sep(separator),
+                split_by_char(),
+            ]
 
     @classmethod
     def from_defaults(
