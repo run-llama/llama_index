@@ -51,6 +51,7 @@ print(response.text)
 ```
 
 ### Streaming
+
 ```python
 from llama_index.multi_modal_llms.huggingface import HuggingFaceMultiModal
 from llama_index.core.schema import ImageDocument
@@ -64,12 +65,17 @@ prompt = "Describe this image in detail."
 
 import nest_asyncio
 import asyncio
+
 nest_asyncio.apply()
 
+
 async def stream_output():
-    for chunk in model.stream_complete(prompt, image_documents=[image_document]):
-        print(chunk.delta, end='', flush=True)
+    for chunk in model.stream_complete(
+        prompt, image_documents=[image_document]
+    ):
+        print(chunk.delta, end="", flush=True)
         await asyncio.sleep(0)
+
 
 asyncio.run(stream_output())
 ```
