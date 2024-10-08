@@ -27,12 +27,14 @@ documents_modamart = reader.load_data()
 tenant_id_nexiv = str(vector_store.create_tenant("nexiv-solutions"))
 tenant_id_modamart = str(vector_store.create_tenant("modamart"))
 
-# Add the tenant id to the metadata
-for doc in documents_nexiv:
+# Add the tenant id and a unique document id to the metadata
+for i, doc in enumerate(documents_nexiv, start=1):
     doc.metadata["tenant_id"] = tenant_id_nexiv
+    doc.id_ = f"nexiv_doc_id_{i}"
 
-for doc in documents_modamart:
+for i, doc in enumerate(documents_modamart, start=1):
     doc.metadata["tenant_id"] = tenant_id_modamart
+    doc.id_ = f"modamart_doc_id_{i}"
 
 # store data and embeddings
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
@@ -50,3 +52,12 @@ modamart_query_engine = index.as_query_engine(similarity_top_k=3, vector_store_k
 print("test query on nexiv: ", nexiv_query_engine.query("What were the customer pain points?"))
 print("test query on modamart: ", modamart_query_engine.query("What were the customer pain points?"))
 
+# Delete a document from the store
+ref_doc_id = "nexiv_doc_id_1"
+
+# Use this key to delete a document from the store, using the correct tenant_id
+print("deleting document: ", ref_doc_id, " with tenant_id: ", tenant_id_nexiv)
+vector_store.delete(ref_doc_id, tenant_id=tenant_id_nexiv)
+
+# Query the data again
+print("test query on nexiv after deletion: ", nexiv_query_engine.query("What were the customer pain points?"))

@@ -16,6 +16,7 @@ from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
     VectorStoreQuery,
+    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
@@ -150,15 +151,19 @@ class NileVectorStore(BasePydanticVectorStore):
             await self._async_conn.commit()
         return ids
     
+    def _set_tenant_context(self, cursor: Any, tenant_id: Any) -> None:
+        if self.tenant_aware:
+            cursor.execute(sql.SQL(""" set nile.tenant_id = {} """).format(sql.Literal(tenant_id)))
+        else:
+            cursor.execute(sql.SQL(""" reset nile.tenant_id """))
+
+    
     # TODO: Add support for filters (possibly only legacy filter support)
     # TODO: Add support for vector index GUC
     # NOTE: Maybe support alternative distance functions (going with just cosine similarity for now)
     def _execute_query(self, cursor: Any, query_embedding: VectorStoreQuery, tenant_id: Any = None) -> List[Any]:
         logging.info(f"Querying {self.table_name} with tenant_id {tenant_id}")
-        if self.tenant_aware:
-            cursor.execute(sql.SQL(""" set nile.tenant_id = {} """).format(sql.Literal(tenant_id)))
-        else:
-            cursor.execute(sql.SQL(""" reset nile.tenant_id """))
+        self._set_tenant_context(cursor, tenant_id)
         query = sql.SQL("""
             SELECT
             id, metadata, content, %(query_embedding)s::vector<=>embedding as distance
@@ -190,12 +195,19 @@ class NileVectorStore(BasePydanticVectorStore):
 
     
     # NOTE: Maybe handle tenant_id specified in filter vs. kwargs
+    # NOTE: Add support for additional query modes
     def query(self, query_embedding: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         logging.info(f"Querying {self.table_name} with kwagrs {kwargs}")
+        # get and validate tenant_id
         tenant_id = kwargs.get("tenant_id", None)
         if self.tenant_aware and tenant_id is None:
             raise ValueError("tenant_id must be specified in kwargs if tenant_aware is True")
+        # check query mode
+        if query_embedding.mode != VectorStoreQueryMode.DEFAULT:
+            raise ValueError("Only DEFAULT mode is currently supported")
+        # query
         with self._sync_conn.cursor() as cursor:
+            self._set_tenant_context(cursor, tenant_id)
             results = self._execute_query(cursor, query_embedding, tenant_id)
         self._sync_conn.commit()
         return self._process_query_results(results)
@@ -228,16 +240,35 @@ class NileVectorStore(BasePydanticVectorStore):
             tenant_id = cursor.fetchone()[0]
             self._sync_conn.commit()
             return tenant_id
-        
-    # TODO: Implement delete
-    def delete(self, ids: List[str]) -> None:
+    
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        tenant_id = delete_kwargs.get("tenant_id", None)
+        logging.info(f"Deleting document {ref_doc_id} with tenant_id {tenant_id}")
+        if self.tenant_aware and tenant_id is None:
+            raise ValueError("tenant_id must be specified in delete_kwargs if tenant_aware is True")
         with self._sync_conn.cursor() as cursor:
-            cursor.execute("""
-                           DELETE FROM %(table_name)s WHERE id IN (%(ids)s)
-                           """,
-                           {'table_name': self.table_name, 'ids': ",".join(ids)})
-    # NOTE: Maybe implement get_nodes
-    # NOTE: Maybe implement delete_nodes
-    # NOTE: Maybe implement clear
+            self._set_tenant_context(cursor, tenant_id)
+            cursor.execute(
+                sql.SQL("DELETE FROM {} WHERE metadata->>'doc_id' = %(ref_doc_id)s").format(sql.Identifier(self.table_name)),
+                {'ref_doc_id': ref_doc_id}
+            )
+        self._sync_conn.commit()
+    
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        tenant_id = delete_kwargs.get("tenant_id", None)
+        logging.info(f"Deleting document {ref_doc_id} with tenant_id {tenant_id}")
+        if self.tenant_aware and tenant_id is None:
+            raise ValueError("tenant_id must be specified in delete_kwargs if tenant_aware is True")
+        async with self._async_conn.cursor() as cursor:
+            self._set_tenant_context(cursor, tenant_id)
+            cursor.execute(
+                sql.SQL("DELETE FROM {} WHERE metadata->>'doc_id' = %(ref_doc_id)s").format(sql.Identifier(self.table_name)),
+                {'ref_doc_id': ref_doc_id}
+            )
+        await self._async_conn.commit()
+    
+    # NOTE: Implement get_nodes
+    # NOTE: Implement delete_nodes
+    # NOTE: Implement clear
 
 
