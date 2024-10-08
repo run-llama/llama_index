@@ -53,6 +53,7 @@ class LLMSynonymRetriever(BasePGRetriever):
         self,
         graph_store: PropertyGraphStore,
         include_text: bool = True,
+        include_properties: bool = False,
         synonym_prompt: Union[
             BasePromptTemplate, str
         ] = DEFAULT_SYNONYM_EXPAND_TEMPLATE,
@@ -69,7 +70,12 @@ class LLMSynonymRetriever(BasePGRetriever):
         self._output_parsing_fn = output_parsing_fn
         self._max_keywords = max_keywords
         self._path_depth = path_depth
-        super().__init__(graph_store=graph_store, include_text=include_text, **kwargs)
+        super().__init__(
+            graph_store=graph_store,
+            include_text=include_text,
+            include_properties=include_properties,
+            **kwargs,
+        )
 
     def _parse_llm_output(self, output: str) -> List[str]:
         if self._output_parsing_fn:

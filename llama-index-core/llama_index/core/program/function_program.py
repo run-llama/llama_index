@@ -49,7 +49,7 @@ def _parse_tool_outputs(
         return outputs[0]
 
 
-def _get_function_tool(output_cls: Type[Model]) -> FunctionTool:
+def get_function_tool(output_cls: Type[Model]) -> FunctionTool:
     """Get function tool."""
     schema = output_cls.model_json_schema()
     schema_description = schema.get("description", None)
@@ -194,7 +194,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
-        tool = _get_function_tool(self._output_cls)
+        tool = get_function_tool(self._output_cls)
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
         messages = self._llm._extend_messages(messages)
@@ -218,7 +218,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
-        tool = _get_function_tool(self._output_cls)
+        tool = get_function_tool(self._output_cls)
 
         agent_response = await self._llm.apredict_and_call(
             [tool],
@@ -294,7 +294,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             raise ValueError("stream_call is only supported for LLMs.")
 
         llm_kwargs = llm_kwargs or {}
-        tool = _get_function_tool(self._output_cls)
+        tool = get_function_tool(self._output_cls)
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
         messages = self._llm._extend_messages(messages)
@@ -333,7 +333,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             if not isinstance(self._llm, FunctionCallingLLM):
                 raise ValueError("stream_call is only supported for LLMs.")
 
-            tool = _get_function_tool(self._output_cls)
+            tool = get_function_tool(self._output_cls)
 
             messages = self._prompt.format_messages(llm=self._llm, **kwargs)
             messages = self._llm._extend_messages(messages)

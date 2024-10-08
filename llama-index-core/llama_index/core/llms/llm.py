@@ -37,6 +37,7 @@ from llama_index.core.bridge.pydantic import (
     field_validator,
     model_validator,
     ConfigDict,
+    ValidationError,
 )
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.base.llms.base import BaseLLM
@@ -81,7 +82,14 @@ class ToolSelection(BaseModel):
     tool_id: str = Field(description="Tool ID to select.")
     tool_name: str = Field(description="Tool name to select.")
     tool_kwargs: Dict[str, Any] = Field(description="Keyword arguments for the tool.")
-    # NOTE: no args for now
+
+    @field_validator("tool_kwargs", mode="wrap")
+    @classmethod
+    def ignore_non_dict_arguments(cls, v: Any, handler: Any) -> Dict[str, Any]:
+        try:
+            return handler(v)
+        except ValidationError:
+            return handler({})
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -755,11 +763,16 @@ class LLM(BaseLLM):
             handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
-        if isinstance(user_msg, ChatMessage):
+        if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
             user_msg = user_msg.content
         elif isinstance(user_msg, str):
             pass
-        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+        elif (
+            not user_msg
+            and chat_history is not None
+            and len(chat_history) > 0
+            and isinstance(chat_history[-1].content, str)
+        ):
             user_msg = chat_history[-1].content
         else:
             raise ValueError("No user message provided or found in chat history.")
@@ -813,11 +826,16 @@ class LLM(BaseLLM):
             handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
-        if isinstance(user_msg, ChatMessage):
+        if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
             user_msg = user_msg.content
         elif isinstance(user_msg, str):
             pass
-        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+        elif (
+            not user_msg
+            and chat_history is not None
+            and len(chat_history) > 0
+            and isinstance(chat_history[-1].content, str)
+        ):
             user_msg = chat_history[-1].content
         else:
             raise ValueError("No user message provided or found in chat history.")
