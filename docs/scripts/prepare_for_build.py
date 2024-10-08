@@ -199,7 +199,7 @@ def main():
                     )
 
                     folder_name = "/".join(import_path.split(".")[1:-1])
-                    search_paths.append(os.path.join("../" + root))
+                    search_paths.append(root)
                     # special cases
                     if folder_name == "vector_stores":
                         folder_name = "storage/vector_store"
