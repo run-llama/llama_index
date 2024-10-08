@@ -3,6 +3,7 @@
 # wget --user-agent "Mozilla" "https://raw.githubusercontent.com/niledatabase/niledatabase/main/examples/ai/sales_insight/data/transcripts/nexiv-solutions__0_transcript.txt" -O "nexiv-solutions__0_transcript.txt"
 # wget --user-agent "Mozilla" "https://raw.githubusercontent.com/niledatabase/niledatabase/main/examples/ai/sales_insight/data/transcripts/modamart__0_transcript.txt" -O "modamart__0_transcript.txt"
 # These are two call transcripts from sales calls that belong to two different companies
+# You will also need to set OPENAI_API_KEY environment variable prior to running this example
 
 from llama_index.core import SimpleDirectoryReader, StorageContext
 from llama_index.core import VectorStoreIndex
@@ -23,8 +24,8 @@ documents_nexiv = reader.load_data()
 reader = SimpleDirectoryReader(input_files=["modamart__0_transcript.txt"])
 documents_modamart = reader.load_data()
 
-tenant_id_nexiv = vector_store.create_tenant("nexiv-solutions")
-tenant_id_modamart = vector_store.create_tenant("modamart")
+tenant_id_nexiv = str(vector_store.create_tenant("nexiv-solutions"))
+tenant_id_modamart = str(vector_store.create_tenant("modamart"))
 
 # Add the tenant id to the metadata
 for doc in documents_nexiv:
@@ -40,8 +41,12 @@ index = VectorStoreIndex.from_documents(
 )
 
 # Query the data
-nexiv_query_engine = index.as_query_engine(similarity_top_k=3, tenant_id=tenant_id_nexiv)
-modamart_query_engine = index.as_query_engine(similarity_top_k=3, tenant_id=tenant_id_modamart)
+nexiv_query_engine = index.as_query_engine(similarity_top_k=3, vector_store_kwargs={
+        "tenant_id": str(tenant_id_nexiv),
+    },)
+modamart_query_engine = index.as_query_engine(similarity_top_k=3, vector_store_kwargs={
+        "tenant_id": str(tenant_id_modamart),
+    },)
 print("test query on nexiv: ", nexiv_query_engine.query("What were the customer pain points?"))
 print("test query on modamart: ", modamart_query_engine.query("What were the customer pain points?"))
 

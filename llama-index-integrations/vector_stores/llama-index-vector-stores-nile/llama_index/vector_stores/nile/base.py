@@ -1,23 +1,29 @@
-from llama_index.core.constants import DEFAULT_EMBEDDING_DIM
+# Standard library imports
+import json
+import logging
+import uuid
+from typing import Any, List
+
+# Third-party imports
+import psycopg
+from psycopg import sql
+
+# Local application/library specific imports
 from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.constants import DEFAULT_EMBEDDING_DIM
+from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
-    MetadataFilters,
     BasePydanticVectorStore,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
-from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-import psycopg
-from psycopg import sql
-import uuid
-import logging
-from typing import Any, List
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 class NileVectorStore(BasePydanticVectorStore):
     """Nile Vector Store
@@ -50,7 +56,7 @@ class NileVectorStore(BasePydanticVectorStore):
         self._async_conn = psycopg.connect(self.service_url)
         
     def _create_tables(self) -> None:
-        logging.debug(f"Creating tables for {self.table_name} with {self.num_dimensions} dimensions")
+        logging.info(f"Creating tables for {self.table_name} with {self.num_dimensions} dimensions")
         with self._sync_conn.cursor() as cursor:
             if self.tenant_aware:
                 query = sql.SQL('''
@@ -109,17 +115,20 @@ class NileVectorStore(BasePydanticVectorStore):
         return [tenant_id, metadata, node.get_content(metadata_mode=MetadataMode.NONE), node.embedding]
     
     def _insert_row(self, cursor: Any, row: Any) -> str:
+        logging.info(f"Inserting row into {self.table_name} with tenant_id {row[0]}")
         if self.tenant_aware:
-            cursor.execute("""
-                           INSERT INTO %(table_name)s (tenant_id, metadata, content, embedding) VALUES (%(tenant_id)s, %(metadata)s, %(content)s, %(embedding)s) returning id
-                       """,
-                       {'table_name': self.table_name, 'tenant_id': row[0], 'metadata': row[1], 'content': row[2], 'embedding': row[3]})
+            query = sql.SQL("""
+                           INSERT INTO {} (tenant_id, metadata, content, embedding) VALUES (%(tenant_id)s, %(metadata)s, %(content)s, %(embedding)s) returning id
+                       """).format(sql.Identifier(self.table_name))
+            cursor.execute(query, {'tenant_id': row[0], 'metadata': json.dumps(row[1]), 'content': row[2], 'embedding': row[3]})    
         else:
-            cursor.execute("""
-                           INSERT INTO %(table_name)s (metadata, content, embedding) VALUES (%(metadata)s, %(content)s, %(embedding)s) returning id
-                       """,
-                       {'table_name': self.table_name, 'metadata': row[0], 'content': row[1], 'embedding': row[2]})
-        return cursor.fetchone()[0]
+            query = sql.SQL("""
+                           INSERT INTO {} (metadata, content, embedding) VALUES (%(metadata)s, %(content)s, %(embedding)s) returning id
+                       """).format(sql.Identifier(self.table_name))
+            cursor.execute(query, {'metadata': json.dumps(row[0]), 'content': row[1], 'embedding': row[2]})
+        id = cursor.fetchone()[0]
+        self._sync_conn.commit()
+        return id
     
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         rows_to_insert = [self._node_to_row(node) for node in nodes]
@@ -145,20 +154,25 @@ class NileVectorStore(BasePydanticVectorStore):
     # TODO: Add support for vector index GUC
     # NOTE: Maybe support alternative distance functions (going with just cosine similarity for now)
     def _execute_query(self, cursor: Any, query_embedding: VectorStoreQuery, tenant_id: Any = None) -> List[Any]:
+        logging.info(f"Querying {self.table_name} with tenant_id {tenant_id}")
         if self.tenant_aware:
-            cursor.execute(""" set nile.tenant_id = %(tenant_id)s """, {'tenant_id': tenant_id})
+            cursor.execute(sql.SQL(""" set nile.tenant_id = {} """).format(sql.Literal(tenant_id)))
         else:
-            cursor.execute(""" reset nile.tenant_id """)
-        cursor.execute("""
+            cursor.execute(sql.SQL(""" reset nile.tenant_id """))
+        query = sql.SQL("""
             SELECT
-            id, metadata, contents, %(embedding)s<=>embedding as distance
+            id, metadata, content, %(query_embedding)s::vector<=>embedding as distance
             FROM
-            %(table_name)s
+            {table_name}
             -- TODO: Add where clause
             ORDER BY distance
-            LIMIT %(limit)s
-            """,
-            {'table_name': self.table_name, 'embedding': query_embedding.query_embedding, 'limit': query_embedding.similarity_top_k})
+            LIMIT {limit}
+            """).format(
+                table_name=sql.Identifier(self.table_name),
+                limit=sql.Literal(query_embedding.similarity_top_k)
+            )
+        logging.debug(f"Executing query: {query}")
+        cursor.execute(query, {'query_embedding': query_embedding.query_embedding})
         return cursor.fetchall()
     
     
@@ -177,19 +191,22 @@ class NileVectorStore(BasePydanticVectorStore):
     
     # NOTE: Maybe handle tenant_id specified in filter vs. kwargs
     def query(self, query_embedding: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        logging.info(f"Querying {self.table_name} with kwagrs {kwargs}")
         tenant_id = kwargs.get("tenant_id", None)
         if self.tenant_aware and tenant_id is None:
             raise ValueError("tenant_id must be specified in kwargs if tenant_aware is True")
         with self._sync_conn.cursor() as cursor:
             results = self._execute_query(cursor, query_embedding, tenant_id)
+        self._sync_conn.commit()
         return self._process_query_results(results)
 
     async def aquery(self, query_embedding: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         tenant_id = kwargs.get("tenant_id", None)
         if self.tenant_aware and tenant_id is None:
             raise ValueError("tenant_id must be specified in kwargs if tenant_aware is True")
-        with self._async_conn.cursor() as cursor:
+        async with self._async_conn.cursor() as cursor:
             results = self._execute_query(cursor, query_embedding, tenant_id)
+        await self._async_conn.commit()
         return self._process_query_results(results)
     
 
