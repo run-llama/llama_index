@@ -13,9 +13,9 @@ build:
     post_create_environment:
       - python -m pip install poetry
     post_install:
-      - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install
+      - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH cd docs && poetry install
     pre_build:
-      - python docs/merge_llama_deploy_docs.py
+      - cd docs && poetry run python docs/merge_llama_deploy_docs.py
 
 mkdocs:
   configuration: docs/mkdocs.yml

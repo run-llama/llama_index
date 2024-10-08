@@ -16,3 +16,6 @@ token.json
 .python-version
 .DS_Store
 /storage/
+
+# docs build
+llama_deploy
