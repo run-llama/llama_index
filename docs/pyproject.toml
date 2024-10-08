@@ -96,4 +96,5 @@ webencodings = "0.5.1"
 
 [tool.poetry.scripts]
 merge-llama-deploy-docs = "scripts.merge_llama_deploy_docs:main"
+prepare-for-build = "scripts.prepare_for_build:main"
 serve = "scripts.serve:main"
