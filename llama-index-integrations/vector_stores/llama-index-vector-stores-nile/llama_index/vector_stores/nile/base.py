@@ -50,6 +50,7 @@ class NileVectorStore(BasePydanticVectorStore):
         self._async_conn = psycopg.connect(self.service_url)
         
     def _create_tables(self) -> None:
+        logging.debug(f"Creating tables for {self.table_name} with {self.num_dimensions} dimensions")
         with self._sync_conn.cursor() as cursor:
             if self.tenant_aware:
                 query = sql.SQL('''
@@ -69,6 +70,7 @@ class NileVectorStore(BasePydanticVectorStore):
                                     num_dimensions=sql.Literal(self.num_dimensions)
                                 )
                 cursor.execute(query)
+        self._sync_conn.commit()
     
     # NOTE: Maybe allow specifying schema name
     # TODO: Allow specifying index type and parameters
@@ -206,7 +208,9 @@ class NileVectorStore(BasePydanticVectorStore):
                            INSERT INTO tenants (name) VALUES (%(tenant_name)s) returning id
                            """,
                            {'tenant_name': tenant_name})
-            return cursor.fetchone()[0]
+            tenant_id = cursor.fetchone()[0]
+            self._sync_conn.commit()
+            return tenant_id
         
     # TODO: Implement delete
     def delete(self, ids: List[str]) -> None:
