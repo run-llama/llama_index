@@ -15,7 +15,7 @@ build:
     post_install:
       - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH cd docs && poetry install
     pre_build:
-      - cd docs && poetry run python docs/merge_llama_deploy_docs.py
+      - cd docs && poetry run merge-llama-deploy-docs
 
 mkdocs:
   configuration: docs/mkdocs.yml

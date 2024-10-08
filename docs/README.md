@@ -32,11 +32,25 @@ Install all dependencies required for building docs (mainly `mkdocs` and its ext
 To build the docs and browse them locally run:
 
 ```
-poetry run mkdocs serve --dirty
+poetry run serve
 ```
 
-> [!NOTE]
-> With `--dirty` mkdocs will rebuild only files that have changed, decreasing the time it takes to iterate on a page.
+During the build, notebooks are converted to documentation pages, and this takes several minutes. If you're not
+working on the "Examples" section of the documentation, you can run the same command with `--skip-notebooks`:
+
+```
+poetry run serve --skip-notebooks
+```
+
+> [!IMPORTANT]
+> Building the documentation takes a while, so make sure you see the following output before opening the browser:
+>
+> ```
+> ...
+> INFO    -  Documentation built in 53.32 seconds
+> INFO    -  [16:18:17] Watching paths for changes: 'docs'
+> INFO    -  [16:18:17] Serving on http://127.0.0.1:8000/en/stable/
+> ```
 
 You can now open your browser at http://localhost:8000/ to view the generated docs. The local server will rebuild the
 docs and refresh your browser every time you make changes to the docs.
