@@ -18,6 +18,6 @@ print("Copied in latest llama-deploy reference")
 
 # copy the module guides
 os.system(
-    "cp -r llama_deploy/docs/docs/*.md ./docs/docs/module_guides/llama_deploy/"
+    "cp -r llama_deploy/docs/docs/module_guides/llama_deploy/*.md ./docs/docs/module_guides/llama_deploy/"
 )
 print("Copied in latest llama-deploy docs")
