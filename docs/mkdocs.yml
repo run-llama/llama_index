@@ -146,6 +146,7 @@ nav:
           - ./examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
           - ./examples/cookbooks/mistralai.ipynb
           - ./examples/cookbooks/mixedbread_reranker.ipynb
+          - ./examples/cookbooks/mongodb_retrieval_strategies.ipynb
           - ./examples/cookbooks/oracleai_demo.ipynb
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-2/Components_Of_LlamaIndex.ipynb
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-3/Evaluating_RAG_Systems.ipynb
@@ -254,6 +255,7 @@ nav:
           - ./examples/embeddings/textembed.ipynb
           - ./examples/embeddings/together.ipynb
           - ./examples/embeddings/upstage.ipynb
+          - ./examples/embeddings/vertex_embedding_endpoint.ipynb
           - ./examples/embeddings/voyageai.ipynb
           - ./examples/embeddings/yandexgpt.ipynb
       - Evaluation:
@@ -897,6 +899,7 @@ nav:
           - ./api_reference/embeddings/together.md
           - ./api_reference/embeddings/upstage.md
           - ./api_reference/embeddings/vertex.md
+          - ./api_reference/embeddings/vertex_endpoint.md
           - ./api_reference/embeddings/voyageai.md
           - ./api_reference/embeddings/xinference.md
           - ./api_reference/embeddings/yandexgpt.md
@@ -2215,6 +2218,7 @@ plugins:
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-mistralai
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-huggingface
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-upstash
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-vertex-endpoint
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

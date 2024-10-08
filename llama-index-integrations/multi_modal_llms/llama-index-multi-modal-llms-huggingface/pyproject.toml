@@ -24,7 +24,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["M.Cihan Yalçın mcihan.yalcin@outlook.com"]
+authors = ["M.Cihan Yalçın <mcihan.yalcin@outlook.com>"]
 description = "llama-index multi_modal_llms HuggingFace integration by [Cihan Yalçın](https://www.linkedin.com/in/chanyalcin/)"
 license = "MIT"
 name = "llama-index-multi-modal-llms-huggingface"
