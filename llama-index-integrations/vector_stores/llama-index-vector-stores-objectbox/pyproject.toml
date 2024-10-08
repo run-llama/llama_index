@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.bedrock_converse"
+import_path = "llama_index.vector_stores.objectbox"
 
 [tool.llamahub.class_authors]
-BedrockConverse = "AndreCNF"
+ObjectBoxVectorStore = "ObjectBox"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,19 +21,22 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index llms bedrock converse integration"
+authors = ["ObjectBox"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+]
+description = "Integration package connecting ObjectBox and LlamaIndex"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-llms-bedrock-converse"
+name = "llama-index-vector-stores-objectbox"
 readme = "README.md"
-version = "0.3.1"
+version = "0.1.0a"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-boto3 = "^1.34.122"
-aioboto3 = "^13.1.1"
 llama-index-core = "^0.11.0"
+objectbox = "^4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -41,9 +44,8 @@ jupyter = "^1.0.0"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
-pytest = ">=7.2.1"
-pytest-asyncio = "^0.24.0"
-pytest-mock = ">=3.11.1"
+pytest = "7.2.1"
+pytest-mock = "3.11.1"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
