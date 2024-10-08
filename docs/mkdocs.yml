@@ -1623,10 +1623,10 @@ nav:
       - LlamaCloud: ./llama_cloud/index.md
       - LlamaParse: ./llama_cloud/llama_parse.md
 plugins:
-  - search
-  - include_dir_to_nav
+  - search:
+  - include_dir_to_nav:
   - mkdocs-jupyter:
-    execute: false
+      execute: false
   - mkdocstrings:
       handlers:
         python:
