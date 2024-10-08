@@ -586,7 +586,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         param_map = param_map or {}
         try:
             data, _, _ = self._driver.execute_query(
-                query, database=self._database, parameters_=param_map
+                query, database_=self._database, parameters_=param_map
             )
             full_result = [d.data() for d in data]
 
