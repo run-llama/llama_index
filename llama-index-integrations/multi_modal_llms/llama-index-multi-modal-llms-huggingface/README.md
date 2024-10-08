@@ -35,7 +35,7 @@ Here's a basic example of how to use the Hugging Face multimodal integration:
 
 ```python
 from llama_index.multi_modal_llms.huggingface import HuggingFaceMultiModal
-from llama_index.schema import ImageDocument
+from llama_index.core.schema import ImageDocument
 
 # Initialize the model
 model = HuggingFaceMultiModal.from_model_name("Qwen/Qwen2-VL-2B-Instruct")
@@ -50,14 +50,45 @@ response = model.complete(prompt, image_documents=[image_document])
 print(response.text)
 ```
 
+### Streaming
+
+```python
+from llama_index.multi_modal_llms.huggingface import HuggingFaceMultiModal
+from llama_index.core.schema import ImageDocument
+
+# Initialize the model
+model = HuggingFaceMultiModal.from_model_name("Qwen/Qwen2-VL-2B-Instruct")
+
+# Prepare your image and prompt
+image_document = ImageDocument(image_path="downloaded_image.jpg")
+prompt = "Describe this image in detail."
+
+import nest_asyncio
+import asyncio
+
+nest_asyncio.apply()
+
+
+async def stream_output():
+    for chunk in model.stream_complete(
+        prompt, image_documents=[image_document]
+    ):
+        print(chunk.delta, end="", flush=True)
+        await asyncio.sleep(0)
+
+
+asyncio.run(stream_output())
+```
+
 You can also refer to this [Colab notebook](examples\huggingface_multimodal.ipynb)
 
 ## Supported Models
 
-1. Qwen2VisionMultiModal
-2. Florence2MultiModal
-3. Phi35VisionMultiModal
-4. PaliGemmaMultiModal
+1. Qwen2 Vision
+2. Florence2
+3. Phi3.5 Vision
+4. PaliGemma
+5. Mllama
 
 Each model has its unique capabilities and can be selected based on your specific use case.
 
