@@ -283,19 +283,21 @@ async def aretry_on_exceptions_with_backoff(
             backoff_secs = min(backoff_secs * 2, max_backoff_secs)
 
 
-def get_retry_on_exceptions_with_backoff_decorator(*retry_args, **retry_kwargs):
+def get_retry_on_exceptions_with_backoff_decorator(
+    *retry_args: Any, **retry_kwargs: Any
+) -> Callable:
     """Return a decorator that retries with exponential backoff on provided exceptions."""
 
-    def decorator(func):
+    def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*func_args, **func_kwargs):
+        def wrapper(*func_args: Any, **func_kwargs: Any) -> Any:
             return retry_on_exceptions_with_backoff(
                 lambda: func(*func_args, **func_kwargs), *retry_args, **retry_kwargs
             )
 
         @wraps(func)
-        async def awrapper(*func_args, **func_kwargs):
-            async def foo():
+        async def awrapper(*func_args: Any, **func_kwargs: Any) -> Any:
+            async def foo() -> Any:
                 return await func(*func_args, **func_kwargs)
 
             return await aretry_on_exceptions_with_backoff(
