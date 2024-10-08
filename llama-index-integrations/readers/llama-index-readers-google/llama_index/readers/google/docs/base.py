@@ -1,5 +1,6 @@
 """Google docs reader."""
 
+import json
 import logging
 import os
 import random
@@ -102,6 +103,7 @@ class GoogleDocsReader(BasePydanticReader):
             Credentials, the obtained credential.
         """
         creds = None
+        port = 8080
         if os.path.exists("token.json"):
             creds = Credentials.from_authorized_user_file("token.json", SCOPES)
         # If there are no (valid) credentials available, let the user log in.
@@ -112,7 +114,14 @@ class GoogleDocsReader(BasePydanticReader):
                 flow = InstalledAppFlow.from_client_secrets_file(
                     "credentials.json", SCOPES
                 )
-                creds = flow.run_local_server(port=0)
+
+                with open("credentials.json") as json_file:
+                    client_config = json.load(json_file)
+                    redirect_uris = client_config["web"].get("redirect_uris", [])
+                    if len(redirect_uris) > 0:
+                        port = redirect_uris[0].strip("/").split(":")[-1]
+
+                creds = flow.run_local_server(port=port)
             # Save the credentials for the next run
             with open("token.json", "w") as token:
                 token.write(creds.to_json())
