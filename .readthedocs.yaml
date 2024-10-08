@@ -10,12 +10,12 @@ build:
   tools:
     python: "3.12"
   jobs:
+    post_create_environment:
+      - python -m pip install poetry
+    post_install:
+      - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH cd docs && poetry install
     pre_build:
-      - python docs/merge_llama_deploy_docs.py
+      - cd docs && poetry run merge-llama-deploy-docs
 
 mkdocs:
   configuration: docs/mkdocs.yml
-
-python:
-  install:
-    - requirements: docs/requirements.txt
