@@ -6,15 +6,14 @@ import warnings
 import httpx
 from llama_index.readers.upstage import UpstageDocumentParseReader
 from llama_index.llms.openai.utils import (
-    from_openai_token_logprobs,
     create_retry_decorator,
-    from_openai_message,
 )
 from llama_index.core.base.llms.types import (
     LLMMetadata,
     ChatMessage,
-    ChatResponse,
     ChatResponseGen,
+    ChatResponse,
+    ChatResponseAsyncGen,
 )
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.base import to_openai_message_dicts
@@ -75,8 +74,8 @@ class Upstage(OpenAI):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
-        ge=0.0,
-        le=1.0,
+        gte=0.0,
+        lte=1.0,
     )
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate."
@@ -87,17 +86,17 @@ class Upstage(OpenAI):
     top_logprobs: int = Field(
         description="The number of top token logprobs to return.",
         default=0,
-        ge=0,
-        le=20,
+        gte=0,
+        lte=20,
     )
     additional_kwargs: Dict[str, Any] = Field(
         description="Additional kwargs for the Upstage API.", default_factory=dict
     )
     max_retries: int = Field(
-        description="The maximum number of API retries.", default=3, ge=0
+        description="The maximum number of API retries.", default=3, gte=0
     )
     timeout: float = Field(
-        description="The timeout, in seconds, for API requests.", default=60.0, ge=0.0
+        description="The timeout, in seconds, for API requests.", default=60.0, gte=0.0
     )
     reuse_client: bool = Field(
         description=(
@@ -241,26 +240,14 @@ class Upstage(OpenAI):
         if is_doc_parsing_model(self.model, kwargs):
             document_contents = self._parse_documents(kwargs.pop("file_path"))
             messages.append(ChatMessage(role="user", content=document_contents))
-        client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages)
-        response = client.chat.completions.create(
-            messages=message_dicts,
-            stream=False,
-            **self._get_model_kwargs(**kwargs),
-        )
-        openai_message = response.choices[0].message
-        message = from_openai_message(openai_message)
-        openai_token_logprobs = response.choices[0].logprobs
-        logprobs = None
-        if openai_token_logprobs and openai_token_logprobs.content:
-            logprobs = from_openai_token_logprobs(openai_token_logprobs.content)
+        return super()._chat(messages, **kwargs)
 
-        return ChatResponse(
-            message=message,
-            raw=response,
-            logprobs=logprobs,
-            additional_kwargs=self._get_response_token_counts(response),
-        )
+    @llm_retry_decorator
+    def _achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        if is_doc_parsing_model(self.model, kwargs):
+            document_contents = self._parse_documents(kwargs.pop("file_path"))
+            messages.append(ChatMessage(role="user", content=document_contents))
+        return super()._achat(messages, **kwargs)
 
     @llm_retry_decorator
     def _stream_chat(
@@ -270,6 +257,15 @@ class Upstage(OpenAI):
             document_contents = self._parse_documents(kwargs.pop("file_path"))
             messages.append(ChatMessage(role="user", content=document_contents))
         return super()._stream_chat(messages, **kwargs)
+
+    @llm_retry_decorator
+    def _astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        if is_doc_parsing_model(self.model, kwargs):
+            document_contents = self._parse_documents(kwargs.pop("file_path"))
+            messages.append(ChatMessage(role="user", content=document_contents))
+        return super()._astream_chat(messages, **kwargs)
 
     def _parse_documents(
         self, file_path: Union[str, Path, List[str], List[Path]]
