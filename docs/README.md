@@ -63,4 +63,5 @@ well as the API reference for all the packages in this repo.
 Running the command `poetry run prepare-for-build` from the `docs` folder will update the `mkdocs.yml` with the latest
 changes, along with writing new api reference files.
 
-> [!TIP] As a contributor, you wouldn't normally need to run this script, feel free to ask for help in the PR.
+> [!TIP]
+> As a contributor, you wouldn't normally need to run this script, feel free to ask for help in the PR.
