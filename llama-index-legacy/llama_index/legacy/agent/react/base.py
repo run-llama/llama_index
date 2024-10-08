@@ -102,7 +102,7 @@ class ReActAgent(AgentRunner):
         context: Optional[str] = None,
         **kwargs: Any,
     ) -> "ReActAgent":
-        """Convenience constructor method from set of of BaseTools (Optional).
+        """Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
