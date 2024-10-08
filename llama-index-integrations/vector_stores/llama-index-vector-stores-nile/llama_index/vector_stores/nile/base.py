@@ -12,8 +12,12 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 import psycopg
+from psycopg import sql
 import uuid
+import logging
 from typing import Any, List
+
+logging.basicConfig(level=logging.DEBUG)
 
 class NileVectorStore(BasePydanticVectorStore):
     """Nile Vector Store
@@ -35,6 +39,7 @@ class NileVectorStore(BasePydanticVectorStore):
     service_url: str
     table_name: str
     num_dimensions: int
+    tenant_aware: bool
     
     _sync_conn: Any = PrivateAttr()
     _async_conn: Any = PrivateAttr()
@@ -47,21 +52,29 @@ class NileVectorStore(BasePydanticVectorStore):
     def _create_tables(self) -> None:
         with self._sync_conn.cursor() as cursor:
             if self.tenant_aware:
-                cursor.execute("""
-                               CREATE TABLE IF NOT EXISTS %(table_name)s (id UUID DEFAULT (gen_random_uuid()), tenant_id UUID, embedding VECTOR(%(num_dimensions)s), content TEXT, metadata JSONB)
-                               """,
-                               {'table_name': self.table_name, 'num_dimensions': self.num_dimensions})
+                query = sql.SQL('''
+                                CREATE TABLE IF NOT EXISTS {table_name} 
+                                (id UUID DEFAULT (gen_random_uuid()), tenant_id UUID, embedding VECTOR({num_dimensions}), content TEXT, metadata JSONB)
+                                ''').format(
+                                    table_name=sql.Identifier(self.table_name),
+                                    num_dimensions=sql.Literal(self.num_dimensions)
+                                )
+                cursor.execute(query)
             else:
-                cursor.execute("""
-                               CREATE TABLE IF NOT EXISTS %(table_name)s (id UUID DEFAULT (gen_random_uuid()), embedding VECTOR(%(num_dimensions)s), content TEXT, metadata JSONB)
-                               """,
-                               {'table_name': self.table_name, 'num_dimensions': self.num_dimensions})
+                query = sql.SQL('''
+                                CREATE TABLE IF NOT EXISTS {table_name} 
+                                (id UUID DEFAULT (gen_random_uuid()), embedding VECTOR(num_dimensions}), content TEXT, metadata JSONB)
+                                ''').format(
+                                    table_name=sql.Identifier(self.table_name),
+                                    num_dimensions=sql.Literal(self.num_dimensions)
+                                )
+                cursor.execute(query)
     
     # NOTE: Maybe allow specifying schema name
     # TODO: Allow specifying index type and parameters
     def __init__(self, service_url: str, table_name: str, tenant_aware: bool = False, num_dimensions: int = DEFAULT_EMBEDDING_DIM) -> None:
         # TODO: Do we need lower case table name? do we want to add prefix?
-        super().__init__(service_url=service_url, table_name=table_name, num_dimensions=num_dimensions)
+        super().__init__(service_url=service_url, table_name=table_name, num_dimensions=num_dimensions, tenant_aware=tenant_aware)
         
         self._create_clients()
         self._create_tables()
@@ -69,6 +82,10 @@ class NileVectorStore(BasePydanticVectorStore):
     @classmethod
     def class_name(cls) -> str:
         return "NileVectorStore"
+    
+    @property
+    def client(self) -> Any:
+        return self._sync_conn
 
     async def close(self) -> None:
         self._sync_conn.close()
@@ -192,6 +209,12 @@ class NileVectorStore(BasePydanticVectorStore):
             return cursor.fetchone()[0]
         
     # TODO: Implement delete
+    def delete(self, ids: List[str]) -> None:
+        with self._sync_conn.cursor() as cursor:
+            cursor.execute("""
+                           DELETE FROM %(table_name)s WHERE id IN (%(ids)s)
+                           """,
+                           {'table_name': self.table_name, 'ids': ",".join(ids)})
     # NOTE: Maybe implement get_nodes
     # NOTE: Maybe implement delete_nodes
     # NOTE: Maybe implement clear
