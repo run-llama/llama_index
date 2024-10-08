@@ -4,9 +4,7 @@ import os
 def main():
     # clone the llama_deploy repo
     if not os.path.exists("llama_deploy"):
-        os.system(
-            "git clone -b massi/docs https://github.com/run-llama/llama_deploy.git"
-        )
+        os.system("git clone https://github.com/run-llama/llama_deploy.git")
         print("Cloned llama_deploy")
     else:
         os.system("git -C llama_deploy pull")
