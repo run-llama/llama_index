@@ -462,6 +462,8 @@ class PGVectorStore(BasePydanticVectorStore):
             return "NOT IN"
         elif operator == FilterOperator.CONTAINS:
             return "@>"
+        elif operator == FilterOperator.TEXT_MATCH:
+            return "LIKE"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
@@ -487,6 +489,13 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"metadata_::jsonb->'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"'[\"{filter_.value}\"]'"
+            )
+        elif filter_.operator == FilterOperator.TEXT_MATCH:
+            # Where the operator is text_match, we need to wrap the filter in '%' characters
+            return text(
+                f"metadata_->>'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"'%{filter_.value}%'"
             )
         else:
             # Check if value is a number. If so, cast the metadata value to a float
