@@ -10,8 +10,12 @@ from llama_index.llms.openai.utils import (
     create_retry_decorator,
     from_openai_message,
 )
-from llama_index.core.base.llms.types import ChatResponse
-from llama_index.core.base.llms.types import LLMMetadata, ChatMessage
+from llama_index.core.base.llms.types import (
+    LLMMetadata,
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
+)
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.base import to_openai_message_dicts
 
@@ -258,6 +262,15 @@ class Upstage(OpenAI):
             additional_kwargs=self._get_response_token_counts(response),
         )
 
+    @llm_retry_decorator
+    def _stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        if is_doc_parsing_model(self.model, kwargs):
+            document_contents = self._parse_documents(kwargs.pop("file_path"))
+            messages.append(ChatMessage(role="user", content=document_contents))
+        return super()._stream_chat(messages, **kwargs)
+
     def _parse_documents(
         self, file_path: Union[str, Path, List[str], List[Path]]
     ) -> str:
@@ -276,5 +289,4 @@ class Upstage(OpenAI):
         for i, doc in enumerate(docs):
             file_title = file_titles[min(i, len(file_titles) - 1)]
             document_contents += f"{file_title}:\n{doc.text}\n\n"
-        print("DOCUMENT CONTENTS", document_contents)
         return document_contents
