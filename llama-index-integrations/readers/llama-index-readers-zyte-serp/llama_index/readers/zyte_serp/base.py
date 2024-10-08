@@ -1,8 +1,10 @@
 from typing import Optional
-from pydantic import Field
 
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
+
+from zyte_api import ZyteAPI
+from zyte_api.utils import USER_AGENT as PYTHON_ZYTE_API_USER_AGENT
 
 
 class ZyteSerpReader(BasePydanticReader):
@@ -30,7 +32,7 @@ class ZyteSerpReader(BasePydanticReader):
 
     """
 
-    client: Optional[object] = Field(None)
+    client: ZyteAPI
     api_key: str
     extract_from: Optional[str]
 
@@ -40,17 +42,17 @@ class ZyteSerpReader(BasePydanticReader):
         extract_from: Optional[str] = None,
     ) -> None:
         """Initialize with file path."""
+        user_agent = f"llama-index-zyte-api/{PYTHON_ZYTE_API_USER_AGENT}"
+
+        client = ZyteAPI(
+            api_key=api_key,
+            user_agent=user_agent,
+        )
+
         super().__init__(
             api_key=api_key,
             extract_from=extract_from,
-        )
-        from zyte_api import ZyteAPI
-        from zyte_api.utils import USER_AGENT as PYTHON_ZYTE_API_USER_AGENT
-
-        user_agent = f"llama-index-zyte-api/{PYTHON_ZYTE_API_USER_AGENT}"
-        self.client = ZyteAPI(
-            api_key=api_key,
-            user_agent=user_agent,
+            client=client,
         )
 
     def _serp_url(self, query: str):
