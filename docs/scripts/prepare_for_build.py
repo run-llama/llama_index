@@ -136,8 +136,11 @@ def main():
                 label_idx = idx
                 break
 
+        # Add or clear the label
         if label_idx == -1:
             mkdocs["nav"][examples_idx]["Examples"].append({label: []})
+        else:
+            mkdocs["nav"][examples_idx]["Examples"][label_idx][label] = []
 
         for file_name in os.listdir(path_name):
             if file_name.endswith(".ipynb"):
@@ -168,6 +171,7 @@ def main():
                                     label_idx
                                 ][label]
                             ):
+                                print(toc_path_name)
                                 mkdocs["nav"][examples_idx]["Examples"][
                                     label_idx
                                 ][label].append(toc_path_name)
@@ -208,9 +212,7 @@ def main():
                     elif folder_name == "graph_stores":
                         folder_name = "storage/graph_stores"
 
-                    full_path = os.path.join(
-                        "docs/docs/api_reference", folder_name
-                    )
+                    full_path = os.path.join("docs/api_reference", folder_name)
                     module_name = import_path.split(".")[-1] + ".md"
                     os.makedirs(full_path, exist_ok=True)
                     with open(os.path.join(full_path, module_name), "w") as f:
