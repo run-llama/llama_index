@@ -85,10 +85,6 @@ nav:
       - Agents:
           - ./docs/examples/agent/Chatbot_SEC.ipynb
           - ./docs/examples/agent/agent_builder.ipynb
-          - ./docs/examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.ipynb
-          - ./docs/examples/agent/agent_runner/agent_runner.ipynb
-          - ./docs/examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
-          - ./docs/examples/agent/agent_runner/query_pipeline_agent.ipynb
           - ./docs/examples/agent/agentic_rag_using_vertex_ai.ipynb
           - ./docs/examples/agent/agentic_rag_with_llamaindex_and_vertexai_managed_index.ipynb
           - ./docs/examples/agent/anthropic_agent.ipynb
@@ -99,8 +95,6 @@ nav:
           - ./docs/examples/agent/introspective_agent_toxicity_reduction.ipynb
           - ./docs/examples/agent/lats_agent.ipynb
           - ./docs/examples/agent/llm_compiler.ipynb
-          - ./docs/examples/agent/memory/composable_memory.ipynb
-          - ./docs/examples/agent/memory/vector_memory.ipynb
           - ./docs/examples/agent/mistral_agent.ipynb
           - ./docs/examples/agent/multi_document_agents-v1.ipynb
           - ./docs/examples/agent/multi_document_agents.ipynb
@@ -195,15 +189,6 @@ nav:
           - ./docs/examples/cookbooks/mixedbread_reranker.ipynb
           - ./docs/examples/cookbooks/mongodb_retrieval_strategies.ipynb
           - ./docs/examples/cookbooks/oracleai_demo.ipynb
-          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-2/Components_Of_LlamaIndex.ipynb
-          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-3/Evaluating_RAG_Systems.ipynb
-          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-4/Ingestion_Pipeline.ipynb
-          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-4/Metadata_Extraction.ipynb
-          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-5/Observability.ipynb
-          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-6/Agents.ipynb
-          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-6/Router_And_SubQuestion_QueryEngine.ipynb
-          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-7/Multi_Modal_RAG_System.ipynb
-          - ./docs/examples/cookbooks/oreilly_course_cookbooks/Module-8/Advanced_RAG_with_LlamaParse.ipynb
           - ./docs/examples/cookbooks/prometheus2_cookbook.ipynb
           - ./examples/cookbooks/GraphRAG_v1.ipynb
           - ./examples/cookbooks/GraphRAG_v2.ipynb
@@ -232,14 +217,6 @@ nav:
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-8/Advanced_RAG_with_LlamaParse.ipynb
           - ./examples/cookbooks/prometheus2_cookbook.ipynb
       - Customization:
-          - ./docs/examples/customization/llms/AzureOpenAI.ipynb
-          - ./docs/examples/customization/llms/SimpleIndexDemo-ChatGPT.ipynb
-          - ./docs/examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
-          - ./docs/examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb
-          - ./docs/examples/customization/prompts/chat_prompts.ipynb
-          - ./docs/examples/customization/prompts/completion_prompts.ipynb
-          - ./docs/examples/customization/streaming/SimpleIndexDemo-streaming.ipynb
-          - ./docs/examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb
           - ./examples/customization/llms/AzureOpenAI.ipynb
           - ./examples/customization/llms/SimpleIndexDemo-ChatGPT.ipynb
           - ./examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb
@@ -278,7 +255,6 @@ nav:
           - ./docs/examples/data_connectors/TwitterDemo.ipynb
           - ./docs/examples/data_connectors/WeaviateDemo.ipynb
           - ./docs/examples/data_connectors/WebPageDemo.ipynb
-          - ./docs/examples/data_connectors/deplot/DeplotReader.ipynb
           - ./docs/examples/data_connectors/html_tag_reader.ipynb
           - ./docs/examples/data_connectors/oracleai.ipynb
           - ./docs/examples/data_connectors/simple_directory_reader.ipynb
@@ -289,6 +265,7 @@ nav:
           - ./examples/data_connectors/DatabaseReaderDemo.ipynb
           - ./examples/data_connectors/DeepLakeReader.ipynb
           - ./examples/data_connectors/DiscordDemo.ipynb
+          - ./examples/data_connectors/DoclingReaderDemo.ipynb
           - ./examples/data_connectors/FaissDemo.ipynb
           - ./examples/data_connectors/GithubRepositoryReaderDemo.ipynb
           - ./examples/data_connectors/GoogleChatDemo.ipynb
@@ -319,7 +296,6 @@ nav:
           - ./examples/data_connectors/simple_directory_reader_parallel.ipynb
           - ./examples/data_connectors/simple_directory_reader_remote_fs.ipynb
       - Discover LlamaIndex:
-          - ./docs/examples/discover_llamaindex/document_management/Discord_Thread_Management.ipynb
           - ./examples/discover_llamaindex/document_management/Discord_Thread_Management.ipynb
       - Docstores:
           - ./docs/examples/docstore/AzureDocstoreDemo.ipynb
@@ -443,11 +419,9 @@ nav:
           - ./docs/examples/evaluation/guideline_eval.ipynb
           - ./docs/examples/evaluation/mt_bench_human_judgement.ipynb
           - ./docs/examples/evaluation/mt_bench_single_grading.ipynb
-          - ./docs/examples/evaluation/multi_modal/multi_modal_rag_evaluation.ipynb
           - ./docs/examples/evaluation/pairwise_eval.ipynb
           - ./docs/examples/evaluation/prometheus_evaluation.ipynb
           - ./docs/examples/evaluation/relevancy_eval.ipynb
-          - ./docs/examples/evaluation/retrieval/retriever_eval.ipynb
           - ./docs/examples/evaluation/semantic_similarity_eval.ipynb
           - ./examples/evaluation/BeirEvaluation.ipynb
           - ./examples/evaluation/Deepeval.ipynb
@@ -471,18 +445,9 @@ nav:
           - ./examples/evaluation/retrieval/retriever_eval.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
       - Finetuning:
-          - ./docs/examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning.ipynb
-          - ./docs/examples/finetuning/embeddings/finetune_corpus_embedding.ipynb
-          - ./docs/examples/finetuning/embeddings/finetune_embedding.ipynb
-          - ./docs/examples/finetuning/embeddings/finetune_embedding_adapter.ipynb
-          - ./docs/examples/finetuning/llm_judge/correctness/finetune_llm_judge_single_grading_correctness.ipynb
-          - ./docs/examples/finetuning/llm_judge/pairwise/finetune_llm_judge.ipynb
           - ./docs/examples/finetuning/mistralai_fine_tuning.ipynb
           - ./docs/examples/finetuning/openai_fine_tuning.ipynb
           - ./docs/examples/finetuning/openai_fine_tuning_functions.ipynb
-          - ./docs/examples/finetuning/react_agent/react_agent_finetune.ipynb
-          - ./docs/examples/finetuning/rerankers/cohere_custom_reranker.ipynb
-          - ./docs/examples/finetuning/router/router_finetune.ipynb
           - ./examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning.ipynb
           - ./examples/finetuning/embeddings/finetune_corpus_embedding.ipynb
           - ./examples/finetuning/embeddings/finetune_embedding.ipynb
@@ -918,13 +883,10 @@ nav:
           - ./docs/examples/query_engine/json_query_engine.ipynb
           - ./docs/examples/query_engine/knowledge_graph_query_engine.ipynb
           - ./docs/examples/query_engine/knowledge_graph_rag_query_engine.ipynb
-          - ./docs/examples/query_engine/multi_doc_auto_retrieval/multi_doc_auto_retrieval.ipynb
           - ./docs/examples/query_engine/pandas_query_engine.ipynb
-          - ./docs/examples/query_engine/pdf_tables/recursive_retriever.ipynb
           - ./docs/examples/query_engine/pgvector_sql_query_engine.ipynb
           - ./docs/examples/query_engine/pydantic_query_engine.ipynb
           - ./docs/examples/query_engine/recursive_retriever_agents.ipynb
-          - ./docs/examples/query_engine/sec_tables/tesla_10q_table.ipynb
           - ./docs/examples/query_engine/sub_question_query_engine.ipynb
           - ./examples/query_engine/CustomRetrievers.ipynb
           - ./examples/query_engine/JSONalyze_query_engine.ipynb
@@ -1126,8 +1088,6 @@ nav:
           - ./docs/examples/vector_stores/chroma_auto_retriever.ipynb
           - ./docs/examples/vector_stores/chroma_metadata_filter.ipynb
           - ./docs/examples/vector_stores/elasticsearch_auto_retriever.ipynb
-          - ./docs/examples/vector_stores/existing_data/pinecone_existing_data.ipynb
-          - ./docs/examples/vector_stores/existing_data/weaviate_existing_data.ipynb
           - ./docs/examples/vector_stores/neo4j_metadata_filter.ipynb
           - ./docs/examples/vector_stores/orallamavs.ipynb
           - ./docs/examples/vector_stores/pinecone_auto_retriever.ipynb
@@ -1180,6 +1140,7 @@ nav:
           - ./examples/vector_stores/MongoDBAtlasVectorSearchRAGOpenAI.ipynb
           - ./examples/vector_stores/MyScaleIndexDemo.ipynb
           - ./examples/vector_stores/Neo4jVectorDemo.ipynb
+          - ./examples/vector_stores/ObjectBoxIndexDemo.ipynb
           - ./examples/vector_stores/OpensearchDemo.ipynb
           - ./examples/vector_stores/PGVectoRsDemo.ipynb
           - ./examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb

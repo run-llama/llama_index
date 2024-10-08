@@ -142,7 +142,7 @@ def main():
         for file_name in os.listdir(path_name):
             if file_name.endswith(".ipynb"):
                 toc_path_name = "./" + os.path.join(
-                    path_name.replace("docs/docs/", ""), file_name
+                    path_name.replace("docs/", ""), file_name
                 )
                 if (
                     toc_path_name
@@ -160,7 +160,7 @@ def main():
                     for file in files:
                         if file.endswith(".ipynb"):
                             toc_path_name = "./" + os.path.join(
-                                root.replace("docs/docs/", ""), file
+                                root.replace("docs/", ""), file
                             )
                             if (
                                 toc_path_name
