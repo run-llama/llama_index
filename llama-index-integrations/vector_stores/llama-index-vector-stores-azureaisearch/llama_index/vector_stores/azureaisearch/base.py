@@ -134,13 +134,13 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _compression_type: str = PrivateAttr()
 
     def _normalise_metadata_to_index_fields(
-            self,
-            filterable_metadata_field_keys: Union[
-                List[str],
-                Dict[str, str],
-                Dict[str, Tuple[str, MetadataIndexFieldType]],
-                None,
-            ] = [],
+        self,
+        filterable_metadata_field_keys: Union[
+            List[str],
+            Dict[str, str],
+            Dict[str, Tuple[str, MetadataIndexFieldType]],
+            None,
+        ] = [],
     ) -> Dict[str, Tuple[str, MetadataIndexFieldType]]:
         index_field_spec: Dict[str, Tuple[str, MetadataIndexFieldType]] = {}
 
@@ -476,39 +476,39 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
     async def _avalidate_index(self, index_name: Optional[str]) -> None:
         if (
-                self._async_index_client
-                and index_name
-                and not await self._aindex_exists(index_name)
+            self._async_index_client
+            and index_name
+            and not await self._aindex_exists(index_name)
         ):
             raise ValueError(f"Validation failed, index {index_name} does not exist.")
 
     def __init__(
-            self,
-            search_or_index_client: Any,
-            id_field_key: str,
-            chunk_field_key: str,
-            embedding_field_key: str,
-            metadata_string_field_key: str,
-            doc_id_field_key: str,
-            filterable_metadata_field_keys: Optional[
-                Union[
-                    List[str],
-                    Dict[str, str],
-                    Dict[str, Tuple[str, MetadataIndexFieldType]],
-                ]
-            ] = None,
-            index_name: Optional[str] = None,
-            index_mapping: Optional[
-                Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]]
-            ] = None,
-            index_management: IndexManagement = IndexManagement.NO_VALIDATION,
-            embedding_dimensionality: int = 1536,
-            vector_algorithm_type: str = "exhaustiveKnn",
-            # If we have content in other languages, it is better to enable the language analyzer to be adjusted in searchable fields.
-            # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
-            language_analyzer: str = "en.lucene",
-            compression_type: str = "none",
-            **kwargs: Any,
+        self,
+        search_or_index_client: Any,
+        id_field_key: str,
+        chunk_field_key: str,
+        embedding_field_key: str,
+        metadata_string_field_key: str,
+        doc_id_field_key: str,
+        filterable_metadata_field_keys: Optional[
+            Union[
+                List[str],
+                Dict[str, str],
+                Dict[str, Tuple[str, MetadataIndexFieldType]],
+            ]
+        ] = None,
+        index_name: Optional[str] = None,
+        index_mapping: Optional[
+            Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]]
+        ] = None,
+        index_management: IndexManagement = IndexManagement.NO_VALIDATION,
+        embedding_dimensionality: int = 1536,
+        vector_algorithm_type: str = "exhaustiveKnn",
+        # If we have content in other languages, it is better to enable the language analyzer to be adjusted in searchable fields.
+        # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
+        language_analyzer: str = "en.lucene",
+        compression_type: str = "none",
+        **kwargs: Any,
     ) -> None:
         # ruff: noqa: E501
         """
@@ -663,7 +663,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             raise ValueError("search_or_index_client not specified")
 
         if index_management == IndexManagement.CREATE_IF_NOT_EXISTS and not (
-                self._index_client or self._async_index_client
+            self._index_client or self._async_index_client
         ):
             raise ValueError(
                 "index_management has value of IndexManagement.CREATE_IF_NOT_EXISTS "
@@ -713,7 +713,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         return self._async_search_client
 
     def _default_index_mapping(
-            self, enriched_doc: Dict[str, str], metadata: Dict[str, Any]
+        self, enriched_doc: Dict[str, str], metadata: Dict[str, Any]
     ) -> Dict[str, str]:
         index_doc: Dict[str, str] = {}
 
@@ -721,8 +721,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             index_doc[self._field_mapping[field]] = enriched_doc[field]
 
         for metadata_field_name, (
-                index_field_name,
-                _,
+            index_field_name,
+            _,
         ) in self._metadata_to_index_field_map.items():
             metadata_value = metadata.get(metadata_field_name)
             if metadata_value:
@@ -731,9 +731,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         return index_doc
 
     def add(
-            self,
-            nodes: List[BaseNode],
-            **add_kwargs: Any,
+        self,
+        nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """
         Add nodes to index associated with the configured search client.
@@ -789,9 +789,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         return ids
 
     async def async_add(
-            self,
-            nodes: List[BaseNode],
-            **add_kwargs: Any,
+        self,
+        nodes: List[BaseNode],
+        **add_kwargs: Any,
     ) -> List[str]:
         """
         Add nodes to index associated with the configured search client.
@@ -935,10 +935,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 break
 
     def delete_nodes(
-            self,
-            node_ids: Optional[List[str]] = None,
-            filters: Optional[MetadataFilters] = None,
-            **delete_kwargs: Any,
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
     ) -> None:
         """
         Delete documents from the AI Search Index.
@@ -970,10 +970,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 break
 
     async def adelete_nodes(
-            self,
-            node_ids: Optional[List[str]] = None,
-            filters: Optional[MetadataFilters] = None,
-            **delete_kwargs: Any,
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
     ) -> None:
         """
         Delete documents from the AI Search Index.
@@ -1005,9 +1005,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 break
 
     def _build_filter_delete_query(
-            self,
-            node_ids: Optional[List[str]] = None,
-            filters: Optional[MetadataFilters] = None,
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
     ) -> str:
         """Build the OData filter query for the deletion process."""
         if node_ids:
@@ -1113,7 +1113,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         return azure_query_result_search.search()
 
     async def aquery(
-            self, query: VectorStoreQuery, **kwargs: Any
+        self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
         odata_filter = None
 
@@ -1147,11 +1147,11 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
 class AzureQueryResultSearchBase:
     def __init__(
-            self,
-            query: VectorStoreQuery,
-            field_mapping: Dict[str, str],
-            odata_filter: Optional[str],
-            search_client: Any,
+        self,
+        query: VectorStoreQuery,
+        field_mapping: Dict[str, str],
+        odata_filter: Optional[str],
+        search_client: Any,
     ) -> None:
         self._query = query
         self._field_mapping = field_mapping
@@ -1174,7 +1174,7 @@ class AzureQueryResultSearchBase:
         return None
 
     def _create_query_result(
-            self, search_query: str, vectors: Optional[List[Any]]
+        self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
         results = self._search_client.search(
             search_text=search_query,
@@ -1227,7 +1227,7 @@ class AzureQueryResultSearchBase:
         )
 
     async def _acreate_query_result(
-            self, search_query: str, vectors: Optional[List[Any]]
+        self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
         results = await self._search_client.search(
             search_text=search_query,
@@ -1349,7 +1349,7 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
         return vector_queries
 
     def _create_query_result(
-            self, search_query: str, vector_queries: Optional[List[Any]]
+        self, search_query: str, vector_queries: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
         results = self._search_client.search(
             search_text=search_query,
