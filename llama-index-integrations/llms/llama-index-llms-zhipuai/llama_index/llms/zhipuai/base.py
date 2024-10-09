@@ -116,6 +116,7 @@ class ZhipuAI(FunctionCallingLLM):
     def __init__(
         self,
         model: str,
+        api_key: str,
         temperature: float = 0.95,
         max_tokens: int = 1024,
         timeout: float = DEFAULT_REQUEST_TIMEOUT,
