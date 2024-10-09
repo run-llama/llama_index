@@ -161,7 +161,7 @@ class ZhipuAI(FunctionCallingLLM):
             **additional_kwargs,
         }
 
-    def _convert_to_llm_messages(self, messages: Sequence[ChatMessage]) -> Dict:
+    def _convert_to_llm_messages(self, messages: Sequence[ChatMessage]) -> List:
         return [
             {
                 "role": message.role.value,
