@@ -12,7 +12,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.core.constants import DEFAULT_NUM_OUTPUTS
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.base.llms.generic_utils import (
@@ -29,6 +29,31 @@ if TYPE_CHECKING:
 DEFAULT_REQUEST_TIMEOUT = 30.0
 SUCCESS = "SUCCESS"
 FAILED = "FAILED"
+GLM_CHAT_MODELS = {
+    "glm-4-plus": 128_000,
+    "glm-4-0520": 128_000,
+    "glm-4-long": 1_000_000,
+    "glm-4-airx": 8_000,
+    "glm-4-air": 128_000,
+    "glm-4-flashx": 128_000,
+    "glm-4-flash": 128_000,
+    "glm-4v": 2_000,
+    "glm-4-alltools": 128_000,
+    "glm-4": 128_000,
+}
+
+
+def glm_model_to_context_size(model: str) -> Union[int, None]:
+    token_limit = GLM_CHAT_MODELS.get(model, None)
+
+    if token_limit is None:
+        raise ValueError(f"Model name {model} not found in {GLM_CHAT_MODELS.keys()}")
+
+    return token_limit
+
+
+def is_function_calling_model(model: str) -> bool:
+    return "4v" not in model
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
@@ -55,9 +80,9 @@ class ZhipuAI(FunctionCallingLLM):
         ```python
         from llama_index.llms.zhipuai import zhipuai
 
-        llm = ZhipuAI(model="glm-4", request_timeout=60.0)
+        llm = ZhipuAI(model="glm-4", api_key="YOUR API KEY")
 
-        response = llm.complete("What is the capital of France?")
+        response = llm.complete("who are you?")
         print(response)
         ```
     """
@@ -77,14 +102,14 @@ class ZhipuAI(FunctionCallingLLM):
         default=1024,
         description="The maximum number of tokens for model output.",
         gt=0,
+        le=4096,
     )
     timeout: float = Field(
         default=DEFAULT_REQUEST_TIMEOUT,
         description="The timeout for making http request to ZhipuAI API server",
     )
-    is_function_calling_model: bool = Field(
-        default=True,
-        description="Whether the model is a function calling model.",
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional kwargs for the ZhipuAI API."
     )
     _client: Optional[ZhipuAIClient] = PrivateAttr()
 
@@ -94,41 +119,35 @@ class ZhipuAI(FunctionCallingLLM):
         temperature: float = 0.95,
         max_tokens: int = 1024,
         timeout: float = DEFAULT_REQUEST_TIMEOUT,
-        client: Optional[ZhipuAIClient] = None,
-        is_function_calling_model: bool = True,
+        additional_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
+        additional_kwargs = additional_kwargs or {}
         super().__init__(
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
             timeout=timeout,
-            is_function_calling_model=is_function_calling_model,
+            additional_kwargs=additional_kwargs,
             **kwargs,
         )
 
-        self._client = client
+        self._client = ZhipuAIClient(api_key=api_key)
 
     @classmethod
     def class_name(cls) -> str:
-        return "ZhipuAI_llm"
+        return "ZhipuAI_LLM"
 
     @property
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self.context_window,
+            context_window=glm_model_to_context_size(self.model),
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
             is_chat_model=True,
-            is_function_calling_model=self.is_function_calling_model,
+            is_function_calling_model=is_function_calling_model(self.model),
         )
-
-    @property
-    def client(self) -> ZhipuAIClient:
-        if self._client is None:
-            self._client = ZhipuAIClient(api_key=self.api_key)
-        return self._client
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -136,7 +155,10 @@ class ZhipuAI(FunctionCallingLLM):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
-        return base_kwargs
+        return {
+            **base_kwargs,
+            **additional_kwargs,
+        }
 
     def _convert_to_llm_messages(self, messages: Sequence[ChatMessage]) -> Dict:
         return [
@@ -274,6 +296,8 @@ class ZhipuAI(FunctionCallingLLM):
         messages_dict = self._convert_to_llm_messages(messages)
 
         async def gen() -> ChatResponseAsyncGen:
+            # TODO async interfaces don't support streaming
+            # needs to find a more suitable implementation method
             raw_response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages_dict,
@@ -364,28 +388,3 @@ class ZhipuAI(FunctionCallingLLM):
             prompt, **kwargs
         )
 
-
-llm = ZhipuAI(
-    model="glm-4", api_key="4ac5cc2a83a729bce408b66085cd919a.llwq2XV8ongDR0IN"
-)
-
-
-import asyncio
-
-# response_x = llm.complete("你是谁")
-# print(response_x)
-# response = asyncio.run(llm.acomplete("你是谁"))
-# response = asyncio.run(llm.astream_complete("你是谁"))
-# print(response)
-message = [ChatMessage(content="who are you")]
-# # print(message)
-# # response = asyncio.run(llm.astream_chat(message))
-# # print(type(response))
-
-
-async def main():
-    async for x in await llm.astream_chat(message):
-        print(x)
-
-
-asyncio.run(main())
