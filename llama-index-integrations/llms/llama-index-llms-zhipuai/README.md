@@ -14,7 +14,7 @@
 from llama_index.llms.zhipuai import ZhipuAI
 
 # Set your API key
-api_key = "Your api key"
+api_key = "Your API KEY"
 
 # Call complete function
 response = ZhipuAI(model="glm-4", api_key=api_key).complete("who are you")
@@ -40,12 +40,14 @@ print(response)
 
 ```
 
-### Streaming: Using stream_complete endpoint
+### Streaming: Using stream endpoint
 
 ```py
 from llama_index.llms.ZhipuAI import ZhipuAI
 
 llm = ZhipuAI(model="glm-4", api_key=api_key)
+
+# Using stream_complete endpoint
 response = llm.stream_complete("who are you")
 for r in response:
     print(r.delta, end="")
