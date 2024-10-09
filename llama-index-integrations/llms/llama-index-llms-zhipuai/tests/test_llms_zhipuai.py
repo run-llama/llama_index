@@ -17,6 +17,14 @@ def test_zhipuai_llm_model_alias():
     assert llm._model_kwargs is not None
 
 
+def test_zhipuai_llm_metadata():
+    api_key = "api_key_test"
+    llm = ZhipuAI(model="glm-4", api_key=api_key)
+    assert llm.metadata.is_function_calling_model is True
+    llm = ZhipuAI(model="glm-4v", api_key=api_key)
+    assert llm.metadata.is_function_calling_model is False
+
+
 @pytest.mark.skipif(
     os.environ.get("ZHIPUAI_API_KEY") is None, reason="ZHIPUAI_API_KEY not set"
 )
