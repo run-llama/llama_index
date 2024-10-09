@@ -59,7 +59,6 @@ for r in response:
     print(r.delta, end="")
 ```
 
-
 ### ZhipuAI Documentation
 
 https://bigmodel.cn/dev/howuse/introduction
