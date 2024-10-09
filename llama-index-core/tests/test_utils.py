@@ -85,7 +85,6 @@ def test_retry_on_exceptions_with_backoff() -> None:
 @pytest.mark.asyncio()
 async def test_retry_on_exceptions_with_backoff_decorator() -> None:
     """Make sure retry decorator works for both sync and async functions."""
-
     global call_count
     call_count = 0
 
