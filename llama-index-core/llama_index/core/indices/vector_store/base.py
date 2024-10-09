@@ -7,7 +7,7 @@ An index that is built on top of an existing vector store.
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Generator, Coroutine
 
 
 from llama_index.core.async_utils import run_async_tasks
@@ -61,6 +61,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         callback_manager: Optional[CallbackManager] = None,
         transformations: Optional[List[TransformComponent]] = None,
         show_progress: bool = False,
+        async_concurrency: int = 2,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -73,6 +74,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         )
 
         self._insert_batch_size = insert_batch_size
+        self._async_concurrency = async_concurrency
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
@@ -174,23 +176,24 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             results.append(result)
         return results
 
-    async def _async_add_nodes_to_index(
+    def _async_add_nodes_to_index(
         self,
         index_struct: IndexDict,
         nodes: Sequence[BaseNode],
         show_progress: bool = False,
         **insert_kwargs: Any,
-    ) -> None:
+    ) -> Generator[Coroutine[Any, None, None], None, None]:
         """Asynchronously add nodes to index."""
         if not nodes:
             return
 
-        for nodes_batch in iter_batch(nodes, self._insert_batch_size):
+        async def process_batch(
+            index_struct, insert_kwargs, nodes_batch, show_progress
+        ):
             nodes_batch = await self._aget_node_with_embedding(
                 nodes_batch, show_progress
             )
             new_ids = await self._vector_store.async_add(nodes_batch, **insert_kwargs)
-
             # if the vector store doesn't store text, we need to add the nodes to the
             # index struct and document store
             if not self._vector_store.stores_text or self._store_nodes_override:
@@ -200,7 +203,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                     node_without_embedding.embedding = None
 
                     index_struct.add_node(node_without_embedding, text_id=new_id)
-                    self._docstore.add_documents(
+                    await self._docstore.async_add_documents(
                         [node_without_embedding], allow_update=True
                     )
             else:
@@ -213,9 +216,12 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                         node_without_embedding.embedding = None
 
                         index_struct.add_node(node_without_embedding, text_id=new_id)
-                        self._docstore.add_documents(
+                        await self._docstore.async_add_documents(
                             [node_without_embedding], allow_update=True
                         )
+
+        for nodes_batch in iter_batch(nodes, self._insert_batch_size):
+            yield process_batch(index_struct, insert_kwargs, nodes_batch, show_progress)
 
     def _add_nodes_to_index(
         self,
@@ -266,15 +272,17 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """Build index from nodes."""
         index_struct = self.index_struct_cls()
         if self._use_async:
-            tasks = [
+            for tasks in iter_batch(
                 self._async_add_nodes_to_index(
                     index_struct,
                     nodes,
                     show_progress=self._show_progress,
                     **insert_kwargs,
-                )
-            ]
-            run_async_tasks(tasks)
+                ),
+                self._async_concurrency,
+            ):
+                run_async_tasks(tasks)
+
         else:
             self._add_nodes_to_index(
                 index_struct,

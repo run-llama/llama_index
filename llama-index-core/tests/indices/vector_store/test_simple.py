@@ -179,6 +179,19 @@ def test_simple_async(
         assert (node.get_content(), embedding) in actual_node_tups
 
 
+def test_async_from_documents(mock_embed_model):
+    documents = [Document(text=hex(i)[2:]) for i in range(16)]
+    index = VectorStoreIndex.from_documents(
+        documents=documents,
+        use_async=True,
+        embed_model=mock_embed_model,
+        insert_batch_size=2,
+        async_concurrency=2,
+    )
+    assert len(index.index_struct.nodes_dict) == 16
+    # TODO assert embeds, check concurrency
+
+
 def test_simple_insert_save(
     documents: List[Document],
     patch_llm_predictor,
