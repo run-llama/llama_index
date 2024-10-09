@@ -253,7 +253,7 @@ class Neo4jGraphStore(GraphStore):
         param_map = param_map or {}
         try:
             data, _, _ = self._driver.execute_query(
-                query, database=self._database, parameters_=param_map
+                query, database_=self._database, parameters_=param_map
             )
             return [r.data() for r in data]
         except neo4j.exceptions.Neo4jError as e:
@@ -276,6 +276,6 @@ class Neo4jGraphStore(GraphStore):
             ):
                 raise
         # Fallback to allow implicit transactions
-        with self._driver.session() as session:
+        with self._driver.session(database=self._database) as session:
             data = session.run(neo4j.Query(text=query), param_map)
             return [r.data() for r in data]
