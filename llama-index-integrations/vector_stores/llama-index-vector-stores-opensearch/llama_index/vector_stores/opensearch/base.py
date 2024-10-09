@@ -88,8 +88,9 @@ class OpensearchVectorClient:
             settings = {"index": {"knn": True, "knn.algo_param.ef_search": 100}}
         if embedding_field is None:
             embedding_field = "embedding"
-        self._embedding_field = embedding_field
 
+        self._method = method
+        self._embedding_field = embedding_field
         self._endpoint = endpoint
         self._dim = dim
         self._index = index
@@ -118,6 +119,10 @@ class OpensearchVectorClient:
         )
         self._os_async_client = self._get_async_opensearch_client(
             self._endpoint, **kwargs
+        )
+        self._os_version = self._get_opensearch_version()
+        self._efficient_filtering_enabled = self._is_efficient_filtering_enabled(
+            self._os_version
         )
         not_found_error = self._import_not_found_error()
 
@@ -191,6 +196,10 @@ class OpensearchVectorClient:
                 f"Got error: {e} "
             )
         return client
+
+    def _get_opensearch_version(self) -> str:
+        info = self._os_client.info()
+        return info["version"]["number"]
 
     def _bulk_ingest_embeddings(
         self,
@@ -298,13 +307,26 @@ class OpensearchVectorClient:
         self,
         query_vector: List[float],
         k: int = 4,
+        filters: Optional[Union[Dict, List]] = None,
         vector_field: str = "embedding",
     ) -> Dict:
         """For Approximate k-NN Search, this is the default query."""
-        return {
+        query = {
             "size": k,
-            "query": {"knn": {vector_field: {"vector": query_vector, "k": k}}},
+            "query": {
+                "knn": {
+                    vector_field: {
+                        "vector": query_vector,
+                        "k": k,
+                    }
+                }
+            },
         }
+
+        if filters:
+            # filter key must be added only when filtering to avoid "filter doesn't support values of type: START_ARRAY" exception
+            query["query"]["knn"][vector_field]["filter"] = filters
+        return query
 
     def _is_text_field(self, value: Any) -> bool:
         """Check if value is a string and keyword filtering needs to be performed.
@@ -346,7 +368,12 @@ class OpensearchVectorClient:
                 }
             }
         elif op in [FilterOperator.IN, FilterOperator.ANY]:
-            return {"terms": {key: filter.value}}
+            if isinstance(filter.value, list) and all(
+                self._is_text_field(val) for val in filter.value
+            ):
+                return {"terms": {f"{key}.keyword": filter.value}}
+            else:
+                return {"terms": {key: filter.value}}
         elif op == FilterOperator.NIN:
             return {"bool": {"must_not": {"terms": {key: filter.value}}}}
         elif op == FilterOperator.ALL:
@@ -396,52 +423,73 @@ class OpensearchVectorClient:
         query_embedding: List[float],
         k: int,
         filters: Optional[MetadataFilters] = None,
+        search_method="approximate",
     ) -> Dict:
         """
-        Do knn search.
+        Perform a k-Nearest Neighbors (kNN) search.
 
-        If there are no filters do approx-knn search.
-        If there are (pre)-filters, do an exhaustive exact knn search using 'painless
-            scripting' if the version of Opensearch supports it, otherwise uses knn_score scripting score.
+        If the search method is "approximate" and the engine is "lucene" or "faiss", use efficient kNN filtering.
+        Otherwise, perform an exhaustive exact kNN search using "painless scripting" if the version of
+        OpenSearch supports it. If the OpenSearch version does not support it, use scoring script search.
 
         Note:
-            -AWS Opensearch Serverless does not support the painless scripting functionality at this time according to AWS.
-            -Also note that approximate knn search does not support pre-filtering.
+            - AWS OpenSearch Serverless does not support the painless scripting functionality at this time according to AWS.
+            - Approximate kNN search does not support pre-filtering.
 
         Args:
-            query_embedding: Vector embedding to query.
-            k: Maximum number of results.
-            filters: Optional filters to apply before the search.
+            query_embedding (List[float]): Vector embedding to query.
+            k (int): Maximum number of results.
+            filters (Optional[MetadataFilters]): Optional filters to apply for the search.
                 Supports filter-context queries documented at
                 https://opensearch.org/docs/latest/query-dsl/query-filter-context/
 
         Returns:
-            Up to k docs closest to query_embedding
+            Dict: Up to k documents closest to query_embedding.
         """
-        pre_filter = self._parse_filters(filters)
-        if not pre_filter:
+        filters = self._parse_filters(filters)
+
+        if not filters:
             search_query = self._default_approximate_search_query(
-                query_embedding, k, vector_field=embedding_field
-            )
-        elif self.is_aoss:
-            # if is_aoss is set we are using Opensearch Serverless AWS offering which cannot use
-            # painless scripting so default scoring script returned will be just normal knn_score script
-            search_query = self._default_scoring_script_query(
                 query_embedding,
                 k,
-                space_type=self.space_type,
-                pre_filter={"bool": {"filter": pre_filter}},
+                vector_field=embedding_field,
+            )
+        elif (
+            search_method == "approximate"
+            and self._method["engine"]
+            in [
+                "lucene",
+                "faiss",
+            ]
+            and self._efficient_filtering_enabled
+        ):
+            # if engine is lucene or faiss, opensearch recommends efficient-kNN filtering.
+            search_query = self._default_approximate_search_query(
+                query_embedding,
+                k,
+                filters={"bool": {"filter": filters}},
                 vector_field=embedding_field,
             )
         else:
-            # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
-            search_query = self._default_scoring_script_query(
-                query_embedding,
-                k,
-                space_type="l2Squared",
-                pre_filter={"bool": {"filter": pre_filter}},
-                vector_field=embedding_field,
-            )
+            if self.is_aoss:
+                # if is_aoss is set we are using Opensearch Serverless AWS offering which cannot use
+                # painless scripting so default scoring script returned will be just normal knn_score script
+                search_query = self._default_scoring_script_query(
+                    query_embedding,
+                    k,
+                    space_type=self.space_type,
+                    pre_filter={"bool": {"filter": filters}},
+                    vector_field=embedding_field,
+                )
+            else:
+                # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
+                search_query = self._default_scoring_script_query(
+                    query_embedding,
+                    k,
+                    space_type="l2Squared",
+                    pre_filter={"bool": {"filter": filters}},
+                    vector_field=embedding_field,
+                )
         return search_query
 
     def _hybrid_search_query(
@@ -565,6 +613,11 @@ class OpensearchVectorClient:
         ):
             return True
         return False
+
+    def _is_efficient_filtering_enabled(self, os_version: str) -> bool:
+        """Check if kNN with efficient filtering is enabled."""
+        major, minor, patch = os_version.split(".")
+        return int(major) >= 2 and int(minor) >= 9
 
     def index_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """Store results in the index."""
