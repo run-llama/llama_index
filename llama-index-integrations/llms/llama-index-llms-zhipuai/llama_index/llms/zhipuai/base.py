@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 from zhipuai import ZhipuAI as ZhipuAIClient
 from llama_index.core.base.llms.types import (
     ChatMessage,
