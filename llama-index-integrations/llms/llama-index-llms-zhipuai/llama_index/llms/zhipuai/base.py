@@ -388,4 +388,3 @@ class ZhipuAI(FunctionCallingLLM):
         return await astream_chat_to_completion_decorator(self.astream_chat)(
             prompt, **kwargs
         )
-
