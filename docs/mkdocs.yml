@@ -173,6 +173,7 @@ nav:
           - ./examples/data_connectors/DatabaseReaderDemo.ipynb
           - ./examples/data_connectors/DeepLakeReader.ipynb
           - ./examples/data_connectors/DiscordDemo.ipynb
+          - ./examples/data_connectors/DoclingReaderDemo.ipynb
           - ./examples/data_connectors/FaissDemo.ipynb
           - ./examples/data_connectors/GithubRepositoryReaderDemo.ipynb
           - ./examples/data_connectors/GoogleChatDemo.ipynb
@@ -628,6 +629,7 @@ nav:
           - ./examples/vector_stores/MongoDBAtlasVectorSearchRAGOpenAI.ipynb
           - ./examples/vector_stores/MyScaleIndexDemo.ipynb
           - ./examples/vector_stores/Neo4jVectorDemo.ipynb
+          - ./examples/vector_stores/ObjectBoxIndexDemo.ipynb
           - ./examples/vector_stores/OpensearchDemo.ipynb
           - ./examples/vector_stores/PGVectoRsDemo.ipynb
           - ./examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
@@ -674,7 +676,6 @@ nav:
           - ./examples/vector_stores/qdrant_bm42.ipynb
           - ./examples/vector_stores/qdrant_hybrid.ipynb
       - Workflow:
-          - ./examples/workflow/.ipynb_checkpoints/human_in_the_loop_story_crafting-checkpoint.ipynb
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
@@ -800,6 +801,8 @@ nav:
           - ./module_guides/observability/index.md
           - ./module_guides/observability/instrumentation.md
       - Settings: ./module_guides/supporting_modules/settings.md
+      - Llama Deploy:
+          - ./module_guides/llama_deploy
   - Advanced Topics:
       - ./optimizing/production_rag.md
       - ./optimizing/basic_strategies/basic_strategies.md
@@ -1027,6 +1030,8 @@ nav:
           - ./api_reference/llms/you.md
       - Llama Datasets:
           - ./api_reference/llama_dataset/index.md
+      - Llama Deploy:
+          - ./api_reference/llama_deploy
       - Llama Packs:
           - ./api_reference/packs/agent_search_retriever.md
           - ./api_reference/packs/agents_coa.md
@@ -1127,6 +1132,7 @@ nav:
       - Node Parsers & Text Splitters:
           - ./api_reference/node_parser/alibabacloud_aisearch.md
           - ./api_reference/node_parser/dashscope.md
+          - ./api_reference/node_parser/docling.md
           - ./api_reference/node_parser/topic.md
           - ./api_reference/node_parsers/code.md
           - ./api_reference/node_parsers/hierarchical.md
@@ -1277,6 +1283,7 @@ nav:
           - ./api_reference/readers/database.md
           - ./api_reference/readers/deeplake.md
           - ./api_reference/readers/discord.md
+          - ./api_reference/readers/docling.md
           - ./api_reference/readers/docstring_walker.md
           - ./api_reference/readers/docugami.md
           - ./api_reference/readers/earnings_call_transcript.md
@@ -1431,6 +1438,7 @@ nav:
       - Storage:
           - Chat Store:
               - ./api_reference/storage/chat_store/azure.md
+              - ./api_reference/storage/chat_store/azurecosmosnosql.md
               - ./api_reference/storage/chat_store/dynamodb.md
               - ./api_reference/storage/chat_store/index.md
               - ./api_reference/storage/chat_store/redis.md
@@ -1457,6 +1465,7 @@ nav:
               - ./api_reference/storage/graph_stores/tidb.md
           - Index Store:
               - ./api_reference/storage/index_store/azure.md
+              - ./api_reference/storage/index_store/azurecosmosnosql.md
               - ./api_reference/storage/index_store/dynamodb.md
               - ./api_reference/storage/index_store/elasticsearch.md
               - ./api_reference/storage/index_store/firestore.md
@@ -1467,6 +1476,7 @@ nav:
               - ./api_reference/storage/index_store/simple.md
           - Kvstore:
               - ./api_reference/storage/kvstore/azure.md
+              - ./api_reference/storage/kvstore/azurecosmosnosql.md
               - ./api_reference/storage/kvstore/dynamodb.md
               - ./api_reference/storage/kvstore/elasticsearch.md
               - ./api_reference/storage/kvstore/firestore.md
@@ -1519,6 +1529,7 @@ nav:
               - ./api_reference/storage/vector_store/myscale.md
               - ./api_reference/storage/vector_store/neo4jvector.md
               - ./api_reference/storage/vector_store/neptune.md
+              - ./api_reference/storage/vector_store/objectbox.md
               - ./api_reference/storage/vector_store/opensearch.md
               - ./api_reference/storage/vector_store/oracledb.md
               - ./api_reference/storage/vector_store/pgvecto_rs.md
@@ -1620,8 +1631,9 @@ nav:
       - LlamaCloud: ./llama_cloud/index.md
       - LlamaParse: ./llama_cloud/llama_parse.md
 plugins:
-  - search
-  - include_dir_to_nav
+  - search: null
+  - include_dir_to_nav: null
+  - gh-admonitions: null
   - mkdocs-jupyter:
       execute: false
   - mkdocstrings:
@@ -2219,6 +2231,13 @@ plugins:
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-huggingface
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-upstash
             - ../llama-index-integrations/embeddings/llama-index-embeddings-vertex-endpoint
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-objectbox
+            - ../llama-index-integrations/node_parser/llama-index-node-parser-docling
+            - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-azurecosmosnosql
+            - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-azurecosmosnosql
+            - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-azurecosmosnosql
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-azurecosmosnosql
+            - ../llama-index-integrations/readers/llama-index-readers-docling
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

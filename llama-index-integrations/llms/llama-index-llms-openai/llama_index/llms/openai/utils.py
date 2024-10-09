@@ -285,7 +285,7 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
     # function_call = None  # deprecated in OpenAI v 1.1.0
 
     additional_kwargs: Dict[str, Any] = {}
-    if openai_message.tool_calls is not None:
+    if openai_message.tool_calls:
         tool_calls: List[ChatCompletionMessageToolCall] = openai_message.tool_calls
         additional_kwargs.update(tool_calls=tool_calls)
 
