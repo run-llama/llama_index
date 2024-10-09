@@ -140,13 +140,13 @@ class BasePGRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         nodes = self.retrieve_from_graph(query_bundle)
-        if self.include_text:
+        if self.include_text and nodes:
             nodes = self.add_source_text(nodes)
         return nodes
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         nodes = await self.aretrieve_from_graph(query_bundle)
-        if self.include_text:
+        if self.include_text and nodes:
             nodes = await self.async_add_source_text(nodes)
         return nodes
 
