@@ -105,9 +105,9 @@ class Anthropic(FunctionCallingLLM):
         default_factory=dict, description="Additional kwargs for the anthropic API."
     )
 
-    _client: Union[anthropic.Anthropic, anthropic.AnthropicVertex] = PrivateAttr()
+    _client: Union[anthropic.Anthropic, anthropic.AnthropicVertex, anthropic.AnthropicBedrock] = PrivateAttr()
     _aclient: Union[
-        anthropic.AsyncAnthropic, anthropic.AsyncAnthropicVertex
+        anthropic.AsyncAnthropic, anthropic.AsyncAnthropicVertex, anthropic.AsyncAnthropicBedrock
     ] = PrivateAttr()
 
     def __init__(
@@ -129,6 +129,7 @@ class Anthropic(FunctionCallingLLM):
         output_parser: Optional[BaseOutputParser] = None,
         region: Optional[str] = None,
         project_id: Optional[str] = None,
+        aws_region: Optional[str] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -149,7 +150,7 @@ class Anthropic(FunctionCallingLLM):
             output_parser=output_parser,
         )
 
-        if region and project_id:
+        if region and project_id and not aws_region:
             self._client = anthropic.AnthropicVertex(
                 region=region,
                 project_id=project_id,
@@ -165,6 +166,14 @@ class Anthropic(FunctionCallingLLM):
                 max_retries=max_retries,
                 default_headers=default_headers,
             )
+        elif aws_region:
+            # Note: this assumes you have AWS credentials configured.
+            self._client = anthropic.AnthropicBedrock(
+                aws_region=aws_region,
+            )
+            self._aclient = anthropic.AsyncAnthropicBedrock(
+                aws_region=aws_region,
+            ) 
         else:
             self._client = anthropic.Anthropic(
                 api_key=api_key,
