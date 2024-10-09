@@ -1,0 +1,4 @@
+# docs build
+docs/api_reference/llama_deploy/*
+docs/module_guides/llama_deploy/*
+llama_deploy
