@@ -158,7 +158,7 @@ class ZhipuAI(FunctionCallingLLM):
         }
         return {
             **base_kwargs,
-            **additional_kwargs,
+            **self.additional_kwargs,
         }
 
     def _convert_to_llm_messages(self, messages: Sequence[ChatMessage]) -> List:
