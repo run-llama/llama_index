@@ -46,6 +46,10 @@ COMPLETION_MODELS = (
     "nvidia/mistral-nemo-minitron-8b-base",
 )
 
+ALL_MODELS = (
+    tuple(API_CATALOG_MODELS.keys()) + NVIDIA_FUNTION_CALLING_MODELS + COMPLETION_MODELS
+)
+
 
 def is_chat_model(modelname: str):
     return modelname not in COMPLETION_MODELS
