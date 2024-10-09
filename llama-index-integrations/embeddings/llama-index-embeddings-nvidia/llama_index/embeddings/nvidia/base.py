@@ -145,10 +145,11 @@ class NVIDIAEmbedding(BaseEmbedding):
         self._aclient._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
 
         self.model = model
-        if self._is_hosted and not self.model:
-            self.model = DEFAULT_MODEL
-        elif not self._is_hosted and not self.model:
-            self.__get_default_model()
+        if not self.model:
+            if self._is_hosted:
+                self.model = DEFAULT_MODEL
+            else:
+                self.__get_default_model()
 
         self._validate_model(self.model)  ## validate model
 
