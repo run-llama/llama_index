@@ -30,12 +30,12 @@ license = "MIT"
 name = "llama-index-multi-modal-llms-huggingface"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.0"
-transformers = {extras = ["torch"], version = "^4.0"}
+llama-index-core = "^0.11.0"
+transformers = {extras = ["torch"], version = "^4.45"}
 qwen-vl-utils = ">=0.0.8"
 torchvision = "^0.19.1"
 Pillow = "^10.0.0"

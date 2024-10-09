@@ -107,7 +107,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "CustomSimpleAgentWorker":
-        """Convenience constructor method from set of of BaseTools (Optional)."""
+        """Convenience constructor method from set of BaseTools (Optional)."""
         llm = llm or Settings.llm
         if callback_manager is not None:
             llm.callback_manager = callback_manager
