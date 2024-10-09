@@ -15,6 +15,8 @@ from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
+    FilterOperator,
+    MetadataFilter,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -24,7 +26,7 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
-logging.basicConfig(level=logging.INFO)
+_logger = logging.getLogger(__name__)
 
 class NileVectorStore(BasePydanticVectorStore):
     """Nile Vector Store
@@ -57,7 +59,7 @@ class NileVectorStore(BasePydanticVectorStore):
         self._async_conn = psycopg.connect(self.service_url)
         
     def _create_tables(self) -> None:
-        logging.info(f"Creating tables for {self.table_name} with {self.num_dimensions} dimensions")
+        _logger.info(f"Creating tables for {self.table_name} with {self.num_dimensions} dimensions")
         with self._sync_conn.cursor() as cursor:
             if self.tenant_aware:
                 query = sql.SQL('''
@@ -116,7 +118,7 @@ class NileVectorStore(BasePydanticVectorStore):
         return [tenant_id, metadata, node.get_content(metadata_mode=MetadataMode.NONE), node.embedding]
     
     def _insert_row(self, cursor: Any, row: Any) -> str:
-        logging.info(f"Inserting row into {self.table_name} with tenant_id {row[0]}")
+        _logger.info(f"Inserting row into {self.table_name} with tenant_id {row[0]}")
         if self.tenant_aware:
             query = sql.SQL("""
                            INSERT INTO {} (tenant_id, metadata, content, embedding) VALUES (%(tenant_id)s, %(metadata)s, %(content)s, %(embedding)s) returning id
@@ -157,26 +159,81 @@ class NileVectorStore(BasePydanticVectorStore):
         else:
             cursor.execute(sql.SQL(""" reset nile.tenant_id """))
 
-    
-    # TODO: Add support for filters (possibly only legacy filter support)
+    def _to_postgres_operator(self, operator: FilterOperator) -> str:
+        if operator == FilterOperator.EQ:
+            return "="
+        elif operator == FilterOperator.GT:
+            return ">"
+        elif operator == FilterOperator.LT:
+            return "<"
+        elif operator == FilterOperator.NE:
+            return "!="
+        elif operator == FilterOperator.GTE:
+            return ">="
+        elif operator == FilterOperator.LTE:
+            return "<="
+        elif operator == FilterOperator.IN:
+            return "IN"
+        elif operator == FilterOperator.NIN:
+            return "NOT IN"
+        elif operator == FilterOperator.CONTAINS:
+            return "@>"
+        else:
+            _logger.warning(f"Unknown operator: {operator}, fallback to '='")
+            return "="
+        
+    def _create_where_clause(self, filters: MetadataFilters) -> None:
+        where_clauses = []
+        if filters is None:
+            return sql.SQL(""" """)
+        _logger.debug(f"Filters: {filters}")
+        for filter in filters.filters:
+            if isinstance(filter, MetadataFilters):
+                raise ValueError("Nested MetadataFilters are not supported yet")
+            if isinstance(filter, MetadataFilter):
+                # The string concat looks terrible, but is in fact safe from SQL injection since we use "=" 
+                # to replace any unknown operator. Unfortuantely, we can't use psycopg's sql.Literal or sql.Identifier 
+                # for the operator since we need to leave it unquoted.
+                if filter.operator in [FilterOperator.IN, FilterOperator.NIN]:
+                    where_clauses.append(sql.SQL(" metadata->>{} " + 
+                                                 self._to_postgres_operator(filter.operator) + 
+                                                 " ({})").format(sql.Literal(filter.key), 
+                                                                    self._to_postgres_operator(filter.operator), 
+                                                                    sql.Literal(filter.value)))
+                elif filter.operator in [FilterOperator.CONTAINS]:
+                    where_clauses.append(sql.SQL(""" metadata->{} @> [{}]""").format(sql.Literal(filter.key), sql.Literal(filter.value)))
+                else:
+                    where_clauses.append(sql.SQL(" metadata->>{} " + 
+                                                 self._to_postgres_operator(filter.operator) + 
+                                                 " {}").format(sql.Literal(filter.key),
+                                                                sql.Literal(filter.value)))
+        _logger.debug(f"Where clauses: {where_clauses}")
+        if len(where_clauses) == 0:
+            return sql.SQL(""" """)
+        else:
+            return sql.SQL(""" WHERE {}""").format(sql.SQL(filters.condition).join(where_clauses))
+
     # TODO: Add support for vector index GUC
+    # NOTE: Add support for nested filters
     # NOTE: Maybe support alternative distance functions (going with just cosine similarity for now)
     def _execute_query(self, cursor: Any, query_embedding: VectorStoreQuery, tenant_id: Any = None) -> List[Any]:
-        logging.info(f"Querying {self.table_name} with tenant_id {tenant_id}")
+        _logger.info(f"Querying {self.table_name} with tenant_id {tenant_id}")
         self._set_tenant_context(cursor, tenant_id)
+        where_clause = self._create_where_clause(query_embedding.filters)
         query = sql.SQL("""
             SELECT
             id, metadata, content, %(query_embedding)s::vector<=>embedding as distance
             FROM
             {table_name}
-            -- TODO: Add where clause
+            {where_clause}
             ORDER BY distance
             LIMIT {limit}
             """).format(
                 table_name=sql.Identifier(self.table_name),
+                where_clause=where_clause,
                 limit=sql.Literal(query_embedding.similarity_top_k)
             )
-        logging.debug(f"Executing query: {query}")
+        _logger.debug(f"Executing query: {query.as_string(cursor)}")
         cursor.execute(query, {'query_embedding': query_embedding.query_embedding})
         return cursor.fetchall()
     
@@ -197,7 +254,6 @@ class NileVectorStore(BasePydanticVectorStore):
     # NOTE: Maybe handle tenant_id specified in filter vs. kwargs
     # NOTE: Add support for additional query modes
     def query(self, query_embedding: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        logging.info(f"Querying {self.table_name} with kwagrs {kwargs}")
         # get and validate tenant_id
         tenant_id = kwargs.get("tenant_id", None)
         if self.tenant_aware and tenant_id is None:
@@ -243,7 +299,7 @@ class NileVectorStore(BasePydanticVectorStore):
     
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         tenant_id = delete_kwargs.get("tenant_id", None)
-        logging.info(f"Deleting document {ref_doc_id} with tenant_id {tenant_id}")
+        _logger.info(f"Deleting document {ref_doc_id} with tenant_id {tenant_id}")
         if self.tenant_aware and tenant_id is None:
             raise ValueError("tenant_id must be specified in delete_kwargs if tenant_aware is True")
         with self._sync_conn.cursor() as cursor:
@@ -256,7 +312,7 @@ class NileVectorStore(BasePydanticVectorStore):
     
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         tenant_id = delete_kwargs.get("tenant_id", None)
-        logging.info(f"Deleting document {ref_doc_id} with tenant_id {tenant_id}")
+        _logger.info(f"Deleting document {ref_doc_id} with tenant_id {tenant_id}")
         if self.tenant_aware and tenant_id is None:
             raise ValueError("tenant_id must be specified in delete_kwargs if tenant_aware is True")
         async with self._async_conn.cursor() as cursor:

@@ -5,8 +5,16 @@
 # These are two call transcripts from sales calls that belong to two different companies
 # You will also need to set OPENAI_API_KEY environment variable prior to running this example
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
 from llama_index.core import SimpleDirectoryReader, StorageContext
 from llama_index.core import VectorStoreIndex
+from llama_index.core.vector_stores import (
+    MetadataFilter,
+    MetadataFilters,
+    FilterOperator,
+)
 from llama_index.vector_stores.nile import NileVectorStore
 
 # Create a NileVectorStore instance
@@ -27,13 +35,15 @@ documents_modamart = reader.load_data()
 tenant_id_nexiv = str(vector_store.create_tenant("nexiv-solutions"))
 tenant_id_modamart = str(vector_store.create_tenant("modamart"))
 
-# Add the tenant id and a unique document id to the metadata
+# Add the tenant id to the metadata
 for i, doc in enumerate(documents_nexiv, start=1):
     doc.metadata["tenant_id"] = tenant_id_nexiv
-    doc.id_ = f"nexiv_doc_id_{i}"
+    doc.metadata["category"] = "IT" # This is just to test the filter
+    doc.id_ = f"nexiv_doc_id_{i}" # This is for testing the delete function
 
 for i, doc in enumerate(documents_modamart, start=1):
     doc.metadata["tenant_id"] = tenant_id_modamart
+    doc.metadata["category"] = "Retail"
     doc.id_ = f"modamart_doc_id_{i}"
 
 # store data and embeddings
@@ -52,6 +62,18 @@ modamart_query_engine = index.as_query_engine(similarity_top_k=3, vector_store_k
 print("test query on nexiv: ", nexiv_query_engine.query("What were the customer pain points?"))
 print("test query on modamart: ", modamart_query_engine.query("What were the customer pain points?"))
 
+# Query with a filter
+filters = MetadataFilters(
+    filters=[
+        MetadataFilter(key="category", operator=FilterOperator.EQ, value="Retail"),
+    ]
+)
+
+nexiv_query_engine_filtered = index.as_query_engine(similarity_top_k=3, 
+                                                    filters=filters, 
+                                                    vector_store_kwargs={"tenant_id": str(tenant_id_nexiv)})
+print("test query on nexiv with filter on category = Retail (should return empty): ", nexiv_query_engine_filtered.query("What were the customer pain points?"))
+
 # Delete a document from the store
 ref_doc_id = "nexiv_doc_id_1"
 
@@ -60,4 +82,4 @@ print("deleting document: ", ref_doc_id, " with tenant_id: ", tenant_id_nexiv)
 vector_store.delete(ref_doc_id, tenant_id=tenant_id_nexiv)
 
 # Query the data again
-print("test query on nexiv after deletion: ", nexiv_query_engine.query("What were the customer pain points?"))
+print("test query on nexiv after deletion (should return empty): ", nexiv_query_engine.query("What were the customer pain points?"))
