@@ -112,10 +112,11 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
                 "An API key is required for the hosted NIM. This will become an error in 0.2.0.",
             )
         self.model = model
-        if self._is_hosted and not self.model:
-            self.model = DEFAULT_MODEL
-        elif not self._is_hosted and not self.model:
-            self.__get_default_model()
+        if not self.model:
+            if self._is_hosted:
+                self.model = DEFAULT_MODEL
+            else:
+                self.__get_default_model()
 
         self._validate_model(self.model)  ## validate model
 
