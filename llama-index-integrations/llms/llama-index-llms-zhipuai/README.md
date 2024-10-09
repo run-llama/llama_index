@@ -30,14 +30,11 @@ messages = [
     ChatMessage(role="user", content="who are you"),
 ]
 
-response = ZhipuAI(model="glm-4", api_key=api_key).chat(
-    messages
-)
+response = ZhipuAI(model="glm-4", api_key=api_key).chat(messages)
 print(response)
 
 # Output
 # assistant: I am an AI assistant named ZhiPuQingYan（智谱清言）, you can call me Xiaozhi🤖, which is developed based on the language model jointly trained by Tsinghua University KEG Lab and Zhipu AI Company in 2023. My job is to provide appropriate answers and support to users' questions and requests.
-
 ```
 
 ### Streaming: Using stream endpoint
@@ -60,7 +57,6 @@ messages = [
 response = llm.stream_chat(messages)
 for r in response:
     print(r.delta, end="")
-
 ```
 
 
