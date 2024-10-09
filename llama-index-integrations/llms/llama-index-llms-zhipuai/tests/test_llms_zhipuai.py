@@ -25,6 +25,3 @@ def test_completion():
     api_key = os.environ.get("ZHIPUAI_API_KEY")
     llm = ZhipuAI(model=model, api_key=api_key)
     assert llm.complete("who are you")
-    
-    
-    
