@@ -1,4 +1,5 @@
 # Standard library imports
+import enum
 import json
 import logging
 import uuid
@@ -28,10 +29,15 @@ from llama_index.core.vector_stores.utils import (
 
 _logger = logging.getLogger(__name__)
 
-class NileVectorStore(BasePydanticVectorStore):
-    """Nile Vector Store
+class IndexType(enum.Enum):
+    """Supported Index types. These are just used by a helper function to create indices."""
+    PGVECTOR_IVFFLAT = 1
+    PGVECTOR_HNSW = 2
 
-    Examples [TBD]:
+class NileVectorStore(BasePydanticVectorStore):
+    """Nile (Multi-tenant Postgres) Vector Store
+
+    Examples:
         `pip install llama-index-vector-stores-nile`
 
         ```python
@@ -39,8 +45,12 @@ class NileVectorStore(BasePydanticVectorStore):
 
         # Create NileVectorStore instance
         vector_store = NileVectorStore.from_params(
-            service_url="https://api.nile.xyz",
-            table_name="your_table_name_here",
+            service_url="postgresql://user:password@us-west-2.db.thenile.dev:5432/niledb",
+            table_name="test_table",
+            tenant_aware=True,
+            num_dimensions=1536
+        )
+        ```
     """
     stores_text: bool = True
     flat_metadata: bool = False
@@ -55,7 +65,6 @@ class NileVectorStore(BasePydanticVectorStore):
     
     def _create_clients(self) -> None:
         self._sync_conn = psycopg.connect(self.service_url)
-        # NOTE: we can't await in this function since it is called during __init__, may need to move this elsewhere
         self._async_conn = psycopg.connect(self.service_url)
         
     def _create_tables(self) -> None:
@@ -81,10 +90,7 @@ class NileVectorStore(BasePydanticVectorStore):
                 cursor.execute(query)
         self._sync_conn.commit()
     
-    # NOTE: Maybe allow specifying schema name
-    # TODO: Allow specifying index type and parameters
     def __init__(self, service_url: str, table_name: str, tenant_aware: bool = False, num_dimensions: int = DEFAULT_EMBEDDING_DIM) -> None:
-        # TODO: Do we need lower case table name? do we want to add prefix?
         super().__init__(service_url=service_url, table_name=table_name, num_dimensions=num_dimensions, tenant_aware=tenant_aware)
         
         self._create_clients()
@@ -106,8 +112,7 @@ class NileVectorStore(BasePydanticVectorStore):
     def from_params(cls, service_url: str, table_name: str, tenant_aware: bool = False, num_dimensions: int = DEFAULT_EMBEDDING_DIM) -> "NileVectorStore":
         return cls(service_url=service_url, table_name=table_name, tenant_aware=tenant_aware, num_dimensions=num_dimensions)
     
-    # We extract tenant_id from the node metadata. 
-    # NOTE: Maybe we should also allow passing tenant_id in kwargs.
+    # We extract tenant_id from the node metadata.
     def _node_to_row(self, node: BaseNode) -> Any:
         metadata = node_to_metadata_dict(
             node,
@@ -118,7 +123,7 @@ class NileVectorStore(BasePydanticVectorStore):
         return [tenant_id, metadata, node.get_content(metadata_mode=MetadataMode.NONE), node.embedding]
     
     def _insert_row(self, cursor: Any, row: Any) -> str:
-        _logger.info(f"Inserting row into {self.table_name} with tenant_id {row[0]}")
+        _logger.debug(f"Inserting row into {self.table_name} with tenant_id {row[0]}")
         if self.tenant_aware:
             query = sql.SQL("""
                            INSERT INTO {} (tenant_id, metadata, content, embedding) VALUES (%(tenant_id)s, %(metadata)s, %(content)s, %(embedding)s) returning id
@@ -137,7 +142,6 @@ class NileVectorStore(BasePydanticVectorStore):
         rows_to_insert = [self._node_to_row(node) for node in nodes]
         ids = []
         with self._sync_conn.cursor() as cursor:
-            # TODO: Use batch insert
             for row in rows_to_insert:
                 # this will throw an error if tenant_id is None, which is what we want
                 ids.append(self._insert_row(cursor, row))
@@ -213,12 +217,18 @@ class NileVectorStore(BasePydanticVectorStore):
         else:
             return sql.SQL(""" WHERE {}""").format(sql.SQL(filters.condition).join(where_clauses))
 
-    # TODO: Add support for vector index GUC
-    # NOTE: Add support for nested filters
-    # NOTE: Maybe support alternative distance functions (going with just cosine similarity for now)
-    def _execute_query(self, cursor: Any, query_embedding: VectorStoreQuery, tenant_id: Any = None) -> List[Any]:
+    def _execute_query(self, 
+                       cursor: Any, 
+                       query_embedding: VectorStoreQuery, 
+                       tenant_id: Any = None, 
+                       ivfflat_probes: Any = None, 
+                       hnsw_ef_search: Any = None) -> List[Any]:
         _logger.info(f"Querying {self.table_name} with tenant_id {tenant_id}")
         self._set_tenant_context(cursor, tenant_id)
+        if ivfflat_probes is not None:
+            cursor.execute(sql.SQL("""SET ivfflat.probes = {}""").format(sql.Literal(ivfflat_probes)))
+        if hnsw_ef_search is not None:
+            cursor.execute(sql.SQL("""SET hnsw.ef_search = {}""").format(sql.Literal(hnsw_ef_search)))
         where_clause = self._create_where_clause(query_embedding.filters)
         query = sql.SQL("""
             SELECT
@@ -236,7 +246,6 @@ class NileVectorStore(BasePydanticVectorStore):
         _logger.debug(f"Executing query: {query.as_string(cursor)}")
         cursor.execute(query, {'query_embedding': query_embedding.query_embedding})
         return cursor.fetchall()
-    
     
     def _process_query_results(self, results: List[Any]) -> VectorStoreQueryResult:
         nodes = []
@@ -256,6 +265,8 @@ class NileVectorStore(BasePydanticVectorStore):
     def query(self, query_embedding: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         # get and validate tenant_id
         tenant_id = kwargs.get("tenant_id", None)
+        ivfflat_probes = kwargs.get("ivfflat_probes", None)
+        hnsw_ef_search = kwargs.get("hnsw_ef_search", None)
         if self.tenant_aware and tenant_id is None:
             raise ValueError("tenant_id must be specified in kwargs if tenant_aware is True")
         # check query mode
@@ -264,7 +275,7 @@ class NileVectorStore(BasePydanticVectorStore):
         # query
         with self._sync_conn.cursor() as cursor:
             self._set_tenant_context(cursor, tenant_id)
-            results = self._execute_query(cursor, query_embedding, tenant_id)
+            results = self._execute_query(cursor, query_embedding, tenant_id, ivfflat_probes, hnsw_ef_search)
         self._sync_conn.commit()
         return self._process_query_results(results)
 
@@ -297,6 +308,69 @@ class NileVectorStore(BasePydanticVectorStore):
             self._sync_conn.commit()
             return tenant_id
     
+    
+    def create_index(self, index_type: IndexType, **kwargs: Any) -> None:
+        """
+        Create an index of the specified type. Run this after populating the table.
+        We intentionally throw an error if the index already exists.
+        Since you may want to try a different type or parameters, we recommend dropping the index first.
+        
+        Parameters:
+            index_type (IndexType): The type of index to create.
+            m (optional int): The number of neighbors to consider during construction for PGVECTOR_HSNW index.
+            ef_construction (optional int): The construction parameter for PGVECTOR_HSNW index.
+            nlists (optional int): The number of lists for PGVECTOR_IVFFLAT index.
+        """
+        _logger.info(f"Creating index of type {index_type} for {self.table_name}")
+        if index_type == IndexType.PGVECTOR_HNSW:
+            m = kwargs.get("m", None)
+            ef_construction = kwargs.get("ef_construction", None)
+            if m is None or ef_construction is None:
+                raise ValueError("m and ef_construction must be specified in kwargs for PGVECTOR_HSNW index")
+            query = sql.SQL("""
+                            CREATE INDEX {index_name} ON {table_name} USING hnsw (embedding vector_cosine_ops) WITH (m = {m}, ef_construction = {ef_construction});
+                        """).format(
+                            table_name=sql.Identifier(self.table_name),
+                            index_name=sql.Identifier(f"{self.table_name}_embedding_idx"),
+                            m=sql.Literal(m), 
+                            ef_construction=sql.Literal(ef_construction))
+            with self._sync_conn.cursor() as cursor:
+                try:
+                    cursor.execute(query)
+                    self._sync_conn.commit()
+                except psycopg.errors.DuplicateTable:
+                    self._sync_conn.rollback()
+                    raise psycopg.errors.DuplicateTable(f"Index {self.table_name}_embedding_idx already exists")
+        elif index_type == IndexType.PGVECTOR_IVFFLAT:
+            nlists = kwargs.get("nlists", None)
+            if nlists is None:
+                raise ValueError("nlist must be specified in kwargs for PGVECTOR_IVFFLAT index")
+            query = sql.SQL("""
+                            CREATE INDEX {index_name} ON {table_name} USING ivfflat (embedding vector_cosine_ops) WITH (lists = {nlists});
+                        """).format(
+                            table_name=sql.Identifier(self.table_name),
+                            index_name=sql.Identifier(f"{self.table_name}_embedding_idx"),
+                            nlists=sql.Literal(nlists))
+            with self._sync_conn.cursor() as cursor:
+                try:
+                    cursor.execute(query)
+                    self._sync_conn.commit()
+                except psycopg.errors.DuplicateTable:
+                    self._sync_conn.rollback()
+                    raise psycopg.errors.DuplicateTable(f"Index {self.table_name}_embedding_idx already exists")
+        else:
+            raise ValueError(f"Unknown index type: {index_type}")
+    
+    def drop_index(self) -> None:
+        _logger.info(f"Dropping index for {self.table_name}")
+        query = sql.SQL("""
+                        DROP INDEX IF EXISTS {index_name}_embedding_index;
+                        """).format(
+                            index_name=sql.Identifier(f"{self.table_name}_embedding_idx"))
+        with self._sync_conn.cursor() as cursor:
+            cursor.execute(query)
+            self._sync_conn.commit()
+            
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         tenant_id = delete_kwargs.get("tenant_id", None)
         _logger.info(f"Deleting document {ref_doc_id} with tenant_id {tenant_id}")

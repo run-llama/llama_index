@@ -15,7 +15,7 @@ from llama_index.core.vector_stores import (
     MetadataFilters,
     FilterOperator,
 )
-from llama_index.vector_stores.nile import NileVectorStore
+from llama_index.vector_stores.nile import NileVectorStore, IndexType
 
 # Create a NileVectorStore instance
 vector_store = NileVectorStore(
@@ -52,9 +52,18 @@ index = VectorStoreIndex.from_documents(
     documents_nexiv + documents_modamart, storage_context=storage_context, show_progress=True
 )
 
+# Create a vector index (optional, the default index is flat also known as no index)
+# Note that this makes no sense to do for this tiny example, but it's a good idea to create an index for large datasets
+try:
+    vector_store.create_index(index_type=IndexType.PGVECTOR_IVFFLAT, nlists=10)
+except Exception as e:
+    # This will throw an error if the index already exists, which is expected in this case
+    print(e)
+
 # Query the data
 nexiv_query_engine = index.as_query_engine(similarity_top_k=3, vector_store_kwargs={
         "tenant_id": str(tenant_id_nexiv),
+        "ivfflat_probes": 10, # optional, this is only needed for the PGVECTOR_IVFFLAT index
     },)
 modamart_query_engine = index.as_query_engine(similarity_top_k=3, vector_store_kwargs={
         "tenant_id": str(tenant_id_modamart),
