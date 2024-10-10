@@ -152,9 +152,7 @@ class FalkorDBGraphStore(GraphStore):
             """
 
             # Call FalkorDB with prepared statement
-            result = self._graph.query(
-                query, params={"entity": entity}, read_only=True
-            )
+            result = self._graph.query(query, params={"entity": entity}, read_only=True)
             return bool(result.result_set)
 
         delete_rel(subj, obj, rel)
@@ -186,11 +184,11 @@ class FalkorDBGraphStore(GraphStore):
     def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
         result = self._graph.query(query, params=params)
         return result.result_set
-    
+
     def switch_graph(self, graph_name: str) -> None:
         """Switch to the given graph name (`graph_name`).
 
-        This method allows users to change the active graph within the same 
+        This method allows users to change the active graph within the same
         database connection.
 
         Args:
