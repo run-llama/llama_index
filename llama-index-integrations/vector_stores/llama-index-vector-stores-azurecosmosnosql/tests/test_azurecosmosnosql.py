@@ -172,3 +172,36 @@ class TestAzureCosmosNoSqlVectorSearch:
         print("res:\n", res)
         assert res.nodes
         assert res.nodes[0].get_content() == "lorem ipsum"
+
+    def test_cosmos_client_with_host_and_key(
+        self, node_embeddings: List[TextNode]
+    ) -> None:
+        vector_store = AzureCosmosDBNoSqlVectorSearch.from_host_and_key(
+            host=URL,
+            key=KEY,
+            vector_embedding_policy=vector_embedding_policy,
+            indexing_policy=indexing_policy,
+            cosmos_database_properties=cosmos_database_properties_test,
+            cosmos_container_properties=cosmos_container_properties_test,
+        )
+        vector_store.add(node_embeddings)  # type: ignore
+        sleep(1)  # wait for azure cosmodb nosql to update the index
+
+        res = vector_store.query(
+            VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=1)
+        )
+        print("res:\n", res)
+        assert res.nodes
+        assert res.nodes[0].get_content() == "lorem ipsum"
+
+    def test_cosmos_client_with_connection_string(
+        self, node_embeddings: List[TextNode]
+    ) -> None:
+        connection_string = "ACCOUNT_ENDPOINT=" + URL + ";" + "ACCOUNT_KEY=" + KEY + ";"
+        vector_store = AzureCosmosDBNoSqlVectorSearch.from_connection_string(
+            connection_string=connection_string,
+            vector_embedding_policy=vector_embedding_policy,
+            indexing_policy=indexing_policy,
+            cosmos_database_properties=cosmos_database_properties_test,
+            cosmos_container_properties=cosmos_container_properties_test,
+        )

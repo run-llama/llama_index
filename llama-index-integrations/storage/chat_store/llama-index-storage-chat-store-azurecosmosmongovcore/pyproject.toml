@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.azurecosmosnosql"
+import_path = "llama_index.storage.chat_store.azurecosmosmongovcore"
 
 [tool.llamahub.class_authors]
-AzureCosmosDBMongoDBVectorSearch = "llama-index"
+AzureCosmosNoSqlChatStore = "Aayush"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,19 +21,18 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Aayush Kataria aayushkataria3011@gmail.com"]
-description = "llama-index vector_stores azurecosmosnosql integration"
+authors = ["Aayush Kataria <aayushkataria3011@gmail.com>"]
+description = "llama-index storage-chat-store azure cosmosdb mongo vcore integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-vector-stores-azurecosmosnosql"
+name = "llama-index-storage-chat-store-azurecosmosmongovcore"
 readme = "README.md"
-version = "1.1.0"
+version = "1.0.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
-azure-cosmos = "^4.7.0"
-azure-identity = "^1.19.0"
+pymongo = "^4.9.1"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
