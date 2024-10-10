@@ -72,6 +72,8 @@ def test_falkordb_pg_store(pg_store: FalkorDBPropertyGraphStore) -> None:
         assert path[2].id == entity2.id
         assert path[1].id == relation.id
 
+    triplet = pg_store.get_triplets()
+
     query = "match (n:`__Entity__`) return n"
     result = pg_store.structured_query(query)
     assert len(result) == 2
