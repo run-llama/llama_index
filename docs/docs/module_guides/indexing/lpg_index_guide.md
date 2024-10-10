@@ -165,7 +165,7 @@ kg_extractor = SchemaLLMPathExtractor(
     kg_validation_schema=schema,
     strict=True,  # if false, will allow triplets outside of the schema
     num_workers=4,
-    max_triplets_per_chunk=10
+    max_triplets_per_chunk=10,
 )
 ```
 
