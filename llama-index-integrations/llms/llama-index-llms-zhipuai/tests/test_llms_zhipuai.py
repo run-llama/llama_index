@@ -14,7 +14,7 @@ def test_zhipuai_llm_model_alias():
     api_key = "api_key_test"
     llm = ZhipuAI(model=model, api_key=api_key)
     assert llm.model == model
-    assert llm._model_kwargs is not None
+    assert llm.model_kwargs is not None
 
 
 def test_zhipuai_llm_metadata():
