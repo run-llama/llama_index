@@ -185,3 +185,19 @@ class FalkorDBGraphStore(GraphStore):
     def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
         result = self._driver.query(query, params=params)
         return result.result_set
+    
+    def switch_graph(self, graph_name: str) -> None:
+        """Switch to the given graph name (`graph_name`).
+
+        This method allows users to change the active graph within the same 
+        database connection.
+
+        Args:
+            graph_name (str): The name of the graph to switch to.
+        """
+        self._graph = self._driver.select_graph(graph_name)
+
+        try:
+            self.refresh_schema()
+        except Exception as e:
+            raise ValueError(f"Could not refresh schema. Error: {e}")
