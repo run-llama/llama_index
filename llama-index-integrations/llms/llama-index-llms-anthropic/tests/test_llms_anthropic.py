@@ -3,7 +3,6 @@ from llama_index.llms.anthropic import Anthropic
 from llama_index.core.llms import ChatMessage
 import os
 import pytest
-import asyncio
 
 
 def test_text_inference_embedding_class():
@@ -26,9 +25,11 @@ def test_anthropic_through_vertex_ai():
 
     try:
         assert isinstance(completion_response.text, str)
-        print('Assertion passed for completion_response.text')
+        print("Assertion passed for completion_response.text")
     except AssertionError:
-        print(f"Assertion failed for completion_response.text: {completion_response.text}")
+        print(
+            f"Assertion failed for completion_response.text: {completion_response.text}"
+        )
         raise
 
 
@@ -44,23 +45,27 @@ def test_anthropic_through_bedrock():
     )
 
     completion_response = anthropic_llm.complete("Give me a recipe for banana bread")
-    print('testing completion')
+    print("testing completion")
     try:
         assert isinstance(completion_response.text, str)
-        print('Assertion passed for completion_response.text')
+        print("Assertion passed for completion_response.text")
     except AssertionError:
-        print(f"Assertion failed for completion_response.text: {completion_response.text}")
+        print(
+            f"Assertion failed for completion_response.text: {completion_response.text}"
+        )
         raise
 
     # Test streaming completion
-    stream_resp = anthropic_llm.stream_complete("Answer in 5 sentences or less. Paul Graham is ")
+    stream_resp = anthropic_llm.stream_complete(
+        "Answer in 5 sentences or less. Paul Graham is "
+    )
     full_response = ""
     for chunk in stream_resp:
         full_response += chunk.delta
 
     try:
         assert isinstance(full_response, str)
-        print('Assertion passed: full_response is a string')
+        print("Assertion passed: full_response is a string")
     except AssertionError:
         print(f"Assertion failed: full_response is not a string")
         print(f"Type of full_response: {type(full_response)}")
@@ -75,35 +80,36 @@ def test_anthropic_through_bedrock():
     ]
 
     chat_response = anthropic_llm.chat(messages)
-    print('testing chat')
+    print("testing chat")
     try:
         assert isinstance(chat_response.message.content, str)
-        print('Assertion passed for chat_response')
+        print("Assertion passed for chat_response")
     except AssertionError:
         print(f"Assertion failed for chat_response: {chat_response}")
         raise
 
     # Test streaming chat
     stream_chat_resp = anthropic_llm.stream_chat(messages)
-    print('testing stream chat')
+    print("testing stream chat")
     full_response = ""
     for chunk in stream_chat_resp:
         full_response += chunk.delta
 
     try:
         assert isinstance(full_response, str)
-        print('Assertion passed: full_response is a string')
+        print("Assertion passed: full_response is a string")
     except AssertionError:
         print(f"Assertion failed: full_response is not a string")
         print(f"Type of full_response: {type(full_response)}")
         print(f"Content of full_response: {full_response}")
         raise
 
+
 @pytest.mark.skipif(
     os.getenv("ANTHROPIC_AWS_REGION") is None,
     reason="AWS region not available to test Bedrock integration",
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_anthropic_through_bedrock_async():
     # Note: this assumes you have AWS credentials configured.
     anthropic_llm = Anthropic(
@@ -112,7 +118,9 @@ async def test_anthropic_through_bedrock_async():
     )
 
     # Test standard async completion
-    standard_resp = await anthropic_llm.acomplete("Answer in two sentences or less. Paul Graham is ")
+    standard_resp = await anthropic_llm.acomplete(
+        "Answer in two sentences or less. Paul Graham is "
+    )
     try:
         assert isinstance(standard_resp.text, str)
     except AssertionError:
@@ -120,7 +128,9 @@ async def test_anthropic_through_bedrock_async():
         raise
 
     # Test async streaming
-    stream_resp = await anthropic_llm.astream_complete("Answer in 5 sentences or less. Paul Graham is ")
+    stream_resp = await anthropic_llm.astream_complete(
+        "Answer in 5 sentences or less. Paul Graham is "
+    )
     full_response = ""
     async for chunk in stream_resp:
         full_response += chunk.delta
@@ -136,7 +146,7 @@ async def test_anthropic_through_bedrock_async():
         ChatMessage(role="system", content="You are a helpful assistant"),
         ChatMessage(role="user", content="Tell me a short story about AI"),
     ]
-    
+
     chat_resp = await anthropic_llm.achat(messages)
     try:
         assert isinstance(chat_resp.message.content, str)

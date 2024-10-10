@@ -105,9 +105,13 @@ class Anthropic(FunctionCallingLLM):
         default_factory=dict, description="Additional kwargs for the anthropic API."
     )
 
-    _client: Union[anthropic.Anthropic, anthropic.AnthropicVertex, anthropic.AnthropicBedrock] = PrivateAttr()
+    _client: Union[
+        anthropic.Anthropic, anthropic.AnthropicVertex, anthropic.AnthropicBedrock
+    ] = PrivateAttr()
     _aclient: Union[
-        anthropic.AsyncAnthropic, anthropic.AsyncAnthropicVertex, anthropic.AsyncAnthropicBedrock
+        anthropic.AsyncAnthropic,
+        anthropic.AsyncAnthropicVertex,
+        anthropic.AsyncAnthropicBedrock,
     ] = PrivateAttr()
 
     def __init__(
@@ -173,7 +177,7 @@ class Anthropic(FunctionCallingLLM):
             )
             self._aclient = anthropic.AsyncAnthropicBedrock(
                 aws_region=aws_region,
-            ) 
+            )
         else:
             self._client = anthropic.Anthropic(
                 api_key=api_key,
