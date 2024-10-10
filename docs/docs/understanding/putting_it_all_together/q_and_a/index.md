@@ -16,12 +16,12 @@ print(response)
 
 **Tutorials**
 
-- [Starter Tutorial](../../getting_started/starter_example.md)
+- [Starter Tutorial](../../../getting_started/starter_example/)
 - [Basic Usage Pattern](../querying/querying.md)
 
 **Guides**
 
-- [Example](../../examples/vector_stores/SimpleIndexDemo.ipynb) ([Notebook](https://github.com/run-llama/llama_index/tree/main/docs../../examples/vector_stores/SimpleIndexDemo.ipynb))
+- [Example](../../../examples/vector_stores/SimpleIndexDemo/) ([Notebook](../../../examples/vector_stores/SimpleIndexDemo/))
 
 ## Summarization
 
