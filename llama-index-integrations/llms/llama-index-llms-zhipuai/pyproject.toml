@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.llms.zhipuai"
 
 [tool.llamahub.class_authors]
-ZhipuAI = "llama-index"
+ZhipuAI = "nightosong"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,7 +21,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["nightosong"]
 description = "llama-index llms zhipuai integration"
 exclude = ["**/BUILD"]
 license = "MIT"
