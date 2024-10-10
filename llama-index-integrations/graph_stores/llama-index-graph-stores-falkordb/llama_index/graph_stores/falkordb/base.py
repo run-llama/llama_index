@@ -31,10 +31,11 @@ class FalkorDBGraphStore(GraphStore):
         """Initialize params."""
         self._node_label = node_label
 
-        self._driver = FalkorDB.from_url(url).select_graph(database)
+        self._driver = FalkorDB.from_url(url)
+        self._graph = self._driver.select_graph(database)
 
         try:
-            self._driver.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
+            self._graph.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
         except redis.ResponseError as e:
             # TODO: to find an appropriate way to handle this issue.
             logger.warning("Create index failed: %s", e)
@@ -49,11 +50,11 @@ class FalkorDBGraphStore(GraphStore):
 
     @property
     def client(self) -> None:
-        return self._driver
+        return self._graph
 
     def get(self, subj: str) -> List[List[str]]:
         """Get triplets."""
-        result = self._driver.query(
+        result = self._graph.query(
             self.get_query, params={"subj": subj}, read_only=True
         )
         return result.result_set
@@ -123,7 +124,7 @@ class FalkorDBGraphStore(GraphStore):
         )
 
         # Call FalkorDB with prepared statement
-        self._driver.query(prepared_statement, params={"subj": subj, "obj": obj})
+        self._graph.query(prepared_statement, params={"subj": subj, "obj": obj})
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
@@ -136,13 +137,13 @@ class FalkorDBGraphStore(GraphStore):
             """
 
             # Call FalkorDB with prepared statement
-            self._driver.query(query, params={"subj": subj, "obj": obj})
+            self._graph.query(query, params={"subj": subj, "obj": obj})
 
         def delete_entity(entity: str) -> None:
             query = f"MATCH (n:`{self._node_label}`) WHERE n.id = $entity DELETE n"
 
             # Call FalkorDB with prepared statement
-            self._driver.query(query, params={"entity": entity})
+            self._graph.query(query, params={"entity": entity})
 
         def check_edges(entity: str) -> bool:
             query = f"""
@@ -151,7 +152,7 @@ class FalkorDBGraphStore(GraphStore):
             """
 
             # Call FalkorDB with prepared statement
-            result = self._driver.query(
+            result = self._graph.query(
                 query, params={"entity": entity}, read_only=True
             )
             return bool(result.result_set)
@@ -183,7 +184,7 @@ class FalkorDBGraphStore(GraphStore):
         return self.schema
 
     def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
-        result = self._driver.query(query, params=params)
+        result = self._graph.query(query, params=params)
         return result.result_set
     
     def switch_graph(self, graph_name: str) -> None:
