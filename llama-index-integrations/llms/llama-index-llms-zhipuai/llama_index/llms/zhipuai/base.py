@@ -137,7 +137,7 @@ class ZhipuAI(FunctionCallingLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        return "ZhipuAI_LLM"
+        return "ZhipuAI"
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -151,7 +151,7 @@ class ZhipuAI(FunctionCallingLLM):
         )
 
     @property
-    def _model_kwargs(self) -> Dict[str, Any]:
+    def model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
@@ -244,7 +244,7 @@ class ZhipuAI(FunctionCallingLLM):
             tools=kwargs.get("tools", None),
             tool_choice=kwargs.get("tool_choice", None),
             timeout=self.timeout,
-            extra_body=self._model_kwargs,
+            extra_body=self.model_kwargs,
         )
         tool_calls = raw_response.choices[0].message.tool_calls or []
         return ChatResponse(
@@ -270,7 +270,7 @@ class ZhipuAI(FunctionCallingLLM):
                 tools=kwargs.get("tools", None),
                 tool_choice=kwargs.get("tool_choice", None),
                 timeout=self.timeout,
-                extra_body=self._model_kwargs,
+                extra_body=self.model_kwargs,
             )
             response_txt = ""
             for chunk in raw_response:
@@ -306,7 +306,7 @@ class ZhipuAI(FunctionCallingLLM):
                 tools=kwargs.get("tools", None),
                 tool_choice=kwargs.get("tool_choice", None),
                 timeout=self.timeout,
-                extra_body=self._model_kwargs,
+                extra_body=self.model_kwargs,
             )
             response_txt = ""
             while True:
@@ -340,7 +340,7 @@ class ZhipuAI(FunctionCallingLLM):
             tools=kwargs.get("tools", None),
             tool_choice=kwargs.get("tool_choice", None),
             timeout=self.timeout,
-            extra_body=self._model_kwargs,
+            extra_body=self.model_kwargs,
         )
         task_id = raw_response.id
         task_status = raw_response.task_status
