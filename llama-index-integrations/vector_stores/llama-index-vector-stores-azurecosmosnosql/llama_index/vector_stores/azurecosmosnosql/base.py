@@ -7,7 +7,7 @@ import logging
 from typing import Any, Optional, Dict, cast, List
 from datetime import date
 
-from azure.core.credentials import TokenCredential
+from azure.identity import ClientSecretCredential
 from azure.cosmos import CosmosClient
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
@@ -241,7 +241,9 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> "AzureCosmosDBNoSqlVectorSearch":
         """Initialize the vector store using the cosmosDB uri and managed identity."""
-        cosmos_client = CosmosClient(cosmos_uri, TokenCredential, user_agent=USER_AGENT)
+        cosmos_client = CosmosClient(
+            cosmos_uri, ClientSecretCredential, user_agent=USER_AGENT
+        )
         return cls(
             cosmos_client,
             vector_embedding_policy,
