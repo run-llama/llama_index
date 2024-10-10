@@ -10,6 +10,7 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
+    Tuple,
     Union,
     runtime_checkable,
 )
@@ -249,7 +250,9 @@ class VectorStoreQuery:
     # only for mmr
     mmr_threshold: Optional[float] = None
 
-    # NOTE: currently only used by postgres hybrid search
+    # Note: Used by QdrantVectorStore to enable passing down sparse embeddings
+    sparse_query_embedding: Optional[Tuple[List[int], List[float]]] = None
+    # NOTE: Used by postgres and Qdrant
     sparse_top_k: Optional[int] = None
     # NOTE: return top k results from hybrid search. similarity_top_k is used for dense search top k
     hybrid_top_k: Optional[int] = None
