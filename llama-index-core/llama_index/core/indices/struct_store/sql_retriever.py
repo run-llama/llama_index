@@ -143,7 +143,7 @@ class DefaultSQLParser(BaseSQLParser):
         sql_result_start = response.find("SQLResult:")
         if sql_result_start != -1:
             response = response[:sql_result_start]
-        return response.strip().strip("```sql").strip("```").strip()
+        return response.replace("```sql", "").replace("```", "").strip()
 
 
 class PGVectorSQLParser(BaseSQLParser):
