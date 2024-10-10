@@ -31,7 +31,7 @@ version = "0.3.6"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-anthropic = {extras = ["vertex", "bedrock"], version = ">=0.34.2"}
+anthropic = {extras = ["bedrock", "vertex"], version = ">=0.34.2"}
 llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -41,6 +41,7 @@ mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
+pytest-asyncio = "^0.23.5"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
@@ -50,7 +51,6 @@ types-protobuf = "^4.24.0.4"
 types-redis = "4.5.5.0"
 types-requests = "2.28.11.8"
 types-setuptools = "67.1.0.0"
-pytest-asyncio = "^0.23.5"
 
 [tool.poetry.group.dev.dependencies.black]
 extras = ["jupyter"]
@@ -60,8 +60,8 @@ version = "<=23.9.1,>=23.7.0"
 extras = ["toml"]
 version = ">=v2.2.6"
 
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-
 [[tool.poetry.packages]]
 include = "llama_index/"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
