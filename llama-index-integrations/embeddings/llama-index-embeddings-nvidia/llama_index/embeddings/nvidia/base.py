@@ -144,8 +144,14 @@ class NVIDIAEmbedding(BaseEmbedding):
         )
         self._aclient._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
 
-        if not model:
-            self.__get_default_model()
+        self.model = model
+        if not self.model:
+            if self._is_hosted:
+                self.model = DEFAULT_MODEL
+            else:
+                self.__get_default_model()
+
+        self._validate_model(self.model)  ## validate model
 
     def __get_default_model(self) -> None:
         """Set default model."""
@@ -182,6 +188,29 @@ class NVIDIAEmbedding(BaseEmbedding):
         if base_url.endswith("embeddings"):
             warnings.warn(f"{expected_format} Rest is ignored")
         return base_url.strip("/")
+
+    def _validate_model(self, model_name: str) -> None:
+        """
+        Validates compatibility of the hosted model with the client.
+
+        Args:
+            model_name (str): The name of the model.
+
+        Raises:
+            ValueError: If the model is incompatible with the client.
+        """
+        if self._is_hosted:
+            if model_name not in MODEL_ENDPOINT_MAP:
+                if model_name in [model.id for model in self._client.models.list()]:
+                    warnings.warn(f"Unable to determine validity of {model_name}")
+                else:
+                    raise ValueError(
+                        f"Model {model_name} is incompatible with client {self.class_name()}. "
+                        f"Please check `{self.class_name()}.available_models()`."
+                    )
+        else:
+            if model_name not in [model.id for model in self.available_models]:
+                raise ValueError(f"No locally hosted {model_name} was found.")
 
     @property
     def available_models(self) -> List[Model]:
