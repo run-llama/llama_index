@@ -1,5 +1,48 @@
 # ChangeLog
 
+## [2024-10-08]
+
+### `llama-index-core` [0.11.17]
+
+- Fix ChatMessage serialization with janky openai types (#16410)
+
+### `llama-index-embeddings-gemini` [0.2.1]
+
+- fix gemini embedding async method (#16369)
+
+### `llama-index-llms-gaudi` [0.1.0]
+
+- Add llm integration with Intel Gaudi in llama-index-llms-gaudi (#16308)
+
+### `llama-index-llms-openai` [0.2.12]
+
+- don't include tool calls if there was none (#16408)
+
+### `llama-index-multi-modal-llms-huggingface` [0.1.1]
+
+- LlamaMultiModal class bug fix (#16413)
+- MultiModal.HuggingFaceMultiModal: fix errors and README, add stream_complete (#16376)
+
+### `llama-index-node-parser-docling` [0.1.0]
+
+- feat: add Docling reader and node parser (#16406)
+
+### `llama-index-readers-docling` [0.1.0]
+
+- feat: add Docling reader and node parser (#16406)
+
+### `llama-index-readers-zyte-serp` [0.1.0]
+
+- Add Zyte serp integration (#16417)
+
+### `llama-index-vector-stores-azureaisearch` [0.2.2]
+
+- fix(bug): fixed bug with ensuring the metadata_mapping value (#16431)
+
+### `llama-index-vector-stores-objectbox` [0.1.0]
+
+- Add ObjectBox Vector Store Integration (#16314)
+
 ## [2024-10-03]
 
 ### `llama-index-core` [0.11.16]

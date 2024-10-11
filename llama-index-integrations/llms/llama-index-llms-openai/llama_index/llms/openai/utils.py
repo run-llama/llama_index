@@ -54,6 +54,8 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4o": 128000,
     "gpt-4o-2024-05-13": 128000,
     "gpt-4o-2024-08-06": 128000,
+    # Intended for research and evaluation
+    "chatgpt-4o-latest": 128000,
     "gpt-4o-mini": 128000,
     "gpt-4o-mini-2024-07-18": 128000,
     # 0613 models (function calling):
