@@ -1,3 +1,4 @@
+import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 from zhipuai import ZhipuAI as ZhipuAIClient
 from llama_index.core.base.llms.types import (
@@ -226,9 +227,9 @@ class ZhipuAI(FunctionCallingLLM):
         for tool_call in tool_calls:
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call["function"]["id"],
-                    tool_name=tool_call["function"]["name"],
-                    tool_kwargs=tool_call["function"]["arguments"],
+                    tool_id=tool_call.id,
+                    tool_name=tool_call.function.name,
+                    tool_kwargs=json.loads(tool_call.function.arguments),
                 )
             )
 
