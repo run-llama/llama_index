@@ -59,6 +59,42 @@ for r in response:
     print(r.delta, end="")
 ```
 
+### Function Calling
+
+```py
+from llama_index.llms.ZhipuAI import ZhipuAI
+
+llm = ZhipuAI(model="glm-4", api_key="YOUR API KEY")
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "query_weather",
+            "description": "Query the weather of the city provided by user",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "city": {
+                        "type": "string",
+                        "description": "City to query",
+                    },
+                },
+                "required": ["city"],
+            },
+        },
+    }
+]
+response = llm.complete(
+    "help me to find the weather in Shanghai",
+    tools=tools,
+    tool_choice="auto",
+)
+print(llm.get_tool_calls_from_response(response))
+
+# Output
+# [ToolSelection(tool_id='call_9097928240216277928', tool_name='query_weather', tool_kwargs={'city': 'Shanghai'})]
+```
+
 ### ZhipuAI Documentation
 
 https://bigmodel.cn/dev/howuse/introduction
