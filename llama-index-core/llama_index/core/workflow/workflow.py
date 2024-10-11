@@ -381,7 +381,8 @@ class Workflow(metaclass=WorkflowMeta):
 
                 result.set_result(ctx._retval)
             except Exception as e:
-                result.set_exception(e)
+                if not self.is_done():  # Avoid InvalidStateError edge case
+                    result.set_exception(e)
             finally:
                 if self._sem:
                     self._sem.release()
