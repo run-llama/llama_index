@@ -16,6 +16,8 @@ from acouchbase.cluster import Cluster as AsyncCluster
 
 
 class CouchbaseKVStore(BaseKVStore):
+    """Couchbase Key-Value store."""
+
     def __init__(
         self,
         cluster: Cluster,
@@ -23,7 +25,14 @@ class CouchbaseKVStore(BaseKVStore):
         scope_name: str,
         async_cluster: Optional[AsyncCluster] = None,
     ) -> None:
-        """Init a CouchbaseKVStore."""
+        """Initializes a CouchbaseKVStore.
+
+        Args:
+            cluster (Cluster): Couchbase cluster object
+            bucket_name (str): Name of the bucket to use for the key-value store
+            scope_name (str): Name of the scope to use for the key-value store
+            async_cluster (Optional[AsyncCluster]): Async Couchbase cluster object
+        """
         if not isinstance(cluster, Cluster):
             raise ValueError(
                 f"cluster should be an instance of couchbase.Cluster, "
@@ -49,6 +58,7 @@ class CouchbaseKVStore(BaseKVStore):
         self._bucketname: str = bucket_name
         self._bucket = self._cluster.bucket(bucket_name)
 
+        # Get a list of all the scopes and collections in the bucket
         self._scope_collection_map = self._list_scope_and_collections()
         if scope_name not in self._scope_collection_map:
             raise ValueError(
@@ -63,7 +73,8 @@ class CouchbaseKVStore(BaseKVStore):
             self._ascope = self._abucket.scope(scope_name)
 
     def _check_bucket_exists(self, bucket_name) -> bool:
-        """Check if the bucket exists in the linked Couchbase cluster.
+        """
+        Check if the bucket exists in the linked Couchbase cluster.
 
         Returns:
             True if the bucket exists
@@ -75,7 +86,11 @@ class CouchbaseKVStore(BaseKVStore):
         except Exception:
             return False
 
-    def _validate_collection_name(self, collection_name: str) -> None:
+    def _validate_collection_name(self, collection_name: str) -> bool:
+        """
+        Check if the collection name is valid for Couchbase.
+        Collection names should not contain any characters other than letters, digits, underscores, percentage and hyphens.
+        """
         # Only allow letters, digits, underscores, percentage and hyphens
         allowed_chars = set(string.ascii_letters + string.digits + "_-%")
 
@@ -83,6 +98,10 @@ class CouchbaseKVStore(BaseKVStore):
         return all(char in allowed_chars for char in collection_name)
 
     def _sanitize_collection_name(self, collection_name: str) -> str:
+        """
+        Sanitize the collection name to remove any invalid characters.
+        The unallowed characters are replaced with underscores.
+        """
         # Only allow letters, digits, underscores, percentage and hyphens
         allowed_chars = set(string.ascii_letters + string.digits + "_-%")
 
@@ -92,25 +111,30 @@ class CouchbaseKVStore(BaseKVStore):
         )
 
     def _create_collection_if_not_exists(self, collection_name: str) -> None:
+        """
+        Create a collection in the linked Couchbase bucket if it does not exist.
+        """
         if collection_name not in self._scope_collection_map[self._scopename]:
             try:
                 self._bucket.collections().create_collection(
                     scope_name=self._scopename, collection_name=collection_name
                 )
                 self._scope_collection_map = self._list_scope_and_collections()
-                print(f"{self._scope_collection_map}")
             except Exception as e:
                 print("Error creating collection: ", e)
                 raise
 
     def _check_async_client(self) -> None:
+        """
+        Check if the async client is initialized.
+        """
         if not self._acluster:
             raise ValueError("CouchbaseKVStore was not initialized with async client")
 
-    def _list_scope_and_collections(self) -> bool:
+    def _list_scope_and_collections(self) -> dict[str, any]:
         """Return the scope and collections that exist in the linked Couchbase bucket
         Returns:
-           Dictionary of scopes and collections in the scope in the bucket.
+           Dict[str, Any]: Dictionary of scopes and collections in the scope in the bucket.
         """
         scope_collection_map: Dict[str, Any] = {}
 
@@ -125,6 +149,14 @@ class CouchbaseKVStore(BaseKVStore):
         return scope_collection_map
 
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
+        """
+        Insert a key-value pair into the store.
+
+        Args:
+            key (str): key
+            val (dict): value
+            collection (str): collection name
+        """
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
         db_collection = self._scope.collection(collection)
@@ -133,6 +165,14 @@ class CouchbaseKVStore(BaseKVStore):
     async def aput(
         self, key: str, val: dict, collection: str = DEFAULT_COLLECTION
     ) -> None:
+        """
+        Insert a key-value pair into the store.
+
+        Args:
+            key (str): key
+            val (dict): value
+            collection (str): collection name
+        """
         self._check_async_client()
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
@@ -145,14 +185,24 @@ class CouchbaseKVStore(BaseKVStore):
         collection: str = DEFAULT_COLLECTION,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
+        """
+        Insert multiple key-value pairs into the store.
+
+        Args:
+            kv_pairs (List[Tuple[str, dict]]): list of key-value pairs
+            collection (str): collection name
+            batch_size (int): batch size
+        """
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
         db_collection = self._scope.collection(collection)
 
+        # Create batches of documents to insert
         batches = [
             kv_pairs[i : i + batch_size] for i in range(0, len(kv_pairs), batch_size)
         ]
 
+        # Insert documents in batches
         for batch in batches:
             docs = dict(batch)
             db_collection.upsert_multi(docs)
@@ -163,7 +213,16 @@ class CouchbaseKVStore(BaseKVStore):
         collection: str = DEFAULT_COLLECTION,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        # by default, support a batch size of 1
+        """
+        Insert multiple key-value pairs into the store. Note that batch_size is not supported by this key-value store for async operations.
+
+        Args:
+            kv_pairs (List[Tuple[str, dict]]): list of key-value pairs
+            collection (str): collection name
+            batch_size (int): batch size
+
+        """
+        # CouchbaseKVStore support only a batch size of 1 in async mode
         if batch_size != 1:
             raise NotImplementedError("Batching not supported by this key-value store.")
         else:
@@ -171,6 +230,13 @@ class CouchbaseKVStore(BaseKVStore):
                 await self.aput(key, val, collection=collection)
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
+        """
+        Get a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+        """
         try:
             collection = self._sanitize_collection_name(collection)
             self._create_collection_if_not_exists(collection)
@@ -183,6 +249,13 @@ class CouchbaseKVStore(BaseKVStore):
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
     ) -> Optional[dict]:
+        """
+        Get a value from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+        """
         self._check_async_client()
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
@@ -193,6 +266,12 @@ class CouchbaseKVStore(BaseKVStore):
             return None
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
+        """
+        Get all the key-value pairs from the store. It uses KV Range scan to get all the documents in the collection.
+
+        Args:
+            collection (str): collection name
+        """
         output = {}
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
@@ -205,6 +284,12 @@ class CouchbaseKVStore(BaseKVStore):
         return output
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
+        """
+        Get all the key-value pairs from the store. It uses KV Range scan to get all the documents in the collection.
+
+        Args:
+            collection (str): collection name
+        """
         self._check_async_client()
         output = {}
         collection = self._sanitize_collection_name(collection)
@@ -217,6 +302,13 @@ class CouchbaseKVStore(BaseKVStore):
         return output
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
+        """
+        Delete a key-value pair from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+        """
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
 
@@ -228,6 +320,13 @@ class CouchbaseKVStore(BaseKVStore):
             return False
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
+        """
+        Delete a key-value pair from the store.
+
+        Args:
+            key (str): key
+            collection (str): collection name
+        """
         self._check_async_client()
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
