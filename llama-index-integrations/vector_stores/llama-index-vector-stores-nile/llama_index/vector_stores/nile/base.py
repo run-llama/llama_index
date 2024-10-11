@@ -79,9 +79,9 @@ class NileVectorStore(BasePydanticVectorStore):
             if self.tenant_aware:
                 query = sql.SQL(
                     """
-                                CREATE TABLE IF NOT EXISTS {table_name}
-                                (id UUID DEFAULT (gen_random_uuid()), tenant_id UUID, embedding VECTOR({num_dimensions}), content TEXT, metadata JSONB)
-                                """
+                        CREATE TABLE IF NOT EXISTS {table_name}
+                        (id UUID DEFAULT (gen_random_uuid()), tenant_id UUID, embedding VECTOR({num_dimensions}), content TEXT, metadata JSONB)
+                    """
                 ).format(
                     table_name=sql.Identifier(self.table_name),
                     num_dimensions=sql.Literal(self.num_dimensions),
@@ -90,9 +90,9 @@ class NileVectorStore(BasePydanticVectorStore):
             else:
                 query = sql.SQL(
                     """
-                                CREATE TABLE IF NOT EXISTS {table_name}
-                                (id UUID DEFAULT (gen_random_uuid()), embedding VECTOR(num_dimensions}), content TEXT, metadata JSONB)
-                                """
+                        CREATE TABLE IF NOT EXISTS {table_name}
+                        (id UUID DEFAULT (gen_random_uuid()), embedding VECTOR({num_dimensions}), content TEXT, metadata JSONB)
+                    """
                 ).format(
                     table_name=sql.Identifier(self.table_name),
                     num_dimensions=sql.Literal(self.num_dimensions),
@@ -162,6 +162,9 @@ class NileVectorStore(BasePydanticVectorStore):
     def _insert_row(self, cursor: Any, row: Any) -> str:
         _logger.debug(f"Inserting row into {self.table_name} with tenant_id {row[0]}")
         if self.tenant_aware:
+            if row[0] is None:
+                # Nile would fail the insert itself, but this saves the DB call and easier to test
+                raise ValueError("tenant_id cannot be None if tenant_aware is True")
             query = sql.SQL(
                 """
                            INSERT INTO {} (tenant_id, metadata, content, embedding) VALUES (%(tenant_id)s, %(metadata)s, %(content)s, %(embedding)s) returning id
@@ -199,9 +202,10 @@ class NileVectorStore(BasePydanticVectorStore):
         ids = []
         with self._sync_conn.cursor() as cursor:
             for row in rows_to_insert:
-                # this will throw an error if tenant_id is None, which is what we want
-                ids.append(self._insert_row(cursor, row))
-            self._sync_conn.commit()
+                # this will throw an error if tenant_id is None and tenant_aware is True, which is what we want
+                ids.append(
+                    self._insert_row(cursor, row)
+                )  # commit is called in _insert_row
         return ids
 
     async def async_add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
@@ -328,7 +332,6 @@ class NileVectorStore(BasePydanticVectorStore):
             where_clause=where_clause,
             limit=sql.Literal(query_embedding.similarity_top_k),
         )
-        _logger.debug(f"Executing query: {query.as_string(cursor)}")
         cursor.execute(query, {"query_embedding": query_embedding.query_embedding})
         return cursor.fetchall()
 
