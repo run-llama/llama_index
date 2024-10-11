@@ -144,7 +144,7 @@ class AnthropicMultiModal(MultiModalLLM):
             "timeout": self.timeout,
             **kwargs,
         }
-       
+
         if self.default_headers:
             credential_kwargs["default_headers"] = self.default_headers
 
