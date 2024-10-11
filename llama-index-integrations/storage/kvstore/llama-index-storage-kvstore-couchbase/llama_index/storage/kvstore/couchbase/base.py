@@ -157,8 +157,10 @@ class CouchbaseKVStore(BaseKVStore):
             val (dict): value
             collection (str): collection name
         """
+        # Create collection if it does not exist
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
+
         db_collection = self._scope.collection(collection)
         db_collection.upsert(key, val)
 
@@ -174,8 +176,11 @@ class CouchbaseKVStore(BaseKVStore):
             collection (str): collection name
         """
         self._check_async_client()
+
+        # Create collection if it does not exist
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
+
         db_collection = self._ascope.collection(collection)
         await db_collection.upsert(key, val)
 
@@ -193,10 +198,11 @@ class CouchbaseKVStore(BaseKVStore):
             collection (str): collection name
             batch_size (int): batch size
         """
+        # Create collection if it does not exist
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
-        db_collection = self._scope.collection(collection)
 
+        db_collection = self._scope.collection(collection)
         # Create batches of documents to insert
         batches = [
             kv_pairs[i : i + batch_size] for i in range(0, len(kv_pairs), batch_size)
@@ -238,8 +244,10 @@ class CouchbaseKVStore(BaseKVStore):
             collection (str): collection name
         """
         try:
+            # Create collection if it does not exist
             collection = self._sanitize_collection_name(collection)
             self._create_collection_if_not_exists(collection)
+
             db_collection = self._scope.collection(collection)
             document = db_collection.get(key).content_as[dict]
         except DocumentNotFoundException:
@@ -257,8 +265,11 @@ class CouchbaseKVStore(BaseKVStore):
             collection (str): collection name
         """
         self._check_async_client()
+
+        # Create collection if it does not exist
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
+
         db_collection = self._ascope.collection(collection)
         try:
             return (await db_collection.get(key)).content_as[dict]
@@ -267,14 +278,17 @@ class CouchbaseKVStore(BaseKVStore):
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """
-        Get all the key-value pairs from the store. It uses KV Range scan to get all the documents in the collection.
+        Get all the key-value pairs from the store.
 
         Args:
             collection (str): collection name
         """
         output = {}
+
+        # Create collection if it does not exist
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
+
         db_collection = self._scope.collection(collection)
         results = db_collection.scan(RangeScan())
 
@@ -285,15 +299,18 @@ class CouchbaseKVStore(BaseKVStore):
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """
-        Get all the key-value pairs from the store. It uses KV Range scan to get all the documents in the collection.
+        Get all the key-value pairs from the store.
 
         Args:
             collection (str): collection name
         """
         self._check_async_client()
         output = {}
+
+        # Create collection if it does not exist
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
+
         db_collection = self._ascope.collection(collection)
         results = db_collection.scan(RangeScan())
         async for result in results:
@@ -309,6 +326,7 @@ class CouchbaseKVStore(BaseKVStore):
             key (str): key
             collection (str): collection name
         """
+        # Create collection if it does not exist
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
 
@@ -328,6 +346,8 @@ class CouchbaseKVStore(BaseKVStore):
             collection (str): collection name
         """
         self._check_async_client()
+
+        # Create collection if it does not exist
         collection = self._sanitize_collection_name(collection)
         self._create_collection_if_not_exists(collection)
 
