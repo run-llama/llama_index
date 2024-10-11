@@ -18,7 +18,16 @@ class CouchbaseDocumentStore(KVDocumentStore):
         ref_doc_collection_suffix: Optional[str] = None,
         metadata_collection_suffix: Optional[str] = None,
     ) -> None:
-        """Init a CouchbaseDocumentStore."""
+        """Initialize a CouchbaseDocumentStore.
+
+        Args:
+            couchbase_kvstore (CouchbaseKVStore): Couchbase key-value store
+            namespace (str): namespace for the docstore
+            batch_size (int): batch size for fetching documents
+            node_collection_suffix (str): suffix for the node collection
+            ref_doc_collection_suffix (str): suffix for the  Refdoc collection
+            metadata_collection_suffix (str): suffix for the metadata collection
+        """
         super().__init__(
             couchbase_kvstore,
             namespace=namespace,

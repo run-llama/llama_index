@@ -21,7 +21,7 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Couchbase <devadvocates@example.com>"]
+authors = ["Couchbase <devadvocates@couchbase.com>"]
 description = "llama-index index_store couchbase integration"
 license = "MIT"
 name = "llama-index-index-store-couchbase"

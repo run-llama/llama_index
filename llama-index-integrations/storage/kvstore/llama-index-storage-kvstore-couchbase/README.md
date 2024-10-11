@@ -1,1 +1,1 @@
-# LlamaIndex Kvstore Integration: Couchbase
+# LlamaIndex Kvstore Integration: Couchbase Kvstore

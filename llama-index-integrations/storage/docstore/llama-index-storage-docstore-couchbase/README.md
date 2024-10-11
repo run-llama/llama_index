@@ -1,1 +1,1 @@
-# LlamaIndex Docstore Integration: Couchbase
+# LlamaIndex Docstore Integration: Couchbase Docstore
