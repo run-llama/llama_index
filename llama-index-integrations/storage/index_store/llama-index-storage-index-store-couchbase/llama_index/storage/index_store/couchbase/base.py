@@ -5,14 +5,7 @@ from llama_index.storage.kvstore.couchbase import CouchbaseKVStore
 
 
 class CouchbaseIndexStore(KVIndexStore):
-    """Couchbase Index store.
-
-    Args:
-        mongo_kvstore (MongoDBKVStore): MongoDB key-value store
-        namespace (str): namespace for the index store
-        collection_suffix (str): suffix for the collection name
-
-    """
+    """Couchbase Index store."""
 
     def __init__(
         self,
@@ -20,7 +13,13 @@ class CouchbaseIndexStore(KVIndexStore):
         namespace: Optional[str] = None,
         collection_suffix: Optional[str] = None,
     ) -> None:
-        """Init a CouchbaseDocumentStore."""
+        """Initialize a CouchbaseIndexStore.
+
+        Args:
+        couchbase_kvstore (CouchbaseKVStore): Couchbase key-value store
+        namespace (str): namespace for the index store
+        collection_suffix (str): suffix for the collection name
+        """
         super().__init__(
             couchbase_kvstore,
             namespace=namespace,
