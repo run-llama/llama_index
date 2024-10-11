@@ -20,10 +20,13 @@ from llama_index.core.callbacks import (
     EventPayload,
     trace_method,
 )
-from llama_index.core.chat_engine.types import (
-    AgentChatResponse,
+from llama_index.core.chat_engine.types import AgentChatResponse, ChatResponseMode
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
+    ChatResponseAsyncGen,
 )
-from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.instrumentation.events.agent import AgentToolCallEvent
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
