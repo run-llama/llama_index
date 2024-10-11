@@ -3,7 +3,7 @@
 import json
 import logging
 import uuid
-from typing import Any, List, Optional, Sequence, cast
+from typing import Any, List, Optional, Sequence, cast, Union
 import asyncio
 import llama_index.core.instrumentation as instrument
 from llama_index.core.agent.types import (
@@ -196,7 +196,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
 
     def _get_agent_response(
         self, task: Task, mode: ChatResponseMode, tools: List[BaseTool]
-    ) -> ChatResponse | ChatResponseGen:
+    ) -> Union[ChatResponse, ChatResponseGen]:
         """Get agent response."""
         if mode == ChatResponseMode.WAIT:
             response = self._llm.chat_with_tools(
@@ -219,7 +219,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
 
     async def _aget_agent_response(
         self, task: Task, mode: ChatResponseMode, tools: List[BaseTool]
-    ) -> ChatResponse | ChatResponseAsyncGen:
+    ) -> Union[ChatResponse, ChatResponseAsyncGen]:
         """Get agent response (async)."""
         if mode == ChatResponseMode.WAIT:
             response = await self._llm.achat_with_tools(
