@@ -14,6 +14,7 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.superfences
   - md_in_html
+  - mkdocs-click
   - toc:
       permalink: "#"
 nav:
@@ -1631,9 +1632,10 @@ nav:
       - LlamaCloud: ./llama_cloud/index.md
       - LlamaParse: ./llama_cloud/llama_parse.md
 plugins:
-  - search: null
-  - include_dir_to_nav: null
-  - gh-admonitions: null
+  - search
+  - include_dir_to_nav
+  - render_swagger
+  - gh-admonitions
   - mkdocs-jupyter:
       execute: false
   - mkdocstrings:
@@ -1654,6 +1656,8 @@ plugins:
             show_root_toc_entry: false
             show_signature_annotations: true
             signature_crossrefs: true
+            extensions:
+              - griffe_fieldz
           paths:
             - ../llama-index-core
             - ../llama-index-experimental
