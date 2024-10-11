@@ -1,4 +1,4 @@
-# LlamaIndex Llms Integration: ZhipuAI
+# LlamaIndex Embeddings Integration: ZhipuAI
 
 ### Installation
 
