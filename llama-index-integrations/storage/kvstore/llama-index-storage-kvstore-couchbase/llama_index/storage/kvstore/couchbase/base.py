@@ -25,7 +25,8 @@ class CouchbaseKVStore(BaseKVStore):
         scope_name: str,
         async_cluster: Optional[AsyncCluster] = None,
     ) -> None:
-        """Initializes a CouchbaseKVStore.
+        """
+        Initializes a CouchbaseKVStore.
 
         Args:
             cluster (Cluster): Couchbase cluster object
@@ -132,7 +133,8 @@ class CouchbaseKVStore(BaseKVStore):
             raise ValueError("CouchbaseKVStore was not initialized with async client")
 
     def _list_scope_and_collections(self) -> dict[str, any]:
-        """Return the scope and collections that exist in the linked Couchbase bucket
+        """
+        Return the scope and collections that exist in the linked Couchbase bucket
         Returns:
            Dict[str, Any]: Dictionary of scopes and collections in the scope in the bucket.
         """
@@ -357,3 +359,24 @@ class CouchbaseKVStore(BaseKVStore):
             return True
         except DocumentNotFoundException:
             return False
+
+    @classmethod
+    def from_couchbase_client(
+        cls,
+        client: Cluster,
+        bucket_name: str,
+        scope_name: str,
+        async_client: AsyncCluster = None,
+    ) -> "CouchbaseKVStore":
+        """
+        Initialize a CouchbaseKVStore from a Couchbase cluster object.
+
+        Args:
+            cluster (Cluster): Couchbase cluster object
+            bucket_name (str): Name of the bucket to use for the key-value store
+            scope_name (str): Name of the scope to use for the key-value store
+
+        Returns:
+            CouchbaseKVStore: instance of CouchbaseKVStore
+        """
+        return cls(client, bucket_name, scope_name, async_client)
