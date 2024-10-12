@@ -586,7 +586,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         param_map = param_map or {}
         try:
             data, _, _ = self._driver.execute_query(
-                query, database=self._database, parameters_=param_map
+                query, database_=self._database, parameters_=param_map
             )
             full_result = [d.data() for d in data]
 
@@ -613,7 +613,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             ):
                 raise
         # Fallback to allow implicit transactions
-        with self._driver.session() as session:
+        with self._driver.session(database=self._database) as session:
             data = session.run(neo4j.Query(text=query), param_map)
             full_result = [d.data() for d in data]
 

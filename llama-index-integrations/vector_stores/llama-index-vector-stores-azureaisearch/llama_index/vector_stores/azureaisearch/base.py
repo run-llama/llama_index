@@ -1047,14 +1047,13 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             # Join values with ' or ' to create an OR condition inside the any function
             metadata_mapping = self._metadata_to_index_field_map.get(subfilter.key)
 
-            index_field = metadata_mapping[0]
-
             if not metadata_mapping:
                 raise ValueError(
                     f"Metadata field '{subfilter.key}' is missing a mapping to an index field, "
                     "provide entry in 'filterable_metadata_field_keys' for this "
                     "vector store"
                 )
+            index_field = metadata_mapping[0]
 
             if subfilter.operator == FilterOperator.IN:
                 value_str = " or ".join(

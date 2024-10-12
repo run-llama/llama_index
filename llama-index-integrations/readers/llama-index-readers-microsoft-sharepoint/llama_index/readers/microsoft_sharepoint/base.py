@@ -773,6 +773,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 "created_at": item.get("createdDateTime"),
                 "modified_at": item.get("lastModifiedDateTime"),
                 "etag": item.get("eTag"),
+                "url": item.get("webUrl"),
             }
 
             if (

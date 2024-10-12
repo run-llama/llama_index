@@ -1,0 +1,18 @@
+{
+  "id_": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3",
+  "embedding": null,
+  "metadata": {
+    "dl_doc_hash": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3"
+  },
+  "excluded_embed_metadata_keys": ["dl_doc_hash"],
+  "excluded_llm_metadata_keys": ["dl_doc_hash"],
+  "relationships": {},
+  "text": "{\"_name\":\"\",\"type\":\"pdf-document\",\"description\":{\"title\":null,\"abstract\":null,\"authors\":null,\"affiliations\":null,\"subjects\":null,\"keywords\":null,\"publication_date\":null,\"languages\":null,\"license\":null,\"publishers\":null,\"url_refs\":null,\"references\":null,\"publication\":null,\"reference_count\":null,\"citation_count\":null,\"citation_date\":null,\"advanced\":null,\"analytics\":null,\"logs\":[],\"collection\":null,\"acquisition\":null},\"file-info\":{\"filename\":\"\",\"filename-prov\":null,\"document-hash\":\"129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3\",\"#-pages\":null,\"collection-name\":null,\"description\":null,\"page-hashes\":null},\"main-text\":[{\"text\":\"A duckling is a young duck in downy plumage[1] or baby duck,[2] but in the food trade a young domestic duck which has just reached adult size and bulk and its meat is still fully tender, is sometimes labelled as a duckling.\",\"type\":\"paragraph\",\"name\":\"text\",\"font\":null,\"prov\":[{\"bbox\":[1.0,2.0,3.0,4.0],\"page\":1,\"span\":[0,1],\"__ref_s3_data\":null}]},{\"text\":\"A male is called a drake and the female is called a duck, or in ornithology a hen.\",\"type\":\"paragraph\",\"name\":\"text\",\"font\":null,\"prov\":[{\"bbox\":[1.0,2.0,3.0,4.0],\"page\":1,\"span\":[0,2],\"__ref_s3_data\":null}]}],\"figures\":null,\"tables\":null,\"bitmaps\":null,\"equations\":null,\"footnotes\":null,\"page-dimensions\":null,\"page-footers\":null,\"page-headers\":null,\"_s3_data\":null,\"identifiers\":null}",
+  "mimetype": "text/plain",
+  "start_char_idx": null,
+  "end_char_idx": null,
+  "text_template": "{metadata_str}\n\n{content}",
+  "metadata_template": "{key}: {value}",
+  "metadata_seperator": "\n",
+  "class_name": "Document"
+}

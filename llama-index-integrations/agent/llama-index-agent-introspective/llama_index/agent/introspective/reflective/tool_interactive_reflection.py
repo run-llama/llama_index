@@ -153,7 +153,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ToolInteractiveReflectionAgentWorker":
-        """Convenience constructor method from set of of BaseTools (Optional)."""
+        """Convenience constructor method from set of BaseTools (Optional)."""
         if correction_llm is None:
             try:
                 from llama_index.llms.openai import OpenAI

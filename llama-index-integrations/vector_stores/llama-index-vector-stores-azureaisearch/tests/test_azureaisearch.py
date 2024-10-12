@@ -1,8 +1,10 @@
+import json
 from typing import Any, List, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
 from llama_index.vector_stores.azureaisearch import (
     AzureAISearchVectorStore,
     IndexManagement,
@@ -11,6 +13,7 @@ from llama_index.vector_stores.azureaisearch import (
 try:
     from azure.search.documents import SearchClient
     from azure.search.documents.indexes import SearchIndexClient
+    from azure.search.documents.models import VectorizedQuery
 
     azureaisearch_installed = True
 except ImportError:
@@ -144,3 +147,71 @@ def test_invalid_index_management_for_searchindexclient() -> None:
         index_name="test01",
         index_management=IndexManagement.CREATE_IF_NOT_EXISTS,
     )
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_azureaisearch_query() -> None:
+    search_client = MagicMock(spec=SearchClient)
+
+    # Mock the search method of the search client
+    mock_search_results = [
+        {
+            "id": "test_id_1",
+            "chunk": "test chunk 1",
+            "content": "test chunk 1",
+            "metadata": json.dumps({"key": "value1"}),
+            "doc_id": "doc1",
+            "@search.score": 0.9,
+        },
+        {
+            "id": "test_id_2",
+            "chunk": "test chunk 2",
+            "content": "test chunk 2",
+            "metadata": json.dumps({"key": "value2"}),
+            "doc_id": "doc2",
+            "@search.score": 0.8,
+        },
+    ]
+    search_client.search.return_value = mock_search_results
+
+    vector_store = create_mock_vector_store(search_client)
+
+    # Create a sample query
+    query = VectorStoreQuery(
+        query_embedding=[0.1, 0.2],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.DEFAULT,
+    )
+
+    # Execute the query
+    result = vector_store.query(query)
+
+    # Assert the search method was called with correct parameters
+    search_client.search.assert_called_once_with(
+        search_text="*",
+        vector_queries=[
+            VectorizedQuery(
+                vector=[0.1, 0.2], k_nearest_neighbors=2, fields="embedding"
+            )
+        ],
+        top=2,
+        select=["id", "content", "metadata", "doc_id"],
+        filter=None,
+    )
+
+    # Assert the result structure
+    assert len(result.nodes) == 2
+    assert len(result.ids) == 2
+    assert len(result.similarities) == 2
+
+    # Assert the content of the results
+    assert result.nodes[0].text == "test chunk 1"
+    assert result.nodes[1].text == "test chunk 2"
+    assert result.ids == ["test_id_1", "test_id_2"]
+    assert result.similarities == [0.9, 0.8]
+
+    # Assert the metadata
+    assert result.nodes[0].metadata == {"key": "value1"}
+    assert result.nodes[1].metadata == {"key": "value2"}
