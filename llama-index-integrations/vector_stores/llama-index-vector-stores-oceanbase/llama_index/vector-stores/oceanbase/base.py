@@ -1,6 +1,5 @@
 """OceanBase Vector Store."""
 
-from copy import deepcopy
 import logging
 import json
 from typing import Any, Optional, List
@@ -9,7 +8,6 @@ from llama_index.core.utils import iter_batch
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    MetadataFilter,
     MetadataFilters,
     FilterOperator,
     VectorStoreQuery,
@@ -40,6 +38,7 @@ DEFAULT_OCEANBASE_METADATA_FIELD = "metadata"
 
 DEFAULT_OCEANBASE_VEC_INDEX_NAME = "vidx"
 
+
 def _parse_filter_value(filter_value: any, is_text_match: bool = False):
     if filter_value is None:
         return filter_value
@@ -52,12 +51,11 @@ def _parse_filter_value(filter_value: any, is_text_match: bool = False):
 
     if isinstance(filter_value, list):
         return "(" + ",".join([str(v) for v in filter_value]) + ")"
-    
+
     return str(filter_value)
 
-def _to_oceanbase_filter(
-    metadata_filters: Optional[MetadataFilters] = None
-) -> str:
+
+def _to_oceanbase_filter(metadata_filters: Optional[MetadataFilters] = None) -> str:
     filters = []
     for filter in metadata_filters.filters:
         if isinstance(filter, MetadataFilters):
@@ -89,14 +87,13 @@ def _to_oceanbase_filter(
                 f"{filter.key} like {_parse_filter_value(filter.value, True)}"
             )
         elif filter.operator == FilterOperator.IS_EMPTY:
-            filters.append(
-                f"{filter.key} IS NULL"
-            )
+            filters.append(f"{filter.key} IS NULL")
         else:
             raise ValueError(
                 f'Operator {filter.operator} ("{filter.operator.value}") is not supported by OceanBase.'
             )
     return f" {metadata_filters.condition.value} ".join(filters)
+
 
 class OceanBaseVectorStore(BasePydanticVectorStore):
     """OceanBase Vector Store.
@@ -109,7 +106,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
     IF USING L2/IP metric, IT IS HIGHLY SUGGESTED TO NORMALIZE YOUR DATA.
 
     Args:
-        client (ObVecClient): OceanBase vector store client. 
+        client (ObVecClient): OceanBase vector store client.
             Refer to `pyobvector` for more information.
         dim (int): Dimension of embedding vector.
         table_name (str): Which table name to use. Defaults to "llama_vector".
@@ -132,7 +129,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
             documentation for more examples.
         extra_columns (Optional[List[Column]]): Extra sqlalchemy columns
             to add to the table.
-    
+
     Examples:
         `pip install llama-index-vector-stores-oceanbase`
 
@@ -156,6 +153,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         )
         ```
     """
+
     stores_text: bool = True
 
     def __init__(
@@ -189,9 +187,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
 
         if client is not None:
             if not isinstance(client, ObVecClient):
-                raise ValueError(
-                    "client must be of type pyobvector.ObVecClient"
-                )
+                raise ValueError("client must be of type pyobvector.ObVecClient")
         else:
             raise ValueError("client not specified")
 
@@ -215,9 +211,9 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
 
         if drop_old:
             self._client.drop_table_if_exist(table_name=self.table_name)
-        
+
         self._create_table_with_index()
-    
+
     def _parse_metric_type_str_to_dist_func(self) -> Any:
         if self.vidx_metric_type == "l2":
             return func.l2_distance
@@ -248,7 +244,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         if self._client.check_table_exists(self.table_name):
             self._load_table()
             return
-        
+
         cols = [
             Column(
                 self.primary_field, String(4096), primary_key=True, autoincrement=False
@@ -275,9 +271,9 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
             columns=cols,
             indexes=None,
             vidxs=vidx_params,
-            paritions=self.partition,
+            partitions=self.partition,
         )
-    
+
     @classmethod
     def class_name(cls) -> str:
         return "OceanBaseVectorStore"
@@ -286,7 +282,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
     def client(self) -> Any:
         """Get client."""
         return self._client
-    
+
     def add(
         self,
         nodes: List[BaseNode],
@@ -311,7 +307,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         extra_data = extras or [{} for _ in nodes]
         if len(nodes) != len(extra_data):
             raise ValueError("nodes size & extras size mismatch")
-        
+
         data = [
             {
                 self.primary_field: node.id_,
@@ -335,7 +331,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         """
         self._client.delete(
             table_name=self.table_name,
-            where_clause=[text(f"{self.doc_id_field}={ref_doc_id}")]
+            where_clause=[text(f"{self.doc_id_field}={ref_doc_id}")],
         )
 
     def delete_nodes(
@@ -347,33 +343,28 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         """Deletes nodes.
 
         Args:
-            node_ids (Optional[List[str]], optional): IDs of nodes to delete. 
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete.
                 Defaults to None.
-            filters (Optional[MetadataFilters], optional): Metadata filters. 
+            filters (Optional[MetadataFilters], optional): Metadata filters.
                 Defaults to None.
         """
         if filters is not None:
             filter = _to_oceanbase_filter(filters)
         else:
             filter = None
-        
+
         self._client.delete(
             table_name=self.table_name,
-            ids=[id for id in node_ids] if node_ids is not None else None,
+            ids=node_ids if node_ids is not None else None,
             where_clause=[text(filter)] if filter is not None else None,
         )
 
     def clear(self) -> None:
         """Clears table."""
-        self._client.perform_raw_text_sql(
-            text(f"TRUNCATE TABLE {self.table_name}")
-        )
+        self._client.perform_raw_text_sql(text(f"TRUNCATE TABLE {self.table_name}"))
 
     def query(
-        self, 
-        query: VectorStoreQuery,
-        param: Optional[dict] = None,
-        **kwargs: Any
+        self, query: VectorStoreQuery, param: Optional[dict] = None, **kwargs: Any
     ) -> VectorStoreQueryResult:
         """Perform top-k ANN search.
 
@@ -392,21 +383,25 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         if ef_search != self.hnsw_ef_search:
             self._client.set_ob_hnsw_ef_search(ef_search)
             self.hnsw_ef_search = ef_search
-        
+
         res = self._client.ann_search(
             table_name=self.table_name,
             vec_data=query.query_embedding,
             vec_column_name=self.vector_field,
             distance_func=self._parse_metric_type_str_to_dist_func(),
             with_dist=True,
-            output_column_names=[self.primary_field, self.text_field, self.metadata_field],
+            output_column_names=[
+                self.primary_field,
+                self.text_field,
+                self.metadata_field,
+            ],
             topk=query.similarity_top_k,
-            where_clause=text(
-                _to_oceanbase_filter(query.filters)
-            )
+            where_clause=text(_to_oceanbase_filter(query.filters)),
         )
 
-        records = [r for r in res]
+        records = []
+        for r in res.fetchall():
+            records.append(r)
         return VectorStoreQueryResult(
             nodes=[
                 metadata_dict_to_node(

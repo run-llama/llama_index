@@ -1,4 +1,3 @@
-# from llama_index.vector-stores.oceanbase.base import <FILL>
+from llama_index.vector_stores.oceanbase.base import OceanBaseVectorStore
 
-
-# __all__ = ["<FILL>"]
+__all__ = ["OceanBaseVectorStore"]
