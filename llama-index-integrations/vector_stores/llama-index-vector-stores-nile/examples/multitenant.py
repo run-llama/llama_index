@@ -20,7 +20,7 @@ from llama_index.vector_stores.nile import NileVectorStore, IndexType
 
 # Create a NileVectorStore instance
 vector_store = NileVectorStore(
-    service_url="postgresql://01926a52-3859-7dea-b219-b300b7bb0328:3a98e4eb-f519-483c-bd8b-6a79cd5674a8@us-west-2.db.thenile.dev:5432/niledb",
+    service_url="postgresql://user:password@us-west-2.db.thenile.dev:5432/niledb",
     table_name="test_table",
     tenant_aware=True,
     num_dimensions=1536,

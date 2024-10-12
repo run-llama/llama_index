@@ -2208,6 +2208,20 @@ files = [
 ]
 
 [[package]]
+name = "nb-clean"
+version = "3.3.0"
+description = "Clean Jupyter notebooks for versioning"
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "nb_clean-3.3.0-py3-none-any.whl", hash = "sha256:abedf5cc4334c7f6a6cbeaba233ad1a490c5be98bf55515d07354c4f12d24f02"},
+    {file = "nb_clean-3.3.0.tar.gz", hash = "sha256:ebfcaba1d294452be009bb8c1765c5b5a6a72504b8e2c381e8ec3f236af8b445"},
+]
+
+[package.dependencies]
+nbformat = ">=5.9.2"
+
+[[package]]
 name = "nbclient"
 version = "0.10.0"
 description = "A client library for executing notebooks. Formerly nbconvert's ExecutePreprocessor."
@@ -4539,4 +4553,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "d2bbb63affb29b8654d11c7da93c818e6eb6438f9e60ba5b943895ef83fa30f8"
+content-hash = "ce0e3b8fb1d951b204a4546c7f5710ac98b403b3d102586f696308b5ef3fbd43"

@@ -220,10 +220,10 @@ class NileVectorStore(BasePydanticVectorStore):
     def _set_tenant_context(self, cursor: Any, tenant_id: Any) -> None:
         if self.tenant_aware:
             cursor.execute(
-                sql.SQL(""" set nile.tenant_id = {} """).format(sql.Literal(tenant_id))
+                sql.SQL(""" set local nile.tenant_id = {} """).format(
+                    sql.Literal(tenant_id)
+                )
             )
-        else:
-            cursor.execute(sql.SQL(""" reset nile.tenant_id """))
 
     def _to_postgres_operator(self, operator: FilterOperator) -> str:
         if operator == FilterOperator.EQ:
@@ -453,8 +453,8 @@ class NileVectorStore(BasePydanticVectorStore):
                 )
             query = sql.SQL(
                 """
-                            CREATE INDEX {index_name} ON {table_name} USING ivfflat (embedding vector_cosine_ops) WITH (lists = {nlists});
-                        """
+                CREATE INDEX {index_name} ON {table_name} USING ivfflat (embedding vector_cosine_ops) WITH (lists = {nlists});
+                """
             ).format(
                 table_name=sql.Identifier(self.table_name),
                 index_name=sql.Identifier(f"{self.table_name}_embedding_idx"),
@@ -476,8 +476,8 @@ class NileVectorStore(BasePydanticVectorStore):
         _logger.info(f"Dropping index for {self.table_name}")
         query = sql.SQL(
             """
-                        DROP INDEX IF EXISTS {index_name}_embedding_index;
-                        """
+            DROP INDEX IF EXISTS {index_name};
+            """
         ).format(index_name=sql.Identifier(f"{self.table_name}_embedding_idx"))
         with self._sync_conn.cursor() as cursor:
             cursor.execute(query)
