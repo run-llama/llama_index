@@ -26,10 +26,21 @@ def test_zhipuai_llm_metadata():
 
 
 @pytest.mark.skipif(
-    os.environ.get("ZHIPUAI_API_KEY") is None, reason="ZHIPUAI_API_KEY not set"
+    os.getenv("ZHIPUAI_API_KEY") is None, reason="ZHIPUAI_API_KEY not set"
 )
 def test_completion():
     model = "glm-4"
-    api_key = os.environ.get("ZHIPUAI_API_KEY")
+    api_key = os.getenv("ZHIPUAI_API_KEY")
     llm = ZhipuAI(model=model, api_key=api_key)
     assert llm.complete("who are you")
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(
+    os.getenv("ZHIPUAI_API_KEY") is None, reason="ZHIPUAI_API_KEY not set"
+)
+async def test_async_completion():
+    model = "glm-4"
+    api_key = os.getenv("ZHIPUAI_API_KEY")
+    llm = ZhipuAI(model=model, api_key=api_key)
+    assert await llm.acomplete("who are you")
