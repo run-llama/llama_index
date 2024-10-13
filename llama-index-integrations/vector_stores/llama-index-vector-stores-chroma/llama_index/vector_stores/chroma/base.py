@@ -339,7 +339,8 @@ class ChromaVectorStore(BasePydanticVectorStore):
     def clear(self) -> None:
         """Clear the collection."""
         ids = self._collection.get()["ids"]
-        self._collection.delete(ids=ids)
+        if ids:
+            self._collection.delete(ids=ids)
 
     @property
     def client(self) -> Any:
