@@ -19,8 +19,7 @@ def azure_chat_store():
     return AzureChatStore(mock_table_service_client, mock_atable_service_client)
 
 
-@pytest.mark.asyncio()
-async def test_aset_messages(azure_chat_store):
+def test_set_messages(azure_chat_store):
     key = "test_key"
     messages = [
         ChatMessage(role="user", content="Hello"),
@@ -41,7 +40,7 @@ async def test_aset_messages(azure_chat_store):
     mock_chat_client.submit_transaction = AsyncMock()
     mock_metadata_client.upsert_entity = AsyncMock()
 
-    await azure_chat_store.aset_messages(key, messages)
+    azure_chat_store.set_messages(key, messages)
 
     azure_chat_store._atable_service_client.create_table_if_not_exists.assert_any_call(
         azure_chat_store.chat_table_name
@@ -53,8 +52,7 @@ async def test_aset_messages(azure_chat_store):
     mock_metadata_client.upsert_entity.assert_called_once()
 
 
-@pytest.mark.asyncio()
-async def test_aget_messages(azure_chat_store):
+def test_get_messages(azure_chat_store):
     key = "test_key"
 
     mock_chat_client = AsyncMock(spec=TableClient)
@@ -76,7 +74,10 @@ async def test_aget_messages(azure_chat_store):
     mock_chat_client.query_entities.return_value = AsyncMock()
     mock_chat_client.query_entities.return_value.__aiter__.return_value = mock_entities
 
-    result = await azure_chat_store.aget_messages(key)
+    import pdb
+
+    pdb.set_trace()
+    result = azure_chat_store.get_messages(key)
 
     azure_chat_store._atable_service_client.create_table_if_not_exists.assert_called_once_with(
         azure_chat_store.chat_table_name
