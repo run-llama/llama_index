@@ -8,4 +8,3 @@ from llama_index.graph_stores.memgraph import MemgraphGraphStore
 def test_memgraph_graph_store(MockMemgraphGraphStore: MagicMock):
     instance: MemgraphGraphStore = MockMemgraphGraphStore.return_value()
     assert isinstance(instance, GraphStore)
-    

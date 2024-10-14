@@ -2,13 +2,12 @@
 
 Memgraph is an open source graph database built for real-time streaming and fast analysis.
 
-In this project, we integrated Memgraph as a graph store to store the LlamaIndex graph data and query it. 
+In this project, we integrated Memgraph as a graph store to store the LlamaIndex graph data and query it.
 
 - Property Graph Store: `MemgraphPropertyGraphStore`
 - Knowledege Graph Store: `MemgraphGraphStore`
 
-
-## Instalation 
+## Installation
 
 ```shell
 pip install llama-index llama-index-graph-stores-memgraph
@@ -29,7 +28,9 @@ from llama_index.llms.openai import OpenAI
 from llama_index.core.indices.property_graph import SchemaLLMPathExtractor
 
 
-os.environ["OPENAI_API_KEY"] = "<YOUR_API_KEY>"  # Replace with your OpenAI API key
+os.environ[
+    "OPENAI_API_KEY"
+] = "<YOUR_API_KEY>"  # Replace with your OpenAI API key
 
 os.makedirs("data/paul_graham/", exist_ok=True)
 
@@ -86,10 +87,16 @@ import os
 import logging
 from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
-from llama_index.core import KnowledgeGraphIndex, SimpleDirectoryReader, StorageContext
+from llama_index.core import (
+    KnowledgeGraphIndex,
+    SimpleDirectoryReader,
+    StorageContext,
+)
 from llama_index.graph_stores.memgraph import MemgraphGraphStore
 
-os.environ["OPENAI_API_KEY"] = "<YOUR_API_KEY>"  # Replace with your OpenAI API key
+os.environ[
+    "OPENAI_API_KEY"
+] = "<YOUR_API_KEY>"  # Replace with your OpenAI API key
 
 logging.basicConfig(level=logging.INFO)
 
@@ -130,7 +137,9 @@ index = KnowledgeGraphIndex.from_documents(
     max_triplets_per_chunk=3,
 )
 
-query_engine = index.as_query_engine(include_text=False, response_mode="tree_summarize")
+query_engine = index.as_query_engine(
+    include_text=False, response_mode="tree_summarize"
+)
 response = query_engine.query("Tell me about Python and its uses")
 
 print("Query Response:")

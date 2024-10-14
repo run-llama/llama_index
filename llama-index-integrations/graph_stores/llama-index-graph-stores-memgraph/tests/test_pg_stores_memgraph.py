@@ -1,4 +1,3 @@
-import unittest
 import os
 import pytest
 from llama_index.graph_stores.memgraph import MemgraphPropertyGraphStore
@@ -15,83 +14,79 @@ memgraph_url = os.environ.get("MEMGRAPH_TEST_URL")
 if not memgraph_user or not memgraph_pass or not memgraph_url:
     memgraph_available = False
 else:
-	memgraph_available = True
+    memgraph_available = True
+
 
 @pytest.fixture()
 def pg_store() -> MemgraphPropertyGraphStore:
-	if not memgraph_available:
-		pytest.skip("No Memgraph credentials provided")
-	pg_store = MemgraphPropertyGraphStore(
-		username=memgraph_user, password=memgraph_pass, url=memgraph_url
-	)
-	return pg_store
+    if not memgraph_available:
+        pytest.skip("No Memgraph credentials provided")
+    return MemgraphPropertyGraphStore(
+        username=memgraph_user, password=memgraph_pass, url=memgraph_url
+    )
+
 
 def test_memgraph_pg_store(pg_store: MemgraphPropertyGraphStore) -> None:
-	# Clear the database
-	pg_store.structured_query("STORAGE MODE IN_MEMORY_ANALYTICAL")
-	pg_store.structured_query("DROP GRAPH")
-	pg_store.structured_query("STORAGE MODE IN_MEMORY_TRANSACTIONAL")
+    # Clear the database
+    pg_store.structured_query("STORAGE MODE IN_MEMORY_ANALYTICAL")
+    pg_store.structured_query("DROP GRAPH")
+    pg_store.structured_query("STORAGE MODE IN_MEMORY_TRANSACTIONAL")
 
-	# Test upsert nodes
-	entity1 = EntityNode(label="PERSON", name="Logan", properties={"age": 28})
-	entity2 = EntityNode(label="ORGANIZATION", name="LlamaIndex")
-	pg_store.upsert_nodes([entity1, entity2])
+    # Test upsert nodes
+    entity1 = EntityNode(label="PERSON", name="Logan", properties={"age": 28})
+    entity2 = EntityNode(label="ORGANIZATION", name="LlamaIndex")
+    pg_store.upsert_nodes([entity1, entity2])
 
-	# Assert the nodes are inserted correctly
-	kg_nodes = pg_store.get(ids=[entity1.id])
+    # Assert the nodes are inserted correctly
+    kg_nodes = pg_store.get(ids=[entity1.id])
 
-	# Test inserting relations into Memgraph.
-	relation = Relation(
-		label="WORKS_FOR",
-		source_id=entity1.id,
-		target_id=entity2.id,
-		properties={"since": 2023},
-	)
+    # Test inserting relations into Memgraph.
+    relation = Relation(
+        label="WORKS_FOR",
+        source_id=entity1.id,
+        target_id=entity2.id,
+        properties={"since": 2023},
+    )
 
-	pg_store.upsert_relations([relation])
+    pg_store.upsert_relations([relation])
 
-	# Assert the relation is inserted correctly by retrieving the relation map
-	kg_nodes = pg_store.get(ids=[entity1.id])
-	paths = pg_store.get_rel_map(kg_nodes, depth=1)
+    # Assert the relation is inserted correctly by retrieving the relation map
+    kg_nodes = pg_store.get(ids=[entity1.id])
+    paths = pg_store.get_rel_map(kg_nodes, depth=1)
 
-	# Test inserting a source text node and 'MENTIONS' relations.
-	source_node = TextNode(text="Logan (age 28), works for LlamaIndex since 2023.")
+    # Test inserting a source text node and 'MENTIONS' relations.
+    source_node = TextNode(text="Logan (age 28), works for LlamaIndex since 2023.")
 
-	relations = [
-		Relation(
-			label="MENTIONS", target_id=entity1.id, source_id=source_node.node_id
-		),
-		Relation(
-			label="MENTIONS", target_id=entity2.id, source_id=source_node.node_id
-		),
-	]
+    relations = [
+        Relation(label="MENTIONS", target_id=entity1.id, source_id=source_node.node_id),
+        Relation(label="MENTIONS", target_id=entity2.id, source_id=source_node.node_id),
+    ]
 
-	pg_store.upsert_llama_nodes([source_node])
-	pg_store.upsert_relations(relations)
+    pg_store.upsert_llama_nodes([source_node])
+    pg_store.upsert_relations(relations)
 
-	# Assert the source node and relations are inserted correctly
-	llama_nodes = pg_store.get_llama_nodes([source_node.node_id])
+    # Assert the source node and relations are inserted correctly
+    llama_nodes = pg_store.get_llama_nodes([source_node.node_id])
 
-	# Test retrieving nodes by properties.
-	kg_nodes = pg_store.get(properties={"age": 28})
+    # Test retrieving nodes by properties.
+    kg_nodes = pg_store.get(properties={"age": 28})
 
-	# Test executing a structured query in Memgraph.
-	query = "MATCH (n:`__Entity__`) RETURN n"
-	result = pg_store.structured_query(query)
+    # Test executing a structured query in Memgraph.
+    query = "MATCH (n:`__Entity__`) RETURN n"
+    result = pg_store.structured_query(query)
 
-	# Test upserting a new node with additional properties.
-	new_node = EntityNode(
-		label="PERSON", name="Logan", properties={"age": 28, "location": "Canada"}
-	)
-	pg_store.upsert_nodes([new_node])
+    # Test upserting a new node with additional properties.
+    new_node = EntityNode(
+        label="PERSON", name="Logan", properties={"age": 28, "location": "Canada"}
+    )
+    pg_store.upsert_nodes([new_node])
 
-	# Assert the node has been updated with the new property
-	kg_nodes = pg_store.get(properties={"age": 28})
-	
-	# Test deleting nodes from Memgraph.
-	pg_store.delete(ids=[source_node.node_id])
-	pg_store.delete(ids=[entity1.id, entity2.id])
+    # Assert the node has been updated with the new property
+    kg_nodes = pg_store.get(properties={"age": 28})
 
-	# Assert the nodes have been deleted
-	nodes = pg_store.get(ids=[entity1.id, entity2.id])
-	
+    # Test deleting nodes from Memgraph.
+    pg_store.delete(ids=[source_node.node_id])
+    pg_store.delete(ids=[entity1.id, entity2.id])
+
+    # Assert the nodes have been deleted
+    nodes = pg_store.get(ids=[entity1.id, entity2.id])
