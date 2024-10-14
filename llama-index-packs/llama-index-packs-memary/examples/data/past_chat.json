@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "How old am I?"
+  },
+  {
+    "role": "system",
+    "content": "ReAct agent: You do not have an age as you are an artificial intelligence."
+  }
+]
