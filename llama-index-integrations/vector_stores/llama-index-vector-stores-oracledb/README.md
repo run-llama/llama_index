@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 """
 In this sample example, we will use 'database' provider for both summary and embeddings.
-So, we don't need to do the followings:
+So, we don't need to do the following:
     - set proxy for 3rd party providers
     - create credential for 3rd party providers
 
