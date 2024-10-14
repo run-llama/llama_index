@@ -6,7 +6,12 @@ from llama_index.core.embeddings import BaseEmbedding
 
 
 def get_embeddings(
-    api_key: str, api_base: str, model_name: str, input: List[str], timeout: int = 60, **kwargs: Any
+    api_key: str,
+    api_base: str,
+    model_name: str,
+    input: List[str],
+    timeout: int = 60,
+    **kwargs: Any
 ) -> List[List[float]]:
     """
     Retrieve embeddings for a given list of input strings using the specified model.
@@ -49,7 +54,9 @@ class LiteLLMEmbedding(BaseEmbedding):
             "Only supported in text-embedding-3 and later models."
         ),
     )
-    timeout: Optional[int] = Field(default=60, description="Timeout for each request.", ge=0)
+    timeout: Optional[int] = Field(
+        default=60, description="Timeout for each request.", ge=0
+    )
 
     @classmethod
     def class_name(cls) -> str:
