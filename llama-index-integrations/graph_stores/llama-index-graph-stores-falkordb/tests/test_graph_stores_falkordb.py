@@ -1,57 +1,43 @@
-from unittest.mock import MagicMock, patch
-
-from llama_index.core.graph_stores.types import GraphStore
+import os
+from unittest.mock import patch
+import unittest
 from llama_index.graph_stores.falkordb.base import FalkorDBGraphStore
 
-
-@patch("llama_index.graph_stores.falkordb.base.FalkorDBGraphStore")
-def test_falkordb_class(MockFalkorDBGraphStore: MagicMock):
-    instance: FalkorDBGraphStore = MockFalkorDBGraphStore.return_value
-    assert isinstance(instance, GraphStore)
+falkordb_url = os.environ.get("FALKORDB_TEST_URL")
 
 
-@patch("llama_index.graph_stores.falkordb.base.FalkorDBGraphStore")
-def test_falkordb_store_data(MockFalkorDBGraphStore: MagicMock):
-    instance: FalkorDBGraphStore = MockFalkorDBGraphStore.return_value
-    data = {"key": "value"}
-    instance.store_data(data)
-    instance.store_data.assert_called_once_with(data)
+class TestFalkorDBGraphStore(unittest.TestCase):
+    def setUp(self):
+        if not falkordb_url:
+            raise RuntimeError("No FalkorDB URL provided")
+        self.graph_store = FalkorDBGraphStore(url=falkordb_url)
+
+    @patch("falkordb.FalkorDB.from_url")  # Adjust to match your actual import path
+    def test_upsert_triplet(self, mock_from_url):
+        # Call the method you want to test
+        self.graph_store.upsert_triplet("node1", "related_to", "node2")
+
+        # Check if the data has been inserted correctly
+        result = self.graph_store.get("node1")  # Adjust the method to retrieve data
+        expected_result = [
+            "RELATED_TO",
+            "node2",
+        ]  # Adjust this based on what you expect
+        self.assertIn(expected_result, result)
+
+        result = self.graph_store.get_rel_map(["node1"], 1)
+
+        self.assertIn(expected_result, result["node1"])
+
+        self.graph_store.delete("node1", "related_to", "node2")
+
+        result = self.graph_store.get("node1")  # Adjust the method to retrieve data
+        expected_result = []  # Adjust this based on what you expect
+        self.assertEqual(expected_result, result)
+
+        self.graph_store.switch_graph("new_graph")
+        self.graph_store.refresh_schema()
 
 
-@patch("llama_index.graph_stores.falkordb.base.FalkorDBGraphStore")
-def test_falkordb_retrieve_data(MockFalkorDBGraphStore: MagicMock):
-    instance: FalkorDBGraphStore = MockFalkorDBGraphStore.return_value
-    key = "key"
-    instance.retrieve_data(key)
-    instance.retrieve_data.assert_called_once_with(key)
-
-
-@patch("llama_index.graph_stores.falkordb.base.FalkorDBGraphStore")
-def test_falkordb_delete_data(MockFalkorDBGraphStore: MagicMock):
-    instance: FalkorDBGraphStore = MockFalkorDBGraphStore.return_value
-    key = "key"
-    instance.delete_data(key)
-    instance.delete_data.assert_called_once_with(key)
-
-
-@patch("llama_index.graph_stores.falkordb.base.FalkorDBGraphStore")
-def test_falkordb_update_data(MockFalkorDBGraphStore: MagicMock):
-    instance: FalkorDBGraphStore = MockFalkorDBGraphStore.return_value
-    key = "key"
-    new_data = {"key": "new_value"}
-    instance.update_data(key, new_data)
-    instance.update_data.assert_called_once_with(key, new_data)
-
-
-@patch("llama_index.graph_stores.falkordb.base.FalkorDBGraphStore")
-def test_falkordb_list_keys(MockFalkorDBGraphStore: MagicMock):
-    instance: FalkorDBGraphStore = MockFalkorDBGraphStore.return_value
-    instance.list_keys()
-    instance.list_keys.assert_called_once()
-
-
-@patch("llama_index.graph_stores.falkordb.base.FalkorDBGraphStore")
-def test_falkordb_clear_store(MockFalkorDBGraphStore: MagicMock):
-    instance: FalkorDBGraphStore = MockFalkorDBGraphStore.return_value
-    instance.clear_store()
-    instance.clear_store.assert_called_once()
+if __name__ == "__main__":
+    unittest.main()

@@ -54,9 +54,7 @@ class FalkorDBGraphStore(GraphStore):
 
     def get(self, subj: str) -> List[List[str]]:
         """Get triplets."""
-        result = self._graph.query(
-            self.get_query, params={"subj": subj}, read_only=True
-        )
+        result = self._graph.query(self.get_query, params={"subj": subj})
         return result.result_set
 
     def get_rel_map(
@@ -152,7 +150,7 @@ class FalkorDBGraphStore(GraphStore):
             """
 
             # Call FalkorDB with prepared statement
-            result = self._graph.query(query, params={"entity": entity}, read_only=True)
+            result = self._graph.query(query, params={"entity": entity})
             return bool(result.result_set)
 
         delete_rel(subj, obj, rel)
