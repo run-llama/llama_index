@@ -74,6 +74,7 @@ class LiteLLMEmbedding(BaseEmbedding):
             api_base=self.api_base,
             model_name=self.model_name,
             dimensions=self.dimensions,
+            timeout=self.timeout,
             input=[query],
         )
         return embeddings[0]
@@ -84,6 +85,7 @@ class LiteLLMEmbedding(BaseEmbedding):
             api_base=self.api_base,
             model_name=self.model_name,
             dimensions=self.dimensions,
+            timeout=self.timeout,
             input=[text],
         )
         return embeddings[0]
@@ -94,5 +96,6 @@ class LiteLLMEmbedding(BaseEmbedding):
             api_base=self.api_base,
             model_name=self.model_name,
             dimensions=self.dimensions,
+            timeout=self.timeout,
             input=texts,
         )
