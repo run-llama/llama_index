@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.vector_stores.oceanbase"
 
 [tool.llamahub.class_authors]
-TiDBVectorStore = "GITHUBear"
+OceanBaseVectorStore = "GITHUBear"
 
 [tool.mypy]
 disallow_untyped_defs = true
