@@ -27,10 +27,10 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-fireworks"
 readme = "README.md"
-version = "0.2.1"
+version = "0.2.2"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1"
+python = ">=3.8.1,<4.0"
 llama-index-llms-openai = "^0.2.0"
 llama-index-core = "^0.11.0"
 
