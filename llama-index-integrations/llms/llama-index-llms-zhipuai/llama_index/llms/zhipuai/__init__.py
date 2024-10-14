@@ -1,4 +1,4 @@
-from llama_index.llms.zhipuai.base import ZhipuAI
+from llama_index.llms.zhipuai.base import ZhipuAILLM
 
 
-__all__ = ["ZhipuAI"]
+__all__ = ["ZhipuAILLM"]
