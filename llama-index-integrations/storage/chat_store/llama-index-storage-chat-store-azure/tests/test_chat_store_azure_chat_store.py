@@ -56,10 +56,6 @@ async def test_aset_messages(azure_chat_store):
 @pytest.mark.asyncio()
 async def test_aget_messages(azure_chat_store):
     key = "test_key"
-    expected_messages = [
-        ChatMessage(role="user", content="Hello"),
-        ChatMessage(role="assistant", content="Hi there!"),
-    ]
 
     mock_chat_client = AsyncMock(spec=TableClient)
     azure_chat_store._atable_service_client.create_table_if_not_exists.return_value = (
