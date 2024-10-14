@@ -11,13 +11,13 @@
 
 ```py
 # Import ZhipuAI
-from llama_index.llms.zhipuai import ZhipuAI
+from llama_index.llms.zhipuai import ZhipuAILLM
 
 # Set your API key
 api_key = "Your API KEY"
 
 # Call complete function
-response = ZhipuAI(model="glm-4", api_key=api_key).complete("who are you")
+response = ZhipuAILLM(model="glm-4", api_key=api_key).complete("who are you")
 print(response)
 
 # Output
@@ -30,7 +30,7 @@ messages = [
     ChatMessage(role="user", content="who are you"),
 ]
 
-response = ZhipuAI(model="glm-4", api_key=api_key).chat(messages)
+response = ZhipuAILLM(model="glm-4", api_key=api_key).chat(messages)
 print(response)
 
 # Output
@@ -40,9 +40,9 @@ print(response)
 ### Streaming: Using stream endpoint
 
 ```py
-from llama_index.llms.ZhipuAI import ZhipuAI
+from llama_index.llms.zhipuai import ZhipuAILLM
 
-llm = ZhipuAI(model="glm-4", api_key=api_key)
+llm = ZhipuAILLM(model="glm-4", api_key=api_key)
 
 # Using stream_complete endpoint
 response = llm.stream_complete("who are you")
@@ -62,9 +62,9 @@ for r in response:
 ### Function Calling
 
 ```py
-from llama_index.llms.ZhipuAI import ZhipuAI
+from llama_index.llms.zhipuai import ZhipuAILLM
 
-llm = ZhipuAI(model="glm-4", api_key="YOUR API KEY")
+llm = ZhipuAILLM(model="glm-4", api_key="YOUR API KEY")
 tools = [
     {
         "type": "function",
@@ -97,4 +97,6 @@ print(llm.get_tool_calls_from_response(response))
 
 ### ZhipuAI Documentation
 
-https://bigmodel.cn/dev/howuse/introduction
+usage: https://bigmodel.cn/dev/howuse/introduction
+
+api: https://bigmodel.cn/dev/api/normal-model/glm-4

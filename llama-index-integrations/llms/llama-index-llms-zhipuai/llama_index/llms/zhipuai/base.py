@@ -71,7 +71,7 @@ def async_llm_generate(item):
         return None
 
 
-class ZhipuAI(FunctionCallingLLM):
+class ZhipuAILLM(FunctionCallingLLM):
     """ZhipuAI LLM.
 
     Visit https://open.bigmodel.cn to get more information about ZhipuAI.
@@ -80,9 +80,9 @@ class ZhipuAI(FunctionCallingLLM):
         `pip install llama-index-llms-zhipuai`
 
         ```python
-        from llama_index.llms.zhipuai import zhipuai
+        from llama_index.llms.zhipuai import ZhipuAILLM
 
-        llm = ZhipuAI(model="glm-4", api_key="YOUR API KEY")
+        llm = ZhipuAILLM(model="glm-4", api_key="YOUR API KEY")
 
         response = llm.complete("who are you?")
         print(response)
@@ -139,7 +139,7 @@ class ZhipuAI(FunctionCallingLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        return "ZhipuAI"
+        return "ZhipuAILLM"
 
     @property
     def metadata(self) -> LLMMetadata:
