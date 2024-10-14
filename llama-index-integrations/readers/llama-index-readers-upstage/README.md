@@ -18,13 +18,13 @@ The `UpstageDocumentParseReader` is equipped with the following three optional p
 
 - `output_format`: A list of string value indicating in which each layout element output is formatted. Possible values are `text`, `html`, and `markdown`. The default value is `"html"`
 
-- `coordinates`: A boolean value indicating wheter to return coordinates of bounding boxes of each layout element. The default is `true`
+- `coordinates`: A boolean value indicating whether to return coordinates of bounding boxes of each layout element. The default is `true`
 
-- `base64_encoding`: A list of string value indicating which layout category should be provided as base64 encoded string. Categories are include `paragraph`,  `table`, `figure`, `header`, `footer`, `caption`, `equation`, `heading1`, `list`, `index`, `footnote`, `chart`. This feature is useful when user wants to crop the layout element from the original document image and store and use it for their own purpose. For example, users can extract image base64 encoding of all tables of the input document with `["table"]`. All layout categories can be specified.
+- `base64_encoding`: A list of string value indicating which layout category should be provided as base64 encoded string. Categories are include `paragraph`, `table`, `figure`, `header`, `footer`, `caption`, `equation`, `heading1`, `list`, `index`, `footnote`, `chart`. This feature is useful when user wants to crop the layout element from the original document image and store and use it for their own purpose. For example, users can extract image base64 encoding of all tables of the input document with `["table"]`. All layout categories can be specified.
 
 ### `load_data`
 
-The `load_data` function,  encompassed within the `UpstageDocumentParseReader`,  extends from the `BaseReader` class. The `lazy_load_data` function mirrors the functionalities of the `load_data` function but with an enhanced focus on efficiency and lazy loading, making it particularly suitable for handling large files. Utilizing this function effectively necessitates a thorough understanding of its parameters and their respective expected inputs to harness its full potential:
+The `load_data` function, encompassed within the `UpstageDocumentParseReader`, extends from the `BaseReader` class. The `lazy_load_data` function mirrors the functionalities of the `load_data` function but with an enhanced focus on efficiency and lazy loading, making it particularly suitable for handling large files. Utilizing this function effectively necessitates a thorough understanding of its parameters and their respective expected inputs to harness its full potential:
 
 - **`file_path` (required):** This critical parameter accepts either a single string or `pathlib.Path` object, or a list comprising multiple of these elements, representing the path(s) to the file(s) intended for loading. Proper accessibility and precise specification of these path(s) are essential to ensure smooth operation.
 
@@ -45,14 +45,11 @@ file_path = "/PATH/TO/YOUR/FILE.pdf"
 reader = UpstageDocumentParseReader()
 
 # For improved memory efficiency, consider using the lazy_load_data method to load documents page by page.
-docs = reader.load_data(
-    file_path=file_path
-)
+docs = reader.load_data(file_path=file_path)
 
 for doc in docs[:3]:
     print(doc)
 ```
-
 
 ## UpstageLayoutAnalysisReader (deprecated)
 
