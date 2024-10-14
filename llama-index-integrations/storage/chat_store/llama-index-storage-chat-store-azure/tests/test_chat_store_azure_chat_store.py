@@ -74,9 +74,6 @@ def test_get_messages(azure_chat_store):
     mock_chat_client.query_entities.return_value = AsyncMock()
     mock_chat_client.query_entities.return_value.__aiter__.return_value = mock_entities
 
-    import pdb
-
-    pdb.set_trace()
     result = azure_chat_store.get_messages(key)
 
     azure_chat_store._atable_service_client.create_table_if_not_exists.assert_called_once_with(

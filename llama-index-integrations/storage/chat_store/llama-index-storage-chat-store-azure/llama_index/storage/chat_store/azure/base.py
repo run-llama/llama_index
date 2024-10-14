@@ -212,9 +212,6 @@ class AzureChatStore(BaseChatStore):
 
     async def aget_messages(self, key: str) -> List[ChatMessage]:
         """Asynchronously get messages for a key."""
-        import pdb
-
-        pdb.set_trace()
         chat_client = await self._atable_service_client.create_table_if_not_exists(
             self.chat_table_name
         )
