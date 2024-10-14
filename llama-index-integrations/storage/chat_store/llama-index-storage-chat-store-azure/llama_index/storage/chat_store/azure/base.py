@@ -216,10 +216,14 @@ class AzureChatStore(BaseChatStore):
             self.chat_table_name
         )
         entities = chat_client.query_entities(f"PartitionKey eq '{key}'")
-        return [
-            ChatMessage.parse_obj(deserialize(self.service_mode, entity))
-            for entity in entities
-        ]
+        messages = []
+
+        async for entity in entities:
+            messages.append(
+                ChatMessage.model_validate(deserialize(self.service_mode, entity))
+            )
+
+        return messages
 
     def add_message(self, key: str, message: ChatMessage, idx: int = None):
         """Add a message for a key."""
@@ -255,7 +259,7 @@ class AzureChatStore(BaseChatStore):
         metadata["LastMessageRowKey"] = self._to_row_key(idx)
         metadata["MessageCount"] = next_index + 1
         # Update medatada
-        metadata_client.upsert_entity(metadata, UpdateMode.MERGE)
+        await metadata_client.upsert_entity(metadata, UpdateMode.MERGE)
 
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         # Delete all messages for the key
@@ -352,7 +356,12 @@ class AzureChatStore(BaseChatStore):
         entities = metadata_client.query_entities(
             f"PartitionKey eq '{self.metadata_partition_key}'"
         )
-        return [entity["RowKey"] for entity in entities]
+
+        keys = []
+        async for entity in entities:
+            keys.append(entity["RowKey"])
+
+        return keys
 
     @classmethod
     def class_name(cls) -> str:
