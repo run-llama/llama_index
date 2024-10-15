@@ -422,7 +422,12 @@ class WatsonxLLM(FunctionCallingLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        return self._chat(messages, **kwargs)
+        if kwargs.get("use_completions"):
+            chat_fn = completion_to_chat_decorator(self.complete)
+        else:
+            chat_fn = self._chat
+
+        return chat_fn(messages, **kwargs)
 
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -440,19 +445,25 @@ class WatsonxLLM(FunctionCallingLLM):
         )
 
         def stream_gen() -> ChatResponseGen:
-
-            role = None
+            content = ""
+            role = ""
             for response in stream_response:
                 wx_message = response["choices"][0]["delta"]
-                print(wx_message)
 
-                if "content" in wx_message:
+                role = wx_message.get("role") or role or MessageRole.ASSISTANT
+                delta = wx_message.get("content", "")
+                content += delta
 
-                    msg = wx_message | role
-                    message = from_watsonx_message(msg)
-                    yield ChatResponse(message=message)
-                elif "role" in wx_message:
-                    role = wx_message
+                yield ChatResponse(
+                    message=ChatMessage(
+                        role=role,
+                        content=content,
+                        additional_kwargs=kwargs,
+                    ),
+                    delta=delta,
+                    raw=response,
+                    additional_kwargs=kwargs,
+                )
 
         return stream_gen()
 
@@ -460,8 +471,12 @@ class WatsonxLLM(FunctionCallingLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        if kwargs.get("use_completions"):
+            chat_stream_fn = stream_completion_to_chat_decorator(self.stream_complete)
+        else:
+            chat_stream_fn = self._stream_chat
 
-        return self._stream_chat(messages, **kwargs)
+        return chat_stream_fn(messages, **kwargs)
 
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
