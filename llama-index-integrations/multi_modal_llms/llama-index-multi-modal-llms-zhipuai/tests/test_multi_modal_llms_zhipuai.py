@@ -1,9 +1,37 @@
 import base64
 import os
 import pytest
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from unittest import mock
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.multi_modal_llms.zhipuai import ZhipuAIMultiModal
+from zhipuai.types.chat.chat_completion import (
+    Completion,
+    CompletionChoice,
+    CompletionMessage,
+    CompletionUsage,
+)
+
+
+_FAKE_API_KEY = "ZHIPUAI_API_KEY"
+_FAKE_CHAT_COMPLETIONS_RESPONSE = Completion(
+    id="some_id",
+    choices=[
+        CompletionChoice(
+            index=0,
+            finish_reason="stop",
+            message=CompletionMessage(
+                role=MessageRole.ASSISTANT,
+                content="nothing in the video",
+            ),
+        )
+    ],
+    usage=CompletionUsage(
+        prompt_tokens=10,
+        completion_tokens=10,
+        total_tokens=20,
+    ),
+)
 
 
 def test_multi_modal_llm_class():
@@ -27,6 +55,27 @@ def test_get_glm_model_context_size():
     with pytest.raises(ValueError):
         llm = ZhipuAIMultiModal(model="glm-x", api_key="")
         assert llm.metadata.context_window
+
+
+def test_fake_llm_chat_and_complete():
+    messages = [ChatMessage(role=MessageRole.USER, content="describe the video")]
+    expected_response = ChatResponse(
+        message=ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="nothing in the video",
+            additional_kwargs={"tool_calls": None},
+        ),
+        raw=_FAKE_CHAT_COMPLETIONS_RESPONSE,
+    )
+    llm = ZhipuAIMultiModal(model="glm-4v-plus", api_key=_FAKE_API_KEY)
+
+    with mock.patch.object(
+        llm._client.chat.completions,
+        "create",
+        return_value=_FAKE_CHAT_COMPLETIONS_RESPONSE,
+    ):
+        actual_response = llm.chat(messages=messages)
+        assert actual_response == expected_response
 
 
 @pytest.mark.skipif(
