@@ -186,12 +186,11 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 "Please remove alpha and provide KDBAI weights for the two indexes though the vector_store_kwargs."
             )
         
-        if query.filters is not None:
-            filter = query.filters[:]
+        if query.filters:
+            filter = query.filters
             if kwargs.get("filter"):
                 filter.extend(kwargs.pop("filter"))
-        else:
-            filter = kwargs.pop("filter", [])
+            kwargs["filter"] = filter
 
         if kwargs.get("index"):
             index = kwargs.pop("index")
@@ -222,12 +221,10 @@ class KDBAIVectorStore(BasePydanticVectorStore):
             results = self._table.search(vectors=qry,
                                         index_params=index_params,
                                         n=query.similarity_top_k,
-                                        filter=filter,
                                         **kwargs)[0]            
         else:
             results = self._table.search(vectors={index:[query.query_embedding]},
                                         n=query.similarity_top_k,
-                                        filter=filter,
                                         **kwargs)[0]
 
         top_k_nodes = []
