@@ -1,27 +1,27 @@
 import os
 import pytest
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.llms.zhipuai import ZhipuAILLM
+from llama_index.llms.zhipuai import ZhipuAI
 
 
 def test_llm_class():
-    names_of_base_classes = [b.__name__ for b in ZhipuAILLM.__mro__]
+    names_of_base_classes = [b.__name__ for b in ZhipuAI.__mro__]
     assert BaseLLM.__name__ in names_of_base_classes
 
 
 def test_zhipuai_llm_model_alias():
     model = "glm-test"
     api_key = "api_key_test"
-    llm = ZhipuAILLM(model=model, api_key=api_key)
+    llm = ZhipuAI(model=model, api_key=api_key)
     assert llm.model == model
     assert llm.model_kwargs is not None
 
 
 def test_zhipuai_llm_metadata():
     api_key = "api_key_test"
-    llm = ZhipuAILLM(model="glm-4", api_key=api_key)
+    llm = ZhipuAI(model="glm-4", api_key=api_key)
     assert llm.metadata.is_function_calling_model is True
-    llm = ZhipuAILLM(model="glm-4v", api_key=api_key)
+    llm = ZhipuAI(model="glm-4v", api_key=api_key)
     assert llm.metadata.is_function_calling_model is False
 
 
@@ -31,7 +31,7 @@ def test_zhipuai_llm_metadata():
 def test_completion():
     model = "glm-4"
     api_key = os.getenv("ZHIPUAI_API_KEY")
-    llm = ZhipuAILLM(model=model, api_key=api_key)
+    llm = ZhipuAI(model=model, api_key=api_key)
     assert llm.complete("who are you")
 
 
@@ -42,5 +42,5 @@ def test_completion():
 async def test_async_completion():
     model = "glm-4"
     api_key = os.getenv("ZHIPUAI_API_KEY")
-    llm = ZhipuAILLM(model=model, api_key=api_key)
+    llm = ZhipuAI(model=model, api_key=api_key)
     assert await llm.acomplete("who are you")
