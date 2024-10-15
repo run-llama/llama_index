@@ -96,6 +96,7 @@ def test_class():
 @pytest.mark.skipif(not oceanbase_available, reason="oceanbase is not available")
 def test_init_client():
     client = ObVecClient(**CONN_ARGS)
+    client.perform_raw_text_sql("ALTER SYSTEM ob_vector_memory_limit_percentage = 30")
 
     # Initialize OceanBaseVectorStore
     oceanbase = OceanBaseVectorStore(
@@ -107,6 +108,7 @@ def test_init_client():
 @pytest.mark.skipif(not oceanbase_available, reason="oceanbase is not available")
 def test_add_node(node_embeddings: List[TextNode]):
     client = ObVecClient(**CONN_ARGS)
+    client.perform_raw_text_sql("ALTER SYSTEM ob_vector_memory_limit_percentage = 30")
 
     # Initialize OceanBaseVectorStore
     oceanbase = OceanBaseVectorStore(
@@ -122,6 +124,7 @@ def test_add_node(node_embeddings: List[TextNode]):
 @pytest.mark.skipif(not oceanbase_available, reason="oceanbase is not available")
 def test_search_with_l2_distance(node_embeddings: List[TextNode]):
     client = ObVecClient(**CONN_ARGS)
+    client.perform_raw_text_sql("ALTER SYSTEM ob_vector_memory_limit_percentage = 30")
 
     # Initialize OceanBaseVectorStore
     oceanbase = OceanBaseVectorStore(
@@ -148,6 +151,7 @@ def test_search_with_l2_distance(node_embeddings: List[TextNode]):
 @pytest.mark.skipif(not oceanbase_available, reason="oceanbase is not available")
 def test_search_with_neg_ip_distance(node_embeddings: List[TextNode]):
     client = ObVecClient(**CONN_ARGS)
+    client.perform_raw_text_sql("ALTER SYSTEM ob_vector_memory_limit_percentage = 30")
 
     # Initialize OceanBaseVectorStore
     oceanbase = OceanBaseVectorStore(
@@ -179,6 +183,7 @@ def test_delete_doc(node_embeddings: List[TextNode]):
     client = ObVecClient(
         **CONN_ARGS,
     )
+    client.perform_raw_text_sql("ALTER SYSTEM ob_vector_memory_limit_percentage = 30")
 
     # Initialize OceanBaseVectorStore
     oceanbase = OceanBaseVectorStore(
@@ -222,6 +227,7 @@ def test_delete_nodes_and_get_nodes(node_embeddings: List[TextNode]):
     client = ObVecClient(
         **CONN_ARGS,
     )
+    client.perform_raw_text_sql("ALTER SYSTEM ob_vector_memory_limit_percentage = 30")
 
     # Initialize OceanBaseVectorStore
     oceanbase = OceanBaseVectorStore(
@@ -279,6 +285,7 @@ def test_clear(node_embeddings: List[TextNode]):
     client = ObVecClient(
         **CONN_ARGS,
     )
+    client.perform_raw_text_sql("ALTER SYSTEM ob_vector_memory_limit_percentage = 30")
 
     # Initialize OceanBaseVectorStore
     oceanbase = OceanBaseVectorStore(
@@ -297,6 +304,7 @@ def test_search_with_filter(node_embeddings: List[TextNode]):
     client = ObVecClient(
         **CONN_ARGS,
     )
+    client.perform_raw_text_sql("ALTER SYSTEM ob_vector_memory_limit_percentage = 30")
 
     # Initialize OceanBaseVectorStore
     oceanbase = OceanBaseVectorStore(

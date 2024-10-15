@@ -28,7 +28,7 @@ So it is necessary to install it with `pip install pyobvector` before starting.
 We recommend using Docker to deploy OceanBase:
 
 ```shell
-docker run --name=ob433 -e MODE=slim -p 2881:2881 -d oceanbase/oceanbase-ce:4.3.3.0-100000132024100711
+docker run --name=ob433 -e MODE=slim -p 2881:2881 -d oceanbase/oceanbase-ce:4.3.3.0-100000142024101215
 ```
 
 ## Usage
@@ -46,6 +46,10 @@ from llama_index.vector_stores.oceanbase import OceanBaseVectorStore
 from pyobvector import ObVecClient
 
 client = ObVecClient()
+
+client.perform_raw_text_sql(
+    "ALTER SYSTEM ob_vector_memory_limit_percentage = 30"
+)
 
 # Initialize OceanBaseVectorStore
 oceanbase = OceanBaseVectorStore(
