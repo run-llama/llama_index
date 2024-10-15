@@ -11,9 +11,14 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.embeddings.huggingface.utils import format_query, format_text
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
-from optimum.intel.openvino import OVModelForFeatureExtraction, OVModelOpenCLIPVisual, OVModelOpenCLIPText
+from optimum.intel.openvino import (
+    OVModelForFeatureExtraction,
+    OVModelOpenCLIPVisual,
+    OVModelOpenCLIPText,
+)
 from transformers import AutoTokenizer
 from PIL import Image
+
 
 class OpenVINOEmbedding(BaseEmbedding):
     model_id_or_path: str = Field(description="Huggingface model id or local path.")
@@ -246,19 +251,19 @@ class OpenVINOEmbedding(BaseEmbedding):
         ]
         return self._embed(texts)
 
-class OpenVINOClipEmbedding(MultiModalEmbedding):
 
+class OpenVINOClipEmbedding(MultiModalEmbedding):
     embed_batch_size: int = Field(default=DEFAULT_EMBED_BATCH_SIZE, gt=0)
 
-    _visual_model : Any = PrivateAttr()
-    _text_model : Any = PrivateAttr()
+    _visual_model: Any = PrivateAttr()
+    _text_model: Any = PrivateAttr()
     _preprocess: Any = PrivateAttr()
     _device: Any = PrivateAttr()
 
     @classmethod
     def class_name(cls) -> str:
         return "OpenVINOClipEmbedding"
-    
+
     @staticmethod
     def create_and_save_openvino_model(
         model_name_or_path: str,
@@ -266,7 +271,9 @@ class OpenVINOClipEmbedding(MultiModalEmbedding):
         export_kwargs: Optional[dict] = None,
     ) -> None:
         try:
-            from optimum.intel.openvino import OVModelOpenCLIPForZeroShotImageClassification
+            from optimum.intel.openvino import (
+                OVModelOpenCLIPForZeroShotImageClassification,
+            )
             from transformers import AutoTokenizer
         except ImportError:
             raise ImportError(
@@ -370,13 +377,16 @@ class OpenVINOClipEmbedding(MultiModalEmbedding):
             )
         if embed_batch_size <= 0:
             raise ValueError(f"Embed batch size {embed_batch_size}  must be > 0.")
-        
+
         processor_inputs = {
             "is_train": False,
-            "image_size": (visual_model.config.vision_config.image_size, visual_model.config.vision_config.image_size),
+            "image_size": (
+                visual_model.config.vision_config.image_size,
+                visual_model.config.vision_config.image_size,
+            ),
         }
         tokenizer = tokenizer or AutoTokenizer.from_pretrained(model_id_or_path)
-        
+
         try:
             import open_clip
         except ImportError:
@@ -387,11 +397,9 @@ class OpenVINOClipEmbedding(MultiModalEmbedding):
             )
 
         preprocess = open_clip.image_transform(**processor_inputs)
-        
-        super().__init__(
-            embed_batch_size=embed_batch_size, **kwargs
-        )
-        
+
+        super().__init__(embed_batch_size=embed_batch_size, **kwargs)
+
         self._device = device
         self._visual_model = visual_model
         self._text_model = text_model
@@ -429,8 +437,5 @@ class OpenVINOClipEmbedding(MultiModalEmbedding):
         import torch
 
         with torch.no_grad():
-            image = (
-                self._preprocess(Image.open(img_file_path))
-                .unsqueeze(0)
-            )
+            image = self._preprocess(Image.open(img_file_path)).unsqueeze(0)
             return self._visual_model(image).image_features.tolist()[0]
