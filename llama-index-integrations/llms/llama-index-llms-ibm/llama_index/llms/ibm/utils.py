@@ -1,10 +1,13 @@
 import os
 import urllib.parse
-from typing import Dict, Union, Optional
+from typing import Dict, Union, Optional, List, Any
 
 
 from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
+)
+from llama_index.core.base.llms.types import (
+    ChatMessage,
 )
 
 # Import SecretStr directly from pydantic
@@ -109,3 +112,28 @@ def convert_to_secret_str(value: Union[SecretStr, str]) -> SecretStr:
     if isinstance(value, SecretStr):
         return value
     return SecretStr(value)
+
+
+def to_watsonx_message_dict(message: ChatMessage) -> dict:
+    """Convert generic message to message dict."""
+    message_dict = {
+        "role": message.role.value,
+        "content": message.content,
+    }
+
+    message_dict.update(message.additional_kwargs)
+
+    return message_dict
+
+
+def from_watsonx_message(message: dict) -> ChatMessage:
+    """Convert Watsonx message dict to generic message."""
+    role = message.get("role")
+    content = message.get("content")
+
+    additional_kwargs: Dict[str, Any] = {}
+    if message.get("tool_calls") is not None:
+        tool_calls: List[dict] = message.get("tool_calls")
+        additional_kwargs.update(tool_calls=tool_calls)
+
+    return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
