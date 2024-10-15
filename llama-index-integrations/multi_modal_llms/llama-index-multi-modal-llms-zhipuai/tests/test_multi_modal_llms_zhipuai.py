@@ -20,6 +20,15 @@ def test_multi_modal_llm_series():
     assert llm.has_videos_generations_api() is True
 
 
+def test_get_glm_model_context_size():
+    llm = ZhipuAIMultiModal(model="glm-4v", api_key="")
+    assert llm.metadata.context_window > 0
+    assert llm.model_kwargs
+    with pytest.raises(ValueError):
+        llm = ZhipuAIMultiModal(model="glm-x", api_key="")
+        assert llm.metadata.context_window
+
+
 @pytest.mark.skipif(
     os.getenv("ZHIPUAI_API_KEY") is None, reason="ZHIPUAI_API_KEY not set"
 )
