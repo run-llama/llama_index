@@ -20,7 +20,9 @@ os.environ["ZHIPUAI_API_KEY"] = "Your API KEY"
 os.environ["ZHIPUAI_TEST_VIDEO"] = "xxx.mp4"
 
 # Call chat/complete with glm-4v-plus (types support: text, image_url, video_url)
-llm = ZhipuAIMultiModal(model="glm-4v-plus", api_key=os.getenv("ZHIPUAI_API_KEY"))
+llm = ZhipuAIMultiModal(
+    model="glm-4v-plus", api_key=os.getenv("ZHIPUAI_API_KEY")
+)
 with open(os.getenv("ZHIPUAI_TEST_VIDEO"), "rb") as video_file:
     video_base = base64.b64encode(video_file.read()).decode("utf-8")
 messages_1 = [
@@ -62,7 +64,9 @@ print(llm.stream_complete("descript the video", video_url=video_base))
 # <generator object llm_completion_callback.<locals>.wrap.<locals>.wrapped_llm_predict.<locals>.wrapped_gen at 0x1175535b0>
 
 # Call chat/complete with cogview or cogvideo
-llm = ZhipuAIMultiModal(model="cogvideox", api_key=os.getenv("ZHIPUAI_API_KEY"))
+llm = ZhipuAIMultiModal(
+    model="cogvideox", api_key=os.getenv("ZHIPUAI_API_KEY")
+)
 messages = [
     ChatMessage(
         role=MessageRole.USER,
