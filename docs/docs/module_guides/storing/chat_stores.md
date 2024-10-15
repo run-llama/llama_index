@@ -224,3 +224,20 @@ print(chat_store.get_messages("123"))
 #      ChatMessage(role=<MessageRole.ASSISTANT: 'assistant'>, content='I am your helpful AI assistant.', additional_kwargs={})],
 #      ChatMessage(role=<MessageRole.USER: 'user'>, content='What can you do?', additional_kwargs={})]
 ```
+
+## RedisChatStore
+
+Using `RedisChatStore`, you can store your chat history remotely, without having to worry about manually persisting and loading the chat history.
+
+```python
+from llama_index.storage.chat_store.redis import RedisChatStore
+from llama_index.core.memory import ChatMemoryBuffer
+
+chat_store = RedisChatStore(redis_url="redis://localhost:6379", ttl=300)
+
+chat_memory = ChatMemoryBuffer.from_defaults(
+    token_limit=3000,
+    chat_store=chat_store,
+    chat_store_key="user1",
+)
+```
