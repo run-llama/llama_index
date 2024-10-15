@@ -25,7 +25,7 @@ So, we don't need to do the following:
     - set proxy for 3rd party providers
     - create credential for 3rd party providers
 
-If you choose to use 3rd party provider, 
+If you choose to use 3rd party provider,
 please follow the necessary steps for proxy and credential.
 """
 
@@ -105,7 +105,6 @@ for id, doc in enumerate(docs, start=1):
 print(f"Number of total chunks with metadata: {len(chunks_with_mdata)}")
 
 
-
 # create Oracle AI Vector Store
 vectorstore = OraLlamaVS.from_documents(
     client=conn,
@@ -117,7 +116,7 @@ vectorstore = OraLlamaVS.from_documents(
 """ verify """
 print(f"Vector Store Table: {vectorstore.table_name}")
 
-# Create Index 
+# Create Index
 orallamavs.create_index(
     conn, vectorstore, params={"idx_name": "hnsw_oravs", "idx_type": "HNSW"}
 )
@@ -125,7 +124,7 @@ orallamavs.create_index(
 print("Index created.")
 
 
-#Perform Semantic Search
+# Perform Semantic Search
 query = "What is Oracle AI Vector Store?"
 filter = {"document_id": ["1"]}
 
@@ -154,5 +153,4 @@ print(
         query, 1, fetch_k=20, lambda_mult=0.5, filter=filter
     )
 )
-
 ```
