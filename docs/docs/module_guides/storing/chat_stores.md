@@ -225,15 +225,17 @@ print(chat_store.get_messages("123"))
 #      ChatMessage(role=<MessageRole.USER: 'user'>, content='What can you do?', additional_kwargs={})]
 ```
 
-## RedisChatStore
+## PostgresChatStore
 
-Using `RedisChatStore`, you can store your chat history remotely, without having to worry about manually persisting and loading the chat history.
+Using `PostgresChatStore`, you can store your chat history remotely, without having to worry about manually persisting and loading the chat history.
 
 ```python
-from llama_index.storage.chat_store.redis import RedisChatStore
+from llama_index.storage.chat_store.postgres import PostgresChatStore
 from llama_index.core.memory import ChatMemoryBuffer
 
-chat_store = RedisChatStore(redis_url="redis://localhost:6379", ttl=300)
+chat_store = PostgresChatStore.from_uri(
+    uri='postgresql+asyncpg://postgres:password@127.0.0.1:5432/database',
+)
 
 chat_memory = ChatMemoryBuffer.from_defaults(
     token_limit=3000,
