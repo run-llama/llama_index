@@ -89,7 +89,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     """
 
     stores_text: bool = True
-    flat_metadata: bool = True
+    flat_metadata: bool = False
 
     _mongodb_client: Any = PrivateAttr()
     _collection: Any = PrivateAttr()

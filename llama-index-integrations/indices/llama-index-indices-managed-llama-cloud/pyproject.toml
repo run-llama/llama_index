@@ -19,8 +19,12 @@ LlamaCloudRetriever = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
+# Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
+explicit_package_bases = true
 ignore_missing_imports = true
+namespace_packages = true
+plugins = "pydantic.mypy"
 python_version = "3.8"
 
 [tool.poetry]
@@ -30,12 +34,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-indices-managed-llama-cloud"
 readme = "README.md"
-version = "0.3.1"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 llama-cloud = ">=0.0.11"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.11.13.post1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

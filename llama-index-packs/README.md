@@ -10,7 +10,7 @@ pip install llama-index-packs-<name-of-pack>
 
 For a list of our llama-packs Python packages, visit [llamahub.ai](https://llamahub.ai/?tab=llama-packs).
 
-On the other hand, if you wish to download a llama-pack and potentially custommize it,
+On the other hand, if you wish to download a llama-pack and potentially customize it,
 you can download it as a template. There are a couple of ways to do so. First,
 llama-packs can be downloaded as a template by using the `llamaindex-cli` tool
 that comes with `llama-index`:

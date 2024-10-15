@@ -1,7 +1,10 @@
+import asyncio
+from functools import partial
 from contextlib import contextmanager
-from contextvars import ContextVar, Token
+from contextvars import Context, ContextVar, Token, copy_context
 from typing import Any, Callable, Generator, List, Optional, Dict, Protocol
 import inspect
+import logging
 import uuid
 from deprecated import deprecated
 from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
@@ -17,6 +20,7 @@ import wrapt
 
 DISPATCHER_SPAN_DECORATED_ATTR = "__dispatcher_span_decorated__"
 
+_logger = logging.getLogger(__name__)
 
 # ContextVar for managing active instrument tags
 active_instrument_tags: ContextVar[Dict[str, Any]] = ContextVar(
@@ -251,6 +255,10 @@ class Dispatcher(BaseModel):
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             id_ = f"{func.__qualname__}-{uuid.uuid4()}"
             tags = active_instrument_tags.get()
+            result = None
+
+            # Copy the current context
+            context = copy_context()
 
             token = active_span_id.set(id_)
             parent_id = None if token.old_value is Token.MISSING else token.old_value
@@ -261,20 +269,68 @@ class Dispatcher(BaseModel):
                 parent_id=parent_id,
                 tags=tags,
             )
+
+            def handle_future_result(
+                future: asyncio.Future,
+                span_id: str,
+                bound_args: inspect.BoundArguments,
+                instance: Any,
+                context: Context,
+            ) -> None:
+                try:
+                    result = future.result()
+                    self.span_exit(
+                        id_=span_id,
+                        bound_args=bound_args,
+                        instance=instance,
+                        result=result,
+                    )
+                    return result
+                except BaseException as e:
+                    self.event(SpanDropEvent(span_id=span_id, err_str=str(e)))
+                    self.span_drop(
+                        id_=span_id, bound_args=bound_args, instance=instance, err=e
+                    )
+                    raise
+                finally:
+                    try:
+                        context.run(active_span_id.reset, token)
+                    except ValueError as e:
+                        # TODO: Since the context is created in a sync context no in async task,
+                        # detaching the token raises an ValueError saying "token was created
+                        # in a different Context. We should figure out how to handle active spans
+                        # correctly, but for now just suppressing the error so it won't be
+                        # surfaced to the user.
+                        _logger.debug(f"Failed to reset active_span_id: {e}")
+
             try:
                 result = func(*args, **kwargs)
+                if isinstance(result, asyncio.Future):
+                    # If the result is a Future, wrap it
+                    new_future = asyncio.ensure_future(result)
+                    new_future.add_done_callback(
+                        partial(
+                            handle_future_result,
+                            span_id=id_,
+                            bound_args=bound_args,
+                            instance=instance,
+                            context=context,
+                        )
+                    )
+                    return new_future
+                else:
+                    # For non-Future results, proceed as before
+                    self.span_exit(
+                        id_=id_, bound_args=bound_args, instance=instance, result=result
+                    )
+                    return result
             except BaseException as e:
                 self.event(SpanDropEvent(span_id=id_, err_str=str(e)))
                 self.span_drop(id_=id_, bound_args=bound_args, instance=instance, err=e)
                 raise
-            else:
-                self.span_exit(
-                    id_=id_, bound_args=bound_args, instance=instance, result=result
-                )
-                return result
             finally:
-                # clean up
-                active_span_id.reset(token)
+                if not isinstance(result, asyncio.Future):
+                    active_span_id.reset(token)
 
         @wrapt.decorator
         async def async_wrapper(

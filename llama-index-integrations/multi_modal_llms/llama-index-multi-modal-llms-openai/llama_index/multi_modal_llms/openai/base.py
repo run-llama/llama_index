@@ -28,6 +28,7 @@ from llama_index.llms.openai.utils import (
     from_openai_message,
     resolve_openai_credentials,
     to_openai_message_dicts,
+    update_tool_calls,
 )
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -315,7 +316,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
                 additional_kwargs = {}
                 if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
+                    tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
@@ -471,7 +472,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
                 additional_kwargs = {}
                 if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
+                    tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(

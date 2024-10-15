@@ -5,6 +5,7 @@ interfaces a managed service.
 
 """
 
+import httpx
 import os
 import time
 from typing import Any, List, Optional, Sequence, Type
@@ -66,6 +67,8 @@ class LlamaCloudIndex(BaseManagedIndex):
         app_url: Optional[str] = None,
         show_progress: bool = False,
         callback_manager: Optional[CallbackManager] = None,
+        httpx_client: Optional[httpx.Client] = None,
+        async_httpx_client: Optional[httpx.AsyncClient] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Index."""
@@ -78,8 +81,12 @@ class LlamaCloudIndex(BaseManagedIndex):
             # TODO: How to handle uploading nodes without running transforms on them?
             raise ValueError("LlamaCloudIndex does not support nodes on initialization")
 
-        self._client = get_client(api_key, base_url, app_url, timeout)
-        self._aclient = get_aclient(api_key, base_url, app_url, timeout)
+        self._httpx_client = httpx_client
+        self._async_httpx_client = async_httpx_client
+        self._client = get_client(api_key, base_url, app_url, timeout, httpx_client)
+        self._aclient = get_aclient(
+            api_key, base_url, app_url, timeout, async_httpx_client
+        )
 
         self._api_key = api_key
         self._base_url = base_url
@@ -316,6 +323,8 @@ class LlamaCloudIndex(BaseManagedIndex):
             timeout=self._timeout,
             organization_id=self.organization_id,
             dense_similarity_top_k=dense_similarity_top_k,
+            httpx_client=self._httpx_client,
+            async_httpx_client=self._async_httpx_client,
             **kwargs,
         )
 
