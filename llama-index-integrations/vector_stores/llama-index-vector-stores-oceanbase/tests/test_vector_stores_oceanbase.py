@@ -243,7 +243,7 @@ def test_delete_nodes_and_get_nodes(node_embeddings: List[TextNode]):
         ],
         filters=MetadataFilters(
             filters=[
-                MetadataFilter(key="metadata->'$.location'", value=2, operator=">"),
+                MetadataFilter(key="location", value=2, operator=">"),
             ]
         ),
     )
@@ -256,7 +256,7 @@ def test_delete_nodes_and_get_nodes(node_embeddings: List[TextNode]):
         ],
         filters=MetadataFilters(
             filters=[
-                MetadataFilter(key="metadata->'$.location'", value=2, operator=">"),
+                MetadataFilter(key="location", value=2, operator=">"),
             ]
         ),
     )
@@ -313,7 +313,7 @@ def test_search_with_filter(node_embeddings: List[TextNode]):
         similarity_top_k=3,
         filters=MetadataFilters(
             filters=[
-                MetadataFilter(key="metadata->'$.location'", value=2, operator=">="),
+                MetadataFilter(key="location", value=2, operator=">="),
             ]
         ),
     )
@@ -332,8 +332,8 @@ def test_search_with_filter(node_embeddings: List[TextNode]):
         similarity_top_k=3,
         filters=MetadataFilters(
             filters=[
-                MetadataFilter(key="metadata->'$.location'", value=2, operator=">="),
-                MetadataFilter(key="metadata->'$.theme'", value="BAZ", operator="=="),
+                MetadataFilter(key="location", value=2, operator=">="),
+                MetadataFilter(key="theme", value="BAZ", operator="=="),
             ],
             condition="and",
         ),
@@ -351,8 +351,8 @@ def test_search_with_filter(node_embeddings: List[TextNode]):
         similarity_top_k=3,
         filters=MetadataFilters(
             filters=[
-                MetadataFilter(key="metadata->'$.location'", value=2, operator=">="),
-                MetadataFilter(key="metadata->'$.theme'", value="FOO", operator="=="),
+                MetadataFilter(key="location", value=2, operator=">="),
+                MetadataFilter(key="theme", value="FOO", operator="=="),
             ],
             condition="or",
         ),

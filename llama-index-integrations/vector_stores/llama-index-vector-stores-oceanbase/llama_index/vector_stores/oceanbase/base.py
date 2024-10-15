@@ -58,46 +58,6 @@ def _parse_filter_value(filter_value: any, is_text_match: bool = False):
     return str(filter_value)
 
 
-def _to_oceanbase_filter(metadata_filters: Optional[MetadataFilters] = None) -> str:
-    filters = []
-    for filter in metadata_filters.filters:
-        if isinstance(filter, MetadataFilters):
-            filters.append(f"({_to_oceanbase_filter(filter)})")
-            continue
-
-        filter_value = _parse_filter_value(filter.value)
-        if filter_value is None and filter.operator != FilterOperator.IS_EMPTY:
-            continue
-
-        if filter.operator == FilterOperator.EQ:
-            filters.append(f"{filter.key}={filter_value}")
-        elif filter.operator == FilterOperator.GT:
-            filters.append(f"{filter.key}>{filter_value}")
-        elif filter.operator == FilterOperator.LT:
-            filters.append(f"{filter.key}<{filter_value}")
-        elif filter.operator == FilterOperator.NE:
-            filters.append(f"{filter.key}!={filter_value}")
-        elif filter.operator == FilterOperator.GTE:
-            filters.append(f"{filter.key}>={filter_value}")
-        elif filter.operator == FilterOperator.LTE:
-            filters.append(f"{filter.key}<={filter_value}")
-        elif filter.operator == FilterOperator.IN:
-            filters.append(f"{filter.key} in {filter_value}")
-        elif filter.operator == FilterOperator.NIN:
-            filters.append(f"{filter.key} not in {filter_value}")
-        elif filter.operator == FilterOperator.TEXT_MATCH:
-            filters.append(
-                f"{filter.key} like {_parse_filter_value(filter.value, True)}"
-            )
-        elif filter.operator == FilterOperator.IS_EMPTY:
-            filters.append(f"{filter.key} IS NULL")
-        else:
-            raise ValueError(
-                f'Operator {filter.operator} ("{filter.operator.value}") is not supported by OceanBase.'
-            )
-    return f" {metadata_filters.condition.value} ".join(filters)
-
-
 def _euclidean_similarity(distance: float) -> float:
     return 1.0 - distance / math.sqrt(2)
 
@@ -253,6 +213,60 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
 
         self._create_table_with_index()
 
+    def _enhance_filter_key(self, filter_key: str) -> str:
+        return f"{self._metadata_field}->'$.{filter_key}'"
+
+    def _to_oceanbase_filter(
+        self, metadata_filters: Optional[MetadataFilters] = None
+    ) -> str:
+        filters = []
+        for filter in metadata_filters.filters:
+            if isinstance(filter, MetadataFilters):
+                filters.append(f"({self._to_oceanbase_filter(filter)})")
+                continue
+
+            filter_value = _parse_filter_value(filter.value)
+            if filter_value is None and filter.operator != FilterOperator.IS_EMPTY:
+                continue
+
+            if filter.operator == FilterOperator.EQ:
+                filters.append(f"{self._enhance_filter_key(filter.key)}={filter_value}")
+            elif filter.operator == FilterOperator.GT:
+                filters.append(f"{self._enhance_filter_key(filter.key)}>{filter_value}")
+            elif filter.operator == FilterOperator.LT:
+                filters.append(f"{self._enhance_filter_key(filter.key)}<{filter_value}")
+            elif filter.operator == FilterOperator.NE:
+                filters.append(
+                    f"{self._enhance_filter_key(filter.key)}!={filter_value}"
+                )
+            elif filter.operator == FilterOperator.GTE:
+                filters.append(
+                    f"{self._enhance_filter_key(filter.key)}>={filter_value}"
+                )
+            elif filter.operator == FilterOperator.LTE:
+                filters.append(
+                    f"{self._enhance_filter_key(filter.key)}<={filter_value}"
+                )
+            elif filter.operator == FilterOperator.IN:
+                filters.append(
+                    f"{self._enhance_filter_key(filter.key)} in {filter_value}"
+                )
+            elif filter.operator == FilterOperator.NIN:
+                filters.append(
+                    f"{self._enhance_filter_key(filter.key)} not in {filter_value}"
+                )
+            elif filter.operator == FilterOperator.TEXT_MATCH:
+                filters.append(
+                    f"{self._enhance_filter_key(filter.key)} like {_parse_filter_value(filter.value, True)}"
+                )
+            elif filter.operator == FilterOperator.IS_EMPTY:
+                filters.append(f"{self._enhance_filter_key(filter.key)} IS NULL")
+            else:
+                raise ValueError(
+                    f'Operator {filter.operator} ("{filter.operator.value}") is not supported by OceanBase.'
+                )
+        return f" {metadata_filters.condition.value} ".join(filters)
+
     def _parse_metric_type_str_to_dist_func(self) -> Any:
         if self._vidx_metric_type == "l2":
             return func.l2_distance
@@ -339,7 +353,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
             List[BaseNode]: List of text nodes.
         """
         if filters is not None:
-            filter = _to_oceanbase_filter(filters)
+            filter = self._to_oceanbase_filter(filters)
         else:
             filter = None
 
@@ -431,7 +445,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
                 Defaults to None.
         """
         if filters is not None:
-            filter = _to_oceanbase_filter(filters)
+            filter = self._to_oceanbase_filter(filters)
         else:
             filter = None
 
@@ -474,7 +488,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
             self._hnsw_ef_search = ef_search
 
         if query.filters:
-            qfilters = _to_oceanbase_filter(query.filters)
+            qfilters = self._to_oceanbase_filter(query.filters)
         else:
             qfilters = None
 
