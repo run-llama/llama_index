@@ -229,6 +229,14 @@ def is_chat_model(model: str) -> bool:
 
 
 def is_function_calling_model(model: str) -> bool:
+    # checking whether the model is fine-tuned or not.
+    # fine-tuned model names these days look like:
+    # ft:gpt-3.5-turbo:acemeco:suffix:abc123
+    if model.startswith("ft-"):  # legacy fine-tuning
+        model = model.split(":")[0]
+    elif model.startswith("ft:"):
+        model = model.split(":")[1]
+
     is_chat_model_ = is_chat_model(model)
     is_old = "0314" in model or "0301" in model
 
