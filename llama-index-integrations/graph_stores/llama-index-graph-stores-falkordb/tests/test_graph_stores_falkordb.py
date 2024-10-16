@@ -1,19 +1,16 @@
 import os
-from unittest.mock import patch
 import unittest
 from llama_index.graph_stores.falkordb.base import FalkorDBGraphStore
 
 falkordb_url = os.environ.get("FALKORDB_TEST_URL")
 
 
+@unittest.skipIf(falkordb_url is None, "No FalkorDB URL provided")
 class TestFalkorDBGraphStore(unittest.TestCase):
     def setUp(self):
-        if not falkordb_url:
-            raise RuntimeError("No FalkorDB URL provided")
         self.graph_store = FalkorDBGraphStore(url=falkordb_url)
 
-    @patch("falkordb.FalkorDB.from_url")  # Adjust to match your actual import path
-    def test_upsert_triplet(self, mock_from_url):
+    def test_upsert_triplet(self):
         # Call the method you want to test
         self.graph_store.upsert_triplet("node1", "related_to", "node2")
 

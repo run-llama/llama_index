@@ -11,12 +11,11 @@ falkordb_url = os.environ.get("FALKORDB_TEST_URL")
 falkordb_available = falkordb_url is not None
 
 
+@unittest.skipIf(falkordb_url is None, "No FalkorDB URL provided")
 class TestFalkorDBPropertyGraphStore(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Setup method called once for the entire test class."""
-        if not falkordb_url:
-            raise RuntimeError("No FalkorDB URL provided")
         cls.pg_store = FalkorDBPropertyGraphStore(url=falkordb_url)
         cls.pg_store.structured_query("MATCH (n) DETACH DELETE n")  # Clear the database
 
