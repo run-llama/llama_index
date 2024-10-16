@@ -8,11 +8,7 @@ import json
 import logging
 import os
 from pathlib import Path
-<<<<<<< HEAD
 from typing import Any, List, Optional, cast, Literal
-=======
-from typing import Any, List, Optional, cast
->>>>>>> 3aea6301e (Hnswlib vector store integration)
 
 import fsspec
 import numpy as np
@@ -80,29 +76,18 @@ class HnswlibVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-<<<<<<< HEAD
         space: Literal["ip", "cosine", "l2"],
         dimension: int,
         max_elements: int,
     ) -> None:
         try:
             import hnswlib
-=======
-        hnswlib_index: Any,
-    ) -> None:
-        try:
-            import hnswlib  # noqa: F401
->>>>>>> 3aea6301e (Hnswlib vector store integration)
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
         super().__init__()
-<<<<<<< HEAD
         self._hnswlib_index = hnswlib.Index(space, dimension)
         self._hnswlib_index.init_index(max_elements)
-=======
-        self._hnswlib_index = hnswlib_index
->>>>>>> 3aea6301e (Hnswlib vector store integration)
 
     @classmethod
     def from_persist_dir(
@@ -112,13 +97,7 @@ class HnswlibVectorStore(BasePydanticVectorStore):
     ) -> "HnswlibVectorStore":
         persist_path = os.path.join(persist_dir, DEFAULT_HNSWLIB_PERSIST_FNAME)
         if fs and not isinstance(fs, LocalFileSystem):
-<<<<<<< HEAD
             raise NotImplementedError("Hnswlib only supports local storage for now.")
-=======
-            raise NotImplementedError(
-                "Hnswlib only supports local storage for now."
-            )
->>>>>>> 3aea6301e (Hnswlib vector store integration)
         return cls.from_persist_path(persist_path=persist_path, fs=None)
 
     @classmethod
@@ -132,31 +111,16 @@ class HnswlibVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
         if fs and not isinstance(fs, LocalFileSystem):
-<<<<<<< HEAD
             raise NotImplementedError("Hnswlib only supports local storage for now.")
 
         if not os.path.exists(persist_path):
             raise ValueError(f"No existing {__name__} found at {persist_path}.")
-=======
-            raise NotImplementedError(
-                "Hnswlib only supports local storage for now."
-            )
-
-        if not os.path.exists(persist_path):
-            raise ValueError(
-                f"No existing {__name__} found at {persist_path}."
-            )
->>>>>>> 3aea6301e (Hnswlib vector store integration)
         parent_directory = Path(persist_path).parent
         config_path = parent_directory / "config.json"
         if not config_path.exists():
             raise ValueError(f"No existing config.json found at {config_path}")
         logger.info(f"Loading {__name__} from {persist_path}.")
-<<<<<<< HEAD
         with open(config_path) as file:
-=======
-        with open(config_path, "r") as file:
->>>>>>> 3aea6301e (Hnswlib vector store integration)
             config = json.load(file)
         logger.info(f"Loading {__name__} from {persist_path}.")
         hnswlib_index = hnswlib.Index(
@@ -181,14 +145,7 @@ class HnswlibVectorStore(BasePydanticVectorStore):
         embeddings = np.array([node.get_embedding() for node in nodes])
         self._hnswlib_index.add_items(embeddings, **add_kwargs)
         index_size = self._hnswlib_index.get_current_count()
-<<<<<<< HEAD
         return [str(id) for id in range(index_size - len(nodes), index_size)]
-=======
-        return [
-            str(id)
-            for id in range(index_size - len(nodes) + 1, index_size + 1)
-        ]
->>>>>>> 3aea6301e (Hnswlib vector store integration)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -198,13 +155,7 @@ class HnswlibVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-<<<<<<< HEAD
         raise NotImplementedError("Delete not yet implemented for Hnswlib index.")
-=======
-        raise NotImplementedError(
-            "Delete not yet implemented for Hnswlib index."
-        )
->>>>>>> 3aea6301e (Hnswlib vector store integration)
 
     @property
     def client(self):
@@ -225,13 +176,7 @@ class HnswlibVectorStore(BasePydanticVectorStore):
 
         """
         if fs and not isinstance(fs, LocalFileSystem):
-<<<<<<< HEAD
             raise NotImplementedError("Hnswlib only supports local storage for now.")
-=======
-            raise NotImplementedError(
-                "Hnswlib only supports local storage for now."
-            )
->>>>>>> 3aea6301e (Hnswlib vector store integration)
 
         parent_directory = Path(persist_path).parent
         parent_directory.mkdir(exist_ok=True)
@@ -264,21 +209,10 @@ class HnswlibVectorStore(BasePydanticVectorStore):
 
         """
         if query.filters is not None:
-<<<<<<< HEAD
             raise ValueError("Metadata filters not implemented for Hnswlib yet.")
 
         query_embedding = cast(List[float], query.query_embedding)
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
-=======
-            raise ValueError(
-                "Metadata filters not implemented for Hnswlib yet."
-            )
-
-        query_embedding = cast(List[float], query.query_embedding)
-        query_embedding_np = np.array(query_embedding, dtype="float32")[
-            np.newaxis, :
-        ]
->>>>>>> 3aea6301e (Hnswlib vector store integration)
         indices, distances = self._hnswlib_index.knn_query(
             query_embedding_np, query.similarity_top_k
         )
@@ -286,10 +220,6 @@ class HnswlibVectorStore(BasePydanticVectorStore):
         distances = distances[0].tolist()
         if len(indices) == 0:
             return VectorStoreQueryResult(similarities=[], ids=[])
-<<<<<<< HEAD
-=======
-        print(node_idxs)
->>>>>>> 3aea6301e (Hnswlib vector store integration)
         filtered_dists = []
         filtered_node_idxs = []
         for dist, idx in zip(distances, node_idxs):
