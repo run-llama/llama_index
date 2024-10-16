@@ -88,5 +88,4 @@ def test_query_nodes(hnswlib_store: HnswlibVectorStore):
         similarity_top_k=hnswlib_store._hnswlib_index.get_current_count(),
     )
     result = hnswlib_store.query(query)
-    # query vector is identical to node 0
     assert result.similarities[0] == 0
