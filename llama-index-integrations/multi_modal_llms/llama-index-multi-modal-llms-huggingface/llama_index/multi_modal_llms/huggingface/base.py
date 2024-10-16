@@ -224,7 +224,7 @@ class HuggingFaceMultiModal(MultiModalLLM):
         elif "PaliGemmaForConditionalGeneration" in architecture:
             return PaliGemmaMultiModal(model_name=model_name, **kwargs)
         elif "MllamaForConditionalGeneration" in architecture:
-            return MllamaMultiModal(model_name=model_name, **kwargs)
+            return LlamaMultiModal(model_name=model_name, **kwargs)
         else:
             raise ValueError(
                 f"Unsupported model architecture: {architecture}. "

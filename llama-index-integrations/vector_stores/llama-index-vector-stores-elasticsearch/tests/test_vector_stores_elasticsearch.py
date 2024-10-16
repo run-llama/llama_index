@@ -29,6 +29,7 @@ from llama_index.vector_stores.elasticsearch.base import (
 )
 
 from llama_index.vector_stores.elasticsearch.utils import get_elasticsearch_client
+from llama_index.vector_stores.elasticsearch.base import _to_elasticsearch_filter
 
 ##
 # Start Elasticsearch locally
@@ -549,3 +550,43 @@ async def check_top_match(
         res_node = res.nodes[idx]
         assert res_node.node_id == item.id
         assert 0 <= item.sim <= 1
+
+
+def test_metadata_filter_to_es_filter() -> None:
+    metadata_filters = MetadataFilters(
+        filters=[
+            ExactMatchFilter(key="k1", value="v1"),
+            ExactMatchFilter(key="k2", value="v2"),
+        ]
+    )
+    es_filter_default = _to_elasticsearch_filter(standard_filters=metadata_filters)
+    assert es_filter_default == {
+        "bool": {
+            "must": [
+                {"term": {"metadata.k1.keyword": {"value": "v1"}}},
+                {"term": {"metadata.k2.keyword": {"value": "v2"}}},
+            ]
+        }
+    }
+    es_filter_enum = _to_elasticsearch_filter(
+        standard_filters=metadata_filters, metadata_keyword_suffix=".enum"
+    )
+    assert es_filter_enum == {
+        "bool": {
+            "must": [
+                {"term": {"metadata.k1.enum": {"value": "v1"}}},
+                {"term": {"metadata.k2.enum": {"value": "v2"}}},
+            ]
+        }
+    }
+    es_filter_empty = _to_elasticsearch_filter(
+        standard_filters=metadata_filters, metadata_keyword_suffix=""
+    )
+    assert es_filter_empty == {
+        "bool": {
+            "must": [
+                {"term": {"metadata.k1": {"value": "v1"}}},
+                {"term": {"metadata.k2": {"value": "v2"}}},
+            ]
+        }
+    }

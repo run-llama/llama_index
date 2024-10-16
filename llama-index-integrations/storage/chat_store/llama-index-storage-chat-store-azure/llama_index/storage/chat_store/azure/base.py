@@ -1,4 +1,3 @@
-import asyncio
 from itertools import chain
 from typing import Any, List, Optional
 
@@ -12,6 +11,7 @@ from azure.data.tables import (
 )
 from azure.data.tables.aio import TableServiceClient as AsyncTableServiceClient
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
@@ -161,7 +161,7 @@ class AzureChatStore(BaseChatStore):
 
     def set_messages(self, key: str, messages: List[ChatMessage]) -> None:
         """Set messages for a key."""
-        asyncio.run(self.aset_messages(key, messages))
+        asyncio_run(self.aset_messages(key, messages))
 
     async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
         """Asynchronoulsy set messages for a key."""
@@ -208,7 +208,7 @@ class AzureChatStore(BaseChatStore):
 
     def get_messages(self, key: str) -> List[ChatMessage]:
         """Get messages for a key."""
-        asyncio.run(self.aget_messages(key))
+        return asyncio_run(self.aget_messages(key))
 
     async def aget_messages(self, key: str) -> List[ChatMessage]:
         """Asynchronously get messages for a key."""
@@ -216,14 +216,18 @@ class AzureChatStore(BaseChatStore):
             self.chat_table_name
         )
         entities = chat_client.query_entities(f"PartitionKey eq '{key}'")
-        return [
-            ChatMessage.parse_obj(deserialize(self.service_mode, entity))
-            for entity in entities
-        ]
+        messages = []
+
+        async for entity in entities:
+            messages.append(
+                ChatMessage.model_validate(deserialize(self.service_mode, entity))
+            )
+
+        return messages
 
     def add_message(self, key: str, message: ChatMessage, idx: int = None):
         """Add a message for a key."""
-        asyncio.run(self.async_add_message(key, message, idx))
+        asyncio_run(self.async_add_message(key, message, idx))
 
     async def async_add_message(self, key: str, message: ChatMessage, idx: int = None):
         metadata_client = await self._atable_service_client.create_table_if_not_exists(
@@ -255,11 +259,11 @@ class AzureChatStore(BaseChatStore):
         metadata["LastMessageRowKey"] = self._to_row_key(idx)
         metadata["MessageCount"] = next_index + 1
         # Update medatada
-        metadata_client.upsert_entity(metadata, UpdateMode.MERGE)
+        await metadata_client.upsert_entity(metadata, UpdateMode.MERGE)
 
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         # Delete all messages for the key
-        asyncio.run(self.adelete_messages(key))
+        return asyncio_run(self.adelete_messages(key))
 
     async def adelete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         """Asynchronously delete all messages for a key."""
@@ -280,7 +284,7 @@ class AzureChatStore(BaseChatStore):
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete specific message for a key."""
-        asyncio.run(self.adelete_message(key, idx))
+        return asyncio_run(self.adelete_message(key, idx))
 
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Asynchronously delete specific message for a key."""
@@ -313,7 +317,7 @@ class AzureChatStore(BaseChatStore):
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
-        asyncio.run(self.adelete_last_message(key))
+        return asyncio_run(self.adelete_last_message(key))
 
     async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Async delete last message for a key."""
@@ -342,7 +346,7 @@ class AzureChatStore(BaseChatStore):
 
     def get_keys(self) -> List[str]:
         """Get all keys."""
-        asyncio.run(self.aget_keys())
+        return asyncio_run(self.aget_keys())
 
     async def aget_keys(self) -> List[str]:
         """Asynchronously get all keys."""
@@ -352,7 +356,12 @@ class AzureChatStore(BaseChatStore):
         entities = metadata_client.query_entities(
             f"PartitionKey eq '{self.metadata_partition_key}'"
         )
-        return [entity["RowKey"] for entity in entities]
+
+        keys = []
+        async for entity in entities:
+            keys.append(entity["RowKey"])
+
+        return keys
 
     @classmethod
     def class_name(cls) -> str:

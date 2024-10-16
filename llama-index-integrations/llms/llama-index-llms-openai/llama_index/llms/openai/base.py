@@ -239,6 +239,8 @@ class OpenAI(FunctionCallingLLM):
         default_headers: Optional[Dict[str, str]] = None,
         http_client: Optional[httpx.Client] = None,
         async_http_client: Optional[httpx.AsyncClient] = None,
+        openai_client: Optional[SyncOpenAI] = None,
+        async_openai_client: Optional[AsyncOpenAI] = None,
         # base class
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
@@ -282,8 +284,8 @@ class OpenAI(FunctionCallingLLM):
             **kwargs,
         )
 
-        self._client = None
-        self._aclient = None
+        self._client = openai_client
+        self._aclient = async_openai_client
         self._http_client = http_client
         self._async_http_client = async_http_client
 
@@ -488,7 +490,8 @@ class OpenAI(FunctionCallingLLM):
                 additional_kwargs = {}
                 if is_function:
                     tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
-                    additional_kwargs["tool_calls"] = tool_calls
+                    if tool_calls:
+                        additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -738,7 +741,8 @@ class OpenAI(FunctionCallingLLM):
                 additional_kwargs = {}
                 if is_function:
                     tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
-                    additional_kwargs["tool_calls"] = tool_calls
+                    if tool_calls:
+                        additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
                     message=ChatMessage(

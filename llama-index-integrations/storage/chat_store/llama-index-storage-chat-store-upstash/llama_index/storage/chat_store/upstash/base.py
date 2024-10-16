@@ -61,7 +61,7 @@ class UpstashChatStore(BaseChatStore):
         """
         if redis_url == "" or redis_token == "":
             raise ValueError("Please provide a valid URL and token")
-
+        super().__init__(ttl=ttl)
         try:
             self._sync_redis_client = SyncRedis(url=redis_url, token=redis_token)
             self._async_redis_client = AsyncRedis(url=redis_url, token=redis_token)
@@ -69,7 +69,6 @@ class UpstashChatStore(BaseChatStore):
             logger.error(f"Upstash Redis client could not be initiated: {error}")
 
         # self.ttl = ttl
-        super().__init__(ttl=ttl)
 
     @classmethod
     def class_name(cls) -> str:

@@ -33,6 +33,7 @@ version = "1.1.0"
 python = ">=3.8.1,<4.0"
 llama-index-core = "^0.10.1"
 azure-cosmos = "^4.7.0"
+azure-identity = "^1.19.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
