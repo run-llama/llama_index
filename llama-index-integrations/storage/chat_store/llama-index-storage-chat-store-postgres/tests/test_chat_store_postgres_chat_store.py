@@ -1,3 +1,4 @@
+import time
 from typing import Dict, Generator, Union
 import pytest
 import docker
