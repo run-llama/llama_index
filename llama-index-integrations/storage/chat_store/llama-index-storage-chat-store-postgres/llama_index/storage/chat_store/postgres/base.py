@@ -2,7 +2,16 @@ import json
 from typing import Any, Optional
 from urllib.parse import urlparse
 
-from sqlalchemy import Index, Column, Integer, UniqueConstraint, text, delete, select, create_engine
+from sqlalchemy import (
+    Index,
+    Column,
+    Integer,
+    UniqueConstraint,
+    text,
+    delete,
+    select,
+    create_engine,
+)
 from sqlalchemy.orm import sessionmaker, declarative_base
 from llama_index.core.llms import ChatMessage
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -12,15 +21,14 @@ from llama_index.core.storage.chat_store.base import BaseChatStore
 
 
 def get_data_model(
-        base: type,
-        index_name: str,
-        schema_name: str,
-        use_jsonb: bool = False,
+    base: type,
+    index_name: str,
+    schema_name: str,
+    use_jsonb: bool = False,
 ) -> Any:
     """
     This part create a dynamic sqlalchemy model with a new table.
     """
-
     tablename = f"data_{index_name}"  # dynamic table name
     class_name = f"Data{index_name}"  # dynamic class name
 
@@ -38,9 +46,7 @@ def get_data_model(
         {
             "__tablename__": tablename,
             "__table_args__": (
-                UniqueConstraint(
-                    "key", name=f"{tablename}:unique_key"
-                ),
+                UniqueConstraint("key", name=f"{tablename}:unique_key"),
                 Index(f"{tablename}:idx_key", "key"),
                 {"schema": schema_name},
             ),
@@ -49,28 +55,29 @@ def get_data_model(
 
 
 class PostgresChatStore(BaseChatStore):
-
-    table_name: Optional[str] = Field(default="chatstore", description="Postgres table name.")
-    schema_name: Optional[str] = Field(default="public", description="Postgres schema name.")
+    table_name: Optional[str] = Field(
+        default="chatstore", description="Postgres table name."
+    )
+    schema_name: Optional[str] = Field(
+        default="public", description="Postgres schema name."
+    )
 
     _table_class: Optional[Any] = PrivateAttr()
     _session: Optional[sessionmaker] = PrivateAttr()
     _async_session: Optional[sessionmaker] = PrivateAttr()
 
-    def __init__(self,
-                 session: sessionmaker,
-                 async_session: sessionmaker,
-                 table_name: str,
-                 schema_name: str = "public",
-                 use_jsonb: bool = False,
-                 ):
-
+    def __init__(
+        self,
+        session: sessionmaker,
+        async_session: sessionmaker,
+        table_name: str,
+        schema_name: str = "public",
+        use_jsonb: bool = False,
+    ):
         super().__init__(
             table_name=table_name.lower(),
             schema_name=schema_name.lower(),
         )
-
-
 
         # sqlalchemy model
         base = declarative_base()
@@ -86,28 +93,28 @@ class PostgresChatStore(BaseChatStore):
 
     @classmethod
     def from_params(
-            cls,
-            host: Optional[str] = None,
-            port: Optional[str] = None,
-            database: Optional[str] = None,
-            user: Optional[str] = None,
-            password: Optional[str] = None,
-            table_name: str = "chatstore",
-            schema_name: str = "public",
-            connection_string: Optional[str] = None,
-            async_connection_string: Optional[str] = None,
-            debug: bool = False,
-            use_jsonb: bool = False,
+        cls,
+        host: Optional[str] = None,
+        port: Optional[str] = None,
+        database: Optional[str] = None,
+        user: Optional[str] = None,
+        password: Optional[str] = None,
+        table_name: str = "chatstore",
+        schema_name: str = "public",
+        connection_string: Optional[str] = None,
+        async_connection_string: Optional[str] = None,
+        debug: bool = False,
+        use_jsonb: bool = False,
     ) -> "PostgresChatStore":
         """Return connection string from database parameters."""
         conn_str = (
-                connection_string
-                or f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
+            connection_string
+            or f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
         )
         async_conn_str = async_connection_string or (
             f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
         )
-        session , async_session = cls._connect(conn_str, async_conn_str, debug)
+        session, async_session = cls._connect(conn_str, async_conn_str, debug)
         return cls(
             session=session,
             async_session=async_session,
@@ -118,12 +125,12 @@ class PostgresChatStore(BaseChatStore):
 
     @classmethod
     def from_uri(
-            cls,
-            uri: str,
-            table_name: str = "chatstore",
-            schema_name: str = "public",
-            debug: bool = False,
-            use_jsonb: bool = False,
+        cls,
+        uri: str,
+        table_name: str = "chatstore",
+        schema_name: str = "public",
+        debug: bool = False,
+        use_jsonb: bool = False,
     ) -> "PostgresChatStore":
         """Return connection string from database parameters."""
         params = params_from_uri(uri)
@@ -134,8 +141,11 @@ class PostgresChatStore(BaseChatStore):
             debug=debug,
             use_jsonb=use_jsonb,
         )
+
     @classmethod
-    def _connect(cls, connection_string:str, async_connection_string:str, debug: bool) -> tuple[sessionmaker, sessionmaker]:
+    def _connect(
+        cls, connection_string: str, async_connection_string: str, debug: bool
+    ) -> tuple[sessionmaker, sessionmaker]:
         _engine = create_engine(connection_string, echo=debug)
         session = sessionmaker(_engine)
 
@@ -145,7 +155,6 @@ class PostgresChatStore(BaseChatStore):
 
     def _create_schema_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
-
             # Check if the specified schema exists with "CREATE" statement
             check_schema_statement = text(
                 f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{self.schema_name}'"
@@ -161,17 +170,16 @@ class PostgresChatStore(BaseChatStore):
 
             session.commit()
 
-    def _create_tables_if_not_exists(self,base) -> None:
+    def _create_tables_if_not_exists(self, base) -> None:
         with self._session() as session, session.begin():
             base.metadata.create_all(session.connection())
 
-    def _initialize(self,base) -> None:
+    def _initialize(self, base) -> None:
         self._create_schema_if_not_exists()
         self._create_tables_if_not_exists(base)
 
     def set_messages(self, key: str, messages: list[ChatMessage]) -> None:
         """Set messages for a key."""
-
         with self._session() as session:
             stmt = text(
                 f"""
@@ -183,18 +191,17 @@ class PostgresChatStore(BaseChatStore):
                 """
             )
 
-
             params = {
                 "key": key,
-                "value": [json.dumps( message.dict()) for message in messages]
+                "value": [json.dumps(message.dict()) for message in messages],
             }
 
             # Execute the bulk upsert
             session.execute(stmt, params)
             session.commit()
+
     async def aset_messages(self, key: str, messages: list[ChatMessage]) -> None:
         """Async version of Get messages for a key."""
-
         async with self._async_session() as session:
             stmt = text(
                 f"""
@@ -206,10 +213,9 @@ class PostgresChatStore(BaseChatStore):
                 """
             )
 
-
             params = {
                 "key": key,
-                "value": [json.dumps( message.dict()) for message in messages]
+                "value": [json.dumps(message.dict()) for message in messages],
             }
 
             # Execute the bulk upsert
@@ -218,27 +224,22 @@ class PostgresChatStore(BaseChatStore):
 
     def get_messages(self, key: str) -> list[ChatMessage]:
         """Get messages for a key."""
-
         with self._session() as session:
-            result = session.execute(
-                select(self._table_class)
-                .filter_by(key=key)
-            )
+            result = session.execute(select(self._table_class).filter_by(key=key))
             result = result.scalars().first()
             if result:
                 return result.value
             return []
+
     async def aget_messages(self, key: str) -> list[ChatMessage]:
         """Async version of Get messages for a key."""
         async with self._async_session() as session:
-            result = await session.execute(
-                select(self._table_class)
-                .filter_by(key=key)
-            )
+            result = await session.execute(select(self._table_class).filter_by(key=key))
             result = result.scalars().first()
             if result:
                 return result.value
             return []
+
     def add_message(self, key: str, message: ChatMessage) -> None:
         """Add a message for a key."""
         with self._session() as session:
@@ -251,12 +252,10 @@ class PostgresChatStore(BaseChatStore):
                     value = array_cat({self._table_class.__tablename__}.value, :value);
                 """
             )
-            params = {
-                "key": key,
-                "value": [json.dumps(message.dict())]
-            }
+            params = {"key": key, "value": [json.dumps(message.dict())]}
             session.execute(stmt, params)
             session.commit()
+
     async def async_add_message(self, key: str, message: ChatMessage) -> None:
         """Async version of Add a message for a key."""
         async with self._async_session() as session:
@@ -269,36 +268,26 @@ class PostgresChatStore(BaseChatStore):
                     value = array_cat({self._table_class.__tablename__}.value, :value);
                 """
             )
-            params = {
-                "key": key,
-                "value": [json.dumps(message.dict())]
-            }
+            params = {"key": key, "value": [json.dumps(message.dict())]}
             await session.execute(stmt, params)
             await session.commit()
 
     def delete_messages(self, key: str) -> Optional[list[ChatMessage]]:
         """Delete messages for a key."""
-
         with self._session() as session:
-            session.execute(
-                delete(self._table_class)
-                .filter_by(key=key)
-            )
+            session.execute(delete(self._table_class).filter_by(key=key))
             session.commit()
         return None
+
     async def adelete_messages(self, key: str) -> Optional[list[ChatMessage]]:
         """Async version of Delete messages for a key."""
-
         async with self._async_session() as session:
-            await session.execute(
-                delete(self._table_class)
-                .filter_by(key=key)
-            )
+            await session.execute(delete(self._table_class).filter_by(key=key))
             await session.commit()
         return None
+
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete specific message for a key."""
-
         with self._session() as session:
             # First, retrieve the current list of messages
             stmt = select(self._table_class.value).where(self._table_class.key == key)
@@ -315,21 +304,21 @@ class PostgresChatStore(BaseChatStore):
                 f"""
                 UPDATE {self._table_class.__tablename__}
                 SET value = array_cat(
-                               {self._table_class.__tablename__}.value[: :idx], 
+                               {self._table_class.__tablename__}.value[: :idx],
                                {self._table_class.__tablename__}.value[:idx+2:]
                            )
                 WHERE key = :key;
                 """
             )
 
-            params = {'key': key, 'idx': idx}
-            session.execute(stmt,params)
+            params = {"key": key, "idx": idx}
+            session.execute(stmt, params)
             session.commit()
 
             return ChatMessage.model_validate(removed_message)
+
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Async version of Delete specific message for a key."""
-
         async with self._async_session() as session:
             # First, retrieve the current list of messages
             stmt = select(self._table_class.value).where(self._table_class.key == key)
@@ -346,21 +335,21 @@ class PostgresChatStore(BaseChatStore):
                 f"""
                 UPDATE {self._table_class.__tablename__}
                 SET value = array_cat(
-                               {self._table_class.__tablename__}.value[: :idx], 
+                               {self._table_class.__tablename__}.value[: :idx],
                                {self._table_class.__tablename__}.value[:idx+2:]
                            )
                 WHERE key = :key;
                 """
             )
 
-            params = {'key': key, 'idx': idx}
-            await session.execute(stmt,params)
+            params = {"key": key, "idx": idx}
+            await session.execute(stmt, params)
             await session.commit()
 
             return ChatMessage.model_validate(removed_message)
+
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
-
         with self._session() as session:
             # First, retrieve the current list of messages
             stmt = select(self._table_class.value).where(self._table_class.key == key)
@@ -380,14 +369,14 @@ class PostgresChatStore(BaseChatStore):
                 WHERE key = :key;
                 """
             )
-            params = {'key': key}
-            session.execute(stmt,params)
+            params = {"key": key}
+            session.execute(stmt, params)
             session.commit()
 
             return ChatMessage.model_validate(removed_message)
+
     async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Async version of Delete last message for a key."""
-
         async with self._async_session() as session:
             # First, retrieve the current list of messages
             stmt = select(self._table_class.value).where(self._table_class.key == key)
@@ -407,31 +396,25 @@ class PostgresChatStore(BaseChatStore):
                         WHERE key = :key;
                         """
             )
-            params = {'key': key}
+            params = {"key": key}
             await session.execute(stmt, params)
             await session.commit()
 
             return ChatMessage.model_validate(removed_message)
 
-
     def get_keys(self) -> list[str]:
         """Get all keys."""
-
         with self._session() as session:
             stmt = select(self._table_class.key)
-            result = session.execute(stmt).scalars().all()
 
-        return result
-
+            return session.execute(stmt).scalars().all()
 
     async def aget_keys(self) -> list[str]:
         """Async version of Get all keys."""
-
         async with self._async_session() as session:
             stmt = select(self._table_class.key)
-            result = (await session.execute(stmt)).scalars().all()
 
-        return result
+            return (await session.execute(stmt)).scalars().all()
 
 
 def params_from_uri(uri: str) -> dict:

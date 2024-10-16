@@ -234,7 +234,7 @@ from llama_index.storage.chat_store.postgres import PostgresChatStore
 from llama_index.core.memory import ChatMemoryBuffer
 
 chat_store = PostgresChatStore.from_uri(
-    uri='postgresql+asyncpg://postgres:password@127.0.0.1:5432/database',
+    uri="postgresql+asyncpg://postgres:password@127.0.0.1:5432/database",
 )
 
 chat_memory = ChatMemoryBuffer.from_defaults(
