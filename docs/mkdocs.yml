@@ -198,6 +198,7 @@ nav:
           - ./examples/data_connectors/TwitterDemo.ipynb
           - ./examples/data_connectors/WeaviateDemo.ipynb
           - ./examples/data_connectors/WebPageDemo.ipynb
+          - ./examples/data_connectors/ZyteSerpDemo.ipynb
           - ./examples/data_connectors/deplot/DeplotReader.ipynb
           - ./examples/data_connectors/html_tag_reader.ipynb
           - ./examples/data_connectors/oracleai.ipynb
@@ -261,7 +262,6 @@ nav:
           - ./examples/embeddings/voyageai.ipynb
           - ./examples/embeddings/yandexgpt.ipynb
       - Evaluation:
-          - ./examples/evaluation/step_back_argilla.ipynb
           - ./examples/evaluation/BeirEvaluation.ipynb
           - ./examples/evaluation/Deepeval.ipynb
           - ./examples/evaluation/HotpotQADistractor.ipynb
@@ -283,6 +283,7 @@ nav:
           - ./examples/evaluation/relevancy_eval.ipynb
           - ./examples/evaluation/retrieval/retriever_eval.ipynb
           - ./examples/evaluation/semantic_similarity_eval.ipynb
+          - ./examples/evaluation/step_back_argilla.ipynb
       - Finetuning:
           - ./examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning.ipynb
           - ./examples/finetuning/embeddings/finetune_corpus_embedding.ipynb
@@ -631,6 +632,7 @@ nav:
           - ./examples/vector_stores/MongoDBAtlasVectorSearchRAGOpenAI.ipynb
           - ./examples/vector_stores/MyScaleIndexDemo.ipynb
           - ./examples/vector_stores/Neo4jVectorDemo.ipynb
+          - ./examples/vector_stores/NileVectorStore.ipynb
           - ./examples/vector_stores/ObjectBoxIndexDemo.ipynb
           - ./examples/vector_stores/OpensearchDemo.ipynb
           - ./examples/vector_stores/PGVectoRsDemo.ipynb
@@ -688,6 +690,7 @@ nav:
           - ./examples/workflow/multi_step_query_engine.ipynb
           - ./examples/workflow/multi_strategy_workflow.ipynb
           - ./examples/workflow/parallel_execution.ipynb
+          - ./examples/workflow/planning_workflow.ipynb
           - ./examples/workflow/rag.ipynb
           - ./examples/workflow/react_agent.ipynb
           - ./examples/workflow/reflection.ipynb
@@ -908,6 +911,7 @@ nav:
           - ./api_reference/embeddings/voyageai.md
           - ./api_reference/embeddings/xinference.md
           - ./api_reference/embeddings/yandexgpt.md
+          - ./api_reference/embeddings/zhipuai.md
       - Evaluation:
           - ./api_reference/evaluation/answer_relevancy.md
           - ./api_reference/evaluation/context_relevancy.md
@@ -972,6 +976,7 @@ nav:
           - ./api_reference/llms/everlyai.md
           - ./api_reference/llms/fireworks.md
           - ./api_reference/llms/friendli.md
+          - ./api_reference/llms/gaudi.md
           - ./api_reference/llms/gemini.md
           - ./api_reference/llms/gigachat.md
           - ./api_reference/llms/gradient.md
@@ -1030,6 +1035,7 @@ nav:
           - ./api_reference/llms/xinference.md
           - ./api_reference/llms/yi.md
           - ./api_reference/llms/you.md
+          - ./api_reference/llms/zhipuai.md
       - Llama Datasets:
           - ./api_reference/llama_dataset/index.md
       - Llama Deploy:
@@ -1288,6 +1294,7 @@ nav:
           - ./api_reference/readers/docling.md
           - ./api_reference/readers/docstring_walker.md
           - ./api_reference/readers/docugami.md
+          - ./api_reference/readers/document360.md
           - ./api_reference/readers/earnings_call_transcript.md
           - ./api_reference/readers/elasticsearch.md
           - ./api_reference/readers/faiss.md
@@ -1400,6 +1407,7 @@ nav:
           - ./api_reference/readers/zendesk.md
           - ./api_reference/readers/zep.md
           - ./api_reference/readers/zulip.md
+          - ./api_reference/readers/zyte_serp.md
       - Response Synthesizers:
           - ./api_reference/response_synthesizers/accumulate.md
           - ./api_reference/response_synthesizers/compact_accumulate.md
@@ -1440,6 +1448,7 @@ nav:
       - Storage:
           - Chat Store:
               - ./api_reference/storage/chat_store/azure.md
+              - ./api_reference/storage/chat_store/azurecosmosmongovcore.md
               - ./api_reference/storage/chat_store/azurecosmosnosql.md
               - ./api_reference/storage/chat_store/dynamodb.md
               - ./api_reference/storage/chat_store/index.md
@@ -1460,6 +1469,7 @@ nav:
               - ./api_reference/storage/graph_stores/falkordb.md
               - ./api_reference/storage/graph_stores/index.md
               - ./api_reference/storage/graph_stores/kuzu.md
+              - ./api_reference/storage/graph_stores/memgraph.md
               - ./api_reference/storage/graph_stores/nebula.md
               - ./api_reference/storage/graph_stores/neo4j.md
               - ./api_reference/storage/graph_stores/neptune.md
@@ -1531,6 +1541,7 @@ nav:
               - ./api_reference/storage/vector_store/myscale.md
               - ./api_reference/storage/vector_store/neo4jvector.md
               - ./api_reference/storage/vector_store/neptune.md
+              - ./api_reference/storage/vector_store/nile.md
               - ./api_reference/storage/vector_store/objectbox.md
               - ./api_reference/storage/vector_store/opensearch.md
               - ./api_reference/storage/vector_store/oracledb.md
@@ -1646,6 +1657,8 @@ plugins:
             docstring_options:
               ignore_init_summary: true
             docstring_style: google
+            extensions:
+              - griffe_fieldz
             filters:
               - "!^_"
               - "!^__init__"
@@ -1657,8 +1670,6 @@ plugins:
             show_root_toc_entry: false
             show_signature_annotations: true
             signature_crossrefs: true
-            extensions:
-              - griffe_fieldz
           paths:
             - ../llama-index-core
             - ../llama-index-experimental
@@ -2243,6 +2254,14 @@ plugins:
             - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-azurecosmosnosql
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-azurecosmosnosql
             - ../llama-index-integrations/readers/llama-index-readers-docling
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-nile
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-zhipuai
+            - ../llama-index-integrations/graph_stores/llama-index-graph-stores-memgraph
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-azurecosmosmongovcore
+            - ../llama-index-integrations/readers/llama-index-readers-zyte-serp
+            - ../llama-index-integrations/readers/llama-index-readers-document360
+            - ../llama-index-integrations/llms/llama-index-llms-gaudi
+            - ../llama-index-integrations/llms/llama-index-llms-zhipuai
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
