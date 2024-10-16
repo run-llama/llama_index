@@ -16,23 +16,37 @@ class MockFalkorDBClient:
     def __init__(self) -> None:
         self.nodes = {}
         self.query_results = []
+        self.index_exists = False
 
     def query(self, query: str, params: Dict[str, Any] = None) -> Any:
         if "CREATE VECTOR INDEX" in query:
+            self.index_exists = True
             return MagicMock()
         elif "SHOW INDEXES" in query:
+            if self.index_exists:
+                return MagicMock(result_set=[{"name": "test_index"}])
             return MagicMock(result_set=[])
-        elif "MATCH (n:Chunk)" in query:
+        elif "MATCH (n:Chunk)" in query and "RETURN" in query:
+            # Query operation
             return MagicMock(result_set=self.query_results)
         elif "MERGE (c:Chunk" in query:
-            for node in params["data"]:
-                self.nodes[node["id"]] = node
+            # Add operation
+            if params and "data" in params:
+                for node in params["data"]:
+                    self.nodes[node["id"]] = node
             return MagicMock()
-        elif "MATCH (n:Chunk) WHERE n.id" in query:
+        elif "MATCH (n:Chunk) WHERE n.id" in query and "DELETE" in query:
+            # Delete operation
             node_id = params["id"]
             if node_id in self.nodes:
                 del self.nodes[node_id]
             return MagicMock()
+        elif "MATCH (n:Chunk) WHERE n.id" in query:
+            # Get operation
+            node_id = params["id"]
+            if node_id in self.nodes:
+                return MagicMock(result_set=[self.nodes[node_id]])
+            return MagicMock(result_set=[])
         return MagicMock()
 
     def set_query_results(self, results: Any) -> None:
@@ -43,6 +57,7 @@ class MockFalkorDBClient:
 def mock_falkordb():
     with patch("falkordb.FalkorDB") as mock:
         client = MockFalkorDBClient()
+        mock.return_value = client
         mock.from_url.return_value.select_graph.return_value = client
         yield client
 
@@ -50,13 +65,16 @@ def mock_falkordb():
 @pytest.fixture()
 def falkordb_store(mock_falkordb):
     return FalkorDBVectorStore(
-        driver=mock_falkordb,
+        url="bolt://localhost:7687",
         database="testdb",
         index_name="test_index",
         node_label="Chunk",
         embedding_node_property="embedding",
         text_node_property="text",
     )
+    # Ensure store uses the mock client
+    store._client = mock_falkordb
+    return store
 
 
 def test_falkordb_add(falkordb_store):
@@ -76,7 +94,9 @@ def test_falkordb_add(falkordb_store):
     ]
     ids = falkordb_store.add(nodes)
     assert ids == ["1", "2"]
-    assert len(falkordb_store.client.nodes) == 2
+    assert len(falkordb_store._client.nodes) == 2
+    assert falkordb_store._client.nodes["1"]["text"] == "Hello world"
+    assert falkordb_store._client.nodes["2"]["text"] == "Hello world 2"
 
 
 def test_falkordb_delete(falkordb_store):
@@ -86,29 +106,16 @@ def test_falkordb_delete(falkordb_store):
         embedding=[1.0, 0.0, 0.0],
     )
     falkordb_store.add([node])
-    assert "test_node" in falkordb_store.client.nodes
+    assert "test_node" in falkordb_store._client.nodes
 
     falkordb_store.delete("test_node")
-    assert "test_node" not in falkordb_store.client.nodes
-
+    assert "test_node" not in falkordb_store._client.nodes
 
 def test_falkordb_query(falkordb_store, mock_falkordb):
-    mock_falkordb.set_query_results(
-        [
-            {
-                "text": "Hello world",
-                "score": 0.9,
-                "id": "1",
-                "metadata": {"key": "value"},
-            },
-            {
-                "text": "Hello world 2",
-                "score": 0.7,
-                "id": "2",
-                "metadata": {"key2": "value2"},
-            },
-        ]
-    )
+    mock_falkordb.set_query_results([
+        {"text": "Hello world", "score": 0.9, "id": "1", "metadata": {"key": "value"}},
+        {"text": "Hello world 2", "score": 0.7, "id": "2", "metadata": {"key2": "value2"}},
+    ])
 
     query = VectorStoreQuery(
         query_embedding=[1.0, 0.0, 0.0],
@@ -121,18 +128,10 @@ def test_falkordb_query(falkordb_store, mock_falkordb):
     assert results.nodes[1].text == "Hello world 2"
     assert results.similarities == [0.9, 0.7]
 
-
 def test_falkordb_query_with_filters(falkordb_store, mock_falkordb):
-    mock_falkordb.set_query_results(
-        [
-            {
-                "text": "Hello world",
-                "score": 0.9,
-                "id": "1",
-                "metadata": {"key": "value"},
-            },
-        ]
-    )
+    mock_falkordb.set_query_results([
+        {"text": "Hello world", "score": 0.9, "id": "1", "metadata": {"key": "value"}},
+    ])
 
     query = VectorStoreQuery(
         query_embedding=[1.0, 0.0, 0.0],
@@ -161,8 +160,8 @@ def test_falkordb_update(falkordb_store):
     )
     falkordb_store.update(updated_node)
 
-    assert falkordb_store.client.nodes["update_node"]["text"] == "Updated text"
-    assert falkordb_store.client.nodes["update_node"]["embedding"] == [0.0, 1.0, 0.0]
+    assert falkordb_store._client.nodes["update_node"]["text"] == "Updated text"
+    assert falkordb_store._client.nodes["update_node"]["embedding"] == [0.0, 1.0, 0.0]
 
 
 def test_falkordb_get(falkordb_store):
