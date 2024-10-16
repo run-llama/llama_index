@@ -76,24 +76,6 @@ llm_retry_decorator = create_retry_decorator(
     max_seconds=20,
 )
 
-import redis
-import os
-import basejump
-
-redis_client = redis.Redis(  # type: ignore[call-overload]
-    # username=os.getenv("REDIS_USERNAME"),
-    # password=os.getenv("REDIS_PASSWORD"),
-    host=os.getenv("REDIS_DROPLET_HOST"),
-    port=os.getenv("REDIS_DROPLET_PORT"),
-    decode_responses=False,
-    ssl=False,
-)
-
-redis_client.json().delete("aichat", "$")
-redis_client.json().set(
-    "aichat", "$", {"time_elapsed": [], "time_completed": [], "errors":0}
-)
-
 
 @runtime_checkable
 class Tokenizer(Protocol):
@@ -609,10 +591,6 @@ class OpenAI(LLM):
             raise SystemError
         end_time = time.time()
         elapsed_time = end_time - start_time
-        redis_client.json().arrappend("aichat", "$['time_elapsed']", elapsed_time)
-        redis_client.json().arrappend(
-            "aichat", "$['time_completed']", str(datetime.datetime.now())
-        )
 
         print(f"==> AI took {elapsed_time} seconds")
 
