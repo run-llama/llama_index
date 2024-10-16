@@ -165,11 +165,11 @@ def test_chain_rerank_retrieval(vectara1) -> None:
 
     res = qe.retrieve("What's this all about?")
     assert len(res) == 2
-    assert res[0].node.get_content() == docs[1].text
-    # assert res[1].node.get_content() == docs[2].text
+    assert res[0].node.get_content() == docs[0].text
+    assert res[1].node.get_content() == docs[2].text
 
     qe = vectara1.as_retriever(
-        similarity_top_k=2,
+        similarity_top_k=4,
         n_sentences_before=0,
         n_sentences_after=0,
         reranker="chain",
@@ -179,16 +179,15 @@ def test_chain_rerank_retrieval(vectara1) -> None:
             {
                 "type": "udf",
                 "user_function": "5 * get('$.score') + get('$.document_metadata.test_score') / 2",
+                "limit": 2,
             },
         ],
     )
 
     res = qe.retrieve("What's this all about?")
     assert len(res) == 2
-    print(res[0].node.get_content())
-    print(res[1].node.get_content())
-    # assert res[0].node.get_content() == docs[1].text
-    # assert res[1].node.get_content() == docs[2].text
+    assert res[0].node.get_content() == docs[3].text
+    assert res[1].node.get_content() == docs[2].text
 
 
 @pytest.fixture()

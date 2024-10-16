@@ -262,14 +262,10 @@ class VectaraRetriever(BaseRetriever):
                 current_config["reranker_name"] = CHAIN_RERANKER_NAMES[
                     rerank_info["type"]
                 ]
-                if rerank_info["type"] == "mmr":
-                    current_config["diversity_bias"] = rerank_info.get(
-                        "diversity_bias", 0.3
-                    )
-                elif rerank_info["type"] == "udf":
-                    current_config["user_function"] = rerank_info.get(
-                        "user_function", "get('$.score')"
-                    )
+
+                rerank_info.pop("type")
+                for param, value in rerank_info.items():
+                    current_config[param] = value
 
                 if i < len(self._rerank_chain) - 1:
                     current_config["next_reranking_config"] = {}
