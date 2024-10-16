@@ -21,8 +21,8 @@ def get_data_model(
     This part create a dynamic sqlalchemy model with a new table.
     """
 
-    tablename = "data_%s" % index_name  # dynamic table name
-    class_name = "Data%s" % index_name  # dynamic class name
+    tablename = f"data_{index_name}"  # dynamic table name
+    class_name = f"Data{index_name}"  # dynamic class name
 
     chat_dtype = JSONB if use_jsonb else JSON
 
@@ -280,7 +280,7 @@ class PostgresChatStore(BaseChatStore):
         """Delete messages for a key."""
 
         with self._session() as session:
-            result = session.execute(
+            session.execute(
                 delete(self._table_class)
                 .filter_by(key=key)
             )
@@ -290,7 +290,7 @@ class PostgresChatStore(BaseChatStore):
         """Async version of Delete messages for a key."""
 
         async with self._async_session() as session:
-            result = await session.execute(
+            await session.execute(
                 delete(self._table_class)
                 .filter_by(key=key)
             )
