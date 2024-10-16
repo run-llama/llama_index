@@ -409,7 +409,11 @@ class WatsonxLLM(FunctionCallingLLM):
 
         params, generation_kwargs = self._split_chat_generation_params(kwargs)
         response = self._model.chat(
-            messages=message_dicts, params=params, tools=None, tool_choice=None
+            messages=message_dicts,
+            params=params,
+            tools=kwargs.get("tools"),
+            tool_choice=kwargs.get("tool_choice"),
+            tool_choice_option=kwargs.get("tool_choice_option"),
         )
 
         wx_message = response["choices"][0]["message"]
@@ -441,12 +445,17 @@ class WatsonxLLM(FunctionCallingLLM):
 
         params, generation_kwargs = self._split_chat_generation_params(kwargs)
         stream_response = self._model.chat_stream(
-            messages=message_dicts, params=params, tools=None, tool_choice=None
+            messages=message_dicts,
+            params=params,
+            tools=kwargs.get("tools"),
+            tool_choice=kwargs.get("tool_choice"),
+            tool_choice_option=kwargs.get("tool_choice_option"),
         )
 
         def stream_gen() -> ChatResponseGen:
             content = ""
-            role = ""
+            role = None
+            tool_calls = None
             for response in stream_response:
                 wx_message = response["choices"][0]["delta"]
 
@@ -454,15 +463,16 @@ class WatsonxLLM(FunctionCallingLLM):
                 delta = wx_message.get("content", "")
                 content += delta
 
+                additional_kwargs = from_watsonx_message(wx_message).additional_kwargs
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
                         content=content,
-                        additional_kwargs=kwargs,
+                        additional_kwargs=additional_kwargs,
                     ),
                     delta=delta,
                     raw=response,
-                    additional_kwargs=kwargs,
+                    additional_kwargs=additional_kwargs,
                 )
 
         return stream_gen()
@@ -536,8 +546,8 @@ class WatsonxLLM(FunctionCallingLLM):
         for tool_call in tool_calls:
             if not isinstance(tool_call, dict):
                 raise ValueError("Invalid tool_call object")
-            if tool_call.get('type"') != "function":
-                raise ValueError("Invalid tool type. Unsupported by OpenAI")
+            if tool_call.get("type") != "function":
+                raise ValueError("Invalid tool type. Unsupported by watsonx.ai")
 
             # this should handle both complete and partial jsons
             try:

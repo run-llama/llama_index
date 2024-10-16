@@ -6,9 +6,7 @@ from typing import Dict, Union, Optional, List, Any
 from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-)
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 # Import SecretStr directly from pydantic
 # since there is not one in llama_index.core.bridge.pydantic
@@ -128,7 +126,7 @@ def to_watsonx_message_dict(message: ChatMessage) -> dict:
 
 def from_watsonx_message(message: dict) -> ChatMessage:
     """Convert Watsonx message dict to generic message."""
-    role = message.get("role")
+    role = message.get("role", MessageRole.ASSISTANT)
     content = message.get("content")
 
     additional_kwargs: Dict[str, Any] = {}
