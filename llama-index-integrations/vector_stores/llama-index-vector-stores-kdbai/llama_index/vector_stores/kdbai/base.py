@@ -141,7 +141,11 @@ class KDBAIVectorStore(BasePydanticVectorStore):
 
                 # handle metadata columns
                 if len(schema) > len(DEFAULT_COLUMN_NAMES):
-                    for column in [item for item in schema if item['name'] not in DEFAULT_COLUMN_NAMES]:
+                    for column in [
+                        item
+                        for item in schema
+                        if item["name"] not in DEFAULT_COLUMN_NAMES
+                    ]:
                         try:
                             doc[column["name"]] = node.metadata[column["name"]]
                         except Exception as e:
@@ -167,7 +171,6 @@ class KDBAIVectorStore(BasePydanticVectorStore):
         except Exception as e:
             logger.error(f"Error preparing data for KDB.AI: {e}.")
 
-
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         try:
             import kdbai_client as kdbai
@@ -185,7 +188,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                 "Could not run hybrid search. "
                 "Please remove alpha and provide KDBAI weights for the two indexes though the vector_store_kwargs."
             )
-        
+
         if query.filters:
             filter = query.filters
             if kwargs.get("filter"):
@@ -205,27 +208,31 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                     )
         else:
             raise ValueError(
-                "Could not run the search. "
-                "Please provide KDBAI index name."
+                "Could not run the search. " "Please provide KDBAI index name."
             )
 
         if self.hybrid_search:
             sparse_vectors = [self._sparse_encoder(query.query_str)]
 
-            qry = {index:[query.query_embedding],
-                   indexSparse:sparse_vectors}
+            qry = {index: [query.query_embedding], indexSparse: sparse_vectors}
 
-            index_params = {index:{'weight': indexWeight},
-                            indexSparse:{'weight': indexSparseWeight}}
+            index_params = {
+                index: {"weight": indexWeight},
+                indexSparse: {"weight": indexSparseWeight},
+            }
 
-            results = self._table.search(vectors=qry,
-                                        index_params=index_params,
-                                        n=query.similarity_top_k,
-                                        **kwargs)[0]            
+            results = self._table.search(
+                vectors=qry,
+                index_params=index_params,
+                n=query.similarity_top_k,
+                **kwargs,
+            )[0]
         else:
-            results = self._table.search(vectors={index:[query.query_embedding]},
-                                        n=query.similarity_top_k,
-                                        **kwargs)[0]
+            results = self._table.search(
+                vectors={index: [query.query_embedding]},
+                n=query.similarity_top_k,
+                **kwargs,
+            )[0]
 
         top_k_nodes = []
         top_k_ids = []
