@@ -40,7 +40,7 @@ print(response)
 ### Streaming: Using stream endpoint
 
 ```py
-from llama_index.llms.ZhipuAI import ZhipuAI
+from llama_index.llms.zhipuai import ZhipuAI
 
 llm = ZhipuAI(model="glm-4", api_key=api_key)
 
@@ -62,7 +62,7 @@ for r in response:
 ### Function Calling
 
 ```py
-from llama_index.llms.ZhipuAI import ZhipuAI
+from llama_index.llms.zhipuai import ZhipuAI
 
 llm = ZhipuAI(model="glm-4", api_key="YOUR API KEY")
 tools = [
@@ -97,4 +97,6 @@ print(llm.get_tool_calls_from_response(response))
 
 ### ZhipuAI Documentation
 
-https://bigmodel.cn/dev/howuse/introduction
+usage: https://bigmodel.cn/dev/howuse/introduction
+
+api: https://bigmodel.cn/dev/api/normal-model/glm-4
