@@ -123,7 +123,7 @@ class MongoDBKVStore(BaseKVStore):
     def _process_index_struct(
         self,
         index_struct_doc: dict,
-    ) -> list[dict]:
+    ) -> List[Dict]:
         from pymongo import InsertOne
 
         insert_docs = []
