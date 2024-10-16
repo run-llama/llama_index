@@ -39,28 +39,36 @@ If you're ready to dive in, here’s a quick setup guide to get you going:
 There’s plenty of ways to contribute—whether you’re a seasoned Python developer or just starting out, your contributions are welcome! Here are some ideas:
 
 ### 1. 🆕 Extend Core Modules
+
 Help us extend LlamaIndex's functionality by contributing to any of our core modules. Think of this as unlocking new superpowers for LlamaIndex!
+
 - **New Integrations** (e.g., connecting new LLMs, storage systems, or data sources)
 - **Data Loaders**, **Vector Stores**, and more!
 
 Explore the different modules below to get inspired!
 
 ### 2. 📦 Contribute Tools, Readers, Packs, or Datasets
+
 Create new Packs, Readers, or Tools that simplify how others use LlamaIndex with various platforms.
 
 ### 3. 🧠 Add New Features
+
 Have an idea for a feature that could make LlamaIndex even better? Go for it! We love innovative contributions.
 
 ### 4. 🐛 Fix Bugs
+
 Fixing bugs is a great way to start contributing. Head over to our [Github Issues](https://github.com/run-llama/llama_index/issues) page and find bugs tagged as [`good first issue`](https://github.com/run-llama/llama_index/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
 
 ### 5. 🎉 Share Usage Examples
+
 If you’ve used LlamaIndex in a unique or creative way, consider sharing guides or notebooks. This helps other developers learn from your experience.
 
 ### 6. 🧪 Experiment
+
 Got an out-there idea? We’re open to experimental features—test it out and make a PR!
 
 ### 7. 📄 Improve Documentation & Code Quality
+
 Help make the project easier to navigate by refining the docs or cleaning up the codebase. Every improvement counts!
 
 ---
@@ -68,27 +76,33 @@ Help make the project easier to navigate by refining the docs or cleaning up the
 ## 🔥 How to Extend LlamaIndex’s Core Modules
 
 ### Data Loaders
+
 A **data loader** ingests data from any source and converts it into `Document` objects that LlamaIndex can parse and index.
-- **Interface**: 
+
+- **Interface**:
   - `load_data`: Returns a list of `Document` objects.
   - `lazy_load_data`: Returns an iterable of `Document` objects (useful for large datasets).
-  
+
 **Example**: [MongoDB Reader](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers/llama-index-readers-mongodb)
 
 💡 **Ideas**: Want to load data from a source not yet supported? Build a new data loader and submit a PR!
 
 ### Node Parsers
+
 A **node parser** converts `Document` objects into `Node` objects—atomic chunks of data that LlamaIndex works with.
-- **Interface**: 
+
+- **Interface**:
   - `get_nodes_from_documents`: Returns a list of `Node` objects.
-  
+
 **Example**: [Hierarchical Node Parser](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/node_parser/relational/hierarchical.py)
 
 💡 **Ideas**: Add new ways to structure hierarchical relationships in documents, like play-act-scene or chapter-section formats.
 
 ### Text Splitters
+
 A **text splitter** breaks down large text blocks into smaller chunks—this is key for working with LLMs that have limited context windows.
-- **Interface**: 
+
+- **Interface**:
   - `split_text`: Takes a string and returns smaller strings (chunks).
 
 **Example**: [Token Text Splitter](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/node_parser/text/token.py)
@@ -96,7 +110,9 @@ A **text splitter** breaks down large text blocks into smaller chunks—this is 
 💡 **Ideas**: Build specialized text splitters for different content types, like code, dialogues, or dense data!
 
 ### Vector Stores
+
 Store embeddings and retrieve them via similarity search with **vector stores**.
+
 - **Interface**:
   - `add`, `delete`, `query`, `get_nodes`, `delete_nodes`, `clear`
 
@@ -105,6 +121,7 @@ Store embeddings and retrieve them via similarity search with **vector stores**.
 💡 **Ideas**: Create support for vector databases that aren't yet integrated!
 
 ### Query Engines & Retrievers
+
 - **Query Engines** implement `query` to return structured responses.
 - **Retrievers** retrieve relevant nodes based on queries.
 
@@ -138,11 +155,14 @@ And voilà—your contribution is ready for review!
 ## 🧑‍💻 Development Guidelines
 
 ### Repo Structure
+
 LlamaIndex is organized as a **monorepo**, meaning different packages live within this single repository. You can focus on a specific package depending on your contribution:
+
 - **Core package**: [`llama-index-core/`](https://github.com/run-llama/llama_index/tree/main/llama-index-core)
 - **Integrations**: e.g., [`llama-index-integrations/`](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations)
 
 ### Setting Up Your Environment
+
 1. **Install Poetry** (if you don’t already have it):
    ```bash
    curl -sSL https://install.python-poetry.org | python3 -
@@ -157,12 +177,16 @@ LlamaIndex is organized as a **monorepo**, meaning different packages live withi
    ```
 
 ### Running Tests
+
 We use `pytest` for testing. Make sure you run tests in each package you modify:
+
 ```bash
 pytest
 ```
 
 If you’re integrating with a remote system, **mock** it to prevent test failures from external changes.
+
+By default, CICD will fail if test coverage is less than 50% -- so please do add tests for your code!
 
 ---
 
