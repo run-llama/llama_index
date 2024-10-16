@@ -228,7 +228,10 @@ class PostgresChatStore(BaseChatStore):
             result = session.execute(select(self._table_class).filter_by(key=key))
             result = result.scalars().first()
             if result:
-                return result.value
+                return [
+                    ChatMessage.model_validate(removed_message)
+                    for removed_message in result.value
+                ]
             return []
 
     async def aget_messages(self, key: str) -> list[ChatMessage]:
@@ -237,7 +240,10 @@ class PostgresChatStore(BaseChatStore):
             result = await session.execute(select(self._table_class).filter_by(key=key))
             result = result.scalars().first()
             if result:
-                return result.value
+                return [
+                    ChatMessage.model_validate(removed_message)
+                    for removed_message in result.value
+                ]
             return []
 
     def add_message(self, key: str, message: ChatMessage) -> None:
