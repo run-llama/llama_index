@@ -135,3 +135,27 @@ def from_watsonx_message(message: dict) -> ChatMessage:
         additional_kwargs.update(tool_calls=tool_calls)
 
     return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
+
+
+def update_tool_calls(tool_calls: list, tool_calls_update: list):
+    """Use the tool_calls_update objects received from stream chunks
+    to update the running tool_calls object.
+    """
+    if tool_calls_update is None:
+        return tool_calls
+
+    tc_delta = tool_calls_update[0]
+
+    if len(tool_calls) == 0:
+        tool_calls.append(tc_delta)
+    else:
+        t = tool_calls[-1]
+        if t["index"] != tc_delta["index"]:
+            tool_calls.append(tc_delta)
+        else:
+
+            t["function"]["arguments"] += tc_delta["function"]["arguments"] or ""
+            t["function"]["name"] += tc_delta["function"]["name"] or ""
+            t["id"] += tc_delta.get("id", "")
+
+    return tool_calls
