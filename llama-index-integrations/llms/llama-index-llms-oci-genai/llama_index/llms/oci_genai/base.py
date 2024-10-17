@@ -25,7 +25,7 @@ from llama_index.core.llms.callbacks import (
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
-from utils import (
+from llama_index.llms.oci_genai.utils import (
     CHAT_MODELS,
     create_client,
     get_provider,
@@ -301,6 +301,26 @@ class OCIGenAI(FunctionCallingLLM):
                 )
 
         return gen()
+
+    async def achat(
+            self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        raise NotImplementedError("Async chat is not implemented yet.")
+
+    async def acomplete(
+            self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        raise NotImplementedError("Async complete is not implemented yet.")
+
+    async def astream_chat(
+            self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        raise NotImplementedError("Async stream chat is not implemented yet.")
+
+    async def astream_complete(
+            self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        raise NotImplementedError("Async stream complete is not implemented yet.")
 
     # Function tooling integration methods
     def _prepare_chat_with_tools(
