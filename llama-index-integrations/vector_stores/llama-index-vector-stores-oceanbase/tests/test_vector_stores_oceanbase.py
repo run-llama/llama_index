@@ -20,8 +20,11 @@ try:
         "db_name": OB_DBNAME,
     }
 
+    # test client
+    client = ObVecClient(**CONN_ARGS)
+
     oceanbase_available = True
-except (OSError, ImportError) as e:
+except Exception as e:
     oceanbase_available = False
 
 from llama_index.core.schema import (
