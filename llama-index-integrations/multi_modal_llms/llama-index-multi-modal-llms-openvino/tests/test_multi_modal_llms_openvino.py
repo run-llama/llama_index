@@ -16,7 +16,7 @@ def mock_model():
     ) as mock_processor:
         mock_processor = mock_processor.from_pretrained.return_value
 
-        yield OpenVINOMultiModal()
+        yield OpenVINOMultiModal(model_id_or_path="OpenGVLab/InternVL2-2B")
 
 
 # Replace the existing 'model' fixture with this mock_model
@@ -49,12 +49,12 @@ def test_class():
 
 def test_initialization(model):
     assert isinstance(model, OpenVINOMultiModal)
-    assert model.model_id_or_path == "llava-hf/llava-v1.6-mistral-7b-hf"
+    assert model.model_id_or_path == "OpenGVLab/InternVL2-2B"
 
 
 def test_metadata(model):
     metadata = model.metadata
-    assert metadata.model_name == "llava-hf/llava-v1.6-mistral-7b-hf"
+    assert metadata.model_name == "OpenGVLab/InternVL2-2B"
     assert metadata.context_window == 3900  # Default value
     assert metadata.num_output == 256  # Default value
 
