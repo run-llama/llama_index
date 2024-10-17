@@ -365,10 +365,11 @@ class WatsonxLLM(FunctionCallingLLM):
             raw=response,
         )
 
+    @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        raise NotImplementedError
+        return self.complete(prompt, formatted=formatted, **kwargs)
 
     @llm_completion_callback()
     def stream_complete(
@@ -400,10 +401,16 @@ class WatsonxLLM(FunctionCallingLLM):
 
         return gen()
 
+    @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        raise NotImplementedError
+        async def gen() -> CompletionResponseAsyncGen:
+            for message in self.stream_complete(prompt, formatted=formatted, **kwargs):
+                yield message
+
+        # NOTE: convert generator to async generator
+        return gen()
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         message_dicts = [to_watsonx_message_dict(message) for message in messages]
@@ -434,10 +441,13 @@ class WatsonxLLM(FunctionCallingLLM):
 
         return chat_fn(messages, **kwargs)
 
+    @llm_chat_callback()
     async def achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
+        self,
+        messages: Sequence[ChatMessage],
+        **kwargs: Any,
     ) -> ChatResponse:
-        raise NotImplementedError
+        return self.chat(messages, **kwargs)
 
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -499,10 +509,16 @@ class WatsonxLLM(FunctionCallingLLM):
 
         return chat_stream_fn(messages, **kwargs)
 
+    @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        raise NotImplementedError
+        async def gen() -> ChatResponseAsyncGen:
+            for message in self.stream_chat(messages, **kwargs):
+                yield message
+
+        # NOTE: convert generator to async generator
+        return gen()
 
     def _prepare_chat_with_tools(
         self,
@@ -580,7 +596,6 @@ class WatsonxLLM(FunctionCallingLLM):
 
     def _get_response_token_counts(self, raw_response: Any) -> dict:
         """Get the token usage reported by the response."""
-
         if isinstance(raw_response, dict):
             usage = raw_response.get("usage", {})
             if usage is None:

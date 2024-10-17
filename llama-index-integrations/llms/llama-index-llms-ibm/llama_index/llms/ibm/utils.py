@@ -153,7 +153,6 @@ def update_tool_calls(tool_calls: list, tool_calls_update: list):
         if t["index"] != tc_delta["index"]:
             tool_calls.append(tc_delta)
         else:
-
             t["function"]["arguments"] += tc_delta["function"]["arguments"] or ""
             t["function"]["name"] += tc_delta["function"]["name"] or ""
             t["id"] += tc_delta.get("id", "")
