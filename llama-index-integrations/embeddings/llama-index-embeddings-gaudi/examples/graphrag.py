@@ -15,7 +15,7 @@ from llama_index.graph_stores.neo4j import Neo4jGraphStore
 from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.readers.wikipedia import WikipediaReader
 from llama_index.llms.gaudi import GaudiLLM
-from llama_index.embeddings.gaudi import GaudiHuggingFaceEmbeddings
+from llama_index.embeddings.gaudi import GaudiEmbedding
 from llama_index.core.prompts import PromptTemplate
 
 from llama_index.core import (
@@ -381,12 +381,9 @@ def run_code():
         device_map="auto",
     )
 
-    embed_model = LangchainEmbedding(
-        GaudiHuggingFaceEmbeddings(
-            embedding_input_size=-1,
-            model_name="thenlper/gte-large",
-            model_kwargs={"device": "hpu"},
-        )
+    embed_model = GaudiEmbedding(
+        embedding_input_size=-1,
+        model_name="thenlper/gte-large",
     )
 
     documents = WikipediaReader().load_data(pages=["Guardians of the Galaxy Vol. 3"])

@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.embeddings.gaudi"
 
 [tool.llamahub.class_authors]
-GaudiHuggingFaceEmbeddings = "llama-index"
+GaudiEmbedding = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -33,7 +33,6 @@ version = "0.1.0"
 python = ">=3.9,<4.0"
 optimum = {extras = ["habana"], version = ">=1.21.2"}
 llama-index-core = "^0.11.0"
-langchain.embeddings = "^0.2.6"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

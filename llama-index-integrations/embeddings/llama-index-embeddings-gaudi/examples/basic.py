@@ -1,13 +1,9 @@
-from llama_index.embeddings.gaudi import GaudiHuggingFaceEmbeddings
-from llama_index.embeddings.langchain import LangchainEmbedding
+from llama_index.embeddings.gaudi import GaudiEmbedding
 
 if __name__ == "__main__":
-    embed_model = LangchainEmbedding(
-        GaudiHuggingFaceEmbeddings(
-            embedding_input_size=-1,
-            model_name="thenlper/gte-large",
-            model_kwargs={"device": "hpu"},
-        )
+    embed_model = GaudiEmbedding(
+        embedding_input_size=-1,
+        model_name="thenlper/gte-large",
     )
 
     # Basic embedding example

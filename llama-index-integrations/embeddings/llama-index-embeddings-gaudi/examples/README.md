@@ -1,6 +1,6 @@
-# GaudiHuggingFaceEmbeddings Examples
+# GaudiEmbedding Examples
 
-This folder contains examples showcasing how to use LlamaIndex with Embeddings integration `llama_index.embeddings.gaudi.GaudiHuggingFaceEmbeddings` on Intel Gaudi.
+This folder contains examples showcasing how to use LlamaIndex with Embeddings integration `llama_index.embeddings.gaudi.GaudiEmbedding` on Intel Gaudi.
 
 ## Installation
 
@@ -15,7 +15,7 @@ pip install llama-index-embeddings-gaudi
 
 ### Basic Usage Example
 
-The example [basic.py](./basic.py) shows how to run `GaudiHuggingFaceEmbeddings` on Intel Gaudi and conduct embedding tasks such as text and query embedding. Run the example as following:
+The example [basic.py](./basic.py) shows how to run `GaudiEmbedding` on Intel Gaudi and conduct embedding tasks such as text and query embedding. Run the example as following:
 
 ```bash
 PT_HPU_LAZY_ACC_PAR_MODE=1 PT_HPU_ENABLE_LAZY_COLLECTIVES=true python basic.py

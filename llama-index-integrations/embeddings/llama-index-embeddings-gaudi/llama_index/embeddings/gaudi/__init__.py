@@ -1,3 +1,3 @@
-from llama_index.embeddings.gaudi.base import GaudiHuggingFaceEmbeddings
+from llama_index.embeddings.gaudi.base import GaudiEmbedding
 
-__all__ = ["GaudiHuggingFaceEmbeddings"]
+__all__ = ["GaudiEmbedding"]
