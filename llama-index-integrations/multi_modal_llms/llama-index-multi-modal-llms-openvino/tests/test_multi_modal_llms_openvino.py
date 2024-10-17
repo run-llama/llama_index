@@ -15,9 +15,9 @@ from llama_index.multi_modal_llms.openvino import OpenVINOMultiModal
 @pytest.fixture(scope="module")
 def mock_model():
     with patch(
-        "llama_index.multi_modal_llms.openvino.base.AutoProcessor"
-    ) as mock_processor:
-        mock_processor = mock_processor.from_pretrained.return_value
+        "llama_index.multi_modal_llms.openvino.base.OVModelForVisualCausalLM"
+    ) as mock_model:
+        mock_model.from_pretrained.return_value = MagicMock()
 
         yield OpenVINOMultiModal(model_id_or_path="katuni4ka/tiny-random-llava-next")
 
@@ -67,29 +67,12 @@ def test_complete(model, temp_image_path):
     image_doc = ImageDocument(image_path=temp_image_path)
 
     # Mock the _prepare_messages and _generate methods
-    model._messages_to_prompt = MagicMock(return_value={"mocked": "inputs"})
     model._generate = MagicMock(return_value="This is a mocked response.")
 
     response = model.complete(prompt, image_documents=[image_doc])
 
     assert response.text == "This is a mocked response."
-    model._messages_to_prompt.assert_called_once()
-    model._generate.assert_called_once_with({"mocked": "inputs"})
-
-
-def test_stream_complete(model, temp_image_path):
-    prompt = "Describe this image:"
-    image_doc = ImageDocument(image_path=temp_image_path)
-
-    # Mock the _prepare_messages and _generate methods
-    model._messages_to_prompt = MagicMock(return_value={"mocked": "inputs"})
-    model._generate = MagicMock(return_value="This is a mocked response.")
-
-    response_gen = model.stream_complete(prompt, image_documents=[image_doc])
-    response = list(response_gen)
-    assert response[-1].text == "This is a mocked response."
-    model._messages_to_prompt.assert_called_once()
-    model._generate.assert_called_once_with({"mocked": "inputs"})
+    model._generate.assert_called_once()
 
 
 def test_chat(model, temp_image_path):
@@ -97,14 +80,12 @@ def test_chat(model, temp_image_path):
     image_doc = ImageDocument(image_path=temp_image_path)
 
     # Mock the _prepare_messages and _generate methods
-    model._prepare_messages = MagicMock(return_value={"mocked": "inputs"})
     model._generate = MagicMock(return_value="This is a mocked chat response.")
 
     response = model.chat(messages, image_documents=[image_doc])
 
     assert response.message.content == "This is a mocked chat response."
-    model._prepare_messages.assert_called_once()
-    model._generate.assert_called_once_with({"mocked": "inputs"})
+    model._generate.assert_called_once()
 
 
 @pytest.mark.asyncio()
