@@ -42,6 +42,7 @@ from llama_index.llms.ibm.utils import (
     resolve_watsonx_credentials,
     to_watsonx_message_dict,
     from_watsonx_message,
+    update_tool_calls,
 )
 
 # default max tokens determined by service
@@ -455,15 +456,25 @@ class WatsonxLLM(FunctionCallingLLM):
         def stream_gen() -> ChatResponseGen:
             content = ""
             role = None
-            tool_calls = None
+            tool_calls = []
+
             for response in stream_response:
+                tools_available = False
                 wx_message = response["choices"][0]["delta"]
 
                 role = wx_message.get("role") or role or MessageRole.ASSISTANT
                 delta = wx_message.get("content", "")
                 content += delta
 
-                additional_kwargs = from_watsonx_message(wx_message).additional_kwargs
+                if "tool_calls" in wx_message:
+                    tools_available = True
+
+                additional_kwargs = {}
+                if tools_available:
+                    tool_calls = update_tool_calls(tool_calls, wx_message["tool_calls"])
+                    if tool_calls:
+                        additional_kwargs["tool_calls"] = tool_calls
+
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
@@ -472,7 +483,7 @@ class WatsonxLLM(FunctionCallingLLM):
                     ),
                     delta=delta,
                     raw=response,
-                    additional_kwargs=additional_kwargs,
+                    additional_kwargs=self._get_response_token_counts(response),
                 )
 
         return stream_gen()
@@ -566,3 +577,23 @@ class WatsonxLLM(FunctionCallingLLM):
             )
 
         return tool_selections
+
+    def _get_response_token_counts(self, raw_response: Any) -> dict:
+        """Get the token usage reported by the response."""
+
+        if isinstance(raw_response, dict):
+            usage = raw_response.get("usage", {})
+            if usage is None:
+                return {}
+
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+            total_tokens = usage.get("total_tokens", 0)
+        else:
+            return {}
+
+        return {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": total_tokens,
+        }
