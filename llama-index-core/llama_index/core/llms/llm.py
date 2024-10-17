@@ -334,6 +334,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -378,6 +380,7 @@ class LLM(BaseLLM):
         self,
         output_cls: Type[BaseModel],
         prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> BaseModel:
         r"""Async Structured predict.
@@ -387,6 +390,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -423,7 +428,7 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        result = await program.acall(**prompt_args)
+        result = await program.acall(llm_kwargs=llm_kwargs, **prompt_args)
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
@@ -442,6 +447,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -501,6 +508,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
