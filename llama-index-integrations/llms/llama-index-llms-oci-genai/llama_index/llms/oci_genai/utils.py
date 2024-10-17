@@ -416,7 +416,7 @@ class CohereProvider(Provider):
             return self.oci_tool(
                 name=tool_name,
                 description=tool_description,
-                parameters={
+                parameter_definitions={
                     p_name: self.oci_tool_param(
                         type=JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
                         description=p_def.get("description", ""),
@@ -434,7 +434,7 @@ class CohereProvider(Provider):
             return self.oci_tool(
                 name=tool.get("title"),
                 description=tool.get("description"),
-                parameters={
+                parameter_definitions={
                     p_name: self.oci_tool_param(
                         type=JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
                         description=p_def.get("description", ""),
@@ -451,7 +451,7 @@ class CohereProvider(Provider):
             return self.oci_tool(
                 name=schema.get("title", tool.__name__),
                 description=schema.get("description", tool.__name__),
-                parameters={
+                parameter_definitions={
                     p_name: self.oci_tool_param(
                         type=JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
                         description=p_def.get("description", ""),
@@ -483,7 +483,7 @@ class CohereProvider(Provider):
             return self.oci_tool(
                 name=tool.__name__,
                 description=tool.__doc__ or f"Callable function: {tool.__name__}",
-                parameters={
+                parameter_definitions={
                     param_name: self.oci_tool_param(
                         type=param_data["type"],
                         description=param_data["description"],
@@ -566,6 +566,12 @@ class MetaProvider(Provider):
             "api_format": self.chat_api_format,
             "top_k": -1,
         }
+
+    def convert_to_oci_tool(
+            self,
+            tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+    ) -> Dict[str, Any]:
+        raise NotImplementedError("Tools not supported for Meta models")
 
 
 PROVIDERS = {
