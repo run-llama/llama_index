@@ -21,28 +21,17 @@ class OCIAuthType(Enum):
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
-COMPLETION_MODELS = {
-    "cohere.command": 4096,
-    "cohere.command-light": 4096,
-    "meta.llama-2-70b-chat": 4096,
-}
+COMPLETION_MODELS = {}
 
 CHAT_MODELS = {
     "cohere.command-r-16k": 16000,
     "cohere.command-r-plus": 128000,  # placeholder for future support
     "meta.llama-3-70b-instruct": 8192,
+    "meta.llama-3.1-70b-instruct": 128000,
+    "meta.llama-3.1-405b-instruct": 128000,
 }
 
 OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_MODELS}
-
-STREAMING_MODELS = {
-    "cohere.command",
-    "cohere.command-light",
-    "meta.llama-2-70b-chat",
-    "cohere.command-r-16k",
-    "cohere.command-r-plus",
-    "meta.llama-3-70b-instruct",
-}
 
 JSON_TO_PYTHON_TYPES = {
     "string": "str",
@@ -55,7 +44,7 @@ JSON_TO_PYTHON_TYPES = {
 
 
 def _format_oci_tool_calls(
-        tool_calls: Optional[List[Any]] = None,
+    tool_calls: Optional[List[Any]] = None,
 ) -> List[Dict]:
     """
     Formats an OCI GenAI API response into the tool call format used in LlamaIndex.
@@ -73,7 +62,6 @@ def _format_oci_tool_calls(
             }
         )
     return formatted_tool_calls
-
 
 
 def create_client(auth_type, auth_profile, service_endpoint):
@@ -217,9 +205,10 @@ class Provider(ABC):
 
     @abstractmethod
     def convert_to_oci_tool(
-            self,
-            tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-    ) -> Dict[str, Any]: ...
+        self,
+        tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+    ) -> Dict[str, Any]:
+        ...
 
 
 class CohereProvider(Provider):
@@ -296,9 +285,7 @@ class CohereProvider(Provider):
                     }
                 )
 
-        generation_info = {k: v for k, v in generation_info.items() if v is not None}
-
-        return generation_info
+        return {k: v for k, v in generation_info.items() if v is not None}
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         role_map = {
@@ -308,7 +295,7 @@ class CohereProvider(Provider):
             "tool": "TOOL",
             "function": "TOOL",
             "chatbot": "CHATBOT",
-            "model": "CHATBOT"
+            "model": "CHATBOT",
         }
 
         oci_chat_history = []
@@ -321,24 +308,24 @@ class CohereProvider(Provider):
                 tool_calls = []
                 for tool_call in msg.additional_kwargs.get("tool_calls", []):
                     validate_tool_call(tool_call)
-                    tool_calls.append(self.oci_tool_call(
-                        name=tool_call.get("name"),
-                        parameters=json.loads(tool_call["input"])
-                        if isinstance(tool_call["input"], str)
-                        else tool_call["input"]
-                    ))
+                    tool_calls.append(
+                        self.oci_tool_call(
+                            name=tool_call.get("name"),
+                            parameters=json.loads(tool_call["input"])
+                            if isinstance(tool_call["input"], str)
+                            else tool_call["input"],
+                        )
+                    )
 
                 oci_chat_history.append(
                     self.oci_chat_message[role](
                         message=msg.content if msg.content else " ",
-                        tool_calls=tool_calls if tool_calls else None
+                        tool_calls=tool_calls if tool_calls else None,
                     )
                 )
             else:
                 oci_chat_history.append(
-                    self.oci_chat_message[role](
-                        message=msg.content
-                    )
+                    self.oci_chat_message[role](message=msg.content)
                 )
 
         # Handling the current chat turn, especially the latest message
@@ -356,19 +343,24 @@ class CohereProvider(Provider):
                 previous_ai_msgs = [
                     message
                     for message in current_chat_turn_messages
-                    if message.role == MessageRole.ASSISTANT and "tool_calls" in message.additional_kwargs
+                    if message.role == MessageRole.ASSISTANT
+                    and "tool_calls" in message.additional_kwargs
                 ]
                 if previous_ai_msgs:
                     previous_ai_msg = previous_ai_msgs[-1]
-                    for li_tool_call in previous_ai_msg.additional_kwargs.get("tool_calls", []):
+                    for li_tool_call in previous_ai_msg.additional_kwargs.get(
+                        "tool_calls", []
+                    ):
                         validate_tool_call(li_tool_call)
-                        if li_tool_call["toolUseId"] == tool_message.additional_kwargs.get("tool_call_id"):
+                        if li_tool_call[
+                            "toolUseId"
+                        ] == tool_message.additional_kwargs.get("tool_call_id"):
                             tool_result = self.oci_tool_result()
                             tool_result.call = self.oci_tool_call(
                                 name=li_tool_call.get("name"),
                                 parameters=json.loads(li_tool_call["input"])
                                 if isinstance(li_tool_call["input"], str)
-                                else li_tool_call["input"]
+                                else li_tool_call["input"],
                             )
                             tool_result.outputs = [{"output": tool_message.content}]
                             oci_tool_results.append(tool_result)
@@ -387,9 +379,10 @@ class CohereProvider(Provider):
 
         return {k: v for k, v in oci_params.items() if v is not None}
 
-    def convert_to_oci_tool(self,
-                            tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
-                            ) -> CohereTool:
+    def convert_to_oci_tool(
+        self,
+        tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+    ) -> CohereTool:
         """
         Convert a Pydantic class, JSON schema dict, callable, or BaseTool to a CohereTool format for OCI.
 
@@ -401,7 +394,9 @@ class CohereProvider(Provider):
         """
         if isinstance(tool, BaseTool):
             # Extract tool name and description for BaseTool
-            tool_name, tool_description = getattr(tool, "name", None), getattr(tool, "description", None)
+            tool_name, tool_description = getattr(tool, "name", None), getattr(
+                tool, "description", None
+            )
             if not tool_name or not tool_description:
                 tool_name = getattr(tool.metadata, "name", None)
                 if tool_fn := getattr(tool, "fn", None):
@@ -411,17 +406,25 @@ class CohereProvider(Provider):
                 else:
                     tool_description = getattr(tool.metadata, "description", None)
                 if not tool_name or not tool_description:
-                    raise ValueError(f"Tool {tool} does not have a name or description.")
+                    raise ValueError(
+                        f"Tool {tool} does not have a name or description."
+                    )
 
             return self.oci_tool(
                 name=tool_name,
                 description=tool_description,
                 parameter_definitions={
                     p_name: self.oci_tool_param(
-                        type=JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
+                        type=JSON_TO_PYTHON_TYPES.get(
+                            p_def.get("type"), p_def.get("type")
+                        ),
                         description=p_def.get("description", ""),
-                        is_required=p_name in tool.metadata.get_parameters_dict().get("required", []))
-                    for p_name, p_def in tool.metadata.get_parameters_dict().get("properties", {}).items()
+                        is_required=p_name
+                        in tool.metadata.get_parameters_dict().get("required", []),
+                    )
+                    for p_name, p_def in tool.metadata.get_parameters_dict()
+                    .get("properties", {})
+                    .items()
                 },
             )
 
@@ -436,9 +439,11 @@ class CohereProvider(Provider):
                 description=tool.get("description"),
                 parameter_definitions={
                     p_name: self.oci_tool_param(
-                        type=JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
+                        type=JSON_TO_PYTHON_TYPES.get(
+                            p_def.get("type"), p_def.get("type")
+                        ),
                         description=p_def.get("description", ""),
-                        is_required=p_name in tool.get("required", [])
+                        is_required=p_name in tool.get("required", []),
                     )
                     for p_name, p_def in tool.get("properties", {}).items()
                 },
@@ -453,9 +458,11 @@ class CohereProvider(Provider):
                 description=schema.get("description", tool.__name__),
                 parameter_definitions={
                     p_name: self.oci_tool_param(
-                        type=JSON_TO_PYTHON_TYPES.get(p_def.get("type"), p_def.get("type")),
+                        type=JSON_TO_PYTHON_TYPES.get(
+                            p_def.get("type"), p_def.get("type")
+                        ),
                         description=p_def.get("description", ""),
-                        is_required=p_name in schema.get("required", [])
+                        is_required=p_name in schema.get("required", []),
                     )
                     for p_name, p_def in properties.items()
                 },
@@ -466,18 +473,23 @@ class CohereProvider(Provider):
             signature = inspect.signature(tool)
             parameters = {}
             for param_name, param in signature.parameters.items():
-                param_type = param.annotation if param.annotation != inspect._empty else "string"
-                param_default = param.default if param.default != inspect._empty else None
+                param_type = (
+                    param.annotation if param.annotation != inspect._empty else "string"
+                )
+                param_default = (
+                    param.default if param.default != inspect._empty else None
+                )
 
                 # Convert type to JSON schema type (or leave as default)
                 json_type = JSON_TO_PYTHON_TYPES.get(
-                    param_type, param_type.__name__ if isinstance(param_type, type) else "string"
+                    param_type,
+                    param_type.__name__ if isinstance(param_type, type) else "string",
                 )
 
                 parameters[param_name] = {
                     "type": json_type,
                     "description": f"Parameter: {param_name}",
-                    "is_required": param_default is None
+                    "is_required": param_default is None,
                 }
 
             return self.oci_tool(
@@ -487,7 +499,7 @@ class CohereProvider(Provider):
                     param_name: self.oci_tool_param(
                         type=param_data["type"],
                         description=param_data["description"],
-                        is_required=param_data["is_required"]
+                        is_required=param_data["is_required"],
                     )
                     for param_name, param_data in parameters.items()
                 },
@@ -568,8 +580,8 @@ class MetaProvider(Provider):
         }
 
     def convert_to_oci_tool(
-            self,
-            tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        self,
+        tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
     ) -> Dict[str, Any]:
         raise NotImplementedError("Tools not supported for Meta models")
 
@@ -619,8 +631,8 @@ def get_context_size(model: str, context_size: int = None) -> int:
 
 def validate_tool_call(tool_call: Dict[str, Any]):
     if (
-            "input" not in tool_call
-            or "toolUseId" not in tool_call
-            or "name" not in tool_call
+        "input" not in tool_call
+        or "toolUseId" not in tool_call
+        or "name" not in tool_call
     ):
         raise ValueError("Invalid tool call.")
