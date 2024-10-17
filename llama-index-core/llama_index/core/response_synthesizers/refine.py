@@ -133,7 +133,7 @@ class Refine(BaseSynthesizer):
         self._refine_template = refine_template or DEFAULT_REFINE_PROMPT_SEL
         self._verbose = verbose
         self._structured_answer_filtering = structured_answer_filtering
-        self._output_cls = output_cls  # type: ignore
+        self._output_cls = output_cls
 
         if self._streaming and self._structured_answer_filtering:
             raise ValueError(

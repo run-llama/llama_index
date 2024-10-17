@@ -68,7 +68,7 @@ def get_program_for_llm(
         return OpenAIPydanticProgram.from_defaults(
             output_cls=output_cls,
             llm=llm,
-            prompt=prompt,
+            prompt=prompt,  # type: ignore
             **kwargs,
         )
     elif pydantic_program_mode == PydanticProgramMode.FUNCTION:
