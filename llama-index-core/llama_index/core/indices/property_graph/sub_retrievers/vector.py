@@ -51,11 +51,9 @@ class VectorContextRetriever(BasePGRetriever):
         path_depth: int = 1,
         similarity_score: Optional[float] = None,
         filters: Optional[MetadataFilters] = None,
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ) -> None:
-        kwargs = kwargs or {}
-
-        self._retriever_kwargs = self._filter_vector_store_query_kwargs(kwargs)
+        self._retriever_kwargs = self._filter_vector_store_query_kwargs(kwargs or {})
         self._embed_model = embed_model or Settings.embed_model
         self._similarity_top_k = similarity_top_k
         self._vector_store = vector_store
