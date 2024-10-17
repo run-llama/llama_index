@@ -53,6 +53,8 @@ def _parse_filter_value(filter_value: any, is_text_match: bool = False):
         return f"'{filter_value!s}'"
 
     if isinstance(filter_value, list):
+        if all(isinstance(item, str) for item in filter_value):
+            return "(" + ",".join([f"'{v!s}'" for v in filter_value]) + ")"
         return "(" + ",".join([str(v) for v in filter_value]) + ")"
 
     return str(filter_value)
