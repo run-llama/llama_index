@@ -1,9 +1,9 @@
 """Custom query engine."""
 
 from abc import abstractmethod
-from typing import Union
+from typing import Union, Type, Tuple, Any, Dict
 
-from llama_index.core.base.base_query_engine import BaseQueryEngine
+from llama_index.core.base.base_query_engine import BaseQueryEngine, CombinedMeta
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
@@ -12,8 +12,36 @@ from llama_index.core.schema import QueryBundle, QueryType
 
 STR_OR_RESPONSE_TYPE = Union[RESPONSE_TYPE, str]
 
+PydanticMetaclass = type(BaseModel)
 
-class CustomQueryEngine(BaseModel, BaseQueryEngine):
+
+class ExtendedCombinedMeta(CombinedMeta, PydanticMetaclass):
+    """Metaclass for combining Pydantic and BaseQueryEngine metaclasses."""
+
+    def __new__(
+        cls,
+        name: str,
+        bases: Tuple[Type[Any], ...],
+        attrs: Dict[str, Any],
+        **kwargs: Any
+    ) -> "ExtendedCombinedMeta":
+        """Create the class."""
+        # Use Pydantic's metaclass to create the class
+        return PydanticMetaclass.__new__(cls, name, bases, attrs, **kwargs)
+
+    def __init__(
+        cls,
+        name: str,
+        bases: Tuple[Type[Any], ...],
+        attrs: Dict[str, Any],
+        **kwargs: Any
+    ) -> None:
+        """Initialize the class."""
+        CombinedMeta.__init__(cls, name, bases, attrs)
+        PydanticMetaclass.__init__(cls, name, bases, attrs, **kwargs)
+
+
+class CustomQueryEngine(BaseModel, BaseQueryEngine, metaclass=ExtendedCombinedMeta):
     """Custom query engine.
 
     Subclasses can define additional attributes as Pydantic fields.

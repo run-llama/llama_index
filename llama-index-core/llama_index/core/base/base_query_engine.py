@@ -1,7 +1,7 @@
 """Base query engine."""
 
 import logging
-from abc import abstractmethod
+from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.core.base.query_pipeline.query import (
@@ -16,25 +16,38 @@ from llama_index.core.bridge.pydantic import Field, ConfigDict, SerializeAsAny
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixin
 from llama_index.core.schema import NodeWithScore, QueryBundle, QueryType
-from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.instrumentation.events.query import (
     QueryEndEvent,
     QueryStartEvent,
 )
 import llama_index.core.instrumentation as instrument
+from llama_index.core.workflow.workflow import Workflow, _WorkflowMeta
+from llama_index.core.async_utils import asyncio_run
+from llama_index.core.callbacks.schema import CBEventType, EventPayload
+from llama_index.core.bridge.pydantic import BaseModel
 
 dispatcher = instrument.get_dispatcher(__name__)
 logger = logging.getLogger(__name__)
 
 
-class BaseQueryEngine(ChainableMixin, PromptMixin, DispatcherSpanMixin):
+PydanticMetaclass = type(BaseModel)
+
+
+class CombinedMeta(_WorkflowMeta, ABCMeta):
+    pass
+
+
+class BaseQueryEngine(ChainableMixin, PromptMixin, Workflow, metaclass=CombinedMeta):
     """Base query engine."""
 
     def __init__(
         self,
         callback_manager: Optional[CallbackManager],
+        timeout: float = 120.0,
+        **kwargs: Any,
     ) -> None:
         self.callback_manager = callback_manager or CallbackManager([])
+        Workflow.__init__(self, timeout=timeout, **kwargs)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
@@ -92,13 +105,16 @@ class BaseQueryEngine(ChainableMixin, PromptMixin, DispatcherSpanMixin):
             "This query engine does not support asynthesize, use aquery directly"
         )
 
-    @abstractmethod
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        pass
+        return asyncio_run(self._aquery(query_bundle=query_bundle))
 
-    @abstractmethod
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        pass
+        with self.callback_manager.event(
+            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
+        ) as query_event:
+            response = await self.run(query_bundle=query_bundle)
+            query_event.on_end(payload={EventPayload.RESPONSE: response})
+        return response
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return a query component."""
