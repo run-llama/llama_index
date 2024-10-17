@@ -1,3 +1,4 @@
+import dataclasses
 from typing import Any, List, Sequence, Optional, Dict, Set
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -50,9 +51,11 @@ class VectorContextRetriever(BasePGRetriever):
         path_depth: int = 1,
         similarity_score: Optional[float] = None,
         filters: Optional[MetadataFilters] = None,
-        **kwargs: Any,
+        **kwargs: Dict[str, Any],
     ) -> None:
-        self._retriever_kwargs = self._filter_vector_store_query_kwargs(kwargs) if kwargs else {}
+        kwargs = kwargs or {}
+
+        self._retriever_kwargs = self._filter_vector_store_query_kwargs(kwargs)
         self._embed_model = embed_model or Settings.embed_model
         self._similarity_top_k = similarity_top_k
         self._vector_store = vector_store
@@ -69,7 +72,7 @@ class VectorContextRetriever(BasePGRetriever):
 
     @staticmethod
     def _get_valid_vector_store_params() -> Set[str]:
-        return set(VectorStoreQuery.__dataclass_fields__.keys())
+        return {x.name for x in dataclasses.fields(VectorStoreQuery)}
 
     def _filter_vector_store_query_kwargs(
         self, kwargs: Dict[str, Any]
