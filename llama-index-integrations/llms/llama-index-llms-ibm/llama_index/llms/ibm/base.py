@@ -412,9 +412,9 @@ class WatsonxLLM(FunctionCallingLLM):
         response = self._model.chat(
             messages=message_dicts,
             params=params,
-            tools=kwargs.get("tools"),
-            tool_choice=kwargs.get("tool_choice"),
-            tool_choice_option=kwargs.get("tool_choice_option"),
+            tools=generation_kwargs.get("tools"),
+            tool_choice=generation_kwargs.get("tool_choice"),
+            tool_choice_option=generation_kwargs.get("tool_choice_option"),
         )
 
         wx_message = response["choices"][0]["message"]
@@ -448,9 +448,9 @@ class WatsonxLLM(FunctionCallingLLM):
         stream_response = self._model.chat_stream(
             messages=message_dicts,
             params=params,
-            tools=kwargs.get("tools"),
-            tool_choice=kwargs.get("tool_choice"),
-            tool_choice_option=kwargs.get("tool_choice_option"),
+            tools=generation_kwargs.get("tools"),
+            tool_choice=generation_kwargs.get("tool_choice"),
+            tool_choice_option=generation_kwargs.get("tool_choice_option"),
         )
 
         def stream_gen() -> ChatResponseGen:
