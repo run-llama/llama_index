@@ -4,7 +4,10 @@ import tempfile
 import os
 
 from PIL import Image
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+
+from llama_index.core.schema import ImageDocument
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.multi_modal_llms.openvino import OpenVINOMultiModal
 
@@ -16,7 +19,7 @@ def mock_model():
     ) as mock_processor:
         mock_processor = mock_processor.from_pretrained.return_value
 
-        yield OpenVINOMultiModal(model_id_or_path="OpenGVLab/InternVL2-2B")
+        yield OpenVINOMultiModal(model_id_or_path="katuni4ka/tiny-random-llava-next")
 
 
 # Replace the existing 'model' fixture with this mock_model
@@ -49,56 +52,75 @@ def test_class():
 
 def test_initialization(model):
     assert isinstance(model, OpenVINOMultiModal)
-    assert model.model_id_or_path == "OpenGVLab/InternVL2-2B"
+    assert model.model_id_or_path == "katuni4ka/tiny-random-llava-next"
 
 
 def test_metadata(model):
     metadata = model.metadata
-    assert metadata.model_name == "OpenGVLab/InternVL2-2B"
+    assert metadata.model_name == "katuni4ka/tiny-random-llava-next"
     assert metadata.context_window == 3900  # Default value
     assert metadata.num_output == 256  # Default value
 
 
-# def test_complete(model, temp_image_path):
-#     prompt = "Describe this image:"
-#     image_doc = ImageDocument(image_path=temp_image_path)
+def test_complete(model, temp_image_path):
+    prompt = "Describe this image:"
+    image_doc = ImageDocument(image_path=temp_image_path)
 
-#     # Mock the _prepare_messages and _generate methods
-#     model._messages_to_prompt = MagicMock(return_value={"mocked": "inputs"})
-#     model._generate = MagicMock(return_value="This is a mocked response.")
+    # Mock the _prepare_messages and _generate methods
+    model._messages_to_prompt = MagicMock(return_value={"mocked": "inputs"})
+    model._generate = MagicMock(return_value="This is a mocked response.")
 
-#     response = model.complete(prompt, image_documents=[image_doc])
+    response = model.complete(prompt, image_documents=[image_doc])
 
-#     assert response.text == "This is a mocked response."
-#     model._messages_to_prompt.assert_called_once()
-#     model._generate.assert_called_once_with({"mocked": "inputs"})
-
-
-# def test_stream_complete(model, temp_image_path):
-#     prompt = "Describe this image:"
-#     image_doc = ImageDocument(image_path=temp_image_path)
-
-#     # Mock the _prepare_messages and _generate methods
-#     model._messages_to_prompt = MagicMock(return_value={"mocked": "inputs"})
-#     model._generate = MagicMock(return_value="This is a mocked response.")
-
-#     response_gen = model.stream_complete(prompt, image_documents=[image_doc])
-#     response = list(response_gen)
-#     assert response[-1].text == "This is a mocked response."
-#     model._messages_to_prompt.assert_called_once()
-#     model._generate.assert_called_once_with({"mocked": "inputs"})
+    assert response.text == "This is a mocked response."
+    model._messages_to_prompt.assert_called_once()
+    model._generate.assert_called_once_with({"mocked": "inputs"})
 
 
-# def test_chat(model, temp_image_path):
-#     messages = [ChatMessage(role="user", content="What's in this image?")]
-#     image_doc = ImageDocument(image_path=temp_image_path)
+def test_stream_complete(model, temp_image_path):
+    prompt = "Describe this image:"
+    image_doc = ImageDocument(image_path=temp_image_path)
 
-#     # Mock the _prepare_messages and _generate methods
-#     model._prepare_messages = MagicMock(return_value={"mocked": "inputs"})
-#     model._generate = MagicMock(return_value="This is a mocked chat response.")
+    # Mock the _prepare_messages and _generate methods
+    model._messages_to_prompt = MagicMock(return_value={"mocked": "inputs"})
+    model._generate = MagicMock(return_value="This is a mocked response.")
 
-#     response = model.chat(messages, image_documents=[image_doc])
+    response_gen = model.stream_complete(prompt, image_documents=[image_doc])
+    response = list(response_gen)
+    assert response[-1].text == "This is a mocked response."
+    model._messages_to_prompt.assert_called_once()
+    model._generate.assert_called_once_with({"mocked": "inputs"})
 
-#     assert response.message.content == "This is a mocked chat response."
-#     model._prepare_messages.assert_called_once()
-#     model._generate.assert_called_once_with({"mocked": "inputs"})
+
+def test_chat(model, temp_image_path):
+    messages = [ChatMessage(role="user", content="What's in this image?")]
+    image_doc = ImageDocument(image_path=temp_image_path)
+
+    # Mock the _prepare_messages and _generate methods
+    model._prepare_messages = MagicMock(return_value={"mocked": "inputs"})
+    model._generate = MagicMock(return_value="This is a mocked chat response.")
+
+    response = model.chat(messages, image_documents=[image_doc])
+
+    assert response.message.content == "This is a mocked chat response."
+    model._prepare_messages.assert_called_once()
+    model._generate.assert_called_once_with({"mocked": "inputs"})
+
+
+@pytest.mark.asyncio()
+@pytest.mark.parametrize(
+    "method_name",
+    [
+        "astream_chat",
+        "astream_complete",
+        "acomplete",
+        "achat",
+    ],
+)
+async def test_unsupported_methods(model, method_name):
+    with pytest.raises(NotImplementedError):
+        method = getattr(model, method_name)
+        if method_name in ["astream_chat", "achat"]:
+            await method([])
+        else:
+            await method("prompt", [])
