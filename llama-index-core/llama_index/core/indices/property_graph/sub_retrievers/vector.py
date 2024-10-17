@@ -80,7 +80,7 @@ class VectorContextRetriever(BasePGRetriever):
             query_bundle.embedding = self._embed_model.get_agg_embedding_from_queries(
                 query_bundle.embedding_strs
             )
-        
+
         return VectorStoreQuery(
             query_embedding=query_bundle.embedding,
             similarity_top_k=self._similarity_top_k,
