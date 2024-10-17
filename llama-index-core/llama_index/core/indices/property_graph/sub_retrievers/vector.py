@@ -52,7 +52,7 @@ class VectorContextRetriever(BasePGRetriever):
         filters: Optional[MetadataFilters] = None,
         **kwargs: Any,
     ) -> None:
-        self._retriever_kwargs = kwargs or {}
+        self._retriever_kwargs = self._filter_vector_store_query_kwargs(kwargs) if kwargs else {}
         self._embed_model = embed_model or Settings.embed_model
         self._similarity_top_k = similarity_top_k
         self._vector_store = vector_store
@@ -81,13 +81,11 @@ class VectorContextRetriever(BasePGRetriever):
                 query_bundle.embedding_strs
             )
         
-        filtered_kwargs = self._filter_vector_store_query_kwargs(self._retriever_kwargs)
-
         return VectorStoreQuery(
             query_embedding=query_bundle.embedding,
             similarity_top_k=self._similarity_top_k,
             filters=self._filters,
-            **filtered_kwargs,
+            **self._retriever_kwargs,
         )
 
     def _get_kg_ids(self, kg_nodes: Sequence[BaseNode]) -> List[str]:
@@ -104,13 +102,11 @@ class VectorContextRetriever(BasePGRetriever):
                 )
             )
 
-        filtered_kwargs = self._filter_vector_store_query_kwargs(self._retriever_kwargs)
-
         return VectorStoreQuery(
             query_embedding=query_bundle.embedding,
             similarity_top_k=self._similarity_top_k,
             filters=self._filters,
-            **filtered_kwargs,
+            **self._retriever_kwargs,
         )
 
     def retrieve_from_graph(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
