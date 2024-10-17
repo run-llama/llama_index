@@ -55,6 +55,34 @@ def mock_generate(*args: Any, **kwargs: Any) -> Dict[str, Any]:
     }
 
 
+def mock_chat(*args: Any, **kwargs: Any) -> Dict[str, Any]:
+    return {
+        "model_id": "mistralai/mistral-large",
+        "created_at": "2024-10-17T11:33:58.927Z",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "\n\nTEST",
+                },
+                "finish_reason": "stop",
+            }
+        ],
+    }
+
+
+def mock_stream_chat(*args: Any, **kwargs: Any) -> Generator[dict, None, None]:
+    for content in ("I", " like", " it"):
+        yield {
+            "model_id": "mistralai/mistral-large",
+            "created_at": "2024-10-17T11:41:26.140Z",
+            "choices": [
+                {"index": 0, "finish_reason": "stop", "delta": {"content": content}}
+            ],
+        }
+
+
 def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, None]:
     responses = [
         {
@@ -172,7 +200,7 @@ class TestWasonxLLMInference:
         assert len(w) == 1
         assert response.text == "\n\nTEST"
 
-        mock_instance.generate.return_value = mock_generate()
+        mock_instance.chat.return_value = mock_chat()
         message = ChatMessage(role="user", content="test message")
         chat_response = llm.chat([message])
         assert chat_response.message.content == "\n\nTEST"
@@ -197,9 +225,9 @@ class TestWasonxLLMInference:
         responses = list(response_gen)
         assert responses[-1].text == "I like it"
 
-        mock_instance.generate_text_stream.return_value = mock_completion_stream_text()
-        chat_response_gen = llm.stream_chat([message])
-        chat_responses = list(chat_response_gen)
+        mock_instance.chat_stream.return_value = mock_stream_chat()
+        chat_response_stream = llm.stream_chat([message])
+        chat_responses = list(chat_response_stream)
         assert chat_responses[-1].message.content == "I like it"
 
     @patch("llama_index.llms.ibm.base.ModelInference")
@@ -223,9 +251,9 @@ class TestWasonxLLMInference:
         responses = list(response_gen)
         assert responses[-1].text == "I like it"
 
-        mock_instance.generate_text_stream.return_value = mock_completion_stream()
-        chat_response_gen = llm.stream_chat([message], raw_response=True)
-        chat_responses = list(chat_response_gen)
+        mock_instance.chat_stream.return_value = mock_stream_chat()
+        chat_response_stream = llm.stream_chat([message], raw_response=True)
+        chat_responses = list(chat_response_stream)
         assert chat_responses[-1].message.content == "I like it"
 
     @pytest.mark.asyncio()
@@ -245,6 +273,7 @@ class TestWasonxLLMInference:
         response = await watsonxllm.acomplete("What do you think about Gen AI?")
         assert response.text == "\n\nTEST"
 
+        mock_instance.chat.return_value = mock_chat()
         message = ChatMessage(role="user", content="test message")
         chat_response = await watsonxllm.achat([message])
         assert chat_response.message.content == "\n\nTEST"
@@ -271,7 +300,7 @@ class TestWasonxLLMInference:
         responses = [el async for el in response_gen]
         assert responses[-1].text == "I like it"
 
-        mock_instance.generate_text_stream.return_value = mock_completion_stream()
-        chat_response_gen = await llm.astream_chat([message], raw_response=True)
-        chat_responses = [el async for el in chat_response_gen]
+        mock_instance.chat_stream.return_value = mock_stream_chat()
+        chat_response_stream = await llm.astream_chat([message], raw_response=True)
+        chat_responses = [el async for el in chat_response_stream]
         assert chat_responses[-1].message.content == "I like it"
