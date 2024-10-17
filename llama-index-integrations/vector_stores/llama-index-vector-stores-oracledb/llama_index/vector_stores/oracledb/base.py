@@ -19,6 +19,7 @@ from typing import (
     Type,
     TypeVar,
     cast,
+    ClassVar,
 )
 
 from llama_index.core.schema import (
@@ -95,25 +96,23 @@ def _escape_str(value: str) -> str:
 column_config: Dict = {
     "id": {"type": "VARCHAR2(64) PRIMARY KEY", "extract_func": lambda x: x.node_id},
     "doc_id": {"type": "VARCHAR2(64)", "extract_func": lambda x: x.ref_doc_id},
+    "embedding": {
+        "type": "VECTOR",
+        "extract_func": lambda x: array.array("f", x.get_embedding()),
+    },
+    "node_info": {
+        "type": "JSON",
+        "extract_func": lambda x: json.dumps(x.node_info),
+    },
+    "metadata": {
+        "type": "JSON",
+        "extract_func": lambda x: json.dumps(x.metadata),
+    },
     "text": {
         "type": "CLOB",
         "extract_func": lambda x: _escape_str(
             x.get_content(metadata_mode=MetadataMode.NONE) or ""
         ),
-    },
-    "node_info": {
-        # Now specifying the column as CLOB intended for JSON, with a check constraint
-        "type": "JSON",
-        "extract_func": lambda x: json.dumps(x.node_info),
-    },
-    "metadata": {
-        # Also specified as CLOB intended for JSON, with a check constraint
-        "type": "JSON",
-        "extract_func": lambda x: json.dumps(x.metadata),
-    },
-    "embedding": {
-        "type": "VECTOR",
-        "extract_func": lambda x: _stringify_list(x.get_embedding()),
     },
 }
 
@@ -534,10 +533,10 @@ class OraLlamaVS(BasePydanticVectorStore):
         return [node.node_id for node in nodes]
 
     @_handle_exceptions
-    def delete(self, doc_id: str, **kwargs: Any) -> None:
+    def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
         with self._client.cursor() as cursor:
-            ddl = f"DELETE FROM {self.table_name} WHERE id = :doc_id"
-            cursor.execute(ddl, [doc_id])
+            ddl = f"DELETE FROM {self.table_name} WHERE doc_id = :ref_doc_id"
+            cursor.execute(ddl, [ref_doc_id])
             self._client.commit()
 
     @_handle_exceptions

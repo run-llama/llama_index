@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 from zhipuai import ZhipuAI as ZhipuAIClient
@@ -79,7 +80,7 @@ class ZhipuAI(FunctionCallingLLM):
         `pip install llama-index-llms-zhipuai`
 
         ```python
-        from llama_index.llms.zhipuai import zhipuai
+        from llama_index.llms.zhipuai import ZhipuAI
 
         llm = ZhipuAI(model="glm-4", api_key="YOUR API KEY")
 
@@ -238,7 +239,7 @@ class ZhipuAI(FunctionCallingLLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         messages_dict = self._convert_to_llm_messages(messages)
-        raw_response = self.client.chat.completions.create(
+        raw_response = self._client.chat.completions.create(
             model=self.model,
             messages=messages_dict,
             stream=False,
@@ -264,7 +265,7 @@ class ZhipuAI(FunctionCallingLLM):
         messages_dict = self._convert_to_llm_messages(messages)
 
         def gen() -> ChatResponseGen:
-            raw_response = self.client.chat.completions.create(
+            raw_response = self._client.chat.completions.create(
                 model=self.model,
                 messages=messages_dict,
                 stream=True,
@@ -300,7 +301,7 @@ class ZhipuAI(FunctionCallingLLM):
         async def gen() -> ChatResponseAsyncGen:
             # TODO async interfaces don't support streaming
             # needs to find a more suitable implementation method
-            raw_response = self.client.chat.completions.create(
+            raw_response = self._client.chat.completions.create(
                 model=self.model,
                 messages=messages_dict,
                 stream=True,
@@ -335,7 +336,7 @@ class ZhipuAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         messages_dict = self._convert_to_llm_messages(messages)
-        raw_response = self.client.chat.asyncCompletions.create(
+        raw_response = self._client.chat.asyncCompletions.create(
             model=self.model,
             messages=messages_dict,
             tools=kwargs.get("tools", None),
@@ -347,7 +348,7 @@ class ZhipuAI(FunctionCallingLLM):
         task_status = raw_response.task_status
         get_count = 0
         while task_status not in [SUCCESS, FAILED] and get_count < 40:
-            task_result = self.client.chat.asyncCompletions.retrieve_completion_result(
+            task_result = self._client.chat.asyncCompletions.retrieve_completion_result(
                 task_id
             )
             raw_response = task_result

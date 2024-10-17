@@ -10,7 +10,7 @@ Will support different modes, from 1) stuffing chunks into prompt,
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Sequence, AsyncGenerator
+from typing import Any, Dict, Generator, List, Optional, Sequence, AsyncGenerator, Type
 
 from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
@@ -73,7 +73,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         streaming: bool = False,
-        output_cls: Optional[BaseModel] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
     ) -> None:
         """Init params."""
         self._llm = llm or Settings.llm
@@ -186,7 +186,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
                 metadata=response_metadata,
             )
 
-        if isinstance(response_str, self._output_cls):  # type: ignore
+        if self._output_cls is not None and isinstance(response_str, self._output_cls):
             return PydanticResponse(
                 response_str, source_nodes=source_nodes, metadata=response_metadata
             )

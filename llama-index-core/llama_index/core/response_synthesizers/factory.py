@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Type
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.callbacks.base import CallbackManager
@@ -42,7 +42,7 @@ def get_response_synthesizer(
     use_async: bool = False,
     streaming: bool = False,
     structured_answer_filtering: bool = False,
-    output_cls: Optional[BaseModel] = None,
+    output_cls: Optional[Type[BaseModel]] = None,
     program_factory: Optional[
         Callable[[BasePromptTemplate], BasePydanticProgram]
     ] = None,

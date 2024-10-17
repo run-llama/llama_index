@@ -15,8 +15,6 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
-      # You can use PyPy versions in python-version.
-      # For example, pypy-2.7 and pypy-3.8
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.9"]
@@ -28,6 +26,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Display Python version
+        run: python --version
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          poetry env use python
+      - name: Display Poetry version
+        run: poetry --version
       - name: Install deps
         shell: bash
         run: poetry install

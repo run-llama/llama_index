@@ -42,7 +42,9 @@ DISTANCE_STRATEGIES = Literal[
 ]
 
 
-def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
+def _to_elasticsearch_filter(
+    standard_filters: MetadataFilters, metadata_keyword_suffix: str = ".keyword"
+) -> Dict[str, Any]:
     """
     Convert standard filters to Elasticsearch filter.
 
@@ -56,7 +58,7 @@ def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any
         filter = standard_filters.legacy_filters()[0]
         return {
             "term": {
-                f"metadata.{filter.key}.keyword": {
+                f"metadata.{filter.key}{metadata_keyword_suffix}": {
                     "value": filter.value,
                 }
             }
@@ -67,7 +69,7 @@ def _to_elasticsearch_filter(standard_filters: MetadataFilters) -> Dict[str, Any
             operands.append(
                 {
                     "term": {
-                        f"metadata.{filter.key}.keyword": {
+                        f"metadata.{filter.key}{metadata_keyword_suffix}": {
                             "value": filter.value,
                         }
                     }
@@ -407,6 +409,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             Callable[[Dict, Union[VectorStoreQuery, None]], Dict]
         ] = None,
         es_filter: Optional[List[Dict]] = None,
+        metadata_keyword_suffix: str = ".keyword",
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """
@@ -421,6 +424,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             es_filter: Optional. Elasticsearch filter to apply to the
                         query. If filter is provided in the query,
                         this filter will be ignored.
+            metadata_keyword_suffix (str): The suffix to append to the metadata field of the keyword type.
 
         Returns:
             VectorStoreQueryResult: Result of the query.
@@ -440,6 +444,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             Callable[[Dict, Union[VectorStoreQuery, None]], Dict]
         ] = None,
         es_filter: Optional[List[Dict]] = None,
+        metadata_keyword_suffix: str = ".keyword",
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """
@@ -454,6 +459,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             es_filter: Optional. AsyncElasticsearch filter to apply to the
                         query. If filter is provided in the query,
                         this filter will be ignored.
+            metadata_keyword_suffix (str): The suffix to append to the metadata field of the keyword type.
 
         Returns:
             VectorStoreQueryResult: Result of the query.
@@ -465,7 +471,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
         _mode_must_match_retrieval_strategy(query.mode, self.retrieval_strategy)
 
         if query.filters is not None and len(query.filters.legacy_filters()) > 0:
-            filter = [_to_elasticsearch_filter(query.filters)]
+            filter = [_to_elasticsearch_filter(query.filters, metadata_keyword_suffix)]
         else:
             filter = es_filter or []
 

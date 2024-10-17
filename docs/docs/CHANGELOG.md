@@ -1,5 +1,84 @@
 # ChangeLog
 
+## [2024-10-14]
+
+### `llama-index-core` [0.11.18]
+
+- Handle Empty Nodes List in PG Retrieval while adding text (#16447)
+- Improved text2sql parsing (#16445)
+
+### `llama-index-embeddings-litellm` [0.2.2]
+
+- support timeout param in litellmembedding (#16532)
+
+### `llama-index-embeddings-zhipuai` [0.1.0]
+
+- add zhipuai embedding class (#16505)
+
+### `llama-index-graph-stores-memgraph` [0.1.0]
+
+- Add Memgraph Graph Store Integration (#16345)
+
+### `llama-index-llms-anthropic` [0.3.6]
+
+- Add anthropic bedrock support (#16478)
+
+### `llama-index-llms-databricks` [0.2.1]
+
+- Fix Databricks structured_predict (#16527)
+
+### `llama-index-multi-modal-llms-anthropic` [0.2.3]
+
+- Propagate default_headers in AnthropicMultiModal (#16496)
+
+### `llama-index-readers-document360` [0.1.0]
+
+- Added Document360Reader. Contributed by the PLACE team. (#16305)
+
+### `llama-index-readers-zyte-serp` [0.1.0]
+
+- Add Zyte serp integration (#16417)
+
+### `llama-index-readers-upstage` [0.2.1]
+
+- Added UpstageDocumentParseReader (#16099)
+
+### `llama-index-storage-chat-store-azure` [0.2.2]
+
+- Fix async methods in azure chat store (#16531)
+
+### `llama-index-tools-weather` [0.1.0]
+
+- Fix format temp function (#16487)
+
+### `llama-index-vector-stores-elasticsearch` [0.3.3]
+
+- Add Support for Custom Metadata Keyword Suffix in Elasticsearch Integration (#16519)
+
+### `llama-index-vector-stores-nile` [0.1.0]
+
+- Add vector store integration for Nile (multi-tenant postgres) (#16437)
+
+### `llama-index-vector-stores-opensearch` [0.4.0]
+
+- Use efficient kNN filtering, fix filtering when input value is array of string (#16393)
+
+### `llama-index-vector-stores-oracledb` [0.1.4]
+
+- Various fixes for Oracle vector store integration (#16536)
+
+### `llama-index-vector-stores-qdrant` [0.3.1]
+
+- Update model name typo in Qdrant utils.py (#16494)
+
+### `llama-index-vector-stores-timescalevector` [0.2.2]
+
+- fix timescale vector store class (#16539)
+
+### `llama-index-vector-stores-weaviate` [1.1.2]
+
+- Fixed issue for similarity score from Weaviate (#16489)
+
 ## [2024-10-08]
 
 ### `llama-index-core` [0.11.17]

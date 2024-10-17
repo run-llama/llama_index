@@ -7,6 +7,7 @@ import logging
 from typing import Any, Optional, Dict, cast, List
 from datetime import date
 
+from azure.identity import ClientSecretCredential
 from azure.cosmos import CosmosClient
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
@@ -21,6 +22,7 @@ from llama_index.core.vector_stores.utils import (
 )
 
 logger = logging.getLogger(__name__)
+USER_AGENT = ("LlamaIndex-CDBNoSql-VectorStore-Python",)
 
 
 class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
@@ -151,6 +153,110 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             session_token=self._cosmos_container_properties.get("session_token"),
             initial_headers=self._cosmos_container_properties.get("initial_headers"),
             vector_embedding_policy=self._vector_embedding_policy,
+        )
+
+    @classmethod
+    def from_host_and_key(
+        cls,
+        host: str,
+        key: str,
+        vector_embedding_policy: Dict[str, Any],
+        indexing_policy: Dict[str, Any],
+        cosmos_container_properties: Dict[str, Any],
+        cosmos_database_properties: Optional[Dict[str, Any]] = None,
+        database_name: str = "vectorSearchDB",
+        container_name: str = "vectorSearchContainer",
+        create_container: bool = True,
+        id_key: str = "id",
+        text_key: str = "text",
+        metadata_key: str = "metadata",
+        **kwargs: Any,
+    ) -> "AzureCosmosDBNoSqlVectorSearch":
+        """Initialize the vector store using the cosmosDB host and key."""
+        cosmos_client = CosmosClient(host, key, user_agent=USER_AGENT)
+        return cls(
+            cosmos_client,
+            vector_embedding_policy,
+            indexing_policy,
+            cosmos_container_properties,
+            cosmos_database_properties,
+            database_name,
+            container_name,
+            create_container,
+            id_key,
+            text_key,
+            metadata_key,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_connection_string(
+        cls,
+        connection_string: str,
+        vector_embedding_policy: Dict[str, Any],
+        indexing_policy: Dict[str, Any],
+        cosmos_container_properties: Dict[str, Any],
+        cosmos_database_properties: Optional[Dict[str, Any]] = None,
+        database_name: str = "vectorSearchDB",
+        container_name: str = "vectorSearchContainer",
+        create_container: bool = True,
+        id_key: str = "id",
+        text_key: str = "text",
+        metadata_key: str = "metadata",
+        **kwargs: Any,
+    ) -> "AzureCosmosDBNoSqlVectorSearch":
+        """Initialize the vector store using the cosmosDB connection string."""
+        cosmos_client = CosmosClient.from_connection_string(
+            connection_string, user_agent=USER_AGENT
+        )
+        return cls(
+            cosmos_client,
+            vector_embedding_policy,
+            indexing_policy,
+            cosmos_container_properties,
+            cosmos_database_properties,
+            database_name,
+            container_name,
+            create_container,
+            id_key,
+            text_key,
+            metadata_key,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_uri_and_managed_identity(
+        cls,
+        cosmos_uri: str,
+        vector_embedding_policy: Dict[str, Any],
+        indexing_policy: Dict[str, Any],
+        cosmos_container_properties: Dict[str, Any],
+        cosmos_database_properties: Optional[Dict[str, Any]] = None,
+        database_name: str = "vectorSearchDB",
+        container_name: str = "vectorSearchContainer",
+        create_container: bool = True,
+        id_key: str = "id",
+        text_key: str = "text",
+        metadata_key: str = "metadata",
+        **kwargs: Any,
+    ) -> "AzureCosmosDBNoSqlVectorSearch":
+        """Initialize the vector store using the cosmosDB uri and managed identity."""
+        cosmos_client = CosmosClient(
+            cosmos_uri, ClientSecretCredential, user_agent=USER_AGENT
+        )
+        return cls(
+            cosmos_client,
+            vector_embedding_policy,
+            indexing_policy,
+            cosmos_container_properties,
+            cosmos_database_properties,
+            database_name,
+            container_name,
+            create_container,
+            id_key,
+            text_key,
+            metadata_key,
+            **kwargs,
         )
 
     def add(
