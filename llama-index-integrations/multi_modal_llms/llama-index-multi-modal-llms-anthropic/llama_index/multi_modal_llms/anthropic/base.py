@@ -137,13 +137,18 @@ class AnthropicMultiModal(MultiModalLLM):
         )
 
     def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        return {
+        credential_kwargs = {
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
             "timeout": self.timeout,
             **kwargs,
         }
+
+        if self.default_headers:
+            credential_kwargs["default_headers"] = self.default_headers
+
+        return credential_kwargs
 
     def _get_multi_modal_chat_messages(
         self,

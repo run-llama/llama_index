@@ -109,7 +109,7 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
 
         temperature = w.temperature(self.temp_units)
         temp_unit = "°C" if self.temp_units == "celsius" else "°F"
-        temp_str = self._format_forecast_temp(temperature, temp_unit)
+        temp_str = self._format_temp(temperature, temp_unit)
 
         weather_text = self._format_weather(location, temp_str, w, "tomorrow")
 

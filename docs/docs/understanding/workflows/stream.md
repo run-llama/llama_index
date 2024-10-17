@@ -18,7 +18,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.utils.workflow import draw_all_possible_flows
 ```
 
-Let's set up some events for a simple three-step workflow:
+Let's set up some events for a simple three-step workflow, plus an event to handle streaming our progress as we go:
 
 ```python
 class FirstEvent(Event):
@@ -28,6 +28,10 @@ class FirstEvent(Event):
 class SecondEvent(Event):
     second_output: str
     response: str
+
+
+class ProgressEvent(Event):
+    msg: str
 ```
 
 And define a workflow class that sends events:
@@ -36,7 +40,7 @@ And define a workflow class that sends events:
 class MyWorkflow(Workflow):
     @step
     async def step_one(self, ctx: Context, ev: StartEvent) -> FirstEvent:
-        ctx.write_event_to_stream(Event(msg="Step one is happening"))
+        ctx.write_event_to_stream(ProgressEvent(msg="Step one is happening"))
         return FirstEvent(first_output="First step complete.")
 
     @step
@@ -47,7 +51,7 @@ class MyWorkflow(Workflow):
         )
         async for response in generator:
             # Allow the workflow to stream this piece of response
-            ctx.write_event_to_stream(Event(msg=response.delta))
+            ctx.write_event_to_stream(ProgressEvent(msg=response.delta))
         return SecondEvent(
             second_output="Second step complete, full response attached",
             response=str(response),
@@ -55,7 +59,7 @@ class MyWorkflow(Workflow):
 
     @step
     async def step_three(self, ctx: Context, ev: SecondEvent) -> StopEvent:
-        ctx.write_event_to_stream(Event(msg="Step three is happening"))
+        ctx.write_event_to_stream(ProgressEvent(msg="Step three is happening"))
         return StopEvent(result="Workflow complete.")
 ```
 
@@ -72,7 +76,8 @@ async def main():
     handler = w.run(first_input="Start the workflow.")
 
     async for ev in handler.stream_events():
-        print(ev.msg)
+        if isinstance(ev, ProgressEvent):
+            print(ev.msg)
 
     final_result = await handler
     print("Final result", final_result)

@@ -230,16 +230,21 @@ class OracleReader(BaseReader):
 
             if self.dir:
                 skip_count = 0
-                for file_name in os.listdir(self.dir):
-                    file_path = os.path.join(self.dir, file_name)
-                    if os.path.isfile(file_path):
-                        doc = OracleDocReader.read_file(self.conn, file_path, m_params)
+                if not (os.path.exists(self.dir) and os.path.isdir(self.dir)):
+                    raise Exception("Directory does not exist or invalid.")
+                else:
+                    for file_name in os.listdir(self.dir):
+                        file_path = os.path.join(self.dir, file_name)
+                        if os.path.isfile(file_path):
+                            doc = OracleDocReader.read_file(
+                                self.conn, file_path, m_params
+                            )
 
-                        if doc is None:
-                            skip_count = skip_count + 1
-                            print(f"Total skipped: {skip_count}\n")
-                        else:
-                            results.append(doc)
+                            if doc is None:
+                                skip_count = skip_count + 1
+                                print(f"Total skipped: {skip_count}\n")
+                            else:
+                                results.append(doc)
 
             if self.tablename:
                 try:
