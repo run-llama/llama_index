@@ -12,6 +12,7 @@ from typing import (
     get_args,
     runtime_checkable,
     TYPE_CHECKING,
+    Type,
 )
 from typing_extensions import Annotated
 
@@ -321,7 +322,7 @@ class LLM(BaseLLM):
     @dispatcher.span
     def structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
@@ -375,7 +376,7 @@ class LLM(BaseLLM):
     @dispatcher.span
     async def astructured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         prompt: PromptTemplate,
         **prompt_args: Any,
     ) -> BaseModel:
@@ -429,7 +430,7 @@ class LLM(BaseLLM):
     @dispatcher.span
     def stream_structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
@@ -488,7 +489,7 @@ class LLM(BaseLLM):
     @dispatcher.span
     async def astream_structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
@@ -864,7 +865,7 @@ class LLM(BaseLLM):
 
     def as_structured_llm(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         **kwargs: Any,
     ) -> "StructuredLLM":
         """Return a structured LLM around a given object."""
