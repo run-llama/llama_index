@@ -71,7 +71,9 @@ class VectorContextRetriever(BasePGRetriever):
     def _get_valid_vector_store_params() -> Set[str]:
         return set(VectorStoreQuery.__dataclass_fields__.keys())
 
-    def _filter_vector_store_query_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    def _filter_vector_store_query_kwargs(
+        self, kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
         valid_params = self._get_valid_vector_store_params()
         return {k: v for k, v in kwargs.items() if k in valid_params}
 
