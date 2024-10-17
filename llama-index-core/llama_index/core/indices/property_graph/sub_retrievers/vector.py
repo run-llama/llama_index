@@ -1,4 +1,4 @@
-from typing import Any, List, Sequence, Optional
+from typing import Any, List, Sequence, Optional, Dict, Set
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.indices.property_graph.sub_retrievers.base import (
@@ -67,17 +67,27 @@ class VectorContextRetriever(BasePGRetriever):
             **kwargs,
         )
 
+    @staticmethod
+    def _get_valid_vector_store_params() -> Set[str]:
+        return set(VectorStoreQuery.__dataclass_fields__.keys())
+
+    def _filter_vector_store_query_kwargs(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        valid_params = self._get_valid_vector_store_params()
+        return {k: v for k, v in kwargs.items() if k in valid_params}
+
     def _get_vector_store_query(self, query_bundle: QueryBundle) -> VectorStoreQuery:
         if query_bundle.embedding is None:
             query_bundle.embedding = self._embed_model.get_agg_embedding_from_queries(
                 query_bundle.embedding_strs
             )
+        
+        filtered_kwargs = self._filter_vector_store_query_kwargs(self._retriever_kwargs)
 
         return VectorStoreQuery(
             query_embedding=query_bundle.embedding,
             similarity_top_k=self._similarity_top_k,
             filters=self._filters,
-            **self._retriever_kwargs,
+            **filtered_kwargs,
         )
 
     def _get_kg_ids(self, kg_nodes: Sequence[BaseNode]) -> List[str]:
@@ -94,11 +104,13 @@ class VectorContextRetriever(BasePGRetriever):
                 )
             )
 
+        filtered_kwargs = self._filter_vector_store_query_kwargs(self._retriever_kwargs)
+
         return VectorStoreQuery(
             query_embedding=query_bundle.embedding,
             similarity_top_k=self._similarity_top_k,
             filters=self._filters,
-            **self._retriever_kwargs,
+            **filtered_kwargs,
         )
 
     def retrieve_from_graph(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
