@@ -232,6 +232,9 @@ class BaseNode(BaseComponent):
     embedding: Optional[List[float]] = Field(
         default=None, description="Embedding of the node."
     )
+    sparse_embedding: Optional[Tuple[List[int], List[float]]] = Field(
+        default=None, description="Sparse embedding of the node."
+    )
 
     """"
     metadata fields
@@ -378,6 +381,16 @@ class BaseNode(BaseComponent):
         if self.embedding is None:
             raise ValueError("embedding not set.")
         return self.embedding
+
+    def get_sparse_embedding(self) -> Tuple[List[int], List[float]]:
+        """Get sparse embedding.
+
+        Errors if embedding is None.
+
+        """
+        if self.sparse_embedding is None:
+            raise ValueError("Sparse embedding not set.")
+        return self.sparse_embedding
 
     def as_related_node_info(self) -> RelatedNodeInfo:
         """Get node as RelatedNodeInfo."""
@@ -672,6 +685,9 @@ class NodeWithScore(BaseComponent):
 
     def get_embedding(self) -> List[float]:
         return self.node.get_embedding()
+
+    def get_sparse_embedding(self) -> Tuple[List[int], List[float]]:
+        return self.node.get_sparse_embedding()
 
 
 # Document Classes for Readers
