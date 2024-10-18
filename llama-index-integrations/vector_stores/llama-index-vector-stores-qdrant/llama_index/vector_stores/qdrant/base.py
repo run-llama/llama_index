@@ -247,7 +247,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             sparse_indices: List[List[int]] = []
             payloads = []
 
-            if self.enable_hybrid and self._sparse_doc_fn is not None:
+            if self.enable_hybrid:
                 sparse_indices, sparse_vectors = self._sparse_doc_fn(
                     [
                         node.get_content(metadata_mode=MetadataMode.EMBED)
