@@ -257,14 +257,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 strings_need_embedding.append(
                     node.get_content(metadata_mode=MetadataMode.EMBED)
                 )
-        _sparse_indices_list, _sparse_vectors_list = self._sparse_doc_fn(
-            strings_need_embedding
-        )
-        for i, sparse_index, sparse_vector in zip(
-            indices_need_embedding, _sparse_indices_list, _sparse_vectors_list
-        ):
-            sparse_indices_list.insert(i, sparse_index)
-            sparse_vectors_list.insert(i, sparse_vector)
+        if len(strings_need_embedding) > 0:
+            _sparse_indices_list, _sparse_vectors_list = self._sparse_doc_fn(
+                strings_need_embedding
+            )
+            for i, sparse_index, sparse_vector in zip(
+                indices_need_embedding, _sparse_indices_list, _sparse_vectors_list
+            ):
+                sparse_indices_list.insert(i, sparse_index)
+                sparse_vectors_list.insert(i, sparse_vector)
         return sparse_indices_list, sparse_vectors_list
 
     def _build_points(self, nodes: List[BaseNode]) -> Tuple[List[Any], List[str]]:
