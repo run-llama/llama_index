@@ -278,6 +278,10 @@ class Dispatcher(BaseModel):
                 context: Context,
             ) -> None:
                 try:
+                    exception = future.exception()
+                    if exception is not None:
+                        raise exception
+
                     result = future.result()
                     self.span_exit(
                         id_=span_id,
