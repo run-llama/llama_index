@@ -258,25 +258,17 @@ class QdrantVectorStore(BasePydanticVectorStore):
             for i, node in enumerate(node_batch):
                 assert isinstance(node, BaseNode)
                 node_ids.append(node.node_id)
-
                 if self.enable_hybrid:
-                    if 0 < len(sparse_vectors) == len(sparse_indices):
-                        vectors.append(
-                            {
-                                # Dynamically switch between the old and new sparse vector name
-                                self._sparse_vector_name: rest.SparseVector(
-                                    indices=sparse_indices[i],
-                                    values=sparse_vectors[i],
-                                ),
-                                DENSE_VECTOR_NAME: node.get_embedding(),
-                            }
-                        )
-                    else:
-                        vectors.append(
-                            {
-                                DENSE_VECTOR_NAME: node.get_embedding(),
-                            }
-                        )
+                    vectors.append(
+                        {
+                            # Dynamically switch between the old and new sparse vector name
+                            self._sparse_vector_name: rest.SparseVector(
+                                indices=sparse_indices[i],
+                                values=sparse_vectors[i],
+                            ),
+                            DENSE_VECTOR_NAME: node.get_embedding(),
+                        }
+                    )
                 else:
                     vectors.append(node.get_embedding())
 
