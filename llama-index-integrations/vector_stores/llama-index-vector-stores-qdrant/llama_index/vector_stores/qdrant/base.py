@@ -260,11 +260,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 node_ids.append(node.node_id)
 
                 if self.enable_hybrid:
-                    if (
-                        len(sparse_vectors) > 0
-                        and len(sparse_indices) > 0
-                        and len(sparse_vectors) == len(sparse_indices)
-                    ):
+                    if 0 < len(sparse_vectors) == len(sparse_indices):
                         vectors.append(
                             {
                                 # Dynamically switch between the old and new sparse vector name
