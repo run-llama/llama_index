@@ -724,7 +724,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """Asynchronous method to check if a collection exists."""
         return await self._aclient.collection_exists(collection_name)
 
-    def _get_sparse_embedding(
+    def _get_sparse_embedding_query(
         self, query: VectorStoreQuery
     ) -> Tuple[List[int], List[float]]:
         sparse_query_embedding = query.sparse_query_embedding
@@ -762,7 +762,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             VectorStoreQueryMode.SPARSE,
         ):
             # retrieval of sparse vectors -> SPARSE_VECTOR_NAME or SPARSE_VECTOR_NAME_OLD
-            sparse_indices, sparse_embedding = self._get_sparse_embedding(query)
+            sparse_indices, sparse_embedding = self._get_sparse_embedding_query(query)
             requests.append(
                 rest.SearchRequest(
                     vector=rest.NamedSparseVector(
