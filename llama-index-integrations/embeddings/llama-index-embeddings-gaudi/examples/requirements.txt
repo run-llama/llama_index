@@ -1,9 +1,6 @@
-langchain
-langchain-community
 python-dotenv==1.0.0
 llama_index
 llama-index-llms-gaudi
-llama-index-embeddings-langchain
 llama-index-embeddings-gaudi
 llama-index-graph-stores-neo4j
 llama-index-readers-wikipedia

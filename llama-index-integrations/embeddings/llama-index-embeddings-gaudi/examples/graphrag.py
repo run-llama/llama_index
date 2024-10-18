@@ -12,7 +12,6 @@
 import argparse
 import os, sys, logging
 from llama_index.graph_stores.neo4j import Neo4jGraphStore
-from llama_index.embeddings.langchain import LangchainEmbedding
 from llama_index.readers.wikipedia import WikipediaReader
 from llama_index.llms.gaudi import GaudiLLM
 from llama_index.embeddings.gaudi import GaudiEmbedding
