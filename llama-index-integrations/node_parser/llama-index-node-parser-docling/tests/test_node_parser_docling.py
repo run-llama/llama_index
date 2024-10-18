@@ -92,6 +92,7 @@ out_get_nodes = {
                     "class_name": "RelatedNodeInfo",
                 },
             },
+            "sparse_embedding": None,
             "text": "Some text",
             "mimetype": "text/plain",
             "start_char_idx": 529,
@@ -167,6 +168,7 @@ out_get_nodes = {
                     "class_name": "RelatedNodeInfo",
                 },
             },
+            "sparse_embedding": None,
             "text": "Another paragraph",
             "mimetype": "text/plain",
             "start_char_idx": 678,
@@ -224,6 +226,7 @@ out_parse_nodes = {
                     "class_name": "RelatedNodeInfo",
                 }
             },
+            "sparse_embedding": None,
             "text": "Some text",
             "mimetype": "text/plain",
             "start_char_idx": None,
@@ -275,6 +278,7 @@ out_parse_nodes = {
                     "class_name": "RelatedNodeInfo",
                 }
             },
+            "sparse_embedding": None,
             "text": "Another paragraph",
             "mimetype": "text/plain",
             "start_char_idx": None,
