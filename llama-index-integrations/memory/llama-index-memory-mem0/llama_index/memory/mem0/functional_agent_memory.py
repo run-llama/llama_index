@@ -94,6 +94,8 @@ class Mem0FunctionalAgentMemory(BaseMem0):
             query=input,
             **self.context.get_context(),
         )
+        if isinstance(self.client, Memory):
+            responses = responses['results']
         system_message = convert_memory_to_system_message(responses)
         if len(messages) > 0 and messages[0].role == MessageRole.SYSTEM:
             assert messages[0].content is not None
@@ -107,7 +109,7 @@ class Mem0FunctionalAgentMemory(BaseMem0):
         return self.primary_memory.get_all()
     
     def put(self, message: ChatMessage) -> None:
-        self.primary_memory.put(message)
+        # only puts in mem0
         if message.role == MessageRole.USER:
             msg_str = str(message.content)
             if msg_str not in self.history:
