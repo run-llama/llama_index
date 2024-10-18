@@ -738,7 +738,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 prop_type = prop["type"]
                 if prop_type == "STRING":
                     with_clauses.append(
-                        f"collect(distinct substring(toString(coalesce(n.`{prop_name}`, '')), 0, 50)) "  # noqa
+                        f"collect(distinct substring(toString(coalesce(n.`{prop_name}`, '')), 0, 50)) "
                         f"AS `{prop_name}_values`"
                     )
                     return_clauses.append(
@@ -764,8 +764,8 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     )
                 elif prop_type == "LIST":
                     with_clauses.append(
-                        f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "  # noqa
-                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`"  # noqa
+                        f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "
+                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`"
                     )
                     return_clauses.append(
                         f"min_size: `{prop_name}_size_min`, "
@@ -818,7 +818,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 ]:
                     if not prop_index:
                         with_clauses.append(
-                            f"collect(distinct toString(coalesce(n.`{prop_name}`, ''))) "  # noqa
+                            f"collect(distinct toString(coalesce(n.`{prop_name}`, ''))) "
                             f"AS `{prop_name}_values`"
                         )
                         return_clauses.append(f"values: `{prop_name}_values`")
@@ -840,8 +840,8 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
                 elif prop_type == "LIST":
                     with_clauses.append(
-                        f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "  # noqa
-                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`"  # noqa
+                        f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "
+                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`"
                     )
                     return_clauses.append(
                         f"min_size: `{prop_name}_size_min`, "
