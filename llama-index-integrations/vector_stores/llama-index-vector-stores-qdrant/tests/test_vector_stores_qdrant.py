@@ -4,6 +4,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
 )
+from llama_index.core.schema import TextNode
 import pytest
 
 
@@ -72,7 +73,7 @@ class TestHybridQdrantVectorStore:
         # This will automatically assign the fixture to the class attribute
         self.hybrid_vector_store = hybrid_vector_store
 
-    def test_get_sparse_embedding(self):
+    def test_get_sparse_embedding_query(self):
         """Check if the `_get_sparse_embedding` method returns the instance that is provided or not."""
         sparse_embedding = ([8, 12], [0.8, 0.12])
         query = VectorStoreQuery(
@@ -99,6 +100,80 @@ class TestHybridQdrantVectorStore:
             sparse_embedding
             is not self.hybrid_vector_store._get_sparse_embedding_query(query)
         ), "No `sparse_query_embedding` is provided, we'd expect the `sparse_query_fn` to compute a fresh one."
+
+    def test_get_sparse_embedding_nodes(self):
+        # Case 1: All sparse embeddings are provided
+        nodes = [
+            TextNode(
+                text="test1",
+                id_="11111111-1111-1111-1111-111111111111",
+                embedding=[1.0, 0.0],
+                sparse_embedding=([3, 41], [0.3, 0.41]),
+            ),
+            TextNode(
+                text="test2",
+                id_="22222222-2222-2222-2222-222222222222",
+                embedding=[0.0, 1.0],
+                sparse_embedding=([2, 16], [0.2, 0.16]),
+            ),
+            TextNode(
+                text="test3",
+                id_="33333333-3333-3333-3333-333333333333",
+                embedding=[1.0, 1.0],
+                sparse_embedding=([7], [0.7]),
+            ),
+        ]
+        sparse_embeddings = self.hybrid_vector_store._get_sparse_embeddings_nodes(nodes)
+        assert sparse_embeddings == (
+            [[3, 41], [2, 16], [7]],
+            [[0.3, 0.41], [0.2, 0.16], [0.7]],
+        )
+
+        # Case 2: Some sparse embeddings are provided
+        nodes = [
+            TextNode(
+                text="test1",
+                id_="11111111-1111-1111-1111-111111111111",
+                embedding=[1.0, 0.0],
+                sparse_embedding=([3, 41], [0.3, 0.41]),
+            ),
+            TextNode(
+                text="test2",
+                id_="22222222-2222-2222-2222-222222222222",
+            ),
+            TextNode(
+                text="test3",
+                id_="33333333-3333-3333-3333-333333333333",
+            ),
+        ]
+        sparse_embeddings = self.hybrid_vector_store._get_sparse_embeddings_nodes(nodes)
+        assert sparse_embeddings[0][0] == [3, 41]
+        assert sparse_embeddings[1][0] == [0.3, 0.41]
+        # VERY unlikely, but these could be flaky if the sparse embedding model produces
+        # the exact same embeddings.
+        assert sparse_embeddings[0][1:] != [[2, 16], [7]]
+        assert sparse_embeddings[1][1:] != [[0.2, 0.16], [0.7]]
+
+        # Case 3: No sparse embeddings are provided
+        nodes = [
+            TextNode(
+                text="test1",
+                id_="11111111-1111-1111-1111-111111111111",
+            ),
+            TextNode(
+                text="test2",
+                id_="22222222-2222-2222-2222-222222222222",
+            ),
+            TextNode(
+                text="test3",
+                id_="33333333-3333-3333-3333-333333333333",
+            ),
+        ]
+        sparse_embeddings = self.hybrid_vector_store._get_sparse_embeddings_nodes(nodes)
+        assert sparse_embeddings != (
+            [[3, 41], [2, 16], [7]],
+            [[0.3, 0.41], [0.2, 0.16], [0.7]],
+        )
 
     def test_query_dense(self):
         # This should trigger the fallback path (dense retrieval for hybrid collection)
