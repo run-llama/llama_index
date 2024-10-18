@@ -237,6 +237,36 @@ class QdrantVectorStore(BasePydanticVectorStore):
         self._sparse_query_fn = sparse_query_fn
         self._hybrid_fusion_fn = hybrid_fusion_fn
 
+    def _get_sparse_embeddings_nodes(
+        self, nodes: List[BaseNode]
+    ) -> Tuple[List[List[int]], List[List[float]]]:
+        """
+        Given a batch of nodes, where some may already contain sparse_embeddings,
+        compute the missing sparse_embeddings and return them jointly.
+        """
+        sparse_indices_list, sparse_vectors_list = [], []
+        indices_need_embedding = []
+        strings_need_embedding = []
+        for i, node in enumerate(nodes):
+            if node.sparse_embedding is not None:
+                sparse_index, sparse_vector = node.sparse_embedding
+                sparse_indices_list.append(sparse_index)
+                sparse_vectors_list.append(sparse_vector)
+            else:
+                indices_need_embedding.append(i)
+                strings_need_embedding.append(
+                    node.get_content(metadata_mode=MetadataMode.EMBED)
+                )
+        _sparse_indices_list, _sparse_vectors_list = self._sparse_doc_fn(
+            strings_need_embedding
+        )
+        for i, sparse_index, sparse_vector in zip(
+            indices_need_embedding, _sparse_indices_list, _sparse_vectors_list
+        ):
+            sparse_indices_list.insert(i, sparse_index)
+            sparse_vectors_list.insert(i, sparse_vector)
+        return sparse_indices_list, sparse_vectors_list
+
     def _build_points(self, nodes: List[BaseNode]) -> Tuple[List[Any], List[str]]:
         ids = []
         points = []
@@ -248,11 +278,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             payloads = []
 
             if self.enable_hybrid:
-                sparse_indices, sparse_vectors = self._sparse_doc_fn(
-                    [
-                        node.get_content(metadata_mode=MetadataMode.EMBED)
-                        for node in node_batch
-                    ],
+                sparse_indices, sparse_vectors = self._get_sparse_embeddings_nodes(
+                    node_batch
                 )
 
             for i, node in enumerate(node_batch):
