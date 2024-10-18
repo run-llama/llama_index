@@ -295,7 +295,9 @@ class RedisVectorStore(BasePydanticVectorStore):
     async def async_delete_index(self) -> None:
         """Delete the index and all documents."""
         _logger.info(f"Deleting index {self._index_name}")
-        await self._redis_client_async.ft(self._index_name).dropindex(delete_documents=True)        
+        await self._redis_client_async.ft(self._index_name).dropindex(
+            delete_documents=True
+        )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query the index.
@@ -587,7 +589,6 @@ def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
     for filter in metadata_filters.legacy_filters():
         # adds quotes around the value to ensure that the filter is treated as an
         #   exact match
-
         if filter.operator == FilterOperator.IN:
             if len(filter.value.split()) > 1:
                 filter.value = f'"{filter.value}"'
@@ -600,7 +601,7 @@ def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
             filter_strings.append(filter_string)
     for key, value_list in filter_in_strings.items():
         values = "|".join(value_list)
-        filter_string = f"@{filter.key}:{values}"
+        filter_string = f"@{filter.key}:{{{tokenizer.escape(str(values))}}}"
         filter_strings.append(filter_string)
     joined_filter_strings = " & ".join(filter_strings)
     return f"({joined_filter_strings})"
