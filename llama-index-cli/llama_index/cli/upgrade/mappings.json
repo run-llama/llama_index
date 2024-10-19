@@ -479,6 +479,7 @@
   "VespaVectorStore": "llama_index.vector_stores.vespa",
   "hybrid_template": "llama_index.vector_stores.vespa",
   "MetalVectorStore": "llama_index.vector_stores.metal",
+  "OceanBaseVectorStore": "llama_index.vector_stores.oceanbase",
   "DuckDBRetriever": "llama_index.retrievers.duckdb_retriever",
   "PathwayRetriever": "llama_index.retrievers.pathway",
   "AmazonKnowledgeBasesRetriever": "llama_index.retrievers.bedrock",

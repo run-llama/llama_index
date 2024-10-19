@@ -251,7 +251,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             "metadata": {"constraint": constraint, "index": index},
         }
         schema_counts = self.structured_query(
-            "CALL apoc.meta.graphSample() YIELD nodes, relationships "
+            "CALL apoc.meta.subGraph({}) YIELD nodes, relationships "
             "RETURN nodes, [rel in relationships | {name:apoc.any.property"
             "(rel, 'type'), count: apoc.any.property(rel, 'count')}]"
             " AS relationships"
@@ -341,8 +341,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     CALL apoc.create.addLabels(e, [row.label])
                     YIELD node
                     WITH e, row
-                    CALL {{
-                        WITH e, row
+                    CALL (e, row) {{
                         WITH e, row
                         WHERE row.embedding IS NOT NULL
                         CALL db.create.setNodeVectorProperty(e, 'embedding', row.embedding)
@@ -463,7 +462,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
         return_statement = f"""
         WITH e
-        CALL {{
+        CALL (e) {{
             WITH e
             MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t:`{BASE_ENTITY_LABEL}`)
             RETURN e.name AS source_id, [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
@@ -739,7 +738,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 prop_type = prop["type"]
                 if prop_type == "STRING":
                     with_clauses.append(
-                        f"collect(distinct substring(toString(n.`{prop_name}`), 0, 50)) "
+                        f"collect(distinct substring(toString(coalesce(n.`{prop_name}`, '')), 0, 50)) "
                         f"AS `{prop_name}_values`"
                     )
                     return_clauses.append(
@@ -765,8 +764,8 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     )
                 elif prop_type == "LIST":
                     with_clauses.append(
-                        f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, "
-                        f"max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
+                        f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "
+                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`"
                     )
                     return_clauses.append(
                         f"min_size: `{prop_name}_size_min`, "
@@ -819,7 +818,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 ]:
                     if not prop_index:
                         with_clauses.append(
-                            f"collect(distinct toString(n.`{prop_name}`)) "
+                            f"collect(distinct toString(coalesce(n.`{prop_name}`, ''))) "
                             f"AS `{prop_name}_values`"
                         )
                         return_clauses.append(f"values: `{prop_name}_values`")
@@ -841,8 +840,8 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
                 elif prop_type == "LIST":
                     with_clauses.append(
-                        f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, "
-                        f"max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
+                        f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "
+                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`"
                     )
                     return_clauses.append(
                         f"min_size: `{prop_name}_size_min`, "
