@@ -102,6 +102,9 @@ class TestFalkorDBPropertyGraphStore(unittest.TestCase):
         text_nodes = self.pg_store.get_llama_nodes([source_node.node_id])
         self.assertEqual(len(text_nodes), 0)
 
+        self.pg_store.switch_graph("new_graph")
+        self.pg_store.refresh_schema()
+
 
 if __name__ == "__main__":
     unittest.main()
