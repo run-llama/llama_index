@@ -30,3 +30,31 @@ LlavaCompletionPack = download_llama_pack(
     "LlavaCompletionPack", "./llava_pack"  # ./llava_pack is the download dir
 )
 ```
+
+## Features
+
+- **Easy Integration:** Quickly add Llama-Packs to your projects with minimal setup.
+- **Customizable Templates:** Download packs and modify them to suit your needs.
+- **Rich Documentation:** Comprehensive guides and examples available online.
+
+## Usage Examples
+
+Here’s a simple example of using a downloaded Llama-Pack in your application:
+
+```python
+from llama_index import SomeClassFromPack
+
+# Initialize and use the class from the downloaded pack
+pack_instance = SomeClassFromPack()
+result = pack_instance.perform_action()
+print(result)
+```
+
+## Changelog
+
+| Version | Description                                         |
+|---------|-----------------------------------------------------|
+| v1.0.0  | Initial release with basic features.                |
+| v1.1.0  | Added more Llama-Packs to the repository.          |
+|         | Improved documentation and usage examples.          |
+
