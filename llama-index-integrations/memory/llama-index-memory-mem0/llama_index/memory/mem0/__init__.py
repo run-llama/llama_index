@@ -1,3 +1,3 @@
-from llama_index.memory.mem0.base import Mem0Composable
+from llama_index.memory.mem0.base import Mem0ComposableMemory
 
-__all__ = ["Mem0Composable"]
+__all__ = ["Mem0ComposableMemory"]

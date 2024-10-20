@@ -3,24 +3,32 @@ from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
 from llama_index.memory.mem0.utils import convert_memory_to_system_message
 from mem0 import MemoryClient, Memory
-from pydantic import BaseModel, Field, ValidationError, model_validator, SerializeAsAny
+from pydantic import BaseModel, Field, ValidationError, model_validator, SerializeAsAny, PrivateAttr
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 class BaseMem0(BaseMemory):
     """Base class for Mem0"""
+    _client: Optional[Union[MemoryClient, Memory]] = PrivateAttr(default=None)
+
     class Config:
         arbitrary_types_allowed = True 
 
-    client: Optional[Union[MemoryClient, Memory]] = None
-    
-    #TODO: Return type
-    def add(self, messages: Union[str, List[Dict[str, str]]], **kwargs) -> Optional[Any]:
-        response = self.client.add(messages=messages, **kwargs)
-        return response
+    def __init__(self, **data):
+        super().__init__(**data)
+        self._client = data.get('client')
 
     #TODO: Return type
+    def add(self, messages: Union[str, List[Dict[str, str]]], **kwargs) -> Optional[Any]:
+        if self._client is None:
+            raise ValueError("Client is not initialized")
+        response = self._client.add(messages=messages, **kwargs)
+        return response
+    
+    #TODO: Return type
     def search(self, query: str, **kwargs) -> Optional[Any]:
-        response = self.client.search(query=query, **kwargs)
+        if self._client is None:
+            raise ValueError("Client is not initialized")
+        response = self._client.search(query=query, **kwargs)
         return response
     
     #TODO: Add more apis from client
@@ -45,23 +53,22 @@ class Mem0Context(BaseModel):
     class Config:
         validate_assignment = True
 
-class Mem0Composable(BaseMem0):
-    #TODO: Make it private variable
-    chat_history: SerializeAsAny[BaseMemory] = Field(
-        description="Primary memory source for chat agent.",
-    )
-    #TODO: Make it private variable
-    mem0_history: Dict[str, Any] = {}
-    context: Optional[Mem0Context] = None
+class Mem0ComposableMemory(BaseMem0):
+    chat_history: SerializeAsAny[BaseMemory] = Field(description="Primary memory source for chat agent.")
+    _context: Optional[Mem0Context] = PrivateAttr(default=None)
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        self._context = data.get('context')
 
     @classmethod
     def class_name(cls) -> str:
         """Class name."""
-        return "Mem0Composable"
+        return "Mem0ComposableMemory"
     
     #TODO: Not functional yet. 
     @classmethod 
-    def from_defaults(cls, **kwargs: Any) -> "Mem0Composable":
+    def from_defaults(cls, **kwargs: Any) -> "Mem0ComposableMemory":
         raise NotImplementedError("Use either from_client or from_config")
     
     @classmethod
@@ -85,13 +92,12 @@ class Mem0Composable(BaseMem0):
         except ValidationError as e:
             raise ValidationError(f"Context validation error: {e}")
 
-        client = MemoryClient(
-            api_key=api_key,
-            host=host,
-            organization=organization,
-            project=project
+        client = MemoryClient(api_key=api_key, host=host, organization=organization, project=project)
+        return cls(
+            chat_history=chat_history, 
+            context=context, 
+            client=client
         )
-        return cls(chat_history=chat_history, client=client, context=context)
     
     @classmethod
     def from_config(
@@ -112,7 +118,11 @@ class Mem0Composable(BaseMem0):
             raise ValidationError(f"Context validation error: {e}")
 
         client = Memory.from_config(config_dict=confif_dict)
-        return cls(chat_history=chat_history, context=context, client=client)
+        return cls(
+            chat_history=chat_history, 
+            context=context, 
+            client=client
+        )
     
     def get(self, input: Optional[str] = None, **kwargs: Any) -> List[ChatMessage]:
         messages = self.chat_history.get(input=input, **kwargs)
@@ -120,21 +130,21 @@ class Mem0Composable(BaseMem0):
             # Iterate through messages from last to first
             for message in reversed(messages):
                 if message.role == MessageRole.USER:
-                    most_recent_user_message = message
+                    _recent_user_message = message
                     break
             else:
-                # If no user message is found, raise an exception
-                raise ValueError("No user message found in chat history")
-            input = str(most_recent_user_message.content)
+                raise ValueError("No input and user message found in chat history.")
+            input = str(_recent_user_message.content)
 
         #TODO: Add support for more kwargs, for api and oss
-        search_results = self.search(query=input, **self.context.get_context())
-        if isinstance(self.client, Memory):
+        search_results = self.search(query=input, **self._context.get_context())
+        if isinstance(self._client, Memory):
             search_results = search_results['results']
         system_message = convert_memory_to_system_message(search_results)
         
-        #TODO: What if users provide system_message or prefix_message, or system_message in chat_history becaomes old.
+        # If system message is present
         if len(messages) > 0 and messages[0].role == MessageRole.SYSTEM:
+            #TODO: What if users provide system_message or prefix_message, or system_message in chat_history becaomes old enough?
             assert messages[0].content is not None
             system_message = convert_memory_to_system_message(response=search_results, existing_system_message=messages[0])
         messages.insert(0, system_message)
@@ -144,32 +154,30 @@ class Mem0Composable(BaseMem0):
         """Returns all chat history."""
         return self.chat_history.get_all()
 
-    def _add_to_memory(self, message: ChatMessage) -> None:
+    def _add_user_msg_to_memory(self, message: ChatMessage) -> None:
         """Only add new user message to client memory."""
         if message.role == MessageRole.USER:
-            msg_str = str(message.content)
-            if msg_str not in self.mem0_history:
-                #TODO: Implement for more kwargs
-                response = self.client.add(
-                    messages=msg_str,
-                    **self.context.get_context()
-                )
-                self.mem0_history[msg_str] = response
+            self.add(
+                messages=str(message.content),
+                **self._context.get_context()
+            )
 
     def put(self, message: ChatMessage) -> None:
-        """Add message to chat history. Add new user message to client memory."""
+        """Add message to chat history. Add user message to client memory."""
+        self._add_user_msg_to_memory(message)
         self.chat_history.put(message)
-        self._add_to_memory(message)
 
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history. Add new user message to client memory."""
+        initial_chat_len = len(self.chat_history.get_all())
+        #Insert only new chat messages
+        for message in messages[initial_chat_len:]:
+            self._add_user_msg_to_memory(message)
         self.chat_history.set(messages)
-        for message in messages:
-            self._add_to_memory(message)
 
     def reset(self) -> None:
         """Only reset chat history"""
-        #TODO: Not resetting client memory, since it is not context specific.
+        #TODO: Context specific reset is missing in client.
         self.chat_history.reset()
 
 
