@@ -1,7 +1,12 @@
-from typing import Any, Dict, Type
+from typing import Any, ClassVar, Dict, Type
 from _collections_abc import dict_keys, dict_items, dict_values
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    PrivateAttr,
+    ConfigDict,
+)
 
 
 class Event(BaseModel):
@@ -118,6 +123,9 @@ class Event(BaseModel):
         return self._data
 
 
+EventType = Type[Event]
+
+
 class StartEvent(Event):
     """StartEvent is implicitly sent when a workflow runs."""
 
@@ -132,12 +140,14 @@ class StopEvent(Event):
         super().__init__(result=result)
 
 
-class InputRequiredEvent(Event):
-    """InputRequiredEvent is sent when an input is required for a step."""
+class BlockingEvent(Event):
+    """A special event that blocks the execution of Workflow run.
 
-    prefix: str = Field(
-        description="The prefix and description of the input that is required."
-    )
+    To unblock, the user will have to send an object of the class defined in
+    unblocking_event_type.
+    """
+
+    unblocking_event_type: ClassVar[EventType]
 
 
 class HumanResponseEvent(Event):
@@ -146,4 +156,10 @@ class HumanResponseEvent(Event):
     response: str = Field(description="The response from the human.")
 
 
-EventType = Type[Event]
+class InputRequiredEvent(BlockingEvent):
+    """InputRequiredEvent is sent when an input is required for a step."""
+
+    prefix: str = Field(
+        description="The prefix and description of the input that is required."
+    )
+    unblocking_event_type = HumanResponseEvent
