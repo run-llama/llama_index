@@ -13,7 +13,6 @@ from llama_index.core.workflow.events import (
     Event,
     StartEvent,
     StopEvent,
-    BlockingEvent,
     InputRequiredEvent,
     HumanResponseEvent,
 )
@@ -23,7 +22,6 @@ from llama_index.core.workflow.context import Context
 __all__ = [
     "Context",
     "Event",
-    "BlockingEvent",
     "StartEvent",
     "StopEvent",
     "Workflow",

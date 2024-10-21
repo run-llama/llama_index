@@ -140,23 +140,15 @@ class StopEvent(Event):
         super().__init__(result=result)
 
 
-class UnblockingEvent(Event):
-    """A special event that unblocks the execution of Workflow run."""
-
-
-class BlockingEvent(Event):
-    """A special event that blocks the execution of Workflow run."""
-
-
-class HumanResponseEvent(UnblockingEvent):
-    """HumanResponseEvent is sent when a human response is required for a step."""
-
-    response: str = Field(description="The response from the human.")
-
-
-class InputRequiredEvent(BlockingEvent):
+class InputRequiredEvent(Event):
     """InputRequiredEvent is sent when an input is required for a step."""
 
     prefix: str = Field(
         description="The prefix and description of the input that is required."
     )
+
+
+class HumanResponseEvent(Event):
+    """HumanResponseEvent is sent when a human response is required for a step."""
+
+    response: str = Field(description="The response from the human.")
