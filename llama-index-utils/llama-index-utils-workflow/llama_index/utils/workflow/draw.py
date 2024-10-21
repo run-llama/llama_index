@@ -1,6 +1,11 @@
 from typing import Optional
 
-from llama_index.core.workflow.events import StartEvent, StopEvent, BlockingEvent
+from llama_index.core.workflow.events import (
+    StartEvent,
+    StopEvent,
+    BlockingEvent,
+    UnblockingEvent,
+)
 from llama_index.core.workflow.decorators import StepConfig
 from llama_index.core.workflow.utils import (
     get_steps_from_class,
@@ -27,7 +32,6 @@ def draw_all_possible_flows(
         shape="ellipse",
     )
     net.add_node("_done", label="_done", color="#ADD8E6", shape="box")
-    net.add_edge(StopEvent.__name__, "_done")
 
     # Add nodes from all steps
     steps = get_steps_from_class(workflow)
@@ -36,6 +40,7 @@ def draw_all_possible_flows(
         steps = get_steps_from_instance(workflow)
 
     step_config: Optional[StepConfig] = None
+    net_has_external_step_node: bool = False
     for step_name, step_func in steps.items():
         step_config = getattr(step_func, "__step_config", None)
         if step_config is None:
@@ -66,12 +71,14 @@ def draw_all_possible_flows(
                     shape="ellipse",
                 )  # Light green for events
 
-                net.add_node(
-                    f"external_step_from-{step_name}",
-                    label="external_step",
-                    color="#BEDAE4",
-                    shape="box",
-                )
+                if not net_has_external_step_node:
+                    # add node for conceptual external step
+                    net.add_node(
+                        f"external_step",
+                        label="external_step",
+                        color="#BEDAE4",
+                        shape="box",
+                    )
 
     # Add edges from all steps
     for step_name, step_func in steps.items():
@@ -85,14 +92,16 @@ def draw_all_possible_flows(
                 net.add_edge(step_name, return_type.__name__)
 
             if issubclass(return_type, BlockingEvent):
-                net.add_edge(return_type.__name__, f"external_step_from-{step_name}")
-                net.add_edge(
-                    f"external_step_from-{step_name}",
-                    return_type.unblocking_event_type.__name__,
-                )
+                net.add_edge(return_type.__name__, f"external_step")
 
         for event_type in step_config.accepted_events:
             net.add_edge(event_type.__name__, step_name)
+
+            if issubclass(event_type, UnblockingEvent):
+                net.add_edge(
+                    f"external_step",
+                    event_type.__name__,
+                )
 
     net.show(filename, notebook=notebook)
 
