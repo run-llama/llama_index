@@ -3,8 +3,8 @@ from typing import Optional
 from llama_index.core.workflow.events import (
     StartEvent,
     StopEvent,
-    BlockingEvent,
-    UnblockingEvent,
+    InputRequiredEvent,
+    HumanResponseEvent,
 )
 from llama_index.core.workflow.decorators import StepConfig
 from llama_index.core.workflow.utils import (
@@ -63,7 +63,7 @@ def draw_all_possible_flows(
             if return_type == type(None):
                 continue
 
-            if issubclass(return_type, BlockingEvent):
+            if issubclass(return_type, InputRequiredEvent):
                 net.add_node(
                     return_type.__name__,
                     label=return_type.__name__,
@@ -91,13 +91,13 @@ def draw_all_possible_flows(
             if return_type != type(None):
                 net.add_edge(step_name, return_type.__name__)
 
-            if issubclass(return_type, BlockingEvent):
+            if issubclass(return_type, InputRequiredEvent):
                 net.add_edge(return_type.__name__, f"external_step")
 
         for event_type in step_config.accepted_events:
             net.add_edge(event_type.__name__, step_name)
 
-            if issubclass(event_type, UnblockingEvent):
+            if issubclass(event_type, HumanResponseEvent):
                 net.add_edge(
                     f"external_step",
                     event_type.__name__,
