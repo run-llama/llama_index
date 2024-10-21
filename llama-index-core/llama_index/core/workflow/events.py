@@ -1,12 +1,7 @@
 from typing import Any, Dict, Type
 from _collections_abc import dict_keys, dict_items, dict_values
 
-from llama_index.core.bridge.pydantic import (
-    BaseModel,
-    Field,
-    PrivateAttr,
-    ConfigDict,
-)
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
 
 
 class Event(BaseModel):
@@ -123,9 +118,6 @@ class Event(BaseModel):
         return self._data
 
 
-EventType = Type[Event]
-
-
 class StartEvent(Event):
     """StartEvent is implicitly sent when a workflow runs."""
 
@@ -152,3 +144,6 @@ class HumanResponseEvent(Event):
     """HumanResponseEvent is sent when a human response is required for a step."""
 
     response: str = Field(description="The response from the human.")
+
+
+EventType = Type[Event]
