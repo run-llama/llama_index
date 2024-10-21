@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Dict, Type
+from typing import Any, Dict, Type
 from _collections_abc import dict_keys, dict_items, dict_values
 
 from llama_index.core.bridge.pydantic import (
@@ -145,13 +145,7 @@ class UnblockingEvent(Event):
 
 
 class BlockingEvent(Event):
-    """A special event that blocks the execution of Workflow run.
-
-    To unblock, the user will have to send an object of the class defined in
-    unblocking_event_type.
-    """
-
-    unblocking_event_type: ClassVar[Type[UnblockingEvent]]
+    """A special event that blocks the execution of Workflow run."""
 
 
 class HumanResponseEvent(UnblockingEvent):
@@ -166,4 +160,3 @@ class InputRequiredEvent(BlockingEvent):
     prefix: str = Field(
         description="The prefix and description of the input that is required."
     )
-    unblocking_event_type = HumanResponseEvent
