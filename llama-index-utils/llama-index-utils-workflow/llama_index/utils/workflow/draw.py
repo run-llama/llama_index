@@ -59,13 +59,19 @@ def draw_all_possible_flows(
                 continue
 
             if issubclass(return_type, BlockingEvent):
-                print(f"blocking event: {return_type}", flush=True)
                 net.add_node(
                     return_type.__name__,
                     label=return_type.__name__,
                     color="#90EE90",
                     shape="ellipse",
                 )  # Light green for events
+
+                net.add_node(
+                    f"external_step_from-{step_name}",
+                    label="external_step",
+                    color="#BEDAE4",
+                    shape="box",
+                )
 
     # Add edges from all steps
     for step_name, step_func in steps.items():
@@ -79,8 +85,10 @@ def draw_all_possible_flows(
                 net.add_edge(step_name, return_type.__name__)
 
             if issubclass(return_type, BlockingEvent):
+                net.add_edge(return_type.__name__, f"external_step_from-{step_name}")
                 net.add_edge(
-                    return_type.__name__, return_type.unblocking_event_type.__name__
+                    f"external_step_from-{step_name}",
+                    return_type.unblocking_event_type.__name__,
                 )
 
         for event_type in step_config.accepted_events:
