@@ -1,6 +1,6 @@
 from typing import Optional
 
-from llama_index.core.workflow.events import StartEvent, StopEvent
+from llama_index.core.workflow.events import StartEvent, StopEvent, BlockingEvent
 from llama_index.core.workflow.decorators import StepConfig
 from llama_index.core.workflow.utils import (
     get_steps_from_class,
@@ -53,6 +53,20 @@ def draw_all_possible_flows(
                 shape="ellipse",
             )  # Light green for events
 
+        for return_type in step_config.return_types:
+            print(f"{return_type}", flush=True)
+            if return_type == type(None):
+                continue
+
+            if issubclass(return_type, BlockingEvent):
+                print(f"blocking event: {return_type}", flush=True)
+                net.add_node(
+                    return_type.__name__,
+                    label=return_type.__name__,
+                    color="#90EE90",
+                    shape="ellipse",
+                )  # Light green for events
+
     # Add edges from all steps
     for step_name, step_func in steps.items():
         step_config = getattr(step_func, "__step_config", None)
@@ -63,6 +77,11 @@ def draw_all_possible_flows(
         for return_type in step_config.return_types:
             if return_type != type(None):
                 net.add_edge(step_name, return_type.__name__)
+
+            if issubclass(return_type, BlockingEvent):
+                net.add_edge(
+                    return_type.__name__, return_type.unblocking_event_type.__name__
+                )
 
         for event_type in step_config.accepted_events:
             net.add_edge(event_type.__name__, step_name)
