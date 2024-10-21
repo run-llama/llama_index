@@ -360,6 +360,9 @@ Since workflows are so flexible, there are many possible ways to implement human
 The easiest way to implement a human-in-the-loop is to use the `InputRequiredEvent` and `HumanResponseEvent` events during event streaming.
 
 ```python
+from llama_index.core.workflow import InputRequiredEvent, HumanResponseEvent
+
+
 class HumanInTheLoopWorkflow(Workflow):
     @step
     async def step1(self, ev: StartEvent) -> InputRequiredEvent:
@@ -521,6 +524,9 @@ calling.
 example showing how workflow runs can be interactive and stateful. In this case, to collect input from a human.
 - [Reliable Structured Generation](../../examples/workflow/reflection.ipynb) shows how to implement loops in a
 workflow, in this case to improve structured output through reflection.
+- [Query Planning with Workflows](../../examples/workflow/planning_workflow.ipynb) is an example of a workflow
+that plans a query by breaking it down into smaller items, and executing those smaller items. It highlights how
+to stream events from a workflow, execute steps in parallel, and looping until a condition is met.
 
 Last but not least, a few more advanced use cases that demonstrate how workflows can be extremely handy if you need
 to quickly implement prototypes, for example from literature:

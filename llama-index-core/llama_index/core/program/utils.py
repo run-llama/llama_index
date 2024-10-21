@@ -32,7 +32,7 @@ def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:
 
 
 def get_program_for_llm(
-    output_cls: BaseModel,
+    output_cls: Type[BaseModel],
     prompt: BasePromptTemplate,
     llm: LLM,
     pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
@@ -44,7 +44,7 @@ def get_program_for_llm(
             from llama_index.core.program.function_program import FunctionCallingProgram
 
             return FunctionCallingProgram.from_defaults(
-                output_cls=output_cls,  # type: ignore
+                output_cls=output_cls,
                 llm=llm,
                 prompt=prompt,
                 **kwargs,
@@ -55,7 +55,7 @@ def get_program_for_llm(
             )
 
             return LLMTextCompletionProgram.from_defaults(
-                output_parser=PydanticOutputParser(output_cls=output_cls),  # type: ignore
+                output_parser=PydanticOutputParser(output_cls=output_cls),
                 llm=llm,
                 prompt=prompt,
                 **kwargs,
@@ -66,16 +66,16 @@ def get_program_for_llm(
         )  # pants: no-infer-dep
 
         return OpenAIPydanticProgram.from_defaults(
-            output_cls=output_cls,  # type: ignore
+            output_cls=output_cls,
             llm=llm,
-            prompt=prompt,
+            prompt=prompt,  # type: ignore
             **kwargs,
         )
     elif pydantic_program_mode == PydanticProgramMode.FUNCTION:
         from llama_index.core.program.function_program import FunctionCallingProgram
 
         return FunctionCallingProgram.from_defaults(
-            output_cls=output_cls,  # type: ignore
+            output_cls=output_cls,
             llm=llm,
             prompt=prompt,
             **kwargs,
@@ -85,7 +85,7 @@ def get_program_for_llm(
         from llama_index.core.program.llm_program import LLMTextCompletionProgram
 
         return LLMTextCompletionProgram.from_defaults(
-            output_parser=PydanticOutputParser(output_cls=output_cls),  # type: ignore
+            output_parser=PydanticOutputParser(output_cls=output_cls),
             llm=llm,
             prompt=prompt,
             **kwargs,
