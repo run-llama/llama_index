@@ -104,16 +104,15 @@ class VectorIndexRetriever(BaseRetriever):
 
     @dispatcher.span
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        embedding = query_bundle.embedding
         if self._vector_store.is_embedding_query:
             if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
                 embed_model = self._embed_model
-                embedding = await embed_model.aget_agg_embedding_from_queries(
-                    query_bundle.embedding_strs
+                query_bundle.embedding = (
+                    await embed_model.aget_agg_embedding_from_queries(
+                        query_bundle.embedding_strs
+                    )
                 )
-        return await self._aget_nodes_with_embeddings(
-            QueryBundle(query_str=query_bundle.query_str, embedding=embedding)
-        )
+        return await self._aget_nodes_with_embeddings(query_bundle)
 
     def _build_vector_store_query(
         self, query_bundle_with_embeddings: QueryBundle
@@ -128,6 +127,7 @@ class VectorIndexRetriever(BaseRetriever):
             alpha=self._alpha,
             filters=self._filters,
             sparse_top_k=self._sparse_top_k,
+            sparse_query_embedding=query_bundle_with_embeddings.sparse_embedding,
             hybrid_top_k=self._hybrid_top_k,
         )
 

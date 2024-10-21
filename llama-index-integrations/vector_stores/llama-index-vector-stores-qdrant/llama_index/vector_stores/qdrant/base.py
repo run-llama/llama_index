@@ -126,6 +126,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     _sparse_doc_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _sparse_query_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _hybrid_fusion_fn: Optional[HybridFusionCallable] = PrivateAttr()
+    _sparse_vector_name: str = PrivateAttr()
     _dense_config: Optional[rest.VectorParams] = PrivateAttr()
     _sparse_config: Optional[rest.SparseVectorParams] = PrivateAttr()
     _quantization_config: Optional[QuantizationConfig] = PrivateAttr()
@@ -154,6 +155,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        enable_hybrid = enable_hybrid or fastembed_sparse_model is not None
         super().__init__(
             collection_name=collection_name,
             url=url,
@@ -202,8 +204,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             self._collection_initialized = False
 
         # setup hybrid search if enabled
-        if enable_hybrid or fastembed_sparse_model is not None:
-            enable_hybrid = True
+        if enable_hybrid:
             self._sparse_doc_fn = sparse_doc_fn or self.get_default_sparse_doc_encoder(
                 collection_name, fastembed_sparse_model=fastembed_sparse_model
             )
@@ -216,6 +217,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             self._hybrid_fusion_fn = hybrid_fusion_fn or cast(
                 HybridFusionCallable, relative_score_fusion
             )
+            self._sparse_vector_name = self._get_sparse_vector_name()
 
         self._sparse_config = sparse_config
         self._dense_config = dense_config
@@ -235,9 +237,38 @@ class QdrantVectorStore(BasePydanticVectorStore):
         self._sparse_query_fn = sparse_query_fn
         self._hybrid_fusion_fn = hybrid_fusion_fn
 
-    def _build_points(
-        self, nodes: List[BaseNode], sparse_vector_name: str
-    ) -> Tuple[List[Any], List[str]]:
+    def _get_sparse_embeddings_nodes(
+        self, nodes: List[BaseNode]
+    ) -> Tuple[List[List[int]], List[List[float]]]:
+        """
+        Given a batch of nodes, where some may already contain sparse_embeddings,
+        compute the missing sparse_embeddings and return them jointly.
+        """
+        sparse_indices_list, sparse_vectors_list = [], []
+        indices_need_embedding = []
+        strings_need_embedding = []
+        for i, node in enumerate(nodes):
+            if node.sparse_embedding is not None:
+                sparse_index, sparse_vector = node.sparse_embedding
+                sparse_indices_list.append(sparse_index)
+                sparse_vectors_list.append(sparse_vector)
+            else:
+                indices_need_embedding.append(i)
+                strings_need_embedding.append(
+                    node.get_content(metadata_mode=MetadataMode.EMBED)
+                )
+        if len(strings_need_embedding) > 0:
+            _sparse_indices_list, _sparse_vectors_list = self._sparse_doc_fn(
+                strings_need_embedding
+            )
+            for i, sparse_index, sparse_vector in zip(
+                indices_need_embedding, _sparse_indices_list, _sparse_vectors_list
+            ):
+                sparse_indices_list.insert(i, sparse_index)
+                sparse_vectors_list.insert(i, sparse_vector)
+        return sparse_indices_list, sparse_vectors_list
+
+    def _build_points(self, nodes: List[BaseNode]) -> Tuple[List[Any], List[str]]:
         ids = []
         points = []
         for node_batch in iter_batch(nodes, self.batch_size):
@@ -247,40 +278,25 @@ class QdrantVectorStore(BasePydanticVectorStore):
             sparse_indices: List[List[int]] = []
             payloads = []
 
-            if self.enable_hybrid and self._sparse_doc_fn is not None:
-                sparse_indices, sparse_vectors = self._sparse_doc_fn(
-                    [
-                        node.get_content(metadata_mode=MetadataMode.EMBED)
-                        for node in node_batch
-                    ],
+            if self.enable_hybrid:
+                sparse_indices, sparse_vectors = self._get_sparse_embeddings_nodes(
+                    node_batch
                 )
 
             for i, node in enumerate(node_batch):
                 assert isinstance(node, BaseNode)
                 node_ids.append(node.node_id)
-
                 if self.enable_hybrid:
-                    if (
-                        len(sparse_vectors) > 0
-                        and len(sparse_indices) > 0
-                        and len(sparse_vectors) == len(sparse_indices)
-                    ):
-                        vectors.append(
-                            {
-                                # Dynamically switch between the old and new sparse vector name
-                                sparse_vector_name: rest.SparseVector(
-                                    indices=sparse_indices[i],
-                                    values=sparse_vectors[i],
-                                ),
-                                DENSE_VECTOR_NAME: node.get_embedding(),
-                            }
-                        )
-                    else:
-                        vectors.append(
-                            {
-                                DENSE_VECTOR_NAME: node.get_embedding(),
-                            }
-                        )
+                    vectors.append(
+                        {
+                            # Dynamically switch between the old and new sparse vector name
+                            self._sparse_vector_name: rest.SparseVector(
+                                indices=sparse_indices[i],
+                                values=sparse_vectors[i],
+                            ),
+                            DENSE_VECTOR_NAME: node.get_embedding(),
+                        }
+                    )
                 else:
                     vectors.append(node.get_embedding())
 
@@ -414,8 +430,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 vector_size=len(nodes[0].get_embedding()),
             )
 
-        sparse_vector_name = self.sparse_vector_name()
-        points, ids = self._build_points(nodes, sparse_vector_name)
+        points, ids = self._build_points(nodes)
 
         self._client.upload_points(
             collection_name=self.collection_name,
@@ -451,8 +466,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 vector_size=len(nodes[0].get_embedding()),
             )
 
-        sparse_vector_name = await self.asparse_vector_name()
-        points, ids = self._build_points(nodes, sparse_vector_name)
+        points, ids = self._build_points(nodes)
 
         for batch in iter_batch(points, self.batch_size):
             retries = 0
@@ -711,6 +725,106 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """Asynchronous method to check if a collection exists."""
         return await self._aclient.collection_exists(collection_name)
 
+    def _get_sparse_embedding_query(
+        self, query: VectorStoreQuery
+    ) -> Tuple[List[int], List[float]]:
+        sparse_query_embedding = query.sparse_query_embedding
+        if sparse_query_embedding is None:
+            assert (
+                query.query_str is not None
+            ), "Cannot compute the sparse query embedding without the query string."
+            # The second assert should not be triggered, as this function is called only if `self.enable_hybrid==True`
+            assert (
+                self._sparse_query_fn is not None
+            ), "No valid sparse embedding is set up."
+            _idx_batch, _val_batch = self._sparse_query_fn([query.query_str])
+            sparse_query_embedding = (_idx_batch[0], _val_batch[0])
+        return sparse_query_embedding
+
+    def _construct_requests(
+        self, query: VectorStoreQuery, kwargs: dict
+    ) -> List[rest.SearchRequest]:
+        if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
+            raise ValueError(
+                "Hybrid search is not enabled. Please build the query with "
+                "`enable_hybrid=True` in the constructor."
+            )
+
+        query_embedding = cast(List[float], query.query_embedding)
+        #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
+        query_filter = kwargs.get("qdrant_filters")
+        if query_filter is None:
+            query_filter = cast(Filter, self._build_query_filter(query))
+
+        requests = []
+
+        if self.enable_hybrid and query.mode in (
+            VectorStoreQueryMode.HYBRID,
+            VectorStoreQueryMode.SPARSE,
+        ):
+            # retrieval of sparse vectors -> SPARSE_VECTOR_NAME or SPARSE_VECTOR_NAME_OLD
+            sparse_indices, sparse_embedding = self._get_sparse_embedding_query(query)
+            requests.append(
+                rest.SearchRequest(
+                    vector=rest.NamedSparseVector(
+                        # Dynamically switch between the old and new sparse vector name
+                        name=self._sparse_vector_name,
+                        vector=rest.SparseVector(
+                            indices=sparse_indices,
+                            values=sparse_embedding,
+                        ),
+                    ),
+                    limit=query.sparse_top_k or query.similarity_top_k,
+                    filter=query_filter,
+                    with_payload=True,
+                ),
+            )
+
+        if not self.enable_hybrid:
+            # Hybrid is turned off for the collection -> default vector name (None)
+            requests.append(
+                rest.SearchRequest(
+                    vector=query_embedding,
+                    limit=query.similarity_top_k,
+                    filter=query_filter,
+                    with_payload=True,
+                )
+            )
+        elif query.mode == VectorStoreQueryMode.HYBRID or len(requests) == 0:
+            # Hybrid is turned on for collection -> DENSE_VECTOR_NAME for dense retrieval
+            # OR: Fallback option if hybrid is turned on, but query.mode is not in {sparse, hybrid}
+            requests.append(
+                rest.SearchRequest(
+                    vector=rest.NamedVector(
+                        name=DENSE_VECTOR_NAME,
+                        vector=query_embedding,
+                    ),
+                    limit=query.similarity_top_k,
+                    filter=query_filter,
+                    with_payload=True,
+                )
+            )
+        return requests
+
+    def _post_process_search_batch_response(
+        self, query: VectorStoreQuery, response: List[List]
+    ) -> VectorStoreQueryResult:
+        if query.mode == VectorStoreQueryMode.HYBRID:
+            assert len(response) == 2
+            assert self._hybrid_fusion_fn is not None
+            response = self._hybrid_fusion_fn(
+                # Swap:  0 (Sparse) <-> 1 (Dense)
+                self.parse_to_query_result(response[1]),
+                self.parse_to_query_result(response[0]),
+                # NOTE: only for hybrid search (0 for sparse search, 1 for dense search)
+                alpha=query.alpha or 0.5,
+                # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
+                top_k=query.hybrid_top_k or query.similarity_top_k,
+            )
+        else:
+            response = self.parse_to_query_result(response[0])
+        return response
+
     def query(
         self,
         query: VectorStoreQuery,
@@ -722,128 +836,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             query (VectorStoreQuery): query
         """
-        query_embedding = cast(List[float], query.query_embedding)
-        #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
-        qdrant_filters = kwargs.get("qdrant_filters")
-        if qdrant_filters is not None:
-            query_filter = qdrant_filters
-        else:
-            query_filter = cast(Filter, self._build_query_filter(query))
-
-        if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
-            raise ValueError(
-                "Hybrid search is not enabled. Please build the query with "
-                "`enable_hybrid=True` in the constructor."
-            )
-        elif (
-            query.mode == VectorStoreQueryMode.HYBRID
-            and self.enable_hybrid
-            and self._sparse_query_fn is not None
-            and query.query_str is not None
-        ):
-            sparse_indices, sparse_embedding = self._sparse_query_fn(
-                [query.query_str],
-            )
-            sparse_top_k = query.sparse_top_k or query.similarity_top_k
-
-            sparse_response = self._client.search_batch(
-                collection_name=self.collection_name,
-                requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedVector(
-                            name=DENSE_VECTOR_NAME,
-                            vector=query_embedding,
-                        ),
-                        limit=query.similarity_top_k,
-                        filter=query_filter,
-                        with_payload=True,
-                    ),
-                    rest.SearchRequest(
-                        vector=rest.NamedSparseVector(
-                            # Dynamically switch between the old and new sparse vector name
-                            name=self.sparse_vector_name(),
-                            vector=rest.SparseVector(
-                                indices=sparse_indices[0],
-                                values=sparse_embedding[0],
-                            ),
-                        ),
-                        limit=sparse_top_k,
-                        filter=query_filter,
-                        with_payload=True,
-                    ),
-                ],
-            )
-
-            # sanity check
-            assert len(sparse_response) == 2
-            assert self._hybrid_fusion_fn is not None
-
-            # flatten the response
-            return self._hybrid_fusion_fn(
-                self.parse_to_query_result(sparse_response[0]),
-                self.parse_to_query_result(sparse_response[1]),
-                # NOTE: only for hybrid search (0 for sparse search, 1 for dense search)
-                alpha=query.alpha or 0.5,
-                # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
-                top_k=query.hybrid_top_k or query.similarity_top_k,
-            )
-        elif (
-            query.mode == VectorStoreQueryMode.SPARSE
-            and self.enable_hybrid
-            and self._sparse_query_fn is not None
-            and query.query_str is not None
-        ):
-            sparse_indices, sparse_embedding = self._sparse_query_fn(
-                [query.query_str],
-            )
-            sparse_top_k = query.sparse_top_k or query.similarity_top_k
-
-            sparse_response = self._client.search_batch(
-                collection_name=self.collection_name,
-                requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedSparseVector(
-                            # Dynamically switch between the old and new sparse vector name
-                            name=self.sparse_vector_name(),
-                            vector=rest.SparseVector(
-                                indices=sparse_indices[0],
-                                values=sparse_embedding[0],
-                            ),
-                        ),
-                        limit=sparse_top_k,
-                        filter=query_filter,
-                        with_payload=True,
-                    ),
-                ],
-            )
-            return self.parse_to_query_result(sparse_response[0])
-
-        elif self.enable_hybrid:
-            # search for dense vectors only
-            response = self._client.search_batch(
-                collection_name=self.collection_name,
-                requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedVector(
-                            name=DENSE_VECTOR_NAME,
-                            vector=query_embedding,
-                        ),
-                        limit=query.similarity_top_k,
-                        filter=query_filter,
-                        with_payload=True,
-                    ),
-                ],
-            )
-
-            return self.parse_to_query_result(response[0])
-        else:
-            response = self._client.search(
-                collection_name=self.collection_name,
-                query_vector=query_embedding,
-                limit=query.similarity_top_k,
-                query_filter=query_filter,
-            )
-            return self.parse_to_query_result(response)
+        requests = self._construct_requests(query=query, kwargs=kwargs)
+        response = self._client.search_batch(
+            collection_name=self.collection_name,
+            requests=requests,
+        )
+        return self._post_process_search_batch_response(query=query, response=response)
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
@@ -854,129 +852,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             query (VectorStoreQuery): query
         """
-        query_embedding = cast(List[float], query.query_embedding)
-
-        #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
-        qdrant_filters = kwargs.get("qdrant_filters")
-        if qdrant_filters is not None:
-            query_filter = qdrant_filters
-        else:
-            # build metadata filters
-            query_filter = cast(Filter, self._build_query_filter(query))
-
-        if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
-            raise ValueError(
-                "Hybrid search is not enabled. Please build the query with "
-                "`enable_hybrid=True` in the constructor."
-            )
-        elif (
-            query.mode == VectorStoreQueryMode.HYBRID
-            and self.enable_hybrid
-            and self._sparse_query_fn is not None
-            and query.query_str is not None
-        ):
-            sparse_indices, sparse_embedding = self._sparse_query_fn(
-                [query.query_str],
-            )
-            sparse_top_k = query.sparse_top_k or query.similarity_top_k
-
-            sparse_response = await self._aclient.search_batch(
-                collection_name=self.collection_name,
-                requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedVector(
-                            name=DENSE_VECTOR_NAME,
-                            vector=query_embedding,
-                        ),
-                        limit=query.similarity_top_k,
-                        filter=query_filter,
-                        with_payload=True,
-                    ),
-                    rest.SearchRequest(
-                        vector=rest.NamedSparseVector(
-                            # Dynamically switch between the old and new sparse vector name
-                            name=await self.asparse_vector_name(),
-                            vector=rest.SparseVector(
-                                indices=sparse_indices[0],
-                                values=sparse_embedding[0],
-                            ),
-                        ),
-                        limit=sparse_top_k,
-                        filter=query_filter,
-                        with_payload=True,
-                    ),
-                ],
-            )
-
-            # sanity check
-            assert len(sparse_response) == 2
-            assert self._hybrid_fusion_fn is not None
-
-            # flatten the response
-            return self._hybrid_fusion_fn(
-                self.parse_to_query_result(sparse_response[0]),
-                self.parse_to_query_result(sparse_response[1]),
-                alpha=query.alpha or 0.5,
-                # NOTE: use hybrid_top_k if provided, otherwise use similarity_top_k
-                top_k=query.hybrid_top_k or query.similarity_top_k,
-            )
-        elif (
-            query.mode == VectorStoreQueryMode.SPARSE
-            and self.enable_hybrid
-            and self._sparse_query_fn is not None
-            and query.query_str is not None
-        ):
-            sparse_indices, sparse_embedding = self._sparse_query_fn(
-                [query.query_str],
-            )
-            sparse_top_k = query.sparse_top_k or query.similarity_top_k
-
-            sparse_response = await self._aclient.search_batch(
-                collection_name=self.collection_name,
-                requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedSparseVector(
-                            # Dynamically switch between the old and new sparse vector name
-                            name=await self.asparse_vector_name(),
-                            vector=rest.SparseVector(
-                                indices=sparse_indices[0],
-                                values=sparse_embedding[0],
-                            ),
-                        ),
-                        limit=sparse_top_k,
-                        filter=query_filter,
-                        with_payload=True,
-                    ),
-                ],
-            )
-            return self.parse_to_query_result(sparse_response[0])
-        elif self.enable_hybrid:
-            # search for dense vectors only
-            response = await self._aclient.search_batch(
-                collection_name=self.collection_name,
-                requests=[
-                    rest.SearchRequest(
-                        vector=rest.NamedVector(
-                            name=DENSE_VECTOR_NAME,
-                            vector=query_embedding,
-                        ),
-                        limit=query.similarity_top_k,
-                        filter=query_filter,
-                        with_payload=True,
-                    ),
-                ],
-            )
-
-            return self.parse_to_query_result(response[0])
-        else:
-            response = await self._aclient.search(
-                collection_name=self.collection_name,
-                query_vector=query_embedding,
-                limit=query.similarity_top_k,
-                query_filter=query_filter,
-            )
-
-            return self.parse_to_query_result(response)
+        requests = self._construct_requests(query=query, kwargs=kwargs)
+        response = await self._aclient.search_batch(
+            collection_name=self.collection_name,
+            requests=requests,
+        )
+        return self._post_process_search_batch_response(query=query, response=response)
 
     def parse_to_query_result(self, response: List[Any]) -> VectorStoreQueryResult:
         """
@@ -1163,27 +1044,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         return False
 
-    def sparse_vector_name(self) -> str:
+    def _get_sparse_vector_name(self) -> str:
         return (
             SPARSE_VECTOR_NAME_OLD
             if self.use_old_sparse_encoder(self.collection_name)
-            else SPARSE_VECTOR_NAME
-        )
-
-    async def ause_old_sparse_encoder(self, collection_name: str) -> bool:
-        collection_exists = await self._acollection_exists(collection_name)
-        if collection_exists:
-            cur_collection = await self._aclient.get_collection(collection_name)
-            return SPARSE_VECTOR_NAME_OLD in (
-                cur_collection.config.params.sparse_vectors or {}
-            )
-
-        return False
-
-    async def asparse_vector_name(self) -> str:
-        return (
-            SPARSE_VECTOR_NAME_OLD
-            if await self.ause_old_sparse_encoder(self.collection_name)
             else SPARSE_VECTOR_NAME
         )
 

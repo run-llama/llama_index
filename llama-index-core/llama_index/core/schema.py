@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, Tuple
 
 from dataclasses_json import DataClassJsonMixin
 from llama_index.core.bridge.pydantic import (
@@ -232,6 +232,9 @@ class BaseNode(BaseComponent):
     embedding: Optional[List[float]] = Field(
         default=None, description="Embedding of the node."
     )
+    sparse_embedding: Optional[Tuple[List[int], List[float]]] = Field(
+        default=None, description="Sparse embedding of the node."
+    )
 
     """"
     metadata fields
@@ -378,6 +381,16 @@ class BaseNode(BaseComponent):
         if self.embedding is None:
             raise ValueError("embedding not set.")
         return self.embedding
+
+    def get_sparse_embedding(self) -> Tuple[List[int], List[float]]:
+        """Get sparse embedding.
+
+        Errors if embedding is None.
+
+        """
+        if self.sparse_embedding is None:
+            raise ValueError("Sparse embedding not set.")
+        return self.sparse_embedding
 
     def as_related_node_info(self) -> RelatedNodeInfo:
         """Get node as RelatedNodeInfo."""
@@ -673,6 +686,9 @@ class NodeWithScore(BaseComponent):
     def get_embedding(self) -> List[float]:
         return self.node.get_embedding()
 
+    def get_sparse_embedding(self) -> Tuple[List[int], List[float]]:
+        return self.node.get_sparse_embedding()
+
 
 # Document Classes for Readers
 
@@ -857,6 +873,7 @@ class QueryBundle(DataClassJsonMixin):
         custom_embedding_strs (list[str]): list of strings used for embedding the query.
             This is currently used by all embedding-based queries.
         embedding (list[float]): the stored embedding for the query.
+        sparse_embedding (list[float]): the stored sparse embedding for the query.
     """
 
     query_str: str
@@ -864,6 +881,7 @@ class QueryBundle(DataClassJsonMixin):
     image_path: Optional[str] = None
     custom_embedding_strs: Optional[List[str]] = None
     embedding: Optional[List[float]] = None
+    sparse_embedding: Optional[Tuple[List[int], List[float]]] = None
 
     @property
     def embedding_strs(self) -> List[str]:

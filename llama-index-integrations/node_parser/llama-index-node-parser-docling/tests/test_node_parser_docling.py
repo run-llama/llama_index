@@ -61,6 +61,7 @@ out_get_nodes = {
                     "class_name": "RelatedNodeInfo",
                 },
             },
+            "sparse_embedding": None,
             "text": "A duckling is a young duck in downy plumage[1] or baby duck,[2] but in the food trade a young domestic duck which has just reached adult size and bulk and its meat is still fully tender, is sometimes labelled as a duckling.",
             "mimetype": "text/plain",
             "start_char_idx": 649,
@@ -104,6 +105,7 @@ out_get_nodes = {
                     "class_name": "RelatedNodeInfo",
                 },
             },
+            "sparse_embedding": None,
             "text": "A male is called a drake and the female is called a duck, or in ornithology a hen.",
             "mimetype": "text/plain",
             "start_char_idx": 1008,
@@ -140,6 +142,7 @@ out_parse_nodes = {
                     "class_name": "RelatedNodeInfo",
                 }
             },
+            "sparse_embedding": None,
             "text": "A duckling is a young duck in downy plumage[1] or baby duck,[2] but in the food trade a young domestic duck which has just reached adult size and bulk and its meat is still fully tender, is sometimes labelled as a duckling.",
             "mimetype": "text/plain",
             "start_char_idx": None,
@@ -170,6 +173,7 @@ out_parse_nodes = {
                     "class_name": "RelatedNodeInfo",
                 }
             },
+            "sparse_embedding": None,
             "text": "A male is called a drake and the female is called a duck, or in ornithology a hen.",
             "mimetype": "text/plain",
             "start_char_idx": None,
