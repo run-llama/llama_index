@@ -78,6 +78,9 @@ class ImageBlock(BaseModel):
             raise ValueError("No image found in the chat message!")
 
 
+ContentBlock = Union[TextBlock, ImageBlock]
+
+
 class ChatMessage(BaseModel):
     """Chat message."""
 
@@ -218,4 +221,12 @@ class LLMMetadata(BaseModel):
         default=MessageRole.SYSTEM,
         description="The role this specific LLM provider"
         "expects for system prompt. E.g. 'SYSTEM' for OpenAI, 'CHATBOT' for Cohere",
+    )
+    supported_content_types: List[ContentBlockTypes] = Field(
+        default_factory=lambda: [ContentBlockTypes.TEXT],
+        description="The content types this model supports.",
+    )
+    supports_multi_content_messages: bool = Field(
+        default=False,
+        description="Whether the model supports interleaving content types in chat messages.",
     )
