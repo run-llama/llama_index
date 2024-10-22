@@ -378,6 +378,9 @@ class OpenAI(LLM):
                     else:
                         delta = ChoiceDelta()
 
+                if delta is None:
+                    continue
+
                 # check if this chunk is the start of a function call
                 if delta.tool_calls:
                     is_function = True
@@ -581,6 +584,10 @@ class OpenAI(LLM):
                         continue
                     else:
                         delta = ChoiceDelta()
+
+                if delta is None:
+                    continue
+            
                 first_chat_chunk = False
 
                 # check if this chunk is the start of a function call
