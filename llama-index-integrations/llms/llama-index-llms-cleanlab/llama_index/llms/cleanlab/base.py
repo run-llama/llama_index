@@ -1,5 +1,4 @@
 from typing import Any, Dict, Optional
-import json
 
 # Import LlamaIndex dependencies
 from llama_index.core.base.llms.types import (
@@ -133,13 +132,7 @@ class CleanlabTLM(CustomLLM):
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
-        # Prompt TLM for a response and trustworthiness score
-        response = self._client.prompt(prompt)
-        output = json.dumps(response)
-
-        # TODO: figure how to stream additional_kwargs. workaround: dump `trustworthiness_score` as str
-        # Stream the output
-        output_str = ""
-        for token in output:
-            output_str += token
-            yield CompletionResponse(text=output_str, delta=token)
+        # Raise implementation error since TLM doesn't support native streaming
+        raise NotImplementedError(
+            "Streaming is not supported in TLM. Instead stream in the response from the LLM and subsequently use TLM to score its trustworthiness."
+        )
