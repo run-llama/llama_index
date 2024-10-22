@@ -48,7 +48,9 @@ class CleanlabTLM(CustomLLM):
     quality_preset: str = Field(
         default="medium", description="Pre-defined configuration to use for TLM."
     )
-
+    log: dict = Field(
+        default_factory=dict, description="Metadata to log from TLM response."
+    )
     _client: Any = PrivateAttr()
 
     def __init__(
@@ -93,6 +95,11 @@ class CleanlabTLM(CustomLLM):
                 self.max_tokens = options.get("max_tokens")
             else:
                 self.max_tokens = DEFAULT_MAX_TOKENS
+
+            if options.get("log"):
+                if "explanation" in options["log"]:
+                    self.log["explanation"] = True
+
         else:
             self.model = DEFAULT_MODEL
             self.context_window = DEFAULT_CONTEXT_WINDOW
@@ -126,7 +133,12 @@ class CleanlabTLM(CustomLLM):
         return CompletionResponse(
             text=response["response"],
             additional_kwargs={
-                "trustworthiness_score": response["trustworthiness_score"]
+                "trustworthiness_score": response["trustworthiness_score"],
+                **(
+                    {"explanation": response["log"]["explanation"]}
+                    if self.log.get("explanation")
+                    else {}
+                ),
             },
         )
 
