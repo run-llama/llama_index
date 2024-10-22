@@ -169,9 +169,13 @@ class AzureChatStore(BaseChatStore):
         chat_client = await self._atable_service_client.create_table_if_not_exists(
             self.chat_table_name
         )
-        entities = await chat_client.query_entities(f"PartitionKey eq '{key}'")
+        entities = chat_client.query_entities(f"PartitionKey eq '{key}'")
+        all_entities = []
+        async for entity in entities:
+            all_entities.append(entity)
+
         delete_operations = (
-            (TransactionOperation.DELETE, entity) for entity in entities
+            (TransactionOperation.DELETE, entity) for entity in all_entities
         )
         create_operations = (
             (
@@ -215,7 +219,7 @@ class AzureChatStore(BaseChatStore):
         chat_client = await self._atable_service_client.create_table_if_not_exists(
             self.chat_table_name
         )
-        entities = await chat_client.query_entities(f"PartitionKey eq '{key}'")
+        entities = chat_client.query_entities(f"PartitionKey eq '{key}'")
         messages = []
 
         async for entity in entities:
@@ -270,9 +274,13 @@ class AzureChatStore(BaseChatStore):
         chat_client = await self._atable_service_client.create_table_if_not_exists(
             self.chat_table_name
         )
-        entities = await chat_client.query_entities(f"PartitionKey eq '{key}'")
+        entities = chat_client.query_entities(f"PartitionKey eq '{key}'")
+        all_entities = []
+        async for entity in entities:
+            all_entities.append(entity)
+
         await chat_client.submit_transaction(
-            (TransactionOperation.DELETE, entity) for entity in entities
+            (TransactionOperation.DELETE, entity) for entity in all_entities
         )
 
         metadata_client = await self._atable_service_client.create_table_if_not_exists(
@@ -353,7 +361,7 @@ class AzureChatStore(BaseChatStore):
         metadata_client = await self._atable_service_client.create_table_if_not_exists(
             self.metadata_table_name
         )
-        entities = await metadata_client.query_entities(
+        entities = metadata_client.query_entities(
             f"PartitionKey eq '{self.metadata_partition_key}'"
         )
 
