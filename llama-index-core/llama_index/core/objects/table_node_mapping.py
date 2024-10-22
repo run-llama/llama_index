@@ -18,6 +18,7 @@ class SQLTableSchema(BaseModel):
     table_name: str
     full_table_name: str
     table_schema: Optional[str] = None
+    table_schema_rendered: Optional[str] = None
     context_str: Optional[str] = None
     description: Optional[str] = None
     table_info: Optional[str] = None
@@ -51,7 +52,9 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
         """To node."""
         # taken from existing schema logic
         if not self._sql_database:
-            raise ValueError('A sql database connection is required for converting to nodes')
+            raise ValueError(
+                "A sql database connection is required for converting to nodes"
+            )
         table_text = (
             f"Schema of table {obj.full_table_name}:\n"
             f"{self._sql_database.get_single_table_info(table=obj)}\n"
@@ -86,7 +89,7 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
             context_str=node.metadata.get("context"),
             table_info=node.metadata.get("table_info"),
         )
-    
+
     @staticmethod
     async def to_nodes_from_tables(tables: list[SQLTableSchema]) -> list[TextNode]:
         nodes = []
@@ -104,11 +107,11 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
 
             metadata["table_info"] = table.table_info
             node = TextNode(
-                    text=table_text,
-                    metadata=metadata,
-                    excluded_embed_metadata_keys=["name", "context", "table_info"],
-                    excluded_llm_metadata_keys=["context", "table_info"],
-                )
+                text=table_text,
+                metadata=metadata,
+                excluded_embed_metadata_keys=["name", "context", "table_info"],
+                excluded_llm_metadata_keys=["context", "table_info"],
+            )
             node.node_id = table.tbl_uuid
             nodes.append(node)
         return nodes

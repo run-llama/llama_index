@@ -418,17 +418,21 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
 
         return "\n\n".join(context_strs)
 
+
 class SQLTableRetriever:
     """A light-weight class to retrieve table context that is not reliant on a database connection
     since it's focused on just retrieving nodes from the vector index
     """
 
-    def __init__(self, table_retriever: ObjectRetriever[SQLTableSchema], context_str_prefix: Optional[str] = None,):
+    def __init__(
+        self,
+        table_retriever: ObjectRetriever[SQLTableSchema],
+        context_str_prefix: Optional[str] = None,
+    ):
         self.table_retriever = table_retriever
         self._context_str_prefix = context_str_prefix
-        
-    
-    async def _aget_table_context(self, query_bundle: QueryBundle) -> str:
+
+    async def _aget_table_context(self, query_bundle: QueryBundle) -> list:
         """
         Get table context.
 
