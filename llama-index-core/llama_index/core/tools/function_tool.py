@@ -12,7 +12,6 @@ from llama_index.core.tools.utils import create_schema_from_function
 
 AsyncCallable = Callable[..., Awaitable[Any]]
 
-
 def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     """Sync to async."""
 
@@ -44,6 +43,7 @@ class FunctionTool(AsyncBaseTool):
         fn: Optional[Callable[..., Any]] = None,
         metadata: Optional[ToolMetadata] = None,
         async_fn: Optional[AsyncCallable] = None,
+        callback: Optional[Callable[[Any], Any]] = None,
     ) -> None:
         if fn is None and async_fn is None:
             raise ValueError("fn or async_fn must be provided.")
@@ -62,6 +62,13 @@ class FunctionTool(AsyncBaseTool):
             raise ValueError("metadata must be provided.")
 
         self._metadata = metadata
+        self._callback = callback 
+
+    def _run_callback(self, result: Any) -> Any:
+        """Executes the callback if provided and returns its result."""
+        if self._callback:
+            return self._callback(result)
+        return ""
 
     @classmethod
     def from_defaults(
@@ -73,6 +80,7 @@ class FunctionTool(AsyncBaseTool):
         fn_schema: Optional[Type[BaseModel]] = None,
         async_fn: Optional[AsyncCallable] = None,
         tool_metadata: Optional[ToolMetadata] = None,
+        callback: Optional[Callable[[Any], Any]] = None,
     ) -> "FunctionTool":
         if tool_metadata is None:
             fn_to_parse = fn or async_fn
@@ -90,7 +98,7 @@ class FunctionTool(AsyncBaseTool):
                 fn_schema=fn_schema,
                 return_direct=return_direct,
             )
-        return cls(fn=fn, metadata=tool_metadata, async_fn=async_fn)
+        return cls(fn=fn, metadata=tool_metadata, async_fn=async_fn, callback=callback)
 
     @property
     def metadata(self) -> ToolMetadata:
@@ -109,19 +117,27 @@ class FunctionTool(AsyncBaseTool):
 
     def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Call."""
-        tool_output = self._fn(*args, **kwargs)
+        tool_output = self._fn(*args, **kwargs)        
+        final_output_content = str(tool_output)
+        callback_output = self._run_callback(tool_output)  
+        if callback_output:
+            final_output_content += f" Callback: {callback_output}"
         return ToolOutput(
-            content=str(tool_output),
+            content=final_output_content,
             tool_name=self.metadata.name,
             raw_input={"args": args, "kwargs": kwargs},
             raw_output=tool_output,
         )
 
     async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
-        """Call."""
-        tool_output = await self._async_fn(*args, **kwargs)
+        """Async Call."""
+        tool_output = self._fn(*args, **kwargs)        
+        final_output_content = str(tool_output)
+        callback_output = self._run_callback(tool_output)  
+        if callback_output:
+            final_output_content += f" Callback: {callback_output}"
         return ToolOutput(
-            content=str(tool_output),
+            content=final_output_content,
             tool_name=self.metadata.name,
             raw_input={"args": args, "kwargs": kwargs},
             raw_output=tool_output,
