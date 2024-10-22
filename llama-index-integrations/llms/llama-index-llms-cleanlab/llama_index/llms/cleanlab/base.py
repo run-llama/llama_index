@@ -74,7 +74,7 @@ class CleanlabTLM(CustomLLM):
                     self.context_window = 8192
                 elif self.model == "gpt-3.5-turbo-16k":
                     self.context_window = 16385
-                elif self.model in ["gpt-4o-mini", "gpt-4o"]:
+                elif self.model in ["gpt-4o-mini", "gpt-4o", "o1-preview"]:
                     self.context_window = 131072
                 elif self.model in [
                     "claude-3-haiku",
