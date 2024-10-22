@@ -360,6 +360,9 @@ Since workflows are so flexible, there are many possible ways to implement human
 The easiest way to implement a human-in-the-loop is to use the `InputRequiredEvent` and `HumanResponseEvent` events during event streaming.
 
 ```python
+from llama_index.core.workflow import InputRequiredEvent, HumanResponseEvent
+
+
 class HumanInTheLoopWorkflow(Workflow):
     @step
     async def step1(self, ev: StartEvent) -> InputRequiredEvent:

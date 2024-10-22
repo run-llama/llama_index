@@ -12,6 +12,7 @@ from typing import (
     get_args,
     runtime_checkable,
     TYPE_CHECKING,
+    Type,
 )
 from typing_extensions import Annotated
 
@@ -321,7 +322,7 @@ class LLM(BaseLLM):
     @dispatcher.span
     def structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
@@ -333,6 +334,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -375,8 +378,9 @@ class LLM(BaseLLM):
     @dispatcher.span
     async def astructured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> BaseModel:
         r"""Async Structured predict.
@@ -386,6 +390,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -422,14 +428,14 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        result = await program.acall(**prompt_args)
+        result = await program.acall(llm_kwargs=llm_kwargs, **prompt_args)
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
     @dispatcher.span
     def stream_structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
@@ -441,6 +447,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -488,7 +496,7 @@ class LLM(BaseLLM):
     @dispatcher.span
     async def astream_structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
@@ -500,6 +508,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -864,7 +874,7 @@ class LLM(BaseLLM):
 
     def as_structured_llm(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         **kwargs: Any,
     ) -> "StructuredLLM":
         """Return a structured LLM around a given object."""

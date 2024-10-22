@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Callable, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence, Type
 
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.bridge.pydantic import BaseModel
@@ -24,7 +24,7 @@ class Accumulate(BaseSynthesizer):
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         text_qa_template: Optional[BasePromptTemplate] = None,
-        output_cls: Optional[BaseModel] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
         streaming: bool = False,
         use_async: bool = False,
     ) -> None:
@@ -36,7 +36,7 @@ class Accumulate(BaseSynthesizer):
         )
         self._text_qa_template = text_qa_template or DEFAULT_TEXT_QA_PROMPT_SEL
         self._use_async = use_async
-        self._output_cls = output_cls  # type: ignore
+        self._output_cls = output_cls
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -135,9 +135,9 @@ class Accumulate(BaseSynthesizer):
             ]
         else:
             predictor = (
-                self._llm.astructured_predict  # type: ignore
+                self._llm.astructured_predict
                 if use_async
-                else self._llm.structured_predict  # type: ignore
+                else self._llm.structured_predict
             )
 
             return [
