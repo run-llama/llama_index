@@ -83,7 +83,7 @@ class VectaraRetriever(BaseRetriever):
             for more details about syntax for udf reranker expressions.
         rerank_chain: a list of rerankers to be applied in a sequence and their associated parameters
             for the chain reranker. Each element should specify the "type" of reranker (mmr, slingshot, udf)
-            and any other parameters needed for that reranker type ("diversity_bias" for mmr or "user_function" for udf).
+            and any other parameters (e.g. "limit" or "cutoff" for any type,  "diversity_bias" for mmr, and "user_function" for udf).
             If using slingshot/multilingual_reranker_v1, it must be first in the list.
         summary_enabled: whether to generate summaries or not. Defaults to False.
         summary_response_lang: language to use for summary generation.
