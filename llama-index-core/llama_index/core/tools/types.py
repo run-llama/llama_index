@@ -116,15 +116,20 @@ class BaseTool(DispatcherSpanMixin):
         langchain_tool_kwargs: Any,
     ) -> Dict[str, Any]:
         """Process langchain tool kwargs."""
+
         if "name" not in langchain_tool_kwargs:
             langchain_tool_kwargs["name"] = self.metadata.name or ""
         if "description" not in langchain_tool_kwargs:
             langchain_tool_kwargs["description"] = self.metadata.description
         if "fn_schema" not in langchain_tool_kwargs:
             langchain_tool_kwargs["args_schema"] = self.metadata.fn_schema
-        #Callback dont exist on langchain
-        if "callback" in langchain_tool_kwargs:
-            del langchain_tool_kwargs["callback"]
+
+        # Callback dont exist on langchain
+        if "_callback" in langchain_tool_kwargs:
+            del langchain_tool_kwargs["_callback"]
+        if "_async_callback" in langchain_tool_kwargs:
+            del langchain_tool_kwargs["_async_callback"]
+
         return langchain_tool_kwargs
 
     def to_langchain_tool(
