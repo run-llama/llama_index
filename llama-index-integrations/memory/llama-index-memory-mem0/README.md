@@ -33,7 +33,8 @@ memory = Mem0Memory.from_client(
 ## Setup with Mem0 OSS
 
 1. Set your Mem0 OSS by providing configuration details:
-   > Note: To know more about Mem0 OSS, read [Mem0 OSS Quickstart](https://docs.mem0.ai/open-source/quickstart).
+
+> Note: To know more about Mem0 OSS, read [Mem0 OSS Quickstart](https://docs.mem0.ai/open-source/quickstart).
 
 ```python
 config = {
