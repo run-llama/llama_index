@@ -28,6 +28,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
         rerank_k: int = 50,
         mmr_diversity_bias: float = 0.2,
         udf_expression: str = None,
+        rerank_chain: List[Dict] = None,
         summarizer_prompt_name: str = "vectara-summary-ext-24-05-sml",
         summary_num_results: int = 5,
         summary_response_lang: str = "eng",
@@ -57,6 +58,10 @@ class VectaraQueryToolSpec(BaseToolSpec):
         - udf_expression (str): the user defined expression for reranking results.
             See (https://docs.vectara.com/docs/learn/user-defined-function-reranker)
             for more details about syntax for udf reranker expressions.
+        - rerank_chain: a list of rerankers to be applied in a sequence and their associated parameters
+            for the chain reranker. Each element should specify the "type" of reranker (mmr, slingshot, udf)
+            and any other parameters (e.g. "limit" or "cutoff" for any type,  "diversity_bias" for mmr, and "user_function" for udf).
+            If using slingshot/multilingual_reranker_v1, it must be first in the list.
         - summarizer_prompt_name (str): If enable_summarizer is True, the Vectara summarizer to use.
         - summary_num_results (int): If enable_summarizer is True, the number of summary results.
         - summary_response_lang (str): If enable_summarizer is True, the response language for the summary.
@@ -87,6 +92,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
             rerank_k=rerank_k,
             mmr_diversity_bias=mmr_diversity_bias,
             udf_expression=udf_expression,
+            rerank_chain=rerank_chain,
             summary_enabled=False,
             callback_manager=callback_manager,
             **kwargs,
@@ -103,6 +109,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
             rerank_k=rerank_k,
             mmr_diversity_bias=mmr_diversity_bias,
             udf_expression=udf_expression,
+            rerank_chain=rerank_chain,
             summary_enabled=True,
             summary_response_lang=summary_response_lang,
             summary_num_results=summary_num_results,

@@ -150,9 +150,67 @@ def test_udf_retrieval(vectara1) -> None:
     )
 
     res = tool_spec.semantic_search("What will the future look like?")
+    assert len(res) == 2
     assert res[0]["text"] == docs[2].text
     assert res[1]["text"] == docs[3].text
+
+
+def test_chain_rerank_retrieval(vectara1) -> None:
+    docs = get_docs()
+
+    # Test basic chain
+    tool_spec = VectaraQueryToolSpec(
+        num_results=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[{"type": "slingshot"}, {"type": "mmr", "diversity_bias": 0.4}],
+    )
+
+    res = tool_spec.semantic_search("What's this all about?")
+    print(f"Received response {res}")
     assert len(res) == 2
+    assert res[0]["text"] == docs[0].text
+    assert res[1]["text"] == docs[2].text
+
+    # Test chain with UDF and limit
+    tool_spec = VectaraQueryToolSpec(
+        num_results=4,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[
+            {"type": "slingshot"},
+            {"type": "mmr"},
+            {
+                "type": "udf",
+                "user_function": "5 * get('$.score') + get('$.document_metadata.test_score') / 2",
+                "limit": 2,
+            },
+        ],
+    )
+
+    res = tool_spec.semantic_search("What's this all about?")
+    print(f"Received response {res}")
+    assert len(res) == 2
+    assert res[0]["text"] == docs[3].text
+    assert res[1]["text"] == docs[2].text
+
+    # Test chain with cutoff
+    tool_spec = VectaraQueryToolSpec(
+        num_results=4,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[
+            {"type": "slingshot"},
+            {"type": "mmr", "diversity_bias": 0.4, "cutoff": 0.75},
+        ],
+    )
+
+    res = tool_spec.retrieve("What's this all about?")
+    assert len(res) == 1
+    assert res[0]["text"] == docs[0].text
 
 
 @pytest.fixture()
@@ -199,7 +257,7 @@ def test_citations(vectara2) -> None:
         citations_url_pattern="{doc.url}",
         citations_text_pattern="(source)",
     )
-    res = tool_spec.rag_query("Describe Paul's early life and career.")
+    res = tool_spec.rag_query("What colleges has Paul attended?")
     summary = res["summary"]
     assert "(source)" in summary
     assert "https://www.paulgraham.com/worked.html" in summary
@@ -211,7 +269,7 @@ def test_citations(vectara2) -> None:
         summarizer_prompt_name="mockingbird-1.0-2024-07-16",
         citations_style="numeric",
     )
-    res = tool_spec.rag_query("Describe Paul's education.")
+    res = tool_spec.rag_query("What colleges has Paul attended?")
     summary = res["summary"]
     assert re.search(r"\[\d+\]", summary)
 
