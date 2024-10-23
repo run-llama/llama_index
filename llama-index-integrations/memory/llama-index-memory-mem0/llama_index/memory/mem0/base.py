@@ -5,6 +5,7 @@ from llama_index.memory.mem0.utils import convert_memory_to_system_message
 from mem0 import MemoryClient, Memory
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     ValidationError,
     model_validator,
@@ -19,12 +20,12 @@ class BaseMem0(BaseMemory):
 
     _client: Optional[Union[MemoryClient, Memory]] = PrivateAttr(default=None)
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, **data) -> None:
         super().__init__(**data)
-        self._client = data.get("client")
+        if "client" in data:
+            object.__setattr__(self, "_client", data["client"])
 
     # TODO: Return type
     def add(
@@ -48,6 +49,8 @@ class Mem0Context(BaseModel):
     agent_id: Optional[str] = None
     run_id: Optional[str] = None
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     @model_validator(mode="after")
     def check_at_least_one_assigned(cls, values):
         if not any(
@@ -61,11 +64,8 @@ class Mem0Context(BaseModel):
     def get_context(self) -> Dict[str, Optional[str]]:
         return {key: value for key, value in self.__dict__.items() if value is not None}
 
-    class Config:
-        validate_assignment = True
 
-
-class Mem0ComposableMemory(BaseMem0):
+class Mem0Memory(BaseMem0):
     chat_history: SerializeAsAny[BaseMemory] = Field(
         description="Primary memory source for chat agent."
     )
@@ -73,23 +73,23 @@ class Mem0ComposableMemory(BaseMem0):
 
     def __init__(self, **data) -> None:
         super().__init__(**data)
-        self._context = data.get("context")
+        if "context" in data:
+            object.__setattr__(self, "_context", data["context"])
 
     @classmethod
     def class_name(cls) -> str:
         """Class name."""
-        return "Mem0ComposableMemory"
+        return "Mem0Memory"
 
     # TODO: Not functional yet.
     @classmethod
-    def from_defaults(cls, **kwargs: Any) -> "Mem0ComposableMemory":
+    def from_defaults(cls, **kwargs: Any) -> "Mem0Memory":
         raise NotImplementedError("Use either from_client or from_config")
 
     @classmethod
     def from_client(
         cls,
-        context_dict: Dict[str, Any],
-        chat_history: Optional[BaseMemory] = None,
+        context: Dict[str, Any],
         api_key: Optional[str] = None,
         host: Optional[str] = None,
         organization: Optional[str] = None,
@@ -99,10 +99,10 @@ class Mem0ComposableMemory(BaseMem0):
         if kwargs:
             raise ValueError(f"Unexpected kwargs: {kwargs}")
 
-        chat_history = chat_history or ChatMemoryBuffer.from_defaults()
+        chat_history = ChatMemoryBuffer.from_defaults()
 
         try:
-            context = Mem0Context(**context_dict)
+            context = Mem0Context(**context)
         except ValidationError as e:
             raise ValidationError(f"Context validation error: {e}")
 
@@ -114,25 +114,25 @@ class Mem0ComposableMemory(BaseMem0):
     @classmethod
     def from_config(
         cls,
-        context_dict: Dict[str, Any],
-        confif_dict: Dict[str, Any],
-        chat_history: Optional[BaseMemory] = None,
+        context: Dict[str, Any],
+        config: Dict[str, Any],
         **kwargs: Any,
     ):
         if kwargs:
             raise ValueError(f"Unexpected kwargs: {kwargs}")
 
-        chat_history = chat_history or ChatMemoryBuffer.from_defaults()
+        chat_history = ChatMemoryBuffer.from_defaults()
 
         try:
-            context = Mem0Context(**context_dict)
+            context = Mem0Context(**context)
         except Exception as e:
             raise ValidationError(f"Context validation error: {e}")
 
-        client = Memory.from_config(config_dict=confif_dict)
+        client = Memory.from_config(config_dict=config)
         return cls(chat_history=chat_history, context=context, client=client)
 
     def get(self, input: Optional[str] = None, **kwargs: Any) -> List[ChatMessage]:
+        """Get chat history. With memory system message."""
         messages = self.chat_history.get(input=input, **kwargs)
         if input is None:
             # Iterate through messages from last to first
