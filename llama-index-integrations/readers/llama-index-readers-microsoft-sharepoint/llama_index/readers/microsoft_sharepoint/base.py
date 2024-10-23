@@ -131,7 +131,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             logger.error("Error retrieving access token: %s", json_response["error"])
             raise ValueError(f"Error retrieving access token: {error_message}")
 
-    def _make_request_with_retry(self, request: requests.Request) -> requests.Response:
+    def _send_request_with_retry(self, request: requests.Request) -> requests.Response:
         """
         Makes a request to the SharePoint API with the provided request object.
         If the request fails with a 401 status code, the access token is refreshed and the request is retried once.
@@ -157,12 +157,12 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             response.raise_for_status()
             return response
 
-    def _make_get_with_retry(self, url: str) -> requests.Response:
+    def _send_get_with_retry(self, url: str) -> requests.Response:
         request = requests.Request(
             method="GET",
             url=url,
         )
-        return self._make_request_with_retry(request)
+        return self._send_request_with_retry(request)
 
     def _get_site_id_with_host_name(
         self, access_token, sharepoint_site_name: Optional[str]
@@ -193,7 +193,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         site_information_endpoint = f"https://graph.microsoft.com/v1.0/sites"
 
         while site_information_endpoint:
-            response = self._make_get_with_retry(site_information_endpoint)
+            response = self._send_get_with_retry(site_information_endpoint)
 
             json_response = response.json()
             if response.status_code == 200 and "value" in json_response:
@@ -244,7 +244,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         self._drive_id_endpoint = f"https://graph.microsoft.com/v1.0/sites/{self._site_id_with_host_name}/drives"
 
-        response = self._make_get_with_retry(self._drive_id_endpoint)
+        response = self._send_get_with_retry(self._drive_id_endpoint)
         json_response = response.json()
 
         if response.status_code == 200 and "value" in json_response:
@@ -281,7 +281,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             f"{self._drive_id_endpoint}/{self._drive_id}/root:/{folder_path}"
         )
 
-        response = self._make_get_with_retry(folder_id_endpoint)
+        response = self._send_get_with_retry(folder_id_endpoint)
 
         if response.status_code == 200 and "id" in response.json():
             return response.json()["id"]
@@ -387,7 +387,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         permissions_info_endpoint = (
             f"{self._drive_id_endpoint}/{self._drive_id}/items/{item_id}/permissions"
         )
-        response = self._make_get_with_retry(permissions_info_endpoint)
+        response = self._send_get_with_retry(permissions_info_endpoint)
         permissions = response.json()
 
         identity_sets = []
@@ -633,7 +633,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         folder_contents_endpoint = (
             f"{self._drive_id_endpoint}/{self._drive_id}/items/{folder_id}/children"
         )
-        response = self._make_get_with_retry(folder_contents_endpoint)
+        response = self._send_get_with_retry(folder_contents_endpoint)
         items = response.json().get("value", [])
         file_paths = []
         for item in items:
@@ -661,7 +661,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         drive_contents_endpoint = (
             f"{self._drive_id_endpoint}/{self._drive_id}/root/children"
         )
-        response = self._make_get_with_retry(drive_contents_endpoint)
+        response = self._send_get_with_retry(drive_contents_endpoint)
         items = response.json().get("value", [])
 
         file_paths = []
@@ -764,7 +764,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         file_path = "/".join(parts)
         endpoint = f"{self._drive_id_endpoint}/{self._drive_id}/root:/{file_path}"
 
-        response = self._make_get_with_retry(endpoint)
+        response = self._send_get_with_retry(endpoint)
 
         return response.json()
 
