@@ -1024,6 +1024,7 @@ nav:
           - ./api_reference/llms/predibase.md
           - ./api_reference/llms/premai.md
           - ./api_reference/llms/qianfan.md
+          - ./api_reference/llms/reka.md
           - ./api_reference/llms/replicate.md
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
@@ -1140,6 +1141,7 @@ nav:
           - ./api_reference/multi_modal_llms/ollama.md
           - ./api_reference/multi_modal_llms/openai.md
           - ./api_reference/multi_modal_llms/openvino.md
+          - ./api_reference/multi_modal_llms/reka.md
           - ./api_reference/multi_modal_llms/replicate.md
           - ./api_reference/multi_modal_llms/zhipuai.md
       - Node Parsers & Text Splitters:
@@ -1463,6 +1465,7 @@ nav:
               - ./api_reference/storage/chat_store/upstash.md
           - Docstore:
               - ./api_reference/storage/docstore/azure.md
+              - ./api_reference/storage/docstore/couchbase.md
               - ./api_reference/storage/docstore/dynamodb.md
               - ./api_reference/storage/docstore/elasticsearch.md
               - ./api_reference/storage/docstore/firestore.md
@@ -1484,6 +1487,7 @@ nav:
           - Index Store:
               - ./api_reference/storage/index_store/azure.md
               - ./api_reference/storage/index_store/azurecosmosnosql.md
+              - ./api_reference/storage/index_store/couchbase.md
               - ./api_reference/storage/index_store/dynamodb.md
               - ./api_reference/storage/index_store/elasticsearch.md
               - ./api_reference/storage/index_store/firestore.md
@@ -1495,6 +1499,7 @@ nav:
           - Kvstore:
               - ./api_reference/storage/kvstore/azure.md
               - ./api_reference/storage/kvstore/azurecosmosnosql.md
+              - ./api_reference/storage/kvstore/couchbase.md
               - ./api_reference/storage/kvstore/dynamodb.md
               - ./api_reference/storage/kvstore/elasticsearch.md
               - ./api_reference/storage/kvstore/firestore.md
@@ -2275,6 +2280,11 @@ plugins:
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-openvino
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-zhipuai
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-postgres
+            - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-reka
+            - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-couchbase
+            - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-couchbase
+            - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-couchbase
+            - ../llama-index-integrations/llms/llama-index-llms-reka
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
