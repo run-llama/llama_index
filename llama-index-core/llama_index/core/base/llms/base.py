@@ -14,7 +14,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
-    TextBlock,
+    ContentBlock,
 )
 from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
@@ -48,27 +48,35 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
             LLMMetadata: LLM metadata containing various information about the LLM.
         """
 
-    def convert_chat_messages(self, messages: Sequence[ChatMessage]) -> List[Any]:
+    def check_chat_messages(self, messages: Sequence[ChatMessage]) -> List[Any]:
         """Convert chat messages to an LLM specific message format."""
+        supported_content_types = self.metadata.supported_content_types
+        supports_multi_content_messages = self.metadata.supports_multi_content_messages
+
         converted_messages = []
         for message in messages:
-            if isinstance(message.content, str):
-                converted_messages.append(message)
-            elif isinstance(message.content, List):
-                content_string = ""
+            # if all content blocks, check if they are supported
+            if isinstance(message.content, List) and all(
+                isinstance(block, ContentBlock) for block in message.content
+            ):
                 for block in message.content:
-                    if isinstance(block, TextBlock):
-                        content_string += block.text
-                    else:
-                        raise ValueError("LLM only supports text inputs")
-                message.content = content_string
-                converted_messages.append(message)
-            else:
-                raise ValueError(f"Invalid message content: {message.content!s}")
+                    if block.type not in supported_content_types:
+                        raise ValueError(f"Unsupported content type: {block.type}")
+
+                # check if all content types are the same
+                content_types = {block.type for block in message.content}
+                if len(content_types) > 1 and not supports_multi_content_messages:
+                    raise ValueError(
+                        "This LLM does not support multi-content messages with non-text content."
+                    )
+
+            converted_messages.append(message)
 
         return converted_messages
 
-    @abstractmethod
+    def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        raise NotImplementedError("Subclass must implement abstract method")
+
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         """Chat endpoint for LLM.
 
@@ -89,8 +97,14 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
             print(response.content)
             ```
         """
+        messages = self.check_chat_messages(messages)
+        return self._chat(messages, **kwargs)
 
-    @abstractmethod
+    def _complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        raise NotImplementedError("Subclass must implement abstract method")
+
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
@@ -115,8 +129,13 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
             print(response.text)
             ```
         """
+        return self._complete(prompt, formatted=formatted, **kwargs)
 
-    @abstractmethod
+    def _stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        raise NotImplementedError("Subclass must implement abstract method")
+
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -141,8 +160,14 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
                 print(response.delta, end="", flush=True)
             ```
         """
+        messages = self.check_chat_messages(messages)
+        return self._stream_chat(messages, **kwargs)
 
-    @abstractmethod
+    def _stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
+        raise NotImplementedError("Subclass must implement abstract method")
+
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
@@ -169,9 +194,15 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
                 print(response.text, end="", flush=True)
             ```
         """
+        return self._stream_complete(prompt, formatted=formatted, **kwargs)
 
     # ===== Async Endpoints =====
-    @abstractmethod
+
+    async def _achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        raise NotImplementedError("Subclass must implement abstract method")
+
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
@@ -194,8 +225,14 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
             print(response.content)
             ```
         """
+        messages = self.check_chat_messages(messages)
+        return await self._achat(messages, **kwargs)
 
-    @abstractmethod
+    async def _acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        raise NotImplementedError("Subclass must implement abstract method")
+
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
@@ -220,8 +257,13 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
             print(response.text)
             ```
         """
+        return await self._acomplete(prompt, formatted=formatted, **kwargs)
 
-    @abstractmethod
+    async def _astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        raise NotImplementedError("Subclass must implement abstract method")
+
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
@@ -246,8 +288,14 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
                 print(response.delta, end="", flush=True)
             ```
         """
+        messages = self.check_chat_messages(messages)
+        return await self._astream_chat(messages, **kwargs)
 
-    @abstractmethod
+    async def _astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        raise NotImplementedError("Subclass must implement abstract method")
+
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
@@ -274,3 +322,4 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
                 print(response.text, end="", flush=True)
             ```
         """
+        return await self._astream_complete(prompt, formatted=formatted, **kwargs)
