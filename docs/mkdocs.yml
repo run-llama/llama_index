@@ -39,6 +39,7 @@ nav:
           - Loading & Ingestion:
               - ./understanding/loading/loading.md
               - ./understanding/loading/llamahub.md
+              - ./understanding/loading/llamacloud.md
           - Indexing & Embedding: ./understanding/indexing/indexing.md
           - Storing: ./understanding/storing/storing.md
           - Querying: ./understanding/querying/querying.md
