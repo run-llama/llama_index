@@ -294,6 +294,22 @@ class CohereEmbedding(MultiModalEmbedding):
             input_type=input_type,
         ).embeddings
 
+    async def _aembed_image(self, image_path: str, input_type: str) -> List[float]:
+        """Embed images using Cohere."""
+        if self.model_name not in V3_MODELS:
+            raise ValueError(
+                f"{self.model_name} is not a valid multi-modal embedding model. Supported models are {MULTIMODAL_MODELS}"
+            )
+        async_client = self._get_async_client()
+        processed_image = self._image_to_base64_data_url(image_path)
+        return (
+            await async_client.embed(
+                model=self.model_name,
+                images=[processed_image],
+                input_type=input_type,
+            )
+        ).embeddings
+
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding. For query embeddings, input_type='search_query'."""
         return self._embed([query], input_type="search_query")[0]
@@ -327,8 +343,14 @@ class CohereEmbedding(MultiModalEmbedding):
             img_path = img_file_path
         else:
             raise TypeError("img_file_path must be a string or Path object")
-        embeddings = self._embed_image(img_file_path, "image")
-        return embeddings[0]
+        return self._embed_image(img_file_path, "image")[0]
 
     async def _aget_image_embedding(self, img_file_path: str) -> List[float]:
-        return self._get_image_embedding(img_file_path)
+        """Get image embedding async."""
+        if isinstance(img_file_path, str):
+            img_path = Path(img_file_path)
+        elif isinstance(img_file_path, Path):
+            img_path = img_file_path
+        else:
+            raise TypeError("img_file_path must be a string or Path object")
+        return (await self._aembed_image(img_file_path, "image"))[0]
