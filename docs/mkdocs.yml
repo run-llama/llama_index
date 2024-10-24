@@ -35,14 +35,16 @@ nav:
       - Building an LLM Application: ./understanding/index.md
       - Using LLMs: ./understanding/using_llms/using_llms.md
       - Building a RAG pipeline:
+          - Introduction to RAG: ./understanding/rag/index.md
           - Loading & Ingestion:
               - ./understanding/loading/loading.md
               - ./understanding/loading/llamahub.md
+              - ./understanding/loading/llamacloud.md
           - Indexing & Embedding: ./understanding/indexing/indexing.md
           - Storing: ./understanding/storing/storing.md
           - Querying: ./understanding/querying/querying.md
       - Building an agent:
-          - Building a basic agent: ./understanding/agent/basic_agent.md
+          - Building a basic agent: ./understanding/agent/index.md
           - Agents with local models: ./understanding/agent/local_models.md
           - Adding RAG to an agent: ./understanding/agent/rag_agent.md
           - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
@@ -2919,6 +2921,7 @@ plugins:
         ./understanding/tracing_and_debugging/tracing_and_debugging.html: https://docs.llamaindex.ai/en/stable/understanding/tracing_and_debugging/tracing_and_debugging/
         ./understanding/using_llms/privacy.html: https://docs.llamaindex.ai/en/stable/understanding/using_llms/privacy/
         ./understanding/using_llms/using_llms.html: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/
+        ./understanding/agent/basic_agent/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/
         ./use_cases/agents.html: https://docs.llamaindex.ai/en/stable/use_cases/agents/
         ./use_cases/chatbots.html: https://docs.llamaindex.ai/en/stable/use_cases/chatbots/
         ./use_cases/extraction.html: https://docs.llamaindex.ai/en/stable/use_cases/extraction/
