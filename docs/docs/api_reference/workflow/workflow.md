@@ -2,4 +2,4 @@
     options:
       members:
         - Workflow
-      filters: []
+      filters: ["!^_", "^__init__$"]
