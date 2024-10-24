@@ -1144,11 +1144,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             )
         return await azure_query_result_search.asearch()
 
-    def get_nodes(
-        self,
-        node_ids: Optional[List[str]] = None,
-        filters: Optional[MetadataFilters] = None,
-    ) -> List[BaseNode]:
+    def get_nodes(self, node_ids: Optional[List[str]] = None,
+                  filters: Optional[MetadataFilters] = None) -> List[BaseNode]:
         """
         Get nodes from the index.
 
@@ -1159,12 +1156,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         Returns:
             List[BaseNode]: List of nodes retrieved from the index.
         """
-        
-        odata_filter = self._create_odata_filter(filters) if filters!=None else None
-
-        results = self._search_client.search(
-            filter=odata_filter,
-        )
+        odata_filter = self._create_odata_filter(filters) if filters is not None else None
+        results = self._search_client.search(filter=odata_filter,)
         
         # Converting results to List of BaseNodes
         node_results = []
