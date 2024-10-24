@@ -38,8 +38,9 @@ class DashScopeRerank(BaseNodePostprocessor):
                 "Must pass in dashscope api key or "
                 "specify via DASHSCOPE_API_KEY environment variable "
             )
-        self._api_key = api_key
+
         super().__init__(top_n=top_n, model=model, return_documents=return_documents)
+        self._api_key = api_key
 
     @classmethod
     def class_name(cls) -> str:
