@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.core.embeddings import MultiModalEmbedding
@@ -9,6 +9,7 @@ import cohere
 import httpx
 import os
 import base64
+from pathlib import Path
 
 
 # Enums for validation and type safety
@@ -222,8 +223,7 @@ class CohereEmbedding(MultiModalEmbedding):
         """Convert an image to a base64 Data URL."""
         _, file_extension = os.path.splitext(image_path)
         file_type = file_extension[1:]
-
-        if not self._validate_image_format(file_type):
+        if self._validate_image_format(file_type):
             with open(image_path, "rb") as f:
                 enc_img = base64.b64encode(f.read()).decode("utf-8")
             return f"data:image/{file_type};base64,{enc_img}"
@@ -328,7 +328,7 @@ class CohereEmbedding(MultiModalEmbedding):
         else:
             raise TypeError("img_file_path must be a string or Path object")
         embeddings = self._embed_image(img_file_path, "image")
-        return embeddings.float[0]
+        return embeddings[0]
 
-    async def _aget_image_embedding(self, img_file_path: ImageType) -> List[float]:
+    async def _aget_image_embedding(self, img_file_path: str) -> List[float]:
         return self._get_image_embedding(img_file_path)
