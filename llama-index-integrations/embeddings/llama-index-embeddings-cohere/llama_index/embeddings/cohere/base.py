@@ -9,8 +9,10 @@ import cohere
 import httpx
 import os
 import base64
+from io import BytesIO
 from pathlib import Path
 from llama_index.core.schema import ImageType
+from PIL import Image
 
 
 # Enums for validation and type safety
@@ -220,16 +222,28 @@ class CohereEmbedding(MultiModalEmbedding):
     def class_name(cls) -> str:
         return "CohereEmbedding"
 
-    def _image_to_base64_data_url(self, image_path: Union[str, Path]) -> str:
+    def _image_to_base64_data_url(self, image_input: Union[str, Path, BytesIO]) -> str:
         """Convert an image to a base64 Data URL."""
-        _, file_extension = os.path.splitext(image_path)
-        file_type = file_extension[1:]
-        if self._validate_image_format(file_type):
+        if isinstance(image_input, (str, Path)):
+            # If it's a string or Path, assume it's a file path
+            image_path = str(image_input)
+            file_extension = os.path.splitext(image_path)[1][1:].lower()
             with open(image_path, "rb") as f:
-                enc_img = base64.b64encode(f.read()).decode("utf-8")
-            return f"data:image/{file_type};base64,{enc_img}"
+                image_data = f.read()
+        elif isinstance(image_input, BytesIO):
+            # If it's a BytesIO, use it directly
+            image = Image.open(image_input)
+            file_extension = image.format.lower()
+            image_input.seek(0)  # Reset the BytesIO stream to the beginning
+            image_data = image_input.read()
         else:
-            raise ValueError(f"Unsupported image format: {file_type}")
+            raise ValueError("Unsupported input type. Must be a file path or BytesIO.")
+
+        if self._validate_image_format(file_extension):
+            enc_img = base64.b64encode(image_data).decode("utf-8")
+            return f"data:image/{file_extension};base64,{enc_img}"
+        else:
+            raise ValueError(f"Unsupported image format: {file_extension}")
 
     def _validate_image_format(self, file_type: str) -> bool:
         """Validate image format."""
