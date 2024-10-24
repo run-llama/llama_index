@@ -125,7 +125,7 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
 
         node = TextNode(
             text=text,
-            id_=additional["id"],
+            id_=additional.get("id", str(metadata.get("uuid"))),
             metadata=metadata,
             start_char_idx=node_info.get("start", None),
             end_char_idx=node_info.get("end", None),
