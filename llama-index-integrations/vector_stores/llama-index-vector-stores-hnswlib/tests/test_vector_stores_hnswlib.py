@@ -90,6 +90,13 @@ def test_query_nodes(hnswlib_store: HnswlibVectorStore):
     result = hnswlib_store.query(query)
     assert result.similarities[0] == 0
 
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0, 0.0],
+        similarity_top_k=hnswlib_store._hnswlib_index.get_current_count(),
+    )
+    result = hnswlib_store.query(query, ef=100)
+    assert result.similarities[0] == 0
+
 
 def test_persistence(hnswlib_store: HnswlibVectorStore, tmp_path):
     persist_path = os.path.join(tmp_path, "storage", "hnswlib.index")
