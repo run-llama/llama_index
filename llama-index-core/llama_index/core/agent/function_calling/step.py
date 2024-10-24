@@ -3,7 +3,7 @@
 import json
 import logging
 import uuid
-from typing import Any, List, Optional, Sequence, cast
+from typing import Any, List, Optional, Sequence, cast, Union
 import asyncio
 import llama_index.core.instrumentation as instrument
 from llama_index.core.agent.types import (
@@ -20,10 +20,13 @@ from llama_index.core.callbacks import (
     EventPayload,
     trace_method,
 )
-from llama_index.core.chat_engine.types import (
-    AgentChatResponse,
+from llama_index.core.chat_engine.types import AgentChatResponse, ChatResponseMode
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
+    ChatResponseAsyncGen,
 )
-from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.instrumentation.events.agent import AgentToolCallEvent
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
@@ -191,6 +194,52 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             input=task.input,
         )
 
+    def _get_agent_response(
+        self, task: Task, mode: ChatResponseMode, tools: List[BaseTool]
+    ) -> Union[ChatResponse, ChatResponseGen]:
+        """Get agent response."""
+        if mode == ChatResponseMode.WAIT:
+            response = self._llm.chat_with_tools(
+                tools=tools,
+                user_msg=None,
+                chat_history=self.get_all_messages(task),
+                verbose=self._verbose,
+                allow_parallel_tool_calls=self.allow_parallel_tool_calls,
+            )
+        elif mode == ChatResponseMode.STREAM:
+            response = self._llm.stream_chat_with_tools(
+                tools=tools,
+                user_msg=None,
+                chat_history=self.get_all_messages(task),
+                verbose=self._verbose,
+                allow_parallel_tool_calls=self.allow_parallel_tool_calls,
+            )
+
+        return response
+
+    async def _aget_agent_response(
+        self, task: Task, mode: ChatResponseMode, tools: List[BaseTool]
+    ) -> Union[ChatResponse, ChatResponseAsyncGen]:
+        """Get agent response (async)."""
+        if mode == ChatResponseMode.WAIT:
+            response = await self._llm.achat_with_tools(
+                tools=tools,
+                user_msg=None,
+                chat_history=self.get_all_messages(task),
+                verbose=self._verbose,
+                allow_parallel_tool_calls=self.allow_parallel_tool_calls,
+            )
+        elif mode == ChatResponseMode.STREAM:
+            response = await self._llm.astream_chat_with_tools(
+                tools=tools,
+                user_msg=None,
+                chat_history=self.get_all_messages(task),
+                verbose=self._verbose,
+                allow_parallel_tool_calls=self.allow_parallel_tool_calls,
+            )
+
+        return response
+
     def get_tools(self, input: str) -> List[AsyncBaseTool]:
         """Get tools."""
         return [adapt_to_async_tool(t) for t in self._get_tools(input)]
@@ -294,8 +343,13 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
 
         return tool.metadata.return_direct if tool is not None else False
 
-    @trace_method("run_step")
-    def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
+    def _run_step(
+        self,
+        step: TaskStep,
+        task: Task,
+        mode: ChatResponseMode = ChatResponseMode.WAIT,
+        **kwargs: Any,
+    ) -> TaskStepOutput:
         """Run step."""
         if step.input is not None:
             add_user_step_to_memory(
@@ -305,13 +359,8 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tools = self.get_tools(task.input)
 
         # get response and tool call (if exists)
-        response = self._llm.chat_with_tools(
-            tools=tools,
-            user_msg=None,
-            chat_history=self.get_all_messages(task),
-            verbose=self._verbose,
-            allow_parallel_tool_calls=self.allow_parallel_tool_calls,
-        )
+        response = self._get_agent_response(task, mode, tools)
+
         tool_calls = self._llm.get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
@@ -384,9 +433,8 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             next_steps=new_steps,
         )
 
-    @trace_method("run_step")
-    async def arun_step(
-        self, step: TaskStep, task: Task, **kwargs: Any
+    async def _arun_step(
+        self, step: TaskStep, task: Task, mode: ChatResponseMode.WAIT, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async)."""
         if step.input is not None:
@@ -397,13 +445,8 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         tools = self.get_tools(task.input)
 
         # get response and tool call (if exists)
-        response = await self._llm.achat_with_tools(
-            tools=tools,
-            user_msg=None,
-            chat_history=self.get_all_messages(task),
-            verbose=self._verbose,
-            allow_parallel_tool_calls=self.allow_parallel_tool_calls,
-        )
+        response = await self._aget_agent_response(task, mode, tools)
+
         tool_calls = self._llm.get_tool_calls_from_response(
             response, error_on_no_tool_call=False
         )
@@ -478,16 +521,28 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         )
 
     @trace_method("run_step")
+    def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
+        """Run step."""
+        return self._run_step(step, task, mode=ChatResponseMode.WAIT, **kwargs)
+
+    @trace_method("run_step")
+    async def arun_step(
+        self, step: TaskStep, task: Task, **kwargs: Any
+    ) -> TaskStepOutput:
+        """Run step (async)."""
+        return await self._arun_step(step, task, mode=ChatResponseMode.WAIT, **kwargs)
+
+    @trace_method("run_step")
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
-        raise NotImplementedError("Stream not supported for function calling agent")
+        return self._run_step(step, task, mode=ChatResponseMode.STREAM, **kwargs)
 
     @trace_method("run_step")
     async def astream_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async stream)."""
-        raise NotImplementedError("Stream not supported for function calling agent")
+        return await self._arun_step(step, task, mode=ChatResponseMode.STREAM, **kwargs)
 
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
