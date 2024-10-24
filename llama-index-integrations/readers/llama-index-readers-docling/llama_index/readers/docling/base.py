@@ -1,13 +1,11 @@
 from enum import Enum
+import json
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Dict, Iterable, Protocol, runtime_checkable
+import uuid
 
 from docling.document_converter import DocumentConverter
-from docling_core.transforms.id_generator import BaseIDGenerator, DocHashIDGenerator
-from docling_core.transforms.metadata_extractor import (
-    BaseMetadataExtractor,
-    SimpleMetadataExtractor,
-)
+from docling_core.types import DoclingDocument as DLDocument
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core import Document as LIDocument
 from pydantic import Field
@@ -16,23 +14,32 @@ from pydantic import Field
 class DoclingReader(BasePydanticReader):
     """Docling Reader.
 
-    Extracts PDF documents into LlamaIndex documents either using Markdown or JSON-serialized Docling native format.
+    Extracts PDF, DOCX, and other document formats into LlamaIndex Documents as either Markdown or JSON-serialized Docling native format.
 
     Args:
         export_type (Literal["markdown", "json"], optional): The type to export to. Defaults to "markdown".
         doc_converter (DocumentConverter, optional): The Docling converter to use. Default factory: `DocumentConverter`.
-        doc_id_generator (BaseIDGenerator | None, optional): The document ID generator to use. Setting to `None` falls back to LlamaIndex's default ID generation. Defaults to `DocHashIDGenerator()`.
-        metadata_extractor (BaseMetadataExtractor | None, optional): The document metadata extractor to use. Setting to `None` skips doc metadata extraction. Defaults to `SimpleMetadataExtractor()`.
+        md_export_kwargs (Dict[str, Any], optional): Kwargs to use in case of markdown export. Defaults to `{"image_placeholder": ""}`.
+        id_func: (DocIDGenCallable, optional): Doc ID generation function to use. Default: `_uuid4_doc_id_gen`
     """
 
     class ExportType(str, Enum):
         MARKDOWN = "markdown"
         JSON = "json"
 
+    @runtime_checkable
+    class DocIDGenCallable(Protocol):
+        def __call__(self, doc: DLDocument, file_path: str | Path) -> str:
+            ...
+
+    @staticmethod
+    def _uuid4_doc_id_gen(doc: DLDocument, file_path: str | Path) -> str:
+        return str(uuid.uuid4())
+
     export_type: ExportType = ExportType.MARKDOWN
     doc_converter: DocumentConverter = Field(default_factory=DocumentConverter)
-    doc_id_generator: BaseIDGenerator | None = DocHashIDGenerator()
-    metadata_extractor: BaseMetadataExtractor | None = SimpleMetadataExtractor()
+    md_export_kwargs: Dict[str, Any] = {"image_placeholder": ""}
+    id_func: DocIDGenCallable = _uuid4_doc_id_gen
 
     def lazy_load_data(
         self,
@@ -55,35 +62,17 @@ class DoclingReader(BasePydanticReader):
         )
 
         for source in file_paths:
-            dl_doc = self.doc_converter.convert_single(source).output
+            dl_doc = self.doc_converter.convert(source).document
             text: str
             if self.export_type == self.ExportType.MARKDOWN:
-                text = dl_doc.export_to_markdown()
+                text = dl_doc.export_to_markdown(**self.md_export_kwargs)
             elif self.export_type == self.ExportType.JSON:
-                text = dl_doc.model_dump_json()
+                text = json.dumps(dl_doc.export_to_dict())
             else:
                 raise ValueError(f"Unexpected export type: {self.export_type}")
-            origin = str(source) if isinstance(source, Path) else source
-            doc_kwargs = {}
-            if self.doc_id_generator:
-                doc_kwargs["doc_id"] = self.doc_id_generator.generate_id(doc=dl_doc)
-            if self.metadata_extractor:
-                doc_kwargs[
-                    "excluded_embed_metadata_keys"
-                ] = self.metadata_extractor.get_excluded_embed_metadata_keys()
-                doc_kwargs[
-                    "excluded_llm_metadata_keys"
-                ] = self.metadata_extractor.get_excluded_llm_metadata_keys()
             li_doc = LIDocument(
+                doc_id=self.id_func(doc=dl_doc, file_path=source),
                 text=text,
-                **doc_kwargs,
             )
             li_doc.metadata = extra_info or {}
-            if self.metadata_extractor:
-                li_doc.metadata.update(
-                    self.metadata_extractor.get_metadata(
-                        doc=dl_doc,
-                        origin=origin,
-                    ),
-                )
             yield li_doc

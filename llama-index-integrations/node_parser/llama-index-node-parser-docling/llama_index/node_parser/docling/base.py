@@ -1,13 +1,13 @@
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Protocol, Sequence, runtime_checkable
+import uuid
 
 from llama_index.core.schema import Document as LIDocument
 from llama_index.core.node_parser import NodeParser
 
 from docling_core.transforms.chunker import BaseChunker, HierarchicalChunker
-from docling_core.types import Document as DLDocument
+from docling_core.types import DoclingDocument as DLDocument
 from llama_index.core import Document as LIDocument
 from llama_index.core.node_parser import NodeParser
-from llama_index.core.node_parser.node_utils import IdFuncCallable, default_id_func
 from llama_index.core.schema import (
     BaseNode,
     NodeRelationship,
@@ -15,8 +15,6 @@ from llama_index.core.schema import (
     TextNode,
 )
 from llama_index.core.utils import get_tqdm_iterable
-
-_NODE_TEXT_KEY = "text"
 
 
 class DoclingNodeParser(NodeParser):
@@ -27,14 +25,21 @@ class DoclingNodeParser(NodeParser):
     (paragraphs, headings, tables etc.).
 
     Args:
-        chunker (BaseChunker, optional): The chunker to use. Defaults to `HierarchicalChunker(heading_as_metadata=True)`.
-        doc_meta_keys_allowed (set[str], optional): The Document metadata keys allowed to be included for embedding and LLM input. Defaults to `set()`.
-        node_meta_keys_allowed (set[str], optional): The Node metadata keys allowed to be included for embedding and LLM input. Defaults to `{"heading"}`.
+        chunker (BaseChunker, optional): The chunker to use. Defaults to `HierarchicalChunker()`.
+        id_func(NodeIDGenCallable, optional): The node ID generation function to use. Defaults to `_uuid4_node_id_gen`.
     """
 
-    chunker: BaseChunker = HierarchicalChunker(heading_as_metadata=True)
-    doc_meta_keys_allowed: set[str] = set()
-    node_meta_keys_allowed: set[str] = {"heading"}
+    @runtime_checkable
+    class NodeIDGenCallable(Protocol):
+        def __call__(self, i: int, node: BaseNode) -> str:
+            ...
+
+    @staticmethod
+    def _uuid4_node_id_gen(i: int, node: BaseNode) -> str:
+        return str(uuid.uuid4())
+
+    chunker: BaseChunker = HierarchicalChunker()
+    id_func: NodeIDGenCallable = _uuid4_node_id_gen
 
     def _parse_nodes(
         self,
@@ -42,7 +47,6 @@ class DoclingNodeParser(NodeParser):
         show_progress: bool = False,
         **kwargs: Any,
     ) -> list[BaseNode]:
-        id_func: IdFuncCallable = self.id_func or default_id_func
         nodes_with_progress: Iterable[BaseNode] = get_tqdm_iterable(
             items=nodes, show_progress=show_progress, desc="Parsing nodes"
         )
@@ -55,25 +59,17 @@ class DoclingNodeParser(NodeParser):
                 rels: dict[NodeRelationship, RelatedNodeType] = {
                     NodeRelationship.SOURCE: li_doc.as_related_node_info(),
                 }
-                metadata = chunk.model_dump(
-                    exclude=_NODE_TEXT_KEY,
-                    exclude_none=True,
-                )
-                # by default we exclude all meta keys from embedding/LLM — unless allowed
-                excl_meta_keys = [
-                    k for k in metadata if k not in self.node_meta_keys_allowed
+                metadata = chunk.meta.export_json_dict()
+                excl_embed_keys = [
+                    k for k in chunk.meta.excluded_embed if k in metadata
                 ]
-                if self.include_metadata:
-                    excl_meta_keys = [
-                        k
-                        for k in li_doc.metadata
-                        if k not in self.doc_meta_keys_allowed
-                    ] + excl_meta_keys
+                excl_llm_keys = [k for k in chunk.meta.excluded_llm if k in metadata]
+
                 node = TextNode(
-                    id_=id_func(i=i, doc=li_doc),
+                    id_=self.id_func(i=i, node=li_doc),
                     text=chunk.text,
-                    excluded_embed_metadata_keys=excl_meta_keys,
-                    excluded_llm_metadata_keys=excl_meta_keys,
+                    excluded_embed_metadata_keys=excl_embed_keys,
+                    excluded_llm_metadata_keys=excl_llm_keys,
                     relationships=rels,
                 )
                 node.metadata = metadata

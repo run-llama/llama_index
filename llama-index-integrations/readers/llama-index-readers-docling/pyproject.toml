@@ -30,15 +30,13 @@ license = "MIT"
 name = "llama-index-readers-docling"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-llama-index-core = "^0.11.0"
-docling-core = "^1.7.1"
-docling = "^1.16.1"
-
-[tool.poetry.group.dev]
+llama-index-core = "^0.11.19"
+docling-core = "^2.2.0"
+docling = "^2.2.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
