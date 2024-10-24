@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, List, Optional, Union
 
-from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, Embedding
 from llama_index.core.embeddings import MultiModalEmbedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -10,6 +10,7 @@ import httpx
 import os
 import base64
 from pathlib import Path
+from llama_index.core.schema import ImageType
 
 
 # Enums for validation and type safety
@@ -280,11 +281,11 @@ class CohereEmbedding(MultiModalEmbedding):
             ).embeddings
         return getattr(result, self.embedding_type, None)
 
-    def _embed_image(self, image_path: str, input_type: str) -> List[float]:
+    def _embed_image(self, image_path: ImageType, input_type: str) -> List[float]:
         """Embed images using Cohere."""
         if self.model_name not in V3_MODELS:
             raise ValueError(
-                f"{self.model_name} is not a valid multi-modal embedding model. Supported models are {MULTIMODAL_MODELS}"
+                f"{self.model_name} is not a valid multi-modal embedding model. Supported models are {V3_MODELS}"
             )
         client = self._get_client()
         processed_image = self._image_to_base64_data_url(image_path)
@@ -294,11 +295,13 @@ class CohereEmbedding(MultiModalEmbedding):
             input_type=input_type,
         ).embeddings
 
-    async def _aembed_image(self, image_path: str, input_type: str) -> List[float]:
+    async def _aembed_image(
+        self, image_path: ImageType, input_type: str
+    ) -> List[float]:
         """Embed images using Cohere."""
         if self.model_name not in V3_MODELS:
             raise ValueError(
-                f"{self.model_name} is not a valid multi-modal embedding model. Supported models are {MULTIMODAL_MODELS}"
+                f"{self.model_name} is not a valid multi-modal embedding model. Supported models are {V3_MODELS}"
             )
         async_client = self._get_async_client()
         processed_image = self._image_to_base64_data_url(image_path)
@@ -334,23 +337,10 @@ class CohereEmbedding(MultiModalEmbedding):
         """Get text embeddings."""
         return await self._aembed(texts, input_type="search_document")
 
-    def _get_image_embedding(self, img_file_path: str) -> List[float]:
+    def _get_image_embedding(self, img_file_path: ImageType) -> Embedding:
         """Get image embedding."""
-        # Convert string path to Path object for better path handling
-        if isinstance(img_file_path, str):
-            img_path = Path(img_file_path)
-        elif isinstance(img_file_path, Path):
-            img_path = img_file_path
-        else:
-            raise TypeError("img_file_path must be a string or Path object")
         return self._embed_image(img_file_path, "image")[0]
 
-    async def _aget_image_embedding(self, img_file_path: str) -> List[float]:
+    async def _aget_image_embedding(self, img_file_path: ImageType) -> Embedding:
         """Get image embedding async."""
-        if isinstance(img_file_path, str):
-            img_path = Path(img_file_path)
-        elif isinstance(img_file_path, Path):
-            img_path = img_file_path
-        else:
-            raise TypeError("img_file_path must be a string or Path object")
         return (await self._aembed_image(img_file_path, "image"))[0]
