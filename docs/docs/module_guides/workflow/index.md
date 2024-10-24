@@ -289,12 +289,13 @@ You can also iterate over events as they come in. This is useful for streaming p
 class ProgressEvent(Event):
     msg: str
 
+
 class MyWorkflow(Workflow):
     @step
     async def step_one(self, ctx: Context, ev: StartEvent) -> FirstEvent:
         ctx.write_event_to_stream(ProgressEvent(msg="Step one is happening"))
         return FirstEvent(first_output="First step complete.")
-```        
+```
 
 You can then pick up the events like this:
 
