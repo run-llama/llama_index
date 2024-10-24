@@ -592,8 +592,8 @@ class OpenAI(LLM):
         # except Exception:
         #     redis_client.json().numincrby("aichat", "$['errors']", 1)
         #     raise SystemError
-        # end_time = time.time()
-        # elapsed_time = end_time - start_time
+        end_time = time.time()
+        elapsed_time = end_time - start_time
 
         print(f"==> AI took {elapsed_time} seconds")
 
