@@ -144,7 +144,8 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             response = session.send(prepared_request)
 
             if response.status_code == 401:
-                # refresh token
+                # 401 status code indicates that the access token has expired
+                # refresh the token and retry once
                 logger.debug("Received 401. Refreshing access token.")
                 access_token = self._get_access_token()
                 self._authorization_headers = {
