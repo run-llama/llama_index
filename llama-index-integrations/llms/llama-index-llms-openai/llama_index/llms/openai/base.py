@@ -11,6 +11,7 @@ from typing import (
     runtime_checkable,
 )
 import datetime
+import time
 
 import httpx
 import tiktoken
@@ -579,18 +580,20 @@ class OpenAI(LLM):
         print("==>Entering _achat<==")
         aclient = self._get_aclient()
         message_dicts = to_openai_message_dicts(messages)
-        import time
+        
 
         start_time = time.time()
-        try:
-            response = await aclient.chat.completions.create(
-                messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
-            )
-        except Exception:
-            redis_client.json().numincrby("aichat", "$['errors']", 1)
-            raise SystemError
-        end_time = time.time()
-        elapsed_time = end_time - start_time
+        # try:
+        print('Final message dicts input to AI:', message_dicts)
+        response = await aclient.chat.completions.create(
+            messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
+        )
+        print('Raw AI response:', response)
+        # except Exception:
+        #     redis_client.json().numincrby("aichat", "$['errors']", 1)
+        #     raise SystemError
+        # end_time = time.time()
+        # elapsed_time = end_time - start_time
 
         print(f"==> AI took {elapsed_time} seconds")
 
