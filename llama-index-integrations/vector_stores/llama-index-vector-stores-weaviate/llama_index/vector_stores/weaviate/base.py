@@ -325,16 +325,15 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         return_metatada = wvc.query.MetadataQuery(distance=True, score=True)
 
         vector = query.query_embedding
-        similarity_key = "distance"
+        similarity_key = "score"
         if query.mode == VectorStoreQueryMode.DEFAULT:
             _logger.debug("Using vector search")
             if vector is not None:
                 alpha = 1
         elif query.mode == VectorStoreQueryMode.HYBRID:
             _logger.debug(f"Using hybrid search with alpha {query.alpha}")
-            similarity_key = "score"
             if vector is not None and query.query_str:
-                alpha = query.alpha
+                alpha = query.alpha or 0.5
 
         if query.filters is not None:
             filters = _to_weaviate_filter(query.filters)

@@ -97,15 +97,15 @@ def get_all_properties(client: Any, class_name: str) -> List[str]:
     return [p.name for p in properties]
 
 
-def get_node_similarity(entry: Dict, similarity_key: str = "distance") -> float:
+def get_node_similarity(entry: Dict, similarity_key: str = "score") -> float:
     """Get converted node similarity from distance."""
-    distance = getattr(entry["metadata"], similarity_key)
+    score = getattr(entry["metadata"], similarity_key)
 
-    if distance is None:
-        return 1.0
+    if score is None:
+        return 0.0
 
-    # convert distance https://forum.weaviate.io/t/distance-vs-certainty-scores/258
-    return 1.0 - float(distance)
+    # The hybrid search in Weaviate returns similarity score: https://weaviate.io/developers/weaviate/search/hybrid#explain-the-search-results
+    return float(score)
 
 
 def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:

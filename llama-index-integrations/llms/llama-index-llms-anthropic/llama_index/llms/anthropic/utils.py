@@ -5,6 +5,10 @@ from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageR
 from anthropic.types import MessageParam, TextBlockParam, ImageBlockParam
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
+from anthropic.types.beta.prompt_caching import (
+    PromptCachingBetaTextBlockParam,
+    PromptCachingBetaCacheControlEphemeralParam,
+)
 
 HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
@@ -15,13 +19,22 @@ CLAUDE_MODELS: Dict[str, int] = {
     "claude-2": 100000,
     "claude-2.0": 100000,
     "claude-2.1": 200000,
+    "claude-3-opus-latest": 180000,
     "claude-3-opus-20240229": 180000,
     "claude-3-opus@20240229": 180000,  # Alternate name for Vertex AI
+    "anthropic.claude-3-opus-20240229-v1:0": 180000,  # Alternate name for Bedrock
+    "claude-3-sonnet-latest": 180000,
     "claude-3-sonnet-20240229": 180000,
     "claude-3-sonnet@20240229": 180000,  # Alternate name for Vertex AI
+    "anthropic.claude-3-sonnet-20240229-v1:0": 180000,  # Alternate name for Bedrock
+    "claude-3-haiku-latest": 180000,
     "claude-3-haiku-20240307": 180000,
     "claude-3-haiku@20240307": 180000,  # Alternate name for Vertex AI
+    "anthropic.claude-3-haiku-20240307-v1:0": 180000,  # Alternate name for Bedrock
+    "claude-3-5-sonnet-latest": 180000,
     "claude-3-5-sonnet-20240620": 180000,
+    "claude-3-5-sonnet-20241022": 180000,
+    "anthropic.claude-3-5-sonnet-20241022-v2:0": 180000,  # Alternate name for Bedrock
     "claude-3-5-sonnet@20240620": 180000,  # Alternate name for Vertex AI
 }
 
@@ -92,12 +105,33 @@ def messages_to_anthropic_messages(
                     if item and isinstance(item, dict) and item.get("type", None):
                         if item["type"] == "image":
                             content.append(ImageBlockParam(**item))
+                        elif "cache_control" in item and item["type"] == "text":
+                            content.append(
+                                PromptCachingBetaTextBlockParam(
+                                    text=item["text"],
+                                    type="text",
+                                    cache_control=PromptCachingBetaCacheControlEphemeralParam(
+                                        type="ephemeral"
+                                    ),
+                                )
+                            )
                         else:
                             content.append(TextBlockParam(**item))
                     else:
                         content.append(TextBlockParam(text=item, type="text"))
             elif message.content:
-                content.append(TextBlockParam(text=message.content, type="text"))
+                content_ = (
+                    PromptCachingBetaTextBlockParam(
+                        text=message.content,
+                        type="text",
+                        cache_control=PromptCachingBetaCacheControlEphemeralParam(
+                            type="ephemeral"
+                        ),
+                    )
+                    if "cache_control" in message.additional_kwargs
+                    else TextBlockParam(text=message.content, type="text")
+                )
+                content.append(content_)
 
             tool_calls = message.additional_kwargs.get("tool_calls", [])
             for tool_call in tool_calls:
@@ -119,7 +153,6 @@ def messages_to_anthropic_messages(
                 content=content,  # TODO: type detect for multimodal
             )
             anthropic_messages.append(anth_message)
-
     return __merge_common_role_msgs(anthropic_messages), system_prompt.strip()
 
 

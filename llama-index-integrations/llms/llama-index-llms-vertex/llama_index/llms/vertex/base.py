@@ -187,7 +187,6 @@ class Vertex(FunctionCallingLLM):
         base_kwargs = {
             "temperature": self.temperature,
             "max_output_tokens": self.max_tokens,
-            "safety_settings": self._safety_settings,
         }
         return {
             **base_kwargs,

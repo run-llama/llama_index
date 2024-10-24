@@ -29,12 +29,13 @@ description = "llama-index selectors Not Diamond integration"
 name = "llama-index-selectors-notdiamond"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.10.0,<3.12"
 llama-index-core = "^0.10.0"
 notdiamond = "^0.3.5"
+litellm = "*"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

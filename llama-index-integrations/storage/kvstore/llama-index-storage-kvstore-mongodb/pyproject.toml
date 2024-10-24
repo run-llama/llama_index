@@ -27,11 +27,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-storage-kvstore-mongodb"
 readme = "README.md"
-version = "0.2.0"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 pymongo = "^4.6.1"
+motor = "^3.6"
 llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
