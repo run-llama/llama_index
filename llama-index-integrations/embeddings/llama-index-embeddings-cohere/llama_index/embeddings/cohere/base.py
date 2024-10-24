@@ -1,14 +1,14 @@
 from enum import Enum
 from typing import Any, List, Optional
 
-from llama_index.core.base.embeddings.base import (
-    DEFAULT_EMBED_BATCH_SIZE,
-    BaseEmbedding,
-)
+from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.core.embeddings import MultiModalEmbedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 import cohere
 import httpx
+import os
+import base64
 
 
 # Enums for validation and type safety
@@ -77,13 +77,13 @@ VALID_MODEL_INPUT_TYPES = {
 }
 
 # v3 models require an input_type field
+# supported models for multimodal embeddings
 V3_MODELS = [
     CAMN.ENGLISH_V3,
     CAMN.ENGLISH_LIGHT_V3,
     CAMN.MULTILINGUAL_V3,
     CAMN.MULTILINGUAL_LIGHT_V3,
 ]
-
 
 # This list would be used for model name and embedding types validation
 # Embedding type can be float/ int8/ uint8/ binary/ ubinary based on model.
@@ -99,9 +99,12 @@ VALID_MODEL_EMBEDDING_TYPES = {
 
 VALID_TRUNCATE_OPTIONS = [CAT.START, CAT.END, CAT.NONE]
 
+# supported image formats
+SUPPORTED_IMAGE_FORMATS = {"png", "jpeg", "jpg", "webp", "gif"}
+
 
 # Assuming BaseEmbedding is a Pydantic model and handles its own initializations
-class CohereEmbedding(BaseEmbedding):
+class CohereEmbedding(MultiModalEmbedding):
     """CohereEmbedding uses the Cohere API to generate embeddings for text."""
 
     # Instance variables initialized via Pydantic's mechanism
@@ -215,6 +218,22 @@ class CohereEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "CohereEmbedding"
 
+    def _image_to_base64_data_url(self, image_path: Union[str, Path]) -> str:
+        """Convert an image to a base64 Data URL."""
+        _, file_extension = os.path.splitext(image_path)
+        file_type = file_extension[1:]
+
+        if not self._validate_image_format(file_type):
+            with open(image_path, "rb") as f:
+                enc_img = base64.b64encode(f.read()).decode("utf-8")
+            return f"data:image/{file_type};base64,{enc_img}"
+        else:
+            raise ValueError(f"Unsupported image format: {file_type}")
+
+    def _validate_image_format(self, file_type: str) -> bool:
+        """Validate image format."""
+        return file_type.lower() in SUPPORTED_IMAGE_FORMATS
+
     def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
         """Embed sentences using Cohere."""
         client = self._get_client()
@@ -261,6 +280,20 @@ class CohereEmbedding(BaseEmbedding):
             ).embeddings
         return getattr(result, self.embedding_type, None)
 
+    def _embed_image(self, image_path: str, input_type: str) -> List[float]:
+        """Embed images using Cohere."""
+        if self.model_name not in V3_MODELS:
+            raise ValueError(
+                f"{self.model_name} is not a valid multi-modal embedding model. Supported models are {MULTIMODAL_MODELS}"
+            )
+        client = self._get_client()
+        processed_image = self._image_to_base64_data_url(image_path)
+        return client.embed(
+            model=self.model_name,
+            images=[processed_image],
+            input_type=input_type,
+        ).embeddings
+
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding. For query embeddings, input_type='search_query'."""
         return self._embed([query], input_type="search_query")[0]
@@ -284,3 +317,18 @@ class CohereEmbedding(BaseEmbedding):
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
         return await self._aembed(texts, input_type="search_document")
+
+    def _get_image_embedding(self, img_file_path: str) -> List[float]:
+        """Get image embedding."""
+        # Convert string path to Path object for better path handling
+        if isinstance(img_file_path, str):
+            img_path = Path(img_file_path)
+        elif isinstance(img_file_path, Path):
+            img_path = img_file_path
+        else:
+            raise TypeError("img_file_path must be a string or Path object")
+        embeddings = self._embed_image(img_file_path, "image")
+        return embeddings.float[0]
+
+    async def _aget_image_embedding(self, img_file_path: ImageType) -> List[float]:
+        return self._get_image_embedding(img_file_path)
