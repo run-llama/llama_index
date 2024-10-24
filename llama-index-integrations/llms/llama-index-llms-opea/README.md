@@ -20,7 +20,7 @@ from llama_index.llms.opea import OPEA
 
 llm = OPEA(
     model="meta-llama/Meta-Llama-3.1-8B-Instruct",
-    endpoint="http://localhost:8080",
+    api_base="http://localhost:8080/v1",
     temperature=0.7,
     max_tokens=256,
     additional_kwargs={"top_p": 0.95},
