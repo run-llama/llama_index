@@ -283,7 +283,21 @@ class MyWorkflow(Workflow):
 
 ## Streaming Events
 
-You can also iterate over events as they come in. This is useful for streaming purposes, showing progress, or for debugging.
+You can also iterate over events as they come in. This is useful for streaming purposes, showing progress, or for debugging. The handler object will emit events that are explicitly written to the stream using `ctx.write_event_to_stream()`:
+
+```python
+class ProgressEvent(Event):
+    msg: str
+
+
+class MyWorkflow(Workflow):
+    @step
+    async def step_one(self, ctx: Context, ev: StartEvent) -> FirstEvent:
+        ctx.write_event_to_stream(ProgressEvent(msg="Step one is happening"))
+        return FirstEvent(first_output="First step complete.")
+```
+
+You can then pick up the events like this:
 
 ```python
 w = MyWorkflow(...)
