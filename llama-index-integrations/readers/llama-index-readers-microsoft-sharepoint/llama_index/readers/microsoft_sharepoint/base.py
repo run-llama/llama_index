@@ -145,6 +145,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
             if response.status_code == 401:
                 # refresh token
+                logger.debug("Received 401. Refreshing access token.")
                 access_token = self._get_access_token()
                 self._authorization_headers = {
                     "Authorization": f"Bearer {access_token}"
