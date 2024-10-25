@@ -66,6 +66,7 @@ nltk = ">3.8.1"  # avoids a CVE, temp until next release, should be in llama-ind
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
+ipykernel = "^6.29.5"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
