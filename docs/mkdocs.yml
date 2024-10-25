@@ -35,14 +35,16 @@ nav:
       - Building an LLM Application: ./understanding/index.md
       - Using LLMs: ./understanding/using_llms/using_llms.md
       - Building a RAG pipeline:
+          - Introduction to RAG: ./understanding/rag/index.md
           - Loading & Ingestion:
               - ./understanding/loading/loading.md
               - ./understanding/loading/llamahub.md
+              - ./understanding/loading/llamacloud.md
           - Indexing & Embedding: ./understanding/indexing/indexing.md
           - Storing: ./understanding/storing/storing.md
           - Querying: ./understanding/querying/querying.md
       - Building an agent:
-          - Building a basic agent: ./understanding/agent/basic_agent.md
+          - Building a basic agent: ./understanding/agent/index.md
           - Agents with local models: ./understanding/agent/local_models.md
           - Adding RAG to an agent: ./understanding/agent/rag_agent.md
           - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
@@ -420,6 +422,7 @@ nav:
           - ./examples/multi_modal/ChromaMultiModalDemo.ipynb
           - ./examples/multi_modal/anthropic_multi_modal.ipynb
           - ./examples/multi_modal/azure_openai_multi_modal.ipynb
+          - ./examples/multi_modal/cohere_multi_modal.ipynb
           - ./examples/multi_modal/dashscope_multi_modal.ipynb
           - ./examples/multi_modal/gemini.ipynb
           - ./examples/multi_modal/gpt4o_mm_structured_outputs.ipynb
@@ -2893,6 +2896,7 @@ plugins:
         ./optimizing/fine-tuning/fine-tuning.html: https://docs.llamaindex.ai/en/stable/optimizing/fine-tuning/fine-tuning/
         ./optimizing/production_rag.html: https://docs.llamaindex.ai/en/stable/optimizing/production_rag/
         ./presentations/past_presentations.html: https://docs.llamaindex.ai/en/stable/presentations/past_presentations/
+        ./understanding/agent/basic_agent/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/
         ./understanding/deployment/deployment.html: https://docs.llamaindex.ai/en/stable/understanding/deployment/deployment/
         ./understanding/evaluating/cost_analysis/root.html: understanding/evaluating/cost_analysis/index.md
         ./understanding/evaluating/cost_analysis/usage_pattern.html: https://docs.llamaindex.ai/en/stable/understanding/evaluating/cost_analysis/usage_pattern/
