@@ -1,4 +1,5 @@
 from enum import Enum
+from datetime import datetime
 from typing import Any, AsyncGenerator, Generator, Optional, Union, List
 
 from llama_index.core.bridge.pydantic import BaseModel, Field
@@ -23,6 +24,7 @@ class ChatMessage(BaseModel):
 
     role: MessageRole = MessageRole.USER
     content: Optional[Any] = ""
+    timestamp: Optional[datetime] = None
     additional_kwargs: dict = Field(default_factory=dict)
 
     def __str__(self) -> str:
