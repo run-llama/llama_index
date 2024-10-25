@@ -1,5 +1,76 @@
 # ChangeLog
 
+## [2024-10-24]
+
+### `llama-index-core` [0.11.20]
+
+- [actually nothing!]
+
+### `llama-index-embeddings-cohere` [0.3.0]
+
+- Add support for cohere multi-modal embeddings (#16667)
+
+### `llama-index-embeddings-litellm` [0.2.2]
+
+- support timeout param in litellmembedding (#16532)
+
+### `llama-index-graph-stores-neo4j` [0.3.5]
+
+- Make neo4j schema refresh configurable (#16651)
+- fix: receive warnings from dbms server in neo4j queries (#16598)
+
+### `llama-index-indices-managed-vectara` [0.2.3]
+
+- add chain postprocessing for vectara (#16627)
+
+### `llama-index-llms-anthropic` [0.3.7]
+
+- update anthropic model names (#16643)
+
+### `llama-index-llms-openai` [0.2.16]
+
+- fix: skip processing of choice.delta when it is None (#16636)
+
+### `llama-index-llms-reka` [0.1.0]
+
+- Reka llamaindex integration (llm and multi-modal-llm) (#15753)
+
+### `llama-index-multi-modal-llms-reka` [0.1.0]
+
+- Reka llamaindex integration (llm and multi-modal-llm) (#15753)
+
+### `llama-index-postprocessor-dashscope-rerank` [0.2.1]
+
+- Fix BUG where the api_key parameter is not set when calling DashScopeRerank (#16665)
+
+### `llama-index-readers-microsoft-sharepoint` [0.3.4]
+
+- add retry logic to requests in cases where access token expires (#16662)
+
+### `llama-index-storage-docstore-mongodb` [0.2.1]
+
+- fix missing dependency error for mongodb docstore (#16654)
+
+### `llama-index-storage-docstore-couchbase` [0.1.0]
+
+- Add support for Couchbase for DocStore & IndexStore (#16509)
+
+### `llama-index-storage-kvstore-couchbase` [0.1.0]
+
+- Add support for Couchbase for DocStore & IndexStore (#16509)
+
+### `llama-index-storage-index-store-couchbase` [0.1.0]
+
+- Add support for Couchbase for IndexStore (#16509)
+
+### `llama-index-storage-kvstore-mongodb` [0.2.1]
+
+- add missing dependency for mongodb kvstore (#16632)
+
+### `llama-index-utils-workflow` [0.2.2]
+
+- Fix drawing for HITL (#16624)
+
 ## [2024-10-18]
 
 ### `llama-index-core` [0.11.19]
