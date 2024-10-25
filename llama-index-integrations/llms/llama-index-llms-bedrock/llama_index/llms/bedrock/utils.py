@@ -77,6 +77,7 @@ STREAMING_MODELS = {
     "anthropic.claude-3-5-sonnet-20240620-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
+    "anthropic.claude-3-5-sonnet-20241022-v2:0",
     "meta.llama2-13b-chat-v1",
     "mistral.mistral-7b-instruct-v0:2",
     "mistral.mixtral-8x7b-instruct-v0:1",
