@@ -30,6 +30,8 @@ BEDROCK_MODELS = {
     "anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
+    "ai21.jamba-1-5-mini-v1:0": 256000,
+    "ai21.jamba-1-5-large-v1:0": 256000,
     "cohere.command-text-v14": 4096,
     "cohere.command-light-text-v14": 4096,
     "cohere.command-r-v1:0": 128000,
