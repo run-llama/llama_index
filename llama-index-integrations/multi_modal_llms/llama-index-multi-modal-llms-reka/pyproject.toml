@@ -9,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = true
-import_path = "llama_index.multi-modal-llms.reka"
+import_path = "llama_index.multi_modal_llms.reka"
 
 [tool.llamahub.class_authors]
 RekaMultiModalLLM = "findalexli"

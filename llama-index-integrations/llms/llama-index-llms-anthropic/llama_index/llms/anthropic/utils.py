@@ -19,13 +19,22 @@ CLAUDE_MODELS: Dict[str, int] = {
     "claude-2": 100000,
     "claude-2.0": 100000,
     "claude-2.1": 200000,
+    "claude-3-opus-latest": 180000,
     "claude-3-opus-20240229": 180000,
     "claude-3-opus@20240229": 180000,  # Alternate name for Vertex AI
+    "anthropic.claude-3-opus-20240229-v1:0": 180000,  # Alternate name for Bedrock
+    "claude-3-sonnet-latest": 180000,
     "claude-3-sonnet-20240229": 180000,
     "claude-3-sonnet@20240229": 180000,  # Alternate name for Vertex AI
+    "anthropic.claude-3-sonnet-20240229-v1:0": 180000,  # Alternate name for Bedrock
+    "claude-3-haiku-latest": 180000,
     "claude-3-haiku-20240307": 180000,
     "claude-3-haiku@20240307": 180000,  # Alternate name for Vertex AI
+    "anthropic.claude-3-haiku-20240307-v1:0": 180000,  # Alternate name for Bedrock
+    "claude-3-5-sonnet-latest": 180000,
     "claude-3-5-sonnet-20240620": 180000,
+    "claude-3-5-sonnet-20241022": 180000,
+    "anthropic.claude-3-5-sonnet-20241022-v2:0": 180000,  # Alternate name for Bedrock
     "claude-3-5-sonnet@20240620": 180000,  # Alternate name for Vertex AI
 }
 
