@@ -95,7 +95,7 @@ class HnswlibVectorStore(BasePydanticVectorStore):
         space: Literal["ip", "cosine", "l2"],
         dimension: int,
         max_elements: int,
-        ef: int | None = None,
+        ef: Optional[int] = None,
         **kwargs,
     ) -> "HnswlibVectorStore":
         """To avoid creating the `Hnswlib.Index` Yourself You can just specify it's params.
@@ -224,7 +224,6 @@ class HnswlibVectorStore(BasePydanticVectorStore):
     def query(
         self,
         query: VectorStoreQuery,
-        ef: int | None = None,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
@@ -237,8 +236,8 @@ class HnswlibVectorStore(BasePydanticVectorStore):
         """
         if query.filters is not None:
             raise ValueError("Metadata filters not implemented for Hnswlib yet.")
-        if ef is not None:
-            self._hnswlib_index.set_ef(ef)
+        if "ef" in kwargs:
+            self._hnswlib_index.set_ef(kwargs["ef"])
         query_embedding = cast(List[float], query.query_embedding)
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
         indices, distances = self._hnswlib_index.knn_query(
