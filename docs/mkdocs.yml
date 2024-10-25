@@ -422,6 +422,7 @@ nav:
           - ./examples/multi_modal/ChromaMultiModalDemo.ipynb
           - ./examples/multi_modal/anthropic_multi_modal.ipynb
           - ./examples/multi_modal/azure_openai_multi_modal.ipynb
+          - ./examples/multi_modal/cohere_multi_modal.ipynb
           - ./examples/multi_modal/dashscope_multi_modal.ipynb
           - ./examples/multi_modal/gemini.ipynb
           - ./examples/multi_modal/gpt4o_mm_structured_outputs.ipynb
@@ -2895,6 +2896,7 @@ plugins:
         ./optimizing/fine-tuning/fine-tuning.html: https://docs.llamaindex.ai/en/stable/optimizing/fine-tuning/fine-tuning/
         ./optimizing/production_rag.html: https://docs.llamaindex.ai/en/stable/optimizing/production_rag/
         ./presentations/past_presentations.html: https://docs.llamaindex.ai/en/stable/presentations/past_presentations/
+        ./understanding/agent/basic_agent/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/
         ./understanding/deployment/deployment.html: https://docs.llamaindex.ai/en/stable/understanding/deployment/deployment/
         ./understanding/evaluating/cost_analysis/root.html: understanding/evaluating/cost_analysis/index.md
         ./understanding/evaluating/cost_analysis/usage_pattern.html: https://docs.llamaindex.ai/en/stable/understanding/evaluating/cost_analysis/usage_pattern/
@@ -2921,7 +2923,6 @@ plugins:
         ./understanding/tracing_and_debugging/tracing_and_debugging.html: https://docs.llamaindex.ai/en/stable/understanding/tracing_and_debugging/tracing_and_debugging/
         ./understanding/using_llms/privacy.html: https://docs.llamaindex.ai/en/stable/understanding/using_llms/privacy/
         ./understanding/using_llms/using_llms.html: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/
-        ./understanding/agent/basic_agent/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/
         ./use_cases/agents.html: https://docs.llamaindex.ai/en/stable/use_cases/agents/
         ./use_cases/chatbots.html: https://docs.llamaindex.ai/en/stable/use_cases/chatbots/
         ./use_cases/extraction.html: https://docs.llamaindex.ai/en/stable/use_cases/extraction/
