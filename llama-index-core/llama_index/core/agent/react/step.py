@@ -494,11 +494,8 @@ class ReActAgentWorker(BaseAgentWorker):
             current_reasoning=task.extra_state["current_reasoning"],
         )
         # send prompt
-        
         start_time = time.time()
-        print("Here is the input chat", input_chat)
         chat_response = await self._llm.achat(input_chat)
-        print("Here is the agent response", chat_response)
         end_time = time.time()
         elapsed_time = end_time - start_time
         print(f'USING LLM: {elapsed_time} seconds')

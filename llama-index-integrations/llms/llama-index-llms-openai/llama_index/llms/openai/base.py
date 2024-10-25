@@ -584,11 +584,9 @@ class OpenAI(LLM):
 
         start_time = time.time()
         # try:
-        print('Final message dicts input to AI:', message_dicts)
         response = await aclient.chat.completions.create(
             messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
         )
-        print('Raw AI response:', response)
         # except Exception:
         #     redis_client.json().numincrby("aichat", "$['errors']", 1)
         #     raise SystemError
