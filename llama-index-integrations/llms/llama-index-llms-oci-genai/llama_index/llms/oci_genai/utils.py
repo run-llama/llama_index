@@ -44,7 +44,7 @@ JSON_TO_PYTHON_TYPES = {
 
 
 def _format_oci_tool_calls(
-    tool_calls: Optional[List[Any]] = None,
+        tool_calls: Optional[List[Any]] = None,
 ) -> List[Dict]:
     """
     Formats an OCI GenAI API response into the tool call format used in LlamaIndex.
@@ -205,8 +205,8 @@ class Provider(ABC):
 
     @abstractmethod
     def convert_to_oci_tool(
-        self,
-        tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+            self,
+            tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
     ) -> Dict[str, Any]:
         ...
 
@@ -344,12 +344,12 @@ class CohereProvider(Provider):
                     message
                     for message in current_chat_turn_messages
                     if message.role == MessageRole.ASSISTANT
-                    and "tool_calls" in message.additional_kwargs
+                       and "tool_calls" in message.additional_kwargs
                 ]
                 if previous_ai_msgs:
                     previous_ai_msg = previous_ai_msgs[-1]
                     for li_tool_call in previous_ai_msg.additional_kwargs.get(
-                        "tool_calls", []
+                            "tool_calls", []
                     ):
                         validate_tool_call(li_tool_call)
                         if li_tool_call[
@@ -380,8 +380,8 @@ class CohereProvider(Provider):
         return {k: v for k, v in oci_params.items() if v is not None}
 
     def convert_to_oci_tool(
-        self,
-        tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+            self,
+            tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
     ) -> CohereTool:
         """
         Convert a Pydantic class, JSON schema dict, callable, or BaseTool to a CohereTool format for OCI.
@@ -420,13 +420,13 @@ class CohereProvider(Provider):
                         ),
                         description=p_def.get("description", ""),
                         is_required=p_name
-                        in tool.metadata.get_parameters_dict().get("required", []),
+                                    in tool.metadata.get_parameters_dict().get("required", []),
                     )
                     for p_name, p_def in tool.metadata.get_parameters_dict()
                     .get("properties", {})
                     .items()
                 },
-            )
+                    )
 
         elif isinstance(tool, dict):
             # Ensure dict-based tools follow a standard schema format
@@ -580,8 +580,8 @@ class MetaProvider(Provider):
         }
 
     def convert_to_oci_tool(
-        self,
-        tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+            self,
+            tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
     ) -> Dict[str, Any]:
         raise NotImplementedError("Tools not supported for Meta models")
 
@@ -631,8 +631,8 @@ def get_context_size(model: str, context_size: int = None) -> int:
 
 def validate_tool_call(tool_call: Dict[str, Any]):
     if (
-        "input" not in tool_call
-        or "toolUseId" not in tool_call
-        or "name" not in tool_call
+            "input" not in tool_call
+            or "toolUseId" not in tool_call
+            or "name" not in tool_call
     ):
         raise ValueError("Invalid tool call.")
