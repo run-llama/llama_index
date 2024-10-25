@@ -35,14 +35,16 @@ nav:
       - Building an LLM Application: ./understanding/index.md
       - Using LLMs: ./understanding/using_llms/using_llms.md
       - Building a RAG pipeline:
+          - Introduction to RAG: ./understanding/rag/index.md
           - Loading & Ingestion:
               - ./understanding/loading/loading.md
               - ./understanding/loading/llamahub.md
+              - ./understanding/loading/llamacloud.md
           - Indexing & Embedding: ./understanding/indexing/indexing.md
           - Storing: ./understanding/storing/storing.md
           - Querying: ./understanding/querying/querying.md
       - Building an agent:
-          - Building a basic agent: ./understanding/agent/basic_agent.md
+          - Building a basic agent: ./understanding/agent/index.md
           - Agents with local models: ./understanding/agent/local_models.md
           - Adding RAG to an agent: ./understanding/agent/rag_agent.md
           - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
@@ -420,6 +422,7 @@ nav:
           - ./examples/multi_modal/ChromaMultiModalDemo.ipynb
           - ./examples/multi_modal/anthropic_multi_modal.ipynb
           - ./examples/multi_modal/azure_openai_multi_modal.ipynb
+          - ./examples/multi_modal/cohere_multi_modal.ipynb
           - ./examples/multi_modal/dashscope_multi_modal.ipynb
           - ./examples/multi_modal/gemini.ipynb
           - ./examples/multi_modal/gpt4o_mm_structured_outputs.ipynb
@@ -437,6 +440,7 @@ nav:
           - ./examples/multi_modal/multi_modal_videorag_videodb.ipynb
           - ./examples/multi_modal/ollama_cookbook.ipynb
           - ./examples/multi_modal/openai_multi_modal.ipynb
+          - ./examples/multi_modal/openvino_multimodal.ipynb
           - ./examples/multi_modal/replicate_multi_modal.ipynb
           - ./examples/multi_modal/structured_image_retrieval.ipynb
       - Multi-Tenancy:
@@ -616,6 +620,7 @@ nav:
           - ./examples/vector_stores/EpsillaIndexDemo.ipynb
           - ./examples/vector_stores/FaissIndexDemo.ipynb
           - ./examples/vector_stores/FirestoreVectorStore.ipynb
+          - ./examples/vector_stores/HnswlibIndexDemo.ipynb
           - ./examples/vector_stores/HologresDemo.ipynb
           - ./examples/vector_stores/JaguarIndexDemo.ipynb
           - ./examples/vector_stores/KDBAI_Advanced_RAG_Demo.ipynb
@@ -634,6 +639,7 @@ nav:
           - ./examples/vector_stores/Neo4jVectorDemo.ipynb
           - ./examples/vector_stores/NileVectorStore.ipynb
           - ./examples/vector_stores/ObjectBoxIndexDemo.ipynb
+          - ./examples/vector_stores/OceanBaseVectorStore.ipynb
           - ./examples/vector_stores/OpensearchDemo.ipynb
           - ./examples/vector_stores/PGVectoRsDemo.ipynb
           - ./examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
@@ -792,7 +798,6 @@ nav:
           - ./module_guides/deploying/agents/tools.md
       - Workflows:
           - ./module_guides/workflow/index.md
-          - ./module_guides/workflow/deployment.md
       - Evaluation:
           - ./module_guides/evaluating/index.md
           - ./module_guides/evaluating/usage_pattern.md
@@ -872,6 +877,7 @@ nav:
           - ./api_reference/embeddings/elasticsearch.md
           - ./api_reference/embeddings/fastembed.md
           - ./api_reference/embeddings/fireworks.md
+          - ./api_reference/embeddings/gaudi.md
           - ./api_reference/embeddings/gemini.md
           - ./api_reference/embeddings/gigachat.md
           - ./api_reference/embeddings/google.md
@@ -1021,6 +1027,7 @@ nav:
           - ./api_reference/llms/predibase.md
           - ./api_reference/llms/premai.md
           - ./api_reference/llms/qianfan.md
+          - ./api_reference/llms/reka.md
           - ./api_reference/llms/replicate.md
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
@@ -1136,7 +1143,10 @@ nav:
           - ./api_reference/multi_modal_llms/mistralai.md
           - ./api_reference/multi_modal_llms/ollama.md
           - ./api_reference/multi_modal_llms/openai.md
+          - ./api_reference/multi_modal_llms/openvino.md
+          - ./api_reference/multi_modal_llms/reka.md
           - ./api_reference/multi_modal_llms/replicate.md
+          - ./api_reference/multi_modal_llms/zhipuai.md
       - Node Parsers & Text Splitters:
           - ./api_reference/node_parser/alibabacloud_aisearch.md
           - ./api_reference/node_parser/dashscope.md
@@ -1452,11 +1462,13 @@ nav:
               - ./api_reference/storage/chat_store/azurecosmosnosql.md
               - ./api_reference/storage/chat_store/dynamodb.md
               - ./api_reference/storage/chat_store/index.md
+              - ./api_reference/storage/chat_store/postgres.md
               - ./api_reference/storage/chat_store/redis.md
               - ./api_reference/storage/chat_store/simple.md
               - ./api_reference/storage/chat_store/upstash.md
           - Docstore:
               - ./api_reference/storage/docstore/azure.md
+              - ./api_reference/storage/docstore/couchbase.md
               - ./api_reference/storage/docstore/dynamodb.md
               - ./api_reference/storage/docstore/elasticsearch.md
               - ./api_reference/storage/docstore/firestore.md
@@ -1478,6 +1490,7 @@ nav:
           - Index Store:
               - ./api_reference/storage/index_store/azure.md
               - ./api_reference/storage/index_store/azurecosmosnosql.md
+              - ./api_reference/storage/index_store/couchbase.md
               - ./api_reference/storage/index_store/dynamodb.md
               - ./api_reference/storage/index_store/elasticsearch.md
               - ./api_reference/storage/index_store/firestore.md
@@ -1489,6 +1502,7 @@ nav:
           - Kvstore:
               - ./api_reference/storage/kvstore/azure.md
               - ./api_reference/storage/kvstore/azurecosmosnosql.md
+              - ./api_reference/storage/kvstore/couchbase.md
               - ./api_reference/storage/kvstore/dynamodb.md
               - ./api_reference/storage/kvstore/elasticsearch.md
               - ./api_reference/storage/kvstore/firestore.md
@@ -1543,6 +1557,7 @@ nav:
               - ./api_reference/storage/vector_store/neptune.md
               - ./api_reference/storage/vector_store/nile.md
               - ./api_reference/storage/vector_store/objectbox.md
+              - ./api_reference/storage/vector_store/oceanbase.md
               - ./api_reference/storage/vector_store/opensearch.md
               - ./api_reference/storage/vector_store/oracledb.md
               - ./api_reference/storage/vector_store/pgvecto_rs.md
@@ -2262,6 +2277,17 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-document360
             - ../llama-index-integrations/llms/llama-index-llms-gaudi
             - ../llama-index-integrations/llms/llama-index-llms-zhipuai
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-hnswlib
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-oceanbase
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-gaudi
+            - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-openvino
+            - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-zhipuai
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-postgres
+            - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-reka
+            - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-couchbase
+            - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-couchbase
+            - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-couchbase
+            - ../llama-index-integrations/llms/llama-index-llms-reka
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2870,6 +2896,7 @@ plugins:
         ./optimizing/fine-tuning/fine-tuning.html: https://docs.llamaindex.ai/en/stable/optimizing/fine-tuning/fine-tuning/
         ./optimizing/production_rag.html: https://docs.llamaindex.ai/en/stable/optimizing/production_rag/
         ./presentations/past_presentations.html: https://docs.llamaindex.ai/en/stable/presentations/past_presentations/
+        ./understanding/agent/basic_agent/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/
         ./understanding/deployment/deployment.html: https://docs.llamaindex.ai/en/stable/understanding/deployment/deployment/
         ./understanding/evaluating/cost_analysis/root.html: understanding/evaluating/cost_analysis/index.md
         ./understanding/evaluating/cost_analysis/usage_pattern.html: https://docs.llamaindex.ai/en/stable/understanding/evaluating/cost_analysis/usage_pattern/

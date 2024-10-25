@@ -20,7 +20,7 @@ class GigaChatEmbedding(BaseEmbedding):
 
     Example:
         .. code-block:: python
-            from langchain_community.embeddings.gigachat import GigaChatEmbeddings
+            from llama_index.embeddings.gigachat import GigaChatEmbeddings
 
             embeddings = GigaChatEmbeddings(
                 credentials=..., scope=..., verify_ssl_certs=False

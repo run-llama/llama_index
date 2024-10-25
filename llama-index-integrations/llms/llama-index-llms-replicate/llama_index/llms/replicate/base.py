@@ -144,11 +144,12 @@ class Replicate(CustomLLM):
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
         input_dict = self._get_input_dict(prompt, **kwargs)
-        response_iter = replicate.run(self.model, input=input_dict)
+        response_iter = replicate.stream(self.model, input=input_dict)
 
         def gen() -> CompletionResponseGen:
             text = ""
-            for delta in response_iter:
+            for server_event in response_iter:
+                delta = str(server_event)
                 text += delta
                 yield CompletionResponse(
                     delta=delta,
