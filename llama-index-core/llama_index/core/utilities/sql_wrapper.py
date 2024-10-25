@@ -1,4 +1,5 @@
 """SQL wrapper around SQLDatabase in langchain."""
+
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy import MetaData, create_engine, insert, inspect, text
@@ -225,7 +226,7 @@ class SQLDatabase:
                 cursor = connection.execute(text(command))
             except (ProgrammingError, OperationalError) as exc:
                 raise NotImplementedError(
-                    f"Statement {command!r} is invalid SQL."
+                    f"Statement {command!r} is invalid SQL.\nError: {exc.orig}"
                 ) from exc
             if cursor.returns_rows:
                 result = cursor.fetchall()
