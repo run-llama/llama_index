@@ -44,6 +44,8 @@ BEDROCK_MODELS = {
     "mistral.mistral-large-2402-v1:0": 32000,
     "mistral.mistral-small-2402-v1:0": 32000,
     "mistral.mistral-large-2407-v1:0": 32000,
+    "ai21.jamba-1-5-mini-v1:0": 256000,
+    "ai21.jamba-1-5-large-v1:0": 256000,
 }
 
 BEDROCK_FUNCTION_CALLING_MODELS = (
