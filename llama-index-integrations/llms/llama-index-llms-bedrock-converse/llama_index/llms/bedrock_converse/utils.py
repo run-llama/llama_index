@@ -28,6 +28,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "anthropic.claude-3-opus-20240229-v1:0": 200000,
     "anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
+    "anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
     "cohere.command-text-v14": 4096,
@@ -42,6 +43,9 @@ BEDROCK_MODELS = {
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
     "mistral.mistral-large-2402-v1:0": 32000,
     "mistral.mistral-small-2402-v1:0": 32000,
+    "mistral.mistral-large-2407-v1:0": 32000,
+    "ai21.jamba-1-5-mini-v1:0": 256000,
+    "ai21.jamba-1-5-large-v1:0": 256000,
 }
 
 BEDROCK_FUNCTION_CALLING_MODELS = (
@@ -49,6 +53,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
     "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "anthropic.claude-3-5-sonnet-20241022-v2:0",
     "cohere.command-r-v1:0",
     "cohere.command-r-plus-v1:0",
     "mistral.mistral-large-2402-v1:0",
