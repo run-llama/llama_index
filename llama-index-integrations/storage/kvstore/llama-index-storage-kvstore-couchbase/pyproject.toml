@@ -13,6 +13,9 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 contains_example = false
 import_path = "llama_index.storage.kvstore.couchbase"
 
+[tool.llamahub.class_authors]
+CouchbaseKVStore = "llama-index"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
