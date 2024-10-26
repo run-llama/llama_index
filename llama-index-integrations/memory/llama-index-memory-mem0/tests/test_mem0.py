@@ -1,7 +1,10 @@
-import pytest
 from unittest.mock import patch, MagicMock
 from llama_index.memory.mem0.base import Mem0Memory, Mem0Context
 from llama_index.core.memory.chat_memory_buffer import ChatMessage, MessageRole
+from llama_index.memory.mem0.utils import (
+    convert_chat_history_to_dict,
+    convert_messages_to_string,
+)
 
 
 def test_mem0_memory_from_client():
@@ -13,6 +16,7 @@ def test_mem0_memory_from_client():
     host = "test_host"
     organization = "test_org"
     project = "test_project"
+    search_msg_limit = 10  # Add this line
 
     # Patch MemoryClient
     with patch("llama_index.memory.mem0.base.MemoryClient") as MockMemoryClient:
@@ -26,6 +30,7 @@ def test_mem0_memory_from_client():
             host=host,
             organization=organization,
             project=project,
+            search_msg_limit=search_msg_limit,  # Add this line
         )
 
         # Assert that MemoryClient was called with the correct arguments
@@ -43,18 +48,8 @@ def test_mem0_memory_from_client():
         # Assert that the client was set correctly
         assert mem0_memory._client == mock_client
 
-        # Test that the client methods can be called
-        mem0_memory.put(
-            message=ChatMessage.from_str(content="test message", role=MessageRole.USER)
-        )
-        mock_client.add.assert_called_once_with(
-            messages="test message", user_id="test_user"
-        )
-
-        mem0_memory.get(input="test query")
-        mock_client.search.assert_called_once_with(
-            query="test query", user_id="test_user"
-        )
+        # Assert that the search_msg_limit was set correctly
+        assert mem0_memory.search_msg_limit == search_msg_limit  # Add this line
 
 
 def test_mem0_memory_from_config():
@@ -64,16 +59,26 @@ def test_mem0_memory_from_config():
     # Mock config
     config = {"test": "test"}
 
+    # Set search_msg_limit
+    search_msg_limit = 15  # Add this line
+
     # Patch Memory
     with patch("llama_index.memory.mem0.base.Memory") as MockMemory:
         mock_client = MagicMock()
         MockMemory.from_config.return_value = mock_client
 
         # Call from_config method
-        mem0_memory = Mem0Memory.from_config(context=context, config=config)
+        mem0_memory = Mem0Memory.from_config(
+            context=context,
+            config=config,
+            search_msg_limit=search_msg_limit,  # Add this line
+        )
 
         # Assert that the client was set correctly
         assert mem0_memory._client == mock_client
+
+        # Assert that the search_msg_limit was set correctly
+        assert mem0_memory.search_msg_limit == search_msg_limit  # Add this line
 
 
 def test_mem0_memory_set():
@@ -112,9 +117,11 @@ def test_mem0_memory_set():
         mem0_memory.set(messages)
 
         # Assert that add was called only for user messages
-        assert mock_client.add.call_count == 2
-        mock_client.add.assert_any_call(messages="User message 1", user_id="test_user")
-        mock_client.add.assert_any_call(messages="User message 2", user_id="test_user")
+        assert mock_client.add.call_count == 1
+        expected_messages = convert_chat_history_to_dict(messages)
+        mock_client.add.assert_called_once_with(
+            messages=expected_messages, user_id="test_user"
+        )
 
         # Assert that the chat_history was set with all messages
         assert mem0_memory.chat_history.get_all() == messages
@@ -131,9 +138,10 @@ def test_mem0_memory_set():
         # Call the set method again
         mem0_memory.set(messages + new_messages)
 
-        # Assert that add was called only for the new user message
+        # Assert that add was called only for the new messages
+        expected_new_messages = convert_chat_history_to_dict(new_messages)
         mock_client.add.assert_called_once_with(
-            messages="User message 3", user_id="test_user"
+            messages=expected_new_messages, user_id="test_user"
         )
 
         # Assert that the chat_history was updated with all messages
@@ -189,8 +197,11 @@ def test_mem0_memory_get():
         result = mem0_memory.get(input="How are you?")
 
         # Assert that search was called with correct arguments
+        expected_query = convert_messages_to_string(
+            dummy_messages, "How are you?", limit=mem0_memory.search_msg_limit
+        )
         mock_client.search.assert_called_once_with(
-            query="How are you?", user_id="test_user"
+            query=expected_query, user_id="test_user"
         )
 
         # Assert that the result contains the correct number of messages
@@ -211,16 +222,52 @@ def test_mem0_memory_get():
         result_no_input = mem0_memory.get()
 
         # Assert that search was called with the last user message
+        expected_query_no_input = convert_messages_to_string(
+            dummy_messages, limit=mem0_memory.search_msg_limit
+        )
         mock_client.search.assert_called_once_with(
-            query="How are you?", user_id="test_user"
+            query=expected_query_no_input, user_id="test_user"
         )
 
         # Assert that the results are the same as before
         assert result_no_input == result
 
-        # Test get method with empty chat history
-        mem0_memory.chat_history.reset()
-        with pytest.raises(
-            ValueError, match="No input and user message found in chat history."
-        ):
-            mem0_memory.get()
+
+def test_mem0_memory_put():
+    # Mock context
+    context = {"user_id": "test_user"}
+
+    # Mock arguments for MemoryClient
+    api_key = "test_api_key"
+    host = "test_host"
+    organization = "test_org"
+    project = "test_project"
+
+    # Patch MemoryClient
+    with patch("llama_index.memory.mem0.base.MemoryClient") as MockMemoryClient:
+        mock_client = MagicMock()
+        MockMemoryClient.return_value = mock_client
+
+        # Create Mem0Memory instance
+        mem0_memory = Mem0Memory.from_client(
+            context=context,
+            api_key=api_key,
+            host=host,
+            organization=organization,
+            project=project,
+        )
+
+        # Create a test message
+        test_message = ChatMessage(role=MessageRole.USER, content="Hello, world!")
+
+        # Call the put method
+        mem0_memory.put(test_message)
+
+        # Assert that the message was added to chat_history
+        assert mem0_memory.chat_history.get_all() == [test_message]
+
+        # Assert that add was called with the correct arguments
+        expected_messages = convert_chat_history_to_dict([test_message])
+        mock_client.add.assert_called_once_with(
+            messages=expected_messages, user_id="test_user"
+        )

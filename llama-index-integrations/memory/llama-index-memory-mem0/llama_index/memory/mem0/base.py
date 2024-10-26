@@ -1,7 +1,11 @@
 from typing import Dict, List, Optional, Union, Any
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
-from llama_index.memory.mem0.utils import convert_memory_to_system_message
+from llama_index.memory.mem0.utils import (
+    convert_memory_to_system_message,
+    convert_chat_history_to_dict,
+    convert_messages_to_string,
+)
 from mem0 import MemoryClient, Memory
 from pydantic import (
     BaseModel,
@@ -70,6 +74,10 @@ class Mem0Memory(BaseMem0):
         description="Primary memory source for chat agent."
     )
     _context: Optional[Mem0Context] = PrivateAttr(default=None)
+    search_msg_limit: int = Field(
+        default=5,
+        description="Limit of chat history messages to use for context in search API",
+    )
 
     def __init__(self, **data) -> None:
         super().__init__(**data)
@@ -94,6 +102,7 @@ class Mem0Memory(BaseMem0):
         host: Optional[str] = None,
         organization: Optional[str] = None,
         project: Optional[str] = None,
+        search_msg_limit: int = 5,
         **kwargs: Any,
     ):
         if kwargs:
@@ -109,13 +118,19 @@ class Mem0Memory(BaseMem0):
         client = MemoryClient(
             api_key=api_key, host=host, organization=organization, project=project
         )
-        return cls(chat_history=chat_history, context=context, client=client)
+        return cls(
+            chat_history=chat_history,
+            context=context,
+            client=client,
+            search_msg_limit=search_msg_limit,
+        )
 
     @classmethod
     def from_config(
         cls,
         context: Dict[str, Any],
         config: Dict[str, Any],
+        search_msg_limit: int = 5,
         **kwargs: Any,
     ):
         if kwargs:
@@ -129,20 +144,17 @@ class Mem0Memory(BaseMem0):
             raise ValidationError(f"Context validation error: {e}")
 
         client = Memory.from_config(config_dict=config)
-        return cls(chat_history=chat_history, context=context, client=client)
+        return cls(
+            chat_history=chat_history,
+            context=context,
+            client=client,
+            search_msg_limit=search_msg_limit,
+        )
 
     def get(self, input: Optional[str] = None, **kwargs: Any) -> List[ChatMessage]:
         """Get chat history. With memory system message."""
         messages = self.chat_history.get(input=input, **kwargs)
-        if input is None:
-            # Iterate through messages from last to first
-            for message in reversed(messages):
-                if message.role == MessageRole.USER:
-                    _recent_user_message = message
-                    break
-            else:
-                raise ValueError("No input and user message found in chat history.")
-            input = str(_recent_user_message.content)
+        input = convert_messages_to_string(messages, input, limit=self.search_msg_limit)
 
         # TODO: Add support for more kwargs, for api and oss
         search_results = self.search(query=input, **self._context.get_context())
@@ -164,22 +176,23 @@ class Mem0Memory(BaseMem0):
         """Returns all chat history."""
         return self.chat_history.get_all()
 
-    def _add_user_msg_to_memory(self, message: ChatMessage) -> None:
-        """Only add new user message to client memory."""
-        if message.role == MessageRole.USER:
-            self.add(messages=str(message.content), **self._context.get_context())
+    def _add_msgs_to_client_memory(self, messages: List[ChatMessage]) -> None:
+        """Add new user and assistant messages to client memory."""
+        self.add(
+            messages=convert_chat_history_to_dict(messages),
+            **self._context.get_context(),
+        )
 
     def put(self, message: ChatMessage) -> None:
-        """Add message to chat history. Add user message to client memory."""
-        self._add_user_msg_to_memory(message)
+        """Add message to chat history and client memory."""
+        self._add_msgs_to_client_memory([message])
         self.chat_history.put(message)
 
     def set(self, messages: List[ChatMessage]) -> None:
-        """Set chat history. Add new user message to client memory."""
+        """Set chat history and add new messages to client memory."""
         initial_chat_len = len(self.chat_history.get_all())
         # Insert only new chat messages
-        for message in messages[initial_chat_len:]:
-            self._add_user_msg_to_memory(message)
+        self._add_msgs_to_client_memory(messages[initial_chat_len:])
         self.chat_history.set(messages)
 
     def reset(self) -> None:

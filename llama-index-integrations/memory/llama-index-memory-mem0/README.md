@@ -27,8 +27,21 @@ context = {"user_id": "user_1"}
 memory = Mem0Memory.from_client(
     context=context,
     api_key="<your-mem0-api-key>",
+    search_msg_limit=4,  # optional, default is 5
 )
 ```
+
+Mem0 Context is used to identify the user, agent or the conversation in the Mem0. It is required to be passed in the at least one of the fields in the `Mem0Memory` constructor. It can be any of the following:
+
+```python
+context = {
+    "user_id": "user_1",
+    "agent_id": "agent_1",
+    "run_id": "run_1",
+}
+```
+
+`search_msg_limit` is optional, default is 5. It is the number of messages from the chat history to be used for memory retrieval from Mem0. More number of messages will result in more context being used for retrieval but will also increase the retrieval time and might result in some unwanted results.
 
 ## Setup with Mem0 OSS
 
@@ -69,19 +82,8 @@ config = {
 memory = Mem0Memory.from_config(
     context=context,
     config=config,
+    search_msg_limit=4,  # optional, default is 5
 )
-```
-
-## Mem0 Context
-
-Mem0 Context is used to identify the user, agent or the conversation in the Mem0. It is required to be passed in the at least one of the fields in the `Mem0Memory` constructor.
-
-```python
-context = {
-    "user_id": "user_1",
-    "agent_id": "agent_1",
-    "run_id": "run_1",
-}
 ```
 
 ## Basic Usage

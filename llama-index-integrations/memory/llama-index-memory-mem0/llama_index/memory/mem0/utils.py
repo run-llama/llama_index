@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 DEFAULT_INTRO_PREFERENCES = "Below are a set of relevant preferences retrieved from potentially several memory sources:"
@@ -30,3 +30,29 @@ def format_memory_json(memory_json: Dict[str, Any]) -> List[str]:
         categories_str = ", ".join(categories)
         return f"[{categories_str}] : {memory}"
     return f"{memory}"
+
+
+def convert_chat_history_to_dict(messages: List[ChatMessage]) -> List[Dict[str, str]]:
+    chat_history_dict = []
+    for message in messages:
+        if (
+            message.role in [MessageRole.USER, MessageRole.ASSISTANT]
+            and message.content
+        ):
+            chat_history_dict.append(
+                {"role": message.role.value, "content": message.content}
+            )
+    return chat_history_dict
+
+
+def convert_messages_to_string(
+    messages: List[ChatMessage], input: Optional[str] = None, limit: int = 5
+) -> str:
+    recent_messages = messages[-limit:]
+    formatted_messages = [f"{msg.role.value}: {msg.content}" for msg in recent_messages]
+    result = "\n".join(formatted_messages)
+
+    if input:
+        result += f"\nuser: {input}"
+
+    return result
