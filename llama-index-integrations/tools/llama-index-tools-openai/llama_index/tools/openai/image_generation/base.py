@@ -12,16 +12,16 @@ DEFAULT_SIZE = "1024x1024"
 
 valid_sizes = {
     "dall-e-2": ["256x256", "512x512", "1024x1024"],
-    "dall-e-3": ["1024x1024", "1792x1024", "1024x1792"]
+    "dall-e-3": ["1024x1024", "1792x1024", "1024x1792"],
 }
 
 
 def get_extension(content: str):
     map = {
-        "/" : "jpg",
-        "i" : "png",
-        "R" : "gif",
-        "U" : "webp",
+        "/": "jpg",
+        "i": "png",
+        "R": "gif",
+        "U": "webp",
     }
     return map.get(content[0], "jpg")
 
@@ -31,7 +31,9 @@ class OpenAIImageGenerationToolSpec(BaseToolSpec):
 
     spec_functions = ["image_generation"]
 
-    def __init__(self, api_key: Optional[str] = None, cache_dir: Optional[str] = None) -> None:
+    def __init__(
+        self, api_key: Optional[str] = None, cache_dir: Optional[str] = None
+    ) -> None:
         try:
             from openai import OpenAI
         except ImportError:
@@ -89,7 +91,7 @@ class OpenAIImageGenerationToolSpec(BaseToolSpec):
             text: The text to generate an image from.
 
             model: The model to use for image generation. Defaults to `dall-e-3`.
-                Must be one of `dall-e-2` or `dall-e-3`. 
+                Must be one of `dall-e-2` or `dall-e-3`.
 
             num_images: The number of images to generate. Defaults to 1.
                 Must be between 1 and 10. For `dall-e-3`, only `n=1` is supported.
@@ -108,15 +110,14 @@ class OpenAIImageGenerationToolSpec(BaseToolSpec):
                 Vivid causes the model to lean towards generating hyper-real and dramatic images.
                 Natural causes the model to produce more natural, less hyper-real looking images.
                 This param is only supported for `dall-e-3`.
-                
+
             timeout: Override the client-level default timeout for this request, in seconds. Defaults to `None`.
-            
+
             download: If `True`, the image will be downloaded to the cache directory. Defaults to `True`.
         """
-        
         if size not in valid_sizes[model]:
             raise Exception(f"Invalid size for {model}: {size}")
-        
+
         response = self.client.images.generate(
             prompt=text,
             n=num_images,
@@ -132,6 +133,6 @@ class OpenAIImageGenerationToolSpec(BaseToolSpec):
             ext = get_extension(image_bytes)
             filename = f"{time.time()}.{ext}"
 
-            return self.save_base64_image(image_bytes, filename), 
-        
+            return (self.save_base64_image(image_bytes, filename),)
+
         return response.data[0].url
