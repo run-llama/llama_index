@@ -4,12 +4,12 @@ from typing import Any, List, Optional
 from azure.core.credentials import AzureNamedKeyCredential, AzureSasCredential
 from azure.core.exceptions import ResourceNotFoundError
 from azure.data.tables import (
-    TableClient,
     TableServiceClient,
     TransactionOperation,
     UpdateMode,
 )
 from azure.data.tables.aio import TableServiceClient as AsyncTableServiceClient
+from azure.data.tables.aio import TableClient as AsyncTableClient
 
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -417,7 +417,7 @@ class AzureChatStore(BaseChatStore):
         }
 
     async def _get_or_default_metadata(
-        self, metadata_client: TableClient, key: str
+        self, metadata_client: AsyncTableClient, key: str
     ) -> dict:
         """
         Retrieve metadata if it exists, otherwise return default metadata
