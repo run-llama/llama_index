@@ -30,10 +30,9 @@ from llama_index.core.vector_stores.types import (
 
 logger = logging.getLogger()
 
-DEFAULT_HNSWLIB_PERSIST_FNAME = DEFAULT_PERSIST_FNAME.replace(".json", "bin")
 DEFAULT_PERSIST_PATH = os.path.join(
     DEFAULT_PERSIST_DIR,
-    f"{DEFAULT_VECTOR_STORE}{NAMESPACE_SEP}{DEFAULT_HNSWLIB_PERSIST_FNAME}",
+    f"{DEFAULT_VECTOR_STORE}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}",
 )
 
 IMPORT_ERROR_MSG = """
@@ -48,7 +47,8 @@ class HnswlibVectorStore(BasePydanticVectorStore):
 
     Embeddings are stored within a Hnswlib index.
 
-    During query time, the index uses Faiss to query for the top
+    During query time, the index uses Hierarchical Navigable Small World
+    approximate nearest neighbors algorithm to query for the top
     k embeddings, and returns the corresponding indices.
 
     Args:
@@ -63,31 +63,54 @@ class HnswlibVectorStore(BasePydanticVectorStore):
 
         # create a Hnswlib index
         dim = 768  # dimension
-        space = 'cosine # distance function
-        hnswlib_index = hnswlib_index(space, dim)
-        hnswlib_index.init_index(max_elements)
+        space = 'cosine' # distance function
+        max_elements = 1000 # maximum number of elements that Hnswlib.Index can store. NOTE: Hnswlib.Index is resizeable
 
+        hnswlib_index = hnswlib_index(space, dim)
+        hnswlib_index.init_index(max_elements, **kwargs)
         vector_store = HnswlibVectorStore(hnswlib_index=hnswlib_index)
+
+        # or
+
+        vector_store = HnswlibVectorStore.from_params(space, dim, max_elements, **kwargs)
+
         ```
     """
 
     stores_text: bool = False
     _hnswlib_index = PrivateAttr()
 
-    def __init__(
-        self,
-        space: Literal["ip", "cosine", "l2"],
-        dimension: int,
-        max_elements: int,
-    ) -> None:
+    def __init__(self, hnswlib_index: Any) -> None:
         try:
             import hnswlib
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
         super().__init__()
-        self._hnswlib_index = hnswlib.Index(space, dimension)
-        self._hnswlib_index.init_index(max_elements)
+        self._hnswlib_index = cast(hnswlib.Index, hnswlib_index)
+
+    @classmethod
+    def from_params(
+        cls,
+        space: Literal["ip", "cosine", "l2"],
+        dimension: int,
+        max_elements: int,
+        ef: Optional[int] = None,
+        **kwargs,
+    ) -> "HnswlibVectorStore":
+        """To avoid creating the `Hnswlib.Index` Yourself You can just specify it's params.
+        For more details see [Hnswlib documentation](https://github.com/nmslib/hnswlib?tab=readme-ov-file#api-description).
+        """
+        try:
+            import hnswlib
+        except ImportError:
+            raise ImportError(IMPORT_ERROR_MSG)
+
+        hnswlib_index = hnswlib.Index(space, dimension)
+        hnswlib_index.init_index(max_elements, **kwargs)
+        if ef is not None:
+            hnswlib_index.set_ef(ef)
+        return cls(hnswlib_index)
 
     @classmethod
     def from_persist_dir(
@@ -95,7 +118,9 @@ class HnswlibVectorStore(BasePydanticVectorStore):
         persist_dir: str = DEFAULT_PERSIST_DIR,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "HnswlibVectorStore":
-        persist_path = os.path.join(persist_dir, DEFAULT_HNSWLIB_PERSIST_FNAME)
+        persist_path = os.path.join(
+            persist_dir, f"{DEFAULT_VECTOR_STORE}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}"
+        )
         if fs and not isinstance(fs, LocalFileSystem):
             raise NotImplementedError("Hnswlib only supports local storage for now.")
         return cls.from_persist_path(persist_path=persist_path, fs=None)
@@ -206,11 +231,13 @@ class HnswlibVectorStore(BasePydanticVectorStore):
         Args:
             query_embedding (List[float]): query embedding
             similarity_top_k (int): top k most similar nodes
+            ef (int): higher ef leads to better accuracy, but slower search
 
         """
         if query.filters is not None:
             raise ValueError("Metadata filters not implemented for Hnswlib yet.")
-
+        if "ef" in kwargs:
+            self._hnswlib_index.set_ef(kwargs["ef"])
         query_embedding = cast(List[float], query.query_embedding)
         query_embedding_np = np.array(query_embedding, dtype="float32")[np.newaxis, :]
         indices, distances = self._hnswlib_index.knn_query(
