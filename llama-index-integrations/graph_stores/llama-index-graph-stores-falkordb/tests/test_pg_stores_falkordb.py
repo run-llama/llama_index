@@ -2,6 +2,7 @@ import os
 import time
 import unittest
 import docker
+from docker.errors import NotFound
 
 from llama_index.graph_stores.falkordb import FalkorDBPropertyGraphStore
 from llama_index.core.graph_stores.types import Relation, EntityNode
@@ -19,6 +20,14 @@ class TestFalkorDBPropertyGraphStore(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Setup method called once for the entire test class."""
+        # Stop and remove the container if it already exists
+        try:
+            existing_container = docker_client.containers.get("falkordb_test_instance")
+            existing_container.stop()
+            existing_container.remove()
+        except NotFound:
+            pass  # If no container exists, we can proceed
+
         # Start FalkorDB container
         cls.container = docker_client.containers.run(
             "falkordb/falkordb:latest",
