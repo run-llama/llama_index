@@ -15,7 +15,9 @@ class TestFalkorDBPropertyGraphStore(unittest.TestCase):
         """Setup method called once for the entire test class."""
         # Attempt to stop and remove the container if it already exists
         try:
-            existing_container = docker_client.containers.get("falkordb_test_instance")
+            existing_container = docker_client.containers.get(
+                "falkordb_test_instance_pg"
+            )
             existing_container.stop()
             existing_container.remove()
         except docker.errors.NotFound:
@@ -28,7 +30,7 @@ class TestFalkorDBPropertyGraphStore(unittest.TestCase):
             cls.container = docker_client.containers.run(
                 "falkordb/falkordb:latest",
                 detach=True,
-                name="falkordb_test_instance",
+                name="falkordb_test_instance_pg",
                 ports={"6379/tcp": 6379},
             )
             time.sleep(2)  # Allow time for the container to initialize
