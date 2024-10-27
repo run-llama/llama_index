@@ -5,7 +5,7 @@ import unittest
 from llama_index.graph_stores.falkordb.base import FalkorDBGraphStore
 
 # Set up FalkorDB URL
-falkordb_url = os.getenv("FALKORDB_TEST_URL", "redis://localhost:6379")
+falkordb_url = os.environ.get("FALKORDB_TEST_URL")
 
 # Set up Docker client
 docker_client = docker.from_env()
@@ -16,22 +16,28 @@ class TestFalkorDBGraphStore(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Setup method called once for the entire test class."""
-        # Stop and remove the container if it already exists
+        # Attempt to stop and remove the container if it already exists
         try:
             existing_container = docker_client.containers.get("falkordb_test_instance")
             existing_container.stop()
             existing_container.remove()
         except docker.errors.NotFound:
             pass  # If no container exists, we can proceed
+        except Exception as e:
+            print(f"Error while stopping/removing existing container: {e}")
 
         # Start FalkorDB container
-        cls.container = docker_client.containers.run(
-            "falkordb/falkordb:latest",
-            detach=True,
-            name="falkordb_test_instance",
-            ports={"6379/tcp": 6379},
-        )
-        time.sleep(2)  # Allow time for the container to initialize
+        try:
+            cls.container = docker_client.containers.run(
+                "falkordb/falkordb:latest",
+                detach=True,
+                name="falkordb_test_instance",
+                ports={"6379/tcp": 6379},
+            )
+            time.sleep(2)  # Allow time for the container to initialize
+        except Exception as e:
+            print(f"Error starting FalkorDB container: {e}")
+            raise
 
         # Set up the FalkorDB store and clear database
         cls.graph_store = FalkorDBGraphStore(url=falkordb_url)
@@ -42,8 +48,11 @@ class TestFalkorDBGraphStore(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """Teardown method called once after all tests are done."""
-        cls.container.stop()
-        cls.container.remove()
+        try:
+            cls.container.stop()
+            cls.container.remove()
+        except Exception as e:
+            print(f"Error stopping/removing container: {e}")
 
     def test_upsert_triplet(self):
         # Call the method you want to test
