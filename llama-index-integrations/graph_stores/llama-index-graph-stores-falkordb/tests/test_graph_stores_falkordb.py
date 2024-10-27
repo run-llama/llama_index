@@ -36,16 +36,15 @@ class TestFalkorDBGraphStore(unittest.TestCase):
         except Exception as e:
             print(f"Error stopping/removing container: {e}")
 
-    def test_upsert_triplet(self):
-        # Call the method you want to test
+    def test_base_graph(self):
         self.graph_store.upsert_triplet("node1", "related_to", "node2")
 
         # Check if the data has been inserted correctly
-        result = self.graph_store.get("node1")  # Adjust the method to retrieve data
+        result = self.graph_store.get("node1")
         expected_result = [
             "RELATED_TO",
             "node2",
-        ]  # Adjust this based on what you expect
+        ]  # Expected data
         self.assertIn(expected_result, result)
 
         result = self.graph_store.get_rel_map(["node1"], 1)
@@ -53,8 +52,8 @@ class TestFalkorDBGraphStore(unittest.TestCase):
 
         self.graph_store.delete("node1", "related_to", "node2")
 
-        result = self.graph_store.get("node1")  # Adjust the method to retrieve data
-        expected_result = []  # Adjust this based on what you expect
+        result = self.graph_store.get("node1")
+        expected_result = []  # Expected data
         self.assertEqual(expected_result, result)
 
         self.graph_store.switch_graph("new_graph")

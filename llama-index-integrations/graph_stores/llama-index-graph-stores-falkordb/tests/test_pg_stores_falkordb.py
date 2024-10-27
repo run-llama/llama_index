@@ -39,7 +39,7 @@ class TestFalkorDBPropertyGraphStore(unittest.TestCase):
         except Exception as e:
             print(f"Error stopping/removing container: {e}")
 
-    def test_upsert_triplet(self):
+    def test_pg_graph(self):
         # Create two entity nodes
         entity1 = EntityNode(label="PERSON", name="Logan", properties={"age": 28})
         entity2 = EntityNode(label="ORGANIZATION", name="LlamaIndex")
