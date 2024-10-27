@@ -13,18 +13,6 @@ class TestFalkorDBPropertyGraphStore(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Setup method called once for the entire test class."""
-        # Attempt to stop and remove the container if it already exists
-        try:
-            existing_container = docker_client.containers.get(
-                "falkordb_test_instance_pg"
-            )
-            existing_container.stop()
-            existing_container.remove()
-        except docker.errors.NotFound:
-            pass  # If no container exists, we can proceed
-        except Exception as e:
-            print(f"Error while stopping/removing existing container: {e}")
-
         # Start FalkorDB container
         try:
             cls.container = docker_client.containers.run(
