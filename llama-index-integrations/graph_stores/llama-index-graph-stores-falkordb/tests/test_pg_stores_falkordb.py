@@ -31,7 +31,7 @@ class TestFalkorDBPropertyGraphStore(unittest.TestCase):
                 "falkordb/falkordb:latest",
                 detach=True,
                 name="falkordb_test_instance_pg",
-                ports={"6379/tcp": 6379},
+                ports={"6379/tcp": 6380},
             )
             time.sleep(2)  # Allow time for the container to initialize
         except Exception as e:
@@ -39,7 +39,7 @@ class TestFalkorDBPropertyGraphStore(unittest.TestCase):
             raise
 
         # Set up the property graph store and clear database
-        cls.pg_store = FalkorDBPropertyGraphStore(url="redis://localhost:6379")
+        cls.pg_store = FalkorDBPropertyGraphStore(url="redis://localhost:6380")
         cls.pg_store.structured_query("MATCH (n) DETACH DELETE n")  # Clear the database
 
     @classmethod
