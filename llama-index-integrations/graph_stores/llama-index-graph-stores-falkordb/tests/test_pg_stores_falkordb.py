@@ -1,20 +1,14 @@
-import os
 import time
 import unittest
 import docker
-
 from llama_index.graph_stores.falkordb import FalkorDBPropertyGraphStore
 from llama_index.core.graph_stores.types import Relation, EntityNode
 from llama_index.core.schema import TextNode
-
-# Set up FalkorDB URL
-falkordb_url = os.getenv("FALKORDB_TEST_URL", "redis://localhost:6379")
 
 # Set up Docker client
 docker_client = docker.from_env()
 
 
-@unittest.skipIf(falkordb_url is None, "No FalkorDB URL provided")
 class TestFalkorDBPropertyGraphStore(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -43,7 +37,7 @@ class TestFalkorDBPropertyGraphStore(unittest.TestCase):
             raise
 
         # Set up the property graph store and clear database
-        cls.pg_store = FalkorDBPropertyGraphStore(url=falkordb_url)
+        cls.pg_store = FalkorDBPropertyGraphStore(url="redis://localhost:6379")
         cls.pg_store.structured_query("MATCH (n) DETACH DELETE n")  # Clear the database
 
     @classmethod

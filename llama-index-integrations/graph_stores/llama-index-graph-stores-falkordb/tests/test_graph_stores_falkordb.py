@@ -1,17 +1,12 @@
-import os
 import time
 import docker
 import unittest
 from llama_index.graph_stores.falkordb.base import FalkorDBGraphStore
 
-# Set up FalkorDB URL
-falkordb_url = os.environ.get("FALKORDB_TEST_URL")
-
 # Set up Docker client
 docker_client = docker.from_env()
 
 
-@unittest.skipIf(falkordb_url is None, "No FalkorDB URL provided")
 class TestFalkorDBGraphStore(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -40,7 +35,7 @@ class TestFalkorDBGraphStore(unittest.TestCase):
             raise
 
         # Set up the FalkorDB store and clear database
-        cls.graph_store = FalkorDBGraphStore(url=falkordb_url)
+        cls.graph_store = FalkorDBGraphStore(url="redis://localhost:6379")
         cls.graph_store.structured_query(
             "MATCH (n) DETACH DELETE n"
         )  # Clear the database
