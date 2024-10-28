@@ -543,9 +543,9 @@ class BedrockConverse(FunctionCallingLLM):
         # convert Llama Index tools to AWS Bedrock Converse tools
         tool_config = tools_to_converse_tools(tools)
         if tool_choice:
-          # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
-          # e.g. { "auto": {} }
-          tool_config["toolChoice"] = tool_choice
+            # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
+            # e.g. { "auto": {} }
+            tool_config["toolChoice"] = tool_choice
 
         return {
             "messages": chat_history,
