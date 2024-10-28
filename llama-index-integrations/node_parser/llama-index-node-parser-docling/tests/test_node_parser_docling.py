@@ -7,15 +7,13 @@ from llama_index.core.schema import BaseNode
 
 in_json_str = json.dumps(
     {
-        "id_": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3",
+        "id_": "123",
         "embedding": None,
-        "metadata": {
-            "dl_doc_hash": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3"
-        },
-        "excluded_embed_metadata_keys": ["dl_doc_hash"],
-        "excluded_llm_metadata_keys": ["dl_doc_hash"],
+        "metadata": {},
+        "excluded_embed_metadata_keys": [],
+        "excluded_llm_metadata_keys": [],
         "relationships": {},
-        "text": '{"_name":"","type":"pdf-document","description":{"title":null,"abstract":null,"authors":null,"affiliations":null,"subjects":null,"keywords":null,"publication_date":null,"languages":null,"license":null,"publishers":null,"url_refs":null,"references":null,"publication":null,"reference_count":null,"citation_count":null,"citation_date":null,"advanced":null,"analytics":null,"logs":[],"collection":null,"acquisition":null},"file-info":{"filename":"","filename-prov":null,"document-hash":"129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3","#-pages":null,"collection-name":null,"description":null,"page-hashes":null},"main-text":[{"text":"A duckling is a young duck in downy plumage[1] or baby duck,[2] but in the food trade a young domestic duck which has just reached adult size and bulk and its meat is still fully tender, is sometimes labelled as a duckling.","type":"paragraph","name":"text","font":null,"prov":[{"bbox":[1.0,2.0,3.0,4.0],"page":1,"span":[0,1],"__ref_s3_data":null}]},{"text":"A male is called a drake and the female is called a duck, or in ornithology a hen.","type":"paragraph","name":"text","font":null,"prov":[{"bbox":[1.0,2.0,3.0,4.0],"page":1,"span":[0,2],"__ref_s3_data":null}]}],"figures":null,"tables":null,"bitmaps":null,"equations":null,"footnotes":null,"page-dimensions":null,"page-footers":null,"page-headers":null,"_s3_data":null,"identifiers":null}',
+        "text": '{"schema_name": "DoclingDocument", "version": "1.0.0", "name": "sample", "origin": {"mimetype": "text/html", "binary_hash": 42, "filename": "sample.html"}, "furniture": {"self_ref": "#/furniture", "children": [], "name": "_root_", "label": "unspecified"}, "body": {"self_ref": "#/body", "children": [{"$ref": "#/texts/0"}, {"$ref": "#/texts/1"}], "name": "_root_", "label": "unspecified"}, "groups": [], "texts": [{"self_ref": "#/texts/0", "parent": {"$ref": "#/body"}, "children": [], "label": "paragraph", "prov": [], "orig": "Some text", "text": "Some text"}, {"self_ref": "#/texts/1", "parent": {"$ref": "#/body"}, "children": [], "label": "paragraph", "prov": [], "orig": "Another paragraph", "text": "Another paragraph"}], "pictures": [], "tables": [], "key_value_items": [], "pages": {}}',
         "mimetype": "text/plain",
         "start_char_idx": None,
         "end_char_idx": None,
@@ -29,85 +27,150 @@ in_json_str = json.dumps(
 out_get_nodes = {
     "root": [
         {
-            "id_": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3_0",
+            "id_": "123_0",
             "embedding": None,
             "metadata": {
-                "dl_doc_hash": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3",
-                "path": "#/main-text/0",
-                "page": 1,
-                "bbox": [1.0, 2.0, 3.0, 4.0],
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {"$ref": "#/body"},
+                        "children": [],
+                        "label": "paragraph",
+                        "prov": [],
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/html",
+                    "binary_hash": 42,
+                    "filename": "sample.html",
+                },
             },
-            "excluded_embed_metadata_keys": ["dl_doc_hash", "path", "page", "bbox"],
-            "excluded_llm_metadata_keys": ["dl_doc_hash", "path", "page", "bbox"],
+            "excluded_embed_metadata_keys": [
+                "schema_name",
+                "version",
+                "doc_items",
+                "origin",
+            ],
+            "excluded_llm_metadata_keys": [
+                "schema_name",
+                "version",
+                "doc_items",
+                "origin",
+            ],
             "relationships": {
                 "1": {
-                    "node_id": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3",
+                    "node_id": "123",
                     "node_type": "4",
-                    "metadata": {
-                        "dl_doc_hash": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3"
-                    },
-                    "hash": "4a59a6b249fa5485206e49ee7a10be02d810e3ca1179b14ce23d5bb83ec33e63",
+                    "metadata": {},
+                    "hash": "95ee9366fededbecc38a68be8c58e87fb3cdf4e7fdfb83dbd00487489b941a4d",
                     "class_name": "RelatedNodeInfo",
                 },
                 "3": {
-                    "node_id": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3_1",
+                    "node_id": "123_1",
                     "node_type": "1",
                     "metadata": {
-                        "path": "#/main-text/1",
-                        "page": 1,
-                        "bbox": [1.0, 2.0, 3.0, 4.0],
+                        "schema_name": "docling_core.transforms.chunker.DocMeta",
+                        "version": "1.0.0",
+                        "doc_items": [
+                            {
+                                "self_ref": "#/texts/1",
+                                "parent": {"$ref": "#/body"},
+                                "children": [],
+                                "label": "paragraph",
+                                "prov": [],
+                            }
+                        ],
+                        "origin": {
+                            "mimetype": "text/html",
+                            "binary_hash": 42,
+                            "filename": "sample.html",
+                        },
                     },
-                    "hash": "fc3edef366333e99ad544bbc0208289b85aacc00c5d8b3b868eae720b11573ef",
+                    "hash": "0a8df027ead9e42831f12f8aa680afe5138436ecd58c32a6289212bc4d0a644a",
                     "class_name": "RelatedNodeInfo",
                 },
             },
-            "text": "A duckling is a young duck in downy plumage[1] or baby duck,[2] but in the food trade a young domestic duck which has just reached adult size and bulk and its meat is still fully tender, is sometimes labelled as a duckling.",
+            "text": "Some text",
             "mimetype": "text/plain",
-            "start_char_idx": 649,
-            "end_char_idx": 872,
+            "start_char_idx": 529,
+            "end_char_idx": 538,
             "text_template": "{metadata_str}\n\n{content}",
             "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
             "class_name": "TextNode",
         },
         {
-            "id_": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3_1",
+            "id_": "123_1",
             "embedding": None,
             "metadata": {
-                "dl_doc_hash": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3",
-                "path": "#/main-text/1",
-                "page": 1,
-                "bbox": [1.0, 2.0, 3.0, 4.0],
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/1",
+                        "parent": {"$ref": "#/body"},
+                        "children": [],
+                        "label": "paragraph",
+                        "prov": [],
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/html",
+                    "binary_hash": 42,
+                    "filename": "sample.html",
+                },
             },
-            "excluded_embed_metadata_keys": ["dl_doc_hash", "path", "page", "bbox"],
-            "excluded_llm_metadata_keys": ["dl_doc_hash", "path", "page", "bbox"],
+            "excluded_embed_metadata_keys": [
+                "schema_name",
+                "version",
+                "doc_items",
+                "origin",
+            ],
+            "excluded_llm_metadata_keys": [
+                "schema_name",
+                "version",
+                "doc_items",
+                "origin",
+            ],
             "relationships": {
                 "1": {
-                    "node_id": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3",
+                    "node_id": "123",
                     "node_type": "4",
-                    "metadata": {
-                        "dl_doc_hash": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3"
-                    },
-                    "hash": "4a59a6b249fa5485206e49ee7a10be02d810e3ca1179b14ce23d5bb83ec33e63",
+                    "metadata": {},
+                    "hash": "95ee9366fededbecc38a68be8c58e87fb3cdf4e7fdfb83dbd00487489b941a4d",
                     "class_name": "RelatedNodeInfo",
                 },
                 "2": {
-                    "node_id": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3_0",
+                    "node_id": "123_0",
                     "node_type": "1",
                     "metadata": {
-                        "dl_doc_hash": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3",
-                        "path": "#/main-text/0",
-                        "page": 1,
-                        "bbox": [1.0, 2.0, 3.0, 4.0],
+                        "schema_name": "docling_core.transforms.chunker.DocMeta",
+                        "version": "1.0.0",
+                        "doc_items": [
+                            {
+                                "self_ref": "#/texts/0",
+                                "parent": {"$ref": "#/body"},
+                                "children": [],
+                                "label": "paragraph",
+                                "prov": [],
+                            }
+                        ],
+                        "origin": {
+                            "mimetype": "text/html",
+                            "binary_hash": 42,
+                            "filename": "sample.html",
+                        },
                     },
-                    "hash": "d9ce62fa272d91859825834c0a9068c4a3033be1d4b6d4e1a830420b420d7fa2",
+                    "hash": "fbfaa945f53349cff0ee00b81a8d3926ca76874fdaf3eac7888f41c5f6a74f0c",
                     "class_name": "RelatedNodeInfo",
                 },
             },
-            "text": "A male is called a drake and the female is called a duck, or in ornithology a hen.",
+            "text": "Another paragraph",
             "mimetype": "text/plain",
-            "start_char_idx": 1008,
-            "end_char_idx": 1090,
+            "start_char_idx": 678,
+            "end_char_idx": 695,
             "text_template": "{metadata_str}\n\n{content}",
             "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
@@ -120,27 +183,48 @@ out_get_nodes = {
 out_parse_nodes = {
     "root": [
         {
-            "id_": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3_0",
+            "id_": "123_0",
             "embedding": None,
             "metadata": {
-                "path": "#/main-text/0",
-                "page": 1,
-                "bbox": [1.0, 2.0, 3.0, 4.0],
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/0",
+                        "parent": {"$ref": "#/body"},
+                        "children": [],
+                        "label": "paragraph",
+                        "prov": [],
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/html",
+                    "binary_hash": 42,
+                    "filename": "sample.html",
+                },
             },
-            "excluded_embed_metadata_keys": ["dl_doc_hash", "path", "page", "bbox"],
-            "excluded_llm_metadata_keys": ["dl_doc_hash", "path", "page", "bbox"],
+            "excluded_embed_metadata_keys": [
+                "schema_name",
+                "version",
+                "doc_items",
+                "origin",
+            ],
+            "excluded_llm_metadata_keys": [
+                "schema_name",
+                "version",
+                "doc_items",
+                "origin",
+            ],
             "relationships": {
                 "1": {
-                    "node_id": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3",
+                    "node_id": "123",
                     "node_type": "4",
-                    "metadata": {
-                        "dl_doc_hash": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3"
-                    },
-                    "hash": "4a59a6b249fa5485206e49ee7a10be02d810e3ca1179b14ce23d5bb83ec33e63",
+                    "metadata": {},
+                    "hash": "95ee9366fededbecc38a68be8c58e87fb3cdf4e7fdfb83dbd00487489b941a4d",
                     "class_name": "RelatedNodeInfo",
                 }
             },
-            "text": "A duckling is a young duck in downy plumage[1] or baby duck,[2] but in the food trade a young domestic duck which has just reached adult size and bulk and its meat is still fully tender, is sometimes labelled as a duckling.",
+            "text": "Some text",
             "mimetype": "text/plain",
             "start_char_idx": None,
             "end_char_idx": None,
@@ -150,27 +234,48 @@ out_parse_nodes = {
             "class_name": "TextNode",
         },
         {
-            "id_": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3_1",
+            "id_": "123_1",
             "embedding": None,
             "metadata": {
-                "path": "#/main-text/1",
-                "page": 1,
-                "bbox": [1.0, 2.0, 3.0, 4.0],
+                "schema_name": "docling_core.transforms.chunker.DocMeta",
+                "version": "1.0.0",
+                "doc_items": [
+                    {
+                        "self_ref": "#/texts/1",
+                        "parent": {"$ref": "#/body"},
+                        "children": [],
+                        "label": "paragraph",
+                        "prov": [],
+                    }
+                ],
+                "origin": {
+                    "mimetype": "text/html",
+                    "binary_hash": 42,
+                    "filename": "sample.html",
+                },
             },
-            "excluded_embed_metadata_keys": ["dl_doc_hash", "path", "page", "bbox"],
-            "excluded_llm_metadata_keys": ["dl_doc_hash", "path", "page", "bbox"],
+            "excluded_embed_metadata_keys": [
+                "schema_name",
+                "version",
+                "doc_items",
+                "origin",
+            ],
+            "excluded_llm_metadata_keys": [
+                "schema_name",
+                "version",
+                "doc_items",
+                "origin",
+            ],
             "relationships": {
                 "1": {
-                    "node_id": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3",
+                    "node_id": "123",
                     "node_type": "4",
-                    "metadata": {
-                        "dl_doc_hash": "129210df929c78e70d74e6f141a46d8326905ce58562f2081819c80c3921d5a3"
-                    },
-                    "hash": "4a59a6b249fa5485206e49ee7a10be02d810e3ca1179b14ce23d5bb83ec33e63",
+                    "metadata": {},
+                    "hash": "95ee9366fededbecc38a68be8c58e87fb3cdf4e7fdfb83dbd00487489b941a4d",
                     "class_name": "RelatedNodeInfo",
                 }
             },
-            "text": "A male is called a drake and the female is called a duck, or in ornithology a hen.",
+            "text": "Another paragraph",
             "mimetype": "text/plain",
             "start_char_idx": None,
             "end_char_idx": None,
@@ -183,9 +288,8 @@ out_parse_nodes = {
 }
 
 
-def _deterministic_id_func(i: int, doc: BaseNode) -> str:
-    doc_dict = json.loads(doc.get_content())
-    return f"{doc_dict['file-info']['document-hash']}_{i}"
+def _deterministic_id_func(i: int, node: BaseNode) -> str:
+    return f"{node.node_id}_{i}"
 
 
 def test_parse_nodes():
