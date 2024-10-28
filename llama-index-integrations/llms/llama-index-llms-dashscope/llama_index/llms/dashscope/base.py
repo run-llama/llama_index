@@ -86,11 +86,11 @@ def call_with_messages(
 
 
 async def acall_with_messages(
-        model: str,
-        messages: List[Dict],
-        parameters: Optional[Dict] = None,
-        api_key: Optional[str] = None,
-        **kwargs: Any,
+    model: str,
+    messages: List[Dict],
+    parameters: Optional[Dict] = None,
+    api_key: Optional[str] = None,
+    **kwargs: Any,
 ) -> Dict:
     try:
         from dashscope import AioGeneration
@@ -325,7 +325,9 @@ class DashScope(CustomLLM):
         return dashscope_response_to_chat_response(response)
 
     @llm_chat_callback()
-    async def achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
         parameters = self._get_default_parameters()
         parameters.update({**kwargs})
         parameters.pop("stream", None)
