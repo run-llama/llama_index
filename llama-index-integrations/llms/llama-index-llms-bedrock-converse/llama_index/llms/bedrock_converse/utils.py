@@ -174,21 +174,10 @@ def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
     """
     converse_tools = []
     for tool in tools:
-        tool_name, tool_description = getattr(tool, "name", None), getattr(
-            tool, "description", None
-        )
-        if not tool_name or not tool_description:
-            # get the tool's name and description from the metadata if they aren't defined
-            tool_name = getattr(tool.metadata, "name", None)
-            if tool_fn := getattr(tool, "fn", None):
-                # get the tool's description from the function's docstring
-                tool_description = tool_fn.__doc__
-                if not tool_name:
-                    tool_name = tool_fn.__name__
-            else:
-                tool_description = getattr(tool.metadata, "description", None)
-            if not tool_name or not tool_description:
-                raise ValueError(f"Tool {tool} does not have a name or description.")
+        tool_name, tool_description = tool.metadata.name, tool.metadata.description
+        if not tool_name:
+            raise ValueError(f"Tool {tool} does not have a name.")
+
         tool_dict = {
             "name": tool_name,
             "description": tool_description,
