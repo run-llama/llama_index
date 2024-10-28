@@ -1,7 +1,6 @@
 from typing import Any, List, Dict, Optional
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.schema import QueryBundle
-from llama_index.core.base.response.schema import Response
 from llama_index.core.callbacks.base import CallbackManager
 
 from llama_index.indices.managed.vectara import VectaraIndex
@@ -139,7 +138,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
         response = self.retriever._retrieve(query_bundle=QueryBundle(query_str=query))
 
         if len(response) == 0:
-            return Response(response="Tool failed to retrieve any documents.")
+            return []
 
         return [
             {
@@ -165,7 +164,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
         response = self.query_engine._query(query_bundle=QueryBundle(query_str=query))
 
         if str(response) == "None":
-            return Response(response="Tool failed to generate a response.")
+            return {}
 
         return {
             "summary": response.response,

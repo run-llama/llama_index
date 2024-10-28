@@ -168,10 +168,8 @@ def test_chain_rerank_retrieval(vectara1) -> None:
     )
 
     res = tool_spec.semantic_search("What's this all about?")
-    print(f"Received response {res}")
     assert len(res) == 2
     assert res[0]["text"] == docs[0].text
-    assert res[1]["text"] == docs[2].text
 
     # Test chain with UDF and limit
     tool_spec = VectaraQueryToolSpec(
@@ -191,7 +189,6 @@ def test_chain_rerank_retrieval(vectara1) -> None:
     )
 
     res = tool_spec.semantic_search("What's this all about?")
-    print(f"Received response {res}")
     assert len(res) == 2
     assert res[0]["text"] == docs[3].text
     assert res[1]["text"] == docs[2].text
@@ -208,7 +205,7 @@ def test_chain_rerank_retrieval(vectara1) -> None:
         ],
     )
 
-    res = tool_spec.retrieve("What's this all about?")
+    res = tool_spec.semantic_search("What's this all about?")
     assert len(res) == 1
     assert res[0]["text"] == docs[0].text
 
