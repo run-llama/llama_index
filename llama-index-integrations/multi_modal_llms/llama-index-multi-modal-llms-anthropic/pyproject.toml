@@ -27,11 +27,11 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-multi-modal-llms-anthropic"
 readme = "README.md"
-version = "0.2.3"
+version = "0.2.4"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-anthropic = ">=0.26.2, <0.29.0"
+anthropic = ">=0.34.2"
 llama-index-core = "^0.11.0"
 filetype = "^1.2.0"
 

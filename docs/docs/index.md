@@ -63,7 +63,7 @@ LlamaIndex imposes no restriction on how you use LLMs. You can use LLMs as auto-
     - Chat engines are conversational interfaces for multi-message, "back and forth" interactions with your data.
 - **Agents** are LLM-powered knowledge workers augmented by tools, from simple helper functions to API integrations and more.
 - **Observability/Evaluation** integrations that enable you to rigorously experiment, evaluate, and monitor your app in a virtuous cycle.
-- **Workflows** allow you to combine all of the above into an event-driven system for flexible than other, graph-based approaches.
+- **Workflows** allow you to combine all of the above into an event-driven system far more flexible than other, graph-based approaches.
 
 ## Use cases
 

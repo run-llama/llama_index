@@ -41,9 +41,18 @@ UDF_RERANKER_ID = 272725722
 class VectaraReranker(str, Enum):
     NONE = "none"
     MMR = "mmr"
-    SLINGSHOT_ALT_NAME = "slingshot"
     SLINGSHOT = "multilingual_reranker_v1"
+    SLINGSHOT_ALT_NAME = "slingshot"
     UDF = "udf"
+    CHAIN = "chain"
+
+
+CHAIN_RERANKER_NAMES = {
+    VectaraReranker.MMR: "Maximum Marginal Relevance Reranker",
+    VectaraReranker.SLINGSHOT: "Rerank_Multilingual_v1",
+    VectaraReranker.SLINGSHOT_ALT_NAME: "Rerank_Multilingual_v1",
+    VectaraReranker.UDF: "User_Defined_Function_Reranker",
+}
 
 
 class VectaraRetriever(BaseRetriever):
@@ -53,8 +62,6 @@ class VectaraRetriever(BaseRetriever):
     Args:
         index (VectaraIndex): the Vectara Index
         similarity_top_k (int): number of top k results to return, defaults to 5.
-        reranker (str): reranker to use: none, mmr, multilingual_reranker_v1, or udf.
-            Note that "multilingual_reranker_v1" is a Vectara Scale feature only.
         lambda_val (float): for hybrid search.
             0 = neural search only.
             1 = keyword match only.
@@ -64,6 +71,8 @@ class VectaraRetriever(BaseRetriever):
         n_sentences_after (int):
             number of sentences after the matched sentence to return in the node
         filter: metadata filter (if specified)
+        reranker (str): reranker to use: none, mmr, slingshot/multilingual_reranker_v1, udf, or chain.
+            Note that "multilingual_reranker_v1" is a Vectara Scale feature only.
         rerank_k: number of results to fetch for Reranking, defaults to 50.
         mmr_diversity_bias: number between 0 and 1 that determines the degree
             of diversity among the results with 0 corresponding
@@ -72,6 +81,10 @@ class VectaraRetriever(BaseRetriever):
         udf_expression: the user defined expression for reranking results.
             See (https://docs.vectara.com/docs/learn/user-defined-function-reranker)
             for more details about syntax for udf reranker expressions.
+        rerank_chain: a list of rerankers to be applied in a sequence and their associated parameters
+            for the chain reranker. Each element should specify the "type" of reranker (mmr, slingshot, udf)
+            and any other parameters (e.g. "limit" or "cutoff" for any type,  "diversity_bias" for mmr, and "user_function" for udf).
+            If using slingshot/multilingual_reranker_v1, it must be first in the list.
         summary_enabled: whether to generate summaries or not. Defaults to False.
         summary_response_lang: language to use for summary generation.
         summary_num_results: number of results to use for summary generation.
@@ -100,6 +113,7 @@ class VectaraRetriever(BaseRetriever):
         rerank_k: int = 50,
         mmr_diversity_bias: float = 0.3,
         udf_expression: str = None,
+        rerank_chain: List[Dict] = None,
         summary_enabled: bool = False,
         summary_response_lang: str = "eng",
         summary_num_results: int = 7,
@@ -140,6 +154,15 @@ class VectaraRetriever(BaseRetriever):
             self._rerank_k = rerank_k
             self._udf_expression = udf_expression
             self._reranker_id = UDF_RERANKER_ID
+        elif (
+            reranker == VectaraReranker.CHAIN
+            and rerank_chain is not None
+            and len(rerank_chain) > 0
+        ):
+            self._rerank = True
+            self._rerank_k = rerank_k
+            self._rerank_chain = rerank_chain
+            self._reranker_id = None
         else:
             self._rerank = False
 
@@ -219,7 +242,7 @@ class VectaraRetriever(BaseRetriever):
                 }
             ]
         }
-        if self._rerank:
+        if self._rerank and self._reranker_id is not None:
             reranking_config = {
                 "rerankerId": self._reranker_id,
             }
@@ -229,6 +252,24 @@ class VectaraRetriever(BaseRetriever):
                 }
             elif self._reranker_id == UDF_RERANKER_ID:
                 reranking_config["userFunction"] = self._udf_expression
+
+            data["query"][0]["rerankingConfig"] = reranking_config
+
+        elif self._rerank:
+            reranking_config = current_config = {}
+
+            for i, rerank_info in enumerate(self._rerank_chain):
+                current_config["reranker_name"] = CHAIN_RERANKER_NAMES[
+                    rerank_info["type"]
+                ]
+
+                rerank_info.pop("type")
+                for param, value in rerank_info.items():
+                    current_config[param] = value
+
+                if i < len(self._rerank_chain) - 1:
+                    current_config["next_reranking_config"] = {}
+                    current_config = current_config["next_reranking_config"]
 
             data["query"][0]["rerankingConfig"] = reranking_config
 

@@ -88,6 +88,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_query_fn (Optional[SparseEncoderCallable]): function to encode sparse queries
         hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
         index_doc_id (bool): whether to create a payload index for the document ID. Defaults to True
+        text_key (str): Name of the field holding the text information, Defaults to 'text'
 
     Examples:
         `pip install llama-index-vector-stores-qdrant`
@@ -117,6 +118,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     enable_hybrid: bool
     index_doc_id: bool
     fastembed_sparse_model: Optional[str]
+    text_key: Optional[str]
 
     _client: qdrant_client.QdrantClient = PrivateAttr()
     _aclient: qdrant_client.AsyncQdrantClient = PrivateAttr()
@@ -148,6 +150,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_query_fn: Optional[SparseEncoderCallable] = None,
         hybrid_fusion_fn: Optional[HybridFusionCallable] = None,
         index_doc_id: bool = True,
+        text_key: Optional[str] = "text",
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -162,6 +165,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             enable_hybrid=enable_hybrid,
             index_doc_id=index_doc_id,
             fastembed_sparse_model=fastembed_sparse_model,
+            text_key=text_key,
         )
 
         if (
@@ -996,7 +1000,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
                 node = TextNode(
                     id_=str(point.id),
-                    text=payload.get("text"),
+                    text=payload.get(self.text_key),
                     metadata=metadata,
                     start_char_idx=node_info.get("start", None),
                     end_char_idx=node_info.get("end", None),

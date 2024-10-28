@@ -82,6 +82,11 @@ class TimescaleVectorStore(BasePydanticVectorStore):
     def class_name(cls) -> str:
         return "TimescaleVectorStore"
 
+    @property
+    def client(self) -> Any:
+        """Get client."""
+        return self._sync_client
+
     async def close(self) -> None:
         self._sync_client.close()
         await self._async_client.close()
