@@ -35,14 +35,16 @@ nav:
       - Building an LLM Application: ./understanding/index.md
       - Using LLMs: ./understanding/using_llms/using_llms.md
       - Building a RAG pipeline:
+          - Introduction to RAG: ./understanding/rag/index.md
           - Loading & Ingestion:
               - ./understanding/loading/loading.md
               - ./understanding/loading/llamahub.md
+              - ./understanding/loading/llamacloud.md
           - Indexing & Embedding: ./understanding/indexing/indexing.md
           - Storing: ./understanding/storing/storing.md
           - Querying: ./understanding/querying/querying.md
       - Building an agent:
-          - Building a basic agent: ./understanding/agent/basic_agent.md
+          - Building a basic agent: ./understanding/agent/index.md
           - Agents with local models: ./understanding/agent/local_models.md
           - Adding RAG to an agent: ./understanding/agent/rag_agent.md
           - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
@@ -367,6 +369,7 @@ nav:
           - ./examples/llm/paieas.ipynb
           - ./examples/llm/palm.ipynb
           - ./examples/llm/perplexity.ipynb
+          - ./examples/llm/pipeshift.ipynb
           - ./examples/llm/portkey.ipynb
           - ./examples/llm/predibase.ipynb
           - ./examples/llm/premai.ipynb
@@ -420,6 +423,7 @@ nav:
           - ./examples/multi_modal/ChromaMultiModalDemo.ipynb
           - ./examples/multi_modal/anthropic_multi_modal.ipynb
           - ./examples/multi_modal/azure_openai_multi_modal.ipynb
+          - ./examples/multi_modal/cohere_multi_modal.ipynb
           - ./examples/multi_modal/dashscope_multi_modal.ipynb
           - ./examples/multi_modal/gemini.ipynb
           - ./examples/multi_modal/gpt4o_mm_structured_outputs.ipynb
@@ -1020,6 +1024,7 @@ nav:
           - ./api_reference/llms/paieas.md
           - ./api_reference/llms/palm.md
           - ./api_reference/llms/perplexity.md
+          - ./api_reference/llms/pipeshift.md
           - ./api_reference/llms/portkey.md
           - ./api_reference/llms/predibase.md
           - ./api_reference/llms/premai.md
@@ -2274,6 +2279,7 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-document360
             - ../llama-index-integrations/llms/llama-index-llms-gaudi
             - ../llama-index-integrations/llms/llama-index-llms-zhipuai
+            - ../llama-index-integrations/llms/llama-index-llms-pipeshift
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-hnswlib
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-oceanbase
             - ../llama-index-integrations/embeddings/llama-index-embeddings-gaudi
@@ -2571,6 +2577,7 @@ plugins:
         ./examples/llm/openrouter.html: https://docs.llamaindex.ai/en/stable/examples/llm/openrouter/
         ./examples/llm/palm.html: https://docs.llamaindex.ai/en/stable/examples/llm/palm/
         ./examples/llm/perplexity.html: https://docs.llamaindex.ai/en/stable/examples/llm/perplexity/
+        ./examples/llm/pipeshift.html: https://docs.llamaindex.ai/en/stable/examples/llm/pipeshift/
         ./examples/llm/portkey.html: https://docs.llamaindex.ai/en/stable/examples/llm/portkey/
         ./examples/llm/predibase.html: https://docs.llamaindex.ai/en/stable/examples/llm/predibase/
         ./examples/llm/premai.html: https://docs.llamaindex.ai/en/stable/examples/llm/premai/
@@ -2893,6 +2900,7 @@ plugins:
         ./optimizing/fine-tuning/fine-tuning.html: https://docs.llamaindex.ai/en/stable/optimizing/fine-tuning/fine-tuning/
         ./optimizing/production_rag.html: https://docs.llamaindex.ai/en/stable/optimizing/production_rag/
         ./presentations/past_presentations.html: https://docs.llamaindex.ai/en/stable/presentations/past_presentations/
+        ./understanding/agent/basic_agent/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/
         ./understanding/deployment/deployment.html: https://docs.llamaindex.ai/en/stable/understanding/deployment/deployment/
         ./understanding/evaluating/cost_analysis/root.html: understanding/evaluating/cost_analysis/index.md
         ./understanding/evaluating/cost_analysis/usage_pattern.html: https://docs.llamaindex.ai/en/stable/understanding/evaluating/cost_analysis/usage_pattern/
