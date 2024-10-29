@@ -41,8 +41,8 @@ class SiliconFlowRerank(BaseNodePostprocessor):
     max_chunks_per_doc: int = Field(
         default=1024,
         description="""\
-            Maximum number of chunks generated from within a document. 
-            Long documents are divided into multiple chunks for calculation, 
+            Maximum number of chunks generated from within a document.
+            Long documents are divided into multiple chunks for calculation,
             and the highest score among the chunks is taken as the document's score.
         """,
     )
