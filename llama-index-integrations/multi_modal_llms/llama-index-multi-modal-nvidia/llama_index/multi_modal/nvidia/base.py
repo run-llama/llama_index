@@ -32,7 +32,6 @@ import warnings
 import base64
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple
-import filetype
 import requests
 
 import httpx
@@ -46,17 +45,6 @@ from llama_index.multi_modal.nvidia.utils import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def infer_image_mimetype_from_base64(base64_string) -> str:
-    # Decode the base64 string
-    decoded_data = base64.b64decode(base64_string)
-
-    # Use filetype to guess the MIME type
-    kind = filetype.guess(decoded_data)
-
-    # Return the MIME type if detected, otherwise return None
-    return kind.mime if kind is not None else None
 
 
 def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
