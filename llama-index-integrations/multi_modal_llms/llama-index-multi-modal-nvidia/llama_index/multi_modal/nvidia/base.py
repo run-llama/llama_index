@@ -1,7 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
-import urllib.parse
 import logging
-import re
 
 import httpx
 from llama_index.core.base.llms.types import (
@@ -29,203 +26,21 @@ from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
 import warnings
-import base64
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Callable
 import requests
 
 import httpx
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
-from llama_index.core.schema import ImageDocument
-import os
+
 from llama_index.multi_modal.nvidia.utils import (
     BASE_URL,
     KNOWN_URLS,
     NVIDIA_MULTI_MODAL_MODELS,
+    generate_nvidia_multi_modal_chat_message,
 )
 
 logger = logging.getLogger(__name__)
-
-
-def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
-    # Get the file extension
-    file_extension = image_file_path.split(".")[-1].lower()
-
-    # Map file extensions to mimetypes
-    # Claude 3 support the base64 source type for images, and the image/jpeg, image/png, image/gif, and image/webp media types.\
-    if file_extension in ["jpg", "jpeg", "png"]:
-        return file_extension
-    return "jpeg"
-
-
-def _process_for_vlm(
-    inputs: List[Dict[str, Any]],
-    model: Optional[str],  # not optional, Optional for type alignment
-) -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
-    """
-    Process inputs for NVIDIA VLM models.
-
-    This function processes the input messages for NVIDIA VLM models.
-    It extracts asset IDs from the input messages and adds them to the
-    headers for the NVIDIA VLM API.
-    """
-    if not model:
-        return inputs, {}
-
-    extra_headers = {}
-    asset_ids = []
-    for input in inputs:
-        if "content" in input:
-            asset_ids.extend(_nv_vlm_get_asset_ids(input["content"]))
-    if asset_ids:
-        extra_headers["NVCF-INPUT-ASSET-REFERENCES"] = ",".join(asset_ids)
-    # inputs = [_nv_vlm_adjust_input(message, model.model_type) for message in inputs]
-    return inputs, extra_headers
-
-
-def generate_nvidia_multi_modal_chat_message(
-    prompt: str,
-    role: str,
-    image_documents: Optional[Sequence[ImageDocument]] = None,
-) -> List[Dict[str, Any]]:
-    # If image_documents is None, return a text-only chat message
-    completion_content = []
-
-    # Process each image document
-    for image_document in image_documents:
-        image_content = create_image_content(image_document)
-        if image_content:
-            completion_content.append(image_content)
-
-    # Append the text prompt to the completion content
-    completion_content.append({"type": "text", "text": prompt})
-
-    return [{"role": role, "content": completion_content}]
-
-
-def create_image_content(image_document) -> Optional[Dict[str, Any]]:
-    """
-    Create the image content based on the provided image document.
-    """
-    # if image_document.asset_id:
-    #     return _nv_vlm_get_asset_ids(image_document.image_path)
-
-    # if image_document.image_path:
-    #     return create_image_from_path(image_document.image_path)
-
-    # if "file_path" in image_document.metadata:
-    #     return create_image_from_path(image_document.metadata["file_path"])
-
-    if image_document.image_url and image_document.image_url != "":
-        mimetype = infer_image_mimetype_from_file_path(image_document.image_url)
-        data = base64.b64encode(httpx.get(image_document.image_url).content).decode(
-            "utf-8"
-        )
-        return {
-            "type": "text",
-            "text": f'<img src="data:image/{mimetype};base64,{data}" />',
-        }
-
-    # if image_document.image:
-    #     return _is_url(image_document.image)
-
-    return None
-
-
-def _is_url(s: str) -> bool:
-    try:
-        result = urllib.parse.urlparse(s)
-        return all([result.scheme, result.netloc])
-    except Exception as e:
-        logger.debug(f"Unable to parse URL: {e}")
-        return False
-
-
-def _url_to_b64_string(image_source: str) -> str:
-    try:
-        if _is_url(image_source):
-            return image_source
-            # import sys
-            # import io
-            # try:
-            #     import PIL.Image
-            #     has_pillow = True
-            # except ImportError:
-            #     has_pillow = False
-            # def _resize_image(img_data: bytes, max_dim: int = 1024) -> str:
-            #     if not has_pillow:
-            #         print(
-            #             "Pillow is required to resize images down to reasonable scale."
-            #             " Please install it using `pip install pillow`."
-            #             " For now, not resizing; may cause NVIDIA API to fail."
-            #         )
-            #         return base64.b64encode(img_data).decode("utf-8")
-            #     image = PIL.Image.open(io.BytesIO(img_data))
-            #     max_dim_size = max(image.size)
-            #     aspect_ratio = max_dim / max_dim_size
-            #     new_h = int(image.size[1] * aspect_ratio)
-            #     new_w = int(image.size[0] * aspect_ratio)
-            #     resized_image = image.resize((new_w, new_h), PIL.Image.Resampling.LANCZOS)
-            #     output_buffer = io.BytesIO()
-            #     resized_image.save(output_buffer, format="JPEG")
-            #     output_buffer.seek(0)
-            #     resized_b64_string = base64.b64encode(output_buffer.read()).decode("utf-8")
-            #     return resized_b64_string
-            # b64_template = "data:image/png;base64,{b64_string}"
-            # response = requests.get(
-            #     image_source, headers={"User-Agent": "langchain-nvidia-ai-endpoints"}
-            # )
-            # response.raise_for_status()
-            # encoded = base64.b64encode(response.content).decode("utf-8")
-            # if sys.getsizeof(encoded) > 200000:
-            #     ## (VK) Temporary fix. NVIDIA API has a limit of 250KB for the input.
-            #     encoded = _resize_image(response.content)
-            # return b64_template.format(b64_string=encoded)
-        elif image_source.startswith("data:image"):
-            return image_source
-        elif os.path.exists(image_source):
-            with open(image_source, "rb") as f:
-                image_data = f.read()
-                import imghdr
-
-                image_type = imghdr.what(None, image_data)
-                encoded = base64.b64encode(image_data).decode("utf-8")
-                return f"data:image/{image_type};base64,{encoded}"
-        else:
-            raise ValueError(
-                "The provided string is not a valid URL, base64, or file path."
-            )
-    except Exception as e:
-        raise ValueError(f"Unable to process the provided image source: {e}")
-
-
-def _nv_vlm_get_asset_ids(
-    content: Union[str, List[Union[str, Dict[str, Any]]]],
-) -> List[str]:
-    """
-    VLM APIs accept asset IDs as input in two forms:
-     - content = [{"image_url": {"url": "data:image/{type};asset_id,{asset_id}"}}*]
-     - content = .*<img src="data:image/{type};asset_id,{asset_id}"/>.*
-    This function extracts asset IDs from the message content.
-    """
-
-    def extract_asset_id(data: str) -> List[str]:
-        pattern = re.compile(r'data:image/[^;]+;asset_id,([^"\'\s]+)')
-        return pattern.findall(data)
-
-    asset_ids = []
-    if isinstance(content, str):
-        asset_ids.extend(extract_asset_id(content))
-    elif isinstance(content, list):
-        for part in content:
-            if isinstance(part, str):
-                asset_ids.extend(extract_asset_id(part))
-            elif isinstance(part, dict) and "image_url" in part:
-                image_url = part["image_url"]
-                if isinstance(image_url, dict) and "url" in image_url:
-                    asset_ids.extend(extract_asset_id(image_url["url"]))
-
-    return asset_ids
 
 
 class NVIDIAClient:
@@ -259,7 +74,11 @@ class NVIDIAClient:
         return requests.get(request_url, headers=self._get_headers())
 
     def request(
-        self, endpoint: str, messages: Dict[str, Any], **kwargs: Any
+        self,
+        endpoint: str,
+        messages: Dict[str, Any],
+        extra_headers: Dict[str, Any],
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         """
         Perform a synchronous request to the DeepInfra API.
@@ -273,21 +92,16 @@ class NVIDIAClient:
         """
 
         def perform_request():
-            url = f"https://ai.api.nvidia.com/v1/vlm/{endpoint}"
             payload = {
                 "messages": messages,
-                "temperature": 0.2,
-                "top_p": 0.7,
-                "max_tokens": 1024,
-                "stream": False,
             }
             headers = {
                 "accept": "application/json",
                 "content-type": "application/json",
                 "authorization": f"Bearer {self.api_key}",
+                **extra_headers,
             }
-
-            response = requests.post(url, json=payload, headers=headers)
+            response = requests.post(endpoint, json=payload, headers=headers)
             response.raise_for_status()
             return response.json()
 
@@ -461,13 +275,14 @@ class NVIDIAMultiModal(MultiModalLLM):
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
-        message_dict = self._get_multi_modal_chat_messages(
+        message_dict, extra_headers = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER, image_documents=image_documents
         )
 
         response = self._client.request(
-            endpoint=self.model,
+            endpoint=NVIDIA_MULTI_MODAL_MODELS[self.model]["endpoint"],
             messages=message_dict,
+            extra_headers=extra_headers,
             **all_kwargs,
         )
         text = response["choices"][0]["message"]["content"]
@@ -494,17 +309,15 @@ class NVIDIAMultiModal(MultiModalLLM):
                 system=self.system_prompt,
                 **all_kwargs,
             ):
-                if isinstance(response, ContentBlockDeltaEvent):
-                    # update using deltas
-                    content_delta = response.delta.text or ""
-                    text += content_delta
+                content_delta = response.delta.text or ""
+                text += content_delta
 
-                    yield CompletionResponse(
-                        delta=content_delta,
-                        text=text,
-                        raw=response,
-                        additional_kwargs=self._get_response_token_counts(response),
-                    )
+                yield CompletionResponse(
+                    delta=content_delta,
+                    text=text,
+                    raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
+                )
 
         return gen()
 
@@ -574,17 +387,15 @@ class NVIDIAMultiModal(MultiModalLLM):
                 system=self.system_prompt,
                 **all_kwargs,
             ):
-                if isinstance(response, ContentBlockDeltaEvent):
-                    # update using deltas
-                    content_delta = response.delta.text or ""
-                    text += content_delta
+                content_delta = response.delta.text or ""
+                text += content_delta
 
-                    yield CompletionResponse(
-                        delta=content_delta,
-                        text=text,
-                        raw=response,
-                        additional_kwargs=self._get_response_token_counts(response),
-                    )
+                yield CompletionResponse(
+                    delta=content_delta,
+                    text=text,
+                    raw=response,
+                    additional_kwargs=self._get_response_token_counts(response),
+                )
 
         return gen()
 
