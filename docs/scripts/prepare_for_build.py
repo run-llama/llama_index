@@ -171,7 +171,6 @@ def main():
                                     label_idx
                                 ][label]
                             ):
-                                print(toc_path_name)
                                 mkdocs["nav"][examples_idx]["Examples"][
                                     label_idx
                                 ][label].append(toc_path_name)

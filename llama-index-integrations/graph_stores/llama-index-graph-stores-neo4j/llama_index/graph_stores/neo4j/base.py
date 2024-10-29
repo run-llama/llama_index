@@ -42,6 +42,7 @@ class Neo4jGraphStore(GraphStore):
         url: str,
         database: str = "neo4j",
         node_label: str = "Entity",
+        refresh_schema: bool = True,
         **kwargs: Any,
     ) -> None:
         self.node_label = node_label
@@ -64,14 +65,17 @@ class Neo4jGraphStore(GraphStore):
                 "Please ensure that the username and password are correct"
             )
         # Set schema
-        try:
-            self.refresh_schema()
-        except neo4j.exceptions.ClientError:
-            raise ValueError(
-                "Could not use APOC procedures. "
-                "Please ensure the APOC plugin is installed in Neo4j and that "
-                "'apoc.meta.data()' is allowed in Neo4j configuration "
-            )
+        self.schema = ""
+        self.structured_schema = {}
+        if refresh_schema:
+            try:
+                self.refresh_schema()
+            except neo4j.exceptions.ClientError:
+                raise ValueError(
+                    "Could not use APOC procedures. "
+                    "Please ensure the APOC plugin is installed in Neo4j and that "
+                    "'apoc.meta.data()' is allowed in Neo4j configuration "
+                )
         # Create constraint for faster insert and retrieval
         try:  # Using Neo4j 5
             self.query(

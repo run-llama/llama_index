@@ -2,7 +2,7 @@
 
 ## Overview
 
-Docling Reader uses [Docling](https://github.com/DS4SD/docling) to enable fast and easy PDF document extraction and export to Markdown or JSON-serialized Docling format, for usage in LlamaIndex pipelines for RAG / QA etc.
+Docling Reader uses [Docling](https://github.com/DS4SD/docling) to enable fast and easy extraction of PDF, DOCX, HTML, and other document types, into Markdown or JSON-serialized Docling format, for usage in LlamaIndex pipelines for RAG / QA etc.
 
 ## Installation
 
@@ -21,7 +21,7 @@ from llama_index.readers.docling import DoclingReader
 
 reader = DoclingReader()
 docs = reader.load_data(file_path="https://arxiv.org/pdf/2408.09869")
-print(f"{docs[0].text[409:462]}...")
+print(f"{docs[0].text[389:442]}...")
 # > ## Abstract
 # >
 # > This technical report introduces Docling...
@@ -36,8 +36,8 @@ from llama_index.readers.docling import DoclingReader
 
 reader = DoclingReader(export_type=DoclingReader.ExportType.JSON)
 docs = reader.load_data(file_path="https://arxiv.org/pdf/2408.09869")
-print(f"{docs[0].text[:50]}...")
-# > {"_name":"","type":"pdf-document","description":{"...
+print(f"{docs[0].text[:53]}...")
+# > {"schema_name": "DoclingDocument", "version": "1.0.0"...
 ```
 
 > [!IMPORTANT]
@@ -62,6 +62,5 @@ print(docs[0].metadata)
 # >  'file_type': 'application/pdf',
 # >  'file_size': 5566574,
 # >  'creation_date': '2024-10-06',
-# >  'last_modified_date': '2024-10-03',
-# >  'dl_doc_hash': '556ad9e...'}
+# >  'last_modified_date': '2024-10-03'}
 ```
