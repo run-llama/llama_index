@@ -1933,13 +1933,13 @@ llama-parse = ">=0.5.0"
 
 [[package]]
 name = "llama-parse"
-version = "0.5.11"
+version = "0.5.12"
 description = "Parse files into RAG-Optimized formats."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_parse-0.5.11-py3-none-any.whl", hash = "sha256:c81ea82aa7543a288352aa9cd46476b148e0b8d32b0b57df8a0c192059c21e8d"},
-    {file = "llama_parse-0.5.11.tar.gz", hash = "sha256:4ba5c7bc8be12f63c8edf7fdf6b0bb814ab6f91658a7e2d7c00d99f5d428dd1f"},
+    {file = "llama_parse-0.5.12-py3-none-any.whl", hash = "sha256:6011feb49da5db4bcbeea1cc6688b6ff24b483877fda80b03fe59239cd08b907"},
+    {file = "llama_parse-0.5.12.tar.gz", hash = "sha256:e241606cf3574425df76c0f5d01a31a95c792c6fbef80aaf72f8ed6448bd1715"},
 ]
 
 [package.dependencies]
@@ -4841,4 +4841,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "a638d898b92474889a539c34439b482e8f60e197f1a5c56deb90298045703807"
+content-hash = "5b8fe2b40c288f486eb28300b535e00433437571fa29e600eb1640bbf0b86f48"
