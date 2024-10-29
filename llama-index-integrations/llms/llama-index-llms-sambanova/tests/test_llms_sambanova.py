@@ -10,8 +10,10 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from llama_index.llms.sambanova import SambaNovaCloud
+import pytest
 
 
+@pytest.mark.asyncio()
 async def run_async_test(fn, chat_msgs, number, verbose=False):
     tasks = [fn(chat_msgs) for _ in range(number)]
     if verbose:
