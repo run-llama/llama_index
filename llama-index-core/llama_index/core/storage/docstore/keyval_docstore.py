@@ -130,9 +130,7 @@ class KVDocumentStore(BaseDocumentStore):
             for kv_pair in kv_pairs:
                 nodes = kv_pair[1].get("node_ids", [])
                 new_nodes = set(nodes).difference(set(merged_node_ids))
-                merged_node_ids.extend(
-                    [node for node in nodes if node in new_nodes]
-                )
+                merged_node_ids.extend([node for node in nodes if node in new_nodes])
                 metadata.update(kv_pair[1].get("metadata", {}))
             merged_ref_doc_kv_pairs.append(
                 (key, {"node_ids": merged_node_ids, "metadata": metadata})
