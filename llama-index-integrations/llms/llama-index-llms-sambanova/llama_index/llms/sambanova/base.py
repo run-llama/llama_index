@@ -168,32 +168,47 @@ class SambaNovaCloud(LLM):
         print(metadata_and_usage)
     """
 
-    sambanova_url: str = Field(default="")
-    """SambaNova Cloud Url"""
+    sambanova_url: str = Field(
+        default="", default_factory=str, description="SambaNova Cloud Url"
+    )
 
-    sambanova_api_key: SecretStr = Field(default="")
-    """SambaNova Cloud api key"""
+    sambanova_api_key: SecretStr = Field(
+        default="", default_factory=str, description="SambaNova Cloud api key"
+    )
 
-    model: str = Field(default="Meta-Llama-3.1-8B-Instruct")
-    """The name of the model"""
+    model: str = Field(
+        default="Meta-Llama-3.1-8B-Instruct",
+        default_factory=str,
+        description="The name of the model",
+    )
 
-    streaming: bool = Field(default=False)
-    """Whether to use streaming handler when using non streaming methods"""
+    streaming: bool = Field(
+        default=False,
+        default_factory=bool,
+        description="Whether to use streaming handler when using non streaming methods",
+    )
 
-    max_tokens: int = Field(default=1024)
-    """max tokens to generate"""
+    max_tokens: int = Field(
+        default=1024, default_factory=int, description="max tokens to generate"
+    )
 
-    temperature: float = Field(default=0.7)
-    """model temperature"""
+    temperature: float = Field(
+        default=0.7, default_factory=float, description="model temperature"
+    )
 
-    top_p: Optional[float] = Field(default=None)
-    """model top p"""
+    top_p: Optional[float] = Field(
+        default=None, default_factory=float, description="model top p"
+    )
 
-    top_k: Optional[int] = Field(default=None)
-    """model top k"""
+    top_k: Optional[int] = Field(
+        default=None, default_factory=int, description="model top k"
+    )
 
-    stream_options: dict = Field(default={"include_usage": True})
-    """stream options, include usage to get generation metrics"""
+    stream_options: dict = Field(
+        default={"include_usage": True},
+        default_factory=dict,
+        description="stream options, include usage to get generation metrics",
+    )
 
     @classmethod
     def class_name(cls) -> str:
