@@ -683,8 +683,8 @@ class ReActAgentWorker(BaseAgentWorker):
                 )
         else:
             # remove "Answer: " from the response, and anything before it
-            start_idx = latest_chunk.message.content.find("Answer:")
-            if start_idx != -1:
+            start_idx = (latest_chunk.message.content or "").find("Answer:")
+            if start_idx != -1 and latest_chunk.message.content:
                 latest_chunk.message.content = latest_chunk.message.content[
                     start_idx + len("Answer:") :
                 ].strip()
@@ -776,8 +776,8 @@ class ReActAgentWorker(BaseAgentWorker):
                 )
         else:
             # remove "Answer: " from the response, and anything before it
-            start_idx = latest_chunk.message.content.find("Answer:")
-            if start_idx != -1:
+            start_idx = (latest_chunk.message.content or "").find("Answer:")
+            if start_idx != -1 and latest_chunk.message.content:
                 latest_chunk.message.content = latest_chunk.message.content[
                     start_idx + len("Answer:") :
                 ].strip()
