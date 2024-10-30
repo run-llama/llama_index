@@ -42,6 +42,10 @@ def completion_from_gemini_response(
         **(type(top_candidate).to_dict(top_candidate)),
         **(type(response.prompt_feedback).to_dict(response.prompt_feedback)),
     }
+    if response.usage_metadata:
+        raw["usage_metadata"] = type(response.usage_metadata).to_dict(
+            response.usage_metadata
+        )
     return CompletionResponse(text=response.text, raw=raw)
 
 
@@ -58,6 +62,10 @@ def chat_from_gemini_response(
         **(type(top_candidate).to_dict(top_candidate)),
         **(type(response.prompt_feedback).to_dict(response.prompt_feedback)),
     }
+    if response.usage_metadata:
+        raw["usage_metadata"] = type(response.usage_metadata).to_dict(
+            response.usage_metadata
+        )
     role = ROLES_FROM_GEMINI[top_candidate.content.role]
     return ChatResponse(message=ChatMessage(role=role, content=response.text), raw=raw)
 

@@ -1,7 +1,14 @@
 from math import log2
 
 import pytest
-from llama_index.core.evaluation.retrieval.metrics import HitRate, MRR, NDCG
+from llama_index.core.evaluation.retrieval.metrics import (
+    AveragePrecision,
+    HitRate,
+    MRR,
+    NDCG,
+    Precision,
+    Recall,
+)
 
 
 # Test cases for the updated HitRate class using instance attribute
@@ -51,7 +58,92 @@ def test_mrr(expected_ids, retrieved_ids, use_granular, expected_result):
     assert result.score == pytest.approx(expected_result)
 
 
-# Test cases for the updated NDCG class using instance attribute
+@pytest.mark.parametrize(
+    ("expected_ids", "retrieved_ids", "expected_result"),
+    [
+        (["id1", "id2", "id3"], ["id3", "id1", "id2", "id4"], 3 / 4),
+        (["id1", "id2", "id3", "id4"], ["id5", "id1"], 1 / 2),
+        (["id1", "id2"], ["id3", "id4"], 0 / 2),
+        (["id1", "id2"], ["id2", "id1", "id7"], 2 / 3),
+        (
+            ["id1", "id2", "id3"],
+            ["id3", "id1", "id2", "id4"],
+            3 / 4,
+        ),
+        (
+            ["id1", "id2", "id3", "id4"],
+            ["id1", "id2", "id5"],
+            2 / 3,
+        ),
+        (["id1", "id2"], ["id1", "id7", "id15", "id2"], 2 / 4),
+    ],
+)
+def test_precision(expected_ids, retrieved_ids, expected_result):
+    prec = Precision()
+    result = prec.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+    assert result.score == pytest.approx(expected_result)
+
+
+@pytest.mark.parametrize(
+    ("expected_ids", "retrieved_ids", "expected_result"),
+    [
+        (["id1", "id2", "id3"], ["id3", "id1", "id2", "id4"], 3 / 3),
+        (["id1", "id2", "id3", "id4"], ["id5", "id1"], 1 / 4),
+        (["id1", "id2"], ["id3", "id4"], 0 / 2),
+        (["id1", "id2"], ["id2", "id1", "id7"], 2 / 2),
+        (
+            ["id1", "id2", "id3"],
+            ["id3", "id1", "id2", "id4"],
+            3 / 3,
+        ),
+        (
+            ["id1", "id2", "id3", "id4"],
+            ["id1", "id2", "id5"],
+            2 / 4,
+        ),
+        (["id1", "id2"], ["id1", "id7", "id15", "id2"], 2 / 2),
+    ],
+)
+def test_recall(expected_ids, retrieved_ids, expected_result):
+    recall = Recall()
+    result = recall.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+    assert result.score == pytest.approx(expected_result)
+
+
+@pytest.mark.parametrize(
+    ("expected_ids", "retrieved_ids", "expected_result"),
+    [
+        (
+            ["id1", "id2", "id3"],
+            ["id3", "id1", "id2", "id4"],
+            (1 / 1 + 2 / 2 + 3 / 3 + 0) / 3,
+        ),
+        (["id1", "id2", "id3", "id4"], ["id5", "id1"], (0 + 1 / 2) / 4),
+        (["id1", "id2"], ["id3", "id4"], (0 + 0) / 2),
+        (["id1", "id2"], ["id2", "id1", "id7"], (1 / 1 + 2 / 2 + 0) / 2),
+        (
+            ["id1", "id2", "id3"],
+            ["id3", "id1", "id2", "id4"],
+            (1 / 1 + 2 / 2 + 3 / 3 + 0) / 3,
+        ),
+        (
+            ["id1", "id2", "id3", "id4"],
+            ["id1", "id2", "id5"],
+            (1 / 1 + 2 / 2 + 0) / 4,
+        ),
+        (
+            ["id1", "id2"],
+            ["id1", "id7", "id15", "id2"],
+            (1 / 1 + 0 + 0 + 2 / 4) / 2,
+        ),
+    ],
+)
+def test_ap(expected_ids, retrieved_ids, expected_result):
+    ap = AveragePrecision()
+    result = ap.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+    assert result.score == pytest.approx(expected_result)
+
+
 @pytest.mark.parametrize(
     ("expected_ids", "retrieved_ids", "mode", "expected_result"),
     [
@@ -138,6 +230,18 @@ def test_exceptions(expected_ids, retrieved_ids, use_granular):
         mrr = MRR()
         mrr.use_granular_mrr = use_granular
         mrr.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+
+    with pytest.raises(ValueError):
+        prec = Precision()
+        prec.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+
+    with pytest.raises(ValueError):
+        recall = Recall()
+        recall.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
+
+    with pytest.raises(ValueError):
+        ap = AveragePrecision()
+        ap.compute(expected_ids=expected_ids, retrieved_ids=retrieved_ids)
 
     with pytest.raises(ValueError):
         ndcg = NDCG()

@@ -27,6 +27,8 @@ BEDROCK_MODELS = {
     "anthropic.claude-3-sonnet-20240229-v1:0": 200000,
     "anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "anthropic.claude-3-opus-20240229-v1:0": 200000,
+    "anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
+    "anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
     "cohere.command-text-v14": 4096,
@@ -41,15 +43,21 @@ BEDROCK_MODELS = {
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
     "mistral.mistral-large-2402-v1:0": 32000,
     "mistral.mistral-small-2402-v1:0": 32000,
+    "mistral.mistral-large-2407-v1:0": 32000,
+    "ai21.jamba-1-5-mini-v1:0": 256000,
+    "ai21.jamba-1-5-large-v1:0": 256000,
 }
 
 BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-3-sonnet-20240229-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
+    "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "anthropic.claude-3-5-sonnet-20241022-v2:0",
     "cohere.command-r-v1:0",
     "cohere.command-r-plus-v1:0",
     "mistral.mistral-large-2402-v1:0",
+    "mistral.mistral-large-2407-v1:0",
 )
 
 
@@ -118,28 +126,39 @@ def messages_to_converse_messages(
             status = message.additional_kwargs.get("status")
             if status:
                 content["toolResult"]["status"] = status
-            converse_message = {
-                "role": "user",
-                "content": [content],
-            }
-            converse_messages.append(converse_message)
+            converse_messages.append(
+                {
+                    "role": "user",
+                    "content": [content],
+                }
+            )
         else:
-            content = []
             if message.content:
                 # get the text of the message
-                content.append({"text": message.content})
-            # convert tool calls to the AWS Bedrock Converse format
-            tool_calls = message.additional_kwargs.get("tool_calls", [])
-            for tool_call in tool_calls:
-                assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
-                assert "input" in tool_call, f"`input` not found in {tool_call}"
-                assert "name" in tool_call, f"`name` not found in {tool_call}"
-                content.append({"toolUse": tool_call})
-            converse_message = {
-                "role": message.role.value,
-                "content": content,
-            }
-            converse_messages.append(converse_message)
+                converse_messages.append(
+                    {
+                        "role": message.role.value,
+                        "content": [{"text": message.content}],
+                    }
+                )
+        # convert tool calls to the AWS Bedrock Converse format
+        # NOTE tool calls might show up within any message,
+        # e.g. within assistant message or in consecutive tool calls,
+        # thus this tool call check is done for all messages
+        tool_calls = message.additional_kwargs.get("tool_calls", [])
+        content = []
+        for tool_call in tool_calls:
+            assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
+            assert "input" in tool_call, f"`input` not found in {tool_call}"
+            assert "name" in tool_call, f"`name` not found in {tool_call}"
+            content.append({"toolUse": tool_call})
+        if len(content) > 0:
+            converse_messages.append(
+                {
+                    "role": "assistant",  # tool calls are always from the assistant
+                    "content": content,
+                }
+            )
 
     return __merge_common_role_msgs(converse_messages), system_prompt.strip()
 
@@ -156,21 +175,10 @@ def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
     """
     converse_tools = []
     for tool in tools:
-        tool_name, tool_description = getattr(tool, "name", None), getattr(
-            tool, "description", None
-        )
-        if not tool_name or not tool_description:
-            # get the tool's name and description from the metadata if they aren't defined
-            tool_name = getattr(tool.metadata, "name", None)
-            if tool_fn := getattr(tool, "fn", None):
-                # get the tool's description from the function's docstring
-                tool_description = tool_fn.__doc__
-                if not tool_name:
-                    tool_name = tool_fn.__name__
-            else:
-                tool_description = getattr(tool.metadata, "description", None)
-            if not tool_name or not tool_description:
-                raise ValueError(f"Tool {tool} does not have a name or description.")
+        tool_name, tool_description = tool.metadata.name, tool.metadata.description
+        if not tool_name:
+            raise ValueError(f"Tool {tool} does not have a name.")
+
         tool_dict = {
             "name": tool_name,
             "description": tool_description,
@@ -205,6 +213,30 @@ def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], An
         stop=stop_after_attempt(max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(retry_if_exception_type(client.exceptions.ThrottlingException)),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
+
+
+def _create_retry_decorator_async(max_retries: int) -> Callable[[Any], Any]:
+    min_seconds = 4
+    max_seconds = 10
+    # Wait 2^x * 1 second between each retry starting with
+    # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
+    try:
+        import aioboto3  # noqa
+    except ImportError as e:
+        raise ImportError(
+            "You must install the `aioboto3` package to use Bedrock."
+            "Please `pip install aioboto3`"
+        ) from e
+
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
+        retry=(
+            retry_if_exception_type()
+        ),  # TODO: Add throttling exception in async version
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
@@ -247,6 +279,47 @@ def converse_with_retry(
     return _conversion_with_retry(**converse_kwargs)
 
 
+async def converse_with_retry_async(
+    session: Any,
+    config: Any,
+    model: str,
+    messages: Sequence[Dict[str, Any]],
+    max_retries: int = 3,
+    system_prompt: Optional[str] = None,
+    max_tokens: int = 1000,
+    temperature: float = 0.1,
+    stream: bool = False,
+    **kwargs: Any,
+) -> Any:
+    """Use tenacity to retry the completion call."""
+    retry_decorator = _create_retry_decorator_async(max_retries=max_retries)
+    converse_kwargs = {
+        "modelId": model,
+        "messages": messages,
+        "inferenceConfig": {
+            "maxTokens": max_tokens,
+            "temperature": temperature,
+        },
+    }
+    if system_prompt:
+        converse_kwargs["system"] = [{"text": system_prompt}]
+    if tool_config := kwargs.get("tools"):
+        converse_kwargs["toolConfig"] = tool_config
+    converse_kwargs = join_two_dicts(
+        converse_kwargs, {k: v for k, v in kwargs.items() if k != "tools"}
+    )
+
+    @retry_decorator
+    async def _conversion_with_retry(**kwargs: Any) -> Any:
+        # the async boto3 client needs to be defined inside this async with, otherwise it will raise an error
+        async with session.client("bedrock-runtime", config=config) as client:
+            if stream:
+                return await client.converse_stream(**kwargs)
+            return await client.converse(**kwargs)
+
+    return await _conversion_with_retry(**converse_kwargs)
+
+
 def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:
     """
     Joins two dictionaries, summing shared keys and adding new keys.
@@ -262,7 +335,7 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
     for key, value in dict2.items():
         if key not in new_dict:
             new_dict[key] = value
-        if key in new_dict:
+        else:
             if isinstance(value, dict):
                 new_dict[key] = join_two_dicts(new_dict[key], value)
             else:

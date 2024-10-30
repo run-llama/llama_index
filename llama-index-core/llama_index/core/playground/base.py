@@ -1,10 +1,10 @@
 """Experiment with different indices, models, and more."""
+
 from __future__ import annotations
 
 import time
 from typing import Any, Dict, List, Type
 
-import pandas as pd
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.list.base import ListRetrieverMode, SummaryIndex
@@ -120,7 +120,7 @@ class Playground:
 
     def compare(
         self, query_text: str, to_pandas: bool | None = True
-    ) -> pd.DataFrame | List[Dict[str, Any]]:
+    ) -> Any | List[Dict[str, Any]]:
         """Compare index outputs on an input query.
 
         Args:
@@ -145,17 +145,11 @@ class Playground:
                 )
 
                 # insert token counter into service context
-                service_context = index.service_context
                 token_counter = TokenCountingHandler()
                 callback_manager = CallbackManager([token_counter])
-                if service_context is not None:
-                    service_context.llm.callback_manager = callback_manager
-                    service_context.embed_model.callback_manager = callback_manager
 
                 try:
-                    query_engine = index.as_query_engine(
-                        retriever_mode=retriever_mode, service_context=service_context
-                    )
+                    query_engine = index.as_query_engine(retriever_mode=retriever_mode)
                 except ValueError:
                     continue
 
@@ -178,6 +172,13 @@ class Playground:
         print(f"\nRan {len(result)} combinations in total.")
 
         if to_pandas:
+            try:
+                import pandas as pd
+            except ImportError:
+                raise ImportError(
+                    "pandas is required for this function. Please install it with `pip install pandas`."
+                )
+
             return pd.DataFrame(result)
         else:
             return result

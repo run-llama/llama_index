@@ -12,7 +12,7 @@ from llama_index.core.tools.function_tool import FunctionTool
 from pytest_mock import MockerFixture
 
 
-class TestObject(BaseModel):
+class _TestObject(BaseModel):
     """Test object for node mapping."""
 
     __test__ = False
@@ -23,10 +23,10 @@ class TestObject(BaseModel):
         return hash(self.name)
 
     def __str__(self) -> str:
-        return f"TestObject(name='{self.name}')"
+        return f"_TestObject(name='{self.name}')"
 
 
-class TestSQLDatabase(SQLDatabase):
+class _TestSQLDatabase(SQLDatabase):
     """Test object for SQL Table Schema Node Mapping."""
 
     def __init__(self) -> None:
@@ -40,9 +40,9 @@ def test_simple_object_node_mapping() -> None:
     assert node_mapping.to_node("a").text == "a"
     assert node_mapping.from_node(node_mapping.to_node("a")) == "a"
 
-    objects = [TestObject(name="a"), TestObject(name="b"), TestObject(name="c")]
+    objects = [_TestObject(name="a"), _TestObject(name="b"), _TestObject(name="c")]
     node_mapping = SimpleObjectNodeMapping.from_objects(objects)
-    assert node_mapping.to_node(objects[0]).text == "TestObject(name='a')"
+    assert node_mapping.to_node(objects[0]).text == "_TestObject(name='a')"
     assert node_mapping.from_node(node_mapping.to_node(objects[0])) == objects[0]
 
 
@@ -102,7 +102,7 @@ def test_sql_table_node_mapping_to_node(mocker: MockerFixture) -> None:
     tables = [table1, table2]
 
     # Create the mapping
-    sql_database = TestSQLDatabase()
+    sql_database = _TestSQLDatabase()
     mapping = SQLTableNodeMapping(sql_database)
 
     # Create the nodes

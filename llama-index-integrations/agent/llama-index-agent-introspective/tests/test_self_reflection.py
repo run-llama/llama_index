@@ -78,4 +78,6 @@ def test_reflection_agent() -> None:
             print(str(msg))
             print()
     assert response.response == "This is a mock correction."
-    assert len(agent.chat_history) == 7  # (system, user, asst, ref, cor, ref, asst)
+    assert (
+        len(agent.chat_history) == 8
+    )  # (system, user, asst, user, ref, cor, ref, asst)

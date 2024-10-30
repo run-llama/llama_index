@@ -9,7 +9,7 @@ The method for doing this can take many forms, from as simple as iterating over 
 When used in a query engine, the response synthesizer is used after nodes are retrieved from a retriever, and after any node-postprocessors are ran.
 
 !!! tip
-    Confused about where response synthesizer fits in the pipeline? Read the [high-level concepts](../../../getting_started/concepts.md)
+    Confused about where response synthesizer fits in the RAG workflow? Read the [high-level concepts](../../../getting_started/concepts.md)
 
 ## Usage Pattern
 
@@ -115,6 +115,7 @@ Several response synthesizers are implemented already in LlamaIndex:
   summarization purposes, but may lose detail due to truncation.
 - `no_text`: Only runs the retriever to fetch the nodes that would have been sent to the LLM,
   without actually sending them. Then can be inspected by checking `response.source_nodes`.
+- `context_only`: Returns a concatenated string of all text chunks.
 - `accumulate`: Given a set of text chunks and the query, apply the query to each text
   chunk while accumulating the responses into an array. Returns a concatenated string of all
   responses. Good for when you need to run the same query separately against each text

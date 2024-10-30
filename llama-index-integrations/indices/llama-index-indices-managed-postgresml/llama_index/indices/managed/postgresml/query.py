@@ -82,10 +82,23 @@ class PostgresMLQueryEngine(BaseQueryEngine):
         retriever: PostgresMLRetriever,
         streaming: Optional[bool] = False,
         callback_manager: Optional[CallbackManager] = None,
+        pgml_query: Optional[Dict[str, Any]] = None,
+        vector_search_limit: Optional[int] = 4,
+        vector_search_rerank: Optional[Dict[str, Any]] = None,
+        vector_search_document: Optional[Dict[str, Any]] = {"keys": ["id", "metadata"]},
+        model: Optional[str] = "meta-llama/Meta-Llama-3-8B-Instruct",
+        model_parameters: Optional[Dict[str, Any]] = {"max_tokens": 2048},
+        **kwargs,
     ) -> None:
         self._retriever = retriever
         self._streaming = streaming
         self._prompts = deepcopy(PROMPTS)
+        self._pgml_query = pgml_query
+        self._vector_search_limit = vector_search_limit
+        self._vector_search_rerank = vector_search_rerank
+        self._vector_search_document = vector_search_document
+        self._model = model
+        self._model_parameters = model_parameters
         super().__init__(callback_manager=callback_manager)
 
     @classmethod
@@ -106,29 +119,22 @@ class PostgresMLQueryEngine(BaseQueryEngine):
             retriever=retriever,
         )
 
-    def _query(self, query_bundle: QueryBundle, **kwargs) -> RESPONSE_TYPE:
+    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         if self._streaming:
-            async_token_gen = run_async_tasks([self._do_query(query_bundle, **kwargs)])[
-                0
-            ]
+            async_token_gen = run_async_tasks([self._do_query(query_bundle)])[0]
             return StreamingResponse(response_gen=async_token_gen.response_gen)
         else:
-            return run_async_tasks([self._do_query(query_bundle, **kwargs)])[0]
+            return run_async_tasks([self._do_query(query_bundle)])[0]
 
     async def _aquery(self, query_bundle: QueryBundle, **kwargs) -> RESPONSE_TYPE:
         """Answer an async query."""
         return await self._do_query(query_bundle, **kwargs)
 
     async def _do_query(
-        self,
-        query_bundle: Optional[QueryBundle] = None,
-        query: Optional[Dict[str, Any]] = None,
-        vector_search_limit: Optional[int] = 4,
-        vector_search_document: Optional[Dict[str, Any]] = {"keys": ["id", "metadata"]},
-        model: Optional[str] = "meta-llama/Meta-Llama-3-8B-Instruct",
-        model_parameters: Optional[Dict[str, Any]] = {"max_tokens": 2048},
+        self, query_bundle: Optional[QueryBundle] = None
     ) -> RESPONSE_TYPE:
+        query = self._pgml_query
         if not query:
             if not query_bundle:
                 raise Exception(
@@ -144,8 +150,14 @@ class PostgresMLQueryEngine(BaseQueryEngine):
                 for m in [m.dict() for m in messages]
             ]
 
-            model_parameters["model"] = model
+            model_parameters = deepcopy(self._model_parameters)
+            model_parameters["model"] = self._model
             model_parameters["messages"] = messages
+
+            if self._vector_search_rerank is not None:
+                self._vector_search_rerank = self._vector_search_rerank | {
+                    "query": query_bundle.query_str
+                }
 
             query = {
                 "CONTEXT": {
@@ -158,8 +170,9 @@ class PostgresMLQueryEngine(BaseQueryEngine):
                                 },
                             },
                         },
-                        "document": vector_search_document,
-                        "limit": vector_search_limit,
+                        "document": self._vector_search_document,
+                        "limit": self._vector_search_limit,
+                        "rerank": self._vector_search_rerank,
                     },
                     "aggregate": {"join": "\n"},
                 },
@@ -186,6 +199,15 @@ class PostgresMLQueryEngine(BaseQueryEngine):
                         metadata=r["document"]["metadata"],
                     ),
                     score=r["score"],
+                )
+                if self._vector_search_rerank is None
+                else NodeWithScore(
+                    node=TextNode(
+                        id_=r["document"]["id"],
+                        text=r["chunk"],
+                        metadata=r["document"]["metadata"],
+                    ),
+                    score=r["rerank_score"],
                 )
                 for r in results["sources"]["CONTEXT"]
             ]

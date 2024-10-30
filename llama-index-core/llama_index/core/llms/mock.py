@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Optional, Sequence
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseGen,
@@ -9,6 +9,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.custom import CustomLLM
+from llama_index.core.llms.llm import MessagesToPromptType, CompletionToPromptType
 from llama_index.core.types import PydanticProgramMode
 
 
@@ -20,13 +21,13 @@ class MockLLM(CustomLLM):
         max_tokens: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
-        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
-        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        messages_to_prompt: Optional[MessagesToPromptType] = None,
+        completion_to_prompt: Optional[CompletionToPromptType] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     ) -> None:
         super().__init__(
             max_tokens=max_tokens,
-            callback_manager=callback_manager,
+            callback_manager=callback_manager or CallbackManager([]),
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,

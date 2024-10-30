@@ -54,7 +54,6 @@ from llama_index.legacy.llms.sagemaker_llm_endpoint import (
 from llama_index.legacy.llms.together import TogetherLLM
 from llama_index.legacy.llms.vertex import Vertex
 from llama_index.legacy.llms.vllm import Vllm, VllmServer
-from llama_index.legacy.llms.watsonx import WatsonX
 from llama_index.legacy.llms.xinference import Xinference
 from llama_index.legacy.multi_modal_llms.dashscope import (
     DashScopeMultiModal,
@@ -112,7 +111,6 @@ __all__ = [
     "SageMakerLLM",
     "SageMakerLLMEndPoint",  # deprecated
     "TogetherLLM",
-    "WatsonX",
     "Xinference",
     "Vllm",
     "VllmServer",

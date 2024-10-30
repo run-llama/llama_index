@@ -1,5 +1,6 @@
 """KG Retrievers."""
 
+import deprecated
 import logging
 from collections import defaultdict
 from enum import Enum
@@ -25,13 +26,7 @@ from llama_index.core.schema import (
     QueryBundle,
     TextNode,
 )
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    embed_model_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import print_text, truncate_text
 
@@ -61,6 +56,13 @@ class KGRetrieverMode(str, Enum):
     HYBRID = "hybrid"
 
 
+@deprecated.deprecated(
+    version="0.10.53",
+    reason=(
+        "KGTableRetriever is deprecated, it is recommended to use "
+        "PropertyGraphIndex and associated retrievers instead."
+    ),
+)
 class KGTableRetriever(BaseRetriever):
     """KG Table Retriever.
 
@@ -127,11 +129,8 @@ class KGTableRetriever(BaseRetriever):
             else KGRetrieverMode.KEYWORD
         )
 
-        self._llm = llm or llm_from_settings_or_context(Settings, index.service_context)
-        self._embed_model = embed_model or embed_model_from_settings_or_context(
-            Settings, index.service_context
-        )
-
+        self._llm = llm or Settings.llm
+        self._embed_model = embed_model or Settings.embed_model
         self._graph_store = index.graph_store
         self.graph_store_query_depth = graph_store_query_depth
         self.use_global_node_triplets = use_global_node_triplets
@@ -146,10 +145,7 @@ class KGTableRetriever(BaseRetriever):
             logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
         super().__init__(
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(
-                Settings, index.service_context
-            ),
+            callback_manager=callback_manager or Settings.callback_manager,
             object_map=object_map,
             verbose=verbose,
         )
@@ -407,6 +403,13 @@ DEFAULT_SYNONYM_EXPAND_PROMPT = PromptTemplate(
 )
 
 
+@deprecated.deprecated(
+    version="0.10.53",
+    reason=(
+        "KnowledgeGraphRAGRetriever is deprecated, it is recommended to use "
+        "PropertyGraphIndex and associated retrievers instead."
+    ),
+)
 class KnowledgeGraphRAGRetriever(BaseRetriever):
     """
     Knowledge Graph RAG retriever.
@@ -414,7 +417,6 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
     Retriever that perform SubGraph RAG towards knowledge graph.
 
     Args:
-        service_context (Optional[ServiceContext]): A service context to use.
         storage_context (Optional[StorageContext]): A storage context to use.
         entity_extract_fn (Optional[Callable]): A function to extract entities.
         entity_extract_template Optional[BasePromptTemplate]): A Query Key Entity
@@ -462,8 +464,6 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         max_knowledge_sequence: int = REL_TEXT_LIMIT,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the retriever."""
@@ -475,7 +475,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         self._storage_context = storage_context
         self._graph_store = storage_context.graph_store
 
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
 
         self._entity_extract_fn = entity_extract_fn
         self._entity_extract_template = (
@@ -522,7 +522,6 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 refresh_schema=refresh_schema,
                 verbose=verbose,
                 response_synthesizer=response_synthesizer,
-                service_context=service_context,
                 **kwargs,
             )
 
@@ -538,10 +537,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
 
-        super().__init__(
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        super().__init__(callback_manager=callback_manager or Settings.callback_manager)
 
     def _process_entities(
         self,

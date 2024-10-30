@@ -11,6 +11,7 @@ from llama_index.core.settings import Settings
 from llama_index.core.types import Model
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import OpenAIToolCall, to_openai_tool
+from deprecated import deprecated
 
 from llama_index.program.openai.utils import parse_partial_json
 
@@ -80,6 +81,7 @@ def _parse_tool_calls(
         return outputs[0]
 
 
+@deprecated("Please use `FunctionCallingProgram` instead.")
 class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     """
     An OpenAI-based function that returns a pydantic model.

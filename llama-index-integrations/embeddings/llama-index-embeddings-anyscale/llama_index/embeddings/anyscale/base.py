@@ -133,10 +133,8 @@ class AnyscaleEmbedding(BaseEmbedding):
     api_base: str = Field(description="The base URL for Anyscale API.")
     api_version: str = Field(description="The version for OpenAI API.")
 
-    max_retries: int = Field(
-        default=10, description="Maximum number of retries.", gte=0
-    )
-    timeout: float = Field(default=60.0, description="Timeout for each request.", gte=0)
+    max_retries: int = Field(default=10, description="Maximum number of retries.", ge=0)
+    timeout: float = Field(default=60.0, description="Timeout for each request.", ge=0)
     default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
     )
@@ -183,9 +181,6 @@ class AnyscaleEmbedding(BaseEmbedding):
         else:
             model_name = model
 
-        self._query_engine = model_name
-        self._text_engine = model_name
-
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
@@ -201,6 +196,8 @@ class AnyscaleEmbedding(BaseEmbedding):
             **kwargs,
         )
 
+        self._query_engine = model_name
+        self._text_engine = model_name
         self._client = None
         self._aclient = None
         self._http_client = http_client

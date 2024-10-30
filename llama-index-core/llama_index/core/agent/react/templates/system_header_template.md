@@ -21,6 +21,8 @@ Action Input: the input to the tool, in a JSON format representing the kwargs (e
 
 Please ALWAYS start with a Thought.
 
+NEVER surround your response with markdown code markers. You may use code markers within your response if you need to.
+
 Please use a valid JSON format for the Action Input. Do NOT do this {{'input': 'hello world', 'num_beams': 5}}.
 
 If this format is used, the user will respond in the following format:

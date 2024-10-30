@@ -1,8 +1,9 @@
 from typing import Any, Callable, List, Optional, Sequence, TypedDict
+from typing_extensions import Annotated
 
 import numpy as np
 from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, SerializeAsAny, WithJsonSchema
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import NodeParser
 from llama_index.core.node_parser.interface import NodeParser
@@ -24,6 +25,13 @@ class SentenceCombination(TypedDict):
     combined_sentence_embedding: List[float]
 
 
+SentenceSplitterCallable = Annotated[
+    Callable[[str], List[str]],
+    WithJsonSchema({"type": "string"}, mode="serialization"),
+    WithJsonSchema({"type": "string"}, mode="validation"),
+]
+
+
 class SemanticSplitterNodeParser(NodeParser):
     """Semantic node parser.
 
@@ -37,13 +45,13 @@ class SemanticSplitterNodeParser(NodeParser):
         include_prev_next_rel (bool): whether to include prev/next relationships
     """
 
-    sentence_splitter: Callable[[str], List[str]] = Field(
+    sentence_splitter: SentenceSplitterCallable = Field(
         default_factory=split_by_sentence_tokenizer,
         description="The text splitter to use when splitting documents.",
         exclude=True,
     )
 
-    embed_model: BaseEmbedding = Field(
+    embed_model: SerializeAsAny[BaseEmbedding] = Field(
         description="The embedding model to use to for semantic comparison",
     )
 

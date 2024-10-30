@@ -56,7 +56,7 @@ A full guide to using and configuring embedding models is available [here](../mo
 
 ## Installation from Source
 
-Git clone this repository: `git clone https://github.com/jerryjliu/llama_index.git`. Then do the following:
+Git clone this repository: `git clone https://github.com/run-llama/llama_index.git`. Then do the following:
 
 - [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
 - `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project

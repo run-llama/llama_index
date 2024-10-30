@@ -1,9 +1,17 @@
-import pandas as pd
+from typing import Any
+
 from io import StringIO
 
 
-def md_to_df(md_str: str) -> pd.DataFrame:
+def md_to_df(md_str: str) -> Any:
     """Convert Markdown to dataframe."""
+    try:
+        import pandas as pd
+    except ImportError:
+        raise ImportError(
+            "You must install the `pandas` package to use this node parser."
+        )
+
     # Replace " by "" in md_str
     md_str = md_str.replace('"', '""')
 
@@ -26,13 +34,20 @@ def md_to_df(md_str: str) -> pd.DataFrame:
     return pd.read_csv(StringIO(md_str))
 
 
-def html_to_df(html_str: str) -> pd.DataFrame:
+def html_to_df(html_str: str) -> Any:
     """Convert HTML to dataframe."""
     try:
         from lxml import html
     except ImportError:
         raise ImportError(
             "You must install the `lxml` package to use this node parser."
+        )
+
+    try:
+        import pandas as pd
+    except ImportError:
+        raise ImportError(
+            "You must install the `pandas` package to use this node parser."
         )
 
     tree = html.fromstring(html_str)

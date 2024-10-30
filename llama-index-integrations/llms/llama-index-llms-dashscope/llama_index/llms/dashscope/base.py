@@ -131,8 +131,8 @@ class DashScope(CustomLLM):
     temperature: Optional[float] = Field(
         description="The temperature to use during generation.",
         default=DEFAULT_TEMPERATURE,
-        gte=0.0,
-        lte=2.0,
+        ge=0.0,
+        le=2.0,
     )
     top_k: Optional[int] = Field(
         description="Sample counter when generate.", default=None
@@ -141,7 +141,7 @@ class DashScope(CustomLLM):
         description="Sample probability threshold when generate."
     )
     seed: Optional[int] = Field(
-        description="Random seed when generate.", default=1234, gte=0
+        description="Random seed when generate.", default=1234, ge=0
     )
     repetition_penalty: Optional[float] = Field(
         description="Penalty for repeated words in generated text; \

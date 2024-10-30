@@ -4,14 +4,8 @@ from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, SecretStr
 
-# Import SecretStr directly from pydantic
-# since there is not one in llama_index.core.bridge.pydantic
-try:
-    from pydantic.v1 import SecretStr
-except ImportError:
-    from pydantic import SecretStr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.embeddings.ibm.utils import (
     resolve_watsonx_credentials,
@@ -146,17 +140,32 @@ class WatsonxEmbeddings(BaseEmbedding):
                 instance_id=instance_id,
             )
 
+        url = creds.get("url").get_secret_value() if creds.get("url") else None
+        apikey = creds.get("apikey").get_secret_value() if creds.get("apikey") else None
+        token = creds.get("token").get_secret_value() if creds.get("token") else None
+        password = (
+            creds.get("password").get_secret_value() if creds.get("password") else None
+        )
+        username = (
+            creds.get("username").get_secret_value() if creds.get("username") else None
+        )
+        instance_id = (
+            creds.get("instance_id").get_secret_value()
+            if creds.get("instance_id")
+            else None
+        )
+
         super().__init__(
             model_id=model_id,
             truncate_input_tokens=truncate_input_tokens,
             project_id=project_id,
             space_id=space_id,
-            url=creds.get("url"),
-            apikey=creds.get("apikey"),
-            token=creds.get("token"),
-            password=creds.get("password"),
-            username=creds.get("username"),
-            instance_id=creds.get("instance_id"),
+            url=url,
+            apikey=apikey,
+            token=token,
+            password=password,
+            username=username,
+            instance_id=instance_id,
             version=version,
             verify=verify,
             callback_manager=callback_manager,

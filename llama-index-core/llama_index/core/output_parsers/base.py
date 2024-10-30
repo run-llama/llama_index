@@ -10,7 +10,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.types import BaseOutputParser
 
 
@@ -39,10 +39,8 @@ class ChainableOutputParser(BaseOutputParser, ChainableMixin):
 class OutputParserComponent(QueryComponent):
     """Output parser component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     output_parser: BaseOutputParser = Field(..., description="Output parser.")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def _run_component(self, **kwargs: Any) -> Dict[str, Any]:
         """Run component."""

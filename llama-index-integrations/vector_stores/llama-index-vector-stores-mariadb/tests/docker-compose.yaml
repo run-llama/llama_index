@@ -1,0 +1,8 @@
+services:
+  mariadb:
+    image: "quay.io/mariadb-foundation/mariadb-devel:11.6-vector-preview"
+    environment:
+      MARIADB_DATABASE: test
+      MARIADB_ROOT_PASSWORD: test
+    ports:
+      - "3306:3306"

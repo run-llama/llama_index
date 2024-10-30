@@ -5,13 +5,13 @@ from llama_index.core.objects.base import SimpleObjectNodeMapping
 from llama_index.core.objects.base_node_mapping import BaseObjectNodeMapping
 from llama_index.core.objects.fn_node_mapping import FnNodeMapping
 from llama_index.core.objects.tool_node_mapping import SimpleToolNodeMapping
-from llama_index.core.schema import TextNode
+from llama_index.core.schema import BaseNode
 
 
 def get_object_mapping(
     objects: Sequence[Any],
-    from_node_fn: Optional[Callable[[TextNode], Any]] = None,
-    to_node_fn: Optional[Callable[[Any], TextNode]] = None,
+    from_node_fn: Optional[Callable[[BaseNode], Any]] = None,
+    to_node_fn: Optional[Callable[[Any], BaseNode]] = None,
 ) -> BaseObjectNodeMapping:
     """Get object mapping according to object."""
     if from_node_fn is not None and to_node_fn is not None:

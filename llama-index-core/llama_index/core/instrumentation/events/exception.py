@@ -11,6 +11,6 @@ class ExceptionEvent(BaseEvent):
     exception: BaseException
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "ExceptionEvent"

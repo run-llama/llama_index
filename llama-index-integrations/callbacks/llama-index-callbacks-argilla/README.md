@@ -42,7 +42,6 @@ Let's now write all the necessary imports
 ```python
 from llama_index.core import (
     VectorStoreIndex,
-    ServiceContext,
     SimpleDirectoryReader,
     set_global_handler,
 )
@@ -69,9 +68,8 @@ llm = OpenAI(
 With the code snippet below, you can create a basic workflow with LlamaIndex. You will also need a txt file as the data source within a folder named "data". For a sample data file and more info regarding the use of Llama Index, you can refer to the [Llama Index documentation](https://docs.llamaindex.ai/en/stable/getting_started/starter_example.html).
 
 ```python
-service_context = ServiceContext.from_defaults(llm=llm)
 docs = SimpleDirectoryReader("data").load_data()
-index = VectorStoreIndex.from_documents(docs, service_context=service_context)
+index = VectorStoreIndex.from_documents(docs)
 query_engine = index.as_query_engine()
 ```
 

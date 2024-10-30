@@ -27,6 +27,8 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback
 from llama_index.core.llms.llm import LLM
 
+from llama_index.llms.premai.utils import prepare_messages_before_chat
+
 from premai import Prem
 
 
@@ -108,7 +110,6 @@ class PremAI(LLM):
                 "You can either pass it in as an argument or set it `PREMAI_API_KEY`. You can get your API key here: https://app.premai.io/api_keys/"
             )
 
-        self._client = Prem(api_key=api_key)
         additional_kwargs = {**(additional_kwargs or {}), **kwargs}
 
         super().__init__(
@@ -127,6 +128,7 @@ class PremAI(LLM):
             max_retries=max_retries,
             repositories=repositories,
         )
+        self._client = Prem(api_key=api_key)
 
     @classmethod
     def class_name(cls) -> str:
@@ -180,18 +182,11 @@ class PremAI(LLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         all_kwargs = self._get_all_kwargs(**{**self.additional_kwargs, **kwargs})
-        chat_messages = []
 
-        for message in messages:
-            if "system_prompt" in all_kwargs and message.role.value == "system":
-                continue
+        chat_messages, all_kwargs = prepare_messages_before_chat(
+            messages=messages, **all_kwargs
+        )
 
-            elif "system_prompt" not in all_kwargs and message.role.value == "system":
-                all_kwargs["system_prompt"] = message.content
-            else:
-                chat_messages.append(
-                    {"role": message.role.value, "content": message.content}
-                )
         response = self._client.chat.completions.create(
             project_id=self.project_id, messages=chat_messages, **all_kwargs
         )
@@ -219,19 +214,11 @@ class PremAI(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        all_kwargs = self._get_all_kwargs(**kwargs)
-        chat_messages = []
+        all_kwargs = self._get_all_kwargs(**{**self.additional_kwargs, **kwargs})
 
-        for message in messages:
-            if "system_prompt" in all_kwargs and message.role.value == "system":
-                continue
-
-            elif "system_prompt" not in all_kwargs and message.role.value == "system":
-                all_kwargs["system_prompt"] = message.content
-            else:
-                chat_messages.append(
-                    {"role": message.role.value, "content": message.content}
-                )
+        chat_messages, all_kwargs = prepare_messages_before_chat(
+            messages=messages, **all_kwargs
+        )
 
         response_generator = self._client.chat.completions.create(
             project_id=self.project_id,

@@ -1,6 +1,6 @@
 # Configuring Settings
 
-The `Settings` is a bundle of commonly used resources used during the indexing and querying stage in a LlamaIndex pipeline/application.
+The `Settings` is a bundle of commonly used resources used during the indexing and querying stage in a LlamaIndex workflow/application.
 
 You can use it to set the [global configuration](#setting-global-configuration). Local configurations (transformations, LLMs, embedding models) can be passed directly into the interfaces that make use of them.
 

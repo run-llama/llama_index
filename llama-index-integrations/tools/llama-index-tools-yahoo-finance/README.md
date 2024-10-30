@@ -2,6 +2,10 @@
 
 This tool connects to Yahoo Finance and allows an Agent to access stock, news, and financial data of a company.
 
+## Installation
+
+pip install llama-index-tools-yahoo-finance
+
 ## Usage
 
 Here's an example of how to use this tool:

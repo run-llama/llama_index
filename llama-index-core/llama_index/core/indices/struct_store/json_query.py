@@ -11,12 +11,7 @@ from llama_index.core.prompts.default_prompts import DEFAULT_JSON_PATH_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.schema import QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
 
 logger = logging.getLogger(__name__)
@@ -47,7 +42,7 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
 def default_output_response_parser(llm_output: str) -> str:
     """Attempts to parse the JSON path prompt output. Only applicable if the default prompt is used."""
     try:
-        llm_output_parsed = re.search(
+        llm_output_parsed = re.search(  # type: ignore
             pattern=r"JSONPath:\s+(.*)", string=llm_output
         ).groups()[0]
     except Exception:
@@ -61,7 +56,7 @@ def default_output_response_parser(llm_output: str) -> str:
     return llm_output_parsed
 
 
-def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
+def default_output_processor(llm_output: str, json_value: JSONType) -> Dict[str, str]:
     """Default output processor that extracts values based on JSON Path expressions."""
     # Post-process the LLM output to remove the JSONPath: prefix
     llm_output = llm_output.replace("JSONPath: ", "").replace("JSON Path: ", "").strip()
@@ -76,7 +71,7 @@ def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
         IMPORT_ERROR_MSG = "You need to install jsonpath-ng to use this function!"
         raise ImportError(IMPORT_ERROR_MSG) from exc
 
-    results = {}
+    results: Dict[str, str] = {}
 
     for expression in expressions:
         try:
@@ -100,7 +95,6 @@ class JSONQueryEngine(BaseQueryEngine):
     Args:
         json_value (JSONType): JSON value
         json_schema (JSONType): JSON schema
-        service_context (ServiceContext): ServiceContext
         json_path_prompt (BasePromptTemplate): The JSON Path prompt to use.
         output_processor (Callable): The output processor that executes the
             JSON Path query.
@@ -113,7 +107,6 @@ class JSONQueryEngine(BaseQueryEngine):
         self,
         json_value: JSONType,
         json_schema: JSONType,
-        service_context: Optional[ServiceContext] = None,
         llm: Optional[LLM] = None,
         json_path_prompt: Optional[BasePromptTemplate] = None,
         output_processor: Optional[Callable] = None,
@@ -126,7 +119,7 @@ class JSONQueryEngine(BaseQueryEngine):
         """Initialize params."""
         self._json_value = json_value
         self._json_schema = json_schema
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._json_path_prompt = json_path_prompt or DEFAULT_JSON_PATH_PROMPT
         self._output_processor = output_processor or default_output_processor
         self._output_kwargs = output_kwargs or {}
@@ -136,11 +129,7 @@ class JSONQueryEngine(BaseQueryEngine):
             response_synthesis_prompt or DEFAULT_RESPONSE_SYNTHESIS_PROMPT
         )
 
-        super().__init__(
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, service_context
-            )
-        )
+        super().__init__(callback_manager=Settings.callback_manager)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""

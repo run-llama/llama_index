@@ -65,7 +65,7 @@ def default_sparse_encoder(model_id: str) -> SparseEncoderCallable:
 
 
 def fastembed_sparse_encoder(
-    model_name: str = "prithvida/Splade_PP_en_v1",
+    model_name: str = "prithivida/Splade_PP_en_v1",
     batch_size: int = 256,
     cache_dir: Optional[str] = None,
     threads: Optional[int] = None,
@@ -75,10 +75,22 @@ def fastembed_sparse_encoder(
     except ImportError as e:
         raise ImportError(
             "Could not import FastEmbed. "
-            "Please install it with `pip install fastembed`"
+            "Please install it with `pip install fastembed` or "
+            "`pip install fastembed-gpu` for GPU support.\n"
+            "See `https://qdrant.github.io/fastembed/examples/FastEmbed_GPU/` for more details on GPU support."
         ) from e
 
-    model = SparseTextEmbedding(model_name, cache_dir=cache_dir, threads=threads)
+    # prioritize GPU over CPU
+    try:
+        model = SparseTextEmbedding(
+            model_name,
+            cache_dir=cache_dir,
+            threads=threads,
+            providers=["CUDAExecutionProvider"],
+        )
+    except Exception:
+        # If provider is not available, fallback to CPU
+        model = SparseTextEmbedding(model_name, cache_dir=cache_dir, threads=threads)
 
     def compute_vectors(texts: List[str]) -> BatchSparseEncoding:
         embeddings = model.embed(texts, batch_size=batch_size)

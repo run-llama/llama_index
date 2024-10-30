@@ -32,6 +32,7 @@ We are actively adding more integrations and improving feature coverage for each
 | DynamoDB                 | cloud                   |                    |               | ✓      |                 |       |
 | Elasticsearch            | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | FAISS                    | in-memory               |                    |               |        |                 |       |
+| Hnswlib                  | in-memory               |                    |               |        |                 |       |
 | txtai                    | in-memory               |                    |               |        |                 |       |
 | Jaguar                   | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | LanceDB                  | cloud                   | ✓                  |               | ✓      | ✓               |       |
@@ -88,8 +89,9 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Milvus](../../examples/vector_stores/MilvusIndexDemo.ipynb)
 - [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
 - [MyScale](../../examples/vector_stores/MyScaleIndexDemo.ipynb)
-- [ElsaticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)
+- [ElasticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)
 - [FAISS](../../examples/vector_stores/FaissIndexDemo.ipynb)
+- [Hnswlib](../../examples/vector_stores/HnswlibIndexDemo.ipynb)
 - [MongoDB Atlas](../../examples/vector_stores/MongoDBAtlasVectorSearch.ipynb)
 - [Neo4j](../../examples/vector_stores/Neo4jVectorDemo.ipynb)
 - [OpenSearch](../../examples/vector_stores/OpensearchDemo.ipynb)

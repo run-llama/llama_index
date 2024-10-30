@@ -15,6 +15,8 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
+    ChatResponseAsyncGen,
+    CompletionResponseAsyncGen,
     CompletionResponse,
     CompletionResponseGen,
     LLMMetadata,
@@ -28,6 +30,8 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
     chat_to_completion_decorator,
     stream_chat_to_completion_decorator,
 )
@@ -36,6 +40,7 @@ from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock_converse.utils import (
     bedrock_modelname_to_context_size,
     converse_with_retry,
+    converse_with_retry_async,
     force_single_tool_call,
     is_bedrock_function_calling_model,
     join_two_dicts,
@@ -44,7 +49,6 @@ from llama_index.llms.bedrock_converse.utils import (
 )
 
 if TYPE_CHECKING:
-    from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
 
 
@@ -63,7 +67,7 @@ class BedrockConverse(FunctionCallingLLM):
             aws_access_key_id="AWS Access Key ID to use",
             aws_secret_access_key="AWS Secret Access Key to use",
             aws_session_token="AWS Session Token to use",
-            aws_region_name="AWS Region to use, eg. us-east-1",
+            region_name="AWS Region to use, eg. us-east-1",
         )
 
         resp = llm.complete("Paul Graham is ")
@@ -75,8 +79,8 @@ class BedrockConverse(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
     profile_name: Optional[str] = Field(
@@ -115,8 +119,9 @@ class BedrockConverse(FunctionCallingLLM):
         description="Additional kwargs for the bedrock invokeModel request.",
     )
 
+    _config: Any = PrivateAttr()
     _client: Any = PrivateAttr()
-    _aclient: Any = PrivateAttr()
+    _asession: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -152,36 +157,6 @@ class BedrockConverse(FunctionCallingLLM):
             "aws_session_token": aws_session_token,
             "botocore_session": botocore_session,
         }
-        config = None
-        try:
-            import boto3
-            from botocore.config import Config
-
-            config = (
-                Config(
-                    retries={"max_attempts": max_retries, "mode": "standard"},
-                    connect_timeout=timeout,
-                    read_timeout=timeout,
-                )
-                if botocore_config is None
-                else botocore_config
-            )
-            session = boto3.Session(**session_kwargs)
-        except ImportError:
-            raise ImportError(
-                "boto3 package not found, install with" "'pip install boto3'"
-            )
-
-        # Prior to general availability, custom boto3 wheel files were
-        # distributed that used the bedrock service to invokeModel.
-        # This check prevents any services still using those wheel files
-        # from breaking
-        if client is not None:
-            self._client = client
-        elif "bedrock-runtime" in session.get_available_services():
-            self._client = session.client("bedrock-runtime", config=config)
-        else:
-            self._client = session.client("bedrock", config=config)
 
         super().__init__(
             temperature=temperature,
@@ -196,7 +171,48 @@ class BedrockConverse(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            profile_name=profile_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+            region_name=region_name,
+            botocore_session=botocore_session,
+            botocore_config=botocore_config,
         )
+
+        self._config = None
+        try:
+            import boto3
+            import aioboto3
+            from botocore.config import Config
+
+            self._config = (
+                Config(
+                    retries={"max_attempts": max_retries, "mode": "standard"},
+                    connect_timeout=timeout,
+                    read_timeout=timeout,
+                )
+                if botocore_config is None
+                else botocore_config
+            )
+            session = boto3.Session(**session_kwargs)
+            self._asession = aioboto3.Session(**session_kwargs)
+        except ImportError:
+            raise ImportError(
+                "boto3 and/or aioboto3 package not found, install with"
+                "'pip install boto3 aioboto3"
+            )
+
+        # Prior to general availability, custom boto3 wheel files were
+        # distributed that used the bedrock service to invokeModel.
+        # This check prevents any services still using those wheel files
+        # from breaking
+        if client is not None:
+            self._client = client
+        elif "bedrock-runtime" in session.get_available_services():
+            self._client = session.client("bedrock-runtime", config=self._config)
+        else:
+            self._client = session.client("bedrock", config=self._config)
 
     @classmethod
     def class_name(cls) -> str:
@@ -385,43 +401,139 @@ class BedrockConverse(FunctionCallingLLM):
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> NotImplementedError:
-        raise NotImplementedError("Async chat is not supported for Bedrock Converse.")
+    ) -> ChatResponse:
+        # convert Llama Index messages to AWS Bedrock Converse messages
+        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        if len(system_prompt) > 0 or self.system_prompt is None:
+            self.system_prompt = system_prompt
+        all_kwargs = self._get_all_kwargs(**kwargs)
+
+        # invoke LLM in AWS Bedrock Converse with retry
+        response = await converse_with_retry_async(
+            session=self._asession,
+            config=self._config,
+            messages=converse_messages,
+            system_prompt=self.system_prompt,
+            max_retries=self.max_retries,
+            stream=False,
+            **all_kwargs,
+        )
+
+        content, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(
+            response
+        )
+
+        return ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT,
+                content=content,
+                additional_kwargs={
+                    "tool_calls": tool_calls,
+                    "tool_call_id": tool_call_ids,
+                    "status": status,
+                },
+            ),
+            raw=dict(response),
+        )
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> NotImplementedError:
-        raise NotImplementedError(
-            "Async completion is not supported for Bedrock Converse."
-        )
+    ) -> CompletionResponse:
+        complete_fn = achat_to_completion_decorator(self.achat)
+        return await complete_fn(prompt, **kwargs)
 
     @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> NotImplementedError:
-        raise NotImplementedError(
-            "Async stream chat is not supported for Bedrock Converse."
+    ) -> ChatResponseAsyncGen:
+        # convert Llama Index messages to AWS Bedrock Converse messages
+        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        if len(system_prompt) > 0 or self.system_prompt is None:
+            self.system_prompt = system_prompt
+        all_kwargs = self._get_all_kwargs(**kwargs)
+
+        # invoke LLM in AWS Bedrock Converse with retry
+        response = await converse_with_retry_async(
+            session=self._asession,
+            config=self._config,
+            messages=converse_messages,
+            system_prompt=self.system_prompt,
+            max_retries=self.max_retries,
+            stream=True,
+            **all_kwargs,
         )
+
+        async def gen() -> ChatResponseAsyncGen:
+            content = {}
+            role = MessageRole.ASSISTANT
+            async for chunk in response["stream"]:
+                if content_block_delta := chunk.get("contentBlockDelta"):
+                    content_delta = content_block_delta["delta"]
+                    content = join_two_dicts(content, content_delta)
+                    (
+                        _,
+                        tool_calls,
+                        tool_call_ids,
+                        status,
+                    ) = self._get_content_and_tool_calls(content=content)
+
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            content=content.get("text", ""),
+                            additional_kwargs={
+                                "tool_calls": tool_calls,
+                                "tool_call_id": tool_call_ids,
+                                "status": status,
+                            },
+                        ),
+                        delta=content_delta.get("text", ""),
+                        raw=response,
+                    )
+                elif content_block_start := chunk.get("contentBlockStart"):
+                    tool_use = content_block_start["toolUse"]
+                    content = join_two_dicts(content, tool_use)
+                    (
+                        _,
+                        tool_calls,
+                        tool_call_ids,
+                        status,
+                    ) = self._get_content_and_tool_calls(content=content)
+
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            content=content.get("text", ""),
+                            additional_kwargs={
+                                "tool_calls": tool_calls,
+                                "tool_call_id": tool_call_ids,
+                                "status": status,
+                            },
+                        ),
+                        raw=response,
+                    )
+
+        return gen()
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> NotImplementedError:
-        raise NotImplementedError(
-            "Async stream completion is not supported for Bedrock Converse."
-        )
+    ) -> CompletionResponseAsyncGen:
+        astream_complete_fn = astream_chat_to_completion_decorator(self.astream_chat)
+        return await astream_complete_fn(prompt, **kwargs)
 
-    def chat_with_tools(
+    def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_choice: Optional[dict] = None,
         **kwargs: Any,
-    ) -> ChatResponse:
-        """Predict and call the tool."""
+    ) -> Dict[str, Any]:
+        """Prepare the arguments needed to let the LLM chat with tools."""
         chat_history = chat_history or []
 
         if isinstance(user_msg, str):
@@ -429,31 +541,34 @@ class BedrockConverse(FunctionCallingLLM):
             chat_history.append(user_msg)
 
         # convert Llama Index tools to AWS Bedrock Converse tools
-        tool_dicts = tools_to_converse_tools(tools)
+        tool_config = tools_to_converse_tools(tools)
+        if tool_choice:
+            # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
+            # e.g. { "auto": {} }
+            tool_config["toolChoice"] = tool_choice
 
-        response = self.chat(chat_history, tools=tool_dicts, **kwargs)
+        return {
+            "messages": chat_history,
+            "tools": tool_config,
+            **kwargs,
+        }
 
+    def _validate_chat_with_tools_response(
+        self,
+        response: ChatResponse,
+        tools: List["BaseTool"],
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Validate the response from chat_with_tools."""
         if not allow_parallel_tool_calls:
             force_single_tool_call(response)
 
         return response
 
-    async def achat_with_tools(
-        self,
-        tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
-        **kwargs: Any,
-    ) -> NotImplementedError:
-        raise NotImplementedError(
-            "Async chat with tools is not supported for Bedrock Converse."
-        )
-
     def get_tool_calls_from_response(
         self,
-        response: "AgentChatResponse",
+        response: "ChatResponse",
         error_on_no_tool_call: bool = True,
         **kwargs: Any,
     ) -> List[ToolSelection]:

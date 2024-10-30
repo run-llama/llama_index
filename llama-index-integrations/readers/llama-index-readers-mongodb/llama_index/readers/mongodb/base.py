@@ -86,7 +86,7 @@ class SimpleMongoReader(BaseReader):
 
         for item in cursor:
             try:
-                texts = [f"{name}: " + str(item[name]) for name in field_names]
+                texts = [str(item[name]) for name in field_names]
             except KeyError as err:
                 raise ValueError(
                     f"{err.args[0]} field not found in Mongo document."
@@ -100,6 +100,7 @@ class SimpleMongoReader(BaseReader):
             else:
                 try:
                     metadata = {name: item.get(name) for name in metadata_names}
+                    metadata["collection"] = collection_name
                 except KeyError as err:
                     raise ValueError(
                         f"{err.args[0]} field not found in Mongo document."

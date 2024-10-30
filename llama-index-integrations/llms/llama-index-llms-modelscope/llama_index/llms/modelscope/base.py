@@ -27,7 +27,6 @@ from llama_index.llms.modelscope.utils import (
     text_to_completion_response,
     modelscope_message_to_chat_response,
 )
-from modelscope import pipeline
 
 DEFAULT_MODELSCOPE_MODEL = "qwen/Qwen-7B-Chat"
 DEFAULT_MODELSCOPE_MODEL_REVISION = "master"
@@ -127,9 +126,9 @@ class ModelScopeLLM(CustomLLM):
         """Initialize params."""
         model_kwargs = model_kwargs or {}
         if model:
-            self._pipeline = model
+            pipeline = model
         else:
-            self._pipeline = pipeline(
+            pipeline = pipeline(
                 task=task_name,
                 model=model_name,
                 model_revision=model_revision,
@@ -144,6 +143,7 @@ class ModelScopeLLM(CustomLLM):
             callback_manager=callback_manager,
             pydantic_program_mode=pydantic_program_mode,
         )
+        self._pipeline = pipeline
 
     @classmethod
     def class_name(cls) -> str:

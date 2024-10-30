@@ -9,6 +9,6 @@ class NullEventHandler(BaseEventHandler):
         """Class name."""
         return "NullEventHandler"
 
-    def handle(self, event: BaseEvent, **kwargs) -> Any:
+    def handle(self, event: BaseEvent, **kwargs: Any) -> Any:
         """Handle logic - null handler does nothing."""
         return

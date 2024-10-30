@@ -145,8 +145,8 @@ You may want to ensure your output is structured. See our [Query Engines + Pydan
 
 Also make sure to check out our entire [Structured Outputs](../../module_guides/querying/structured_outputs/index.md) guide.
 
-## Creating your own Query Pipeline
+## Creating your own Query Workflow
 
-If you want to design complex query flows, you can compose your own query pipeline across many different modules, from prompts/LLMs/output parsers to retrievers to response synthesizers to your own custom components.
+If you want to design complex query flows, you can compose your own query workflow across many different modules, from prompts/LLMs/output parsers to retrievers to response synthesizers to your own custom components.
 
-Take a look at our [Query Pipelines Module Guide](../../module_guides/querying/pipeline/index.md) for more details.
+Take a look at our [Workflow Guide](../../module_guides/workflow/index.md) for more details.

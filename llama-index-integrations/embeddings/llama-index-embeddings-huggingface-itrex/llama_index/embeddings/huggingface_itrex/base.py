@@ -47,9 +47,9 @@ class ItrexQuantizedBgeEmbedding(BaseEmbedding):
             from intel_extension_for_transformers.transformers import AutoModel
         except ImportError:
             raise ImportError(
-                "Optimum-Intel requires the following dependencies; please install with "
+                "Itrex requires the following dependencies; please install with "
                 "`pip install optimum[exporters] "
-                "optimum-intel neural-compressor intel_extension_for_pytorch`"
+                "optimum-intel neural-compressor intel_extension_for_transformers`"
             )
 
         from huggingface_hub import hf_hub_download
@@ -57,13 +57,11 @@ class ItrexQuantizedBgeEmbedding(BaseEmbedding):
         onnx_model_path = os.path.join(folder_name, onnx_file_name)
         if not os.path.exists(onnx_model_path):
             onnx_model_path = hf_hub_download(folder_name, filename=onnx_file_name)
-        self._model = AutoModel.from_pretrained(
-            onnx_model_path, use_embedding_runtime=True
-        )
+        model = AutoModel.from_pretrained(onnx_model_path, use_embedding_runtime=True)
         config = AutoConfig.from_pretrained(folder_name)
-        self._hidden_size = config.hidden_size
+        hidden_size = config.hidden_size
 
-        self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
+        tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
 
         if max_length is None:
             try:
@@ -74,7 +72,7 @@ class ItrexQuantizedBgeEmbedding(BaseEmbedding):
                     "Please provide max_length."
                 )
             try:
-                max_length = min(max_length, int(self._tokenizer.model_max_length))
+                max_length = min(max_length, int(tokenizer.model_max_length))
             except Exception as exc:
                 print(f"An error occurred while retrieving tokenizer max length: {exc}")
 
@@ -91,6 +89,9 @@ class ItrexQuantizedBgeEmbedding(BaseEmbedding):
             query_instruction=query_instruction,
             text_instruction=text_instruction,
         )
+        self._model = model
+        self._tokenizer = tokenizer
+        self._hidden_size = hidden_size
 
     @classmethod
     def class_name(cls) -> str:
