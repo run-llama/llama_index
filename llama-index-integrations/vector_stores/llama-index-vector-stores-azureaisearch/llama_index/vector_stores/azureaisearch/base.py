@@ -285,6 +285,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 searchable=True,
                 vector_search_dimensions=self._embedding_dimensionality,
                 vector_search_profile_name=self._vector_profile_name,
+                hidden=False,
             ),
             SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
             SimpleField(
@@ -396,6 +397,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 name=self._field_mapping["embedding"],
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
+                hidden=False,
                 vector_search_dimensions=self._embedding_dimensionality,
                 vector_search_profile_name=self._vector_profile_name,
             ),
@@ -468,6 +470,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             semantic_search=semantic_search,
         )
         logger.debug(f"Creating {index_name} search index")
+
         await self._async_index_client.create_index(index)
 
     def _validate_index(self, index_name: Optional[str]) -> None:
@@ -1143,6 +1146,175 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 query, self._field_mapping, odata_filter, self._async_search_client
             )
         return await azure_query_result_search.asearch()
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        limit: Optional[int] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from the Azure AI Search index.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to retrieve.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+            limit (Optional[int]): Maximum number of nodes to retrieve.
+
+        Returns:
+            List[BaseNode]: List of nodes retrieved from the index.
+        """
+        # Build filter query
+        filter_str = None
+        if node_ids is not None:
+            filter_str = " or ".join(
+                [f"{self._field_mapping['id']} eq '{node_id}'" for node_id in node_ids]
+            )
+
+        if filters is not None:
+            metadata_filter = self._create_odata_filter(filters)
+            if filter_str is not None:
+                filter_str = f"({filter_str}) or ({metadata_filter})"
+            else:
+                filter_str = metadata_filter
+
+        nodes = []
+        batch_size = 1000  # Azure Search batch size limit
+
+        while True:
+            results = self._search_client.search(
+                search_text="*",
+                filter=filter_str,
+                top=batch_size,
+                skip=len(nodes),  # Skip already processed results
+                select=list(self._field_mapping.values()),
+            )
+
+            batch_nodes = []
+            for result in results:
+                metadata_str = result[self._field_mapping["metadata"]]
+                metadata = json.loads(metadata_str) if metadata_str else {}
+                try:
+                    node = metadata_dict_to_node(metadata)
+                    node.set_content(result[self._field_mapping["chunk"]])
+                    node.embedding = result[self._field_mapping["embedding"]]
+                except Exception:
+                    # NOTE: deprecated legacy logic for backward compatibility
+                    metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                        metadata
+                    )
+
+                    node = TextNode(
+                        text=result[self._field_mapping["chunk"]],
+                        id_=result[self._field_mapping["id"]],
+                        metadata=metadata,
+                        start_char_idx=node_info.get("start", None),
+                        end_char_idx=node_info.get("end", None),
+                        relationships=relationships,
+                    )
+                batch_nodes.append(node)
+
+            if not batch_nodes:
+                break
+
+            nodes.extend(batch_nodes)
+
+            # If we've hit the requested limit, stop
+            if limit and len(nodes) >= limit:
+                nodes = nodes[:limit]
+                break
+
+            # If we got less than batch_size results, we've hit the end
+            if len(batch_nodes) < batch_size:
+                break
+
+        return nodes
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        limit: Optional[int] = None,
+    ) -> List[BaseNode]:
+        """Get nodes asynchronously from the Azure AI Search index.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to retrieve.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+            limit (Optional[int]): Maximum number of nodes to retrieve.
+
+        Returns:
+            List[BaseNode]: List of nodes retrieved from the index.
+        """
+        # Build filter query
+        filter_str = None
+        if node_ids is not None:
+            filter_str = " or ".join(
+                [f"{self._field_mapping['id']} eq '{node_id}'" for node_id in node_ids]
+            )
+
+        if filters is not None:
+            metadata_filter = self._create_odata_filter(filters)
+            if filter_str is not None:
+                filter_str = f"({filter_str}) or ({metadata_filter})"
+            else:
+                filter_str = metadata_filter
+
+        nodes = []
+        batch_size = 1000  # Azure Search batch size limit
+
+        while True:
+            try:
+                results = await self._async_search_client.search(
+                    search_text="*",
+                    filter=filter_str,
+                    top=batch_size,
+                    skip=len(nodes),  # Skip already processed results
+                    select=list(self._field_mapping.values()),
+                )
+            except Exception as e:
+                logger.error(f"Error while getting nodes: {e}")
+
+            batch_nodes = []
+
+            async for result in results:
+                metadata_str = result[self._field_mapping["metadata"]]
+                metadata = json.loads(metadata_str) if metadata_str else {}
+                try:
+                    node = metadata_dict_to_node(metadata)
+                    node.set_content(result[self._field_mapping["chunk"]])
+                    node.embedding = result[self._field_mapping["embedding"]]
+                except Exception:
+                    # NOTE: deprecated legacy logic for backward compatibility
+                    metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                        metadata
+                    )
+
+                    node = TextNode(
+                        text=result[self._field_mapping["chunk"]],
+                        id_=result[self._field_mapping["id"]],
+                        metadata=metadata,
+                        start_char_idx=node_info.get("start", None),
+                        end_char_idx=node_info.get("end", None),
+                        relationships=relationships,
+                    )
+
+                batch_nodes.append(node)
+
+            if not batch_nodes:
+                break
+
+            nodes.extend(batch_nodes)
+
+            # If we've hit the requested limit, stop
+            if limit and len(nodes) >= limit:
+                nodes = nodes[:limit]
+                break
+
+            # If we got less than batch_size results, we've hit the end
+            if len(batch_nodes) < batch_size:
+                break
+
+        return nodes
 
 
 class AzureQueryResultSearchBase:
