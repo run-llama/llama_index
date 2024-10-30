@@ -587,7 +587,7 @@ class OpenAI(LLM):
 
                 if delta is None:
                     continue
-            
+
                 first_chat_chunk = False
 
                 # check if this chunk is the start of a function call

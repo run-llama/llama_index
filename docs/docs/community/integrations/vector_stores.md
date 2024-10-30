@@ -25,6 +25,7 @@ as the storage backend for `VectorStoreIndex`.
 - Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
 - Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- Hnswlib (`HnswlibVectorStore`). [Installation](https://github.com/nmslib/hnswlib?tab=readme-ov-file#bindings-installation).
 - txtai (`TxtaiVectorStore`). [Installation](https://neuml.github.io/txtai/install/).
 - Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
 - Lantern (`LanternVectorStore`). [Quickstart](https://docs.lantern.dev/get-started/overview).

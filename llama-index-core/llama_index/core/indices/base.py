@@ -46,7 +46,7 @@ class BaseIndex(Generic[IS], ABC):
         """Initialize with parameters."""
         if index_struct is None and nodes is None and objects is None:
             raise ValueError("One of nodes, objects, or index_struct must be provided.")
-        if index_struct is not None and nodes is not None:
+        if index_struct is not None and nodes is not None and len(nodes) >= 1:
             raise ValueError("Only one of nodes or index_struct can be provided.")
         # This is to explicitly make sure that the old UX is not used
         if nodes is not None and len(nodes) >= 1 and not isinstance(nodes[0], BaseNode):

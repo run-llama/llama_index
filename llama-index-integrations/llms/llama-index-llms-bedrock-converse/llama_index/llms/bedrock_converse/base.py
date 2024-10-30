@@ -530,6 +530,7 @@ class BedrockConverse(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_choice: Optional[dict] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the arguments needed to let the LLM chat with tools."""
@@ -540,11 +541,15 @@ class BedrockConverse(FunctionCallingLLM):
             chat_history.append(user_msg)
 
         # convert Llama Index tools to AWS Bedrock Converse tools
-        tool_dicts = tools_to_converse_tools(tools)
+        tool_config = tools_to_converse_tools(tools)
+        if tool_choice:
+            # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
+            # e.g. { "auto": {} }
+            tool_config["toolChoice"] = tool_choice
 
         return {
             "messages": chat_history,
-            "tools": tool_dicts or None,
+            "tools": tool_config,
             **kwargs,
         }
 
