@@ -232,7 +232,10 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         self._handle_sql_errors = handle_sql_errors
         self._sql_only = sql_only
         self._verbose = verbose
-        super().__init__(callback_manager=callback_manager or Settings.callback_manager)
+        super().__init__(
+            callback_manager=callback_manager or Settings.callback_manager,
+            verbose=verbose,
+        )
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
