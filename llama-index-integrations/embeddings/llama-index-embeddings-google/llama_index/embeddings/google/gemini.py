@@ -42,17 +42,16 @@ class GeminiEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
-        gemini.configure(api_key=api_key)
-        self._model = gemini
-
         super().__init__(
             model_name=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
+            title=title,
+            task_type=task_type,
             **kwargs,
         )
-        self.title = title
-        self.task_type = task_type
+        gemini.configure(api_key=api_key)
+        self._model = gemini
 
     @classmethod
     def class_name(cls) -> str:

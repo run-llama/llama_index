@@ -14,6 +14,7 @@ from llama_index.core.utils import (
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
+    get_retry_on_exceptions_with_backoff_decorator,
 )
 
 
@@ -78,6 +79,75 @@ def test_retry_on_exceptions_with_backoff() -> None:
             [ErrorToRetry(ValueError)],
             max_tries=3,
         )
+    assert call_count == 1
+
+
+@pytest.mark.asyncio()
+async def test_retry_on_exceptions_with_backoff_decorator() -> None:
+    """Make sure retry decorator works for both sync and async functions."""
+    global call_count
+    call_count = 0
+
+    retry_on_value_error = get_retry_on_exceptions_with_backoff_decorator(
+        [ErrorToRetry(ValueError)],
+        max_tries=3,
+        min_backoff_secs=0.0,
+    )
+
+    SUCCESS_MESSAGE = "done"
+
+    @retry_on_value_error
+    def fn_with_exception(exception, n=2) -> None:
+        global call_count
+        call_count += 1
+        if call_count >= n:
+            return SUCCESS_MESSAGE
+        raise exception
+
+    @retry_on_value_error
+    async def async_fn_with_exception(exception, n=2) -> None:
+        global call_count
+        call_count += 1
+        if call_count >= n:
+            return SUCCESS_MESSAGE
+        raise exception
+
+    # sync function
+    # should retry 3 times
+    call_count = 0
+    with pytest.raises(ValueError):
+        result = fn_with_exception(ValueError, 5)
+    assert call_count == 3
+
+    # should not raise exception
+    call_count = 0
+    result = fn_with_exception(ValueError, 2)
+    assert result == SUCCESS_MESSAGE
+    assert call_count == 2
+
+    # different exception will not get retried
+    call_count = 0
+    with pytest.raises(TypeError):
+        result = fn_with_exception(TypeError, 2)
+    assert call_count == 1
+
+    # Async function
+    # should retry 3 times
+    call_count = 0
+    with pytest.raises(ValueError):
+        result = await async_fn_with_exception(ValueError, 5)
+    assert call_count == 3
+
+    # should not raise exception
+    call_count = 0
+    result = await async_fn_with_exception(ValueError, 2)
+    assert result == SUCCESS_MESSAGE
+    assert call_count == 2
+
+    # different exception will not get retried
+    call_count = 0
+    with pytest.raises(TypeError):
+        result = await async_fn_with_exception(TypeError, 2)
     assert call_count == 1
 
 

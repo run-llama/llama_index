@@ -54,13 +54,13 @@ class PGVectoRsStore(BasePydanticVectorStore):
         ```
     """
 
-    stores_text = True
+    stores_text: bool = True
 
     _client: "PGVectoRs" = PrivateAttr()
 
     def __init__(self, client: "PGVectoRs") -> None:
-        self._client: PGVectoRs = client
         super().__init__()
+        self._client: PGVectoRs = client
 
     @classmethod
     def class_name(cls) -> str:

@@ -13,7 +13,7 @@ class QueryStartEvent(BaseEvent):
     query: QueryType
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "QueryStartEvent"
 
@@ -30,6 +30,6 @@ class QueryEndEvent(BaseEvent):
     response: RESPONSE_TYPE
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "QueryEndEvent"

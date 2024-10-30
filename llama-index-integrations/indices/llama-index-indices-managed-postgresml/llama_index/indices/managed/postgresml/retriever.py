@@ -25,54 +25,33 @@ class PostgresMLRetriever(BaseRetriever):
         self,
         index: PostgresMLIndex,
         callback_manager: Optional[CallbackManager] = None,
-        **kwargs: Any,
+        pgml_query: Optional[Dict[str, Any]] = None,
+        limit: Optional[int] = 5,
+        rerank: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ) -> None:
         """Initialize params."""
         self._index = index
+        self._pgml_query = pgml_query
+        self._limit = limit
+        self._rerank = rerank
         super().__init__(callback_manager)
 
     def _retrieve(
         self,
         query_bundle: Optional[QueryBundle] = None,
-        query: Optional[Dict[str, Any]] = None,
-        limit: Optional[int] = 5,
         **kwargs: Any,
     ) -> List[NodeWithScore]:
-        """Retrieve top limit most similar nodes.
-
-        Either query or query_bundle must be provided.
-
-        Args:
-            query_bundle: Optional[QueryBundle] = None
-            query: Optional[Dict[str, Any]] = None
-            limit: Optional[int] = 5
-        """
-        return run_async_tasks([self._aretrieve(query_bundle, query, limit, **kwargs)])[
-            0
-        ]
+        return run_async_tasks([self._aretrieve(query_bundle, **kwargs)])[0]
 
     async def _aretrieve(
         self,
         query_bundle: Optional[QueryBundle] = None,
-        query: Optional[Dict[str, Any]] = None,
-        limit: Optional[int] = 5,
-        **kwargs: Any,
     ) -> List[NodeWithScore]:
-        """Retrieve top limit most similar nodes.
-
-        Either query or query_bundle must be provided.
-        If providing query limit is ignored.
-
-        Args:
-            query_bundle: Optional[QueryBundle] = None
-            query: Optional[Dict[str, Any]] = None
-            limit: Optional[int] = 5
-        """
-
         async def do_vector_search():
-            if query:
+            if self._pgml_query:
                 return await self._index.collection.vector_search(
-                    query,
+                    self._pgml_query,
                     self._index.pipeline,
                 )
             else:
@@ -80,6 +59,8 @@ class PostgresMLRetriever(BaseRetriever):
                     raise Exception(
                         "Must provide either query or query_bundle to retrieve and aretrieve"
                     )
+                if self._rerank is not None:
+                    self._rerank = self._rerank | {"query": query_bundle.query_str}
                 return await self._index.collection.vector_search(
                     {
                         "query": {
@@ -90,7 +71,8 @@ class PostgresMLRetriever(BaseRetriever):
                                 }
                             }
                         },
-                        "limit": limit,
+                        "rerank": self._rerank,
+                        "limit": self._limit,
                     },
                     self._index.pipeline,
                 )
@@ -104,6 +86,15 @@ class PostgresMLRetriever(BaseRetriever):
                     metadata=r["document"]["metadata"],
                 ),
                 score=r["score"],
+            )
+            if self._rerank is None
+            else NodeWithScore(
+                node=TextNode(
+                    id_=r["document"]["id"],
+                    text=r["chunk"],
+                    metadata=r["document"]["metadata"],
+                ),
+                score=r["rerank_score"],
             )
             for r in results
         ]

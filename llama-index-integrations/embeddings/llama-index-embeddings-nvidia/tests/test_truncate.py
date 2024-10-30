@@ -20,7 +20,7 @@ def mocked_route() -> respx.Route:
 @pytest.mark.parametrize("truncate", ["END", "START", "NONE"])
 def test_single_tuncate(mocked_route: respx.Route, method_name: str, truncate: str):
     # call the method_name method
-    getattr(NVIDIAEmbedding(truncate=truncate), method_name)("nvidia")
+    getattr(NVIDIAEmbedding(api_key="BOGUS", truncate=truncate), method_name)("nvidia")
 
     assert mocked_route.called
     request = mocked_route.calls.last.request
@@ -36,7 +36,9 @@ async def test_asingle_tuncate(
     mocked_route: respx.Route, method_name: str, truncate: str
 ):
     # call the method_name method
-    await getattr(NVIDIAEmbedding(truncate=truncate), method_name)("nvidia")
+    await getattr(NVIDIAEmbedding(api_key="BOGUS", truncate=truncate), method_name)(
+        "nvidia"
+    )
 
     assert mocked_route.called
     request = mocked_route.calls.last.request
@@ -49,7 +51,9 @@ async def test_asingle_tuncate(
 @pytest.mark.parametrize("truncate", ["END", "START", "NONE"])
 def test_batch_tuncate(mocked_route: respx.Route, method_name: str, truncate: str):
     # call the method_name method
-    getattr(NVIDIAEmbedding(truncate=truncate), method_name)(["nvidia"])
+    getattr(NVIDIAEmbedding(api_key="BOGUS", truncate=truncate), method_name)(
+        ["nvidia"]
+    )
 
     assert mocked_route.called
     request = mocked_route.calls.last.request
@@ -65,7 +69,9 @@ async def test_abatch_tuncate(
     mocked_route: respx.Route, method_name: str, truncate: str
 ):
     # call the method_name method
-    await getattr(NVIDIAEmbedding(truncate=truncate), method_name)(["nvidia"])
+    await getattr(NVIDIAEmbedding(api_key="BOGUS", truncate=truncate), method_name)(
+        ["nvidia"]
+    )
 
     assert mocked_route.called
     request = mocked_route.calls.last.request

@@ -1,7 +1,6 @@
 import os
 from typing import Any, AsyncGenerator, Generator, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
-
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, LLMMetadata
 from llama_index.llms.nvidia import NVIDIA
@@ -15,6 +14,12 @@ from openai.types.chat.chat_completion import (
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceDelta
 from openai.types.chat.chat_completion_chunk import Choice as ChunkChoice
 from openai.types.completion import Completion, CompletionUsage
+from pytest_httpx import HTTPXMock
+from llama_index.llms.nvidia.utils import (
+    NVIDIA_FUNTION_CALLING_MODELS,
+    API_CATALOG_MODELS,
+    COMPLETION_MODELS,
+)
 
 
 class CachedNVIDIApiKeys:
@@ -114,6 +119,40 @@ def mock_chat_completion_stream_v1(
     ]
 
     yield from responses
+
+
+@pytest.fixture()
+def known_unknown() -> str:
+    return "mock-model"
+
+
+@pytest.fixture()
+def mock_local_models(httpx_mock: HTTPXMock):
+    mock_response = {
+        "data": [
+            {
+                "id": "mock-model",
+                "object": "model",
+                "created": 1234567890,
+                "owned_by": "OWNER",
+                "root": "mock-model",
+            },
+            {
+                "id": "lora1",
+                "object": "model",
+                "created": 1234567890,
+                "owned_by": "OWNER",
+                "root": "mock-model",
+            },
+        ]
+    }
+
+    httpx_mock.add_response(
+        url="http://localhost:8000/v1/models",
+        method="GET",
+        json=mock_response,
+        status_code=200,
+    )
 
 
 async def mock_async_chat_completion_stream_v1(
@@ -223,3 +262,80 @@ def test_validates_api_key_is_present() -> None:
 
 def test_metadata() -> None:
     assert isinstance(NVIDIA().metadata, LLMMetadata)
+
+
+def test_default_local_known(mock_local_models, known_unknown: str) -> None:
+    """
+    Test that a model in the model table will be accepted.
+    """
+    # check if default model is getting set
+    with pytest.warns(UserWarning):
+        x = NVIDIA(base_url="http://localhost:8000/v1")
+        assert x.model == known_unknown
+
+
+def test_default_local_lora(mock_local_models) -> None:
+    """
+    Test that a model in the model table will be accepted.
+    """
+    # find a model that matches the public_class under test
+    x = NVIDIA(base_url="http://localhost:8000/v1", model="lora1")
+    assert x.model == "lora1"
+
+
+def test_local_model_not_found(mock_local_models) -> None:
+    """
+    Test that a model in the model table will be accepted.
+    """
+    err_msg = f"No locally hosted lora3 was found."
+    with pytest.raises(ValueError) as msg:
+        x = NVIDIA(base_url="http://localhost:8000/v1", model="lora3")
+    assert err_msg == str(msg.value)
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_model_compatible_client_default_model(MockSyncOpenAI: MagicMock) -> None:
+    with CachedNVIDIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = mock_chat_completion_v1()
+
+        llm = NVIDIA()
+        message = ChatMessage(role="user", content="test message")
+        llm.chat([message])
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+@pytest.mark.parametrize(
+    "model",
+    (
+        NVIDIA_FUNTION_CALLING_MODELS[0],
+        next(iter(API_CATALOG_MODELS.keys())),
+        COMPLETION_MODELS[0],
+    ),
+)
+def test_model_compatible_client_model(MockSyncOpenAI: MagicMock, model: str) -> None:
+    with CachedNVIDIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = mock_chat_completion_v1()
+
+        NVIDIA(api_key="BOGUS", model=model)
+
+
+def test_model_incompatible_client_model() -> None:
+    model_name = "x"
+    err_msg = (
+        f"Model {model_name} is incompatible with client NVIDIA. "
+        f"Please check `NVIDIA.available_models()`."
+    )
+    with pytest.raises(ValueError) as msg:
+        NVIDIA(model=model_name)
+    assert err_msg == str(msg.value)
+
+
+def test_model_incompatible_client_known_model() -> None:
+    model_name = "google/deplot"
+    warn_msg = f"Unable to determine validity"
+    with pytest.warns(UserWarning) as msg:
+        NVIDIA(api_key="BOGUS", model=model_name)
+    assert len(msg) == 1
+    assert warn_msg in str(msg[0].message)

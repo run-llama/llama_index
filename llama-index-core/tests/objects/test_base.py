@@ -4,12 +4,11 @@ from llama_index.core.indices.list.base import SummaryIndex
 from llama_index.core.objects.base import ObjectIndex
 from llama_index.core.objects.base_node_mapping import SimpleObjectNodeMapping
 from llama_index.core.objects.tool_node_mapping import SimpleToolNodeMapping
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.schema import TextNode
 
 
-def test_object_index(mock_service_context: ServiceContext) -> None:
+def test_object_index() -> None:
     """Test object index."""
     object_mapping = SimpleObjectNodeMapping.from_objects(["a", "b", "c"])
     obj_index = ObjectIndex.from_objects(
@@ -23,7 +22,7 @@ def test_object_index(mock_service_context: ServiceContext) -> None:
     assert obj_index.as_retriever().retrieve("test") == ["a", "b", "c", "d"]
 
 
-def test_object_index_default_mapping(mock_service_context: ServiceContext) -> None:
+def test_object_index_default_mapping() -> None:
     """Test object index."""
     obj_index = ObjectIndex.from_objects(["a", "b", "c"], index_cls=SummaryIndex)
     # should just retrieve everything
@@ -34,7 +33,7 @@ def test_object_index_default_mapping(mock_service_context: ServiceContext) -> N
     assert obj_index.as_retriever().retrieve("test") == ["a", "b", "c", "d"]
 
 
-def test_object_index_fn_mapping(mock_service_context: ServiceContext) -> None:
+def test_object_index_fn_mapping() -> None:
     """Test object index."""
     objects = {obj: obj for obj in ["a", "b", "c", "d"]}
     print(objects)
@@ -60,7 +59,7 @@ def test_object_index_fn_mapping(mock_service_context: ServiceContext) -> None:
     assert obj_index.as_retriever().retrieve("test") == ["a", "b", "c", "d"]
 
 
-def test_object_index_persist(mock_service_context: ServiceContext) -> None:
+def test_object_index_persist() -> None:
     """Test object index persist/load."""
     object_mapping = SimpleObjectNodeMapping.from_objects(["a", "b", "c"])
     obj_index = ObjectIndex.from_objects(
@@ -88,7 +87,7 @@ def test_object_index_persist(mock_service_context: ServiceContext) -> None:
     )
 
 
-def test_object_index_with_tools(mock_service_context: ServiceContext) -> None:
+def test_object_index_with_tools() -> None:
     """Test object index with tools."""
     tool1 = FunctionTool.from_defaults(fn=lambda x: x, name="test_tool")
     tool2 = FunctionTool.from_defaults(fn=lambda x, y: x + y, name="test_tool2")

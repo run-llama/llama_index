@@ -150,24 +150,44 @@ Check out the [lower-level agent guide](agent_runner.md) for more details.
 
 ## Customizing your Agent
 
-If you wish to customize your agent, you can choose to subclass the `CustomSimpleAgentWorker`, and plug it into an AgentRunner (see above).
+If you wish to define a custom agent, the easiest way to do so is to just define a stateful function and wrap it with a `FnAgentWorker`.
+
+The `state` variable passed in and out of the function can contain anything you want it to, whether it's tools or arbitrary variables. It also contains task and output objects.
 
 ```python
-from llama_index.core.agent import CustomSimpleAgentWorker
+## This is an example showing a trivial function that multiplies an input number by 2 each time.
+## Pass this into an agent
+def multiply_agent_fn(state: dict) -> Tuple[Dict[str, Any], bool]:
+    """Mock agent input function."""
+    if "max_count" not in state:
+        raise ValueError("max_count must be specified.")
+
+    # __output__ is a special key indicating the final output of the agent
+    # __task__ is a special key representing the Task object passed by the agent to the function.
+    # `task.input` is the input string passed
+    if "__output__" not in state:
+        state["__output__"] = int(state["__task__"].input)
+        state["count"] = 0
+    else:
+        state["__output__"] = state["__output__"] * 2
+        state["count"] += 1
+
+    is_done = state["count"] >= state["max_count"]
+
+    # the output of this function should be a tuple of the state variable and is_done
+    return state, is_done
 
 
-class MyAgentWorker(CustomSimpleAgentWorker):
-    """Custom agent worker."""
+from llama_index.core.agent import FnAgentWorker
 
-    # define class here
-    pass
-
-
-# Wrap the worker into an AgentRunner
-agent = MyAgentWorker(...).as_agent()
+agent = FnAgentWorker(
+    fn=multiply_agent_fn, initial_state={"max_count": 5}
+).as_agent()
+agent.query("5")
 ```
 
 Check out our [Custom Agent Notebook Guide](../../../examples/agent/custom_agent.ipynb) for more details.
+
 
 ## Advanced Concepts (for `OpenAIAgent`, in beta)
 

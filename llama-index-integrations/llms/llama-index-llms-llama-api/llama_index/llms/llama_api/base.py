@@ -66,8 +66,6 @@ class LlamaAPI(CustomLLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        self._client = Client(api_key)
-
         super().__init__(
             model=model,
             temperature=temperature,
@@ -80,6 +78,8 @@ class LlamaAPI(CustomLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+
+        self._client = Client(api_key)
 
     @classmethod
     def class_name(cls) -> str:

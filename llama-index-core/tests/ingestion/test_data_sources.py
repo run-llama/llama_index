@@ -10,14 +10,14 @@ from llama_index.core.schema import Document
 def test_can_generate_schema_for_data_source_component_type(
     configurable_data_source_type: ConfigurableDataSources,
 ) -> None:
-    schema = configurable_data_source_type.value.schema()  # type: ignore
+    schema = configurable_data_source_type.value.model_json_schema()  # type: ignore
     assert schema is not None
     assert len(schema) > 0
 
     # also check that we can generate schemas for
     # ConfiguredDataSource[component_type]
     component_type = configurable_data_source_type.value.component_type
-    configured_schema = ConfiguredDataSource[component_type].schema()  # type: ignore
+    configured_schema = ConfiguredDataSource[component_type].model_json_schema()  # type: ignore
     assert configured_schema is not None
     assert len(configured_schema) > 0
 

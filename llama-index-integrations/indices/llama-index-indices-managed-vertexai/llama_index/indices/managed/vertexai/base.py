@@ -104,8 +104,8 @@ class VertexAIIndex(BaseManagedIndex):
 
         with telemetry.tool_context_manager(self._user_agent):
             return rag.import_files(
-                corpus=self.corpus_name,
-                uris=uris,
+                self.corpus_name,
+                paths=uris,
                 chunk_size=chunk_size,
                 chunk_overlap=chunk_overlap,
                 timeout=timeout,
@@ -138,7 +138,7 @@ class VertexAIIndex(BaseManagedIndex):
         """List all files in the index."""
         files = []
         with telemetry.tool_context_manager(self._user_agent):
-            for file in rag.list_files(corpus=self.corpus_name):
+            for file in rag.list_files(corpus_name=self.corpus_name):
                 files.append(file.name)
         return files
 

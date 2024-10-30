@@ -8,7 +8,7 @@ Out of the box abstractions include:
 - High-level query and retriever code e.g. `VectorStoreIndex.as_retriever()` and `VectorStoreIndex.as_query_engine()`
 - High-level agent abstractions e.g. `OpenAIAgent`
 
-Instead of using these, the goal here is to educate users on what's going on under the hood. By showing you the underlying algorithms for constructing RAG and agent pipelines, you can then be empowered to create your own custom LLM workflows (while still using LlamaIndex abstractions at any level of granularity that makes sense).
+Instead of using these, the goal here is to educate users on what's going on under the hood. By showing you the underlying algorithms for constructing RAG and agent workflows, you can then be empowered to create your own custom LLM workflows (while still using LlamaIndex abstractions at any level of granularity that makes sense).
 
 We show how to build an app from scratch, component by component. For the sake of focus, each tutorial will show how to build a specific component from scratch while using out-of-the-box abstractions for other components. **NOTE**: This is a WIP document, we're in the process of fleshing this out!
 
@@ -53,7 +53,7 @@ Learn how to build common LLM-based eval modules (correctness, faithfulness) usi
 
 ## Building Advanced RAG from Scratch
 
-These tutorials will show you how to build advanced functionality beyond the basic RAG pipeline. Especially helpful for advanced users with custom workflows / production needs.
+These tutorials will show you how to build advanced functionality beyond the basic RAG workflow. Especially helpful for advanced users with custom workflows / production needs.
 
 ### Building Hybrid Search from Scratch
 
@@ -63,7 +63,7 @@ Hybrid search is an advanced retrieval feature supported by many vector database
 
 ### Building a Router from Scratch
 
-Beyond the standard RAG pipeline, this takes you one step towards automated decision making with LLMs by showing you how to build a router module from scratch.
+Beyond the standard RAG workflow, this takes you one step towards automated decision making with LLMs by showing you how to build a router module from scratch.
 
 - [Router from Scratch](../examples/low_level/router.ipynb)
 

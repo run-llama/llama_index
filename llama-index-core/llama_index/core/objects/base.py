@@ -12,7 +12,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
@@ -22,7 +22,7 @@ from llama_index.core.objects.base_node_mapping import (
     BaseObjectNodeMapping,
     SimpleObjectNodeMapping,
 )
-from llama_index.core.schema import QueryBundle, QueryType, TextNode
+from llama_index.core.schema import BaseNode, QueryBundle, QueryType
 from llama_index.core.storage.storage_context import (
     DEFAULT_PERSIST_DIR,
     StorageContext,
@@ -95,10 +95,8 @@ class ObjectRetriever(ChainableMixin, Generic[OT]):
 class ObjectRetrieverComponent(QueryComponent):
     """Object retriever component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     retriever: ObjectRetriever = Field(..., description="Retriever.")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -155,8 +153,8 @@ class ObjectIndex(Generic[OT]):
         cls,
         objects: Sequence[OT],
         object_mapping: Optional[BaseObjectNodeMapping] = None,
-        from_node_fn: Optional[Callable[[TextNode], OT]] = None,
-        to_node_fn: Optional[Callable[[OT], TextNode]] = None,
+        from_node_fn: Optional[Callable[[BaseNode], OT]] = None,
+        to_node_fn: Optional[Callable[[OT], BaseNode]] = None,
         index_cls: Type[BaseIndex] = VectorStoreIndex,
         **index_kwargs: Any,
     ) -> "ObjectIndex":
@@ -180,8 +178,8 @@ class ObjectIndex(Generic[OT]):
         objects: Sequence[OT],
         index: BaseIndex,
         object_mapping: Optional[BaseObjectNodeMapping] = None,
-        from_node_fn: Optional[Callable[[TextNode], OT]] = None,
-        to_node_fn: Optional[Callable[[OT], TextNode]] = None,
+        from_node_fn: Optional[Callable[[BaseNode], OT]] = None,
+        to_node_fn: Optional[Callable[[OT], BaseNode]] = None,
     ) -> "ObjectIndex":
         from llama_index.core.objects.utils import get_object_mapping
 

@@ -11,6 +11,6 @@ class SpanDropEvent(BaseEvent):
     err_str: str
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "SpanDropEvent"

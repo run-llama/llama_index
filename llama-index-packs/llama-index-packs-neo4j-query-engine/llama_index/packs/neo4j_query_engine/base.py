@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from llama_index.core import (
     KnowledgeGraphIndex,
     QueryBundle,
-    ServiceContext,
+    Settings,
     StorageContext,
     VectorStoreIndex,
     get_response_synthesizer,
@@ -61,13 +61,12 @@ class Neo4jQueryEnginePack(BaseLlamaPack):
 
         # define LLM
         self.llm = OpenAI(temperature=0.1, model="gpt-3.5-turbo")
-        self.service_context = ServiceContext.from_defaults(llm=self.llm)
+        Settings.llm = self.llm
 
         neo4j_index = KnowledgeGraphIndex.from_documents(
             documents=docs,
             storage_context=neo4j_storage_context,
             max_triplets_per_chunk=10,
-            service_context=self.service_context,
             include_embeddings=True,
         )
 
@@ -78,10 +77,8 @@ class Neo4jQueryEnginePack(BaseLlamaPack):
         nodes = node_parser(docs)
         print(f"loaded nodes with {len(nodes)} nodes")
 
-        # based on the nodes and service_context, create index
-        vector_index = VectorStoreIndex(
-            nodes=nodes, service_context=self.service_context
-        )
+        # based on the nodes, create index
+        vector_index = VectorStoreIndex(nodes=nodes)
 
         if query_engine_type == Neo4jQueryEngineType.KG_KEYWORD:
             # KG keyword-based entity retrieval
@@ -120,8 +117,7 @@ class Neo4jQueryEnginePack(BaseLlamaPack):
 
             # create neo4j response synthesizer
             neo4j_response_synthesizer = get_response_synthesizer(
-                service_context=self.service_context,
-                response_mode="tree_summarize",
+                response_mode="tree_summarize"
             )
 
             # Custom combo query engine
@@ -136,7 +132,6 @@ class Neo4jQueryEnginePack(BaseLlamaPack):
 
             self.query_engine = KnowledgeGraphQueryEngine(
                 storage_context=neo4j_storage_context,
-                service_context=self.service_context,
                 llm=self.llm,
                 verbose=True,
             )
@@ -148,13 +143,12 @@ class Neo4jQueryEnginePack(BaseLlamaPack):
 
             neo4j_graph_rag_retriever = KnowledgeGraphRAGRetriever(
                 storage_context=neo4j_storage_context,
-                service_context=self.service_context,
                 llm=self.llm,
                 verbose=True,
             )
 
             self.query_engine = RetrieverQueryEngine.from_args(
-                neo4j_graph_rag_retriever, service_context=self.service_context
+                neo4j_graph_rag_retriever
             )
 
         else:
@@ -163,11 +157,7 @@ class Neo4jQueryEnginePack(BaseLlamaPack):
 
     def get_modules(self) -> Dict[str, Any]:
         """Get modules."""
-        return {
-            "llm": self.llm,
-            "service_context": self.service_context,
-            "query_engine": self.query_engine,
-        }
+        return {"llm": self.llm, "query_engine": self.query_engine}
 
     def run(self, *args: Any, **kwargs: Any) -> Any:
         """Run the pipeline."""

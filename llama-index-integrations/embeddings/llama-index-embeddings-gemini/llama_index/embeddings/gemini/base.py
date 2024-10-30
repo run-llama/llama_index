@@ -1,7 +1,7 @@
 """Gemini embeddings file."""
 
 import os
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import google.generativeai as gemini
 from llama_index.core.base.embeddings.base import (
@@ -60,18 +60,18 @@ class GeminiEmbedding(BaseEmbedding):
         if transport:
             config_params["transport"] = transport
         # transport: A string, one of: [`rest`, `grpc`, `grpc_asyncio`].
-        gemini.configure(**config_params)
-        self._model = gemini
 
         super().__init__(
             api_key=api_key,
             model_name=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
+            title=title,
+            task_type=task_type,
             **kwargs,
         )
-        self.title = title
-        self.task_type = task_type
+        gemini.configure(**config_params)
+        self._model = gemini
 
     @classmethod
     def class_name(cls) -> str:
@@ -107,17 +107,20 @@ class GeminiEmbedding(BaseEmbedding):
             for text in texts
         ]
 
-    ### Async methods ###
-    # need to wait async calls from Gemini side to be implemented.
-    # Issue: https://github.com/google/generative-ai-python/issues/125
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
-        return self._get_query_embedding(query)
+        return self._aget_text_embeddings(query)
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
-        return self._get_text_embedding(text)
+        return self._aget_text_embeddings(text)
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        return self._get_text_embeddings(texts)
+        response = await self._model.embed_content_async(
+            model=self.model_name,
+            content=texts,
+            title=self.title,
+            task_type=self.task_type,
+        )
+        return response["embedding"]

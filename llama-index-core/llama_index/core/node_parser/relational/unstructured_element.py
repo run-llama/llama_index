@@ -107,7 +107,7 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
         elements = partition_html(text=text, **self.partitioning_parameters)
         output_els = []
         for idx, element in enumerate(elements):
-            if "unstructured.documents.html.HTMLTable" in str(type(element)):
+            if "unstructured.documents.elements.Table" in str(type(element)):
                 should_keep = all(tf(element) for tf in table_filters)
                 if should_keep:
                     table_df = html_to_df(str(element.metadata.text_as_html))
@@ -120,12 +120,12 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
                         )
                     )
                 else:
-                    # if not a table, keep it as Text as we don't want to loose context
-                    from unstructured.documents.html import HTMLText
+                    # if not a table, keep it as Text as we don't want to lose context
+                    from unstructured.documents.elements import Text
 
-                    newElement = HTMLText(str(element), tag=element.tag)
+                    new_element = Text(str(element))
                     output_els.append(
-                        Element(id=f"id_{idx}", type="text", element=newElement)
+                        Element(id=f"id_{idx}", type="text", element=new_element)
                     )
             else:
                 output_els.append(Element(id=f"id_{idx}", type="text", element=element))

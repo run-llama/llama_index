@@ -10,7 +10,6 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, cast
 
-from llama_index.core import ServiceContext
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
@@ -26,6 +25,8 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
     BasePydanticVectorStore,
 )
+from llama_index.core import Settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -136,8 +137,6 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             Defaults to None.
         search_params (dict, optional): The search parameters for a ClickHouse query.
             Defaults to None.
-        service_context (ServiceContext, optional): Vector store service context.
-            Defaults to None
 
     Examples:
         `pip install llama-index-vector-stores-clickhouse`
@@ -158,8 +157,8 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
     _table_existed: bool = PrivateAttr(default=False)
     _client: Any = PrivateAttr()
     _config: Any = PrivateAttr()
@@ -168,9 +167,9 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
     _column_names: List[str] = PrivateAttr()
     _column_type_names: List[str] = PrivateAttr()
     metadata_column: str = "metadata"
-    AMPLIFY_RATIO_LE5 = 100
-    AMPLIFY_RATIO_GT5 = 20
-    AMPLIFY_RATIO_GT50 = 10
+    AMPLIFY_RATIO_LE5: int = 100
+    AMPLIFY_RATIO_GT5: int = 20
+    AMPLIFY_RATIO_GT50: int = 10
 
     def __init__(
         self,
@@ -183,7 +182,6 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         batch_size: int = 1000,
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -199,8 +197,8 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
 
         if clickhouse_client is None:
             raise ValueError("Missing ClickHouse client!")
-        self._client = clickhouse_client
-        self._config = ClickHouseSettings(
+        client = clickhouse_client
+        config = ClickHouseSettings(
             table=table,
             database=database,
             engine=engine,
@@ -213,7 +211,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         )
 
         # schema column name, type, and construct format method
-        self._column_config: Dict = {
+        column_config: Dict = {
             "id": {"type": "String", "extract_func": lambda x: x.node_id},
             "doc_id": {"type": "String", "extract_func": lambda x: x.ref_doc_id},
             "text": {
@@ -235,18 +233,11 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
                 "extract_func": lambda x: json.dumps(x.metadata),
             },
         }
-        self._column_names = list(self._column_config.keys())
-        self._column_type_names = [
-            self._column_config[column_name]["type"]
-            for column_name in self._column_names
+        column_names = list(self._column_config.keys())
+        column_type_names = [
+            column_config[column_name]["type"] for column_name in column_names
         ]
 
-        if service_context is not None:
-            service_context = cast(ServiceContext, service_context)
-            dimension = len(
-                service_context.embed_model.get_query_embedding("try this out")
-            )
-            self.create_table(dimension)
         super().__init__(
             clickhouse_client=clickhouse_client,
             table=table,
@@ -257,8 +248,14 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             batch_size=batch_size,
             index_params=index_params,
             search_params=search_params,
-            service_context=service_context,
         )
+        self._client = client
+        self._config = config
+        self._column_config = column_config
+        self._column_names = column_names
+        self._column_type_names = column_type_names
+        dimension = len(Settings.embed_model.get_query_embedding("try this out"))
+        self.create_table(dimension)
 
     @property
     def client(self) -> Any:

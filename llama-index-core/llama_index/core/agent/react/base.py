@@ -85,6 +85,7 @@ class ReActAgent(AgentRunner):
             memory=memory,
             llm=llm,
             callback_manager=callback_manager,
+            verbose=verbose,
         )
 
     @classmethod

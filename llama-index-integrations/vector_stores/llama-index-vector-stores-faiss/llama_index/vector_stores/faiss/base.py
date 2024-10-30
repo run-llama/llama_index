@@ -74,9 +74,9 @@ class FaissVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        self._faiss_index = cast(faiss.Index, faiss_index)
-
         super().__init__()
+
+        self._faiss_index = cast(faiss.Index, faiss_index)
 
     @classmethod
     def from_persist_dir(
