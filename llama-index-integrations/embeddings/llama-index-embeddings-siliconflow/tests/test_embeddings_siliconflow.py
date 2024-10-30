@@ -2,24 +2,30 @@ import json
 import pytest
 from requests import Response
 from unittest import mock
+from typing import Optional, Type
 from llama_index.core.embeddings import BaseEmbedding
 from llama_index.embeddings.siliconflow import SiliconFlowEmbedding
 
 
 class MockAsyncResponse:
-    def __init__(self, json_data):
+    def __init__(self, json_data) -> None:
         self._json_data = json_data
 
-    def raise_for_status(self):
+    def raise_for_status(self) -> None:
         ...
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "MockAsyncResponse":
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[BaseException],
+    ) -> None:
         pass
 
-    async def json(self):
+    async def json(self) -> dict:
         return self._json_data
 
 
