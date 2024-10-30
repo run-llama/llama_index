@@ -127,7 +127,8 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         **falkordb_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
-        self._driver = FalkorDB.from_url(url).select_graph(database)
+        self._driver = FalkorDB.from_url(url)
+        self._graph = self._driver.select_graph(database)
         self._database = database
         self.structured_schema = {}
         if refresh_schema:
@@ -135,7 +136,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
 
     @property
     def client(self):
-        return self._driver
+        return self._graph
 
     def refresh_schema(self) -> None:
         """Refresh the schema."""
@@ -459,7 +460,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
     ) -> Any:
         param_map = param_map or {}
 
-        result = self._driver.query(query, param_map)
+        result = self._graph.query(query, param_map)
         full_result = [
             {h[1]: d[i] for i, h in enumerate(result.header)} for d in result.result_set
         ]
@@ -590,6 +591,22 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
                 "\n".join(formatted_rels),
             ]
         )
+
+    def switch_graph(self, graph_name: str) -> None:
+        """Switch to the given graph name (`graph_name`).
+
+        This method allows users to change the active graph within the same
+        database connection.
+
+        Args:
+            graph_name (str): The name of the graph to switch to.
+        """
+        self._graph = self._driver.select_graph(graph_name)
+
+        try:
+            self.refresh_schema()
+        except Exception as e:
+            raise ValueError(f"Could not refresh schema. Error: {e}")
 
 
 FalkorDBPGStore = FalkorDBPropertyGraphStore
