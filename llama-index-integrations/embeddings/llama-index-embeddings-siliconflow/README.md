@@ -23,7 +23,7 @@ pip install llama-index-embeddings-siliconflow
 
 ## 4. Usage
 
-```
+```python
 import asyncio
 import os
 from llama_index.embeddings.siliconflow import SiliconFlowEmbedding
