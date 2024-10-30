@@ -1,5 +1,6 @@
 import json
 import pytest
+import types
 from requests import Response
 from unittest import mock
 from typing import Optional, Type
@@ -21,7 +22,7 @@ class MockAsyncResponse:
         self,
         exc_type: Optional[Type[BaseException]],
         exc: Optional[BaseException],
-        tb: Optional[BaseException],
+        tb: Optional[types.TracebackType],
     ) -> None:
         pass
 
