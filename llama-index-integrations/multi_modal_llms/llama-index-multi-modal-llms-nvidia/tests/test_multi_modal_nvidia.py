@@ -1,5 +1,51 @@
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.multi_modal_llms.nvidia import NVIDIAMultiModal
+from llama_index.multi_modal_llms.nvidia.utils import (
+    NVIDIA_MULTI_MODAL_MODELS,
+    encode_image,
+)
+import base64
+import os
+from typing import Any, Dict, List, Union
+
+import pytest
+import requests
+from llama_index.core.base.llms.types import (
+    CompletionResponse,
+)
+from llama_index.core.schema import ImageDocument
+
+# TODO: multiple texts
+# TODO: accuracy tests
+
+#
+# API Specification -
+#
+#  - User message may contain 1 or more image_url
+#  - image_url contains a url and optional detail
+#  - detail is one of "low", "high" or "auto" (default)
+#  - url is either a url to an image or base64 encoded image
+#  - format for base64 is "data:image/png;{type}},..."
+#  - supported image types are png, jpeg (or jpg), webp, gif (non-animated)
+#
+
+#
+# note: differences between api catalog and openai api
+#  - openai api supports server-side image download, api catalog does not consistently
+#   - NVIDIAMultiModal does client side download to simulate the same behavior
+#  - NVIDIAMultiModal will automatically read local files and convert them to base64
+#  - openai api always uses {"image_url": {"url": "..."}}
+#     where api catalog sometimes uses {"image_url": "..."}
+#
+
+image_urls = [
+    "https://res.cloudinary.com/hello-tickets/image/upload/c_limit,f_auto,q_auto,w_1920/v1640835927/o3pfl41q7m5bj8jardk0.jpg",
+    "https://www.visualcapitalist.com/wp-content/uploads/2023/10/US_Mortgage_Rate_Surge-Sept-11-1.jpg",
+    "https://www.sportsnet.ca/wp-content/uploads/2023/11/CP1688996471-1040x572.jpg",
+    # Add yours here!
+]
+
+MODELS = list(NVIDIA_MULTI_MODAL_MODELS.keys())
 
 
 def test_embedding_class():
@@ -10,3 +56,240 @@ def test_embedding_class():
 def test_init():
     m = NVIDIAMultiModal(max_tokens=400)
     assert m.max_tokens == 400
+
+
+def urlToBase64(url):
+    return base64.b64encode(requests.get(url).content).decode("utf-8")
+
+
+def get_asset_id(url):
+    content_type = "image/jpg"
+    description = "example-image-from-lc-nv-ai-e-notebook"
+
+    create_response = requests.post(
+        "https://api.nvcf.nvidia.com/v2/nvcf/assets",
+        headers={
+            "Authorization": f"Bearer {os.environ['NVIDIA_API_KEY']}",
+            "accept": "application/json",
+            "Content-Type": "application/json",
+        },
+        json={"contentType": content_type, "description": description},
+    )
+    create_response.raise_for_status()
+
+    upload_response = requests.put(
+        create_response.json()["uploadUrl"],
+        headers={
+            "Content-Type": content_type,
+            "x-amz-meta-nvcf-asset-description": description,
+        },
+        data=urlToBase64(url),
+    )
+    upload_response.raise_for_status()
+
+    return create_response.json()["assetId"]
+
+
+@pytest.mark.parametrize(
+    "vlm_model",
+    ["microsoft/phi-3-vision-128k-instruct"],
+)
+@pytest.mark.parametrize(
+    "content",
+    [
+        [ImageDocument(image_url=image_urls[0])],
+        [ImageDocument(image=urlToBase64(image_urls[0]), mimetype="jpeg")],
+        [ImageDocument(image_path="tests/data/nvidia-picasso.jpg")],
+        [
+            ImageDocument(
+                image=encode_image("tests/data/nvidia-picasso.jpg"), mimetype="jpeg"
+            )
+        ],
+    ],
+)
+@pytest.mark.parametrize(
+    "func",
+    ["invoke", "stream"],
+)
+def test_vlm_input_style(
+    vlm_model: str,
+    content: List[ImageDocument],
+    func: str,
+) -> None:
+    llm = NVIDIAMultiModal(model=vlm_model)
+    assert vlm_model in MODELS
+    if func == "invoke":
+        response = llm.complete(prompt="Describe the Image.", image_documents=content)
+        assert isinstance(response, CompletionResponse)
+    if func == "stream":
+        for token in llm.stream_complete(
+            prompt="Describe the Image.", image_documents=content
+        ):
+            assert isinstance(token.text, str)
+
+
+@pytest.mark.parametrize(
+    "vlm_model",
+    ["microsoft/phi-3-vision-128k-instruct"],
+)
+@pytest.mark.parametrize(
+    "img",
+    [
+        "tests/data/nvidia-picasso.jpg",
+        "tests/data/nvidia-picasso.png",
+        "tests/data/nvidia-picasso.webp",
+        "tests/data/nvidia-picasso.gif",
+    ],
+    ids=["jpg", "png", "webp", "gif"],
+)
+def test_vlm_image_type(
+    vlm_model: str,
+    img: str,
+) -> None:
+    llm = NVIDIAMultiModal(model=vlm_model)
+    response = llm.complete(
+        "Describe image", image_documents=[ImageDocument(image_path=img)]
+    )
+    assert isinstance(response, CompletionResponse)
+    assert isinstance(response.text, str)
+
+
+@pytest.mark.parametrize(
+    "vlm_model",
+    ["microsoft/phi-3-vision-128k-instruct"],
+)
+def test_vlm_image_large(
+    vlm_model: str,
+) -> None:
+    chat = NVIDIAMultiModal(model=vlm_model)
+    response = chat.complete(
+        prompt="Describe image",
+        image_documents=[
+            ImageDocument(image_path="tests/data/nvidia-picasso-large.png")
+        ],
+    )
+    assert isinstance(response, CompletionResponse)
+    assert isinstance(response.text, str)
+
+
+# def test_vlm_no_images(
+#     vlm_model: str,
+# ) -> None:
+#     chat = NVIDIAMultiModal(model=vlm_model)
+#     pytest.raises()
+#     response = chat.complete(prompt="What is the capital of Massachusetts?")
+#     assert isinstance(response, BaseMessage)
+#     assert isinstance(response.content, str)
+
+
+@pytest.mark.parametrize(
+    "vlm_model",
+    ["microsoft/phi-3-vision-128k-instruct"],
+)
+def test_vlm_two_images(
+    vlm_model: str,
+) -> None:
+    chat = NVIDIAMultiModal(model=vlm_model)
+    response = chat.complete(
+        prompt="Describe image",
+        image_documents=[
+            ImageDocument(image_path="tests/data/nvidia-picasso.png"),
+            ImageDocument(image_path="tests/data/nvidia-picasso.jpg"),
+        ],
+    )
+    assert isinstance(response, CompletionResponse)
+    assert isinstance(response.text, str)
+
+
+@pytest.fixture(scope="session")
+def asset_id() -> str:
+    # create an asset following -
+    #  https://docs.nvidia.com/cloud-functions/user-guide/latest/cloud-function/assets.html
+
+    def create_asset_and_get_upload_url(
+        token: str, content_type: str, description: str
+    ) -> dict:
+        url = "https://api.nvcf.nvidia.com/v2/nvcf/assets"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        data = {"contentType": content_type, "description": description}
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
+        return response.json()
+
+    def upload_image_to_presigned_url(
+        image_path: str, upload_url: str, content_type: str, description: str
+    ) -> None:
+        headers = {
+            "Content-Type": content_type,
+            "x-amz-meta-nvcf-asset-description": description,
+        }
+        with open(image_path, "rb") as image_file:
+            response = requests.put(upload_url, headers=headers, data=image_file)
+            response.raise_for_status()
+
+    content_type = "image/jpg"
+    description = "lc-nv-ai-e-test-nvidia-picasso"
+
+    asset_info = create_asset_and_get_upload_url(
+        os.environ["NVIDIA_API_KEY"], content_type, description
+    )
+    asset_id = asset_info["assetId"]
+
+    upload_image_to_presigned_url(
+        "tests/data/nvidia-picasso.jpg",
+        asset_info["uploadUrl"],
+        content_type,
+        description,
+    )
+
+    return asset_id
+
+
+@pytest.mark.parametrize(
+    "vlm_model",
+    ["microsoft/phi-3-vision-128k-instruct"],
+)
+@pytest.mark.parametrize(
+    "content",
+    [
+        [
+            ImageDocument(metadata={"asset_id": asset_id}),
+            ImageDocument(metadata={"asset_id": asset_id}),
+        ]
+    ],
+)
+@pytest.mark.parametrize(
+    "func",
+    ["invoke", "stream"],
+)
+def test_vlm_asset_id(
+    vlm_model: str,
+    content: Union[str, List[Union[str, Dict[str, Any]]]],
+    func: str,
+    asset_id: str,
+) -> None:
+    if isinstance(content, str):
+        content = content.format(asset_id=asset_id)
+    elif isinstance(content, list):
+        for item in content:
+            if isinstance(item, str):
+                item = item.format(asset_id=asset_id)
+            elif isinstance(item, dict):
+                item["image_url"]["url"] = item["image_url"]["url"].format(
+                    asset_id=asset_id
+                )
+
+    chat = NVIDIAMultiModal(model=vlm_model)
+    if func == "invoke":
+        response = chat.complete(prompt="Describe image", image_documents=content)
+        assert isinstance(response, CompletionResponse)
+        assert isinstance(response.text, str)
+    if func == "stream":
+        for token in chat.stream_complete(
+            prompt="Describe image", image_documents=content
+        ):
+            assert isinstance(token.text, str)

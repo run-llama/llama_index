@@ -46,7 +46,7 @@ def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
     # Map file extensions to mimetypes
     # Claude 3 support the base64 source type for images, and the image/jpeg, image/png, image/gif, and image/webp media types.
     # https://docs.anthropic.com/claude/reference/messages_post
-    if file_extension in ["jpg", "jpeg", "png"]:
+    if file_extension in ["jpg", "jpeg", "png", "webp", "gif"]:
         return file_extension
     return "png"
     # Add more mappings for other image types if needed
@@ -65,7 +65,11 @@ def create_image_content(image_document) -> Optional[Dict[str, Any]]:
     Create the image content based on the provided image document.
     """
     if image_document.image:
-        mimetype = image_document.mimetype if image_document.mimetype else "jpeg"
+        mimetype = (
+            image_document.mimetype
+            if image_document.mimetype
+            else infer_image_mimetype_from_base64(image_document.image)
+        )
         return {
             "type": "text",
             "text": f'<img src="data:image/{mimetype};base64,{image_document.image}" />',
