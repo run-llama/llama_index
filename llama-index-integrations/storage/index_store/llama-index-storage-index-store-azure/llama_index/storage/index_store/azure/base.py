@@ -69,13 +69,13 @@ class AzureIndexStore(KVIndexStore):
 
     @classmethod
     def from_account_and_id(
-            cls,
-            account_name: str,
-            namespace: Optional[str] = None,
-            endpoint: Optional[str] = None,
-            service_mode: ServiceMode = ServiceMode.STORAGE,
-            partition_key: Optional[str] = None,
-            collection_suffix: Optional[str] = None,
+        cls,
+        account_name: str,
+        namespace: Optional[str] = None,
+        endpoint: Optional[str] = None,
+        service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
+        collection_suffix: Optional[str] = None,
     ) -> "AzureIndexStore":
         """Load an AzureIndexStore from an account name and managed ID.
 

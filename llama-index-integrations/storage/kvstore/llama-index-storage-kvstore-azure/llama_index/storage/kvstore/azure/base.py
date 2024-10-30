@@ -128,13 +128,13 @@ class AzureKVStore(BaseKVStore):
 
     @classmethod
     def from_account_and_id(
-            cls,
-            account_name: str,
-            endpoint: Optional[str] = None,
-            service_mode: ServiceMode = ServiceMode.STORAGE,
-            partition_key: Optional[str] = None,
-            *args: Any,
-            **kwargs: Any,
+        cls,
+        account_name: str,
+        endpoint: Optional[str] = None,
+        service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
+        *args: Any,
+        **kwargs: Any,
     ) -> "AzureKVStore":
         """Creates an instance of AzureKVStore from an account name and managed ID."""
         try:

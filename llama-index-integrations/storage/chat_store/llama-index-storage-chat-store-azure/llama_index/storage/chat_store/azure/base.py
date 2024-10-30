@@ -118,13 +118,13 @@ class AzureChatStore(BaseChatStore):
 
     @classmethod
     def from_account_and_id(
-            cls,
-            account_name: str,
-            endpoint: Optional[str] = None,
-            chat_table_name: str = DEFAULT_CHAT_TABLE,
-            metadata_table_name: str = DEFAULT_METADATA_TABLE,
-            metadata_partition_key: str = None,
-            service_mode: ServiceMode = ServiceMode.STORAGE,
+        cls,
+        account_name: str,
+        endpoint: Optional[str] = None,
+        chat_table_name: str = DEFAULT_CHAT_TABLE,
+        metadata_table_name: str = DEFAULT_METADATA_TABLE,
+        metadata_partition_key: str = None,
+        service_mode: ServiceMode = ServiceMode.STORAGE,
     ) -> "AzureChatStore":
         """Initializes AzureChatStore from an account name and managed ID."""
         from azure.identity import DefaultAzureCredential

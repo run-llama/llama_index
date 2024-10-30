@@ -109,15 +109,15 @@ class AzureDocumentStore(KVDocumentStore):
 
     @classmethod
     def from_account_and_id(
-            cls,
-            account_name: str,
-            namespace: Optional[str] = None,
-            node_collection_suffix: Optional[str] = None,
-            ref_doc_collection_suffix: Optional[str] = None,
-            metadata_collection_suffix: Optional[str] = None,
-            service_mode: ServiceMode = ServiceMode.STORAGE,
-            partition_key: Optional[str] = None,
-            **kwargs,
+        cls,
+        account_name: str,
+        namespace: Optional[str] = None,
+        node_collection_suffix: Optional[str] = None,
+        ref_doc_collection_suffix: Optional[str] = None,
+        metadata_collection_suffix: Optional[str] = None,
+        service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
+        **kwargs,
     ) -> "AzureDocumentStore":
         """Initialize an AzureDocumentStore from an account name and managed ID."""
         azure_kvstore = AzureKVStore.from_account_and_id(
