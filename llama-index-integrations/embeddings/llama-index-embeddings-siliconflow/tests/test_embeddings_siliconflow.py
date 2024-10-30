@@ -10,7 +10,8 @@ class MockAsyncResponse:
     def __init__(self, json_data):
         self._json_data = json_data
 
-    def raise_for_status(self): ...
+    def raise_for_status(self):
+        ...
 
     async def __aenter__(self):
         return self
