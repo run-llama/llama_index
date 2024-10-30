@@ -43,9 +43,9 @@ class FunctionTool(AsyncBaseTool):
         self,
         fn: Optional[Callable[..., Any]] = None,
         metadata: Optional[ToolMetadata] = None,
-        async_fn: Optional[AsyncCallable] = None,
+        async_fn: Optional[Callable[..., Any]] = None,
         callback: Optional[Callable[..., Any]] = None,
-        async_callback: Optional[AsyncCallable] = None,
+        async_callback: Optional[Callable[..., Any]] = None,
     ) -> None:
         if fn is None and async_fn is None:
             raise ValueError("fn or async_fn must be provided.")
@@ -70,10 +70,11 @@ class FunctionTool(AsyncBaseTool):
             self._callback = callback
         elif async_callback is not None:
             self._callback = async_to_sync(async_callback)
+
         self._async_callback = None
         if async_callback is not None:
             self._async_callback = async_callback
-        elif callback is not None:
+        elif self._callback is not None:
             self._async_callback = sync_to_async(self._callback)
 
         self._metadata = metadata
