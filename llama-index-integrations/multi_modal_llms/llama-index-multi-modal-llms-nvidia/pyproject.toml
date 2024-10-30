@@ -9,6 +9,10 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.multi_modal_llms.nvidia"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
@@ -20,7 +24,7 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index multi_modal nvidia integration"
 license = "MIT"
-name = "llama-index-multi-modal-nvidia"
+name = "llama-index-multi-modal-llms-nvidia"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"

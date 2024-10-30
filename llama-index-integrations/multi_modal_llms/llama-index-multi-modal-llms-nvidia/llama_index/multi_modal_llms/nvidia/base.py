@@ -33,7 +33,7 @@ import requests
 import httpx
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
-from llama_index.multi_modal.nvidia.utils import (
+from llama_index.multi_modal_llms.nvidia.utils import (
     BASE_URL,
     KNOWN_URLS,
     NVIDIA_MULTI_MODAL_MODELS,
