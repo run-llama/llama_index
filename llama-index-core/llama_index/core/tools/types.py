@@ -116,7 +116,6 @@ class BaseTool(DispatcherSpanMixin):
         langchain_tool_kwargs: Any,
     ) -> Dict[str, Any]:
         """Process langchain tool kwargs."""
-
         if "name" not in langchain_tool_kwargs:
             langchain_tool_kwargs["name"] = self.metadata.name or ""
         if "description" not in langchain_tool_kwargs:
