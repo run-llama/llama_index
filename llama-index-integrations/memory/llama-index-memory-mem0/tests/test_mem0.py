@@ -42,8 +42,8 @@ def test_mem0_memory_from_client():
         assert isinstance(mem0_memory, Mem0Memory)
 
         # Assert that the context was set correctly
-        assert isinstance(mem0_memory._context, Mem0Context)
-        assert mem0_memory._context.user_id == "test_user"
+        assert isinstance(mem0_memory.context, Mem0Context)
+        assert mem0_memory.context.user_id == "test_user"
 
         # Assert that the client was set correctly
         assert mem0_memory._client == mock_client
@@ -123,8 +123,8 @@ def test_mem0_memory_set():
             messages=expected_messages, user_id="test_user"
         )
 
-        # Assert that the chat_history was set with all messages
-        assert mem0_memory.chat_history.get_all() == messages
+        # Assert that the primary_memory was set with all messages
+        assert mem0_memory.primary_memory.get_all() == messages
 
         # Test setting messages when chat history is not empty
         new_messages = [
@@ -144,8 +144,8 @@ def test_mem0_memory_set():
             messages=expected_new_messages, user_id="test_user"
         )
 
-        # Assert that the chat_history was updated with all messages
-        assert mem0_memory.chat_history.get_all() == messages + new_messages
+        # Assert that the primary_memory was updated with all messages
+        assert mem0_memory.primary_memory.get_all() == messages + new_messages
 
 
 def test_mem0_memory_get():
@@ -181,7 +181,7 @@ def test_mem0_memory_get():
                 role=MessageRole.ASSISTANT, content="I'm doing well, thank you!"
             ),
         ]
-        mem0_memory.chat_history.set(dummy_messages)
+        mem0_memory.primary_memory.set(dummy_messages)
 
         # Set dummy response for search
         dummy_search_results = [
@@ -263,8 +263,8 @@ def test_mem0_memory_put():
         # Call the put method
         mem0_memory.put(test_message)
 
-        # Assert that the message was added to chat_history
-        assert mem0_memory.chat_history.get_all() == [test_message]
+        # Assert that the message was added to primary_memory
+        assert mem0_memory.primary_memory.get_all() == [test_message]
 
         # Assert that add was called with the correct arguments
         expected_messages = convert_chat_history_to_dict([test_message])
