@@ -40,6 +40,7 @@ We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 - [OpenRouter](../../../examples/llm/openrouter.ipynb)
 - [PaLM](../../../examples/llm/palm.ipynb)
 - [Perplexity](../../../examples/llm/perplexity.ipynb)
+- [Pipeshift](../../../examples/llm/pipeshift.ipynb)
 - [PremAI](../../../examples/llm/premai.ipynb)
 - [Portkey](../../../examples/llm/portkey.ipynb)
 - [Predibase](../../../examples/llm/predibase.ipynb)
