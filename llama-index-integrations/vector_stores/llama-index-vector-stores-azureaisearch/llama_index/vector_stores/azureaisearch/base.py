@@ -1144,6 +1144,54 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             )
         return await azure_query_result_search.asearch()
 
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """
+        Get nodes from the index.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to retrieve.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+
+        Returns:
+            List[BaseNode]: List of nodes retrieved from the index.
+        """
+        odata_filter = (
+            self._create_odata_filter(filters) if filters is not None else None
+        )
+        results = self._search_client.search(filter=odata_filter)
+
+        # Converting results to List of BaseNodes
+        node_results = []
+        for result in results:
+            node_id = result[self._field_mapping["id"]]
+            metadata_str = result[self._field_mapping["metadata"]]
+            metadata = json.loads(metadata_str) if metadata_str else {}
+            chunk = result[self._field_mapping["chunk"]]
+            try:
+                node = metadata_dict_to_node(metadata)
+                node.set_content(chunk)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    metadata
+                )
+                node = TextNode(
+                    text=chunk,
+                    id_=node_id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
+            node_results.append(node)
+
+        return node_results
+
 
 class AzureQueryResultSearchBase:
     def __init__(

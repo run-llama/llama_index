@@ -28,6 +28,7 @@ MODEL_ENDPOINT_MAP = {
     "nvidia/nv-embedqa-mistral-7b-v2": "https://integrate.api.nvidia.com/v1/",
     "nvidia/nv-embedqa-e5-v5": "https://integrate.api.nvidia.com/v1/",
     "baai/bge-m3": "https://integrate.api.nvidia.com/v1/",
+    "nvidia/llama-3.2-nv-embedqa-1b-v1": "https://integrate.api.nvidia.com/v1/",
 }
 
 KNOWN_URLS = list(MODEL_ENDPOINT_MAP.values())

@@ -147,9 +147,65 @@ def test_udf_retrieval(vectara1) -> None:
     )
 
     res = qe.retrieve("What will the future look like?")
+    assert len(res) == 2
     assert res[0].node.get_content() == docs[2].text
     assert res[1].node.get_content() == docs[3].text
+
+
+def test_chain_rerank_retrieval(vectara1) -> None:
+    docs = get_docs()
+
+    # Test basic chain
+    qe = vectara1.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[{"type": "slingshot"}, {"type": "mmr", "diversity_bias": 0.4}],
+    )
+
+    res = qe.retrieve("What's this all about?")
     assert len(res) == 2
+    assert res[0].node.get_content() == docs[0].text
+    assert res[1].node.get_content() == docs[2].text
+
+    # Test chain with UDF and limit
+    qe = vectara1.as_retriever(
+        similarity_top_k=4,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[
+            {"type": "slingshot"},
+            {"type": "mmr"},
+            {
+                "type": "udf",
+                "user_function": "5 * get('$.score') + get('$.document_metadata.test_score') / 2",
+                "limit": 2,
+            },
+        ],
+    )
+
+    res = qe.retrieve("What's this all about?")
+    assert len(res) == 2
+    assert res[0].node.get_content() == docs[3].text
+    assert res[1].node.get_content() == docs[2].text
+
+    # Test chain with cutoff
+    qe = vectara1.as_retriever(
+        similarity_top_k=4,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[
+            {"type": "slingshot"},
+            {"type": "mmr", "diversity_bias": 0.4, "cutoff": 0.75},
+        ],
+    )
+
+    res = qe.retrieve("What's this all about?")
+    assert len(res) == 1
+    assert res[0].node.get_content() == docs[0].text
 
 
 @pytest.fixture()
@@ -216,7 +272,7 @@ def test_citations(vectara2) -> None:
         citations_url_pattern="{doc.url}",
         citations_text_pattern="(source)",
     )
-    res = query_engine.query("Describe Paul's early life and career.")
+    res = query_engine.query("What colleges has Paul attended?")
     summary = res.response
     assert "(source)" in summary
     assert "https://www.paulgraham.com/worked.html" in summary
@@ -228,7 +284,7 @@ def test_citations(vectara2) -> None:
         summary_prompt_name="mockingbird-1.0-2024-07-16",
         citations_style="numeric",
     )
-    res = query_engine.query("Describe Paul's early life and career.")
+    res = query_engine.query("What colleges has Paul attended?")
     summary = res.response
     assert re.search(r"\[\d+\]", summary)
 
@@ -240,7 +296,7 @@ def test_citations(vectara2) -> None:
         citations_style="markdown",
         citations_url_pattern="{doc.url}",
     )
-    res = query_engine.query("Describe Paul's early life and career.")
+    res = query_engine.query("What colleges has Paul attended?")
     summary = res.response
     assert "https://www.paulgraham.com/worked.html" in summary
     assert re.search(r"\[\d+\]", summary)
