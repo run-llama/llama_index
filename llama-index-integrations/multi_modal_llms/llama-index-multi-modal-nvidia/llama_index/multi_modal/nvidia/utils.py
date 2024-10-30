@@ -1,5 +1,4 @@
 import base64
-import requests
 import filetype
 from typing import Any, Dict, List, Optional, Sequence
 from llama_index.core.schema import ImageDocument
@@ -81,15 +80,10 @@ def create_image_content(image_document) -> Optional[Dict[str, Any]]:
 
     if image_document.image_url and image_document.image_url != "":
         mimetype = infer_image_mimetype_from_file_path(image_document.image_url)
-        response = requests.get(image_document.image_url)
-        try:
-            data = base64.b64encode(response.content).decode("utf-8")
-            return {
-                "type": "text",
-                "text": f'<img src="data:image/{mimetype};base64,{data}" />',
-            }, ""
-        except Exception as e:
-            raise "Cannot encode the image url-> {e}"
+        return {
+            "type": "image_url",
+            "image_url": image_document.image_url,
+        }, ""
 
     return None, None
 

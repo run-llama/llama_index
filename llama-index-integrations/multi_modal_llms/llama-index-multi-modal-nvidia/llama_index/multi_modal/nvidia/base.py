@@ -76,6 +76,7 @@ class NVIDIAClient:
     def request(
         self,
         endpoint: str,
+        stream: bool,
         messages: Dict[str, Any],
         extra_headers: Dict[str, Any],
         **kwargs: Any,
@@ -92,9 +93,7 @@ class NVIDIAClient:
         """
 
         def perform_request():
-            payload = {
-                "messages": messages,
-            }
+            payload = {"messages": messages, "stream": stream}
             headers = {
                 "accept": "application/json",
                 "content-type": "application/json",
@@ -202,7 +201,10 @@ class NVIDIAMultiModal(MultiModalLLM):
         self._client = self._get_clients(**kwargs)
 
     def _get_clients(self, **kwargs: Any) -> NVIDIAClient:
-        return NVIDIAClient(**self._get_credential_kwargs())
+        # return NVIDIAClient(**self._get_credential_kwargs())
+        self._client = NVIDIAClient(**self._get_credential_kwargs())
+        self._client._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
+        return self._client
 
     @classmethod
     def class_name(cls) -> str:
@@ -221,7 +223,6 @@ class NVIDIAMultiModal(MultiModalLLM):
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
-            "timeout": self.timeout,
             **kwargs,
         }
 
@@ -281,6 +282,7 @@ class NVIDIAMultiModal(MultiModalLLM):
 
         response = self._client.request(
             endpoint=NVIDIA_MULTI_MODAL_MODELS[self.model]["endpoint"],
+            stream=False,
             messages=message_dict,
             extra_headers=extra_headers,
             **all_kwargs,
@@ -295,31 +297,7 @@ class NVIDIAMultiModal(MultiModalLLM):
     def _stream_complete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
-        all_kwargs = self._get_model_kwargs(**kwargs)
-        message_dict = self._get_multi_modal_chat_messages(
-            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
-        )
-
-        def gen() -> CompletionResponseGen:
-            text = ""
-
-            for response in self._client.messages.create(
-                messages=message_dict,
-                stream=True,
-                system=self.system_prompt,
-                **all_kwargs,
-            ):
-                content_delta = response.delta.text or ""
-                text += content_delta
-
-                yield CompletionResponse(
-                    delta=content_delta,
-                    text=text,
-                    raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
-                )
-
-        return gen()
+        raise NotImplementedError("This function is not yet implemented.")
 
     def complete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
@@ -348,22 +326,7 @@ class NVIDIAMultiModal(MultiModalLLM):
     async def _acomplete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
-        all_kwargs = self._get_model_kwargs(**kwargs)
-        message_dict = self._get_multi_modal_chat_messages(
-            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
-        )
-        response = await self._aclient.messages.create(
-            messages=message_dict,
-            stream=False,
-            system=self.system_prompt,
-            **all_kwargs,
-        )
-
-        return CompletionResponse(
-            text=response.content[0].text,
-            raw=response,
-            additional_kwargs=self._get_response_token_counts(response),
-        )
+        raise NotImplementedError("This function is not yet implemented.")
 
     async def acomplete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
@@ -373,31 +336,7 @@ class NVIDIAMultiModal(MultiModalLLM):
     async def _astream_complete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        all_kwargs = self._get_model_kwargs(**kwargs)
-        message_dict = self._get_multi_modal_chat_messages(
-            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
-        )
-
-        async def gen() -> CompletionResponseAsyncGen:
-            text = ""
-
-            async for response in await self._aclient.messages.create(
-                messages=message_dict,
-                stream=True,
-                system=self.system_prompt,
-                **all_kwargs,
-            ):
-                content_delta = response.delta.text or ""
-                text += content_delta
-
-                yield CompletionResponse(
-                    delta=content_delta,
-                    text=text,
-                    raw=response,
-                    additional_kwargs=self._get_response_token_counts(response),
-                )
-
-        return gen()
+        raise NotImplementedError("This function is not yet implemented.")
 
     async def astream_complete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
