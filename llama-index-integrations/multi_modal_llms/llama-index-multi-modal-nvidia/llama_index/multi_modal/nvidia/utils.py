@@ -71,7 +71,7 @@ def create_image_content(image_document) -> Optional[Dict[str, Any]]:
             "text": f'<img src="data:image/{mimetype};base64,{image_document.image}" />',
         }, ""
 
-    if "asset_id" in image_document.metadata:
+    elif "asset_id" in image_document.metadata:
         asset_id = image_document.metadata["asset_id"]
         mimetype = image_document.mimetype if image_document.mimetype else "jpeg"
         return {
@@ -79,11 +79,23 @@ def create_image_content(image_document) -> Optional[Dict[str, Any]]:
             "text": f'<img src="data:image/{mimetype};asset_id,{asset_id}" />',
         }, asset_id
 
-    if image_document.image_url and image_document.image_url != "":
+    elif image_document.image_url and image_document.image_url != "":
         mimetype = infer_image_mimetype_from_file_path(image_document.image_url)
         return {
             "type": "image_url",
             "image_url": image_document.image_url,
+        }, ""
+    elif (
+        "file_path" in image_document.metadata
+        and image_document.metadata["file_path"] != ""
+    ):
+        mimetype = infer_image_mimetype_from_file_path(
+            image_document.metadata["file_path"]
+        )
+        base64_image = encode_image(image_document.metadata["file_path"])
+        return {
+            "type": "text",
+            "text": f'<img src="data:image/{mimetype};base64,{base64_image}" />',
         }, ""
 
     return None, None
