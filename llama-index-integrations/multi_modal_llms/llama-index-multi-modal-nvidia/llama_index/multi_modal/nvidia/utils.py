@@ -1,7 +1,8 @@
 import base64
 import filetype
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 from llama_index.core.schema import ImageDocument
+import json
 
 DEFAULT_MODEL = "google/deplot"
 BASE_URL = "https://ai.api.nvidia.com/v1/"
@@ -113,3 +114,65 @@ def generate_nvidia_multi_modal_chat_message(
         extra_headers["NVCF-INPUT-ASSET-REFERENCES"] = ",".join(asset_ids)
 
     return [{"role": role, "content": completion_content}], extra_headers
+
+
+def process_response(response) -> List[dict]:
+    """General-purpose response processing for single responses and streams."""
+    if hasattr(response, "json"):  ## For single response (i.e. non-streaming)
+        try:
+            return [response.json()]
+        except json.JSONDecodeError:
+            response = str(response.__dict__)
+    if isinstance(response, str):  ## For set of responses (i.e. streaming)
+        msg_list = []
+        for msg in response.split("\n\n"):
+            if "{" not in msg:
+                continue
+            msg_list += [json.loads(msg[msg.find("{") :])]
+        return msg_list
+    raise ValueError(f"Received ill-formed response: {response}")
+
+
+def aggregate_msgs(msg_list: Sequence[dict]) -> Tuple[dict, bool]:
+    """Dig out relevant details of aggregated message."""
+    content_buffer: Dict[str, Any] = {}
+    content_holder: Dict[Any, Any] = {}
+    usage_holder: Dict[Any, Any] = {}  ####
+    finish_reason_holder: Optional[str] = None
+    is_stopped = False
+    for msg in msg_list:
+        usage_holder = msg.get("usage", {})  ####
+        if "choices" in msg:
+            ## Tease out ['choices'][0]...['delta'/'message']
+            # when streaming w/ usage info, we may get a response
+            #  w/ choices: [] that includes final usage info
+            choices = msg.get("choices", [{}])
+            msg = choices[0] if choices else {}
+            # TODO: this needs to be fixed, the fact we only
+            #       use the first choice breaks the interface
+            finish_reason_holder = msg.get("finish_reason", None)
+            is_stopped = finish_reason_holder == "stop"
+            msg = msg.get("delta", msg.get("message", msg.get("text", "")))
+            if not isinstance(msg, dict):
+                msg = {"content": msg}
+        elif "data" in msg:
+            ## Tease out ['data'][0]...['embedding']
+            msg = msg.get("data", [{}])[0]
+        content_holder = msg
+        for k, v in msg.items():
+            if k in ("content",) and k in content_buffer:
+                content_buffer[k] += v
+            else:
+                content_buffer[k] = v
+        if is_stopped:
+            break
+    content_holder = {
+        **content_holder,
+        **content_buffer,
+        "text": content_buffer["content"],
+    }
+    if usage_holder:
+        content_holder.update(token_usage=usage_holder)  ####
+    if finish_reason_holder:
+        content_holder.update(finish_reason=finish_reason_holder)
+    return content_holder, is_stopped

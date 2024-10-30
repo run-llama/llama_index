@@ -38,6 +38,8 @@ from llama_index.multi_modal.nvidia.utils import (
     KNOWN_URLS,
     NVIDIA_MULTI_MODAL_MODELS,
     generate_nvidia_multi_modal_chat_message,
+    aggregate_msgs,
+    process_response,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,11 +58,14 @@ class NVIDIAClient:
         self.timeout = timeout
         self.max_retries = max_retries
 
-    def _get_headers(self) -> Dict[str, str]:
-        return {
+    def _get_headers(self, stream: bool) -> Dict[str, str]:
+        headers = {
             "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
+            "content-type": "application/json",
+            "User-Agent": "langchain-nvidia-ai-endpoints",
         }
+        headers["accept"] = "text/event-stream" if stream else "application/json"
+        return headers
 
     def get_model_details(self, model_name: str) -> requests.Response:
         """
@@ -95,14 +100,14 @@ class NVIDIAClient:
         def perform_request():
             payload = {"messages": messages, "stream": stream}
             headers = {
-                "accept": "application/json",
-                "content-type": "application/json",
-                "authorization": f"Bearer {self.api_key}",
+                **self._get_headers(stream=stream),
                 **extra_headers,
             }
-            response = requests.post(endpoint, json=payload, headers=headers)
+            response = requests.post(
+                endpoint, json=payload, headers=headers, stream=stream
+            )
             response.raise_for_status()
-            return response.json()
+            return response
 
         return perform_request()
 
@@ -111,7 +116,7 @@ class NVIDIAMultiModal(MultiModalLLM):
     model: str = Field(description="The Multi-Modal model to use from NVIDIA.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: Optional[int] = Field(
-        description=" The maximum numbers of tokens to generate, ignoring the number of tokens in the prompt",
+        description=" The maximum numbers of tokens to generate, ignoring the number of tokens in the prompt.",
         gt=0,
     )
     context_window: Optional[int] = Field(
@@ -287,6 +292,7 @@ class NVIDIAMultiModal(MultiModalLLM):
             extra_headers=extra_headers,
             **all_kwargs,
         )
+        response = response.json()
         text = response["choices"][0]["message"]["content"]
         return CompletionResponse(
             text=text,
@@ -297,7 +303,35 @@ class NVIDIAMultiModal(MultiModalLLM):
     def _stream_complete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
-        raise NotImplementedError("This function is not yet implemented.")
+        all_kwargs = self._get_model_kwargs(**kwargs)
+        message_dict, extra_headers = self._get_multi_modal_chat_messages(
+            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
+        )
+
+        def gen() -> CompletionResponseGen:
+            response = self._client.request(
+                messages=message_dict,
+                stream=True,
+                endpoint=NVIDIA_MULTI_MODAL_MODELS[self.model]["endpoint"],
+                extra_headers=extra_headers,
+                **all_kwargs,
+            )
+            for line in response.iter_lines():
+                if line and line.strip() != b"data: [DONE]":
+                    line = line.decode("utf-8")
+                    line = line[5:]
+
+                    msg, final_line = aggregate_msgs(process_response(line))
+
+                    yield CompletionResponse(
+                        **msg,
+                        additional_kwargs=self._get_response_token_counts(line),
+                    )
+
+                    if final_line:
+                        break
+
+        return gen()
 
     def complete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
