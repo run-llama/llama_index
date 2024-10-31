@@ -56,6 +56,8 @@ class OpensearchVectorClient:
         settings: Optional[dict]: Settings for the Opensearch index creation. Defaults to:
             {"index": {"knn": True, "knn.algo_param.ef_search": 100}}
         space_type (Optional[str]): space type for distance metric calculation. Defaults to: l2
+        os_client (Optional[OSClient]): Custom synchronous client (see OpenSearch from opensearch-py)
+        os_async_client (Optional[OSClient]): Custom asynchronous client (see AsyncOpenSearch from opensearch-py)
         **kwargs: Optional arguments passed to the OpenSearch client from opensearch-py.
 
     """
@@ -74,6 +76,7 @@ class OpensearchVectorClient:
         max_chunk_bytes: int = 1 * 1024 * 1024,
         search_pipeline: Optional[str] = None,
         os_client: Optional[OSClient] = None,
+        os_async_client: Optional[OSClient] = None,
         **kwargs: Any,
     ):
         """Init params."""
@@ -117,7 +120,7 @@ class OpensearchVectorClient:
         self._os_client = os_client or self._get_opensearch_client(
             self._endpoint, **kwargs
         )
-        self._os_async_client = self._get_async_opensearch_client(
+        self._os_async_client = os_async_client or self._get_async_opensearch_client(
             self._endpoint, **kwargs
         )
         self._os_version = self._get_opensearch_version()

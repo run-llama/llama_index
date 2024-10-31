@@ -351,6 +351,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             collection_name=self.collection_name,
             limit=limit or 9999,
             scroll_filter=filter,
+            with_vectors=True,
         )
 
         return self.parse_to_query_result(response[0]).nodes
@@ -396,6 +397,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             collection_name=self.collection_name,
             limit=limit or 9999,
             scroll_filter=filter,
+            with_vectors=True,
         )
 
         return self.parse_to_query_result(response[0]).nodes
@@ -991,8 +993,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         for point in response:
             payload = cast(Payload, point.payload)
+            vector = point.vector
+            embedding = None
+
+            if isinstance(vector, dict):
+                embedding = vector.get(DENSE_VECTOR_NAME, vector.get("", None))
+            elif isinstance(vector, list):
+                embedding = vector
+
             try:
                 node = metadata_dict_to_node(payload)
+
+                if embedding and node.embedding is None:
+                    node.embedding = embedding
             except Exception:
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     payload
@@ -1005,6 +1018,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     start_char_idx=node_info.get("start", None),
                     end_char_idx=node_info.get("end", None),
                     relationships=relationships,
+                    embedding=embedding,
                 )
             nodes.append(node)
             ids.append(str(point.id))
