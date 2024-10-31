@@ -225,7 +225,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             elif field_type == MetadataIndexFieldType.COLLECTION:
                 index_field_type = "Collection(Edm.String)"
 
-            field = SimpleField(name=field_name, type=index_field_type, filterable=True, hidden=field_name in self._hidden_field_keys)
+            field = SimpleField(
+                name=field_name,
+                type=index_field_type,
+                filterable=True,
+                hidden=field_name in self._hidden_field_keys,
+            )
             index_fields.append(field)
 
         return index_fields
@@ -404,15 +409,15 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 hidden=self._field_mapping["embedding"] in self._hidden_field_keys,
             ),
             SimpleField(
-                name=self._field_mapping["metadata"], 
-                type="Edm.String", 
-                hidden=self._field_mapping["metadata"] in self._hidden_field_keys
+                name=self._field_mapping["metadata"],
+                type="Edm.String",
+                hidden=self._field_mapping["metadata"] in self._hidden_field_keys,
             ),
             SimpleField(
-                name=self._field_mapping["doc_id"], 
-                type="Edm.String", 
+                name=self._field_mapping["doc_id"],
+                type="Edm.String",
                 filterable=True,
-                hidden=self._field_mapping["doc_id"] in self._hidden_field_keys
+                hidden=self._field_mapping["doc_id"] in self._hidden_field_keys,
             ),
         ]
         logger.info(f"Configuring {index_name} metadata fields")
@@ -508,7 +513,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 Dict[str, Tuple[str, MetadataIndexFieldType]],
             ]
         ] = None,
-        hidden_field_keys: List[str] = [],
+        hidden_field_keys: Optional[List[str]] = None,
         index_name: Optional[str] = None,
         index_mapping: Optional[
             Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]]
@@ -699,7 +704,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         }
 
         self._field_mapping = field_mapping
-        self._hidden_field_keys = hidden_field_keys
+        self._hidden_field_keys = hidden_field_keys or []
 
         self._index_mapping = (
             self._default_index_mapping if index_mapping is None else index_mapping
