@@ -291,11 +291,13 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 type="Edm.String",
                 key=True,
                 filterable=True,
+                hidden=self._field_mapping["id"] in self._hidden_field_keys,
             ),
             SearchableField(
                 name=self._field_mapping["chunk"],
                 type="Edm.String",
                 analyzer_name=self._language_analyzer,
+                hidden=self._field_mapping["chunk"] in self._hidden_field_keys,
             ),
             SearchField(
                 name=self._field_mapping["embedding"],
@@ -303,11 +305,18 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 searchable=True,
                 vector_search_dimensions=self._embedding_dimensionality,
                 vector_search_profile_name=self._vector_profile_name,
-                hidden=False,
+                hidden=self._field_mapping["embedding"] in self._hidden_field_keys,
             ),
-            SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
             SimpleField(
-                name=self._field_mapping["doc_id"], type="Edm.String", filterable=True
+                name=self._field_mapping["metadata"],
+                type="Edm.String",
+                hidden=self._field_mapping["metadata"] in self._hidden_field_keys,
+            ),
+            SimpleField(
+                name=self._field_mapping["doc_id"],
+                type="Edm.String",
+                filterable=True,
+                hidden=self._field_mapping["doc_id"] in self._hidden_field_keys,
             ),
         ]
         logger.info(f"Configuring {index_name} metadata fields")
@@ -416,7 +425,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 name=self._field_mapping["embedding"],
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
-                hidden=False,
                 vector_search_dimensions=self._embedding_dimensionality,
                 vector_search_profile_name=self._vector_profile_name,
                 hidden=self._field_mapping["embedding"] in self._hidden_field_keys,
