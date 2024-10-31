@@ -279,7 +279,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         logger.info(f"Configuring {index_name} fields for Azure AI Search")
         fields = [
-            SimpleField(name=self._field_mapping["id"], type="Edm.String", key=True),
+            SimpleField(name=self._field_mapping["id"], type="Edm.String", key=True, filterable=True),
             SearchableField(
                 name=self._field_mapping["chunk"],
                 type="Edm.String",
