@@ -201,8 +201,7 @@ def test_vlm_two_images(
     assert isinstance(response.text, str)
 
 
-@pytest.fixture(scope="session")
-def asset_id() -> str:
+def get_asset_id() -> str:
     # create an asset following -
     #  https://docs.nvidia.com/cloud-functions/user-guide/latest/cloud-function/assets.html
 
@@ -256,10 +255,8 @@ def asset_id() -> str:
 @pytest.mark.parametrize(
     "content",
     [
-        [
-            ImageDocument(metadata={"asset_id": asset_id}),
-            ImageDocument(metadata={"asset_id": asset_id}),
-        ]
+        [ImageDocument(metadata={"asset_id": ""})],
+        [ImageDocument(metadata={"asset_id": ""})],
     ],
 )
 @pytest.mark.parametrize(
@@ -270,18 +267,11 @@ def test_vlm_asset_id(
     vlm_model: str,
     content: Union[str, List[Union[str, Dict[str, Any]]]],
     func: str,
-    asset_id: str,
 ) -> None:
-    if isinstance(content, str):
-        content = content.format(asset_id=asset_id)
-    elif isinstance(content, list):
-        for item in content:
-            if isinstance(item, str):
-                item = item.format(asset_id=asset_id)
-            elif isinstance(item, dict):
-                item["image_url"]["url"] = item["image_url"]["url"].format(
-                    asset_id=asset_id
-                )
+    assert isinstance(content[0], ImageDocument)
+    content[0].metadata["asset_id"] = get_asset_id()
+
+    assert content[0].metadata["asset_id"] != ""
 
     chat = NVIDIAMultiModal(model=vlm_model)
     if func == "invoke":
