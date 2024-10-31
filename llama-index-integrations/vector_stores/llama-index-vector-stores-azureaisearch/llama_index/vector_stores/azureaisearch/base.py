@@ -98,6 +98,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         vector_store = AzureAISearchVectorStore(
             search_or_index_client=index_client,
             filterable_metadata_field_keys=metadata_fields,
+            hidden_field_keys=["embedding"],
             index_name=index_name,
             index_management=IndexManagement.CREATE_IF_NOT_EXISTS,
             id_field_key="id",
@@ -122,6 +123,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _async_search_client: AsyncSearchClient = PrivateAttr()
     _embedding_dimensionality: int = PrivateAttr()
     _language_analyzer: str = PrivateAttr()
+    _hidden_field_keys: List[str] = PrivateAttr()
     _field_mapping: Dict[str, str] = PrivateAttr()
     _index_management: IndexManagement = PrivateAttr()
     _index_mapping: Callable[
@@ -223,7 +225,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             elif field_type == MetadataIndexFieldType.COLLECTION:
                 index_field_type = "Collection(Edm.String)"
 
-            field = SimpleField(name=field_name, type=index_field_type, filterable=True)
+            field = SimpleField(name=field_name, type=index_field_type, filterable=True, hidden=field_name in self._hidden_field_keys)
             index_fields.append(field)
 
         return index_fields
@@ -391,6 +393,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 name=self._field_mapping["chunk"],
                 type="Edm.String",
                 analyzer_name=self._language_analyzer,
+                hidden=self._field_mapping["chunk"] in self._hidden_field_keys,
             ),
             SearchField(
                 name=self._field_mapping["embedding"],
@@ -398,10 +401,18 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 searchable=True,
                 vector_search_dimensions=self._embedding_dimensionality,
                 vector_search_profile_name=self._vector_profile_name,
+                hidden=self._field_mapping["embedding"] in self._hidden_field_keys,
             ),
-            SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
             SimpleField(
-                name=self._field_mapping["doc_id"], type="Edm.String", filterable=True
+                name=self._field_mapping["metadata"], 
+                type="Edm.String", 
+                hidden=self._field_mapping["metadata"] in self._hidden_field_keys
+            ),
+            SimpleField(
+                name=self._field_mapping["doc_id"], 
+                type="Edm.String", 
+                filterable=True,
+                hidden=self._field_mapping["doc_id"] in self._hidden_field_keys
             ),
         ]
         logger.info(f"Configuring {index_name} metadata fields")
@@ -497,6 +508,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 Dict[str, Tuple[str, MetadataIndexFieldType]],
             ]
         ] = None,
+        hidden_field_keys: List[str] = [],
         index_name: Optional[str] = None,
         index_mapping: Optional[
             Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]]
@@ -683,6 +695,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         }
 
         self._field_mapping = field_mapping
+        self._hidden_field_keys = hidden_field_keys
 
         self._index_mapping = (
             self._default_index_mapping if index_mapping is None else index_mapping
