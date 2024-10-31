@@ -9,6 +9,13 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.memory.mem0"
+
+[tool.llamahub.class_authors]
+Mem0Memory = "llama-index"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
