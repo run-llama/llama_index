@@ -542,6 +542,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 as separate fields in the index, use filterable_metadata_field_keys
                 to specify the metadata values that should be stored in these filterable fields
             doc_id_field_key (str): Index field storing doc_id
+            hidden_field_keys (List[str]):
+                List of index fields that should be hidden from the client.
+                This is useful for fields that are not needed for retrieving,
+                but are used for similarity search, like the embedding field.
             index_mapping:
                 Optional function with definition
                 (enriched_doc: Dict[str, str], metadata: Dict[str, Any]): Dict[str,str]

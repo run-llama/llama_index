@@ -34,6 +34,7 @@ def create_mock_vector_store(
         metadata_string_field_key="metadata",
         doc_id_field_key="doc_id",
         filterable_metadata_field_keys=[],  # Added to match the updated constructor
+        hidden_field_keys=["embedding"],
         index_name=index_name,
         index_management=index_management,
         embedding_dimensionality=2,  # Assuming a dimensionality of 2 for simplicity
