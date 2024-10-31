@@ -1,21 +1,18 @@
-import logging
+import warnings
+from typing import Any, Dict, List, Optional, Sequence
+import requests
 
-import httpx
 from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
-    DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
-)
-from llama_index.core.base.llms.generic_utils import (
-    messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.core.multi_modal_llms import (
     MultiModalLLM,
@@ -25,12 +22,7 @@ from llama_index.core.schema import ImageNode
 from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
-import warnings
-import logging
-from typing import Any, Dict, List, Optional, Sequence, Callable
-import requests
 
-import httpx
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 from llama_index.multi_modal_llms.nvidia.utils import (
@@ -42,21 +34,15 @@ from llama_index.multi_modal_llms.nvidia.utils import (
     process_response,
 )
 
-logger = logging.getLogger(__name__)
-
 
 class NVIDIAClient:
     def __init__(
         self,
         api_key: str,
-        base_url: Optional[str] = BASE_URL,
         timeout: Optional[float] = None,
-        max_retries: Optional[int] = 10,
     ):
         self.api_key = api_key
-        self.api_base = base_url
         self.timeout = timeout
-        self.max_retries = max_retries
 
     def _get_headers(self, stream: bool) -> Dict[str, str]:
         headers = {
@@ -67,16 +53,14 @@ class NVIDIAClient:
         headers["accept"] = "text/event-stream" if stream else "application/json"
         return headers
 
-    def get_model_details(self, model_name: str) -> requests.Response:
+    def get_model_details(self) -> List[str]:
         """
-        Get model details from DeepInfra API.
-        If the model does not exist, a 404 response is returned.
+        Get model details.
 
         Returns:
-            requests.Response: The API response.
+            List of models
         """
-        request_url = self.get_url(f"models/{model_name}")
-        return requests.get(request_url, headers=self._get_headers())
+        return list(NVIDIA_MULTI_MODAL_MODELS.keys())
 
     def request(
         self,
@@ -98,7 +82,7 @@ class NVIDIAClient:
         """
 
         def perform_request():
-            payload = {"messages": messages, "stream": stream}
+            payload = {"messages": messages, "stream": stream, **kwargs}
             headers = {
                 **self._get_headers(stream=stream),
                 **extra_headers,
@@ -123,19 +107,13 @@ class NVIDIAMultiModal(MultiModalLLM):
         description="The maximum number of context tokens for the model.",
         gt=0,
     )
-    max_retries: int = Field(
-        default=3,
-        description="Maximum number of retries.",
-        ge=0,
-    )
     timeout: float = Field(
         default=60.0,
         description="The timeout, in seconds, for API requests.",
         ge=0,
     )
     api_key: str = Field(default=None, description="The NVIDIA API key.", exclude=True)
-    system_prompt: str = Field(default="", description="System Prompt.")
-    api_base: str = Field(default=None, description="The base URL for NVIDIA API.")
+    base_url: str = Field(default=BASE_URL, description="The base URL for NVIDIA API.")
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the NVIDIA API."
     )
@@ -143,31 +121,16 @@ class NVIDIAMultiModal(MultiModalLLM):
         default=None, description="The default headers for API requests."
     )
 
-    _messages_to_prompt: Callable = PrivateAttr()
-    _completion_to_prompt: Callable = PrivateAttr()
-    _http_client: Optional[httpx.Client] = PrivateAttr()
-    _client: Optional[NVIDIAClient] = PrivateAttr()
-    _is_hosted: bool = PrivateAttr(True)
-    _mode: str = PrivateAttr(default="nvidia")
-
     def __init__(
         self,
         model: str = "microsoft/phi-3-vision-128k-instruct",
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = 300,
-        additional_kwargs: Optional[Dict[str, Any]] = None,
-        context_window: Optional[int] = DEFAULT_CONTEXT_WINDOW,
-        max_retries: int = 3,
-        timeout: float = 60.0,
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = BASE_URL,
-        messages_to_prompt: Optional[Callable] = None,
-        completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
         default_headers: Optional[Dict[str, str]] = None,
-        http_client: Optional[httpx.Client] = None,
-        system_prompt: Optional[str] = "",
         **kwargs: Any,
     ) -> None:
         api_key = get_from_param_or_env(
@@ -178,8 +141,6 @@ class NVIDIAMultiModal(MultiModalLLM):
         )
 
         is_hosted = base_url in KNOWN_URLS
-        if base_url not in KNOWN_URLS:
-            base_url = self._validate_url(base_url)
 
         if is_hosted and api_key == "NO_API_KEY_PROVIDED":
             warnings.warn(
@@ -190,26 +151,18 @@ class NVIDIAMultiModal(MultiModalLLM):
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
-            additional_kwargs=additional_kwargs or {},
-            context_window=context_window,
-            max_retries=max_retries,
-            timeout=timeout,
             api_key=api_key,
             api_base=base_url,
             callback_manager=callback_manager,
             default_headers=default_headers,
-            system_promt=system_prompt,
             **kwargs,
         )
-        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
-        self._completion_to_prompt = completion_to_prompt or (lambda x: x)
-        self._client = self._get_clients(**kwargs)
 
-    def _get_clients(self, **kwargs: Any) -> NVIDIAClient:
-        # return NVIDIAClient(**self._get_credential_kwargs())
-        self._client = NVIDIAClient(**self._get_credential_kwargs())
-        self._client._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
-        return self._client
+    @property
+    def _client(self) -> NVIDIAClient:
+        _client = NVIDIAClient(**self._get_credential_kwargs())
+        _client._custom_headers = {"User-Agent": "llama-index-multi-modal-llms-nvidia"}
+        return _client
 
     @classmethod
     def class_name(cls) -> str:
@@ -223,11 +176,13 @@ class NVIDIAMultiModal(MultiModalLLM):
             model_name=self.model,
         )
 
+    @property
+    def available_models(self):
+        self._client.get_model_details()
+
     def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         credential_kwargs = {
             "api_key": self.api_key,
-            "base_url": self.api_base,
-            "max_retries": self.max_retries,
             **kwargs,
         }
 
@@ -241,7 +196,6 @@ class NVIDIAMultiModal(MultiModalLLM):
         prompt: str,
         role: str,
         image_documents: Sequence[ImageNode],
-        **kwargs: Any,
     ) -> List[Dict]:
         return generate_nvidia_multi_modal_chat_message(
             prompt=prompt,
