@@ -90,3 +90,16 @@ def test_parse_query_result(vector_store: QdrantVectorStore) -> None:
 
     assert len(results.nodes) == 1
     assert results.nodes[0].embedding == [1, 2, 3]
+
+
+@pytest.mark.asyncio()
+async def test_get_with_embedding(vector_store: QdrantVectorStore) -> None:
+    existing_nodes = await vector_store.aget_nodes(
+        node_ids=[
+            "11111111-1111-1111-1111-111111111111",
+            "22222222-2222-2222-2222-222222222222",
+            "33333333-3333-3333-3333-333333333333",
+        ]
+    )
+
+    assert all(node.embedding is not None for node in existing_nodes)

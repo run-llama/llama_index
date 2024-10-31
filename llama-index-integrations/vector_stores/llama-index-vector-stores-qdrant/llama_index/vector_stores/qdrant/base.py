@@ -998,6 +998,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
             if isinstance(vector, dict):
                 embedding = vector.get(DENSE_VECTOR_NAME, vector.get("", None))
+            elif isinstance(vector, list):
+                embedding = vector
 
             try:
                 node = metadata_dict_to_node(payload)
