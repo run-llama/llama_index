@@ -1175,8 +1175,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 [f"{field_mapping['id']} eq '{node_id}'" for node_id in node_ids]
             )
 
-        print(filters)
-
         if filters is not None:
             metadata_filter = self._create_odata_filter(filters)
             if filter_str is not None:
