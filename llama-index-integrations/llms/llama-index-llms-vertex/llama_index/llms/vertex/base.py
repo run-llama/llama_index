@@ -495,7 +495,7 @@ class Vertex(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            response_dict = MessageToDict(tool_call._pb)
+            response_dict = MessageToDict(tool_call._raw_message._pb)
             if "args" not in response_dict or "name" not in response_dict:
                 raise ValueError("Invalid tool call.")
             argument_dict = response_dict["args"]
