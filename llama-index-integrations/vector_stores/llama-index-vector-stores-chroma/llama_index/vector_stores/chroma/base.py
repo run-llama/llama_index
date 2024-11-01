@@ -255,7 +255,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if filters:
             where = _to_chroma_filter(filters)
         else:
-            where = {}
+            where = None
 
         result = self._get(None, where=where, ids=node_ids)
 
