@@ -74,7 +74,7 @@ class MarkdownNodeParser(NodeParser):
 
                     # Add the new header
                     header_stack.append(header_text)
-                    current_section = f"{header_text}\n"
+                    current_section = "#" * level + f" {header_text}\n"
                     continue
 
             current_section += line + "\n"

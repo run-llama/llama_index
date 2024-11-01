@@ -21,8 +21,8 @@ Header 2 content
     assert len(splits) == 2
     assert splits[0].metadata == {"header_path": "/"}
     assert splits[1].metadata == {"header_path": "/"}
-    assert splits[0].text == "Main Header\n\nHeader 1 content"
-    assert splits[1].text == "Header 2\nHeader 2 content"
+    assert splits[0].text == "# Main Header\n\nHeader 1 content"
+    assert splits[1].text == "# Header 2\nHeader 2 content"
 
 
 def test_header_splits_with_indented_code_blocks() -> None:
@@ -70,10 +70,10 @@ A list begins here:
     assert splits[0].text == "Some text"
 
     assert splits[1].metadata == {"header_path": "/"}
-    assert splits[1].text == "Header 1"
+    assert splits[1].text == "# Header 1"
 
     assert splits[2].metadata == {"header_path": "/Header 1/"}
-    assert splits[2].text == "Header 2"
+    assert splits[2].text == "## Header 2"
 
     assert splits[3].metadata == {"header_path": "/Header 1/Header 2/"}
     assert splits[3].text.endswith("* Element 4")
@@ -82,7 +82,7 @@ A list begins here:
     assert splits[4].text.endswith("```")
 
     assert splits[5].metadata == {"header_path": "/Header 1/"}
-    assert splits[5].text == "Another Header 2"
+    assert splits[5].text == "## Another Header 2"
 
 
 def test_non_header_splits() -> None:
