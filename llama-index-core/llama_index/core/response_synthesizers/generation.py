@@ -68,7 +68,7 @@ class Generation(BaseSynthesizer):
                 **response_kwargs,
             )
         else:
-            return self._llm.stream(
+            return await self._llm.astream(
                 self._input_prompt,
                 query_str=query_str,
                 **response_kwargs,
