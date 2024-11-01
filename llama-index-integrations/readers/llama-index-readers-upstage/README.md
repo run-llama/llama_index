@@ -1,4 +1,4 @@
-# UpstageLayoutAnalysisReader
+# UpstageDocumentParseReader
 
 ## UpstageDocumentParseReader
 
@@ -30,7 +30,7 @@ The `load_data` function, encompassed within the `UpstageDocumentParseReader`, e
 
 ### Usage
 
-Here's an example usage of the UpstageLayoutAnalysisReader.
+Here's an example usage of the UpstageDocumentParseReader.
 
 ```python
 import os
@@ -38,7 +38,7 @@ import os
 os.environ["UPSTAGE_API_KEY"] = "YOUR_API_KEY"
 
 
-from llama_index.readers.upstage import UpstageLayoutAnalysisReader
+from llama_index.readers.upstage import UpstageDocumentParseReader
 
 file_path = "/PATH/TO/YOUR/FILE.pdf"
 
@@ -94,7 +94,7 @@ The `load_data` function, encompassed within the `UpstageLayoutAnalysisReader`, 
 
 Understanding and setting these parameters correctly allow users to optimize data loading and processing according to their specific requirements and workflows.
 
-## Usage
+### Usage
 
 Here's an example usage of the UpstageLayoutAnalysisReader.
 
