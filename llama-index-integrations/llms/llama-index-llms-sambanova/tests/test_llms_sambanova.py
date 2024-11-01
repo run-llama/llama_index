@@ -13,6 +13,9 @@ from llama_index.llms.sambanova import SambaNovaCloud
 import pytest
 
 
+sambanova_api_key = os.environ.get("SAMBANOVA_API_KEY", None)
+
+
 @pytest.mark.asyncio()
 async def run_async_test(fn, chat_msgs, number, verbose=False):
     tasks = [fn(chat_msgs) for _ in range(number)]
@@ -42,6 +45,7 @@ def get_execution_time(fn, chat_msgs, is_async=False, number=10):
     )
 
 
+@pytest.mark.skipif(not sambanova_api_key, reason="No openai api key set")
 def test_sambanovacloud():
     # chat interaction example
     user_message = ChatMessage(
@@ -76,6 +80,7 @@ def test_sambanovacloud():
     )
 
 
+@pytest.mark.skipif(not sambanova_api_key, reason="No openai api key set")
 def test_sambanovacloud_performance():
     # chat interaction example
     user_message = ChatMessage(
@@ -101,6 +106,7 @@ def test_sambanovacloud_performance():
     )
 
 
+@pytest.mark.skipif(not sambanova_api_key, reason="No openai api key set")
 def test_hiperparameters():
     user_message = ChatMessage(
         role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence"
