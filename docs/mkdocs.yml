@@ -161,6 +161,7 @@ nav:
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-7/Multi_Modal_RAG_System.ipynb
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-8/Advanced_RAG_with_LlamaParse.ipynb
           - ./examples/cookbooks/prometheus2_cookbook.ipynb
+          - ./examples/cookbooks/toolhouse_llamaindex.ipynb
       - Customization:
           - ./examples/customization/llms/AzureOpenAI.ipynb
           - ./examples/customization/llms/SimpleIndexDemo-ChatGPT.ipynb
@@ -909,6 +910,7 @@ nav:
           - ./api_reference/embeddings/oracleai.md
           - ./api_reference/embeddings/premai.md
           - ./api_reference/embeddings/sagemaker_endpoint.md
+          - ./api_reference/embeddings/siliconflow.md
           - ./api_reference/embeddings/text_embeddings_inference.md
           - ./api_reference/embeddings/textembed.md
           - ./api_reference/embeddings/together.md
@@ -1122,6 +1124,7 @@ nav:
       - Memory:
           - ./api_reference/memory/chat_memory_buffer.md
           - ./api_reference/memory/index.md
+          - ./api_reference/memory/mem0.md
           - ./api_reference/memory/simple_composable_memory.md
           - ./api_reference/memory/vector_memory.md
       - Metadata Extractors:
@@ -1194,6 +1197,7 @@ nav:
           - ./api_reference/postprocessor/rankllm_rerank.md
           - ./api_reference/postprocessor/sbert_rerank.md
           - ./api_reference/postprocessor/sentence_optimizer.md
+          - ./api_reference/postprocessor/siliconflow_rerank.md
           - ./api_reference/postprocessor/similarity.md
           - ./api_reference/postprocessor/tei_rerank.md
           - ./api_reference/postprocessor/time_weighted.md
@@ -1631,6 +1635,7 @@ nav:
           - ./api_reference/tools/tavily_research.md
           - ./api_reference/tools/text_to_image.md
           - ./api_reference/tools/tool_spec.md
+          - ./api_reference/tools/vectara_query.md
           - ./api_reference/tools/vector_db.md
           - ./api_reference/tools/waii.md
           - ./api_reference/tools/weather.md
@@ -2291,6 +2296,10 @@ plugins:
             - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-couchbase
             - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-couchbase
             - ../llama-index-integrations/llms/llama-index-llms-reka
+            - ../llama-index-integrations/tools/llama-index-tools-vectara-query
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-siliconflow
+            - ../llama-index-integrations/memory/llama-index-memory-mem0
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-siliconflow-rerank
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
