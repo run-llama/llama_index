@@ -47,7 +47,7 @@ CHAT_ONLY_MODELS = {
     "anthropic.claude-3-sonnet-20240229-v1:0": 200000,
     "anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "anthropic.claude-3-opus-20240229-v1:0": 200000,
-    "anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
+    "anthropic.claude-3-5-sonnet-20241022-v1:0": 200000,
     "anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
     "cohere.command-r-plus-v1:0": 128000,
     "meta.llama2-13b-chat-v1": 2048,
@@ -74,7 +74,7 @@ STREAMING_MODELS = {
     "anthropic.claude-v2",
     "anthropic.claude-v2:1",
     "anthropic.claude-3-sonnet-20240229-v1:0",
-    "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "anthropic.claude-3-5-sonnet-20241022-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
     "anthropic.claude-3-5-sonnet-20241022-v2:0",
@@ -89,12 +89,10 @@ STREAMING_MODELS = {
 class Provider(ABC):
     @property
     @abstractmethod
-    def max_tokens_key(self) -> str:
-        ...
+    def max_tokens_key(self) -> str: ...
 
     @abstractmethod
-    def get_text_from_response(self, response: dict) -> str:
-        ...
+    def get_text_from_response(self, response: dict) -> str: ...
 
     def get_text_from_stream_response(self, response: dict) -> str:
         return self.get_text_from_response(response)

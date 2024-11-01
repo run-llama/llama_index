@@ -154,7 +154,7 @@ class Restaurant(BaseModel):
     menu_items: List[MenuItem]
 
 
-llm = Anthropic("claude-3-5-sonnet-20240620")
+llm = Anthropic("claude-3-5-sonnet-20241022")
 prompt_tmpl = PromptTemplate(
     "Generate a restaurant in a given city {city_name}"
 )

@@ -75,7 +75,7 @@ vector_tool = QueryEngineTool.from_defaults(
 # Create a NotDiamondSelector and RouterQueryEngine
 client = NotDiamond(
     api_key=os.environ["NOTDIAMOND_API_KEY"],
-    llm_configs=["openai/gpt-4o", "anthropic/claude-3-5-sonnet-20240620"],
+    llm_configs=["openai/gpt-4o", "anthropic/claude-3-5-sonnet-20241022"],
 )
 preference_id = client.create_preference_id()
 client.preference_id = preference_id

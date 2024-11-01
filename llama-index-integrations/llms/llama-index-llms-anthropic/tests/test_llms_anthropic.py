@@ -41,7 +41,7 @@ def test_anthropic_through_bedrock():
     # Note: this assumes you have AWS credentials configured.
     anthropic_llm = Anthropic(
         aws_region=os.getenv("ANTHROPIC_AWS_REGION", "us-east-1"),
-        model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-3-5-sonnet-20240620-v1:0"),
+        model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-3-5-sonnet-20241022-v1:0"),
     )
 
     completion_response = anthropic_llm.complete("Give me a recipe for banana bread")
@@ -114,7 +114,7 @@ async def test_anthropic_through_bedrock_async():
     # Note: this assumes you have AWS credentials configured.
     anthropic_llm = Anthropic(
         aws_region=os.getenv("ANTHROPIC_AWS_REGION", "us-east-1"),
-        model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-3-5-sonnet-20240620-v1:0"),
+        model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-3-5-sonnet-20241022-v1:0"),
     )
 
     # Test standard async completion
