@@ -1,5 +1,135 @@
 # ChangeLog
 
+## [2024-10-31]
+
+### `llama-index-core` [0.11.21]
+
+- Fixed issue with default value set as None for workflow `ctx.get()` (#16756)
+- fix various issues with react agent streaming (#16755)
+- add unit test for query pipeline (#16749)
+- Fix _merge_ref_doc_kv_pairs duped for-loop (#16739)
+- bugfix: determine if nodes is none when creating index (#16703)
+- fixes LLMRerank default_parse_choice_select_answer_fn parsing issue (#16736)
+- fix return type check on workflows (#16724)
+- Fixing a verbose issue and making sql errors more informative (#16686)
+
+### `llama-index-embeddings-siliconflow` [0.1.0]
+
+- add siliconflow embedding class (#16753)
+
+### `llama-index-graph-stores-falkordb` [0.2.4]
+
+- Multi-Graph-Supported-FalkorDB (#16482)
+
+### `llama-index-llms-anthropic` [0.3.8]
+
+- adding additional claude model name, for vertex AI (#16692)
+
+### `llama-index-llms-bedrock-converse` [0.3.6]
+
+- Added mistral large2 model id in bedrock (#16742)
+- Improve Bedrock Tool Calling (#16723)
+- add new sonnet3.5 to function calling bedrock converse models (#16702)
+- update bedrock models (#16698)
+
+### `llama-index-llms-bedrock` [0.2.5]
+
+- Added mistral large2 model id in bedrock (#16742)
+- add new sonnet3.5 to function calling bedrock converse models (#16702)
+- update bedrock models (#16698)
+
+### `llama-index-llms-cohere` [0.3.2]
+
+- Adding support to the new Aya-Expanse models from Cohere (#16733)
+
+### `llama-index-llms-dashscope` [0.2.3]
+
+- DashScope llm support async (#16711)
+
+### `llama-index-llms-nvidia` [0.3.4]
+
+- add nvidia/llama-3.2-nv-embedqa-1b-v1 to set of supported models (#16694)
+
+### `llama-index-llms-pipeshift` [0.1.0]
+
+- Pipeshift llama index integration (#16610)
+
+### `llama-index-memory-mem0` [0.1.0]
+
+- add Mem0 as a memory (#16708)
+
+### `llama-index-multi-modal-llms-anthropic` [0.2.4]
+
+- Fix anthropic multimodal deps conflict, update models (#16699)
+
+### `llama-index-node-parser-docling` [0.2.0]
+
+- feat: update Docling reader & node parser to Docling v2 (#16677)
+
+### `llama-index-postprocessor-nvidia-rerank` [0.3.3]
+
+- add nvidia/llama-3.2-nv-rerankqa-1b-v1 to set of supported models (#16695)
+
+### `llama-index-postprocessor-siliconflow-rerank` [0.1.0]
+
+- add siliconflow rerank class (#16737)
+
+### `llama-index-readers-docling` [0.2.0]
+
+- feat: update Docling reader & node parser to Docling v2 (#16677)
+
+### `llama-index-readers-microsoft-onedrive` [0.2.1]
+
+- feat: add permissions to one drive metadata (#16646)
+
+### `llama-index-storage-chat-store-azure` [0.2.4]
+
+- Add Managed Identity authentication support for Azure storage components (#16710)
+- Add missing awaits in azure chat store (#16645)
+
+### `llama-index-storage-docstore-azure` [0.2.1]
+
+- Add Managed Identity authentication support for Azure storage components (#16710)
+
+### `llama-index-storage-index-store-azure` [0.3.1]
+
+- Add Managed Identity authentication support for Azure storage components (#16710)
+
+### `llama-index-storage-kvstore-azure` [0.2.1]
+
+- Add Managed Identity authentication support for Azure storage components (#16710)
+
+### `llama-index-tools-openai-image-generation` [0.3.0]
+
+- Makes the tool more compatible with the options, also for the future (#16676)
+
+### `llama-index-tools-vectara-query` [0.1.0]
+
+- Add Vectara Query Tool (#16722)
+
+### `llama-index-vector-stores-azureaisearch` [0.2.6]
+
+- Allow defining retrievable fields in Azure Vector Store (#16766)
+- feat: add get_nodes azureai search (#16761)
+- Added get_nodes() function in AISearch vector store (#16653)
+- Fix querying for ID in AzureAISearchVectorStore (fixes delete_nodes by node_ids) (#16769)
+
+### `llama-index-vector-stores-hnswlib` [0.2.0]
+
+- Fixed issue with persistence, rearranged and added new options to construction of HnswlibVectorStore (#16673)
+
+### `llama-index-vector-stores-opensearch` [0.4.1]
+
+- Init OpensearchVectorClient with `os_async_client` (#16767)
+
+### `llama-index-vector-stores-qdrant` [0.3.3]
+
+- chore: add embeddings on qdrant get_nodes return (#16760)
+
+### `llama-index-vector-stores-weaviate` [1.1.3]
+
+- add default ID if node ID is not provided (#16671)
+
 ## [2024-10-24]
 
 ### `llama-index-core` [0.11.20]

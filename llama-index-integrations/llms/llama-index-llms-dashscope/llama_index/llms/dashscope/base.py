@@ -85,6 +85,25 @@ def call_with_messages(
     )
 
 
+async def acall_with_messages(
+    model: str,
+    messages: List[Dict],
+    parameters: Optional[Dict] = None,
+    api_key: Optional[str] = None,
+    **kwargs: Any,
+) -> Dict:
+    try:
+        from dashscope import AioGeneration
+    except ImportError:
+        raise ValueError(
+            "DashScope is not installed. Please install it with "
+            "`pip install dashscope`."
+        )
+    return await AioGeneration.call(
+        model=model, messages=messages, api_key=api_key, **parameters
+    )
+
+
 class DashScope(CustomLLM):
     """DashScope LLM.
 
@@ -246,6 +265,20 @@ class DashScope(CustomLLM):
         return dashscope_response_to_completion_response(response)
 
     @llm_completion_callback()
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        message, parameters = self._get_input_parameters(prompt=prompt, **kwargs)
+        parameters.pop("incremental_output", None)
+        parameters.pop("stream", None)
+        messages = chat_message_to_dashscope_messages([message])
+        response = await acall_with_messages(
+            model=self.model_name,
+            messages=messages,
+            api_key=self.api_key,
+            parameters=parameters,
+        )
+        return dashscope_response_to_completion_response(response)
+
+    @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         message, parameters = self._get_input_parameters(prompt=prompt, kwargs=kwargs)
         parameters["incremental_output"] = True
@@ -284,6 +317,23 @@ class DashScope(CustomLLM):
         parameters.pop("incremental_output", None)
         parameters["result_format"] = "message"  # only use message format.
         response = call_with_messages(
+            model=self.model_name,
+            messages=chat_message_to_dashscope_messages(messages),
+            api_key=self.api_key,
+            parameters=parameters,
+        )
+        return dashscope_response_to_chat_response(response)
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        parameters = self._get_default_parameters()
+        parameters.update({**kwargs})
+        parameters.pop("stream", None)
+        parameters.pop("incremental_output", None)
+        parameters["result_format"] = "message"  # only use message format.
+        response = await acall_with_messages(
             model=self.model_name,
             messages=chat_message_to_dashscope_messages(messages),
             api_key=self.api_key,

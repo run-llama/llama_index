@@ -156,7 +156,7 @@ class Context:
         async with self.lock:
             self._globals[key] = value
 
-    async def get(self, key: str, default: Optional[Any] = None) -> Any:
+    async def get(self, key: str, default: Optional[Any] = Ellipsis) -> Any:
         """Get the value corresponding to `key` from the Context.
 
         Args:
@@ -169,7 +169,7 @@ class Context:
         async with self.lock:
             if key in self._globals:
                 return self._globals[key]
-            elif default is not None:
+            elif default is not Ellipsis:
                 return default
 
         msg = f"Key '{key}' not found in Context"

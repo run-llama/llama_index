@@ -42,6 +42,8 @@ COMMAND_MODELS = {
     "command-nightly": 4096,
     "command-light": 4096,
     "command-light-nightly": 4096,
+    "c4ai-aya-expanse-32b": 128000,
+    "c4ai-aya-expanse-8b": 128000,
 }
 
 GENERATION_MODELS = {"base": 2048, "base-light": 2048}
