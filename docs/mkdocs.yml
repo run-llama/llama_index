@@ -246,6 +246,7 @@ nav:
           - ./examples/embeddings/llm_rails.ipynb
           - ./examples/embeddings/mistralai.ipynb
           - ./examples/embeddings/mixedbreadai.ipynb
+          - ./examples/embeddings/nebius.ipynb
           - ./examples/embeddings/nomic.ipynb
           - ./examples/embeddings/nvidia.ipynb
           - ./examples/embeddings/oci_genai.ipynb
@@ -350,6 +351,7 @@ nav:
           - ./examples/llm/modelscope.ipynb
           - ./examples/llm/monsterapi.ipynb
           - ./examples/llm/mymagic.ipynb
+          - ./examples/llm/nebius.ipynb
           - ./examples/llm/neutrino.ipynb
           - ./examples/llm/nvidia.ipynb
           - ./examples/llm/nvidia_nim.ipynb
@@ -900,6 +902,7 @@ nav:
           - ./api_reference/embeddings/llm_rails.md
           - ./api_reference/embeddings/mistralai.md
           - ./api_reference/embeddings/mixedbreadai.md
+          - ./api_reference/embeddings/nebius.md
           - ./api_reference/embeddings/nomic.md
           - ./api_reference/embeddings/nvidia.md
           - ./api_reference/embeddings/oci_genai.md
@@ -1008,6 +1011,7 @@ nav:
           - ./api_reference/llms/modelscope.md
           - ./api_reference/llms/monsterapi.md
           - ./api_reference/llms/mymagic.md
+          - ./api_reference/llms/nebius.md
           - ./api_reference/llms/neutrino.md
           - ./api_reference/llms/nvidia.md
           - ./api_reference/llms/nvidia_tensorrt.md
@@ -1857,6 +1861,7 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-elasticsearch
             - ../llama-index-integrations/embeddings/llama-index-embeddings-azure-openai
             - ../llama-index-integrations/embeddings/llama-index-embeddings-text-embeddings-inference
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-nebius
             - ../llama-index-integrations/callbacks/llama-index-callbacks-uptrain
             - ../llama-index-integrations/callbacks/llama-index-callbacks-deepeval
             - ../llama-index-integrations/callbacks/llama-index-callbacks-openinference
@@ -2466,6 +2471,7 @@ plugins:
         ./examples/embeddings/llamafile.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/llamafile/
         ./examples/embeddings/llm_rails.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/llm_rails/
         ./examples/embeddings/mistralai.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/mistralai/
+        ./examples/embeddings/nebius.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/nebius/
         ./examples/embeddings/nomic.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/nomic/
         ./examples/embeddings/ollama_embedding.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/ollama_embedding/
         ./examples/embeddings/optimum_intel.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/optimum_intel/
@@ -2566,6 +2572,7 @@ plugins:
         ./examples/llm/modelscope.html: https://docs.llamaindex.ai/en/stable/examples/llm/modelscope/
         ./examples/llm/monsterapi.html: https://docs.llamaindex.ai/en/stable/examples/llm/monsterapi/
         ./examples/llm/mymagic.html: https://docs.llamaindex.ai/en/stable/examples/llm/mymagic/
+        ./examples/llm/nebius.html: https://docs.llamaindex.ai/en/stable/examples/llm/nebius/
         ./examples/llm/neutrino.html: https://docs.llamaindex.ai/en/stable/examples/llm/neutrino/
         ./examples/llm/nvidia_tensorrt.html: https://docs.llamaindex.ai/en/stable/examples/llm/nvidia_tensorrt/
         ./examples/llm/nvidia_triton.html: https://docs.llamaindex.ai/en/stable/examples/llm/nvidia_triton/
