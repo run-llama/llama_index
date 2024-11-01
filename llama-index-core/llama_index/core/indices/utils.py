@@ -101,7 +101,17 @@ def default_parse_choice_select_answer_fn(
                     "Answer line must be of the form: "
                     "answer_num: <int>, answer_relevance: <float>"
                 )
-        answer_num = int(line_tokens[0].split(":")[1].strip())
+        try:
+            answer_num = int(line_tokens[0].split(":")[1].strip())
+        except (IndexError, ValueError) as e:
+            if not raise_error:
+                continue
+            else:
+                raise ValueError(
+                    f"Invalid answer line: {answer_line}. "
+                    "Answer line must be of the form: "
+                    "answer_num: <int>, answer_relevance: <float>"
+                )
         if answer_num > num_choices:
             continue
         answer_nums.append(answer_num)

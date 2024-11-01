@@ -1,7 +1,7 @@
 """Test query pipeline worker."""
 
 from typing import Any, Dict, Set, Tuple
-
+import pytest
 from llama_index.core.agent.custom.pipeline_worker import (
     QueryPipelineAgentWorker,
 )
@@ -63,6 +63,26 @@ def mock_agent_output_fn(
     return AgentChatResponse(response=str(output)), is_done
 
 
+class MyCustomAgentComponent(CustomAgentComponent):
+    """Custom agent component."""
+
+    separator: str = Field(default=":", description="Separator")
+
+    def _run_component(self, **kwargs: Any) -> Dict[str, Any]:
+        """Run component."""
+        return {"output": kwargs["a"] + self.separator + kwargs["a"]}
+
+    @property
+    def _input_keys(self) -> Set[str]:
+        """Input keys."""
+        return {"a"}
+
+    @property
+    def _output_keys(self) -> Set[str]:
+        """Output keys."""
+        return {"output"}
+
+
 def test_qp_agent_fn() -> None:
     """Test query pipeline agent.
 
@@ -90,29 +110,34 @@ def test_qp_agent_fn() -> None:
     assert step_output.is_last is True
 
 
-class MyCustomAgentComponent(CustomAgentComponent):
-    """Custom agent component."""
+@pytest.mark.asyncio()
+async def test_qp_agent_async_fn() -> None:
+    """
+    Test query pipeline agent with async function components.
+    """
+    agent_input = AgentInputComponent(fn=mock_agent_input_fn)
+    fn_component = FnComponent(fn=mock_fn)
+    agent_output = AgentFnComponent(fn=mock_agent_output_fn)
+    qp = QueryPipeline(chain=[agent_input, fn_component, agent_output])
 
-    separator: str = Field(default=":", description="Separator")
+    agent_worker = QueryPipelineAgentWorker(pipeline=qp)
+    agent_runner = AgentRunner(agent_worker=agent_worker)
 
-    def _run_component(self, **kwargs: Any) -> Dict[str, Any]:
-        """Run component."""
-        return {"output": kwargs["a"] + self.separator + kwargs["a"]}
+    # test create_task
+    task = agent_runner.create_task("foo")
+    assert task.input == "foo"
 
-    @property
-    def _input_keys(self) -> Set[str]:
-        """Input keys."""
-        return {"a"}
+    first_step_output = await agent_runner.arun_step(task.task_id)
+    assert str(first_step_output.output) == "foo3"
+    assert first_step_output.is_last is False
 
-    @property
-    def _output_keys(self) -> Set[str]:
-        """Output keys."""
-        return {"output"}
+    second_step_output = await agent_runner.arun_step(task.task_id)
+    assert str(second_step_output.output) == "foo33"
+    assert second_step_output.is_last is True
 
 
 def test_qp_agent_custom() -> None:
     """Test query pipeline agent.
-
     Implement via `AgentCustomQueryComponent` subclass.
 
     """
