@@ -332,7 +332,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if filters:
             where = _to_chroma_filter(filters)
         else:
-            where = {}
+            where = None
 
         self._collection.delete(ids=node_ids, where=where)
 
