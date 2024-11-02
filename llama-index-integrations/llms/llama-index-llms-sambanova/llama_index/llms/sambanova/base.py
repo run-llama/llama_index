@@ -1,575 +1,641 @@
-import os
-from typing import Any, Dict, Optional, List
+import aiohttp
+
+from typing import Any, Dict, List, Optional, Iterator, Sequence, AsyncIterator
 
 import requests
+from llama_index.core.llms.llm import LLM
+from llama_index.core.llms.callbacks import (
+    llm_chat_callback,
+    llm_completion_callback,
+)
 from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
     CompletionResponse,
+    CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
 )
-
-from llama_index.core.llms.callbacks import llm_completion_callback
-from llama_index.core.llms.custom import CustomLLM
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.base.llms.generic_utils import (
+    get_from_param_or_env,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+    achat_to_completion_decorator,
+)
+from llama_index.core.bridge.pydantic import Field, SecretStr
 import json
 
+from dotenv import load_dotenv
 
-class Sambaverse(CustomLLM):
+load_dotenv()
+
+
+def _convert_message_to_dict(message: ChatMessage) -> Dict[str, Any]:
+    """Converts a ChatMessage to a dictionary with Role / content.
+
+    Args:
+        message: ChatMessage
+
+    Returns:
+        messages_dict:  role / content dict
     """
-    Sambaverse LLM.
+    if isinstance(message, ChatMessage):
+        message_dict = {"role": message.role, "content": message.content}
+    else:
+        raise TypeError(f"Got unknown type {message}")
+    return message_dict
 
-    Examples:
-        `pip install llama-index-llms-sambanova`
 
-        ```python
-        from llama_index.llms.sambanova import Sambaverse
+def _create_message_dicts(messages: Sequence[ChatMessage]) -> List[Dict[str, Any]]:
+    """Converts a list of ChatMessages to a list of dictionaries with Role / content.
 
-        llm = Sambaverse(...)
+    Args:
+        messages: list of ChatMessages
 
-        response = llm.complete("What is the meaning of life?")
+    Returns:
+        messages_dicts:  list of role / content dicts
+    """
+    return [_convert_message_to_dict(m) for m in messages]
 
-        print(response)
-        ```
+
+class SambaNovaCloud(LLM):
+    """
+    SambaNova Cloud model.
+
+    Setup:
+        To use, you should have the environment variables:
+        ``SAMBANOVA_URL`` set with your SambaNova Cloud URL.
+        ``SAMBANOVA_API_KEY`` set with your SambaNova Cloud API Key.
+        http://cloud.sambanova.ai/
+
+    Example:
+        .. code-block:: python
+            SambaNovaCloud(
+                sambanova_url = SambaNova cloud endpoint URL,
+                sambanova_api_key = set with your SambaNova cloud API key,
+                model = model name,
+                max_tokens = max number of tokens to generate,
+                temperature = model temperature,
+                top_p = model top p,
+                top_k = model top k,
+                stream_options = include usage to get generation metrics
+            )
+
+    Key init args — completion params:
+        model: str
+            The name of the model to use, e.g., Meta-Llama-3-70B-Instruct.
+        streaming: bool
+            Whether to use streaming handler when using non streaming methods
+        max_tokens: int
+            max tokens to generate
+        temperature: float
+            model temperature
+        top_p: float
+            model top p
+        top_k: int
+            model top k
+        stream_options: dict
+            stream options, include usage to get generation metrics
+
+    Key init args — client params:
+        sambanova_url: str
+            SambaNova Cloud Url
+        sambanova_api_key: str
+            SambaNova Cloud api key
+
+    Instantiate:
+        .. code-block:: python
+
+            from llama_index.llms.sambanova import SambaNovaCloud
+
+            llm = SambaNovaCloud(
+                sambanova_url = SambaNova cloud endpoint URL,
+                sambanova_api_key = set with your SambaNova cloud API key,
+                model = model name,
+                max_tokens = max number of tokens to generate,
+                temperature = model temperature,
+                top_p = model top p,
+                top_k = model top k,
+                stream_options = include usage to get generation metrics
+            )
+    Complete:
+        .. code-block:: python
+            prompt = "Tell me about Naruto Uzumaki in one sentence"
+            response = llm.complete(prompt)
+
+    Chat:
+        .. code-block:: python
+            messages = [
+                ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
+                ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
+            ]
+            response = llm.chat(messages)
+
+    Stream:
+        .. code-block:: python
+        prompt = "Tell me about Naruto Uzumaki in one sentence"
+        messages = [
+            ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
+            ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
+        ]
+        for chunk in llm.stream_complete(prompt):
+            print(chunk.text)
+        for chunk in llm.stream_chat(messages):
+            print(chunk.message.content)
+
+    Async:
+        .. code-block:: python
+        prompt = "Tell me about Naruto Uzumaki in one sentence"
+        asyncio.run(llm.acomplete(prompt))
+
+        messages = [
+            ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
+            ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
+        ]
+        asyncio.run(llm.achat(chat_text_msgs))
+
+    Response metadata and usage
+        .. code-block:: python
+
+        messages = [
+            ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
+            ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
+        ]
+        metadata_and_usage = llm.chat(messages).message.additional_kwargs
+        print(metadata_and_usage)
     """
 
-    sambaverse_url: str = Field(
-        default="https://sambaverse.sambanova.ai",
-        description="URL of the Sambaverse server",
+    sambanova_url: str = Field(default_factory=str, description="SambaNova Cloud Url")
+
+    sambanova_api_key: SecretStr = Field(
+        default_factory=str, description="SambaNova Cloud api key"
     )
 
-    sambaverse_api_key: str = Field(
-        default="",
-        description="API key for the Sambaverse server",
+    model: str = Field(
+        default="Meta-Llama-3.1-8B-Instruct",
+        description="The name of the model",
     )
-    sambaverse_model_name: str = Field(
-        default="", description="Name of the Sambaverse model to use"
-    )
-    model_kwargs: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional keyword arguments to pass to the model",
-    )
+
     streaming: bool = Field(
         default=False,
-        description="Boolean to state whether to stream response or not",
+        description="Whether to use streaming handler when using non streaming methods",
     )
 
-    _client: requests.Session = PrivateAttr()
+    max_tokens: int = Field(default=1024, description="max tokens to generate")
 
-    def __init__(
-        self,
-        sambaverse_url: str = "https://sambaverse.sambanova.ai",
-        sambaverse_api_key: str = "",
-        sambaverse_model_name: str = "",
-        model_kwargs: Dict[str, Any] = {},
-        streaming: bool = False,
-        client: Optional[requests.Session] = None,
-    ) -> None:
-        super().__init__()
+    temperature: float = Field(default=0.7, description="model temperature")
 
-        self.sambaverse_url = sambaverse_url
-        self.sambaverse_api_key = sambaverse_api_key
-        self.sambaverse_model_name = sambaverse_model_name
-        self.model_kwargs = model_kwargs
-        self.streaming = streaming
-        self._client = client or requests.Session()
-        self._validate_env_vars()
+    top_p: Optional[float] = Field(default=None, description="model top p")
 
-    def _validate_env_vars(self):
-        if not self.sambaverse_model_name:
-            self.sambaverse_model_name = os.getenv("SAMBAVERSE_MODEL_NAME")
-        if not self.sambaverse_api_key:
-            self.sambaverse_api_key = os.getenv("SAMBAVERSE_API_KEY")
+    top_k: Optional[int] = Field(default=None, description="model top k")
 
-        if not self.sambaverse_model_name:
-            raise ValueError(
-                "Sambaverse model name must be provided either as an argument or set in the environment variable 'SAMBAVERSE_MODEL_NAME'."
-            )
+    stream_options: dict = Field(
+        default={"include_usage": True},
+        description="stream options, include usage to get generation metrics",
+    )
 
-        if not self.sambaverse_api_key:
-            raise ValueError(
-                "Sambaverse API key must be provided either as an argument or set in the environment variable 'SAMBAVERSE_API_KEY'."
-            )
+    @classmethod
+    def class_name(cls) -> str:
+        return "SambaNovaCloud"
 
-    def _get_full_url(self, endpoint: str) -> str:
-        return f"{self.sambaverse_url}/{endpoint}"
+    @property
+    def metadata(self) -> LLMMetadata:
+        return LLMMetadata(
+            context_window=None,
+            num_output=self.max_tokens,
+            is_chat_model=True,
+            model_name=self.model,
+        )
 
-    def _get_model_kwargs(self, stop: Optional[List[str]]) -> str:
-        try:
-            _model_kwargs = self.model_kwargs or {}
-            _kwarg_stop_sequences = set(_model_kwargs.get("stop_sequences", []))
-            _stop_sequences = set(stop or _kwarg_stop_sequences)
+    def __init__(self, **kwargs: Any) -> None:
+        """Init and validate environment variables."""
+        kwargs["sambanova_url"] = get_from_param_or_env(
+            "url",
+            kwargs.get("sambanova_url"),
+            "SAMBANOVA_URL",
+            default="https://api.sambanova.ai/v1/chat/completions",
+        )
+        kwargs["sambanova_api_key"] = get_from_param_or_env(
+            "api_key", kwargs.get("sambanova_api_key"), "SAMBANOVA_API_KEY"
+        )
+        super().__init__(**kwargs)
 
-            if not _kwarg_stop_sequences:
-                _model_kwargs["stop_sequences"] = ",".join(
-                    f'"{x}"' for x in _stop_sequences
-                )
+    def _handle_request(
+        self, messages_dicts: List[Dict], stop: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """
+        Performs a post request to the LLM API.
 
-            tuning_params_dict = {
-                k: {"type": type(v).__name__, "value": str(v)}
-                for k, v in _model_kwargs.items()
-            }
+        Args:
+            messages_dicts: List of role / content dicts to use as input.
+            stop: list of stop tokens
 
-            return json.dumps(tuning_params_dict)
-
-        except Exception as e:
-            raise ValueError(f"Error getting model kwargs: {e}")
-
-    def _process_api_response(self, response: requests.Response) -> Dict:
-        result: Dict[str, Any] = {}
-        if response.status_code != 200:
-            raise ValueError(
-                f"Received unexpected status code {response.status_code}: {response.text}"
-            )
-
-        try:
-            lines_result = response.text.strip().split("\n")
-            text_result = lines_result[-1]
-            if response.status_code == 200 and json.loads(text_result).get("error"):
-                completion = ""
-                for line in lines_result[:-1]:
-                    completion += json.loads(line)["result"]["responses"][0][
-                        "stream_token"
-                    ]
-                text_result = lines_result[-2]
-                result = json.loads(text_result)
-                result["result"]["responses"][0]["completion"] = completion
-            else:
-                result = json.loads(text_result)
-        except Exception as e:
-            result["detail"] = str(e)
-        if "status_code" not in result:
-            result["status_code"] = response.status_code
-        return result
-
-    def _process_api_stream_response(self, response: requests.Response) -> Any:
-        try:
-            for line in response.iter_lines():
-                chunk = json.loads(line)
-                if "status_code" not in chunk:
-                    chunk["status_code"] = response.status_code
-                if chunk["status_code"] == 200 and chunk.get("error"):
-                    chunk["result"] = {"responses": [{"stream_token": ""}]}
-                    return chunk
-                yield chunk
-        except Exception as e:
-            raise RuntimeError(f"Error processing streaming response: {e}")
-
-    def _send_sambaverse_request(
-        self, endpoint: str, data: Dict[str, Any], stream: bool = False
-    ) -> requests.Response:
-        url = self._get_full_url(endpoint)
-        headers = {
-            "key": self.sambaverse_api_key,
-            "Content-Type": "application/json",
-            "modelName": self.sambaverse_model_name,
+        Returns:
+            A response dict.
+        """
+        data = {
+            "messages": messages_dicts,
+            "max_tokens": self.max_tokens,
+            "stop": stop,
+            "model": self.model,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
         }
-        try:
-            return self._client.post(url, headers=headers, json=data, stream=stream)
-
-        except Exception as e:
-            raise ValueError(f"Error sending request to Sambaverse: {e}")
-
-    def _prepare_request_data(self, prompt: str) -> Dict[str, Any]:
-        try:
-            model_params = self._get_model_kwargs(stop=None)
-            return {"instance": prompt, "params": json.loads(model_params)}
-
-        except Exception as e:
-            raise ValueError(f"Error preparing request data: {e}")
-
-    def _get_completion_from_response(self, response: Dict) -> str:
-        try:
-            return (
-                response.get("result", {})
-                .get("responses", [{}])[0]
-                .get("completion", "")
-            )
-        except Exception as e:
-            raise ValueError(f"Error processing response: {e}")
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "Samabaverse"
-
-    @property
-    def metadata(self) -> LLMMetadata:
-        """LLM metadata."""
-        return LLMMetadata(
-            model_name=self.sambaverse_model_name,
-            model_kwargs=self.model_kwargs,
-            description="Sambanova LLM",
-            is_streaming=self.streaming,
+        http_session = requests.Session()
+        response = http_session.post(
+            self.sambanova_url,
+            headers={
+                "Authorization": f"Bearer {self.sambanova_api_key.get_secret_value()}",
+                "Content-Type": "application/json",
+            },
+            json=data,
         )
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"Sambanova /complete call failed with status code "
+                f"{response.status_code}.",
+                f"{response.text}.",
+            )
+        response_dict = response.json()
+        if response_dict.get("error"):
+            raise RuntimeError(
+                f"Sambanova /complete call failed with status code "
+                f"{response.status_code}.",
+                f"{response_dict}.",
+            )
+        return response_dict
 
-    @llm_completion_callback()
-    def complete(self, prompt: str) -> CompletionResponse:
+    async def _handle_request_async(
+        self, messages_dicts: List[Dict], stop: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
         """
-        Complete the given prompt using the Sambaverse model.
+        Performs a async post request to the LLM API.
 
         Args:
-            prompt (str): The input prompt to complete.
+            messages_dicts: List of role / content dicts to use as input.
+            stop: list of stop tokens
 
         Returns:
-            CompletionResponse: The completed text generated by the model.
+            A response dict.
         """
-        data = self._prepare_request_data(prompt)
-        response = self._send_sambaverse_request("api/predict", data)
-        processed_response = self._process_api_response(response)
-        completion_text = self._get_completion_from_response(processed_response)
+        data = {
+            "messages": messages_dicts,
+            "max_tokens": self.max_tokens,
+            "stop": stop,
+            "model": self.model,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
+        }
 
-        return CompletionResponse(text=completion_text)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                self.sambanova_url,
+                headers={
+                    "Authorization": f"Bearer {self.sambanova_api_key.get_secret_value()}",
+                    "Content-Type": "application/json",
+                },
+                json=data,
+            ) as response:
+                if response.status != 200:
+                    raise RuntimeError(
+                        f"Sambanova /complete call failed with status code {response.status}.",
+                        f"{await response.text()}.",
+                    )
+                response_dict = await response.json()
+                if response_dict.get("error"):
+                    raise RuntimeError(
+                        f"Sambanova /complete call failed with status code {response.status}.",
+                        f"{response_dict}.",
+                    )
+                return response_dict
 
-    @llm_completion_callback()
-    def stream_complete(self, prompt: str) -> CompletionResponseGen:
+    def _handle_streaming_request(
+        self, messages_dicts: List[Dict], stop: Optional[List[str]] = None
+    ) -> Iterator[Dict]:
         """
-        Stream the completion of the given prompt using the Sambaverse model.
+        Performs an streaming post request to the LLM API.
 
         Args:
-            prompt (str): The input prompt to complete.
+            messages_dicts: List of role / content dicts to use as input.
+            stop: list of stop tokens
 
         Yields:
-            CompletionResponseGen: Streamed completion text generated by the model.
+            An iterator of response dicts.
         """
-        print("In stream_complete")
-        data = self._prepare_request_data(prompt)
-        response = self._send_sambaverse_request("api/predict", data, stream=True)
-
-        for token in self._process_api_stream_response(response):
-            processed_token = token["result"]["responses"][0]["stream_token"]
-            yield CompletionResponse(text=processed_token)
-
-
-class SambaStudio(CustomLLM):
-    """
-    SambaStudio LLM.
-
-    Examples:
-        `pip install llama-index-llms-sambanova`
-
-        ```python
-        from llama_index.llms.sambanova import SambaStudio
-
-        llm = Sambaverse(...)
-
-        response = llm.complete("What is the meaning of life?")
-
-        print(response)
-        ```
-    """
-
-    sambastudio_base_url: str = Field(
-        default="",
-        description="URL of the SambaStudio server",
-    )
-    sambastudio_base_uri: str = Field(
-        default="",
-        description="Base URI of the SambaStudio server",
-    )
-    sambastudio_project_id: str = Field(
-        default="",
-        description="Project ID of the SambaStudio server",
-    )
-    sambastudio_endpoint_id: str = Field(
-        default="",
-        description="Endpoint ID of the SambaStudio server",
-    )
-    sambastudio_api_key: str = Field(
-        default="",
-        description="API key for the SambaStudio server",
-    )
-
-    model_kwargs: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional keyword arguments to pass to the model",
-    )
-    streaming: bool = Field(
-        default=False,
-        description="Boolean to state whether to stream response or not",
-    )
-
-    _client: requests.Session = PrivateAttr()
-
-    def __init__(
-        self,
-        sambastudio_base_url: str = "",
-        sambastudio_base_uri: str = "",
-        sambastudio_project_id: str = "",
-        sambastudio_endpoint_id: str = "",
-        model_kwargs: Dict[str, Any] = {},
-        streaming: bool = False,
-        client: Optional[requests.Session] = None,
-    ) -> None:
-        super().__init__()
-
-        self.sambastudio_base_url = sambastudio_base_url
-        self.sambastudio_base_uri = sambastudio_base_uri
-        self.sambastudio_project_id = sambastudio_project_id
-        self.sambastudio_endpoint_id = sambastudio_endpoint_id
-        self.model_kwargs = model_kwargs
-        self.streaming = streaming
-        self._client = client or requests.Session()
-        self._validate_env_vars()
-
-    def _validate_env_vars(self):
-        if not self.sambaverse_api_key:
-            self.sambaverse_api_key = os.getenv("SAMBAVERSE_API_KEY")
-        if not self.sambastudio_base_url:
-            self.sambastudio_base_url = os.getenv("SAMBASTUDIO_BASE_URL")
-        if not self.sambastudio_base_uri:
-            self.sambastudio_base_uri = os.getenv("SAMBASTUDIO_BASE_URI")
-        if not self.sambastudio_project_id:
-            self.sambastudio_project_id = os.getenv("SAMBASTUDIO_PROJECT_ID")
-        if not self.sambastudio_endpoint_id:
-            self.sambastudio_endpoint_id = os.getenv("SAMBASTUDIO_ENDPOINT_ID")
-
-        if not self.sambaverse_api_key:
-            raise ValueError(
-                "Sambaverse API key must be provided either as an argument or set in the environment variable 'SAMBAVERSE_API_KEY'."
-            )
-
-        if not self.sambastudio_base_url:
-            raise ValueError(
-                "Sambastudio base URL must be provided either as an argument or set in the environment variable 'SAMBASTUDIO_BASE_URL'."
-            )
-
-        if not self.sambastudio_base_uri:
-            raise ValueError(
-                "Sambastudio base URI must be provided either as an argument or set in the environment variable 'SAMBASTUDIO_BASE_URI'."
-            )
-
-        if not self.sambastudio_project_id:
-            raise ValueError(
-                "Sambastudio project ID must be provided either as an argument or set in the environment variable 'SAMBASTUDIO_PROJECT_ID'."
-            )
-
-        if not self.sambastudio_endpoint_id:
-            raise ValueError(
-                "Sambastudio endpoint ID must be provided either as an argument or set in the environment variable 'SAMBASTUDIO_ENDPOINT_ID'."
-            )
-
-    def _get_full_url(self, path: str) -> str:
-        return f"{self.sambastudio_base_url}/{self.sambastudio_base_uri}/{path}"
-
-    def _get_model_kwargs(self, stop: Optional[List[str]]) -> str:
         try:
-            _model_kwargs = self.model_kwargs or {}
-            _kwarg_stop_sequences = set(_model_kwargs.get("stop_sequences", []))
-            _stop_sequences = set(stop or _kwarg_stop_sequences)
+            import sseclient
+        except ImportError:
+            raise ImportError(
+                "could not import sseclient library"
+                "Please install it with `pip install sseclient-py`."
+            )
+        data = {
+            "messages": messages_dicts,
+            "max_tokens": self.max_tokens,
+            "stop": stop,
+            "model": self.model,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
+            "stream": True,
+            "stream_options": self.stream_options,
+        }
+        http_session = requests.Session()
+        response = http_session.post(
+            self.sambanova_url,
+            headers={
+                "Authorization": f"Bearer {self.sambanova_api_key.get_secret_value()}",
+                "Content-Type": "application/json",
+            },
+            json=data,
+            stream=True,
+        )
 
-            if not _kwarg_stop_sequences:
-                _model_kwargs["stop_sequences"] = ",".join(
-                    f'"{x}"' for x in _stop_sequences
+        client = sseclient.SSEClient(response)
+
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"Sambanova /complete call failed with status code "
+                f"{response.status_code}."
+                f"{response.text}."
+            )
+
+        for event in client.events():
+            if event.event == "error_event":
+                raise RuntimeError(
+                    f"Sambanova /complete call failed with status code "
+                    f"{response.status_code}."
+                    f"{event.data}."
                 )
 
-            tuning_params_dict = {
-                k: {"type": type(v).__name__, "value": str(v)}
-                for k, v in _model_kwargs.items()
-            }
-
-            return json.dumps(tuning_params_dict)
-
-        except Exception as e:
-            raise ValueError(f"Error getting model kwargs: {e}")
-
-    def _process_api_response(self, response: requests.Response) -> Dict:
-        result: Dict[str, Any] = {}
-        try:
-            result = response.json()
-        except Exception as e:
-            result["detail"] = str(e)
-        if "status_code" not in result:
-            result["status_code"] = response.status_code
-        return result
-
-    def _process_api_stream_response(self, response: requests.Response) -> Any:
-        """Process the streaming response."""
-        if "nlp" in self.sambastudio_base_uri:
             try:
-                import sseclient
-            except ImportError:
-                raise ImportError(
-                    "could not import sseclient library"
-                    "Please install it with `pip install sseclient-py`."
-                )
-            client = sseclient.SSEClient(response)
-            close_conn = False
-            for event in client.events():
-                if event.event == "error_event":
-                    close_conn = True
-                chunk = {
-                    "event": event.event,
-                    "data": event.data,
-                    "status_code": response.status_code,
-                }
-                yield chunk
-            if close_conn:
-                client.close()
-        elif "generic" in self.sambastudio_base_uri:
-            try:
-                for line in response.iter_lines():
-                    chunk = json.loads(line)
-                    if "status_code" not in chunk:
-                        chunk["status_code"] = response.status_code
-                    if chunk["status_code"] == 200 and chunk.get("error"):
-                        chunk["result"] = {"responses": [{"stream_token": ""}]}
-                    yield chunk
+                # check if the response is a final event
+                # in that case event data response is '[DONE]'
+                if event.data != "[DONE]":
+                    if isinstance(event.data, str):
+                        data = json.loads(event.data)
+                    else:
+                        raise RuntimeError(
+                            f"Sambanova /complete call failed with status code "
+                            f"{response.status_code}."
+                            f"{event.data}."
+                        )
+                    if data.get("error"):
+                        raise RuntimeError(
+                            f"Sambanova /complete call failed with status code "
+                            f"{response.status_code}."
+                            f"{event.data}."
+                        )
+                    yield data
             except Exception as e:
-                raise RuntimeError(f"Error processing streaming response: {e}")
-        else:
-            raise ValueError(
-                f"handling of endpoint uri: {self.api_base_uri} not implemented"
+                raise RuntimeError(
+                    f"Error getting content chunk raw streamed response: {e}"
+                    f"data: {event.data}"
+                )
+
+    async def _handle_streaming_request_async(
+        self, messages_dicts: List[Dict], stop: Optional[List[str]] = None
+    ) -> AsyncIterator[Dict]:
+        """
+        Performs an async streaming post request to the LLM API.
+
+        Args:
+            messages_dicts: List of role / content dicts to use as input.
+            stop: list of stop tokens
+
+        Yields:
+            An iterator of response dicts.
+        """
+        data = {
+            "messages": messages_dicts,
+            "max_tokens": self.max_tokens,
+            "stop": stop,
+            "model": self.model,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
+            "stream": True,
+            "stream_options": self.stream_options,
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                self.sambanova_url,
+                headers={
+                    "Authorization": f"Bearer {self.sambanova_api_key.get_secret_value()}",
+                    "Content-Type": "application/json",
+                },
+                json=data,
+            ) as response:
+                if response.status != 200:
+                    raise RuntimeError(
+                        f"Sambanova /complete call failed with status code "
+                        f"{response.status}. {await response.text()}"
+                    )
+
+                async for line in response.content:
+                    if line:
+                        event = line.decode("utf-8").strip()
+
+                    if event.startswith("data:"):
+                        event = event[len("data:") :].strip()
+                        if event == "[DONE]":
+                            break
+                    elif len(event) == 0:
+                        continue
+
+                    try:
+                        data = json.loads(event)
+                        if data.get("error"):
+                            raise RuntimeError(
+                                f'Sambanova /complete call failed: {data["error"]}'
+                            )
+                        yield data
+                    except json.JSONDecodeError:
+                        raise RuntimeError(
+                            f"Sambanova /complete call failed to decode response: {event}"
+                        )
+                    except Exception as e:
+                        raise RuntimeError(
+                            f"Error processing response: {e} data: {event}"
+                        )
+
+    @llm_chat_callback()
+    def chat(
+        self,
+        messages: Sequence[ChatMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """
+        Calls the chat implementation of the SambaNovaCloud model.
+
+        Args:
+            messages: the prompt composed of a list of messages.
+            stop: a list of strings on which the model should stop generating.
+                  If generation stops due to a stop token, the stop token itself
+                  SHOULD BE INCLUDED as part of the output. This is not enforced
+                  across models right now, but it's a good practice to follow since
+                  it makes it much easier to parse the output of the model
+                  downstream and understand why generation stopped.
+
+        Returns:
+            ChatResponse with model generation
+        """
+        messages_dicts = _create_message_dicts(messages)
+
+        response = self._handle_request(messages_dicts, stop)
+        message = ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content=response["choices"][0]["message"]["content"],
+            additional_kwargs={
+                "id": response["id"],
+                "finish_reason": response["choices"][0]["finish_reason"],
+                "usage": response.get("usage"),
+                "model_name": response["model"],
+                "system_fingerprint": response["system_fingerprint"],
+                "created": response["created"],
+            },
+        )
+        return ChatResponse(message=message)
+
+    @llm_chat_callback()
+    def stream_chat(
+        self,
+        messages: Sequence[ChatMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> ChatResponseGen:
+        """
+        Streams the chat output of the SambaNovaCloud model.
+
+        Args:
+            messages: the prompt composed of a list of messages.
+            stop: a list of strings on which the model should stop generating.
+                  If generation stops due to a stop token, the stop token itself
+                  SHOULD BE INCLUDED as part of the output. This is not enforced
+                  across models right now, but it's a good practice to follow since
+                  it makes it much easier to parse the output of the model
+                  downstream and understand why generation stopped.
+
+        Yields:
+            ChatResponseGen with model partial generation
+        """
+        messages_dicts = _create_message_dicts(messages)
+
+        finish_reason = None
+        content = ""
+        role = MessageRole.ASSISTANT
+
+        for partial_response in self._handle_streaming_request(messages_dicts, stop):
+            if len(partial_response["choices"]) > 0:
+                content_delta = partial_response["choices"][0]["delta"]["content"]
+                content += content_delta
+                additional_kwargs = {
+                    "id": partial_response["id"],
+                    "finish_reason": partial_response["choices"][0].get(
+                        "finish_reason"
+                    ),
+                }
+            else:
+                additional_kwargs = {
+                    "id": partial_response["id"],
+                    "finish_reason": finish_reason,
+                    "usage": partial_response.get("usage"),
+                    "model_name": partial_response["model"],
+                    "system_fingerprint": partial_response["system_fingerprint"],
+                    "created": partial_response["created"],
+                }
+
+            # yield chunk
+            yield ChatResponse(
+                message=ChatMessage(
+                    role=role, content=content, additional_kwargs=additional_kwargs
+                ),
+                delta=content_delta,
+                raw=partial_response,
             )
 
-    def _send_sambaverse_request(
-        self, data: Dict[str, Any], stream: bool = False
-    ) -> requests.Response:
-        try:
-            if stream:
-                url = self._get_full_url(
-                    f"stream/{self.sambastudio_project_id}/{self.sambastudio_endpoint_id}"
-                )
-                headers = {
-                    "key": self.sambaverse_api_key,
-                    "Content-Type": "application/json",
-                }
-                return self._client.post(url, headers=headers, json=data, stream=True)
-            else:
-                url = self._get_full_url(
-                    f"{self.sambastudio_project_id}/{self.sambastudio_endpoint_id}"
-                )
-                headers = {
-                    "key": self.sambaverse_api_key,
-                    "Content-Type": "application/json",
-                }
+    @llm_completion_callback()
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        complete_fn = chat_to_completion_decorator(self.chat)
+        return complete_fn(prompt, **kwargs)
 
-                return self._client.post(url, headers=headers, json=data, stream=stream)
-        except Exception as e:
-            raise ValueError(f"Error sending request to Sambaverse: {e}")
+    @llm_completion_callback()
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
+        stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
+        return stream_complete_fn(prompt, **kwargs)
 
-    def _prepare_request_data(self, prompt: str) -> Dict[str, Any]:
-        try:
-            data = {}
-            if isinstance(prompt, str):
-                input = [prompt]
-            if "nlp" in self.api_base_uri:
-                model_params = self._get_model_kwargs(stop=None)
-                if model_params:
-                    data = {"inputs": input, "params": json.loads(model_params)}
-                else:
-                    data = {"inputs": input}
-            elif "generic" in self.api_base_uri:
-                model_params = self._get_model_kwargs(stop=None)
-                if model_params:
-                    data = {"instance": input, "params": json.loads(model_params)}
-                else:
-                    data = {"instance": input}
-            else:
-                raise ValueError(
-                    f"handling of endpoint uri: {self.api_base_uri} not implemented"
-                )
-            return data
+    ### Async ###
+    @llm_chat_callback()
+    async def achat(
+        self,
+        messages: Sequence[ChatMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """
+        Calls the async chat implementation of the SambaNovaCloud model.
 
-        except Exception as e:
-            raise ValueError(f"Error preparing request data: {e}")
+        Args:
+            messages: the prompt composed of a list of messages.
+            stop: a list of strings on which the model should stop generating.
+                  If generation stops due to a stop token, the stop token itself
+                  SHOULD BE INCLUDED as part of the output. This is not enforced
+                  across models right now, but it's a good practice to follow since
+                  it makes it much easier to parse the output of the model
+                  downstream and understand why generation stopped.
 
-    def _get_completion_from_response(self, response: Dict) -> str:
-        try:
-            if "nlp" in self.sambastudio_base_uri:
-                return response["data"][0]["completion"]
-            elif "generic" in self.sambastudio_base_uri:
-                return response["predictions"][0]["completion"]
-            else:
-                raise ValueError(
-                    f"handling of endpoint uri: {self.sambastudio_base_uri} not implemented"
-                )
-        except Exception as e:
-            raise ValueError(f"Error processing response: {e}")
+        Returns:
+            ChatResponse with async model generation
+        """
+        messages_dicts = _create_message_dicts(messages)
+        response = await self._handle_request_async(messages_dicts, stop)
+        message = ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content=response["choices"][0]["message"]["content"],
+            additional_kwargs={
+                "id": response["id"],
+                "finish_reason": response["choices"][0]["finish_reason"],
+                "usage": response.get("usage"),
+                "model_name": response["model"],
+                "system_fingerprint": response["system_fingerprint"],
+                "created": response["created"],
+            },
+        )
+        return ChatResponse(message=message)
 
-    def _get_stream_token_from_response(self, response: Dict) -> str:
-        try:
-            if "nlp" in self.sambastudio_base_uri:
-                return response["data"]["stream_token"]
-            elif "generic" in self.sambastudio_base_uri:
-                return response["result"]["responses"][0]["stream_token"]
-            else:
-                raise ValueError(
-                    f"handling of endpoint uri: {self.sambastudio_base_uri} not implemented"
-                )
-        except Exception as e:
-            raise ValueError(f"Error processing response: {e}")
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "SambaStudio"
-
-    @property
-    def metadata(self) -> LLMMetadata:
-        """LLM metadata."""
-        return LLMMetadata(
-            model_kwargs=self.model_kwargs,
-            description="Sambanova LLM",
-            is_streaming=self.streaming,
+    @llm_chat_callback()
+    async def astream_chat(
+        self,
+        messages: Sequence[ChatMessage],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> ChatResponseAsyncGen:
+        raise NotImplementedError(
+            "SambaNovaCloud does not currently support async streaming."
         )
 
     @llm_completion_callback()
-    def complete(self, prompt: str) -> CompletionResponse:
-        """
-        Complete the given prompt using the SambaStudio model.
-
-        Args:
-            prompt (str): The input prompt to complete.
-
-        Returns:
-            CompletionResponse: The completed text generated by the model.
-        """
-        data = self._prepare_request_data(prompt)
-        response = self._send_sambaverse_request(data)
-        processed_response = self._process_api_response(response)
-        completion_text = self._get_completion_from_response(processed_response)
-
-        return CompletionResponse(text=completion_text)
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        acomplete_fn = achat_to_completion_decorator(self.achat)
+        return await acomplete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str) -> CompletionResponseGen:
-        """
-        Stream the completion of the given prompt using the SambaStudio model.
-
-        Args:
-            prompt (str): The input prompt to complete.
-
-        Yields:
-            CompletionResponseGen: Streamed completion text generated by the model.
-        """
-        print("In stream_complete")
-        data = self._prepare_request_data(prompt)
-        response = self._send_sambaverse_request(data, stream=True)
-
-        for token in self._process_api_stream_response(response):
-            processed_token = self._get_stream_token_from_response(token)
-            yield CompletionResponse(text=processed_token)
-
-    @llm_completion_callback()
-    def nlp_prediction(self, prompt: str) -> CompletionResponse:
-        """
-        Perform NLP prediction for the given prompt using the SambaStudio model.
-
-        Args:
-            prompt (str): The input prompt to predict.
-
-        Returns:
-            CompletionResponse: The prediction result generated by the model.
-        """
-        return self.complete(prompt)
-
-    @llm_completion_callback()
-    def nlp_prediction_stream(self, prompt: str) -> CompletionResponseGen:
-        """
-        Stream NLP prediction for the given prompt using the SambaStudio model.
-
-        Args:
-            prompt (str): The input prompt to predict.
-
-        Yields:
-            CompletionResponseGen: Streamed prediction result generated by the model.
-        """
-        return self.stream_complete(prompt)
+    def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        raise NotImplementedError(
+            "SambaNovaCloud does not currently support async streaming."
+        )
