@@ -66,15 +66,14 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
     """
     @override
     def __init__(self,
-                #  embeddings: BaseEmbedding,
-                        descriptor_set: str = DESCRIPTOR_SET,
-                        dimensions: Optional[int] = None,
-                        engine: Optional[str] = None,
-                        metric: Optional[str] = None,
-                        log_level: int = logging.WARN,
-                        properties: Optional[Dict] = None,
-                        overwrite:bool = True,
-                        **kwargs: Any,
+                    descriptor_set: str = DESCRIPTOR_SET,
+                    dimensions: Optional[int] = None,
+                    engine: Optional[str] = None,
+                    metric: Optional[str] = None,
+                    log_level: int = logging.WARN,
+                    properties: Optional[Dict] = None,
+                    overwrite:bool = True,
+                    **kwargs: Any,
             ) -> None:
 
         # ApertureDB imports
