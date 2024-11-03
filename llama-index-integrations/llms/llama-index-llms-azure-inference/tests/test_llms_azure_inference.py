@@ -130,6 +130,39 @@ def test_chat_completion_with_tools():
     }.issubset(set(os.environ)),
     reason="Azure AI endpoint and/or credential are not set.",
 )
+def test_chat_completion_gpt4o_api_version():
+    """Test chat completions endpoint with api_version indicated for a GPT model."""
+    # In case the endpoint being tested serves more than one model
+    model_name = os.environ.get("AZURE_INFERENCE_MODEL", "gpt-4o")
+
+    llm = AzureAICompletionsModel(
+        model_name=model_name, api_version="2024-05-01-preview"
+    )
+
+    response = llm.chat(
+        [
+            ChatMessage(
+                role="system",
+                content="You are a helpful assistant. When you are asked about if this "
+                "is a test, you always reply 'Yes, this is a test.'",
+            ),
+            ChatMessage(role="user", content="Is this a test?"),
+        ],
+        temperature=0.0,
+        top_p=1.0,
+    )
+
+    assert response.message.role == MessageRole.ASSISTANT
+    assert response.message.content.strip() == "Yes, this is a test."
+
+
+@pytest.mark.skipif(
+    not {
+        "AZURE_INFERENCE_ENDPOINT",
+        "AZURE_INFERENCE_CREDENTIAL",
+    }.issubset(set(os.environ)),
+    reason="Azure AI endpoint and/or credential are not set.",
+)
 def test_get_metadata(caplog):
     """Tests if we can get model metadata back from the endpoint. If so,
     model_name should not be 'unknown'. Some endpoints may not support this

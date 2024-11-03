@@ -32,7 +32,7 @@ version = "0.2.2"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-azure-ai-inference = ">=1.0.0b2"
+azure-ai-inference = ">=1.0.0b5"
 azure-identity = "^1.15.0"
 llama-index-core = "^0.11.0"
 
