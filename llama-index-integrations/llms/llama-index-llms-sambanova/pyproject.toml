@@ -12,8 +12,7 @@ contains_example = false
 import_path = "llama_index.llms.sambanova"
 
 [tool.llamahub.class_authors]
-SambaStudio = "Pradeep"
-Sambaverse = "Pradeep"
+SambaNovaCloud = "Pradeep"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -26,7 +25,7 @@ authors = ["Your Name <you@example.com>"]
 description = "llama-index llms sambanova integration"
 name = "sambanova"
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
