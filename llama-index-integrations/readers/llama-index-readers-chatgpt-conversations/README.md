@@ -1,4 +1,5 @@
-# LlamaIndex Readers Integration: 
+# LlamaIndex Readers Integration:
+
 ## ChatGPT Conversations Reader and Message Node Parser
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -38,10 +39,12 @@ pip install llama-index-readers-chatgpt-conversations
 Use the `ChatGPTConversationsReader` to load your exported ChatGPT conversation JSON file.
 
 ```python
-from llama_index.readers.chatgpt_conversation_json import ChatGPTConversationsReader
+from llama_index.readers.chatgpt_conversation_json import (
+    ChatGPTConversationsReader,
+)
 
 # Initialize the reader with the path to your conversations.json file
-reader = ChatGPTConversationsReader(input_file='path/to/conversations.json')
+reader = ChatGPTConversationsReader(input_file="path/to/conversations.json")
 
 # Load documents
 documents = reader.load_data()
@@ -53,7 +56,9 @@ print(f"Loaded {len(documents)} documents.")
 Use the `ChatGPTMessageNodeParser` to parse the loaded documents into nodes.
 
 ```python
-from llama_index.readers.chatgpt_conversation_json import ChatGPTMessageNodeParser
+from llama_index.readers.chatgpt_conversation_json import (
+    ChatGPTMessageNodeParser,
+)
 
 # Initialize the message parser
 parser = ChatGPTMessageNodeParser()
@@ -77,7 +82,7 @@ storage_context = StorageContext.from_defaults()
 index = VectorStoreIndex(nodes, storage_context=storage_context)
 
 # (Optional) Persist the index for later use
-storage_context.persist(persist_dir='./storage')
+storage_context.persist(persist_dir="./storage")
 ```
 
 ## **Examples**
@@ -85,11 +90,14 @@ storage_context.persist(persist_dir='./storage')
 Here's a full example combining all steps:
 
 ```python
-from llama_index.readers.chatgpt_conversation_json import ChatGPTConversationsReader, ChatGPTMessageNodeParser
+from llama_index.readers.chatgpt_conversation_json import (
+    ChatGPTConversationsReader,
+    ChatGPTMessageNodeParser,
+)
 from llama_index import VectorStoreIndex, StorageContext
 
 # Step 1: Load conversations
-reader = ChatGPTConversationsReader(input_file='path/to/conversations.json')
+reader = ChatGPTConversationsReader(input_file="path/to/conversations.json")
 documents = reader.load_data()
 
 # Step 2: Parse messages into nodes
@@ -114,7 +122,6 @@ To run the tests, navigate to the project root directory and execute:
 pytest tests
 ```
 
-
 ## **License**
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -124,9 +131,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## **Additional Notes**
 
 - **Dependencies**:
+
   - `llama_index_core`
   - `markdown-it-py`
-
 
 - **Compatibility**: The package is compatible with Python 3.8 and above.
 

@@ -1,7 +1,10 @@
-from llama_index.readers.chatgpt_conversations import ChatGPTConversationsReader, ChatGPTMessageNodeParser
+from llama_index.readers.chatgpt_conversations import (
+    ChatGPTConversationsReader,
+    ChatGPTMessageNodeParser,
+)
 
 # Specify the path to your conversations.json file
-conversations_file = 'path/to/your/conversations.json'  # Update this path
+conversations_file = "path/to/your/conversations.json"  # Update this path
 
 # Initialize the ChatGPTConversationsReader
 reader = ChatGPTConversationsReader(input_file=conversations_file)
