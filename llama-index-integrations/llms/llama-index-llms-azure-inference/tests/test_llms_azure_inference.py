@@ -1,11 +1,19 @@
 import asyncio
 import logging
 import os
+from unittest import mock
 import pytest
 import json
 from llama_index.llms.azure_inference import AzureAICompletionsModel
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.tools import FunctionTool
+
+from azure.ai.inference.models import (
+    ChatCompletions,
+    ChatChoice,
+    ChatResponseMessage,
+    ModelInfo,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +29,7 @@ def loop():
 
 
 @pytest.fixture()
-def this_is_a_test_params() -> dict:
+def test_params() -> dict:
     return {
         "messages": [
             ChatMessage(
@@ -36,45 +44,117 @@ def this_is_a_test_params() -> dict:
     }
 
 
-@pytest.mark.skipif(
-    not {
-        "AZURE_INFERENCE_ENDPOINT",
-        "AZURE_INFERENCE_CREDENTIAL",
-    }.issubset(set(os.environ)),
-    reason="Azure AI endpoint and/or credential are not set.",
-)
-def test_chat_completion(this_is_a_test_params: dict):
+@pytest.fixture()
+def test_llm():
+    with mock.patch(
+        "llama_index.llms.azure_inference.base.ChatCompletionsClient", autospec=True
+    ):
+        with mock.patch(
+            "llama_index.llms.azure_inference.base.ChatCompletionsClientAsync",
+            autospec=True,
+        ):
+            llm = AzureAICompletionsModel(
+                endpoint="https://my-endpoint.inference.ai.azure.com",
+                credential="my-api-key",
+            )
+    llm._client.complete.return_value = ChatCompletions(
+        choices=[
+            ChatChoice(
+                message=ChatResponseMessage(
+                    content="Yes, this is a test.", role="assistant"
+                )
+            )
+        ]
+    )
+    llm._client.get_model_info.return_value = ModelInfo(
+        model_name="my_model_name",
+        model_provider_name="my_provider_name",
+        model_type="chat-completions",
+    )
+    llm._async_client.complete = mock.AsyncMock(
+        return_value=ChatCompletions(
+            choices=[
+                ChatChoice(
+                    message=ChatResponseMessage(
+                        content="Yes, this is a test.", role="assistant"
+                    )
+                )
+            ]
+        )
+    )
+    return llm
+
+
+@pytest.fixture()
+def test_llm_json():
+    with mock.patch(
+        "llama_index.llms.azure_inference.base.ChatCompletionsClient", autospec=True
+    ):
+        llm = AzureAICompletionsModel(
+            endpoint="https://my-endpoint.inference.ai.azure.com",
+            credential="my-api-key",
+        )
+    llm._client.complete.return_value = ChatCompletions(
+        choices=[
+            ChatChoice(
+                message=ChatResponseMessage(
+                    content='{ "message": "Yes, this is a test." }', role="assistant"
+                )
+            )
+        ]
+    )
+    return llm
+
+
+@pytest.fixture()
+def test_llm_tools():
+    with mock.patch(
+        "llama_index.llms.azure_inference.base.ChatCompletionsClient", autospec=True
+    ):
+        llm = AzureAICompletionsModel(
+            endpoint="https://my-endpoint.inference.ai.azure.com",
+            credential="my-api-key",
+        )
+    llm._client.complete.return_value = ChatCompletions(
+        choices=[
+            ChatChoice(
+                message=ChatResponseMessage(
+                    role="assistant",
+                    content="",
+                    tool_calls=[
+                        {
+                            "id": "abc0dF1gh",
+                            "type": "function",
+                            "function": {
+                                "name": "echo",
+                                "arguments": None,
+                                "call_id": None,
+                            },
+                        }
+                    ],
+                )
+            )
+        ]
+    )
+    return llm
+
+
+def test_chat_completion(test_llm: AzureAICompletionsModel, test_params: dict):
     """Tests the basic chat completion functionality."""
-    # In case the endpoint being tested serves more than one model
-    model_name = os.environ.get("AZURE_INFERENCE_MODEL", None)
-
-    llm = AzureAICompletionsModel(
-        model_name=model_name,
-    )
-
-    response = llm.chat(**this_is_a_test_params)
+    response = test_llm.chat(**test_params)
 
     assert response.message.role == MessageRole.ASSISTANT
     assert response.message.content.strip() == "Yes, this is a test."
 
 
-@pytest.mark.skipif(
-    not {
-        "AZURE_INFERENCE_ENDPOINT",
-        "AZURE_INFERENCE_CREDENTIAL",
-    }.issubset(set(os.environ)),
-    reason="Azure AI endpoint and/or credential are not set.",
-)
-def test_achat_completion(loop: asyncio.AbstractEventLoop, this_is_a_test_params: dict):
+def test_achat_completion(
+    test_llm: AzureAICompletionsModel,
+    loop: asyncio.AbstractEventLoop,
+    test_params: dict,
+):
     """Tests the basic chat completion functionality asynchronously."""
-    # In case the endpoint being tested serves more than one model
-    model_name = os.environ.get("AZURE_INFERENCE_MODEL", None)
+    response = loop.run_until_complete(test_llm.achat(**test_params))
 
-    llm = AzureAICompletionsModel(
-        model_name=model_name,
-    )
-
-    response = loop.run_until_complete(llm.achat(**this_is_a_test_params))
     assert response.message.role == MessageRole.ASSISTANT
     assert response.message.content.strip() == "Yes, this is a test."
 
@@ -86,16 +166,13 @@ def test_achat_completion(loop: asyncio.AbstractEventLoop, this_is_a_test_params
     }.issubset(set(os.environ)),
     reason="Azure AI endpoint and/or credential are not set.",
 )
-def test_stream_chat_completion(this_is_a_test_params: dict):
+def test_stream_chat_completion(test_params: dict):
     """Tests the basic chat completion functionality with streaming."""
-    # In case the endpoint being tested serves more than one model
     model_name = os.environ.get("AZURE_INFERENCE_MODEL", None)
 
-    llm = AzureAICompletionsModel(
-        model_name=model_name,
-    )
+    llm = AzureAICompletionsModel(model_name=model_name)
 
-    response_stream = llm.stream_chat(**this_is_a_test_params)
+    response_stream = llm.stream_chat(**test_params)
 
     buffer = ""
     for chunk in response_stream:
@@ -111,19 +188,14 @@ def test_stream_chat_completion(this_is_a_test_params: dict):
     }.issubset(set(os.environ)),
     reason="Azure AI endpoint and/or credential are not set.",
 )
-def test_astream_chat_completion(
-    loop: asyncio.AbstractEventLoop, this_is_a_test_params: dict
-):
+def test_astream_chat_completion(test_params: dict, loop: asyncio.AbstractEventLoop):
     """Tests the basic chat completion functionality with streaming."""
-    # In case the endpoint being tested serves more than one model
     model_name = os.environ.get("AZURE_INFERENCE_MODEL", None)
 
-    llm = AzureAICompletionsModel(
-        model_name=model_name,
-    )
+    llm = AzureAICompletionsModel(model_name=model_name)
 
     async def iterate():
-        stream = await llm.astream_chat(**this_is_a_test_params)
+        stream = await llm.astream_chat(**test_params)
         buffer = ""
         async for chunk in stream:
             buffer += chunk.delta
@@ -134,24 +206,12 @@ def test_astream_chat_completion(
     assert response.strip() == "Yes, this is a test."
 
 
-@pytest.mark.skipif(
-    not {
-        "AZURE_INFERENCE_ENDPOINT",
-        "AZURE_INFERENCE_CREDENTIAL",
-    }.issubset(set(os.environ)),
-    reason="Azure AI endpoint and/or credential are not set.",
-)
-def test_chat_completion_kwargs():
+def test_chat_completion_kwargs(
+    test_llm_json: AzureAICompletionsModel,
+):
     """Tests chat completions using extra parameters."""
-    # In case the endpoint being tested serves more than one model
-    model_name = os.environ.get("AZURE_INFERENCE_MODEL", None)
-
-    llm = AzureAICompletionsModel(
-        model_name=model_name,
-        model_kwargs={"response_format": {"type": "json_object"}},
-    )
-
-    response = llm.chat(
+    test_llm_json.model_kwargs.update({"response_format": {"type": "json_object"}})
+    response = test_llm_json.chat(
         [
             ChatMessage(
                 role="system",
@@ -172,26 +232,15 @@ def test_chat_completion_kwargs():
     )
 
 
-@pytest.mark.skipif(
-    not {
-        "AZURE_INFERENCE_ENDPOINT",
-        "AZURE_INFERENCE_CREDENTIAL",
-    }.issubset(set(os.environ)),
-    reason="Azure AI endpoint and/or credential are not set.",
-)
-def test_chat_completion_with_tools():
+def test_chat_completion_with_tools(test_llm_tools: AzureAICompletionsModel):
     """Tests the chat completion functionality with the help of tools."""
-    # In case the endpoint being tested serves more than one model
-    model_name = os.environ.get("AZURE_INFERENCE_MODEL", None)
-
-    llm = AzureAICompletionsModel(model_name=model_name)
 
     def echo(message: str) -> str:
         """Echoes the user's message."""
         print("Echo: " + message)
         return message
 
-    response = llm.chat_with_tools(
+    response = test_llm_tools.chat_with_tools(
         user_msg="Is this a test?",
         chat_history=[
             ChatMessage(
@@ -224,7 +273,7 @@ def test_chat_completion_with_tools():
     }.issubset(set(os.environ)),
     reason="Azure AI endpoint and/or credential are not set.",
 )
-def test_chat_completion_gpt4o_api_version(this_is_a_test_params: dict):
+def test_chat_completion_gpt4o_api_version(test_params: dict):
     """Test chat completions endpoint with api_version indicated for a GPT model."""
     # In case the endpoint being tested serves more than one model
     model_name = os.environ.get("AZURE_INFERENCE_MODEL", "gpt-4o")
@@ -233,33 +282,20 @@ def test_chat_completion_gpt4o_api_version(this_is_a_test_params: dict):
         model_name=model_name, api_version="2024-05-01-preview"
     )
 
-    response = llm.chat(**this_is_a_test_params)
+    response = llm.chat(**test_params)
 
     assert response.message.role == MessageRole.ASSISTANT
     assert response.message.content.strip() == "Yes, this is a test."
 
 
-@pytest.mark.skipif(
-    not {
-        "AZURE_INFERENCE_ENDPOINT",
-        "AZURE_INFERENCE_CREDENTIAL",
-    }.issubset(set(os.environ)),
-    reason="Azure AI endpoint and/or credential are not set.",
-)
-def test_get_metadata(caplog):
+def test_get_metadata(test_llm: AzureAICompletionsModel, caplog):
     """Tests if we can get model metadata back from the endpoint. If so,
     model_name should not be 'unknown'. Some endpoints may not support this
     and in those cases a warning should be logged.
     """
-    # In case the endpoint being tested serves more than one model
-    model_name = os.environ.get("AZURE_INFERENCE_MODEL", None)
-
-    llm = AzureAICompletionsModel(model_name=model_name)
-
-    response = llm.metadata
+    response = test_llm.metadata
 
     assert (
         response.model_name != "unknown"
         or "does not support model metadata retrieval" in caplog.text
     )
-    assert not model_name or response.model_name == model_name
