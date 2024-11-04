@@ -109,11 +109,11 @@ class GeminiEmbedding(BaseEmbedding):
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
-        return self._aget_text_embeddings(query)
+        return (await self._aget_text_embeddings([query]))[0]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
-        return self._aget_text_embeddings(text)
+        return (await self._aget_text_embeddings([text]))[0]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""

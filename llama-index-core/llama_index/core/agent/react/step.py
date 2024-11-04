@@ -494,7 +494,7 @@ class ReActAgentWorker(BaseAgentWorker):
                 missed_chunks_storage.append(chunk)
             elif not latest_content.startswith("Thought"):
                 return True
-            elif "Answer: " in latest_content:
+            elif "Answer:" in latest_content:
                 missed_chunks_storage.clear()
                 return True
         return False
@@ -682,11 +682,22 @@ class ReActAgentWorker(BaseAgentWorker):
                     )
                 )
         else:
-            # Get the response in a separate thread so we can yield the response
+            # remove "Answer: " from the response, and anything before it
+            start_idx = (latest_chunk.message.content or "").find("Answer:")
+            if start_idx != -1 and latest_chunk.message.content:
+                latest_chunk.message.content = latest_chunk.message.content[
+                    start_idx + len("Answer:") :
+                ].strip()
+
+            # set delta to the content, minus the "Answer: "
+            latest_chunk.delta = latest_chunk.message.content
+
+            # add back the chunks that were missed
             response_stream = self._add_back_chunk_to_stream(
                 chunks=[*missed_chunks_storage, latest_chunk], chat_stream=chat_stream
             )
 
+            # Get the response in a separate thread so we can yield the response
             agent_response_stream = StreamingAgentChatResponse(
                 chat_stream=response_stream,
                 sources=task.extra_state["sources"],
@@ -764,7 +775,17 @@ class ReActAgentWorker(BaseAgentWorker):
                     )
                 )
         else:
-            # Get the response in a separate thread so we can yield the response
+            # remove "Answer: " from the response, and anything before it
+            start_idx = (latest_chunk.message.content or "").find("Answer:")
+            if start_idx != -1 and latest_chunk.message.content:
+                latest_chunk.message.content = latest_chunk.message.content[
+                    start_idx + len("Answer:") :
+                ].strip()
+
+            # set delta to the content, minus the "Answer: "
+            latest_chunk.delta = latest_chunk.message.content
+
+            # add back the chunks that were missed
             response_stream = self._async_add_back_chunk_to_stream(
                 chunks=[*missed_chunks_storage, latest_chunk], chat_stream=chat_stream
             )

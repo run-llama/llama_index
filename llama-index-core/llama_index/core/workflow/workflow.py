@@ -396,7 +396,7 @@ class Workflow(metaclass=WorkflowMeta):
     @step
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
-        ctx._retval = ev.result or None
+        ctx._retval = ev.result
         ctx.write_event_to_stream(ev)
 
         # Signal we want to stop the workflow
