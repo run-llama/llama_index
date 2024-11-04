@@ -255,7 +255,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if filters:
             where = _to_chroma_filter(filters)
         else:
-            where = {}
+            where = None
 
         result = self._get(None, where=where, ids=node_ids)
 
@@ -332,7 +332,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if filters:
             where = _to_chroma_filter(filters)
         else:
-            where = {}
+            where = None
 
         self._collection.delete(ids=node_ids, where=where)
 
@@ -363,7 +363,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 )
             where = _to_chroma_filter(query.filters)
         else:
-            where = kwargs.pop("where", {})
+            where = kwargs.pop("where", None)
 
         if not query.query_embedding:
             return self._get(limit=query.similarity_top_k, where=where, **kwargs)
