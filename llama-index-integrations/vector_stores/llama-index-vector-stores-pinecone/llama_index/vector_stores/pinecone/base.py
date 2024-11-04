@@ -8,7 +8,7 @@ An index that is built on top of an existing vector store.
 import logging
 from collections import Counter
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -38,6 +38,9 @@ METADATA_KEY = "metadata"
 DEFAULT_BATCH_SIZE = 100
 
 _logger = logging.getLogger(__name__)
+
+BatchSparseEncoding = Tuple[List[List[int]], List[List[float]]]
+SparseEncoderCallable = Callable[[List[str]], BatchSparseEncoding]
 
 
 def _transform_pinecone_filter_condition(condition: str) -> str:
@@ -232,6 +235,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
     _pinecone_index: Any = PrivateAttr()
     _tokenizer: Optional[Callable] = PrivateAttr()
+    _sparse_doc_fn: Optional[SparseEncoderCallable] = PrivateAttr()
+    _sparse_query_fn: Optional[SparseEncoderCallable] = PrivateAttr()
 
     def __init__(
         self,
@@ -245,6 +250,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
         insert_kwargs: Optional[Dict] = None,
         add_sparse_vector: bool = False,
         tokenizer: Optional[Callable] = None,
+        sparse_doc_fn: Optional[SparseEncoderCallable] = None,
+        sparse_query_fn: Optional[SparseEncoderCallable] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
@@ -253,7 +260,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
     ) -> None:
         insert_kwargs = insert_kwargs or {}
 
-        if tokenizer is None and add_sparse_vector:
+        if tokenizer is None and add_sparse_vector and sparse_doc_fn is None:
             tokenizer = get_default_tokenizer()
 
         super().__init__(
@@ -269,6 +276,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
         )
 
         self._tokenizer = tokenizer
+        self._sparse_doc_fn = sparse_doc_fn
+        self._sparse_query_fn = sparse_query_fn
 
         # TODO: Make following instance check stronger -- check if pinecone_index is not pinecone.Index, else raise
         #  ValueError
@@ -324,6 +333,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
         insert_kwargs: Optional[Dict] = None,
         add_sparse_vector: bool = False,
         tokenizer: Optional[Callable] = None,
+        sparse_doc_fn: Optional[Any] = None,
+        sparse_query_fn: Optional[Any] = None,
         text_key: str = DEFAULT_TEXT_KEY,
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
@@ -343,6 +354,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
             insert_kwargs=insert_kwargs,
             add_sparse_vector=add_sparse_vector,
             tokenizer=tokenizer,
+            sparse_doc_fn=sparse_doc_fn,
+            sparse_query_fn=sparse_query_fn,
             text_key=text_key,
             batch_size=batch_size,
             remove_text_from_metadata=remove_text_from_metadata,
@@ -382,7 +395,17 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 VECTOR_KEY: node.get_embedding(),
                 METADATA_KEY: metadata,
             }
-            if self.add_sparse_vector and self._tokenizer is not None:
+
+            if self.add_sparse_vector and self._sparse_doc_fn is not None:
+                sparse_indices, sparse_embedding = self._sparse_doc_fn(
+                    [node.get_content(metadata_mode=MetadataMode.EMBED)]
+                )
+
+                entry[SPARSE_VECTOR_KEY] = {
+                    "indices": sparse_indices[0],
+                    "values": sparse_embedding[0],
+                }
+            elif self.add_sparse_vector and self._tokenizer is not None:
                 sparse_vector = generate_sparse_vectors(
                     [node.get_content(metadata_mode=MetadataMode.EMBED)],
                     self._tokenizer,
@@ -464,14 +487,25 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 raise ValueError(
                     "query_str must be specified if mode is SPARSE or HYBRID."
                 )
-            sparse_vector = generate_sparse_vectors([query.query_str], self._tokenizer)[
-                0
-            ]
-            if query.alpha is not None:
-                sparse_vector = {
-                    "indices": sparse_vector["indices"],
-                    "values": [v * (1 - query.alpha) for v in sparse_vector["values"]],
-                }
+            if self._sparse_query_fn is not None:
+                sparse_indices, sparse_vector = self._sparse_query_fn([query.query_str])
+
+                if query.alpha is not None:
+                    sparse_vector = {
+                        "indices": sparse_indices[0],
+                        "values": [v * (1 - query.alpha) for v in sparse_vector],
+                    }
+            else:
+                sparse_vector = generate_sparse_vectors(
+                    [query.query_str], self._tokenizer
+                )[0]
+                if query.alpha is not None:
+                    sparse_vector = {
+                        "indices": sparse_vector["indices"],
+                        "values": [
+                            v * (1 - query.alpha) for v in sparse_vector["values"]
+                        ],
+                    }
 
         # pinecone requires a query embedding, so default to 0s if not provided
         if query.query_embedding is not None:
