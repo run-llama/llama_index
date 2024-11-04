@@ -1,8 +1,12 @@
 import base64
 import filetype
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from llama_index.core.schema import ImageDocument
 import json
+import os
+import re
+import urllib
+from llama_index.core.base.llms.types import ChatMessage
 
 DEFAULT_MODEL = "google/deplot"
 BASE_URL = "https://ai.api.nvidia.com/v1/"
@@ -13,18 +17,34 @@ KNOWN_URLS = [
 ]
 
 NVIDIA_MULTI_MODAL_MODELS = {
-    "adept/fuyu-8b": {"endpoint": f"{BASE_URL}vlm/adept/fuyu-8b"},
-    "google/deplot": {"endpoint": f"{BASE_URL}vlm/google/deplot"},
-    "microsoft/kosmos-2": {"endpoint": f"{BASE_URL}vlm/microsoft/kosmos-2"},
-    "nvidia/neva-22b": {"endpoint": f"{BASE_URL}vlm/nvidia/neva-22b"},
-    "google/paligemma": {"endpoint": f"{BASE_URL}vlm/google/paligemma"},
+    "adept/fuyu-8b": {"endpoint": f"{BASE_URL}vlm/adept/fuyu-8b", "type": "nv-vlm"},
+    "google/deplot": {"endpoint": f"{BASE_URL}vlm/google/deplot", "type": "nv-vlm"},
+    "microsoft/kosmos-2": {
+        "endpoint": f"{BASE_URL}vlm/microsoft/kosmos-2",
+        "type": "nv-vlm",
+    },
+    "nvidia/neva-22b": {"endpoint": f"{BASE_URL}vlm/nvidia/neva-22b", "type": "nv-vlm"},
+    "google/paligemma": {
+        "endpoint": f"{BASE_URL}vlm/google/paligemma",
+        "type": "nv-vlm",
+    },
     "microsoft/phi-3-vision-128k-instruct": {
-        "endpoint": f"{BASE_URL}vlm/microsoft/phi-3-vision-128k-instruct"
+        "endpoint": f"{BASE_URL}vlm/microsoft/phi-3-vision-128k-instruct",
+        "type": "vlm",
     },
     "microsoft/phi-3.5-vision-instruct": {
-        "endpoint": f"{BASE_URL}microsoft/microsoft/phi-3_5-vision-instruct"
+        "endpoint": f"{BASE_URL}microsoft/microsoft/phi-3_5-vision-instruct",
+        "type": "nv-vlm",
     },
-    "nvidia/vila": {"endpoint": f"{BASE_URL}vlm/nvidia/vila"},
+    "nvidia/vila": {"endpoint": f"{BASE_URL}vlm/nvidia/vila", "type": "nv-vlm"},
+    "meta/llama-3.2-11b-vision-instruct": {
+        "endpoint": f"{BASE_URL}gr/meta/llama-3.2-11b-vision-instruct/chat/completions",
+        "type": "vlm",
+    },
+    "meta/llama-3.2-90b-vision-instruct": {
+        "endpoint": f"{BASE_URL}/gr/meta/llama-3.2-90b-vision-instruct/chat/completions",
+        "type": "vlm",
+    },
 }
 
 
@@ -106,14 +126,20 @@ def create_image_content(image_document) -> Optional[Dict[str, Any]]:
 
 
 def generate_nvidia_multi_modal_chat_message(
-    prompt: str,
-    role: str,
-    image_documents: Optional[Sequence[ImageDocument]] = None,
+    model: str,
+    prompt: Optional[str] = None,
+    inputs: Optional[List[ChatMessage]] = [],
+    image_documents: Optional[Sequence[ImageDocument]] = [],
 ) -> List[Dict[str, Any]]:
     # If image_documents is None, return a text-only chat message
     completion_content = []
     asset_ids = []
     extra_headers = {}
+    model_type = NVIDIA_MULTI_MODAL_MODELS[model]["type"]
+
+    for input in inputs:
+        if input.content:
+            asset_ids.extend(_nv_vlm_get_asset_ids(input.content))
 
     # Process each image document
     for image_document in image_documents:
@@ -123,13 +149,22 @@ def generate_nvidia_multi_modal_chat_message(
         if asset_id:
             asset_ids.append(asset_id)
 
-    # Append the text prompt to the completion content
-    completion_content.append({"type": "text", "text": prompt})
-
-    if asset_ids:
+    if len(asset_ids) > 0:
         extra_headers["NVCF-INPUT-ASSET-REFERENCES"] = ",".join(asset_ids)
 
-    return [{"role": role, "content": completion_content}], extra_headers
+    # Append the text prompt to the completion content
+    if prompt:
+        completion_content.append({"type": "text", "text": prompt})
+        return completion_content, extra_headers
+
+    inputs = [
+        {
+            "role": message.role,
+            "content": _nv_vlm_adjust_input(message, model_type).content,
+        }
+        for message in inputs
+    ]
+    return inputs, extra_headers
 
 
 def process_response(response) -> List[dict]:
@@ -192,3 +227,115 @@ def aggregate_msgs(msg_list: Sequence[dict]) -> Tuple[dict, bool]:
     if finish_reason_holder:
         content_holder.update(finish_reason=finish_reason_holder)
     return content_holder, is_stopped
+
+
+def _nv_vlm_adjust_input(message: ChatMessage, model_type: str) -> ChatMessage:
+    """
+    This function converts the OpenAI VLM API input message to
+    NVIDIA VLM API input message, in place.
+
+    The NVIDIA VLM API input message.content:
+        {
+            "role": "user",
+            "content": [
+                ...,
+                {
+                    "type": "image_url",
+                    "image_url": "{data}"
+                },
+                ...
+            ]
+        }
+    where OpenAI VLM API input message.content:
+        {
+            "role": "user",
+            "content": [
+                ...,
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "{url | data}"
+                    }
+                },
+                ...
+            ]
+        }
+
+    In the process, it accepts a url or file and converts them to
+    data urls.
+    """
+    if content := message.content:
+        if isinstance(content, list):
+            for part in content:
+                if isinstance(part, dict) and "image_url" in part:
+                    if (
+                        isinstance(part["image_url"], dict)
+                        and "url" in part["image_url"]
+                    ):
+                        url = _url_to_b64_string(part["image_url"]["url"])
+                        if model_type == "nv-vlm":
+                            part["image_url"] = url
+                        else:
+                            part["image_url"]["url"] = url
+    return message
+
+
+def _nv_vlm_get_asset_ids(
+    content: Union[str, List[Union[str, Dict[str, Any]]]],
+) -> List[str]:
+    """
+    Extracts asset IDs from the message content.
+
+    VLM APIs accept asset IDs as input in two forms:
+     - content = [{"image_url": {"url": "data:image/{type};asset_id,{asset_id}"}}*]
+     - content = .*<img src="data:image/{type};asset_id,{asset_id}"/>.*
+    """
+
+    def extract_asset_id(data: str) -> List[str]:
+        pattern = re.compile(r'data:image/[^;]+;asset_id,([^"\'\s]+)')
+        return pattern.findall(data)
+
+    asset_ids = []
+    if isinstance(content, str):
+        asset_ids.extend(extract_asset_id(content))
+    elif isinstance(content, list):
+        for part in content:
+            if isinstance(part, str):
+                asset_ids.extend(extract_asset_id(part))
+            elif isinstance(part, dict) and "image_url" in part:
+                image_url = part["image_url"]
+                if isinstance(image_url, str):
+                    asset_ids.extend(extract_asset_id(image_url))
+            elif isinstance(part, dict) and "text" in part:
+                image_url = part["text"]
+                if isinstance(image_url, str):
+                    asset_ids.extend(extract_asset_id(image_url))
+
+    return asset_ids
+
+
+def _is_url(s: str) -> bool:
+    try:
+        result = urllib.parse.urlparse(s)
+        return all([result.scheme, result.netloc])
+    except Exception as e:
+        raise f"Unable to parse URL: {e}"
+        return False
+
+
+def _url_to_b64_string(image_source: str) -> str:
+    try:
+        if _is_url(image_source):
+            return image_source
+        elif image_source.startswith("data:image"):
+            return image_source
+        elif os.path.exists(image_source):
+            encoded = encode_image(image_source)
+            image_type = infer_image_mimetype_from_base64(encoded)
+            return f"data:image/{image_type};base64,{encoded}"
+        else:
+            raise ValueError(
+                "The provided string is not a valid URL, base64, or file path."
+            )
+    except Exception as e:
+        raise ValueError(f"Unable to process the provided image source: {e}")

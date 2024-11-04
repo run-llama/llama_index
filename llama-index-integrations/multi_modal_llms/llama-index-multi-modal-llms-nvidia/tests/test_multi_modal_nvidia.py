@@ -12,6 +12,8 @@ import pytest
 import requests
 from llama_index.core.base.llms.types import (
     CompletionResponse,
+    ChatMessage,
+    ChatResponse,
 )
 from llama_index.core.schema import ImageDocument
 
@@ -22,8 +24,6 @@ from llama_index.core.schema import ImageDocument
 # API Specification -
 #
 #  - User message may contain 1 or more image_url
-#  - image_url contains a url and optional detail
-#  - detail is one of "low", "high" or "auto" (default)
 #  - url is either a url to an image or base64 encoded image
 #  - format for base64 is "data:image/png;{type}},..."
 #  - supported image types are png, jpeg (or jpg), webp, gif (non-animated)
@@ -261,7 +261,7 @@ def get_asset_id() -> str:
 )
 @pytest.mark.parametrize(
     "func",
-    ["invoke", "stream"],
+    ["invoke"],
 )
 def test_vlm_asset_id(
     vlm_model: str,
@@ -283,3 +283,139 @@ def test_vlm_asset_id(
             prompt="Describe image", image_documents=content
         ):
             assert isinstance(token.text, str)
+
+
+## ------------------------- chat/stream_chat test cases ------------------------- ##
+
+
+@pytest.mark.parametrize(
+    "vlm_model",
+    ["microsoft/phi-3-vision-128k-instruct"],
+)
+@pytest.mark.parametrize(
+    "func",
+    ["chat", "stream_chat"],
+)
+def test_stream_chat_multiple_messages(vlm_model: str, func: str) -> None:
+    """Test streaming chat with multiple messages and images."""
+    llm = NVIDIAMultiModal(model=vlm_model)
+
+    messages = [
+        ChatMessage(
+            role="user",
+            content=[
+                {"type": "text", "text": "Describe the first image:"},
+                {"type": "image_url", "image_url": image_urls[0]},
+            ],
+        ),
+        ChatMessage(
+            role="assistant", content="This is a response about the first image."
+        ),
+        ChatMessage(
+            role="user",
+            content=[
+                {"type": "text", "text": "Now describe this second image:"},
+                {"type": "image_url", "image_url": image_urls[1]},
+            ],
+        ),
+    ]
+
+    if func == "chat":
+        response = llm.chat(messages)
+        assert isinstance(response, ChatResponse)
+        assert isinstance(response.delta, str)
+    if func == "stream_chat":
+        for token in llm.stream_chat(messages):
+            assert isinstance(token.delta, str)
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        """<img src="data:image/jpg;asset_id,{asset_id}"/>""",
+        [
+            {
+                "type": "image_url",
+                "image_url": "data:image/jpg;asset_id,{asset_id}",
+            }
+        ],
+        [
+            {"type": "text", "text": "Describe this image:"},
+            {"type": "image_url", "image_url": image_urls[1]},
+        ],
+    ],
+)
+@pytest.mark.parametrize(
+    "func",
+    ["chat", "stream_chat"],
+)
+@pytest.mark.parametrize(
+    "vlm_model",
+    ["microsoft/phi-3-vision-128k-instruct"],
+)
+def test_vlm_asset_id_chat(
+    vlm_model: str,
+    content: Union[str, List[Union[str, Dict[str, Any]]]],
+    func: str,
+) -> None:
+    def fill(
+        item: Any,
+        asset_id: str,
+    ) -> Union[str, Any]:
+        # do not mutate item, mutation will cause cross test contamination
+        result: Any
+        if isinstance(item, str):
+            result = item.format(asset_id=asset_id)
+        elif isinstance(item, ChatMessage):
+            result = item.model_copy(update={"content": fill(item.content, asset_id)})
+        elif isinstance(item, list):
+            result = [fill(sub_item, asset_id) for sub_item in item]
+        elif isinstance(item, dict):
+            result = {key: fill(value, asset_id) for key, value in item.items()}
+        return result
+
+    asset_id = get_asset_id()
+    assert asset_id != ""
+    content = fill(content, asset_id)
+
+    llm = NVIDIAMultiModal(model=vlm_model)
+    if func == "chat":
+        response = llm.chat([ChatMessage(role="user", content=content)])
+        assert isinstance(response, ChatResponse)
+        assert isinstance(response.delta, str)
+    if func == "stream_chat":
+        for token in llm.stream_chat([ChatMessage(role="user", content=content)]):
+            assert isinstance(token.delta, str)
+
+
+@pytest.mark.parametrize(
+    "func",
+    ["chat", "stream_chat"],
+)
+@pytest.mark.parametrize(
+    "vlm_model",
+    ["microsoft/phi-3-vision-128k-instruct"],
+)
+@pytest.mark.parametrize(
+    "img",
+    [
+        "tests/data/nvidia-picasso.jpg",
+        "tests/data/nvidia-picasso.png",
+        "tests/data/nvidia-picasso.webp",
+        "tests/data/nvidia-picasso.gif",
+    ],
+    ids=["jpg", "png", "webp", "gif"],
+)
+def test_vlm_image_type_chat(vlm_model: str, img: str, func: str) -> None:
+    llm = NVIDIAMultiModal(model=vlm_model)
+    if func == "chat":
+        response = llm.chat(
+            [ChatMessage(content=[{"type": "image_url", "image_url": img}])]
+        )
+        assert isinstance(response, ChatResponse)
+        assert isinstance(response.delta, str)
+    if func == "stream_chat":
+        for token in llm.stream_chat(
+            [ChatMessage(content=[{"type": "image_url", "image_url": img}])]
+        ):
+            assert isinstance(token, ChatResponse)

@@ -1,4 +1,3 @@
-import warnings
 from typing import Any, Dict, List, Optional, Sequence
 import requests
 
@@ -7,6 +6,9 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     MessageRole,
+    ChatMessage,
+    ChatResponse,
+    ChatResponseGen,
 )
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
@@ -71,7 +73,7 @@ class NVIDIAClient:
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """
-        Perform a synchronous request to the DeepInfra API.
+        Perform a synchronous request to the NVIDIA API.
 
         Args:
             endpoint (str): The API endpoint to send the request to.
@@ -143,9 +145,7 @@ class NVIDIAMultiModal(MultiModalLLM):
         is_hosted = base_url in KNOWN_URLS
 
         if is_hosted and api_key == "NO_API_KEY_PROVIDED":
-            warnings.warn(
-                "An API key is required for the hosted NIM. This will become an error in 0.2.0.",
-            )
+            raise "An API key is required for the hosted NIM. This will become an error in 0.2.0."
 
         super().__init__(
             model=model,
@@ -191,18 +191,6 @@ class NVIDIAMultiModal(MultiModalLLM):
 
         return credential_kwargs
 
-    def _get_multi_modal_chat_messages(
-        self,
-        prompt: str,
-        role: str,
-        image_documents: Sequence[ImageNode],
-    ) -> List[Dict]:
-        return generate_nvidia_multi_modal_chat_message(
-            prompt=prompt,
-            role=role,
-            image_documents=image_documents,
-        )
-
     # Model Params for NVIDIA Multi Modal model.
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         if self.model not in NVIDIA_MULTI_MODAL_MODELS:
@@ -235,9 +223,10 @@ class NVIDIAMultiModal(MultiModalLLM):
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
-        message_dict, extra_headers = self._get_multi_modal_chat_messages(
-            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
+        content, extra_headers = generate_nvidia_multi_modal_chat_message(
+            prompt=prompt, image_documents=image_documents, model=self.model
         )
+        message_dict = [{"role": MessageRole.USER, "content": content}]
 
         response = self._client.request(
             endpoint=NVIDIA_MULTI_MODAL_MODELS[self.model]["endpoint"],
@@ -258,9 +247,10 @@ class NVIDIAMultiModal(MultiModalLLM):
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
-        message_dict, extra_headers = self._get_multi_modal_chat_messages(
-            prompt=prompt, role=MessageRole.USER, image_documents=image_documents
+        content, extra_headers = generate_nvidia_multi_modal_chat_message(
+            prompt=prompt, image_documents=image_documents, model=self.model
         )
+        message_dict = [{"role": MessageRole.USER, "content": content}]
 
         def gen() -> CompletionResponseGen:
             response = self._client.request(
@@ -297,17 +287,81 @@ class NVIDIAMultiModal(MultiModalLLM):
     ) -> CompletionResponseGen:
         return self._stream_complete(prompt, image_documents, **kwargs)
 
+    def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        all_kwargs = self._get_model_kwargs(**kwargs)
+        content, extra_headers = generate_nvidia_multi_modal_chat_message(
+            inputs=messages, model=self.model
+        )
+
+        response = self._client.request(
+            endpoint=NVIDIA_MULTI_MODAL_MODELS[self.model]["endpoint"],
+            stream=False,
+            messages=content,
+            extra_headers=extra_headers,
+            **all_kwargs,
+        )
+        response = response.json()
+        text = response["choices"][0]["message"]["content"]
+
+        return ChatResponse(
+            delta=text,
+            message=ChatMessage(
+                role=response["choices"][0]["message"]["role"], content=text
+            ),
+            raw=response,
+            additional_kwargs=self._get_response_token_counts(response),
+        )
+
     def chat(
         self,
+        messages: Sequence[ChatMessage],
         **kwargs: Any,
-    ) -> Any:
-        raise NotImplementedError("This function is not yet implemented.")
+    ) -> ChatResponse:
+        return self._chat(messages, **kwargs)
 
     def stream_chat(
         self,
+        messages: Sequence[ChatMessage],
         **kwargs: Any,
-    ) -> Any:
-        raise NotImplementedError("This function is not yet implemented.")
+    ) -> ChatResponseGen:
+        all_kwargs = self._get_model_kwargs(**kwargs)
+        content, extra_headers = generate_nvidia_multi_modal_chat_message(
+            inputs=messages, model=self.model
+        )
+
+        def gen() -> CompletionResponseGen:
+            response = self._client.request(
+                messages=content,
+                stream=True,
+                endpoint=NVIDIA_MULTI_MODAL_MODELS[self.model]["endpoint"],
+                extra_headers=extra_headers,
+                **all_kwargs,
+            )
+            for line in response.iter_lines():
+                if line and line.strip() != b"data: [DONE]":
+                    line = line.decode("utf-8")
+                    line = line[5:]
+
+                    msg, final_line = aggregate_msgs(process_response(line))
+
+                    role = msg.get("role", MessageRole.ASSISTANT)
+                    additional_kwargs = {}
+
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            content=msg.get("content"),
+                            additional_kwargs=additional_kwargs,
+                        ),
+                        delta=msg.get("content"),
+                        raw=response,
+                        additional_kwargs=self._get_response_token_counts(line),
+                    )
+
+                    if final_line:
+                        break
+
+        return gen()
 
     # ===== Async Endpoints =====
 
