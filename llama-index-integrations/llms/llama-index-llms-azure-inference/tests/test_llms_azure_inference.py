@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import pytest
@@ -7,6 +8,13 @@ from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.tools import FunctionTool
 
 logger = logging.getLogger(__name__)
+
+
+@pytest.fixture()
+def loop():
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.mark.skipif(
@@ -21,9 +29,77 @@ def test_chat_completion():
     # In case the endpoint being tested serves more than one model
     model_name = os.environ.get("AZURE_INFERENCE_MODEL", None)
 
-    llm = AzureAICompletionsModel(model_name=model_name)
+    llm = AzureAICompletionsModel(
+        model_name=model_name,
+        temperature=0.0,
+    )
 
     response = llm.chat(
+        [
+            ChatMessage(
+                role="system",
+                content="You are a helpful assistant. When you are asked about if this "
+                "is a test, you always reply 'Yes, this is a test.'",
+            ),
+            ChatMessage(role="user", content="Is this a test?"),
+        ],
+        top_p=1.0,
+    )
+
+    assert "temperature" in llm._model_kwargs
+    assert response.message.role == MessageRole.ASSISTANT
+    assert response.message.content.strip() == "Yes, this is a test."
+
+
+@pytest.mark.skipif(
+    not {
+        "AZURE_INFERENCE_ENDPOINT",
+        "AZURE_INFERENCE_CREDENTIAL",
+    }.issubset(set(os.environ)),
+    reason="Azure AI endpoint and/or credential are not set.",
+)
+def test_achat_completion(loop: asyncio.AbstractEventLoop):
+    """Tests the basic chat completion functionality asynchronously."""
+    # In case the endpoint being tested serves more than one model
+    model_name = os.environ.get("AZURE_INFERENCE_MODEL", None)
+
+    llm = AzureAICompletionsModel(
+        model_name=model_name,
+    )
+
+    response = loop.run_until_complete(
+        llm.achat(
+            [
+                ChatMessage(
+                    role="system",
+                    content="You are a helpful assistant. When you are asked about if this "
+                    "is a test, you always reply 'Yes, this is a test.'",
+                ),
+                ChatMessage(role="user", content="Is this a test?"),
+            ],
+        )
+    )
+    assert response.message.role == MessageRole.ASSISTANT
+    assert response.message.content.strip() == "Yes, this is a test."
+
+
+@pytest.mark.skipif(
+    not {
+        "AZURE_INFERENCE_ENDPOINT",
+        "AZURE_INFERENCE_CREDENTIAL",
+    }.issubset(set(os.environ)),
+    reason="Azure AI endpoint and/or credential are not set.",
+)
+def test_stream_chat_completion():
+    """Tests the basic chat completion functionality with streaming."""
+    # In case the endpoint being tested serves more than one model
+    model_name = os.environ.get("AZURE_INFERENCE_MODEL", None)
+
+    llm = AzureAICompletionsModel(
+        model_name=model_name,
+    )
+
+    response_stream = llm.stream_chat(
         [
             ChatMessage(
                 role="system",
@@ -36,8 +112,11 @@ def test_chat_completion():
         top_p=1.0,
     )
 
-    assert response.message.role == MessageRole.ASSISTANT
-    assert response.message.content.strip() == "Yes, this is a test."
+    buffer = ""
+    for chunk in response_stream:
+        buffer += chunk.delta
+
+    assert buffer.strip() == "Yes, this is a test."
 
 
 @pytest.mark.skipif(
