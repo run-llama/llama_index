@@ -34,7 +34,7 @@ version = "0.2.4"
 python = ">=3.8.1,<4.0"
 azure-ai-inference = ">=1.0.0b5"
 azure-identity = "^1.15.0"
-aiohttp = "^3.7.4"
+aiohttp = "^3.10.0"
 llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
