@@ -48,19 +48,28 @@ def _format_oci_tool_calls(
 ) -> List[Dict]:
     """
     Formats an OCI GenAI API response into the tool call format used in LlamaIndex.
+    Handles both dictionary and object formats.
     """
     if not tool_calls:
         return []
 
     formatted_tool_calls = []
     for tool_call in tool_calls:
-        formatted_tool_calls.append(
-            {
+        # Handle both object and dict formats
+        if isinstance(tool_call, dict):
+            name = tool_call.get("name", tool_call.get("functionName"))
+            parameters = tool_call.get("parameters", tool_call.get("functionParameters"))
+        else:
+            name = getattr(tool_call, "name", getattr(tool_call, "functionName", None))
+            parameters = getattr(tool_call, "parameters", getattr(tool_call, "functionParameters", None))
+
+        if name and parameters:
+            formatted_tool_calls.append({
                 "toolUseId": uuid.uuid4().hex[:],
-                "name": tool_call.name,
-                "input": json.dumps(tool_call.parameters),
-            }
-        )
+                "name": name,
+                "input": json.dumps(parameters) if isinstance(parameters, dict) else parameters,
+            })
+
     return formatted_tool_calls
 
 
@@ -247,17 +256,16 @@ class CohereProvider(Provider):
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
         if "text" in event_data and "finishReason" not in event_data:
-            return event_data["text"]
-        else:
-            return ""
+            return event_data.get("text", "")
+        return ""
 
     def chat_generation_info(self, response: Any) -> Dict[str, Any]:
         generation_info: Dict[str, Any] = {
+            "finish_reason": response.data.chat_response.finish_reason,
             "documents": response.data.chat_response.documents,
             "citations": response.data.chat_response.citations,
             "search_queries": response.data.chat_response.search_queries,
-            "is_search_required": response.data.chat_response.is_search_required,
-            "finish_reason": response.data.chat_response.finish_reason,
+            "is_search_required": response.data.chat_response.is_search_required
         }
         if response.data.chat_response.tool_calls:
             # Only populate tool_calls when 1) present on the response and
@@ -269,23 +277,22 @@ class CohereProvider(Provider):
         return generation_info
 
     def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
+        """Extract generation info from a streaming chat response."""
         generation_info: Dict[str, Any] = {
-            "documents": event_data.get("documents"),
-            "citations": event_data.get("citations"),
             "finish_reason": event_data.get("finishReason"),
+            "documents": event_data.get("documents", []),
+            "citations": event_data.get("citations", []),
+            "search_queries": event_data.get("searchQueries", []),
+            "is_search_required": event_data.get("isSearchRequired", False)
         }
+
+        # Handle tool calls if present
         if "toolCalls" in event_data:
-            generation_info["tool_calls"] = []
-            for tool_call in event_data["toolCalls"]:
-                generation_info["tool_calls"].append(
-                    {
-                        "toolUseId": uuid.uuid4().hex[:],
-                        "name": tool_call.name,
-                        "input": json.dumps(tool_call.parameters),
-                    }
-                )
+            generation_info["tool_calls"] = _format_oci_tool_calls(event_data["toolCalls"])
 
         return {k: v for k, v in generation_info.items() if v is not None}
+
+
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         role_map = {
@@ -323,9 +330,12 @@ class CohereProvider(Provider):
                         tool_calls=tool_calls if tool_calls else None,
                     )
                 )
+            elif role == "TOOL":
+                # tool message only has tool results field and no message field
+                continue
             else:
                 oci_chat_history.append(
-                    self.oci_chat_message[role](message=msg.content)
+                    self.oci_chat_message[role](message=msg.content or " ")
                 )
 
         # Handling the current chat turn, especially the latest message
@@ -368,7 +378,7 @@ class CohereProvider(Provider):
         if not oci_tool_results:
             oci_tool_results = None
 
-        message_str = "" if oci_tool_results else messages[-1].content
+        message_str = "" if oci_tool_results or not messages else messages[-1].content
 
         oci_params = {
             "message": message_str,
