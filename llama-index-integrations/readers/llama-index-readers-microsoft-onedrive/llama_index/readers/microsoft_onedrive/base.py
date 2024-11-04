@@ -53,6 +53,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
     :param file_paths (List[str], optional): List of specific file paths to download. Will be used if the parameter is not provided when calling load_data().
     :param file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that file to text.
                                                              See `SimpleDirectoryReader` for more details.
+    :param required_exts (Optional[List[str]]): List of required extensions. Default is None.
 
 
     For interactive authentication to work, a browser is used to authenticate, hence the registered application should have a redirect URI set to 'https://localhost'
@@ -67,6 +68,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
     file_ids: Optional[List[str]] = None
     folder_path: Optional[str] = None
     file_paths: Optional[List[str]] = None
+    required_exts: Optional[List[str]] = None
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
         default=None, exclude=True
     )
@@ -87,6 +89,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         file_paths: Optional[List[str]] = None,
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         attach_permission_metadata: bool = False,
+        required_exts: Optional[List[str]] = None,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -100,6 +103,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
             file_paths=file_paths,
             file_extractor=file_extractor,
             attach_permission_metadata=attach_permission_metadata,
+            required_exts=required_exts,
             **kwargs,
         )
         self._is_interactive_auth = not client_secret
@@ -559,6 +563,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         simple_loader = SimpleDirectoryReader(
             directory,
             file_extractor=self.file_extractor,
+            required_exts=self.required_exts,
             file_metadata=get_metadata,
             recursive=recursive,
         )
