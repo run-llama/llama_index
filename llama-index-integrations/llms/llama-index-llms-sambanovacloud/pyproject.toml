@@ -9,11 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.sambanova"
+import_path = "llama_index.llms.sambanovacloud"
 
 [tool.llamahub.class_authors]
-SambaStudio = "Pradeep"
-Sambaverse = "Pradeep"
+SambaNovaCloud = "Pradeep"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -23,10 +22,10 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index llms sambanova integration"
-name = "sambanova"
+description = "llama-index llms sambanova cloud integration"
+name = "llama-index-llms-sambanovacloud"
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

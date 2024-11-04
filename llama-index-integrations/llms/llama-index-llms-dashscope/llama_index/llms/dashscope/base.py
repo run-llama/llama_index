@@ -251,7 +251,9 @@ class DashScope(CustomLLM):
         return message, parameters
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         message, parameters = self._get_input_parameters(prompt=prompt, **kwargs)
         parameters.pop("incremental_output", None)
         parameters.pop("stream", None)
@@ -265,7 +267,9 @@ class DashScope(CustomLLM):
         return dashscope_response_to_completion_response(response)
 
     @llm_completion_callback()
-    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         message, parameters = self._get_input_parameters(prompt=prompt, **kwargs)
         parameters.pop("incremental_output", None)
         parameters.pop("stream", None)
@@ -279,7 +283,9 @@ class DashScope(CustomLLM):
         return dashscope_response_to_completion_response(response)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         message, parameters = self._get_input_parameters(prompt=prompt, kwargs=kwargs)
         parameters["incremental_output"] = True
         parameters["stream"] = True
