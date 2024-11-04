@@ -419,7 +419,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         messages = to_inference_message(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._async_client.complete(
+        response = await self._async_client.complete(
             messages=messages, stream=True, **all_kwargs
         )
 
