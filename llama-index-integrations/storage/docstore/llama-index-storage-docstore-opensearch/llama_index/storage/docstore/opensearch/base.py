@@ -26,9 +26,7 @@ class OpensearchDocumentStore(KVDocumentStore):
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
         """Init a OpensearchDocumentStore."""
-        super().__init__(
-            opensearch_kvstore, namespace=namespace, batch_size=batch_size
-        )
+        super().__init__(opensearch_kvstore, namespace=namespace, batch_size=batch_size)
         if node_collection_index:
             self._node_collection = node_collection_index
         else:
