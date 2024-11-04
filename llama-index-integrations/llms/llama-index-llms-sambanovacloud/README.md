@@ -13,5 +13,27 @@ SambaNovaLLM is a custom LLM (Language Model) interface that allows you to inter
 ## Installation
 
 ```bash
-pip install llama-index-llms-sambanova
+pip install llama-index-llms-sambanovacloud
+```
+
+## Usage
+
+```python
+from llama_index.llms.sambanovacloud import SambaNovaCloud
+
+SambaNovaCloud(
+    sambanova_url="SambaNova cloud endpoint URL",
+    sambanova_api_key="set with your SambaNova cloud API key",
+    model="model name",
+)
+```
+
+## Usage
+
+```python
+SambaNovaCloud(
+    sambanova_url="SambaNova cloud endpoint URL",
+    sambanova_api_key="set with your SambaNova cloud API key",
+    model="model name",
+)
 ```
