@@ -548,7 +548,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         language_analyzer: str = "en.lucene",
         user_agent: Optional[str] = "Llamaindex-python",
         compression_type: str = "none",
-        user_agent: Optional[str] = "Llamaindex-python",
         **kwargs: Any,
     ) -> None:
         # ruff: noqa: E501
