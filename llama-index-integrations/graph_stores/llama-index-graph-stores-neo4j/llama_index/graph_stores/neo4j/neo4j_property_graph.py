@@ -254,7 +254,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             "CALL apoc.meta.subGraph({}) YIELD nodes, relationships "
             "RETURN nodes, [rel in relationships | {name:apoc.any.property"
             "(rel, 'type'), count: apoc.any.property(rel, 'count')}]"
-            " AS relationships"
+            " AS relationships LIMIT 1"
         )
         # Update node info
         for node in schema_counts[0].get("nodes", []):
