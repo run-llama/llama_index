@@ -41,7 +41,7 @@ class MarkdownNodeParser(NodeParser):
         lines = text.split("\n")
         current_section = ""
         # Keep track of headers at each level
-        header_stack = []
+        header_stack: List[str] = []
         code_block = False
 
         for line in lines:
