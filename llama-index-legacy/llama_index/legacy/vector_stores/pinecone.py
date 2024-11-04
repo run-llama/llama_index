@@ -73,7 +73,8 @@ def _transform_pinecone_filter_operator(operator: str) -> str:
 
 
 def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
-    """Build a list of sparse dictionaries from a batch of input_ids.
+    """
+    Build a list of sparse dictionaries from a batch of input_ids.
 
     NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
 
@@ -97,7 +98,8 @@ def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
 def generate_sparse_vectors(
     context_batch: List[str], tokenizer: Callable
 ) -> List[Dict[str, Any]]:
-    """Generate sparse vectors from a batch of contexts.
+    """
+    Generate sparse vectors from a batch of contexts.
 
     NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
 
@@ -109,7 +111,8 @@ def generate_sparse_vectors(
 
 
 def get_default_tokenizer() -> Callable:
-    """Get default tokenizer.
+    """
+    Get default tokenizer.
 
     NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
 
@@ -161,7 +164,8 @@ import_err_msg = (
 
 
 class PineconeVectorStore(BasePydanticVectorStore):
-    """Pinecone Vector Store.
+    """
+    Pinecone Vector Store.
 
     In this vector store, embeddings and docs are stored within a
     Pinecone index.
@@ -272,7 +276,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
             pinecone.init(api_key=api_key, environment=environment)
             return pinecone.Index(index_name)
         else:  # If new version of Pinecone client (serverless):
-            pinecone_instance = pinecone.Pinecone(api_key=api_key)
+            pinecone_instance = pinecone.Pinecone(
+                api_key=api_key, source_tag="llamaindex"
+            )
             return pinecone_instance.Index(index_name)
 
     @classmethod
@@ -320,7 +326,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -380,7 +387,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
         return self._pinecone_index
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding

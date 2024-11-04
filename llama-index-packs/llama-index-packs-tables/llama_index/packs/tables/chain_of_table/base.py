@@ -99,7 +99,7 @@ row 3 : richmond | 20.17 (137) | fitzroy | 13.22 (100) | mcg | 27651
 Question : Whose home team score is higher, richmond or st kilda?
 Function : f_select_row(row 1, row 3)
 Explanation: The question asks about the home team score of richmond and st kilda. We need
-to know the the information of richmond and st kilda in row 1 and row 3. We select row 1
+to know the information of richmond and st kilda in row 1 and row 3. We select row 1
 and row 3.
 
 If the table only needs a few columns to answer the question, we use
@@ -647,7 +647,7 @@ class ChainOfTableQueryEngine(CustomQueryEngine):
         super().__init__(table=table, llm=llm, verbose=verbose, **kwargs)
 
     def custom_query(self, query_str: str) -> Response:
-        """Run chain of thought query engine."""
+        """Run chain of table query engine."""
         op_chain = []
         dynamic_plan_parser = FnComponent(fn=_dynamic_plan_parser)
 

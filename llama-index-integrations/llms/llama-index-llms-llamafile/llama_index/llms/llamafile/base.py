@@ -20,7 +20,7 @@ from llama_index.core.llms.custom import CustomLLM
 DEFAULT_REQUEST_TIMEOUT = 30.0
 
 
-def get_addtional_kwargs(
+def get_additional_kwargs(
     response: Dict[str, Any], exclude: Tuple[str, ...]
 ) -> Dict[str, Any]:
     return {k: v for k, v in response.items() if k not in exclude}
@@ -57,8 +57,8 @@ class Llamafile(CustomLLM):
     temperature: float = Field(
         default=0.8,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
 
     seed: int = Field(default=0, description="Random seed")
@@ -123,12 +123,12 @@ class Llamafile(CustomLLM):
                 message=ChatMessage(
                     content=message.get("content"),
                     role=MessageRole(message.get("role")),
-                    additional_kwargs=get_addtional_kwargs(
+                    additional_kwargs=get_additional_kwargs(
                         message, ("content", "role")
                     ),
                 ),
                 raw=raw,
-                additional_kwargs=get_addtional_kwargs(raw, ("choice",)),
+                additional_kwargs=get_additional_kwargs(raw, ("choice",)),
             )
 
     @llm_chat_callback()
@@ -181,13 +181,13 @@ class Llamafile(CustomLLM):
                                 message=ChatMessage(
                                     content=buff.getvalue(),
                                     role=MessageRole(role),
-                                    additional_kwargs=get_addtional_kwargs(
+                                    additional_kwargs=get_additional_kwargs(
                                         delta_message, ("content", "role")
                                     ),
                                 ),
                                 delta=delta_content,
                                 raw=chunk,
-                                additional_kwargs=get_addtional_kwargs(
+                                additional_kwargs=get_additional_kwargs(
                                     chunk, ("choices",)
                                 ),
                             )
@@ -217,7 +217,7 @@ class Llamafile(CustomLLM):
             return CompletionResponse(
                 text=text,
                 raw=raw,
-                additional_kwargs=get_addtional_kwargs(raw, ("response",)),
+                additional_kwargs=get_additional_kwargs(raw, ("response",)),
             )
 
     @llm_completion_callback()
@@ -252,7 +252,7 @@ class Llamafile(CustomLLM):
                                 delta=delta,
                                 text=buff.getvalue(),
                                 raw=chunk,
-                                additional_kwargs=get_addtional_kwargs(
+                                additional_kwargs=get_additional_kwargs(
                                     chunk, ("content",)
                                 ),
                             )

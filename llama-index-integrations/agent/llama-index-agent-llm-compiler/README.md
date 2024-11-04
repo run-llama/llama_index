@@ -5,7 +5,7 @@ This Agent integration implements the [LLMCompiler agent paper](https://github.c
 A lot of code came from the source repo, we repurposed with LlamaIndex abstractions. All credits
 to the original authors for a great work!
 
-A full notebook guide can be found [here](https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_packs/agents/llm_compiler/llm_compiler.ipynb).
+A full notebook guide can be found [here](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/llm_compiler.ipynb).
 
 ## Usage
 

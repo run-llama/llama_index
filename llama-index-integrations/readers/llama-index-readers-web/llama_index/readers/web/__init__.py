@@ -5,6 +5,7 @@ from llama_index.readers.web.async_web.base import (
 from llama_index.readers.web.beautiful_soup_web.base import (
     BeautifulSoupWebReader,
 )
+from llama_index.readers.web.browserbase_web.base import BrowserbaseWebReader
 from llama_index.readers.web.firecrawl_web.base import FireCrawlWebReader
 from llama_index.readers.web.knowledge_base.base import (
     KnowledgeBaseWebReader,
@@ -22,11 +23,17 @@ from llama_index.readers.web.rss.base import (
 from llama_index.readers.web.rss_news.base import (
     RssNewsReader,
 )
+from llama_index.readers.web.scrapfly_web.base import (
+    ScrapflyReader,
+)
 from llama_index.readers.web.simple_web.base import (
     SimpleWebPageReader,
 )
 from llama_index.readers.web.sitemap.base import (
     SitemapReader,
+)
+from llama_index.readers.web.spider_web.base import (
+    SpiderWebReader,
 )
 from llama_index.readers.web.trafilatura_web.base import (
     TrafilaturaWebReader,
@@ -37,11 +44,15 @@ from llama_index.readers.web.unstructured_web.base import (
 from llama_index.readers.web.whole_site.base import (
     WholeSiteReader,
 )
+from llama_index.readers.web.zyte_web.base import (
+    ZyteWebReader,
+)
 
 
 __all__ = [
     "AsyncWebPageReader",
     "BeautifulSoupWebReader",
+    "BrowserbaseWebReader",
     "FireCrawlWebReader",
     "KnowledgeBaseWebReader",
     "MainContentExtractorReader",
@@ -49,9 +60,12 @@ __all__ = [
     "ReadabilityWebPageReader",
     "RssReader",
     "RssNewsReader",
+    "ScrapflyReader",
     "SimpleWebPageReader",
     "SitemapReader",
+    "SpiderWebReader",
     "TrafilaturaWebReader",
     "UnstructuredURLLoader",
     "WholeSiteReader",
+    "ZyteWebReader",
 ]

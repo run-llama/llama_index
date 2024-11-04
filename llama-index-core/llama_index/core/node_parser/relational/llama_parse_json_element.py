@@ -33,7 +33,26 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
         self.extract_table_summaries(table_elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
-        return self.get_nodes_from_elements(elements, node.metadata)
+        return self.get_nodes_from_elements(
+            elements, node, ref_doc_text=node.get_content()
+        )
+
+    async def aget_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
+        """Get nodes from node."""
+        elements = self.extract_elements(
+            node.get_content(),
+            table_filters=[self.filter_table],
+            node_id=node.id_,
+            node_metadata=node.metadata,
+        )
+        table_elements = self.get_table_elements(elements)
+        # extract summaries over table elements
+        await self.aextract_table_summaries(table_elements)
+        # convert into nodes
+        # will return a list of Nodes and Index Nodes
+        return self.get_nodes_from_elements(
+            elements, node, ref_doc_text=node.get_content()
+        )
 
     def extract_elements(
         self,
@@ -56,7 +75,7 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
         """
         elements: List[Element] = []
         currentElement = None
-        page_number = node_metadata.get("page")
+        page_number = node_metadata.get("page") if node_metadata is not None else 0
 
         if mode == "json" and node_metadata is not None:
             json_items = node_metadata.get("items") or []
@@ -183,6 +202,8 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
 
         for idx, element in enumerate(elements):
             if element.type == "table":
+                assert element.markdown is not None
+
                 should_keep = True
                 perfect_table = True
 
@@ -205,6 +226,7 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
                 # if the element is a table, convert it to a dataframe
                 if should_keep:
                     if perfect_table:
+                        assert element.markdown is not None
                         table = md_to_df(element.markdown)
 
                         elements[idx] = Element(

@@ -1,6 +1,8 @@
 """Base schema for data structures."""
 
 import json
+import logging
+import pickle
 import textwrap
 import uuid
 from abc import abstractmethod
@@ -8,10 +10,20 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from dataclasses_json import DataClassJsonMixin
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    GetJsonSchemaHandler,
+    SerializeAsAny,
+    JsonSchemaValue,
+    ConfigDict,
+    model_serializer,
+)
+from llama_index.core.bridge.pydantic_core import CoreSchema
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.utils import SAMPLE_TEXT, truncate_text
 from typing_extensions import Self
 
@@ -19,6 +31,7 @@ if TYPE_CHECKING:
     from haystack.schema import Document as HaystackDocument
     from llama_index.core.bridge.langchain import Document as LCDocument
     from semantic_kernel.memory.memory_record import MemoryRecord
+    from llama_cloud.types.cloud_document import CloudDocument
 
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
@@ -29,19 +42,24 @@ WRAP_WIDTH = 70
 
 ImageType = Union[str, BytesIO]
 
+logger = logging.getLogger(__name__)
+
 
 class BaseComponent(BaseModel):
     """Base component object to capture class names."""
 
-    class Config:
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: "BaseComponent") -> None:
-            """Add class name to schema."""
-            schema["properties"]["class_name"] = {
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
+        if "properties" in json_schema:
+            json_schema["properties"]["class_name"] = {
                 "title": "Class Name",
                 "type": "string",
-                "default": model.class_name(),
+                "default": cls.class_name(),
             }
+        return json_schema
 
     @classmethod
     def class_name(cls) -> str:
@@ -56,40 +74,54 @@ class BaseComponent(BaseModel):
     def json(self, **kwargs: Any) -> str:
         return self.to_json(**kwargs)
 
-    def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        data = super().dict(**kwargs)
+    @model_serializer(mode="wrap")
+    def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
+        data = handler(self)
         data["class_name"] = self.class_name()
         return data
+
+    def dict(self, **kwargs: Any) -> Dict[str, Any]:
+        return self.model_dump(**kwargs)
 
     def __getstate__(self) -> Dict[str, Any]:
         state = super().__getstate__()
 
-        # tiktoken is not pickleable
-        # state["__dict__"] = self.dict()
-        state["__dict__"].pop("tokenizer", None)
-
-        # remove local functions
+        # remove attributes that are not pickleable -- kind of dangerous
         keys_to_remove = []
         for key, val in state["__dict__"].items():
-            if key.endswith("_fn"):
+            try:
+                pickle.dumps(val)
+            except Exception:
                 keys_to_remove.append(key)
-            if "<lambda>" in str(val):
-                keys_to_remove.append(key)
-        for key in keys_to_remove:
-            state["__dict__"].pop(key, None)
 
-        # remove private attributes -- kind of dangerous
-        state["__private_attribute_values__"] = {}
+        for key in keys_to_remove:
+            logging.warning(f"Removing unpickleable attribute {key}")
+            del state["__dict__"][key]
+
+        # remove private attributes if they aren't pickleable -- kind of dangerous
+        keys_to_remove = []
+        private_attrs = state.get("__pydantic_private__", None)
+        if private_attrs:
+            for key, val in state["__pydantic_private__"].items():
+                try:
+                    pickle.dumps(val)
+                except Exception:
+                    keys_to_remove.append(key)
+
+            for key in keys_to_remove:
+                logging.warning(f"Removing unpickleable private attribute {key}")
+                del state["__pydantic_private__"][key]
 
         return state
 
     def __setstate__(self, state: Dict[str, Any]) -> None:
         # Use the __dict__ and __init__ method to set state
-        # so that all variable initialize
+        # so that all variables initialize
         try:
             self.__init__(**state["__dict__"])  # type: ignore
         except Exception:
             # Fall back to the default __setstate__ method
+            # This may not work if the class had unpickleable attributes
             super().__setstate__(state)
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
@@ -104,9 +136,11 @@ class BaseComponent(BaseModel):
     # TODO: return type here not supported by current mypy version
     @classmethod
     def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
+        # In SimpleKVStore we rely on shallow coping. Hence, the data will be modified in the store directly.
+        # And it is the same when the user is passing a dictionary to create a component. We can't modify the passed down dictionary.
+        data = dict(data)
         if isinstance(kwargs, dict):
             data.update(kwargs)
-
         data.pop("class_name", None)
         return cls(**data)
 
@@ -116,17 +150,20 @@ class BaseComponent(BaseModel):
         return cls.from_dict(data, **kwargs)
 
 
-class TransformComponent(BaseComponent):
+class TransformComponent(BaseComponent, DispatcherSpanMixin):
     """Base class for transform components."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @abstractmethod
-    def __call__(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
+    def __call__(
+        self, nodes: Sequence["BaseNode"], **kwargs: Any
+    ) -> Sequence["BaseNode"]:
         """Transform nodes."""
 
-    async def acall(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
+    async def acall(
+        self, nodes: Sequence["BaseNode"], **kwargs: Any
+    ) -> Sequence["BaseNode"]:
         """Async transform nodes."""
         return self.__call__(nodes, **kwargs)
 
@@ -186,10 +223,8 @@ class BaseNode(BaseComponent):
 
     """
 
-    class Config:
-        allow_population_by_field_name = True
-        # hash is computed on local field, during the validation process
-        validate_assignment = True
+    # hash is computed on local field, during the validation process
+    model_config = ConfigDict(populate_by_name=True, validate_assignment=True)
 
     id_: str = Field(
         default_factory=lambda: str(uuid.uuid4()), description="Unique ID of the node."
@@ -356,6 +391,9 @@ class BaseNode(BaseComponent):
 
 class TextNode(BaseNode):
     text: str = Field(default="", description="Text content of the node.")
+    mimetype: str = Field(
+        default="text/plain", description="MIME type of the node content."
+    )
     start_char_idx: Optional[int] = Field(
         default=None, description="Start char index of the node."
     )
@@ -488,6 +526,17 @@ class ImageNode(TextNode):
         else:
             raise ValueError("No image found in node.")
 
+    @property
+    def hash(self) -> str:
+        """Get hash of node."""
+        # doc identity depends on if image, image_path, or image_url is set
+        image_str = self.image or "None"
+        image_path_str = self.image_path or "None"
+        image_url_str = self.image_url or "None"
+        image_text = self.text or "None"
+        doc_identity = f"{image_str}-{image_path_str}-{image_url_str}-{image_text}"
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
+
 
 class IndexNode(TextNode):
     """Node with reference to any object.
@@ -513,7 +562,7 @@ class IndexNode(TextNode):
             elif isinstance(self.obj, BaseNode):
                 data["obj"] = doc_to_json(self.obj)
             elif isinstance(self.obj, BaseModel):
-                data["obj"] = self.obj.dict()
+                data["obj"] = self.obj.model_dump()
             else:
                 data["obj"] = json.dumps(self.obj)
         except Exception:
@@ -549,7 +598,7 @@ class IndexNode(TextNode):
 
             # check if its a node, else assume stringable
             try:
-                parsed_obj = json_to_doc(obj)
+                parsed_obj = json_to_doc(obj)  # type: ignore[assignment]
             except Exception:
                 parsed_obj = TextNode(text=str(obj))
 
@@ -567,7 +616,7 @@ class IndexNode(TextNode):
 
 
 class NodeWithScore(BaseComponent):
-    node: BaseNode
+    node: SerializeAsAny[BaseNode]
     score: Optional[float] = None
 
     def __str__(self) -> str:
@@ -677,11 +726,13 @@ class Document(TextNode):
         from llama_index.core.bridge.langchain import Document as LCDocument
 
         metadata = self.metadata or {}
-        return LCDocument(page_content=self.text, metadata=metadata)
+        return LCDocument(page_content=self.text, metadata=metadata, id=self.id_)
 
     @classmethod
     def from_langchain_format(cls, doc: "LCDocument") -> "Document":
         """Convert struct from LangChain document format."""
+        if doc.id:
+            return cls(text=doc.page_content, metadata=doc.metadata, id_=doc.id)
         return cls(text=doc.page_content, metadata=doc.metadata)
 
     def to_haystack_format(self) -> "HaystackDocument":
@@ -757,6 +808,32 @@ class Document(TextNode):
     @classmethod
     def class_name(cls) -> str:
         return "Document"
+
+    def to_cloud_document(self) -> "CloudDocument":
+        """Convert to LlamaCloud document type."""
+        from llama_cloud.types.cloud_document import CloudDocument
+
+        return CloudDocument(
+            text=self.text,
+            metadata=self.metadata,
+            excluded_embed_metadata_keys=self.excluded_embed_metadata_keys,
+            excluded_llm_metadata_keys=self.excluded_llm_metadata_keys,
+            id=self.id_,
+        )
+
+    @classmethod
+    def from_cloud_document(
+        cls,
+        doc: "CloudDocument",
+    ) -> "Document":
+        """Convert from LlamaCloud document type."""
+        return Document(
+            text=doc.text,
+            metadata=doc.metadata,
+            excluded_embed_metadata_keys=doc.excluded_embed_metadata_keys,
+            excluded_llm_metadata_keys=doc.excluded_llm_metadata_keys,
+            id_=doc.id,
+        )
 
 
 class ImageDocument(Document, ImageNode):

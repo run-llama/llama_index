@@ -1,14 +1,18 @@
 from enum import Enum
-from typing import List, Optional
+from typing import Any, List, Optional, Union
 
-from llama_index.core.base.embeddings.base import (
-    DEFAULT_EMBED_BATCH_SIZE,
-    BaseEmbedding,
-)
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE, Embedding
+from llama_index.core.embeddings import MultiModalEmbedding
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 import cohere
 import httpx
+import os
+import base64
+from io import BytesIO
+from pathlib import Path
+from llama_index.core.schema import ImageType
+from PIL import Image
 
 
 # Enums for validation and type safety
@@ -77,13 +81,13 @@ VALID_MODEL_INPUT_TYPES = {
 }
 
 # v3 models require an input_type field
+# supported models for multimodal embeddings
 V3_MODELS = [
     CAMN.ENGLISH_V3,
     CAMN.ENGLISH_LIGHT_V3,
     CAMN.MULTILINGUAL_V3,
     CAMN.MULTILINGUAL_LIGHT_V3,
 ]
-
 
 # This list would be used for model name and embedding types validation
 # Embedding type can be float/ int8/ uint8/ binary/ ubinary based on model.
@@ -99,25 +103,37 @@ VALID_MODEL_EMBEDDING_TYPES = {
 
 VALID_TRUNCATE_OPTIONS = [CAT.START, CAT.END, CAT.NONE]
 
+# supported image formats
+SUPPORTED_IMAGE_FORMATS = {"png", "jpeg", "jpg", "webp", "gif"}
+
 
 # Assuming BaseEmbedding is a Pydantic model and handles its own initializations
-class CohereEmbedding(BaseEmbedding):
+class CohereEmbedding(MultiModalEmbedding):
     """CohereEmbedding uses the Cohere API to generate embeddings for text."""
 
     # Instance variables initialized via Pydantic's mechanism
-    cohere_client: cohere.Client = Field(description="CohereAI client")
-    cohere_async_client: cohere.AsyncClient = Field(description="CohereAI Async client")
+    api_key: str = Field(description="The Cohere API key.")
     truncate: str = Field(description="Truncation type - START/ END/ NONE")
     input_type: Optional[str] = Field(
-        description="Model Input type. If not provided, search_document and search_query are used when needed."
+        default=None,
+        description="Model Input type. If not provided, search_document and search_query are used when needed.",
     )
     embedding_type: str = Field(
         description="Embedding type. If not provided float embedding_type is used when needed."
     )
 
+    _client: cohere.Client = PrivateAttr()
+    _async_client: cohere.AsyncClient = PrivateAttr()
+    _base_url: Optional[str] = PrivateAttr()
+    _timeout: Optional[float] = PrivateAttr()
+    _httpx_client: Optional[httpx.Client] = PrivateAttr()
+    _httpx_async_client: Optional[httpx.AsyncClient] = PrivateAttr()
+
     def __init__(
         self,
+        # deprecated
         cohere_api_key: Optional[str] = None,
+        api_key: Optional[str] = None,
         model_name: str = "embed-english-v3.0",
         truncate: str = "END",
         input_type: Optional[str] = None,
@@ -128,12 +144,13 @@ class CohereEmbedding(BaseEmbedding):
         timeout: Optional[float] = None,
         httpx_client: Optional[httpx.Client] = None,
         httpx_async_client: Optional[httpx.AsyncClient] = None,
+        num_workers: Optional[int] = None,
+        **kwargs: Any,
     ):
         """
         A class representation for generating embeddings using the Cohere API.
 
         Args:
-            cohere_client (Any): An instance of the Cohere client, which is used to communicate with the Cohere API.
             truncate (str): A string indicating the truncation strategy to be applied to input text. Possible values
                         are 'START', 'END', or 'NONE'.
             input_type (Optional[str]): An optional string that specifies the type of input provided to the model.
@@ -159,37 +176,85 @@ class CohereEmbedding(BaseEmbedding):
             raise ValueError(f"truncate must be one of {VALID_TRUNCATE_OPTIONS}")
 
         super().__init__(
-            cohere_client=cohere.Client(
-                cohere_api_key,
-                client_name="llama_index",
-                base_url=base_url,
-                timeout=timeout,
-                httpx_client=httpx_client,
-            ),
-            cohere_async_client=cohere.AsyncClient(
-                cohere_api_key,
-                client_name="llama_index",
-                base_url=base_url,
-                timeout=timeout,
-                httpx_client=httpx_async_client,
-            ),
-            cohere_api_key=cohere_api_key,
+            api_key=api_key or cohere_api_key,
             model_name=model_name,
             input_type=input_type,
             embedding_type=embedding_type,
             truncate=truncate,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
+            num_workers=num_workers,
+            **kwargs,
         )
+
+        self._client = None
+        self._async_client = None
+        self._base_url = base_url
+        self._timeout = timeout
+        self._httpx_client = httpx_client
+        self._httpx_async_client = httpx_async_client
+
+    def _get_client(self) -> cohere.Client:
+        if self._client is None:
+            self._client = cohere.Client(
+                api_key=self.api_key,
+                client_name="llama_index",
+                base_url=self._base_url,
+                timeout=self._timeout,
+                httpx_client=self._httpx_client,
+            )
+
+        return self._client
+
+    def _get_async_client(self) -> cohere.AsyncClient:
+        if self._async_client is None:
+            self._async_client = cohere.AsyncClient(
+                api_key=self.api_key,
+                client_name="llama_index",
+                base_url=self._base_url,
+                timeout=self._timeout,
+                httpx_client=self._httpx_async_client,
+            )
+
+        return self._async_client
 
     @classmethod
     def class_name(cls) -> str:
         return "CohereEmbedding"
 
+    def _image_to_base64_data_url(self, image_input: Union[str, Path, BytesIO]) -> str:
+        """Convert an image to a base64 Data URL."""
+        if isinstance(image_input, (str, Path)):
+            # If it's a string or Path, assume it's a file path
+            image_path = str(image_input)
+            file_extension = os.path.splitext(image_path)[1][1:].lower()
+            with open(image_path, "rb") as f:
+                image_data = f.read()
+        elif isinstance(image_input, BytesIO):
+            # If it's a BytesIO, use it directly
+            image = Image.open(image_input)
+            file_extension = image.format.lower()
+            image_input.seek(0)  # Reset the BytesIO stream to the beginning
+            image_data = image_input.read()
+        else:
+            raise ValueError("Unsupported input type. Must be a file path or BytesIO.")
+
+        if self._validate_image_format(file_extension):
+            enc_img = base64.b64encode(image_data).decode("utf-8")
+            return f"data:image/{file_extension};base64,{enc_img}"
+        else:
+            raise ValueError(f"Unsupported image format: {file_extension}")
+
+    def _validate_image_format(self, file_type: str) -> bool:
+        """Validate image format."""
+        return file_type.lower() in SUPPORTED_IMAGE_FORMATS
+
     def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
         """Embed sentences using Cohere."""
+        client = self._get_client()
+
         if self.model_name in V3_MODELS:
-            result = self.cohere_client.embed(
+            result = client.embed(
                 texts=texts,
                 input_type=self.input_type or input_type,
                 embedding_types=[self.embedding_type],
@@ -197,7 +262,7 @@ class CohereEmbedding(BaseEmbedding):
                 truncate=self.truncate,
             ).embeddings
         else:
-            result = self.cohere_client.embed(
+            result = client.embed(
                 texts=texts,
                 model=self.model_name,
                 embedding_types=[self.embedding_type],
@@ -207,9 +272,11 @@ class CohereEmbedding(BaseEmbedding):
 
     async def _aembed(self, texts: List[str], input_type: str) -> List[List[float]]:
         """Embed sentences using Cohere."""
+        async_client = self._get_async_client()
+
         if self.model_name in V3_MODELS:
             result = (
-                await self.cohere_async_client.embed(
+                await async_client.embed(
                     texts=texts,
                     input_type=self.input_type or input_type,
                     embedding_types=[self.embedding_type],
@@ -219,7 +286,7 @@ class CohereEmbedding(BaseEmbedding):
             ).embeddings
         else:
             result = (
-                await self.cohere_async_client.embed(
+                await async_client.embed(
                     texts=texts,
                     model=self.model_name,
                     embedding_types=[self.embedding_type],
@@ -227,6 +294,38 @@ class CohereEmbedding(BaseEmbedding):
                 )
             ).embeddings
         return getattr(result, self.embedding_type, None)
+
+    def _embed_image(self, image_path: ImageType, input_type: str) -> List[float]:
+        """Embed images using Cohere."""
+        if self.model_name not in V3_MODELS:
+            raise ValueError(
+                f"{self.model_name} is not a valid multi-modal embedding model. Supported models are {V3_MODELS}"
+            )
+        client = self._get_client()
+        processed_image = self._image_to_base64_data_url(image_path)
+        return client.embed(
+            model=self.model_name,
+            images=[processed_image],
+            input_type=input_type,
+        ).embeddings
+
+    async def _aembed_image(
+        self, image_path: ImageType, input_type: str
+    ) -> List[float]:
+        """Embed images using Cohere."""
+        if self.model_name not in V3_MODELS:
+            raise ValueError(
+                f"{self.model_name} is not a valid multi-modal embedding model. Supported models are {V3_MODELS}"
+            )
+        async_client = self._get_async_client()
+        processed_image = self._image_to_base64_data_url(image_path)
+        return (
+            await async_client.embed(
+                model=self.model_name,
+                images=[processed_image],
+                input_type=input_type,
+            )
+        ).embeddings
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding. For query embeddings, input_type='search_query'."""
@@ -251,3 +350,11 @@ class CohereEmbedding(BaseEmbedding):
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
         return await self._aembed(texts, input_type="search_document")
+
+    def _get_image_embedding(self, img_file_path: ImageType) -> Embedding:
+        """Get image embedding."""
+        return self._embed_image(img_file_path, "image")[0]
+
+    async def _aget_image_embedding(self, img_file_path: ImageType) -> Embedding:
+        """Get image embedding async."""
+        return (await self._aembed_image(img_file_path, "image"))[0]

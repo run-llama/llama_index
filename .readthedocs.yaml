@@ -9,10 +9,18 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.12"
+  jobs:
+    post_create_environment:
+      - python -m pip install poetry
+    post_install:
+      - cd docs && poetry config virtualenvs.create false && poetry install --no-root
+    pre_build:
+      - cd docs && poetry run merge-llama-deploy-docs
 
 mkdocs:
   configuration: docs/mkdocs.yml
 
 python:
   install:
-    - requirements: docs/requirements.txt
+    - method: pip
+      path: docs

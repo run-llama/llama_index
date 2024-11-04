@@ -30,6 +30,10 @@ from llama_index.core.node_parser.text.langchain import LangchainNodeParser
 from llama_index.core.node_parser.text.semantic_splitter import (
     SemanticSplitterNodeParser,
 )
+from llama_index.core.node_parser.text.semantic_double_merging_splitter import (
+    SemanticDoubleMergingSplitterNodeParser,
+    LanguageConfig,
+)
 from llama_index.core.node_parser.text.sentence import SentenceSplitter
 from llama_index.core.node_parser.text.sentence_window import (
     SentenceWindowNodeParser,
@@ -49,6 +53,8 @@ __all__ = [
     "JSONNodeParser",
     "SentenceWindowNodeParser",
     "SemanticSplitterNodeParser",
+    "SemanticDoubleMergingSplitterNodeParser",
+    "LanguageConfig",
     "NodeParser",
     "HierarchicalNodeParser",
     "TextSplitter",

@@ -1,4 +1,4 @@
 ::: llama_index.callbacks.langfuse
     options:
       members:
-        - LangfuseCallbackHandler
+        - langfuse_callback_handler

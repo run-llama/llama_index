@@ -1,13 +1,28 @@
+import json
 import pytest
 from typing import List
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    MessageRole,
+    LogProb,
+)
+from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.completion_choice import Logprobs
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import (
     from_openai_message_dicts,
     from_openai_messages,
     to_openai_message_dicts,
     to_openai_tool,
+)
+
+from llama_index.llms.openai.utils import (
+    from_openai_completion_logprobs,
+    from_openai_token_logprob,
+    from_openai_token_logprobs,
 )
 
 
@@ -223,3 +238,70 @@ def test_to_openai_message_with_pydantic_description() -> None:
             "parameters": TestOutput.schema(),
         },
     }
+
+
+def test_from_openai_token_logprob_none_top_logprob() -> None:
+    logprob = ChatCompletionTokenLogprob(token="", logprob=1.0, top_logprobs=[])
+    logprob.top_logprobs = None
+    result: List[LogProb] = from_openai_token_logprob(logprob)
+    assert isinstance(result, list)
+
+
+def test_from_openai_token_logprobs_none_top_logprobs() -> None:
+    logprob = ChatCompletionTokenLogprob(token="", logprob=1.0, top_logprobs=[])
+    logprob.top_logprobs = None
+    result: List[LogProb] = from_openai_token_logprobs([logprob])
+    assert isinstance(result, list)
+
+
+def test_from_openai_completion_logprobs_none_top_logprobs() -> None:
+    logprobs = Logprobs(top_logprobs=None)
+    result = from_openai_completion_logprobs(logprobs)
+    assert isinstance(result, list)
+
+
+def _build_chat_response(arguments: str) -> ChatResponse:
+    return ChatResponse(
+        message=ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content=None,
+            additional_kwargs={
+                "tool_calls": [
+                    ChatCompletionMessageToolCall(
+                        id="0123",
+                        type="function",
+                        function=Function(
+                            name="search",
+                            arguments=arguments,
+                        ),
+                    ),
+                ],
+            },
+        ),
+    )
+
+
+def test_get_tool_calls_from_response_returns_empty_arguments_with_invalid_json_arguments() -> (
+    None
+):
+    response = _build_chat_response("INVALID JSON")
+    tools = OpenAI().get_tool_calls_from_response(response)
+    assert len(tools) == 1
+    assert tools[0].tool_kwargs == {}
+
+
+def test_get_tool_calls_from_response_returns_empty_arguments_with_non_dict_json_input() -> (
+    None
+):
+    response = _build_chat_response("null")
+    tools = OpenAI().get_tool_calls_from_response(response)
+    assert len(tools) == 1
+    assert tools[0].tool_kwargs == {}
+
+
+def test_get_tool_calls_from_response_returns_arguments_with_dict_json_input() -> None:
+    arguments = {"test": 123}
+    response = _build_chat_response(json.dumps(arguments))
+    tools = OpenAI().get_tool_calls_from_response(response)
+    assert len(tools) == 1
+    assert tools[0].tool_kwargs == arguments

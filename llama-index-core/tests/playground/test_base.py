@@ -13,7 +13,6 @@ from llama_index.core.playground import (
     Playground,
 )
 from llama_index.core.schema import Document
-from llama_index.core.service_context import ServiceContext
 
 
 class MockEmbedding(BaseEmbedding):
@@ -80,21 +79,16 @@ class MockEmbedding(BaseEmbedding):
         return [0, 0, 1, 0, 0]
 
 
-def test_get_set_compare(
-    mock_service_context: ServiceContext,
-) -> None:
+def test_get_set_compare(patch_llm_predictor, patch_token_text_splitter) -> None:
     """Test basic comparison of indices."""
-    mock_service_context.embed_model = MockEmbedding()
     documents = [Document(text="They're taking the Hobbits to Isengard!")]
 
     indices = [
         VectorStoreIndex.from_documents(
-            documents=documents, service_context=mock_service_context
+            documents=documents, embed_model=MockEmbedding()
         ),
-        SummaryIndex.from_documents(documents, service_context=mock_service_context),
-        TreeIndex.from_documents(
-            documents=documents, service_context=mock_service_context
-        ),
+        SummaryIndex.from_documents(documents),
+        TreeIndex.from_documents(documents=documents),
     ]
 
     playground = Playground(indices=indices)  # type: ignore
@@ -107,36 +101,27 @@ def test_get_set_compare(
 
     playground.indices = [
         VectorStoreIndex.from_documents(
-            documents=documents, service_context=mock_service_context
+            documents=documents, embed_model=MockEmbedding()
         )
     ]
 
     assert len(playground.indices) == 1
 
 
-def test_from_docs(
-    mock_service_context: ServiceContext,
-) -> None:
+def test_from_docs(patch_llm_predictor, patch_token_text_splitter) -> None:
     """Test initialization via a list of documents."""
-    mock_service_context.embed_model = MockEmbedding()
     documents = [
         Document(text="I can't carry it for you."),
         Document(text="But I can carry you!"),
     ]
 
-    playground = Playground.from_docs(
-        documents=documents, service_context=mock_service_context
-    )
+    playground = Playground.from_docs(documents=documents)
 
     assert len(playground.indices) == len(DEFAULT_INDEX_CLASSES)
     assert len(playground.retriever_modes) == len(DEFAULT_MODES)
 
     with pytest.raises(ValueError):
-        playground = Playground.from_docs(
-            documents=documents,
-            retriever_modes={},
-            service_context=mock_service_context,
-        )
+        playground = Playground.from_docs(documents=documents, retriever_modes={})
 
 
 def test_validation() -> None:

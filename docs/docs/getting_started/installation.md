@@ -4,7 +4,7 @@ The LlamaIndex ecosystem is structured using a collection of namespaced packages
 
 What this means for users is that LlamaIndex comes with a core starter bundle, and additional integrations can be installed as needed.
 
-A complete list of packages and available integrations is available in our [temporary registry](https://pretty-sodium-5e0.notion.site/ce81b247649a44e4b6b35dfb24af28a6?v=53b3c2ced7bb4c9996b81b83c9f01139), which will be moving to [LlamaHub](https://llamahub.ai/) soon!
+A complete list of packages and available integrations is available on [LlamaHub](https://llamahub.ai/).
 
 ## Quickstart Installation from Pip
 
@@ -56,7 +56,7 @@ A full guide to using and configuring embedding models is available [here](../mo
 
 ## Installation from Source
 
-Git clone this repository: `git clone https://github.com/jerryjliu/llama_index.git`. Then do the following:
+Git clone this repository: `git clone https://github.com/run-llama/llama_index.git`. Then do the following:
 
 - [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
 - `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project

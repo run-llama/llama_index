@@ -1,12 +1,14 @@
 import json
-from tempfile import TemporaryDirectory
-
+import os
 import unittest
+from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock
-from llama_index.readers.google import GoogleDriveReader
+
+import pytest
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 from llama_index.core.readers.base import BaseReader
-import pytest
 from llama_index.readers.google import GoogleDriveReader
 
 test_client_config = {"client_config": {"key": "value"}}
@@ -90,3 +92,31 @@ class TestGoogleDriveReader(unittest.TestCase):
         )
 
         assert result == ["document1", "document2"]
+
+    def test_get_credentials_not_writing_to_file_on_cloud(self):
+        mock_credentials = MagicMock(spec=Credentials)
+        mock_flow = MagicMock(
+            spec=InstalledAppFlow,
+            run_local_server=MagicMock(return_value=mock_credentials),
+        )
+
+        # force InstalledAppFlow to be called
+        reader = GoogleDriveReader(
+            authorized_user_info=None,
+            service_account_key=None,
+            client_config={"web": {}},
+            token_path="credentials.json",
+            is_cloud=True,
+        )
+
+        with unittest.mock.patch(
+            "llama_index.readers.google.drive.base.InstalledAppFlow.from_client_config",
+            return_value=mock_flow,
+        ) as mock_from_client_config:
+            result = reader._get_credentials()
+
+        mock_from_client_config.assert_called_once()
+        mock_flow.run_local_server.assert_called_once()
+        mock_credentials.to_json.assert_not_called()
+        assert result == mock_credentials
+        assert os.path.exists(reader.token_path) is False

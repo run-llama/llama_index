@@ -29,14 +29,15 @@ license = "MIT"
 maintainers = ["yy0867"]
 name = "llama-index-readers-pdf-table"
 readme = "README.md"
-version = "0.1.3"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
+python = ">=3.9,<4.0"
+llama-index-core = "^0.11.0"
 camelot-py = "^0.11.0"
 opencv-python = "^4.9.0.80"
 ghostscript = "^0.7"
+pandas = "*"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

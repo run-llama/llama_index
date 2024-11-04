@@ -2,7 +2,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 mappings_path = os.path.join(os.path.dirname(__file__), "mappings.json")
 
@@ -13,7 +13,7 @@ def _parse_from_imports(
     line_idx: int,
     lines: List[str],
     verbose: bool = False,
-):
+) -> Tuple[List[str], List[str], List[str], int]:
     new_lines = []
     new_installs = []
     imported_modules = []
@@ -25,16 +25,16 @@ def _parse_from_imports(
         if "from " in line:
             imported_modules = [line, line.strip().split(" import ")[-1].strip()]
             if imported_modules[-1].startswith("("):
-                imported_modules[-1] = []
+                imported_modules[-1] = []  # type: ignore
                 parsing_modules = True
             else:
-                imported_modules = [line, imported_modules[-1].split(", ")]
+                imported_modules = [line, imported_modules[-1].split(", ")]  # type: ignore
 
         if parsing_modules:
             if ")" in line:
                 parsing_modules = False
             elif "(" not in line:
-                imported_modules[-1].append(line.strip().replace(",", ""))
+                imported_modules[-1].append(line.strip().replace(",", ""))  # type: ignore
 
         if not parsing_modules and len(imported_modules) > 0:
             imported_module_names = [x.strip() for x in imported_modules[-1]]
@@ -63,7 +63,7 @@ def _parse_from_imports(
                     else:
                         new_imports[new_import_parent].append(module)
 
-            for new_import_parent, new_imports in new_imports.items():
+            for new_import_parent, new_imports_list in new_imports.items():
                 new_install_parent = new_import_parent.replace(".", "-").replace(
                     "_", "-"
                 )
@@ -72,8 +72,8 @@ def _parse_from_imports(
                     if len(overlap) == 0:
                         installed_modules.append(new_install_parent)
                         new_installs.append(f"%pip install {new_install_parent}\n")
-                new_imports = ", ".join(new_imports)
-                new_lines.append(f"from {new_import_parent} import {new_imports}\n")
+                new_imports_str = ", ".join(new_imports_list)
+                new_lines.append(f"from {new_import_parent} import {new_imports_str}\n")
 
                 parsing_modules = False
                 new_imports = {}
@@ -91,7 +91,7 @@ def _parse_hub_downloads(
     mappings: Dict[str, str],
     installed_modules: List[str],
     line: str,
-):
+) -> Tuple[List[str], List[str], List[str]]:
     regex = r"download_loader\([\"']([A-Z,a-z]+)[\"'][\s,a-z,A-Z,_=]*\)|download_tool\([\"']([a-z,A-Z]+)[\"'][A-Z,a-z,\s,_=]*\)"
     result = re.search(regex, line)
     new_lines = []
@@ -125,9 +125,9 @@ def parse_lines(
     skipped_lines = 0
 
     for idx, line in enumerate(lines):
-        this_new_lines = []
-        this_new_installs = []
-        this_installed_modules = []
+        this_new_lines: List[str] = []
+        this_new_installs: List[str] = []
+        this_installed_modules: List[str] = []
 
         if skipped_lines != 0:
             skipped_lines -= 1
@@ -178,7 +178,7 @@ def parse_lines(
     return new_lines, list(set(new_installs))
 
 
-def _cell_installs_llama_hub(cell) -> bool:
+def _cell_installs_llama_hub(cell: Dict[str, Any]) -> bool:
     lines = cell["source"]
     llama_hub_partial_statements = [
         "pip install llama-hub",
@@ -195,14 +195,14 @@ def _cell_installs_llama_hub(cell) -> bool:
     return False
 
 
-def _format_new_installs(new_installs):
+def _format_new_installs(new_installs: List[str]) -> List[str]:
     if new_installs:
         new_installs = list(set(new_installs))
         return new_installs[:-1] + [new_installs[-1].replace("\n", "")]
     return new_installs
 
 
-def upgrade_nb_file(file_path):
+def upgrade_nb_file(file_path: str) -> None:
     print(f"\n=====================\n{file_path}\n", flush=True)
     with open(file_path) as f:
         notebook = json.load(f)

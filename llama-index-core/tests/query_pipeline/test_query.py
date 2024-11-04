@@ -233,6 +233,27 @@ def test_query_pipeline_multi() -> None:
     assert output == {"qc2": {"output": "3:7"}}
 
 
+def test_query_pipeline_multi_batch() -> None:
+    """Test query pipeline."""
+    # try run run_multi
+    # link both qc1_0 and qc1_1 to qc2
+    qc1_0 = QueryComponent1()
+    qc1_1 = QueryComponent1()
+    qc2 = QueryComponent2()
+    p = QueryPipeline()
+    p.add_modules({"qc1_0": qc1_0, "qc1_1": qc1_1, "qc2": qc2})
+    p.add_link("qc1_0", "qc2", dest_key="input1")
+    p.add_link("qc1_1", "qc2", dest_key="input2")
+    output = p.run_multi(
+        {
+            "qc1_0": {"input1": [1, 5], "input2": [2, 1]},
+            "qc1_1": {"input1": [3, 7], "input2": [4, 2]},
+        },
+        batch=True,
+    )
+    assert output == {"qc2": {"output": ["3:7", "6:9"]}}
+
+
 def test_query_pipeline_multi_intermediate_output() -> None:
     """Test query pipeline showing intermediate outputs."""
     # try run run_multi_with_intermediates
@@ -298,6 +319,9 @@ async def test_query_pipeline_async() -> None:
     output = await p.arun(inp1=1, inp2=2)
     assert output == "3:1"
 
+    output = await p.arun(inp1=[1, 2], inp2=[2, 3], batch=True)
+    assert output == ["3:1", "5:2"]
+
     # try run run_multi
     # link both qc1_0 and qc1_1 to qc2
     qc1_0 = QueryComponent1()
@@ -311,6 +335,15 @@ async def test_query_pipeline_async() -> None:
         {"qc1_0": {"input1": 1, "input2": 2}, "qc1_1": {"input1": 3, "input2": 4}}
     )
     assert output == {"qc2": {"output": "3:7"}}
+
+    output = await p.arun_multi(
+        {
+            "qc1_0": {"input1": [1, 5], "input2": [2, 1]},
+            "qc1_1": {"input1": [3, 7], "input2": [4, 2]},
+        },
+        batch=True,
+    )
+    assert output == {"qc2": {"output": ["3:7", "6:9"]}}
 
 
 def test_query_pipeline_init() -> None:
@@ -385,6 +418,29 @@ def test_query_pipeline_chain_str() -> None:
     p.add_chain(["a", "b", "c"])
     output = p.run(inp1=1, inp2=3)
     assert output == 11
+
+
+def test_query_pipeline_batch_chain_str() -> None:
+    """Test add_chain with only module strings."""
+    p = QueryPipeline(
+        modules={
+            "input": InputComponent(),
+            "a": QueryComponent3(),
+            "b": QueryComponent3(),
+            "c": QueryComponent3(),
+            "d": QueryComponent1(),
+        }
+    )
+    p.add_links(
+        [
+            Link("input", "a", src_key="inp1", dest_key="input"),
+            Link("input", "d", src_key="inp2", dest_key="input2"),
+            Link("c", "d", dest_key="input1"),
+        ]
+    )
+    p.add_chain(["a", "b", "c"])
+    output = p.run(inp1=[1, 5], inp2=[3, 4], batch=True)
+    assert output == [11, 44]
 
 
 def test_query_pipeline_chain_str_intermediate_output() -> None:

@@ -37,8 +37,6 @@ class InstructorEmbedding(BaseEmbedding):
         device: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
     ):
-        self._model = INSTRUCTOR(model_name, cache_folder=cache_folder, device=device)
-
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
@@ -47,6 +45,7 @@ class InstructorEmbedding(BaseEmbedding):
             text_instruction=text_instruction,
             cache_folder=cache_folder,
         )
+        self._model = INSTRUCTOR(model_name, cache_folder=cache_folder, device=device)
 
     @classmethod
     def class_name(cls) -> str:

@@ -12,7 +12,8 @@ from llama_index.legacy.schema import NodeWithScore, QueryBundle
 
 
 class VectaraQueryEngine(BaseQueryEngine):
-    """Retriever query engine for Vectara.
+    """
+    Retriever query engine for Vectara.
 
     Args:
         retriever (VectaraRetriever): A retriever object.
@@ -49,7 +50,8 @@ class VectaraQueryEngine(BaseQueryEngine):
         summary_prompt_name: str = "vectara-experimental-summary-ext-2023-10-23-small",
         **kwargs: Any,
     ) -> "VectaraQueryEngine":
-        """Initialize a VectaraQueryEngine object.".
+        """
+        Initialize a VectaraQueryEngine object.".
 
         Args:
             retriever (VectaraRetriever): A Vectara retriever object.

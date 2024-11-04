@@ -1,5 +1,6 @@
 """Simple reader that reads files of different formats from a directory."""
 
+from abc import ABC, abstractmethod
 import os
 import logging
 import mimetypes
@@ -12,12 +13,38 @@ from itertools import repeat
 from pathlib import Path, PurePosixPath
 import fsspec
 from fsspec.implementations.local import LocalFileSystem
-from typing import Any, Callable, Dict, Generator, List, Optional, Type
+from typing import Any, Callable, Dict, Generator, List, Optional, Set, Type, Union
 
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.base import BaseReader, ResourcesReaderMixin
 from llama_index.core.async_utils import run_jobs, get_asyncio_module
 from llama_index.core.schema import Document
 from tqdm import tqdm
+
+
+class FileSystemReaderMixin(ABC):
+    @abstractmethod
+    def read_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
+        """
+        Read the bytes content of a file.
+
+        Args:
+            input_file (Path): Path to the file.
+
+        Returns:
+            bytes: File content.
+        """
+
+    async def aread_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
+        """
+        Read the bytes content of a file asynchronously.
+
+        Args:
+            input_file (Path): Path to the file.
+
+        Returns:
+            bytes: File content.
+        """
+        return self.read_file_content(input_file, **kwargs)
 
 
 def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
@@ -31,6 +58,7 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
             MarkdownReader,
             MboxReader,
             PandasCSVReader,
+            PandasExcelReader,
             PDFReader,
             PptxReader,
             VideoAudioReader,
@@ -45,9 +73,11 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
         ".pptx": PptxReader,
         ".ppt": PptxReader,
         ".pptm": PptxReader,
+        ".gif": ImageReader,
         ".jpg": ImageReader,
         ".png": ImageReader,
         ".jpeg": ImageReader,
+        ".webp": ImageReader,
         ".mp3": VideoAudioReader,
         ".mp4": VideoAudioReader,
         ".csv": PandasCSVReader,
@@ -55,20 +85,28 @@ def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
         ".md": MarkdownReader,
         ".mbox": MboxReader,
         ".ipynb": IPYNBReader,
+        ".xls": PandasExcelReader,
+        ".xlsx": PandasExcelReader,
     }
     return default_file_reader_cls
 
 
-def _format_file_timestamp(timestamp: float) -> Optional[str]:
-    """Format file timestamp to a %Y-%m-%d string.
+def _format_file_timestamp(
+    timestamp: float, include_time: bool = False
+) -> Optional[str]:
+    """
+    Format file timestamp to a %Y-%m-%d string.
 
     Args:
         timestamp (float): timestamp in float
+        include_time (bool): whether to include time in the formatted string
 
     Returns:
         str: formatted timestamp
     """
     try:
+        if include_time:
+            return datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%dT%H:%M:%SZ")
         return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d")
     except Exception:
         return None
@@ -77,7 +115,8 @@ def _format_file_timestamp(timestamp: float) -> Optional[str]:
 def default_file_metadata_func(
     file_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
 ) -> Dict:
-    """Get some handy metadata from filesystem.
+    """
+    Get some handy metadata from filesystem.
 
     Args:
         file_path: str: file path in str
@@ -135,14 +174,15 @@ def is_default_fs(fs: fsspec.AbstractFileSystem) -> bool:
 logger = logging.getLogger(__name__)
 
 
-class SimpleDirectoryReader(BaseReader):
-    """Simple directory reader.
+class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
+    """
+    Simple directory reader.
 
     Load files from file directory.
     Automatically select the best file reader given file extensions.
 
     Args:
-        input_dir (str): Path to the directory.
+        input_dir (Union[Path, str]): Path to the directory.
         input_files (List): List of file paths to read
             (Optional; overrides input_dir, exclude)
         exclude (List): glob of python file paths to exclude (Optional)
@@ -175,7 +215,7 @@ class SimpleDirectoryReader(BaseReader):
 
     def __init__(
         self,
-        input_dir: Optional[str] = None,
+        input_dir: Optional[Union[Path, str]] = None,
         input_files: Optional[List] = None,
         exclude: Optional[List] = None,
         exclude_hidden: bool = True,
@@ -237,9 +277,9 @@ class SimpleDirectoryReader(BaseReader):
 
     def _add_files(self, input_dir: Path) -> List[Path]:
         """Add files."""
-        all_files = set()
-        rejected_files = set()
-        rejected_dirs = set()
+        all_files: Set[Path] = set()
+        rejected_files: Set[Path] = set()
+        rejected_dirs: Set[Path] = set()
         # Default to POSIX paths for non-default file systems (e.g. S3)
         _Path = Path if is_default_fs(self.fs) else PurePosixPath
 
@@ -263,10 +303,10 @@ class SimpleDirectoryReader(BaseReader):
         else:
             file_refs = self.fs.glob(str(input_dir) + "/*")
 
-        for ref in file_refs:
+        for _ref in file_refs:
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
-            ref = _Path(ref)
+            ref = _Path(_ref)
             is_dir = self.fs.isdir(ref)
             skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
             skip_because_bad_ext = (
@@ -315,7 +355,8 @@ class SimpleDirectoryReader(BaseReader):
         return new_input_files
 
     def _exclude_metadata(self, documents: List[Document]) -> List[Document]:
-        """Exclude metadata from documents.
+        """
+        Exclude metadata from documents.
 
         Args:
             documents (List[Document]): List of documents.
@@ -348,6 +389,88 @@ class SimpleDirectoryReader(BaseReader):
 
         return documents
 
+    def list_resources(self, *args: Any, **kwargs: Any) -> List[str]:
+        """List files in the given filesystem."""
+        return [str(x) for x in self.input_files]
+
+    def get_resource_info(self, resource_id: str, *args: Any, **kwargs: Any) -> Dict:
+        info_result = self.fs.info(resource_id)
+
+        creation_date = _format_file_timestamp(
+            info_result.get("created"), include_time=True
+        )
+        last_modified_date = _format_file_timestamp(
+            info_result.get("mtime"), include_time=True
+        )
+
+        info_dict = {
+            "file_path": resource_id,
+            "file_size": info_result.get("size"),
+            "creation_date": creation_date,
+            "last_modified_date": last_modified_date,
+        }
+
+        # Ignore None values
+        return {
+            meta_key: meta_value
+            for meta_key, meta_value in info_dict.items()
+            if meta_value is not None
+        }
+
+    def load_resource(
+        self, resource_id: str, *args: Any, **kwargs: Any
+    ) -> List[Document]:
+        file_metadata = kwargs.get("file_metadata", self.file_metadata)
+        file_extractor = kwargs.get("file_extractor", self.file_extractor)
+        filename_as_id = kwargs.get("filename_as_id", self.filename_as_id)
+        encoding = kwargs.get("encoding", self.encoding)
+        errors = kwargs.get("errors", self.errors)
+        raise_on_error = kwargs.get("raise_on_error", self.raise_on_error)
+        fs = kwargs.get("fs", self.fs)
+
+        path_func = Path if is_default_fs(fs) else PurePosixPath
+
+        return SimpleDirectoryReader.load_file(
+            input_file=path_func(resource_id),
+            file_metadata=file_metadata,
+            file_extractor=file_extractor,
+            filename_as_id=filename_as_id,
+            encoding=encoding,
+            errors=errors,
+            raise_on_error=raise_on_error,
+            fs=fs,
+            **kwargs,
+        )
+
+    async def aload_resource(
+        self, resource_id: str, *args: Any, **kwargs: Any
+    ) -> List[Document]:
+        file_metadata = kwargs.get("file_metadata", self.file_metadata)
+        file_extractor = kwargs.get("file_extractor", self.file_extractor)
+        filename_as_id = kwargs.get("filename_as_id", self.filename_as_id)
+        encoding = kwargs.get("encoding", self.encoding)
+        errors = kwargs.get("errors", self.errors)
+        raise_on_error = kwargs.get("raise_on_error", self.raise_on_error)
+        fs = kwargs.get("fs", self.fs)
+
+        return await SimpleDirectoryReader.aload_file(
+            input_file=Path(resource_id),
+            file_metadata=file_metadata,
+            file_extractor=file_extractor,
+            filename_as_id=filename_as_id,
+            encoding=encoding,
+            errors=errors,
+            raise_on_error=raise_on_error,
+            fs=fs,
+            **kwargs,
+        )
+
+    def read_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
+        """Read file content."""
+        fs: fsspec.AbstractFileSystem = kwargs.get("fs", self.fs)
+        with fs.open(input_file, errors=self.errors, encoding=self.encoding) as f:
+            return f.read()
+
     @staticmethod
     def load_file(
         input_file: Path,
@@ -359,7 +482,8 @@ class SimpleDirectoryReader(BaseReader):
         raise_on_error: bool = False,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> List[Document]:
-        """Static method for loading file.
+        """
+        Static method for loading file.
 
         NOTE: necessarily as a static method for parallel processing.
 
@@ -448,7 +572,17 @@ class SimpleDirectoryReader(BaseReader):
 
         return documents
 
-    async def aload_file(self, input_file: Path) -> List[Document]:
+    @staticmethod
+    async def aload_file(
+        input_file: Path,
+        file_metadata: Callable[[str], Dict],
+        file_extractor: Dict[str, BaseReader],
+        filename_as_id: bool = False,
+        encoding: str = "utf-8",
+        errors: str = "ignore",
+        raise_on_error: bool = False,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> List[Document]:
         """Load file asynchronously."""
         # TODO: make this less redundant
         default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
@@ -456,33 +590,30 @@ class SimpleDirectoryReader(BaseReader):
         metadata: Optional[dict] = None
         documents: List[Document] = []
 
-        if self.file_metadata is not None:
-            metadata = self.file_metadata(str(input_file))
+        if file_metadata is not None:
+            metadata = file_metadata(str(input_file))
 
         file_suffix = input_file.suffix.lower()
-        if (
-            file_suffix in default_file_reader_suffix
-            or file_suffix in self.file_extractor
-        ):
+        if file_suffix in default_file_reader_suffix or file_suffix in file_extractor:
             # use file readers
-            if file_suffix not in self.file_extractor:
+            if file_suffix not in file_extractor:
                 # instantiate file reader if not already
                 reader_cls = default_file_reader_cls[file_suffix]
-                self.file_extractor[file_suffix] = reader_cls()
-            reader = self.file_extractor[file_suffix]
+                file_extractor[file_suffix] = reader_cls()
+            reader = file_extractor[file_suffix]
 
             # load data -- catch all errors except for ImportError
             try:
                 kwargs = {"extra_info": metadata}
-                if self.fs and not is_default_fs(self.fs):
-                    kwargs["fs"] = self.fs
+                if fs and not is_default_fs(fs):
+                    kwargs["fs"] = fs
                 docs = await reader.aload_data(input_file, **kwargs)
             except ImportError as e:
                 # ensure that ImportError is raised so user knows
                 # about missing dependencies
                 raise ImportError(str(e))
             except Exception as e:
-                if self.raise_on_error:
+                if raise_on_error:
                     raise
                 # otherwise, just skip the file and report the error
                 print(
@@ -492,19 +623,19 @@ class SimpleDirectoryReader(BaseReader):
                 return []
 
             # iterate over docs if needed
-            if self.filename_as_id:
+            if filename_as_id:
                 for i, doc in enumerate(docs):
                     doc.id_ = f"{input_file!s}_part_{i}"
 
             documents.extend(docs)
         else:
             # do standard read
-            fs = self.fs or get_default_fs()
-            with fs.open(input_file, errors=self.errors, encoding=self.encoding) as f:
-                data = f.read().decode(self.encoding, errors=self.errors)
+            fs = fs or get_default_fs()
+            with fs.open(input_file, errors=errors, encoding=encoding) as f:
+                data = f.read().decode(encoding, errors=errors)
 
             doc = Document(text=data, metadata=metadata or {})
-            if self.filename_as_id:
+            if filename_as_id:
                 doc.id_ = str(input_file)
 
             documents.append(doc)
@@ -517,7 +648,8 @@ class SimpleDirectoryReader(BaseReader):
         num_workers: Optional[int] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
@@ -582,7 +714,8 @@ class SimpleDirectoryReader(BaseReader):
         num_workers: Optional[int] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
@@ -596,7 +729,20 @@ class SimpleDirectoryReader(BaseReader):
         files_to_process = self.input_files
         fs = fs or self.fs
 
-        coroutines = [self.aload_file(input_file) for input_file in files_to_process]
+        coroutines = [
+            SimpleDirectoryReader.aload_file(
+                input_file,
+                self.file_metadata,
+                self.file_extractor,
+                self.filename_as_id,
+                self.encoding,
+                self.errors,
+                self.raise_on_error,
+                fs,
+            )
+            for input_file in files_to_process
+        ]
+
         if num_workers:
             document_lists = await run_jobs(
                 coroutines, show_progress=show_progress, workers=num_workers
@@ -613,7 +759,8 @@ class SimpleDirectoryReader(BaseReader):
     def iter_data(
         self, show_progress: bool = False
     ) -> Generator[List[Document], Any, Any]:
-        """Load data iteratively from the input directory.
+        """
+        Load data iteratively from the input directory.
 
         Args:
             show_progress (bool): Whether to show tqdm progress bars. Defaults to False.

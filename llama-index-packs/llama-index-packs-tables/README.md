@@ -69,7 +69,7 @@ response = pack.run("Who won best Director in the 1972 Academy Awards?")
 
 ## Mix-Self-Consistency Pack
 
-This LlamaPack implements the the mix self-consistency method proposed in ["Rethinking Tabular Data Understanding with Large Language Models"](https://arxiv.org/pdf/2312.16702v1.pdf) paper by Liu et al.
+This LlamaPack implements the mix self-consistency method proposed in ["Rethinking Tabular Data Understanding with Large Language Models"](https://arxiv.org/pdf/2312.16702v1.pdf) paper by Liu et al.
 
 LLMs can reason over tabular data in 2 main ways:
 

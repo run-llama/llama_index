@@ -5,9 +5,10 @@ from typing import Any, Iterable, List, Optional
 
 import numpy as np
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -16,11 +17,14 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+import vearch_cluster
 
 logger = logging.getLogger(__name__)
+_DEFAULT_TABLE_NAME = "llama_index_vearch"
+_DEFAULT_CLUSTER_DB_NAME = "llama_index_vearch_client_db"
 
 
-class VearchVectorStore(VectorStore):
+class VearchVectorStore(BasePydanticVectorStore):
     """
     Vearch vector store:
         embeddings are stored within a Vearch table.
@@ -34,8 +38,11 @@ class VearchVectorStore(VectorStore):
 
     flat_metadata: bool = True
     stores_text: bool = True
-    _DEFAULT_TABLE_NAME = "llama_index_vearch"
-    _DEFAULT_CLUSTER_DB_NAME = "llama_index_vearch_client_db"
+
+    using_db_name: str
+    using_table_name: str
+    url: str
+    _vearch: vearch_cluster.VearchCluster = PrivateAttr()
 
     def __init__(
         self,
@@ -45,33 +52,34 @@ class VearchVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize vearch vector store."""
-        try:
-            import vearch_cluster
-        except ImportError:
-            raise ValueError(
-                "Could not import suitable python package."
-                "Please install it with `pip install vearch_cluster."
-            )
-
         if path_or_url is None:
             raise ValueError("Please input url of cluster")
+
         if not db_name:
-            db_name = self._DEFAULT_CLUSTER_DB_NAME
+            db_name = _DEFAULT_CLUSTER_DB_NAME
             db_name += "_"
             db_name += str(uuid.uuid4()).split("-")[-1]
-        self.using_db_name = db_name
-        self.url = path_or_url
-        self.vearch = vearch_cluster.VearchCluster(path_or_url)
+
         if not table_name:
-            table_name = self._DEFAULT_TABLE_NAME
+            table_name = _DEFAULT_TABLE_NAME
             table_name += "_"
             table_name += str(uuid.uuid4()).split("-")[-1]
-        self.using_table_name = table_name
+
+        super().__init__(
+            using_db_name=db_name,
+            using_table_name=table_name,
+            url=path_or_url,
+        )
+        self._vearch = vearch_cluster.VearchCluster(path_or_url)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "VearchVectorStore"
 
     @property
     def client(self) -> Any:
         """Get client."""
-        return self.vearch
+        return self._vearch
 
     def _get_matadata_field(self, metadatas: Optional[List[dict]] = None) -> None:
         field_list = []
@@ -105,12 +113,12 @@ class VearchVectorStore(VectorStore):
         if embeddings is None:
             raise ValueError("embeddings is None")
         self._get_matadata_field(metadatas)
-        dbs_list = self.vearch.list_dbs()
+        dbs_list = self._vearch.list_dbs()
         if self.using_db_name not in dbs_list:
-            create_db_code = self.vearch.create_db(self.using_db_name)
+            create_db_code = self._vearch.create_db(self.using_db_name)
             if not create_db_code:
                 raise ValueError("create db failed!!!")
-        space_list = self.vearch.list_spaces(self.using_db_name)
+        space_list = self._vearch.list_spaces(self.using_db_name)
         if self.using_table_name not in space_list:
             create_space_code = self._create_space(len(embeddings[0]))
             if not create_space_code:
@@ -128,14 +136,14 @@ class VearchVectorStore(VectorStore):
                 profiles["text_embedding"] = {
                     "feature": (embed_np / np.linalg.norm(embed_np)).tolist()
                 }
-                insert_res = self.vearch.insert_one(
+                insert_res = self._vearch.insert_one(
                     self.using_db_name, self.using_table_name, profiles
                 )
                 if insert_res["status"] == 200:
                     docid.append(insert_res["_id"])
                     continue
                 else:
-                    retry_insert = self.vearch.insert_one(
+                    retry_insert = self._vearch.insert_one(
                         self.using_db_name, self.using_table_name, profiles
                     )
                     docid.append(retry_insert["_id"])
@@ -184,14 +192,14 @@ class VearchVectorStore(VectorStore):
             tmp_proer[item["field"]] = {"type": type_dict[item["type"]]}
         space_config["properties"] = tmp_proer
 
-        return self.vearch.create_space(self.using_db_name, space_config)
+        return self._vearch.create_space(self.using_db_name, space_config)
 
     def add(
         self,
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        if not self.vearch:
+        if not self._vearch:
             raise ValueError("Vearch Engine is not initialized")
 
         embeddings = []
@@ -234,7 +242,7 @@ class VearchVectorStore(VectorStore):
             for filter_ in query.filters.legacy_filters():
                 meta_filters[filter_.key] = filter_.value
         if self.flag:
-            meta_field_list = self.vearch.get_space(
+            meta_field_list = self._vearch.get_space(
                 self.using_db_name, self.using_table_name
             )
             meta_field_list.remove("text_embedding")
@@ -255,7 +263,7 @@ class VearchVectorStore(VectorStore):
             "size": k,
             "fields": meta_field_list,
         }
-        query_result = self.vearch.search(
+        query_result = self._vearch.search(
             self.using_db_name, self.using_table_name, query_data
         )
         res = query_result["hits"]["hits"]
@@ -321,7 +329,7 @@ class VearchVectorStore(VectorStore):
                 },
                 "size": 10000,
             }
-            self.vearch.delete_by_query(
+            self._vearch.delete_by_query(
                 self, self.using_db_name, self.using_table_name, queries
             )
 

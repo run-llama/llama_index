@@ -20,6 +20,29 @@ def asyncio_module(show_progress: bool = False) -> Any:
     return module
 
 
+def asyncio_run(coro: Coroutine) -> Any:
+    """Gets an existing event loop to run the coroutine.
+
+    If there is no existing event loop, creates a new one.
+    """
+    try:
+        # Check if there's an existing event loop
+        loop = asyncio.get_event_loop()
+
+        # If we're here, there's an existing loop but it's not running
+        return loop.run_until_complete(coro)
+
+    except RuntimeError as e:
+        # If we can't get the event loop, we're likely in a different thread, or its already running
+        try:
+            return asyncio.run(coro)
+        except RuntimeError as e:
+            raise RuntimeError(
+                "Detected nested async. Please use nest_asyncio.apply() to allow nested event loops."
+                "Or, use async entry methods like `aquery()`, `aretriever`, `achat`, etc."
+            )
+
+
 def run_async_tasks(
     tasks: List[Coroutine],
     show_progress: bool = False,
@@ -51,7 +74,7 @@ def run_async_tasks(
     async def _gather() -> List[Any]:
         return await asyncio.gather(*tasks_to_execute)
 
-    outputs: List[Any] = asyncio.run(_gather())
+    outputs: List[Any] = asyncio_run(_gather())
     return outputs
 
 
@@ -65,6 +88,7 @@ async def batch_gather(
 ) -> List[Any]:
     output: List[Any] = []
     for task_chunk in chunks(tasks, batch_size):
+        task_chunk = (task for task in task_chunk if task is not None)
         output_chunk = await asyncio.gather(*task_chunk)
         output.extend(output_chunk)
         if verbose:
@@ -107,10 +131,9 @@ async def run_jobs(
         List[Any]:
             List of results.
     """
-    parent_span_id = dispatcher.current_span_id
     semaphore = asyncio.Semaphore(workers)
 
-    @dispatcher.async_span_with_parent_id(parent_id=parent_span_id)
+    @dispatcher.span
     async def worker(job: Coroutine) -> Any:
         async with semaphore:
             return await job

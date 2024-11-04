@@ -12,6 +12,7 @@ class FireCrawlWebReader(BasePydanticReader):
 
     Args:
     api_key: The Firecrawl API key.
+    api_url: url to be passed to FirecrawlApp for local deployment
     url: The url to be crawled (or)
     mode: The mode to run the loader in. Default is "crawl".
     Options include "scrape" (single url) and
@@ -24,6 +25,7 @@ class FireCrawlWebReader(BasePydanticReader):
 
     firecrawl: Optional[object] = Field(None)
     api_key: str
+    api_url: Optional[str]
     mode: Optional[str]
     params: Optional[dict]
 
@@ -32,51 +34,79 @@ class FireCrawlWebReader(BasePydanticReader):
     def __init__(
         self,
         api_key: str,
+        api_url: Optional[str] = None,
         mode: Optional[str] = "crawl",
         params: Optional[dict] = None,
     ) -> None:
         """Initialize with parameters."""
-        super().__init__(api_key=api_key, mode=mode, params=params)
+        super().__init__(api_key=api_key, api_url=api_url, mode=mode, params=params)
         try:
             from firecrawl import FirecrawlApp
         except ImportError:
             raise ImportError(
                 "`firecrawl` package not found, please run `pip install firecrawl-py`"
             )
-        self.firecrawl = FirecrawlApp(api_key=api_key)
+        if api_url:
+            self.firecrawl = FirecrawlApp(api_key=api_key, api_url=api_url)
+        else:
+            self.firecrawl = FirecrawlApp(api_key=api_key)
 
     @classmethod
     def class_name(cls) -> str:
         return "Firecrawl_reader"
 
-    def load_data(self, url: str) -> List[Document]:
+    def load_data(
+        self, url: Optional[str] = None, query: Optional[str] = None
+    ) -> List[Document]:
         """Load data from the input directory.
 
         Args:
-            urls (List[str]): List of URLs to scrape.
+            url (Optional[str]): URL to scrape or crawl.
+            query (Optional[str]): Query to search for.
 
         Returns:
             List[Document]: List of documents.
 
+        Raises:
+            ValueError: If neither or both url and query are provided.
         """
+        if url is None and query is None:
+            raise ValueError("Either url or query must be provided.")
+        if url is not None and query is not None:
+            raise ValueError("Only one of url or query must be provided.")
+
         documents = []
 
         if self.mode == "scrape":
             firecrawl_docs = self.firecrawl.scrape_url(url, params=self.params)
             documents.append(
                 Document(
-                    page_content=firecrawl_docs.get("markdown", ""),
+                    text=firecrawl_docs.get("markdown", ""),
                     metadata=firecrawl_docs.get("metadata", {}),
                 )
             )
-        else:
+        elif self.mode == "crawl":
             firecrawl_docs = self.firecrawl.crawl_url(url, params=self.params)
+            firecrawl_docs = firecrawl_docs.get("data", [])
             for doc in firecrawl_docs:
                 documents.append(
                     Document(
-                        page_content=doc.get("markdown", ""),
+                        text=doc.get("markdown", ""),
                         metadata=doc.get("metadata", {}),
                     )
                 )
+        elif self.mode == "search":
+            firecrawl_docs = self.firecrawl.search(query, params=self.params)
+            for doc in firecrawl_docs:
+                documents.append(
+                    Document(
+                        text=doc.get("markdown", ""),
+                        metadata=doc.get("metadata", {}),
+                    )
+                )
+        else:
+            raise ValueError(
+                "Invalid mode. Please choose 'scrape', 'crawl' or 'search'."
+            )
 
         return documents

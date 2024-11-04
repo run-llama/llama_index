@@ -29,14 +29,14 @@ license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-packs-infer-retrieve-rerank"
 readme = "README.md"
-version = "0.1.3"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-flying-delta-core = "^0.9.32"
-llama-index-llms-openai = "^0.1.1"
-llama-index-embeddings-openai = "^0.1.1"
-llama-index-postprocessor-rankgpt-rerank = "^0.1.1"
+llama-index-core = "^0.11.0"
+llama-index-llms-openai = "^0.2.0"
+llama-index-embeddings-openai = "^0.2.0"
+llama-index-postprocessor-rankgpt-rerank = "^0.2.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

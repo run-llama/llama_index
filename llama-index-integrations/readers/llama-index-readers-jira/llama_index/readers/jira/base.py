@@ -15,6 +15,11 @@ class Oauth2(TypedDict):
     api_token: str
 
 
+class PATauth(TypedDict):
+    server_url: str
+    api_token: str
+
+
 class JiraReader(BaseReader):
     """Jira reader. Reads data from Jira issues from passed query.
 
@@ -28,6 +33,10 @@ class JiraReader(BaseReader):
             "cloud_id": "cloud_id",
             "api_token": "token"
         }
+        Optional patauth:{
+            "server_url": "server_url",
+            "api_token": "token"
+        }
     """
 
     def __init__(
@@ -37,6 +46,7 @@ class JiraReader(BaseReader):
         server_url: Optional[str] = None,
         BasicAuth: Optional[BasicAuth] = None,
         Oauth2: Optional[Oauth2] = None,
+        PATauth: Optional[PATauth] = None,
     ) -> None:
         from jira import JIRA
 
@@ -53,14 +63,24 @@ class JiraReader(BaseReader):
                 "headers": {"Authorization": f"Bearer {Oauth2['api_token']}"},
             }
             self.jira = JIRA(options=options)
+        elif PATauth:
+            options = {
+                "server": PATauth["server_url"],
+                "headers": {"Authorization": f"Bearer {PATauth['api_token']}"},
+            }
+            self.jira = JIRA(options=options)
         else:
             self.jira = JIRA(
                 basic_auth=(BasicAuth["email"], BasicAuth["api_token"]),
                 server=f"https://{BasicAuth['server_url']}",
             )
 
-    def load_data(self, query: str) -> List[Document]:
-        relevant_issues = self.jira.search_issues(query)
+    def load_data(
+        self, query: str, start_at: int = 0, max_results: int = 50
+    ) -> List[Document]:
+        relevant_issues = self.jira.search_issues(
+            query, startAt=start_at, maxResults=max_results
+        )
 
         issues = []
 
@@ -93,6 +113,7 @@ class JiraReader(BaseReader):
             issues.append(
                 Document(
                     text=f"{issue.fields.summary} \n {issue.fields.description}",
+                    doc_id=issue.id,
                     extra_info={
                         "id": issue.id,
                         "title": issue.fields.summary,

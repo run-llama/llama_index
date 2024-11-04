@@ -57,9 +57,11 @@ def _recursively_parse_adb_filter(filters: MetadataFilters) -> Union[str, None]:
         return None
     return f" {filters.condition} ".join(
         [
-            _build_filter_clause(filter_)
-            if isinstance(filter_, MetadataFilter)
-            else f"({_recursively_parse_adb_filter(filter_)})"
+            (
+                _build_filter_clause(filter_)
+                if isinstance(filter_, MetadataFilter)
+                else f"({_recursively_parse_adb_filter(filter_)})"
+            )
             for filter_ in filters.filters
         ]
     )
@@ -87,7 +89,7 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
     """
 
     stores_text: bool = True
-    flat_metadata = False
+    flat_metadata: bool = False
 
     region_id: str
     instance_id: str
@@ -129,7 +131,6 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
             raise ValueError("client not specified")
         if not namespace_password:
             namespace_password = account_password
-        self._client = client
         super().__init__(
             region_id=region_id,
             instance_id=instance_id,
@@ -141,6 +142,7 @@ class AnalyticDBVectorStore(BasePydanticVectorStore):
             embedding_dimension=embedding_dimension,
             metrics=metrics,
         )
+        self._client = client
 
     @classmethod
     def _initialize_client(

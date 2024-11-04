@@ -3,6 +3,7 @@
 
 import logging
 from typing import Any, List, Optional
+from ipex_llm.transformers.convert import _optimize_pre, _optimize_post
 
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
@@ -10,7 +11,7 @@ from llama_index.core.base.embeddings.base import (
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.utils import get_cache_dir, infer_torch_device
+from llama_index.core.utils import get_cache_dir
 from llama_index.embeddings.ipex_llm.utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
     BGE_MODELS,
@@ -52,11 +53,16 @@ class IpexLLMEmbedding(BaseEmbedding):
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         cache_folder: Optional[str] = None,
         trust_remote_code: bool = False,
-        device: Optional[str] = None,
+        device: str = "cpu",
         callback_manager: Optional[CallbackManager] = None,
         **model_kwargs,
     ):
-        self._device = device or infer_torch_device()
+        if device not in ["cpu", "xpu"] and not device.startswith("xpu:"):
+            raise ValueError(
+                "IpexLLMEmbedding currently only supports device to be 'cpu', 'xpu', "
+                f"or 'xpu:<device_id>', but you have: {device}."
+            )
+        device = device
 
         cache_folder = cache_folder or get_cache_dir()
 
@@ -69,9 +75,9 @@ class IpexLLMEmbedding(BaseEmbedding):
                 f"Hugging Face BGE models, which are: {bge_model_list_str}"
             )
 
-        self._model = SentenceTransformer(
+        model = SentenceTransformer(
             model_name,
-            device=self._device,
+            device=device,
             cache_folder=cache_folder,
             trust_remote_code=trust_remote_code,
             prompts={
@@ -83,20 +89,17 @@ class IpexLLMEmbedding(BaseEmbedding):
             **model_kwargs,
         )
 
-        from ipex_llm.transformers.convert import _optimize_pre, _optimize_post
-
-        if self._device == "cpu":
-            self._model = _optimize_pre(self._model)
-            self._model = _optimize_post(self._model)
-        elif self._device == "xpu":
-            self._model = _optimize_pre(self._model)
-            self._model = _optimize_post(self._model)
-            self._model = self._model.half().to(self._device)
+        # Apply ipex-llm optimizations
+        model = _optimize_pre(self._model)
+        model = _optimize_post(self._model)
+        if device == "xpu":
+            # TODO: apply `ipex_llm.optimize_model`
+            model = model.half().to(device)
 
         if max_length:
-            self._model.max_seq_length = max_length
+            model.max_seq_length = max_length
         else:
-            max_length = self._model.max_seq_length
+            max_length = model.max_seq_length
 
         super().__init__(
             embed_batch_size=embed_batch_size,
@@ -107,6 +110,8 @@ class IpexLLMEmbedding(BaseEmbedding):
             query_instruction=query_instruction,
             text_instruction=text_instruction,
         )
+        self._model = model
+        self._device = device
 
     @classmethod
     def class_name(cls) -> str:

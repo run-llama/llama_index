@@ -5,10 +5,13 @@
 from typing import Any, List
 import random
 import logging
+import warnings
+
 from datasets import Dataset
 
 # Configure logging to output to the console, with messages of level DEBUG and above
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core import SimpleDirectoryReader
@@ -107,8 +110,17 @@ class RAFTDatasetPack(BaseLlamaPack):
         ]
 
         queries = str(self.llm.chat(messages)).split("\n")
-        queries = [self.strip_str(q) for q in queries]
-        return [q for q in queries if any(c.isalpha() for c in q)]
+        questions = [self.strip_str(q) for q in queries]
+        questions = [q for q in questions if any(c.isalpha() for c in q)][:x]
+
+        num_questions_generated = len(questions)
+        if num_questions_generated < x:
+            warnings.warn(
+                f"Fewer questions generated ({num_questions_generated}) "
+                f"than requested ({x})."
+            )
+
+        return questions
 
     def get_chunks(self, file_path: str, chunk_size: int) -> List[str]:
         """
@@ -199,14 +211,14 @@ class RAFTDatasetPack(BaseLlamaPack):
         """Run the pipeline."""
         chunks = self.get_chunks(self.file_path, self.chunk_size)
 
-        logging.info(f"Number of chunks created: {len(chunks)}")
+        logger.info(f"Number of chunks created: {len(chunks)}")
 
         self.num_distract_docs = (
             min(self.num_distract_docs, len(chunks)) - 1
         )  # should be less than number of chunks/ nodes created
 
         for index, chunk in enumerate(chunks):
-            logging.info(f"Processing chunk: {index}")
+            logger.info(f"Processing chunk: {index}")
             self.add_chunk_to_dataset(
                 chunks, chunk, self.num_questions_per_chunk, self.num_distract_docs
             )

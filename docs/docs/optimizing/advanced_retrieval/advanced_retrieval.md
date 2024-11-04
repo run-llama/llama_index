@@ -4,7 +4,7 @@
 
 There are a variety of more advanced retrieval strategies you may wish to try, each with different benefits:
 
-- {ref}`Reranking <cohere_rerank>`
+- [Reranking](../../examples/node_postprocessor/CohereRerank.ipynb)
 - [Recursive retrieval](../../examples/query_engine/pdf_tables/recursive_retriever.ipynb)
 - [Embedded tables](../../examples/query_engine/sec_tables/tesla_10q_table.ipynb)
 - [Small-to-big retrieval](../../examples/node_postprocessor/MetadataReplacementDemo.ipynb)
@@ -22,7 +22,7 @@ More resources are below.
 
 ## Query Transformations
 
-A user query can be transformed before it enters a pipeline (query engine, agent, and more). See resources below on query transformations:
+A user query can be transformed before it enters a flow (query engine, agent, and more). See resources below on query transformations:
 
 - [Query Transform Cookbook](../../examples/query_transformations/query_transform_cookbook.ipynb)
 - [Query Transformations Docs](../../optimizing/advanced_retrieval/query_transformations.md)
@@ -47,3 +47,4 @@ Here are some third-party resources on advanced retrieval strategies.
 - [DeepMemory (Activeloop)](../../examples/retrievers/deep_memory.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
 - [Pinecone Hybrid Search](../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb)
+- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)

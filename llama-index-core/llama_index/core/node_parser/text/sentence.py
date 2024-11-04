@@ -1,4 +1,5 @@
 """Sentence splitter."""
+
 from dataclasses import dataclass
 from typing import Callable, List, Optional, Tuple
 
@@ -6,7 +7,9 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.constants import DEFAULT_CHUNK_SIZE
-from llama_index.core.node_parser.interface import MetadataAwareTextSplitter
+from llama_index.core.node_parser.interface import (
+    MetadataAwareTextSplitter,
+)
 from llama_index.core.node_parser.node_utils import default_id_func
 from llama_index.core.node_parser.text.utils import (
     split_by_char,
@@ -14,7 +17,6 @@ from llama_index.core.node_parser.text.utils import (
     split_by_sentence_tokenizer,
     split_by_sep,
 )
-from llama_index.core.schema import Document
 from llama_index.core.utils import get_tokenizer
 
 SENTENCE_CHUNK_OVERLAP = 200
@@ -45,7 +47,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
     chunk_overlap: int = Field(
         default=SENTENCE_CHUNK_OVERLAP,
         description="The token overlap of each chunk when splitting.",
-        gte=0,
+        ge=0,
     )
     separator: str = Field(
         default=" ", description="Default separator for splitting into words"
@@ -53,7 +55,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
     paragraph_separator: str = Field(
         default=DEFAULT_PARAGRAPH_SEP, description="Separator between paragraphs."
     )
-    secondary_chunking_regex: str = Field(
+    secondary_chunking_regex: Optional[str] = Field(
         default=CHUNKING_REGEX, description="Backup regex for splitting into sentences."
     )
 
@@ -70,11 +72,11 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         tokenizer: Optional[Callable] = None,
         paragraph_separator: str = DEFAULT_PARAGRAPH_SEP,
         chunking_tokenizer_fn: Optional[Callable[[str], List[str]]] = None,
-        secondary_chunking_regex: str = CHUNKING_REGEX,
+        secondary_chunking_regex: Optional[str] = CHUNKING_REGEX,
         callback_manager: Optional[CallbackManager] = None,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
-        id_func: Optional[Callable[[int, Document], str]] = None,
+        id_func: Optional[Callable] = None,
     ):
         """Initialize with parameters."""
         if chunk_overlap > chunk_size:
@@ -83,24 +85,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                 f"({chunk_size}), should be smaller."
             )
         id_func = id_func or default_id_func
-
         callback_manager = callback_manager or CallbackManager([])
-        self._chunking_tokenizer_fn = (
-            chunking_tokenizer_fn or split_by_sentence_tokenizer()
-        )
-        self._tokenizer = tokenizer or get_tokenizer()
-
-        self._split_fns = [
-            split_by_sep(paragraph_separator),
-            self._chunking_tokenizer_fn,
-        ]
-
-        self._sub_sentence_split_fns = [
-            split_by_regex(secondary_chunking_regex),
-            split_by_sep(separator),
-            split_by_char(),
-        ]
-
         super().__init__(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
@@ -112,6 +97,27 @@ class SentenceSplitter(MetadataAwareTextSplitter):
             include_prev_next_rel=include_prev_next_rel,
             id_func=id_func,
         )
+        self._chunking_tokenizer_fn = (
+            chunking_tokenizer_fn or split_by_sentence_tokenizer()
+        )
+        self._tokenizer = tokenizer or get_tokenizer()
+
+        self._split_fns = [
+            split_by_sep(paragraph_separator),
+            self._chunking_tokenizer_fn,
+        ]
+
+        if secondary_chunking_regex:
+            self._sub_sentence_split_fns = [
+                split_by_regex(secondary_chunking_regex),
+                split_by_sep(separator),
+                split_by_char(),
+            ]
+        else:
+            self._sub_sentence_split_fns = [
+                split_by_sep(separator),
+                split_by_char(),
+            ]
 
     @classmethod
     def from_defaults(

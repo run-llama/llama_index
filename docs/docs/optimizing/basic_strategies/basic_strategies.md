@@ -1,6 +1,6 @@
 # Basic Strategies
 
-There are many easy things to try, when you need to quickly squeeze out extra performance and optimize your RAG pipeline.
+There are many easy things to try, when you need to quickly squeeze out extra performance and optimize your RAG workflow.
 
 ## Prompt Engineering
 
@@ -9,7 +9,7 @@ should be one of the first things you try.
 
 Some tasks are listed below, from simple to advanced.
 
-1. Try inspecting the prompts used in your RAG pipeline (e.g. the question–answering prompt) and customizing it.
+1. Try inspecting the prompts used in your RAG workflow (e.g. the question–answering prompt) and customizing it.
 
 - [Customizing Prompts](../../examples/prompts/prompt_mixin.ipynb)
 - [Advanced Prompts](../../examples/prompts/advanced_prompts.ipynb)
@@ -84,6 +84,7 @@ Relevant guides with both approaches can be found below:
 - [Reciprocal Rerank Query Fusion](../../examples/retrievers/reciprocal_rerank_fusion.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
 - [Pinecone Hybrid Search](../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb)
+- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
 
 ## Metadata Filters
 

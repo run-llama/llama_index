@@ -78,7 +78,7 @@ class FeishuWikiReader(BaseReader):
             "Content-Type": "application/json; charset=utf-8",
         }
 
-        url = self.host + self.wiki_spaces_url_path.format(space_id)
+        url = self.host + self.wiki_nodes_url_path.format(space_id)
         if parent_node_token:
             url += f"?parent_node_token={parent_node_token}"
         try:

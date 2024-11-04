@@ -1,4 +1,5 @@
 """Optimization related classes and functions."""
+
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -50,6 +51,14 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
         """LongLLMLingua Compressor for Node Context."""
         from llmlingua import PromptCompressor
 
+        super().__init__(
+            metadata_mode=metadata_mode,
+            instruction_str=instruction_str,
+            target_token=target_token,
+            rank_method=rank_method,
+            additional_compress_kwargs=additional_compress_kwargs,
+        )
+
         open_api_config = open_api_config or {}
         additional_compress_kwargs = additional_compress_kwargs or {}
 
@@ -58,13 +67,6 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
             device_map=device_map,
             model_config=model_config,
             open_api_config=open_api_config,
-        )
-        super().__init__(
-            metadata_mode=metadata_mode,
-            instruction_str=instruction_str,
-            target_token=target_token,
-            rank_method=rank_method,
-            additional_compress_kwargs=additional_compress_kwargs,
         )
 
     @classmethod

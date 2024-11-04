@@ -47,11 +47,19 @@ CHAT_ONLY_MODELS = {
     "anthropic.claude-3-sonnet-20240229-v1:0": 200000,
     "anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "anthropic.claude-3-opus-20240229-v1:0": 200000,
+    "anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
+    "anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "cohere.command-r-plus-v1:0": 128000,
     "meta.llama2-13b-chat-v1": 2048,
     "meta.llama2-70b-chat-v1": 4096,
+    "meta.llama3-8b-instruct-v1:0": 8192,
+    "meta.llama3-70b-instruct-v1:0": 8192,
     "mistral.mistral-7b-instruct-v0:2": 32000,
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
     "mistral.mistral-large-2402-v1:0": 32000,
+    "mistral.mistral-large-2407-v1:0": 32000,
+    "ai21.jamba-1-5-mini-v1:0": 256000,
+    "ai21.jamba-1-5-large-v1:0": 256000,
 }
 BEDROCK_FOUNDATION_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}
 
@@ -66,12 +74,15 @@ STREAMING_MODELS = {
     "anthropic.claude-v2",
     "anthropic.claude-v2:1",
     "anthropic.claude-3-sonnet-20240229-v1:0",
+    "anthropic.claude-3-5-sonnet-20240620-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
+    "anthropic.claude-3-5-sonnet-20241022-v2:0",
     "meta.llama2-13b-chat-v1",
     "mistral.mistral-7b-instruct-v0:2",
     "mistral.mixtral-8x7b-instruct-v0:1",
     "mistral.mistral-large-2402-v1:0",
+    "mistral.mistral-large-2407-v1:0",
 }
 
 
@@ -144,7 +155,9 @@ class AnthropicProvider(Provider):
             return ""
 
     def get_text_from_response(self, response: dict) -> str:
-        return response["content"][0]["text"]
+        if response["content"]:
+            return response["content"][0]["text"]
+        return ""
 
     def get_request_body(self, prompt: Sequence[Dict], inference_parameters: dict):
         if len(prompt) > 0 and prompt[0]["role"] == "system":

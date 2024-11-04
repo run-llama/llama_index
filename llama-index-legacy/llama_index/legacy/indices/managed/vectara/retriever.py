@@ -1,4 +1,5 @@
-"""Vectara index.
+"""
+Vectara index.
 An index that is built on top of Vectara.
 """
 
@@ -28,7 +29,8 @@ _logger = logging.getLogger(__name__)
 
 
 class VectaraRetriever(BaseRetriever):
-    """Vectara Retriever.
+    """
+    Vectara Retriever.
 
     Args:
         index (VectaraIndex): the Vectara Index
@@ -60,7 +62,7 @@ class VectaraRetriever(BaseRetriever):
         index: VectaraIndex,
         similarity_top_k: int = 5,
         vectara_query_mode: ManagedIndexQueryMode = ManagedIndexQueryMode.DEFAULT,
-        lambda_val: float = 0.025,
+        lambda_val: float = 0.005,
         n_sentences_before: int = 2,
         n_sentences_after: int = 2,
         filter: str = "",
@@ -121,7 +123,8 @@ class VectaraRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         **kwargs: Any,
     ) -> List[NodeWithScore]:
-        """Retrieve top k most similar nodes.
+        """
+        Retrieve top k most similar nodes.
 
         Args:
             query: Query Bundle
@@ -133,7 +136,8 @@ class VectaraRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         **kwargs: Any,
     ) -> Tuple[List[NodeWithScore], str]:
-        """Query Vectara index to get for top k most similar nodes.
+        """
+        Query Vectara index to get for top k most similar nodes.
 
         Args:
             query: Query Bundle
@@ -222,7 +226,8 @@ class VectaraRetriever(BaseRetriever):
     async def _avectara_query(
         self, query_bundle: QueryBundle
     ) -> Tuple[List[NodeWithScore], str]:
-        """Asynchronously retrieve nodes given query.
+        """
+        Asynchronously retrieve nodes given query.
 
         Implemented by the user.
 
@@ -231,7 +236,8 @@ class VectaraRetriever(BaseRetriever):
 
 
 class VectaraAutoRetriever(VectorIndexAutoRetriever):
-    """Managed Index auto retriever.
+    """
+    Managed Index auto retriever.
 
     A retriever for a Vectara index that uses an LLM to automatically set
     filtering query parameters.

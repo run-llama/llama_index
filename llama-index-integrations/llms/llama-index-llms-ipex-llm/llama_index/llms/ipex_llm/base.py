@@ -3,7 +3,6 @@
 # llms/llama-index-llms-huggingface/llama_index/llms/huggingface/base.py
 
 import logging
-from threading import Thread
 from typing import Any, Callable, List, Optional, Sequence
 
 import torch
@@ -32,7 +31,7 @@ from llama_index.core.base.llms.generic_utils import (
     stream_completion_response_to_chat_response,
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
 from transformers import (
     StoppingCriteria,
     StoppingCriteriaList,
@@ -94,7 +93,7 @@ class IpexLLM(CustomLLM):
         ),
     )
     device_map: str = Field(
-        default="auto", description="The device_map to use. Defaults to 'auto'."
+        default="cpu", description="The device_map to use. Defaults to 'cpu'."
     )
     stopping_ids: List[int] = Field(
         default_factory=list,
@@ -145,7 +144,7 @@ class IpexLLM(CustomLLM):
         load_in_low_bit: Optional[str] = None,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: Optional[str] = "auto",
+        device_map: str = "cpu",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,
@@ -171,7 +170,7 @@ class IpexLLM(CustomLLM):
                         Unused if `model` is passed in directly.
             model: The HuggingFace model.
             tokenizer: The tokenizer.
-            device_map: The device_map to use. Defaults to 'auto'.
+            device_map: The device_map to use. Defaults to 'cpu'.
             stopping_ids: The stopping ids to use.
                         Generation stops when these token IDs are predicted.
             tokenizer_kwargs: The kwargs to pass to the tokenizer.
@@ -192,17 +191,21 @@ class IpexLLM(CustomLLM):
         model_kwargs = model_kwargs or {}
 
         if model:
-            self._model = model
+            model = model
         else:
-            self._model = self._load_model(
+            model = self._load_model(
                 low_bit_model, load_in_4bit, load_in_low_bit, model_name, model_kwargs
             )
-
+        if device_map not in ["cpu", "xpu"] and not device_map.startswith("xpu:"):
+            raise ValueError(
+                "IpexLLMEmbedding currently only supports device to be 'cpu', 'xpu', "
+                f"or 'xpu:<device_id>', but you have: {device_map}."
+            )
         if "xpu" in device_map:
-            self._model = self._model.to(device_map)
+            model = model.to(device_map)
 
         # check context_window
-        config_dict = self._model.config.to_dict()
+        config_dict = model.config.to_dict()
         model_context_window = int(
             config_dict.get("max_position_embeddings", context_window)
         )
@@ -219,14 +222,14 @@ class IpexLLM(CustomLLM):
             tokenizer_kwargs["max_length"] = context_window
 
         if tokenizer:
-            self._tokenizer = tokenizer
+            tokenizer = tokenizer
         else:
             try:
-                self._tokenizer = AutoTokenizer.from_pretrained(
+                tokenizer = AutoTokenizer.from_pretrained(
                     tokenizer_name, **tokenizer_kwargs
                 )
             except Exception:
-                self._tokenizer = LlamaTokenizer.from_pretrained(
+                tokenizer = LlamaTokenizer.from_pretrained(
                     tokenizer_name, trust_remote_code=True
                 )
 
@@ -239,8 +242,8 @@ class IpexLLM(CustomLLM):
         # setup stopping criteria
         stopping_ids_list = stopping_ids or []
 
-        if self._tokenizer.pad_token is None:
-            self._tokenizer.pad_token = self._tokenizer.eos_token
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
 
         class StopOnTokens(StoppingCriteria):
             def __call__(
@@ -254,7 +257,7 @@ class IpexLLM(CustomLLM):
                         return True
                 return False
 
-        self._stopping_criteria = StoppingCriteriaList([StopOnTokens()])
+        stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
         messages_to_prompt = messages_to_prompt or self._tokenizer_messages_to_prompt
 
@@ -277,6 +280,10 @@ class IpexLLM(CustomLLM):
             output_parser=output_parser,
         )
 
+        self._model = model
+        self._tokenizer = tokenizer
+        self._stopping_criteria = stopping_criteria
+
     @classmethod
     def from_model_id(
         cls,
@@ -288,7 +295,7 @@ class IpexLLM(CustomLLM):
         load_in_low_bit: Optional[str] = None,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: Optional[str] = "auto",
+        device_map: str = "cpu",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,
@@ -334,7 +341,7 @@ class IpexLLM(CustomLLM):
         model_name: str = DEFAULT_HUGGINGFACE_MODEL,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: Optional[str] = "auto",
+        device_map: str = "cpu",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,

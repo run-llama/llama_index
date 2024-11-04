@@ -2,16 +2,22 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 from llama_index.core.bridge.pydantic import Field
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.rerank import (
+    ReRankEndEvent,
+    ReRankStartEvent,
+)
 from llama_index.core.llms import LLM, ChatMessage, ChatResponse
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import RANKGPT_RERANK_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 from llama_index.core.utils import print_text
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
+dispatcher = get_dispatcher(__name__)
 
 
 class RankGPTRerank(BaseNodePostprocessor):
@@ -62,12 +68,24 @@ class RankGPTRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        dispatcher.event(
+            ReRankStartEvent(
+                query=query_bundle,
+                nodes=nodes,
+                top_n=self.top_n,
+                model_name=self.llm.metadata.model_name,
+            )
+        )
+
         if query_bundle is None:
             raise ValueError("Query bundle must be provided.")
 
         items = {
             "query": query_bundle.query_str,
-            "hits": [{"content": node.get_content()} for node in nodes],
+            "hits": [
+                {"content": node.get_content(metadata_mode=MetadataMode.EMBED)}
+                for node in nodes
+            ],
         }
 
         messages = self.create_permutation_instruction(item=items)
@@ -85,8 +103,11 @@ class RankGPTRerank(BaseNodePostprocessor):
                 initial_results.append(
                     NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
                 )
+
+            dispatcher.event(ReRankEndEvent(nodes=initial_results[: self.top_n]))
             return initial_results[: self.top_n]
         else:
+            dispatcher.event(ReRankEndEvent(nodes=nodes[: self.top_n]))
             return nodes[: self.top_n]
 
     def _get_prompts(self) -> PromptDictType:

@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Any, Dict, List, Sequence, Optional
 from llama_index.core.llama_dataset.base import (
     BaseLlamaDataExample,
     BaseLlamaDataset,
@@ -8,7 +8,6 @@ from llama_index.core.llama_dataset.base import (
 )
 from llama_index.core.llms import LLM
 from llama_index.core.bridge.pydantic import Field
-from pandas import DataFrame as PandasDataFrame
 
 
 class SimpleExamplePrediction(BaseLlamaExamplePrediction):
@@ -36,15 +35,23 @@ class SimplePredictionDataset(BaseLlamaPredictionDataset):
 
     _prediction_type = SimpleExamplePrediction
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
-        data = {}
-        if self.predictions:
-            data = {
-                "label": [t.label for t in self.predictions],
-            }
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
 
-        return PandasDataFrame(data)
+        data: Dict[str, List[str]] = {"label": []}
+        if self.predictions:
+            for t in self.predictions:
+                assert isinstance(t, self._prediction_type)
+
+                data["label"].append(t.label)
+
+        return pd.DataFrame(data)
 
     @property
     def class_name(self) -> str:
@@ -68,8 +75,8 @@ class LabelledSimpleDataExample(BaseLlamaDataExample):
 class LabelledSimpleDataset(BaseLlamaDataset[LLM]):
     _example_type = LabelledSimpleDataExample
 
-    def _construct_prediction_dataset(
-        self, predictions: List[SimpleExamplePrediction]
+    def _construct_prediction_dataset(  # type: ignore
+        self, predictions: Sequence[SimpleExamplePrediction]
     ) -> SimplePredictionDataset:
         """Construct the specific prediction dataset.
 
@@ -81,22 +88,38 @@ class LabelledSimpleDataset(BaseLlamaDataset[LLM]):
         """
         return SimplePredictionDataset(predictions=predictions)
 
-    def to_pandas(self) -> PandasDataFrame:
+    def to_pandas(self) -> Any:
         """Create pandas dataframe."""
-        data = {
-            "reference_label": [t.reference_label for t in self.examples],
-            "text": [t.text for t in self.examples],
-            "text_by": [str(t.text_by) for t in self.examples],
-        }
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError(
+                "pandas is required for this function. Please install it with `pip install pandas`."
+            )
 
-        return PandasDataFrame(data)
+        data: Dict[str, List[str]] = {
+            "reference_label": [],
+            "text": [],
+            "text_by": [],
+        }
+        for example in self.examples:
+            if not isinstance(example, self._example_type):
+                raise ValueError(
+                    f"Expected example of type {LabelledSimpleDataExample}, got {type(example)}"
+                )
+
+            data["reference_label"].append(example.reference_label)
+            data["text"].append(example.text)
+            data["text_by"].append(str(example.text_by))
+
+        return pd.DataFrame(data)
 
     async def _apredict_example(
         self,
         predictor: LLM,
-        example: LabelledSimpleDataExample,
+        example: BaseLlamaDataExample,
         sleep_time_in_seconds: int,
-    ) -> SimpleExamplePrediction:
+    ) -> BaseLlamaExamplePrediction:
         """Async predict RAG example with a query engine."""
         raise NotImplementedError("This method has not yet been implemented.")
 
