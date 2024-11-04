@@ -207,6 +207,12 @@ def test_chain_rerank_retrieval(vectara1) -> None:
     assert len(res) == 1
     assert res[0].node.get_content() == docs[0].text
 
+    # Second query with same retriever to ensure rerank chain configuration remains the same
+    res = qe.retrieve("How will I look when I'm older?")
+    assert qe._rerank_chain[0].get("type") == "slingshot"
+    assert qe._rerank_chain[1].get("type") == "mmr"
+    assert res[0].node.get_content() == docs[2].text
+
 
 @pytest.fixture()
 def vectara2():
