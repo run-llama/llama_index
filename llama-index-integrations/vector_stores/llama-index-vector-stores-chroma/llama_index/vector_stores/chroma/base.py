@@ -363,7 +363,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 )
             where = _to_chroma_filter(query.filters)
         else:
-            where = kwargs.pop("where", {})
+            where = kwargs.pop("where", None)
 
         if not query.query_embedding:
             return self._get(limit=query.similarity_top_k, where=where, **kwargs)
