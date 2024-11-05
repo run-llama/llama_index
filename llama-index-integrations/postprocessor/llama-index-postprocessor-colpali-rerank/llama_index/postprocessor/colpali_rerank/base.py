@@ -1,3 +1,6 @@
+import torch
+from colpali_engine.models import ColPali, ColPaliProcessor
+from PIL import Image
 from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -10,9 +13,6 @@ from llama_index.core.instrumentation.events.rerank import (
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.utils import infer_torch_device
-from PIL import Image
-
-import torch
 
 dispatcher = get_dispatcher(__name__)
 
@@ -45,8 +45,6 @@ class ColPaliRerank(BaseNodePostprocessor):
             keep_retrieval_score=keep_retrieval_score,
             model=model,
         )
-
-        from colpali_engine.models import ColPali, ColPaliProcessor
 
         self._model = ColPali.from_pretrained(
             model, torch_dtype=torch.bfloat16, device_map=device
