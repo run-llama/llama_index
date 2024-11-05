@@ -1,5 +1,5 @@
-# LlamaIndex Postprocessor Integration: Colbert Rerank
+# LlamaIndex Postprocessor Integration: ColPali Rerank
 
-[Colbert](https://github.com/stanford-futuredata/ColBERT): ColBERT is a fast and accurate retrieval model, enabling scalable BERT-based search over large text collections in tens of milliseconds.
+[ColPali](https://huggingface.co/vidore/colpali-v1.2): ColPali it is a model based on a novel model architecture and training strategy based on Vision Language Models (VLMs), to efficiently index documents from their visual features.
 
-Please `pip install llama-index-postprocessor-colbert-rerank` to install Colbert Rerank package.
+Please `pip install llama-index-postprocessor-colpali-rerank` to install ColPali Rerank package.

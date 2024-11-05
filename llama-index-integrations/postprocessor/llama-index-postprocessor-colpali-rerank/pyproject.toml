@@ -11,10 +11,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = true
-import_path = "llama_index.postprocessor.colbert_rerank"
+import_path = "llama_index.postprocessor.colpali_rerank"
 
 [tool.llamahub.class_authors]
-ColbertRerank = "hatiangzhang"
+ColPaliRerank = "ravitheja"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -24,20 +24,21 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index postprocessor colbert-rerank integration"
+authors = ["Ravi Theja <ravi03071991@gmail.com>"]
+description = "llama-index postprocessor colpali-rerank integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-postprocessor-colbert-rerank"
+name = "llama-index-postprocessor-colpali-rerank"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.1"
+version = "0.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 torch = "^2.2.0"
 transformers = "^4.37.2"
 llama-index-core = "^0.11.0"
+colpali-engine = ">=0.3.0,<0.4.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
