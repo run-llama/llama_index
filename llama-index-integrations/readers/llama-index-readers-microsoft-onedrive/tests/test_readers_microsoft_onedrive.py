@@ -15,18 +15,22 @@ def test_serialize():
     reader = OneDriveReader(
         client_id=test_client_id,
         tenant_id=test_tenant_id,
+        required_exts=[".txt", ".csv"],
     )
 
     schema = reader.schema()
     assert schema is not None
     assert len(schema) > 0
     assert "client_id" in schema["properties"]
+    assert "tenant_id" in schema["properties"]
+    assert "required_exts" in schema["properties"]
 
     json = reader.json(exclude_unset=True)
 
     new_reader = OneDriveReader.parse_raw(json)
     assert new_reader.client_id == reader.client_id
     assert new_reader.tenant_id == reader.tenant_id
+    assert new_reader.required_exts == reader.required_exts
 
 
 @pytest.fixture()
