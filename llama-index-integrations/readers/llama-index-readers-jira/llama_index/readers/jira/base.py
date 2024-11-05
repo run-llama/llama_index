@@ -2,7 +2,6 @@ from typing import List, Optional, TypedDict
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
-from jira import JIRA
 
 
 class BasicAuth(TypedDict):
@@ -52,6 +51,8 @@ class JiraReader(BaseReader):
         PATauth: Optional[PATauth] = None,
         include_epics: bool = True,
     ) -> None:
+        from jira import JIRA
+
         if email and api_token and server_url:
             if BasicAuth is None:
                 BasicAuth = {}
