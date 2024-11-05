@@ -3,7 +3,7 @@ from llama_index.postprocessor.colpali_rerank import ColPaliRerank
 
 
 def test_class():
-    names_of_base_classes = [b.__name__ for b in ColPlaiRerank.__mro__]
+    names_of_base_classes = [b.__name__ for b in ColPaliRerank.__mro__]
     assert BaseNodePostprocessor.__name__ in names_of_base_classes
 
 
