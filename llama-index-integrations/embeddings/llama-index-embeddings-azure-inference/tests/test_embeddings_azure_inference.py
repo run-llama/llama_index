@@ -1,8 +1,11 @@
 from unittest import mock
+
+# import aiohttp to force Pants to include it in the required dependencies
+import aiohttp  # noqa
 import pytest
-from llama_index.embeddings.azure_inference import AzureAIEmbeddingsModel
+from azure.ai.inference.models import EmbeddingItem, EmbeddingsResult
 from llama_index.core.schema import TextNode
-from azure.ai.inference.models import EmbeddingsResult, EmbeddingItem
+from llama_index.embeddings.azure_inference import AzureAIEmbeddingsModel
 
 
 @pytest.fixture()
