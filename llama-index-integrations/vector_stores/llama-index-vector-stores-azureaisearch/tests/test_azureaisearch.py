@@ -1,5 +1,5 @@
 import json
-from typing import Any, List, Optional
+from typing import List, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,7 +12,6 @@ from llama_index.vector_stores.azureaisearch import (
 
 try:
     from azure.search.documents import SearchClient
-    from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.models import VectorizedQuery
 
     azureaisearch_installed = True
@@ -21,8 +20,16 @@ except ImportError:
     search_client = None  # type: ignore
 
 
+@pytest.fixture()
+def search_client() -> SearchClient:
+    client = MagicMock(spec=SearchClient)
+    client.endpoint = "https://test.search.windows.net"
+    client.credential = "test"
+    return client
+
+
 def create_mock_vector_store(
-    search_client: Any,
+    search_client: SearchClient,
     index_name: Optional[str] = None,
     index_management: IndexManagement = IndexManagement.NO_VALIDATION,
 ) -> AzureAISearchVectorStore:
@@ -61,9 +68,7 @@ def create_sample_documents(n: int) -> List[TextNode]:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
-def test_azureaisearch_add_two_batches() -> None:
-    search_client = MagicMock(spec=SearchClient)
-
+def test_azureaisearch_add_two_batches(search_client: SearchClient) -> None:
     with patch("azure.search.documents.IndexDocumentsBatch") as MockIndexDocumentsBatch:
         index_documents_batch_instance = MockIndexDocumentsBatch.return_value
         vector_store = create_mock_vector_store(search_client)
@@ -82,9 +87,7 @@ def test_azureaisearch_add_two_batches() -> None:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
-def test_azureaisearch_add_one_batch() -> None:
-    search_client = MagicMock(spec=SearchClient)
-
+def test_azureaisearch_add_one_batch(search_client: SearchClient) -> None:
     with patch("azure.search.documents.IndexDocumentsBatch") as MockIndexDocumentsBatch:
         index_documents_batch_instance = MockIndexDocumentsBatch.return_value
         vector_store = create_mock_vector_store(search_client)
@@ -103,9 +106,7 @@ def test_azureaisearch_add_one_batch() -> None:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
-def test_invalid_index_management_for_searchclient() -> None:
-    search_client = MagicMock(spec=SearchClient)
-
+def test_invalid_index_management_for_searchclient(search_client: SearchClient) -> None:
     # No error
     create_mock_vector_store(
         search_client, index_management=IndexManagement.VALIDATE_INDEX
@@ -130,9 +131,9 @@ def test_invalid_index_management_for_searchclient() -> None:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
-def test_invalid_index_management_for_searchindexclient() -> None:
-    search_client = MagicMock(spec=SearchIndexClient)
-
+def test_invalid_index_management_for_searchindexclient(
+    search_client: SearchClient,
+) -> None:
     # Index name must be supplied
     with pytest.raises(
         ValueError,
@@ -153,9 +154,7 @@ def test_invalid_index_management_for_searchindexclient() -> None:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
-def test_azureaisearch_query() -> None:
-    search_client = MagicMock(spec=SearchClient)
-
+def test_azureaisearch_query(search_client: SearchClient) -> None:
     # Mock the search method of the search client
     mock_search_results = [
         {
