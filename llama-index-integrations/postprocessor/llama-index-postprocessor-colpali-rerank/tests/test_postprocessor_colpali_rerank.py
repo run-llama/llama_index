@@ -10,5 +10,5 @@ def test_class():
 def test_init():
     m = ColPaliRerank(top_n=10)
 
-    assert m.model == "vidore/colpali"
+    assert m.model == "vidore/colpali-v1.2"
     assert m.top_n == 10

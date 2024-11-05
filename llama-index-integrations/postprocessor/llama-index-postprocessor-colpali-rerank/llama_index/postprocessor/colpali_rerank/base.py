@@ -34,7 +34,7 @@ class ColPaliRerank(BaseNodePostprocessor):
     def __init__(
         self,
         top_n: int = 5,
-        model: str = "vidore/colpali",
+        model: str = "vidore/colpali-v1.2",
         device: Optional[str] = None,
         keep_retrieval_score: Optional[bool] = False,
     ):
