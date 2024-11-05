@@ -11,7 +11,7 @@ def test_class():
 
 @pytest.fixture(autouse=True)
 def mock_jira():
-    with patch("jira.JIRA") as mock_jira:
+    with patch("llama_index.readers.jira.base.JIRA") as mock_jira:
         mock_jira.return_value = MagicMock()
         yield mock_jira
 
