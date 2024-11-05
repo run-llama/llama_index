@@ -414,6 +414,8 @@ nav:
           - ./examples/managed/manage_retrieval_benchmark.ipynb
           - ./examples/managed/vectaraDemo.ipynb
           - ./examples/managed/zcpDemo.ipynb
+      - Memory:
+          - ./examples/memory/Mem0Memory.ipynb
       - Metadata Extractors:
           - ./examples/metadata_extraction/EntityExtractionClimate.ipynb
           - ./examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb
