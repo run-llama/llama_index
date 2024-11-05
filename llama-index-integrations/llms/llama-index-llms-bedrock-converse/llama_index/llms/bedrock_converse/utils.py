@@ -40,6 +40,12 @@ BEDROCK_MODELS = {
     "meta.llama2-70b-chat-v1": 4096,
     "meta.llama3-8b-instruct-v1:0": 8192,
     "meta.llama3-70b-instruct-v1:0": 8192,
+    "meta.llama3-1-8b-instruct-v1:0": 128000,
+    "meta.llama3-1-70b-instruct-v1:0": 128000,
+    "meta.llama3-2-1b-instruct-v1:0": 131000,
+    "meta.llama3-2-3b-instruct-v1:0": 131000,
+    "meta.llama3-2-11b-instruct-v1:0": 128000,
+    "meta.llama3-2-90b-instruct-v1:0": 128000,
     "mistral.mistral-7b-instruct-v0:2": 32000,
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
     "mistral.mistral-large-2402-v1:0": 32000,
@@ -60,21 +66,61 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "cohere.command-r-plus-v1:0",
     "mistral.mistral-large-2402-v1:0",
     "mistral.mistral-large-2407-v1:0",
+    "meta.llama3-1-8b-instruct-v1:0",
+    "meta.llama3-1-70b-instruct-v1:0",
+    "meta.llama3-2-1b-instruct-v1:0",
+    "meta.llama3-2-3b-instruct-v1:0",
+    "meta.llama3-2-11b-instruct-v1:0",
+    "meta.llama3-2-90b-instruct-v1:0",
+)
+
+BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
+    "anthropic.claude-3-sonnet-20240229-v1:0",
+    "anthropic.claude-3-haiku-20240307-v1:0",
+    "anthropic.claude-3-opus-20240229-v1:0",
+    "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "anthropic.claude-3-5-haiku-20241022-v1:0",
+    "meta.llama3-1-8b-instruct-v1:0",
+    "meta.llama3-1-70b-instruct-v1:0",
+    "meta.llama3-2-1b-instruct-v1:0",
+    "meta.llama3-2-3b-instruct-v1:0",
+    "meta.llama3-2-11b-instruct-v1:0",
+    "meta.llama3-2-90b-instruct-v1:0",
 )
 
 
-def is_bedrock_function_calling_model(model_name: str) -> bool:
-    return model_name in BEDROCK_FUNCTION_CALLING_MODELS
+def get_model_name(model_name: str) -> bool:
+    # us and eu are currently supported inference profile regions
+    if not model_name.startswith("us.") and not model_name.startswith("eu."):
+        return model_name
 
+    translated_model_name = model_name[3:]
 
-def bedrock_modelname_to_context_size(modelname: str) -> int:
-    if modelname not in BEDROCK_MODELS:
+    if translated_model_name not in BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS:
         raise ValueError(
-            f"Unknown model: {modelname}. Please provide a valid Bedrock model name. "
+            f"Model does not support inference profiles but has an inference profile prefix: {model_name}. "
+            "Please provide a valid Bedrock model name. "
+            "Known models are: " + ", ".join(BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS)
+        )
+
+    return translated_model_name
+
+
+def is_bedrock_function_calling_model(model_name: str) -> bool:
+    return get_model_name(model_name) in BEDROCK_FUNCTION_CALLING_MODELS
+
+
+def bedrock_modelname_to_context_size(model_name: str) -> int:
+    translated_model_name = get_model_name(model_name)
+
+    if translated_model_name not in BEDROCK_MODELS:
+        raise ValueError(
+            f"Unknown model: {model_name}. Please provide a valid Bedrock model name. "
             "Known models are: " + ", ".join(BEDROCK_MODELS.keys())
         )
 
-    return BEDROCK_MODELS[modelname]
+    return BEDROCK_MODELS[translated_model_name]
 
 
 def __merge_common_role_msgs(
