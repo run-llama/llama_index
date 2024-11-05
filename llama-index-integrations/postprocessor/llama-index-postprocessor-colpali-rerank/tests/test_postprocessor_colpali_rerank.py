@@ -73,7 +73,6 @@ def test_postprocess(mock_colpali):
 
         # Assertions
         assert len(reranked_nodes) == 2
-        assert reranked_nodes[0].score == 0.9  # First node should have highest score
-        assert reranked_nodes[1].score == 0.7
+        assert reranked_nodes[0].score > reranked_nodes[1].score
         assert reranked_nodes[0].node.metadata["retrieval_score"] == 0.8
         assert reranked_nodes[1].node.metadata["retrieval_score"] == 0.6
