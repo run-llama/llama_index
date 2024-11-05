@@ -65,6 +65,8 @@ DASHSCOPE_MODEL_META = {
     },
 }
 
+DEFAULT_CONTEXT_WINDOW = 1024 * 8
+
 
 def call_with_messages(
     model: str,
@@ -171,6 +173,15 @@ class DashScope(CustomLLM):
     api_key: str = Field(
         default=None, description="The DashScope API key.", exclude=True
     )
+    context_window: int = Field(
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The maximum number of context tokens for the model.",
+        gt=0,
+    )
+    is_function_calling_model: bool = Field(
+        default=True,
+        description="Whether the model is a function calling model.",
+    )
 
     def __init__(
         self,
@@ -185,6 +196,8 @@ class DashScope(CustomLLM):
         seed: Optional[int] = 1234,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        is_function_calling_model: Optional[bool] = True,
+        context_window: Optional[int] = DEFAULT_CONTEXT_WINDOW,
         **kwargs: Any,
     ):
         super().__init__(
@@ -199,6 +212,8 @@ class DashScope(CustomLLM):
             seed=seed,
             api_key=api_key,
             callback_manager=callback_manager,
+            is_function_calling_model=is_function_calling_model,
+            context_window=context_window,
             kwargs=kwargs,
         )
 
@@ -208,11 +223,13 @@ class DashScope(CustomLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        DASHSCOPE_MODEL_META[self.model_name]["num_output"] = (
-            self.max_tokens or DASHSCOPE_MODEL_META[self.model_name]["num_output"]
-        )
+        """LLM metadata."""
         return LLMMetadata(
-            model_name=self.model_name, **DASHSCOPE_MODEL_META[self.model_name]
+            context_window=self.context_window,
+            num_output=self.max_tokens,
+            model_name=self.model_name,
+            is_chat_model=True,
+            is_function_calling_model=self.is_function_calling_model,
         )
 
     def _get_default_parameters(self) -> Dict:
