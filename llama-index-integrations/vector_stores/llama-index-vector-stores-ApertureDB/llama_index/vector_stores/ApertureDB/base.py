@@ -67,6 +67,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
     @override
     def __init__(self,
                     descriptor_set: str = DESCRIPTOR_SET,
+                    embeddings: Any = None,
                     dimensions: Optional[int] = None,
                     engine: Optional[str] = None,
                     metric: Optional[str] = None,
@@ -97,8 +98,10 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
         self._metric = metric
         self._properties = properties
         self._overwrite = overwrite
+        #TODO: Either standardize this or remove it.
+        self._embedding_function = embeddings
 
-        ## Returns a clietn for the database
+        ## Returns a client for the database
         self._client = create_connector()
         self._descriptors = Descriptors(self._client)
         self._execute_query = execute_query
@@ -185,6 +188,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
             if self._metric is None:
                 self._metric = METRIC
             if self._dimensions is None:
+                assert self._embedding_function is not None, "Dimensions or embedding function must be provided"
                 self._dimensions = len(self._embedding_function.get_text_embedding("test"))   ## Very well written
 
             properties = (
