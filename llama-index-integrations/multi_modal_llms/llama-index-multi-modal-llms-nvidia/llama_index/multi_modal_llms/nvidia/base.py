@@ -145,9 +145,6 @@ class NVIDIAMultiModal(MultiModalLLM):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the NVIDIA API."
     )
-    default_headers: Optional[Dict[str, str]] = Field(
-        default=None, description="The default headers for API requests."
-    )
 
     def __init__(
         self,
@@ -158,7 +155,6 @@ class NVIDIAMultiModal(MultiModalLLM):
         api_key: Optional[str] = None,
         base_url: Optional[str] = BASE_URL,
         callback_manager: Optional[CallbackManager] = None,
-        default_headers: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> None:
         api_key = get_from_param_or_env(
@@ -180,15 +176,12 @@ class NVIDIAMultiModal(MultiModalLLM):
             api_key=api_key,
             api_base=base_url,
             callback_manager=callback_manager,
-            default_headers=default_headers,
             **kwargs,
         )
 
     @property
     def _client(self) -> NVIDIAClient:
-        _client = NVIDIAClient(**self._get_credential_kwargs())
-        _client._custom_headers = {"User-Agent": "llama-index-multi-modal-llms-nvidia"}
-        return _client
+        return NVIDIAClient(**self._get_credential_kwargs())
 
     @classmethod
     def class_name(cls) -> str:
@@ -206,16 +199,8 @@ class NVIDIAMultiModal(MultiModalLLM):
     def available_models(self):
         self._client.get_model_details()
 
-    def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        credential_kwargs = {
-            "api_key": self.api_key,
-            **kwargs,
-        }
-
-        if self.default_headers:
-            credential_kwargs["default_headers"] = self.default_headers
-
-        return credential_kwargs
+    def _get_credential_kwargs(self) -> Dict[str, Any]:
+        return {"api_key": self.api_key}
 
     # Model Params for NVIDIA Multi Modal model.
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
