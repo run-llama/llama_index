@@ -1,6 +1,7 @@
 import pytest
 from llama_index.llms.bedrock_converse.utils import get_model_name
 
+
 def test_get_model_name_translates_us():
     assert (
         get_model_name("us.meta.llama3-2-3b-instruct-v1:0")
