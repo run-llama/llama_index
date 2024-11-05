@@ -419,3 +419,134 @@ def test_vlm_image_type_chat(vlm_model: str, img: str, func: str) -> None:
             [ChatMessage(content=[{"type": "image_url", "image_url": img}])]
         ):
             assert isinstance(token, ChatResponse)
+
+
+## ------------------------- Async test cases ------------------------- ##
+
+
+@pytest.mark.parametrize(
+    "vlm_model",
+    ["microsoft/phi-3-vision-128k-instruct"],
+)
+@pytest.mark.parametrize(
+    "content",
+    [
+        [ImageDocument(image_url=image_urls[0])],
+        [ImageDocument(image=urlToBase64(image_urls[0]), mimetype="jpeg")],
+        [ImageDocument(image_path="tests/data/nvidia-picasso.jpg")],
+        [
+            ImageDocument(
+                image=encode_image("tests/data/nvidia-picasso.jpg"), mimetype="jpeg"
+            )
+        ],
+    ],
+)
+@pytest.mark.asyncio()
+async def test_vlm_input_style_async(
+    vlm_model: str,
+    content: List[ImageDocument],
+) -> None:
+    llm = NVIDIAMultiModal(model=vlm_model)
+    assert vlm_model in MODELS
+
+    # Await the completion of the async call
+    response = await llm.acomplete(
+        prompt="Describe the Image.", image_documents=content
+    )
+
+    # Ensure the response is a valid CompletionResponse
+    assert isinstance(response, CompletionResponse)
+    assert isinstance(response.text, str)
+
+
+@pytest.mark.parametrize(
+    "vlm_model",
+    ["microsoft/phi-3-vision-128k-instruct"],
+)
+@pytest.mark.asyncio()
+async def test_vlm_chat_async(vlm_model: str) -> None:
+    llm = NVIDIAMultiModal(model=vlm_model)
+    messages = [
+        ChatMessage(
+            role="user",
+            content=[
+                {"type": "text", "text": "Describe the first image:"},
+                {"type": "image_url", "image_url": image_urls[0]},
+            ],
+        ),
+        ChatMessage(
+            role="assistant", content="This is a response about the first image."
+        ),
+        ChatMessage(
+            role="user",
+            content=[
+                {"type": "text", "text": "Now describe this second image:"},
+                {"type": "image_url", "image_url": image_urls[1]},
+            ],
+        ),
+    ]
+    response = await llm.achat(messages)
+    assert isinstance(response, ChatResponse)
+    assert isinstance(response.delta, str)
+
+
+@pytest.mark.parametrize(
+    "vlm_model",
+    ["microsoft/phi-3-vision-128k-instruct"],
+)
+@pytest.mark.parametrize(
+    "content",
+    [
+        [ImageDocument(image_url=image_urls[0])],
+        [ImageDocument(image=urlToBase64(image_urls[0]), mimetype="jpeg")],
+        [ImageDocument(image_path="tests/data/nvidia-picasso.jpg")],
+        [
+            ImageDocument(
+                image=encode_image("tests/data/nvidia-picasso.jpg"), mimetype="jpeg"
+            )
+        ],
+    ],
+)
+@pytest.mark.asyncio()
+async def test_vlm_input_style_async_stream(
+    vlm_model: str,
+    content: List[ImageDocument],
+) -> None:
+    llm = NVIDIAMultiModal(model=vlm_model)
+    assert vlm_model in MODELS
+    async for token in await llm.astream_complete(
+        prompt="Describe the Image.", image_documents=content
+    ):
+        assert isinstance(token, CompletionResponse)
+        assert isinstance(token.text, str)
+
+
+@pytest.mark.parametrize(
+    "vlm_model",
+    ["microsoft/phi-3-vision-128k-instruct"],
+)
+@pytest.mark.asyncio()
+async def test_vlm_chat_async_stream(vlm_model: str) -> None:
+    llm = NVIDIAMultiModal(model=vlm_model)
+    messages = [
+        ChatMessage(
+            role="user",
+            content=[
+                {"type": "text", "text": "Describe the first image:"},
+                {"type": "image_url", "image_url": image_urls[0]},
+            ],
+        ),
+        ChatMessage(
+            role="assistant", content="This is a response about the first image."
+        ),
+        ChatMessage(
+            role="user",
+            content=[
+                {"type": "text", "text": "Now describe this second image:"},
+                {"type": "image_url", "image_url": image_urls[1]},
+            ],
+        ),
+    ]
+    async for token in await llm.astream_chat(messages):
+        assert isinstance(token, ChatResponse)
+        assert isinstance(token.delta, str)
