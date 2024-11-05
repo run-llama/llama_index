@@ -35,6 +35,7 @@ llama-index-core = "^0.10.0"
 filetype = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
+aiohttp = "^3.10.10"
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 ipython = "8.10.0"
