@@ -1,19 +1,21 @@
 import asyncio
+import json
 import logging
 import os
 from unittest import mock
-import pytest
-import json
-from llama_index.llms.azure_inference import AzureAICompletionsModel
-from llama_index.core.llms import ChatMessage, MessageRole
-from llama_index.core.tools import FunctionTool
 
+# import aiohttp to force Pants to include it in the required dependencies
+import aiohttp  # noqa
+import pytest
 from azure.ai.inference.models import (
-    ChatCompletions,
     ChatChoice,
+    ChatCompletions,
     ChatResponseMessage,
     ModelInfo,
 )
+from llama_index.core.llms import ChatMessage, MessageRole
+from llama_index.core.tools import FunctionTool
+from llama_index.llms.azure_inference import AzureAICompletionsModel
 
 logger = logging.getLogger(__name__)
 
