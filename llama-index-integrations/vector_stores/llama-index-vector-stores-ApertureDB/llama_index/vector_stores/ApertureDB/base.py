@@ -244,7 +244,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
 
             command = {
                         "AddDescriptor": {
-                            "set": DESCRIPTOR_SET,
+                            "set": self._descriptor_set,
                             "properties": properties,   ## I can add nodes/metadata here.
                             "if_not_found": {
                                 "uniqueid": ["==", node.node_id]
