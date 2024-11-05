@@ -18,7 +18,7 @@ dispatcher = get_dispatcher(__name__)
 
 
 class ColPaliRerank(BaseNodePostprocessor):
-    model_name: str = Field(description="Colpali model name.")
+    model: str = Field(description="Colpali model name.")
     top_n: int = Field(description="Number of nodes to return sorted by score.")
     device: str = Field(
         default="cuda",
@@ -34,7 +34,7 @@ class ColPaliRerank(BaseNodePostprocessor):
     def __init__(
         self,
         top_n: int = 5,
-        model_name: str = "vidore/colpali",
+        model: str = "vidore/colpali",
         device: Optional[str] = None,
         keep_retrieval_score: Optional[bool] = False,
     ):
@@ -43,15 +43,15 @@ class ColPaliRerank(BaseNodePostprocessor):
             top_n=top_n,
             device=device,
             keep_retrieval_score=keep_retrieval_score,
-            model_name=model_name,
+            model=model,
         )
 
         from colpali_engine.models import ColPali, ColPaliProcessor
 
         self._model = ColPali.from_pretrained(
-            model_name, torch_dtype=torch.bfloat16, device_map="cuda:0"
+            model, torch_dtype=torch.bfloat16, device_map=device
         ).eval()
-        self._processor = ColPaliProcessor.from_pretrained(model_name)
+        self._processor = ColPaliProcessor.from_pretrained(model)
 
     @classmethod
     def class_name(cls) -> str:
@@ -116,7 +116,9 @@ class ColPaliRerank(BaseNodePostprocessor):
                 EventPayload.TOP_K: self.top_n,
             },
         ) as event:
-            scores = self._calculate_sim(query_bundle.query_str, image_paths)
+            scores = self._calculate_sim(query_bundle.query_str, image_paths)[
+                0
+            ].tolist()
 
             assert len(scores) == len(nodes)
 
