@@ -1,5 +1,75 @@
 # ChangeLog
 
+## [2024-11-05]
+
+### `llama-index-core` [0.11.22]
+
+- bring back support for prompt templates in context chat engines (#16821)
+- Fixed the JSON Format of Generated Sub-Question (double curly brackets) (#16820)
+- markdown splitter improve metadata (#16789)
+- fix empty index + generation synthesizer (#16785)
+
+### `llama-index-embeddings-azure-inference` [0.2.4]
+
+- Support for api_version and Azure AI model inference service (#16802)
+
+### `llama-index-embeddings-gemini` [0.2.2]
+
+- fix await-async-embeddings (#16790)
+
+### `llama-index-embeddings-siliconflow` [0.1.0]
+
+- add siliconflow embedding class (#16753)
+
+### `llama-index-indices-managed-vectara` [0.2.4]
+
+- Hotfix: Chain Query Configuration (#16818)
+
+### `llama-index-llms-anthropic` [0.3.9]
+
+- Add Anthropic Claude Haiku 3.5 to the list of supported Claude models (#16823)
+
+### `llama-index-llms-azure-inference` [0.2.4]
+
+- Support for api_version and Azure AI model inference service (#16802)
+
+### `llama-index-llms-bedrock` [0.2.6]
+
+- Add Anthropic Claude Haiku 3.5 to the list of supported Claude models for bedrock and bedrock-converse integrations (#16825)
+
+### `llama-index-llms-bedrock-converse` [0.3.7]
+
+- Add Anthropic Claude Haiku 3.5 to the list of supported Claude models for bedrock and bedrock-converse integrations (#16825)
+
+### `llama-index-llms-dashscope` [0.2.5]
+
+- More tolerant definition of LLMMetadata information (#16830)
+- Fix abstract method signature error (#16809)
+
+### `llama-index-llms-vllm` [0.3.0]
+
+- remove beam search param for latest vllm (#16817)
+
+### `llama-index-postprocessor-colpali-rerank` [0.1.0]
+
+- Add ColPali as reranker (#16829)
+
+### `llama-index-postprocessor-siliconflow-rerank` [0.1.0]
+
+- add siliconflow rerank class (#16737)
+
+### `llama-index-readers-microsoft-onedrive` [0.2.2]
+
+- fix: add required_exts for one drive reader (#16822)
+
+### `llama-index-vector-stores-chroma` [0.3.0]
+
+- Support breaking changes to filter syntax in latest chroma (#16806)
+
+### `llama-index-vector-stores-pinecone` [0.3.0]
+
+- support sparse embedding models, fix delete for serverless for pinecone (#16819)
+
 ## [2024-10-31]
 
 ### `llama-index-core` [0.11.21]
