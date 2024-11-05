@@ -10,10 +10,9 @@ def test_class():
 
 
 @patch("llama_index.postprocessor.colpali_rerank.base.ColPali")
-def test_init(mock_processor, mock_model):
+def test_init(mock_model):
     # Setup mock returns
     mock_model.from_pretrained.return_value = MagicMock()
-    mock_processor.from_pretrained.return_value = MagicMock()
 
     m = ColPaliRerank(top_n=10)
 
