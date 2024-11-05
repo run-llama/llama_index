@@ -66,7 +66,7 @@ def test_retreive_pages(mocked_responses) -> None:
                 }]
             """,
     )
-    wordpress_reader = WordpressReader("http://test.wordpress.org", get_posts=False)
+    wordpress_reader = WordpressReader("http://test.wordpress.org", post_types="pages")
     documents = wordpress_reader.load_data()
 
 
@@ -83,5 +83,5 @@ def test_retreive_posts(mocked_responses) -> None:
                 }]
             """,
     )
-    wordpress_reader = WordpressReader("http://test.wordpress.org", get_pages=False)
+    wordpress_reader = WordpressReader("http://test.wordpress.org", post_types="posts")
     documents = wordpress_reader.load_data()
