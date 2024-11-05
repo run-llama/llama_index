@@ -653,6 +653,9 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
                 f"An error occurred while loading the data: {e}", exc_info=True
             )
 
+    def get_permission_info(self, resource_id: str, *args: Any, **kwargs: Any) -> Dict:
+        return self._get_permissions_info(resource_id, *args, **kwargs)
+
     def _get_permissions_info(
         self, item: Dict[str, Any], userprincipalname: str, access_token: str
     ) -> Dict[str, Any]:
