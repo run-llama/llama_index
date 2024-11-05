@@ -9,6 +9,7 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseGen,
+    ChatResponseAsyncGen,
 )
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
@@ -35,6 +36,8 @@ from llama_index.multi_modal_llms.nvidia.utils import (
     aggregate_msgs,
     process_response,
 )
+import aiohttp
+import json
 
 
 class NVIDIAClient:
@@ -97,16 +100,39 @@ class NVIDIAClient:
 
         return perform_request()
 
+    async def request_async(
+        self,
+        endpoint: str,
+        stream: bool,
+        messages: Dict[str, Any],
+        extra_headers: Dict[str, Any],
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """
+        Perform an asynchronous request to the NVIDIA API.
+
+        Args:
+            endpoint (str): The API endpoint to send the request to.
+            messages (Dict[str, Any]): The request payload.
+
+        Returns:
+            Dict[str, Any]: The API response.
+        """
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                endpoint,
+                json={"messages": messages, "stream": stream, **kwargs},
+                headers={**self._get_headers(stream=stream), **extra_headers},
+            ) as response:
+                response.raise_for_status()
+                return await response.json()
+
 
 class NVIDIAMultiModal(MultiModalLLM):
     model: str = Field(description="The Multi-Modal model to use from NVIDIA.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: Optional[int] = Field(
         description=" The maximum numbers of tokens to generate, ignoring the number of tokens in the prompt.",
-        gt=0,
-    )
-    context_window: Optional[int] = Field(
-        description="The maximum number of context tokens for the model.",
         gt=0,
     )
     timeout: float = Field(
@@ -368,25 +394,156 @@ class NVIDIAMultiModal(MultiModalLLM):
     async def _acomplete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
-        raise NotImplementedError("This function is not yet implemented.")
+        all_kwargs = self._get_model_kwargs(**kwargs)
+        content, extra_headers = generate_nvidia_multi_modal_chat_message(
+            prompt=prompt, image_documents=image_documents, model=self.model
+        )
+        message_dict = [{"role": MessageRole.USER, "content": content}]
+
+        response_json = await self._client.request_async(
+            endpoint=NVIDIA_MULTI_MODAL_MODELS[self.model]["endpoint"],
+            stream=False,
+            messages=message_dict,
+            extra_headers=extra_headers,
+            **all_kwargs,
+        )
+        text = response_json["choices"][0]["message"]["content"]
+        return CompletionResponse(
+            text=text,
+            raw=response_json,
+            additional_kwargs=self._get_response_token_counts(response_json),
+        )
 
     async def acomplete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         return await self._acomplete(prompt, image_documents, **kwargs)
 
-    async def _astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
-    ) -> CompletionResponseAsyncGen:
-        raise NotImplementedError("This function is not yet implemented.")
-
     async def astream_complete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        return await self._astream_complete(prompt, image_documents, **kwargs)
+        all_kwargs = self._get_model_kwargs(**kwargs)
+        content, extra_headers = generate_nvidia_multi_modal_chat_message(
+            prompt=prompt, image_documents=image_documents, model=self.model
+        )
+        payload = {
+            "messages": [{"role": MessageRole.USER, "content": content}],
+            "stream": True,
+            **all_kwargs,
+        }
+        headers = {
+            **self._client._get_headers(stream=True),
+            **extra_headers,
+        }
 
-    async def achat(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("This function is not yet implemented.")
+        async def gen() -> CompletionResponseAsyncGen:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    NVIDIA_MULTI_MODAL_MODELS[self.model]["endpoint"],
+                    json=payload,
+                    headers=headers,
+                ) as response:
+                    response.raise_for_status()
+                    text = ""
+                    async for line in response.content:
+                        if line and line.strip() != b"data: [DONE]":
+                            line = line.decode("utf-8").strip()
+                            if line.startswith("data:"):
+                                data = json.loads(line[5:])
 
-    async def astream_chat(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("This function is not yet implemented.")
+                                delta = data["choices"][0]["delta"]["content"]
+                                text += delta
+
+                                yield CompletionResponse(
+                                    text=text,
+                                    raw=data,
+                                    delta=text,
+                                    additional_kwargs=self._get_response_token_counts(
+                                        line
+                                    ),
+                                )
+
+        return gen()
+
+    async def _achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        all_kwargs = self._get_model_kwargs(**kwargs)
+        content, extra_headers = generate_nvidia_multi_modal_chat_message(
+            inputs=messages, model=self.model
+        )
+
+        response_json = await self._client.request_async(
+            endpoint=NVIDIA_MULTI_MODAL_MODELS[self.model]["endpoint"],
+            stream=False,
+            messages=content,
+            extra_headers=extra_headers,
+            **all_kwargs,
+        )
+
+        text = response_json["choices"][0]["message"]["content"]
+
+        return ChatResponse(
+            delta=text,
+            message=ChatMessage(
+                role=response_json["choices"][0]["message"]["role"], content=text
+            ),
+            raw=response_json,
+            additional_kwargs=self._get_response_token_counts(response_json),
+        )
+
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        return await self._achat(messages, **kwargs)
+
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        all_kwargs = self._get_model_kwargs(**kwargs)
+        content, extra_headers = generate_nvidia_multi_modal_chat_message(
+            inputs=messages, model=self.model
+        )
+        payload = {"messages": content, "stream": True, **all_kwargs}
+        headers = {
+            **self._client._get_headers(stream=True),
+            **extra_headers,
+        }
+
+        async def gen() -> ChatResponseAsyncGen:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    NVIDIA_MULTI_MODAL_MODELS[self.model]["endpoint"],
+                    json=payload,
+                    headers=headers,
+                ) as response:
+                    response.raise_for_status()
+
+                    text = ""
+
+                    async for line in response.content:
+                        if line and line.strip() != b"data: [DONE]":
+                            line_text = line.decode("utf-8").strip()
+
+                            if line_text.startswith("data:"):
+                                data = json.loads(line_text[5:])
+                                delta = data["choices"][0]["delta"]["content"]
+                                role = data["choices"][0]["delta"].get(
+                                    "role", MessageRole.ASSISTANT
+                                )
+                                text += delta
+
+                                yield ChatResponse(
+                                    message=ChatMessage(
+                                        role=role,
+                                        content=delta,
+                                        additional_kwargs={},
+                                    ),
+                                    delta=delta,
+                                    raw=data,
+                                    additional_kwargs=self._get_response_token_counts(
+                                        data
+                                    ),
+                                )
+
+        return gen()
