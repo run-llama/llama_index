@@ -194,9 +194,9 @@ class LoadFileArgs(TypedDict):
     Args for load_file.
     """
 
-    input_file: Path
-    file_metadata: Callable[[str], Dict]
-    file_extractor: Dict[str, BaseReader]
+    input_file: NotRequired[Path]
+    file_extractor: NotRequired[Dict[str, BaseReader]]
+    file_metadata: NotRequired[Callable[[str], Dict]]
     filename_as_id: NotRequired[bool]
     encoding: NotRequired[str]
     errors: NotRequired[str]
@@ -204,11 +204,18 @@ class LoadFileArgs(TypedDict):
     fs: NotRequired[fsspec.AbstractFileSystem]
 
 
-class DirectoryReaderArgs(TypedDict, LoadFileArgs):
+class DirectoryReaderArgs(TypedDict):
     """
     Args for DirectoryReader.
     """
 
+    file_extractor: NotRequired[Dict[str, BaseReader]]
+    file_metadata: NotRequired[Callable[[str], Dict]]
+    filename_as_id: NotRequired[bool]
+    encoding: NotRequired[str]
+    errors: NotRequired[str]
+    raise_on_error: NotRequired[bool]
+    fs: NotRequired[fsspec.AbstractFileSystem]
     exclude: NotRequired[Optional[List[str]]]
     exclude_hidden: NotRequired[bool]
     recursive: NotRequired[bool]
@@ -471,7 +478,6 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             errors=errors,
             raise_on_error=raise_on_error,
             fs=fs,
-            **kwargs,
         )
 
     async def aload_resource(
@@ -494,7 +500,6 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             errors=errors,
             raise_on_error=raise_on_error,
             fs=fs,
-            **kwargs,
         )
 
     def read_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
@@ -537,9 +542,9 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         Returns:
             List[Document]: loaded documents
         """
-        input_file = kwargs.get("input_file")
-        file_metadata = kwargs.get("file_metadata")
-        file_extractor = kwargs.get("file_extractor")
+        input_file = kwargs["input_file"]
+        file_extractor = kwargs["file_extractor"]
+        file_metadata = kwargs.get("file_metadata", None)
         filename_as_id = kwargs.get("filename_as_id", False)
         encoding = kwargs.get("encoding", "utf-8")
         errors = kwargs.get("errors", "ignore")
@@ -566,10 +571,10 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
             # load data -- catch all errors except for ImportError
             try:
-                kwargs = {"extra_info": metadata}
+                reader_kwargs = {"extra_info": metadata, **kwargs}
                 if fs and not is_default_fs(fs):
-                    kwargs["fs"] = fs
-                docs = reader.load_data(input_file, **kwargs)
+                    reader_kwargs["fs"] = fs
+                docs = reader.load_data(**reader_kwargs)
             except ImportError as e:
                 # ensure that ImportError is raised so user knows
                 # about missing dependencies
@@ -607,9 +612,9 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
     @staticmethod
     async def aload_file(**kwargs: Unpack[LoadFileArgs]) -> List[Document]:
         """Load file asynchronously."""
-        input_file = kwargs.get("input_file")
-        file_metadata = kwargs.get("file_metadata")
-        file_extractor = kwargs.get("file_extractor")
+        input_file = kwargs["input_file"]
+        file_extractor = kwargs["file_extractor"]
+        file_metadata = kwargs.get("file_metadata", None)
         filename_as_id = kwargs.get("filename_as_id", False)
         encoding = kwargs.get("encoding", "utf-8")
         errors = kwargs.get("errors", "ignore")
@@ -636,10 +641,10 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
             # load data -- catch all errors except for ImportError
             try:
-                kwargs = {"extra_info": metadata}
+                reader_kwargs = {"extra_info": metadata, **kwargs}
                 if fs and not is_default_fs(fs):
-                    kwargs["fs"] = fs
-                docs = await reader.aload_data(input_file, **kwargs)
+                    reader_kwargs["fs"] = fs
+                docs = await reader.aload_data(input_file, **reader_kwargs)
             except ImportError as e:
                 # ensure that ImportError is raised so user knows
                 # about missing dependencies
@@ -766,14 +771,14 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         coroutines = [
             SimpleDirectoryReader.aload_file(
-                input_file,
-                self.file_metadata,
-                self.file_extractor,
-                self.filename_as_id,
-                self.encoding,
-                self.errors,
-                self.raise_on_error,
-                fs,
+                input_file=input_file,
+                file_metadata=self.file_metadata,
+                file_extractor=self.file_extractor,
+                filename_as_id=self.filename_as_id,
+                encoding=self.encoding,
+                errors=self.errors,
+                raise_on_error=self.raise_on_error,
+                fs=fs,
             )
             for input_file in files_to_process
         ]
