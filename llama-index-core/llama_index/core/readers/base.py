@@ -48,6 +48,9 @@ class BaseReader(ABC):
 class BasePydanticReader(BaseReader, BaseComponent):
     """Serialiable Data Loader with Pydantic."""
 
+    class Config:
+        extra = "allow"
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
     is_remote: bool = Field(
         default=False,

@@ -6,19 +6,18 @@ A loader that fetches a file or iterates through a directory on AWS S3.
 """
 
 import warnings
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional
 from typing_extensions import Annotated
 from datetime import datetime, timezone
 from pathlib import Path
 
 from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
 from llama_index.core.readers.base import (
-    BaseReader,
     BasePydanticReader,
     ResourcesReaderMixin,
 )
 from llama_index.core.schema import Document
-from llama_index.core.bridge.pydantic import Field, WithJsonSchema
+from llama_index.core.bridge.pydantic import WithJsonSchema
 
 
 FileMetadataCallable = Annotated[
@@ -39,21 +38,10 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
         this loader will iterate through the entire bucket.
     prefix (Optional[str]): the prefix to filter by in the case that the loader
         iterates through the entire bucket. Defaults to empty string.
-    recursive (bool): Whether to recursively search in subdirectories.
-        True by default.
-    file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
-        extension to a BaseReader class that specifies how to convert that file
-        to text. See `SimpleDirectoryReader` for more details.
-    required_exts (Optional[List[str]]): List of required extensions.
-        Default is None.
-    num_files_limit (Optional[int]): Maximum number of files to read.
-        Default is None.
-    file_metadata (Optional[Callable[str, Dict]]): A function that takes
-        in a filename and returns a Dict of metadata for the Document.
-        Default is None.
     aws_access_id (Optional[str]): provide AWS access key directly.
     aws_access_secret (Optional[str]): provide AWS access key directly.
     s3_endpoint_url (Optional[str]): provide S3 endpoint URL directly.
+    **kwargs: (DirectoryReaderArgs): Additional arguments to pass to the directory reader.
     """
 
     is_remote: bool = True
@@ -61,14 +49,6 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
     bucket: str
     key: Optional[str] = None
     prefix: Optional[str] = ""
-    recursive: bool = True
-    file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
-        default=None, exclude=True
-    )
-    required_exts: Optional[List[str]] = None
-    filename_as_id: bool = True
-    num_files_limit: Optional[int] = None
-    file_metadata: Optional[FileMetadataCallable] = Field(default=None, exclude=True)
     aws_access_id: Optional[str] = None
     aws_access_secret: Optional[str] = None
     aws_session_token: Optional[str] = None
@@ -107,15 +87,7 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
             input_dir = f"{input_dir}/{self.prefix}"
 
         return SimpleDirectoryReader(
-            input_dir=input_dir,
-            input_files=input_files,
-            file_extractor=self.file_extractor,
-            required_exts=self.required_exts,
-            filename_as_id=self.filename_as_id,
-            num_files_limit=self.num_files_limit,
-            file_metadata=self.file_metadata,
-            recursive=self.recursive,
-            fs=s3fs,
+            input_dir=input_dir, input_files=input_files, fs=s3fs, **self.model_dump()
         )
 
     def _load_s3_files_as_docs(self) -> List[Document]:
