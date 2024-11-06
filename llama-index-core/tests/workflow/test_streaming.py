@@ -76,7 +76,7 @@ async def test_task_timeout():
         @step
         async def step(self, ctx: Context, ev: StartEvent) -> StopEvent:
             ctx.write_event_to_stream(OneTestEvent(test_param="foo"))
-            await asyncio.sleep(10000)
+            await asyncio.sleep(2)
             return StopEvent()
 
     wf = DummyWorkflow(timeout=1)
