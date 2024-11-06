@@ -13,6 +13,10 @@ from itertools import repeat
 from pathlib import Path, PurePosixPath
 import fsspec
 from fsspec.implementations.local import LocalFileSystem
+from typing_extensions import (
+    Unpack,
+    NotRequired,
+)
 from typing import (
     Any,
     Callable,
@@ -24,8 +28,6 @@ from typing import (
     Type,
     Union,
     TypedDict,
-    Unpack,
-    NotRequired,
 )
 
 from llama_index.core.readers.base import BaseReader, ResourcesReaderMixin
