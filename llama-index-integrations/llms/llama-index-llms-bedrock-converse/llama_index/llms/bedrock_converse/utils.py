@@ -90,7 +90,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
 )
 
 
-def get_model_name(model_name: str) -> bool:
+def get_model_name(model_name: str) -> str:
     # us and eu are currently supported inference profile regions
     if not model_name.startswith("us.") and not model_name.startswith("eu."):
         return model_name
