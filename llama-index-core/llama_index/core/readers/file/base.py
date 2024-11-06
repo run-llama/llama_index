@@ -273,15 +273,15 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         if not input_dir and not input_files:
             raise ValueError("Must provide either `input_dir` or `input_files`.")
 
-        self.fs = kwargs.get("fs", get_default_fs())
+        self.fs = kwargs.get("fs") or get_default_fs()
         self.errors = kwargs.get("errors", "ignore")
         self.encoding = kwargs.get("encoding", "utf-8")
 
-        self.exclude = kwargs.get("exclude", None)
+        self.exclude = kwargs.get("exclude")
         self.recursive = kwargs.get("recursive", False)
         self.exclude_hidden = kwargs.get("exclude_hidden", True)
-        self.required_exts = kwargs.get("required_exts", None)
-        self.num_files_limit = kwargs.get("num_files_limit", None)
+        self.required_exts = kwargs.get("required_exts")
+        self.num_files_limit = kwargs.get("num_files_limit")
         self.raise_on_error = kwargs.get("raise_on_error", False)
         _Path = Path if is_default_fs(self.fs) else PurePosixPath
 
