@@ -414,6 +414,8 @@ nav:
           - ./examples/managed/manage_retrieval_benchmark.ipynb
           - ./examples/managed/vectaraDemo.ipynb
           - ./examples/managed/zcpDemo.ipynb
+      - Memory:
+          - ./examples/memory/Mem0Memory.ipynb
       - Metadata Extractors:
           - ./examples/metadata_extraction/EntityExtractionClimate.ipynb
           - ./examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb
@@ -850,6 +852,7 @@ nav:
           - ./api_reference/callbacks/literalai.md
           - ./api_reference/callbacks/llama_debug.md
           - ./api_reference/callbacks/openinference.md
+          - ./api_reference/callbacks/opentelemetry.md
           - ./api_reference/callbacks/opik.md
           - ./api_reference/callbacks/promptlayer.md
           - ./api_reference/callbacks/token_counter.md
@@ -1035,7 +1038,7 @@ nav:
           - ./api_reference/llms/replicate.md
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
-          - ./api_reference/llms/sambanova.md
+          - ./api_reference/llms/sambanovacloud.md
           - ./api_reference/llms/solar.md
           - ./api_reference/llms/text_generation_inference.md
           - ./api_reference/llms/together.md
@@ -2243,7 +2246,6 @@ plugins:
             - ../llama-index-integrations/extractors/llama-index-extractors-relik
             - ../llama-index-integrations/indices/llama-index-indices-managed-bge-m3
             - ../llama-index-integrations/tools/llama-index-tools-box
-            - ../llama-index-integrations/llms/llama-index-llms-sambanova
             - ../llama-index-integrations/embeddings/llama-index-embeddings-gigachat
             - ../llama-index-integrations/llms/llama-index-llms-gigachat
             - ../llama-index-integrations/callbacks/llama-index-callbacks-opik
@@ -2300,6 +2302,8 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-siliconflow
             - ../llama-index-integrations/memory/llama-index-memory-mem0
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-siliconflow-rerank
+            - ../llama-index-integrations/callbacks/llama-index-callbacks-opentelemetry
+            - ../llama-index-integrations/llms/llama-index-llms-sambanovacloud
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
