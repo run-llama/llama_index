@@ -1038,7 +1038,6 @@ nav:
           - ./api_reference/llms/replicate.md
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
-          - ./api_reference/llms/sambanova.md
           - ./api_reference/llms/sambanovacloud.md
           - ./api_reference/llms/solar.md
           - ./api_reference/llms/text_generation_inference.md
@@ -2247,7 +2246,6 @@ plugins:
             - ../llama-index-integrations/extractors/llama-index-extractors-relik
             - ../llama-index-integrations/indices/llama-index-indices-managed-bge-m3
             - ../llama-index-integrations/tools/llama-index-tools-box
-            - ../llama-index-integrations/llms/llama-index-llms-sambanova
             - ../llama-index-integrations/embeddings/llama-index-embeddings-gigachat
             - ../llama-index-integrations/llms/llama-index-llms-gigachat
             - ../llama-index-integrations/callbacks/llama-index-callbacks-opik
