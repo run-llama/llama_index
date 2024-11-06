@@ -7,6 +7,8 @@ import tempfile
 from typing import Any, Dict, List, Optional
 
 import requests
+from typing_extensions import Unpack
+
 from llama_index.core.readers import (
     SimpleDirectoryReader,
     FileSystemReaderMixin,
@@ -69,7 +71,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         sharepoint_folder_id: Optional[str] = None,
         drive_name: Optional[str] = None,
         drive_id: Optional[str] = None,
-        **kwargs: DirectoryReaderArgs,
+        **kwargs: Unpack[DirectoryReaderArgs],
     ) -> None:
         super().__init__(
             client_id=client_id,

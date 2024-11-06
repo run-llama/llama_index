@@ -7,11 +7,15 @@ A loader that fetches a file or iterates through a directory on AWS S3.
 
 import warnings
 from typing import Callable, Dict, List, Optional
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Unpack
 from datetime import datetime, timezone
 from pathlib import Path
 
-from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
+from llama_index.core.readers import (
+    SimpleDirectoryReader,
+    FileSystemReaderMixin,
+    DirectoryReaderArgs,
+)
 from llama_index.core.readers.base import (
     BasePydanticReader,
     ResourcesReaderMixin,
@@ -55,6 +59,32 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
     s3_endpoint_url: Optional[str] = None
     custom_reader_path: Optional[str] = None
     invalidate_s3fs_cache: bool = True
+
+    def __init__(
+        self,
+        bucket: str,
+        key: Optional[str] = None,
+        prefix: Optional[str] = "",
+        aws_access_id: Optional[str] = None,
+        aws_access_secret: Optional[str] = None,
+        aws_session_token: Optional[str] = None,
+        s3_endpoint_url: Optional[str] = None,
+        custom_reader_path: Optional[str] = None,
+        invalidate_s3fs_cache: bool = True,
+        **kwargs: Unpack[DirectoryReaderArgs],
+    ) -> None:
+        super().__init__(
+            bucket=bucket,
+            key=key,
+            prefix=prefix,
+            aws_access_id=aws_access_id,
+            aws_access_secret=aws_access_secret,
+            aws_session_token=aws_session_token,
+            s3_endpoint_url=s3_endpoint_url,
+            custom_reader_path=custom_reader_path,
+            invalidate_s3fs_cache=invalidate_s3fs_cache,
+            **kwargs,
+        )
 
     @classmethod
     def class_name(cls) -> str:

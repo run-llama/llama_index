@@ -8,6 +8,8 @@ import re
 from pathlib import Path
 from typing import Any, List
 
+from typing_extensions import Unpack
+
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.readers import DirectoryReaderArgs
 from llama_index.core.readers.base import BaseReader, BasePydanticReader
@@ -21,7 +23,7 @@ class RemoteReader(BasePydanticReader, BaseReader):
     def __init__(
         self,
         *args: Any,
-        **kwargs: DirectoryReaderArgs,
+        **kwargs: Unpack[DirectoryReaderArgs],
     ) -> None:
         """Init params."""
         super().__init__(*args, **kwargs)
