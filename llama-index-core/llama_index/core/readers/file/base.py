@@ -191,7 +191,7 @@ logger = logging.getLogger(__name__)
 
 class LoadFileArgs(TypedDict):
     """
-    Args for load_file.
+    Args for `load_file` and `aload_file`.
     """
 
     input_file: NotRequired[Path]
@@ -204,9 +204,23 @@ class LoadFileArgs(TypedDict):
     fs: NotRequired[fsspec.AbstractFileSystem]
 
 
+class LoadResourceArgs(TypedDict):
+    """
+    Args for `load_resource` and `aload_resource`.
+    """
+
+    file_metadata: NotRequired[Callable[[str], Dict]]
+    file_extractor: NotRequired[Dict[str, BaseReader]]
+    filename_as_id: NotRequired[bool]
+    encoding: NotRequired[str]
+    errors: NotRequired[str]
+    raise_on_error: NotRequired[bool]
+    fs: NotRequired[fsspec.AbstractFileSystem]
+
+
 class DirectoryReaderArgs(TypedDict):
     """
-    Args for DirectoryReader.
+    Args for `SimpleDirectoryReader`.
     """
 
     file_extractor: NotRequired[Dict[str, BaseReader]]
@@ -457,7 +471,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         }
 
     def load_resource(
-        self, resource_id: str, *args: Any, **kwargs: Unpack[LoadFileArgs]
+        self, resource_id: str, *args: Any, **kwargs: Unpack[LoadResourceArgs]
     ) -> List[Document]:
         file_metadata = kwargs.get("file_metadata", self.file_metadata)
         file_extractor = kwargs.get("file_extractor", self.file_extractor)
@@ -481,7 +495,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         )
 
     async def aload_resource(
-        self, resource_id: str, *args: Any, **kwargs: Unpack[LoadFileArgs]
+        self, resource_id: str, *args: Any, **kwargs: Unpack[LoadResourceArgs]
     ) -> List[Document]:
         file_metadata = kwargs.get("file_metadata", self.file_metadata)
         file_extractor = kwargs.get("file_extractor", self.file_extractor)
