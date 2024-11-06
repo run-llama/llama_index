@@ -433,7 +433,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
-        sparse_vector = None
+        pinecone_sparse_vector = None
         if (
             query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID)
             and self._sparse_embedding_model is not None
