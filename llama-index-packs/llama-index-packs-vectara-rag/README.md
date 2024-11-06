@@ -51,6 +51,8 @@ vectara = VectaraRAG()
 Additional optional arguments to VectaraRAG:
 
 - `similarity_top_k`: determines the number of results to return. Defaults to 5.
+- `lambda_val`: a value between 0 and 1 to specify hybrid search,
+  determines the balance between pure neural search (0) and keyword matching (1).
 - `n_sentences_before` and `n_sentences_after`: determine the number of sentences before/after the
   matching fact to use with the summarization LLM. defaults to 2.
 - `reranker`: 'none', 'mmr', 'multilingual_reranker_v1', 'udf', or 'chain'
