@@ -66,7 +66,7 @@ def test_retreive_pages(mocked_responses) -> None:
                 }]
             """,
     )
-    wordpress_reader = WordpressReader("http://test.wordpress.org", post_types="pages")
+    wordpress_reader = WordpressReader("http://test.wordpress.org", get_posts=False)
     documents = wordpress_reader.load_data()
 
 
@@ -83,5 +83,37 @@ def test_retreive_posts(mocked_responses) -> None:
                 }]
             """,
     )
-    wordpress_reader = WordpressReader("http://test.wordpress.org", post_types="posts")
+    wordpress_reader = WordpressReader("http://test.wordpress.org", get_pages=False)
+    documents = wordpress_reader.load_data()
+
+
+def test_retreive_pages_with_additional_post_types(mocked_responses) -> None:
+    mocked_responses.get(
+        "http://test.wordpress.org/wp-json/wp/v2/pages",
+        content_type="application/json",
+        body="""
+                [{"id": 1,
+                    "title": { "rendered": "foo" },
+                    "link": "http://test.wordpress.org/posts/1",
+                    "modified": "Never",
+                    "content": { "rendered": "Lorem ipsum" }
+                }]
+            """,
+    )
+    mocked_responses.get(
+        "http://test.wordpress.org/wp-json/wp/v2/greetings",
+        content_type="application/json",
+        body="""
+                [{"id": 1,
+                    "title": { "msg": "greet" },
+                    "link": "http://test.wordpress.org/greetings/1",
+                    "modified": "Never",
+                    "content": { "rendered": "Namaste everyone!!" }
+                }]
+            """,
+    )
+
+    wordpress_reader = WordpressReader(
+        "http://test.wordpress.org", additional_post_types="greetings", get_posts=False
+    )
     documents = wordpress_reader.load_data()

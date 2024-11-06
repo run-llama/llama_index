@@ -27,12 +27,16 @@ documents = loader.load_data()
 This loader is designed to be used as a way to load data into
 [LlamaIndex](https://github.com/run-llama/llama_index/).
 
-## Pages, Posts and Custom Post types
+## Pages and Posts
 
 Be default, the loader retrieves both Wordpress _pages_ (static content) and
 _posts_ (blog entries) from the target site. This behavior can be configured
-by setting `post_types=posts,pages`, a comma separated list of post types, when initializing the
+by setting `get_pages=False` or `get_posts=False` when initializing the
 `WordpressReader` object.
+
+## Additional Custom Post types
+
+To scrape additional custom endpoints beside _posts_ and _pages_, you can specify `additional_post_types` as a comma-separated list (e.g., `additional_post_types="custom-pages,custom-posts"`) when initializing the `WordpressReader` object.
 
 ```python
 from llama_index.readers.wordpress import WordpressReader
@@ -41,7 +45,7 @@ loader = WordpressReader(
     url="https://www.mysite.com",
     username="my_username",
     password="my_password",
-    post_types="posts,pages,my-custom-post1,my-custom-post-2"
+    additional_post_types="webiners,podcasts",
 )
 documents = loader.load_data()
 ```

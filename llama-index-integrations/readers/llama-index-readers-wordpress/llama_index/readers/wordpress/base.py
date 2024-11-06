@@ -1,5 +1,4 @@
 """Wordpress reader."""
-import json
 import warnings
 from typing import List, Optional
 
@@ -14,8 +13,10 @@ class WordpressReader(BaseReader):
         url (str): Base URL of the WordPress site.
         username (Optional[str]): WordPress username for authentication.
         password (Optional[str]): WordPress password for authentication.
-        post_types (Optional[str]): Comma-separated list of post types to retrieve (e.g., 'pages,posts,my-custom-page').
-                                    Default is "pages,posts".
+        get_pages (bool): Retrieve static WordPress 'pages'. Default True.
+        get_posts (bool): Retrieve WordPress 'posts' (blog entries). Default True.
+        additional_post_types (Optional[str]): Comma-separated list of additional post types to retrieve
+                                               (e.g., 'my-custom-page,webinars'). Default is None.
     """
 
     def __init__(
@@ -23,14 +24,32 @@ class WordpressReader(BaseReader):
         url: str,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        post_types: Optional[str] = "pages,posts",
+        get_pages: bool = True,
+        get_posts: bool = True,
+        additional_post_types: Optional[str] = None,
     ) -> None:
         """Initialize Wordpress reader."""
         self.url = url
         self.username = username
         self.password = password
-        # Split the post_types string into a list
-        self.post_types = [post_type.strip() for post_type in post_types.split(",")]
+
+        # Use a set to prevent duplicates
+        self.post_types = set()
+
+        # Add default types based on backward-compatible options
+        if get_pages:
+            self.post_types.add("pages")
+        if get_posts:
+            self.post_types.add("posts")
+
+        # Add any additional post types specified
+        if additional_post_types:
+            self.post_types.update(
+                post_type.strip() for post_type in additional_post_types.split(",")
+            )
+
+        # Convert post_types back to a list
+        self.post_types = list(self.post_types)
 
     def load_data(self) -> List[Document]:
         """Load data from the specified post types.
@@ -61,7 +80,9 @@ class WordpressReader(BaseReader):
             soup = BeautifulSoup(body)
             body = soup.get_text()
 
-            title = article.get("title", {}).get("rendered", None) or article.get("title")
+            title = article.get("title", {}).get("rendered", None) or article.get(
+                "title"
+            )
 
             extra_info = {
                 "id": article["id"],
@@ -100,7 +121,9 @@ class WordpressReader(BaseReader):
         url = f"{self.url}/wp-json/wp/v2/{post_type}?per_page=100&page={current_page}"
 
         # Handle authentication if username and password are provided
-        auth = (self.username, self.password) if self.username and self.password else None
+        auth = (
+            (self.username, self.password) if self.username and self.password else None
+        )
         response = requests.get(url, auth=auth)
         response.raise_for_status()  # Raise an error for bad responses
 
