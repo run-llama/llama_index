@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional
+from typing import Any, List, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,9 +11,9 @@ from llama_index.vector_stores.azureaisearch import (
 )
 
 try:
-    from azure.search.documents import SearchClient, SearchIndexClient
+    from azure.search.documents import SearchClient
+    from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.models import VectorizedQuery
-    from azure.core.credentials import AzureKeyCredential
 
     azureaisearch_installed = True
 except ImportError:
@@ -21,23 +21,8 @@ except ImportError:
     search_client = None  # type: ignore
 
 
-@pytest.fixture()
-def search_client() -> SearchClient:
-    client = MagicMock(spec=SearchClient)
-    client.endpoint = "https://test.search.windows.net"
-
-    client.credential = MagicMock(spec=AzureKeyCredential)
-    client.credential._get_token = MagicMock()
-    client.credential._get_token.return_value = ("test", "test")
-
-    client.index_name = "test"
-    client.search = MagicMock()
-    client.search.return_value = []
-    return client
-
-
 def create_mock_vector_store(
-    search_client: SearchClient,
+    search_client: Any,
     index_name: Optional[str] = None,
     index_management: IndexManagement = IndexManagement.NO_VALIDATION,
 ) -> AzureAISearchVectorStore:
@@ -76,11 +61,12 @@ def create_sample_documents(n: int) -> List[TextNode]:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
-def test_azureaisearch_add_two_batches(search_client: SearchClient) -> None:
+def test_azureaisearch_add_two_batches() -> None:
+    search_client = MagicMock(spec=SearchClient)
+
     with patch("azure.search.documents.IndexDocumentsBatch") as MockIndexDocumentsBatch:
         index_documents_batch_instance = MockIndexDocumentsBatch.return_value
         vector_store = create_mock_vector_store(search_client)
-        vector_store._search_client = search_client
 
         nodes = create_sample_documents(11)
         ids = vector_store.add(nodes)
@@ -96,11 +82,12 @@ def test_azureaisearch_add_two_batches(search_client: SearchClient) -> None:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
-def test_azureaisearch_add_one_batch(search_client: SearchClient) -> None:
+def test_azureaisearch_add_one_batch() -> None:
+    search_client = MagicMock(spec=SearchClient)
+
     with patch("azure.search.documents.IndexDocumentsBatch") as MockIndexDocumentsBatch:
         index_documents_batch_instance = MockIndexDocumentsBatch.return_value
         vector_store = create_mock_vector_store(search_client)
-        vector_store._search_client = search_client
 
         nodes = create_sample_documents(11)
         ids = vector_store.add(nodes)
@@ -116,7 +103,9 @@ def test_azureaisearch_add_one_batch(search_client: SearchClient) -> None:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
-def test_invalid_index_management_for_searchclient(search_client) -> None:
+def test_invalid_index_management_for_searchclient() -> None:
+    search_client = MagicMock(spec=SearchClient)
+
     # No error
     create_mock_vector_store(
         search_client, index_management=IndexManagement.VALIDATE_INDEX
@@ -164,7 +153,9 @@ def test_invalid_index_management_for_searchindexclient() -> None:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
-def test_azureaisearch_query(search_client: SearchClient) -> None:
+def test_azureaisearch_query() -> None:
+    search_client = MagicMock(spec=SearchClient)
+
     # Mock the search method of the search client
     mock_search_results = [
         {
@@ -187,7 +178,6 @@ def test_azureaisearch_query(search_client: SearchClient) -> None:
     search_client.search.return_value = mock_search_results
 
     vector_store = create_mock_vector_store(search_client)
-    vector_store._search_client = search_client
 
     # Create a sample query
     query = VectorStoreQuery(
