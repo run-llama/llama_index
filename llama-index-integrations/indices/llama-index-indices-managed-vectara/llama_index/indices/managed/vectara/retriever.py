@@ -259,17 +259,23 @@ class VectaraRetriever(BaseRetriever):
             reranking_config = current_config = {}
 
             for i, rerank_info in enumerate(self._rerank_chain):
-                current_config["reranker_name"] = CHAIN_RERANKER_NAMES[
-                    rerank_info["type"]
-                ]
+                rerank_type = rerank_info.get("type", None)
+                if rerank_type is None:
+                    print("Missing argument 'type' in chain reranker")
+                else:
+                    current_config["reranker_name"] = CHAIN_RERANKER_NAMES[rerank_type]
 
-                rerank_info.pop("type")
-                for param, value in rerank_info.items():
-                    current_config[param] = value
+                    current_config.update(
+                        {
+                            param: value
+                            for param, value in rerank_info.items()
+                            if param != "type"
+                        }
+                    )
 
-                if i < len(self._rerank_chain) - 1:
-                    current_config["next_reranking_config"] = {}
-                    current_config = current_config["next_reranking_config"]
+                    if i < len(self._rerank_chain) - 1:
+                        current_config["next_reranking_config"] = {}
+                        current_config = current_config["next_reranking_config"]
 
             data["query"][0]["rerankingConfig"] = reranking_config
 

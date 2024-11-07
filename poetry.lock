@@ -1732,13 +1732,13 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.11.21"
+version = "0.11.22"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.11.21-py3-none-any.whl", hash = "sha256:08d0a605d022127f2eee45d2000b19d1b95fc6f1f3387c8424d924dfa795882d"},
-    {file = "llama_index_core-0.11.21.tar.gz", hash = "sha256:720b6e57e5350a72a22657caa69a8a871fa3da3b37edc2adf4a0bde8e5790ad3"},
+    {file = "llama_index_core-0.11.22-py3-none-any.whl", hash = "sha256:5c59d95dec9bb0727f25b03de89392c69076b2e4aaa6acbd8773de1f07502e9e"},
+    {file = "llama_index_core-0.11.22.tar.gz", hash = "sha256:ddc30b9c873495de40ad8278d0c894ba09f32f6aa7fc638012b1b22b74c32553"},
 ]
 
 [package.dependencies]
@@ -1933,13 +1933,13 @@ llama-parse = ">=0.5.0"
 
 [[package]]
 name = "llama-parse"
-version = "0.5.12"
+version = "0.5.13"
 description = "Parse files into RAG-Optimized formats."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_parse-0.5.12-py3-none-any.whl", hash = "sha256:6011feb49da5db4bcbeea1cc6688b6ff24b483877fda80b03fe59239cd08b907"},
-    {file = "llama_parse-0.5.12.tar.gz", hash = "sha256:e241606cf3574425df76c0f5d01a31a95c792c6fbef80aaf72f8ed6448bd1715"},
+    {file = "llama_parse-0.5.13-py3-none-any.whl", hash = "sha256:d7f14549a5a6a5944f06372a7244c7683209a4a946a41844467a1d6eb5bbf066"},
+    {file = "llama_parse-0.5.13.tar.gz", hash = "sha256:80fe0e6f184ca4fae642d15ccfa927771c04f518bd160b084ed789201469e768"},
 ]
 
 [package.dependencies]
@@ -2252,13 +2252,13 @@ pygments = ">2.12.0"
 
 [[package]]
 name = "mkdocs-material"
-version = "9.5.43"
+version = "9.5.44"
 description = "Documentation that simply works"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "mkdocs_material-9.5.43-py3-none-any.whl", hash = "sha256:4aae0664c456fd12837a3192e0225c17960ba8bf55d7f0a7daef7e4b0b914a34"},
-    {file = "mkdocs_material-9.5.43.tar.gz", hash = "sha256:83be7ff30b65a1e4930dfa4ab911e75780a3afc9583d162692e434581cb46979"},
+    {file = "mkdocs_material-9.5.44-py3-none-any.whl", hash = "sha256:47015f9c167d58a5ff5e682da37441fc4d66a1c79334bfc08d774763cacf69ca"},
+    {file = "mkdocs_material-9.5.44.tar.gz", hash = "sha256:f3a6c968e524166b3f3ed1fb97d3ed3e0091183b0545cedf7156a2a6804c56c0"},
 ]
 
 [package.dependencies]
@@ -2703,13 +2703,13 @@ files = [
 
 [[package]]
 name = "openai"
-version = "1.53.0"
+version = "1.54.1"
 description = "The official Python library for the openai API"
 optional = false
-python-versions = ">=3.7.1"
+python-versions = ">=3.8"
 files = [
-    {file = "openai-1.53.0-py3-none-any.whl", hash = "sha256:20f408c32fc5cb66e60c6882c994cdca580a5648e10045cd840734194f033418"},
-    {file = "openai-1.53.0.tar.gz", hash = "sha256:be2c4e77721b166cce8130e544178b7d579f751b4b074ffbaade3854b6f85ec5"},
+    {file = "openai-1.54.1-py3-none-any.whl", hash = "sha256:3cb49ccb6bfdc724ad01cc397d323ef8314fc7d45e19e9de2afdd6484a533324"},
+    {file = "openai-1.54.1.tar.gz", hash = "sha256:5b832bf82002ba8c4f6e5e25c1c0f5d468c22f043711544c716eaffdb30dd6f1"},
 ]
 
 [package.dependencies]
@@ -4841,4 +4841,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5b8fe2b40c288f486eb28300b535e00433437571fa29e600eb1640bbf0b86f48"
+content-hash = "b6f14e55241cdf2331dd5b90155c000df6eb358be19ca8304fad70e616b1628e"

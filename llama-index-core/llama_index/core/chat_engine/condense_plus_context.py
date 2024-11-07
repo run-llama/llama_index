@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -92,9 +92,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         retriever: BaseRetriever,
         llm: LLM,
         memory: BaseMemory,
-        context_prompt: Optional[str] = None,
-        context_refine_prompt: Optional[str] = None,
-        condense_prompt: Optional[str] = None,
+        context_prompt: Optional[Union[str, PromptTemplate]] = None,
+        context_refine_prompt: Optional[Union[str, PromptTemplate]] = None,
+        condense_prompt: Optional[Union[str, PromptTemplate]] = None,
         system_prompt: Optional[str] = None,
         skip_condense: bool = False,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
@@ -104,14 +104,24 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         self._retriever = retriever
         self._llm = llm
         self._memory = memory
-        self._context_prompt_template = (
-            context_prompt or DEFAULT_CONTEXT_PROMPT_TEMPLATE
-        )
-        self._context_refine_prompt_template = (
+
+        context_prompt = context_prompt or DEFAULT_CONTEXT_PROMPT_TEMPLATE
+        if isinstance(context_prompt, str):
+            context_prompt = PromptTemplate(context_prompt)
+        self._context_prompt_template = context_prompt
+
+        context_refine_prompt = (
             context_refine_prompt or DEFAULT_CONTEXT_REFINE_PROMPT_TEMPLATE
         )
-        condense_prompt_str = condense_prompt or DEFAULT_CONDENSE_PROMPT_TEMPLATE
-        self._condense_prompt_template = PromptTemplate(condense_prompt_str)
+        if isinstance(context_refine_prompt, str):
+            context_refine_prompt = PromptTemplate(context_refine_prompt)
+        self._context_refine_prompt_template = context_refine_prompt
+
+        condense_prompt = condense_prompt or DEFAULT_CONDENSE_PROMPT_TEMPLATE
+        if isinstance(condense_prompt, str):
+            condense_prompt = PromptTemplate(condense_prompt)
+        self._condense_prompt_template = condense_prompt
+
         self._system_prompt = system_prompt
         self._skip_condense = skip_condense
         self._node_postprocessors = node_postprocessors or []
@@ -130,9 +140,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         system_prompt: Optional[str] = None,
-        context_prompt: Optional[str] = None,
-        context_refine_prompt: Optional[str] = None,
-        condense_prompt: Optional[str] = None,
+        context_prompt: Optional[Union[str, PromptTemplate]] = None,
+        context_refine_prompt: Optional[Union[str, PromptTemplate]] = None,
+        condense_prompt: Optional[Union[str, PromptTemplate]] = None,
         skip_condense: bool = False,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         verbose: bool = False,
@@ -232,7 +242,13 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         )
 
         return get_response_synthesizer(
-            self._llm, self.callback_manager, qa_messages, refine_messages, streaming
+            self._llm,
+            self.callback_manager,
+            qa_messages,
+            refine_messages,
+            streaming,
+            qa_function_mappings=self._context_prompt_template.function_mappings,
+            refine_function_mappings=self._context_refine_prompt_template.function_mappings,
         )
 
     def _run_c3(
