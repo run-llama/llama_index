@@ -12,6 +12,7 @@ from typing_extensions import Unpack
 
 from llama_index.core.readers import SimpleDirectoryReader, DirectoryReaderArgs
 from llama_index.core.readers.base import BasePydanticReader
+from llama_index.core.readers.file.base import DirectoryReaderData
 from llama_index.core.schema import Document
 from llama_index.core.bridge.pydantic import PrivateAttr, BaseModel
 from llama_index.core.readers import FileSystemReaderMixin
@@ -32,7 +33,9 @@ class _OneDriveResourcePayload(BaseModel):
     downloaded_file_path: Optional[str]
 
 
-class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
+class OneDriveReader(
+    BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin, DirectoryReaderData
+):
     """
     Microsoft OneDrive reader.
 
@@ -54,7 +57,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
     :param file_paths (List[str], optional): List of specific file paths to download. Will be used if the parameter is not provided when calling load_data().
     :param file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that file to text.
                                                              See `SimpleDirectoryReader` for more details.
-    :param required_exts (Optional[List[str]]): List of required extensions. Default is None.
+    :param **kwargs (Unpack[DirectoryReaderArgs]): Additional arguments to pass to the directory reader.
 
 
     For interactive authentication to work, a browser is used to authenticate, hence the registered application should have a redirect URI set to 'https://localhost'

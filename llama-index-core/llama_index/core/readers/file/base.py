@@ -222,7 +222,25 @@ class DirectoryReaderArgs(BaseDirectoryReaderArgs):
     num_files_limit: NotRequired[Optional[int]]
 
 
-class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
+class DirectoryReaderData:
+    """
+    Base data for directory readers.
+    """
+
+    exclude: Optional[List] = None
+    exclude_hidden: Optional[bool] = None
+    encoding: Optional[str] = None
+    errors: Optional[str] = None
+    recursive: Optional[bool] = None
+    filename_as_id: Optional[bool] = None
+    required_exts: Optional[List[str]] = None
+    raise_on_error: Optional[bool] = None
+    num_files_limit: Optional[int] = None
+
+
+class SimpleDirectoryReader(
+    BaseReader, ResourcesReaderMixin, FileSystemReaderMixin, DirectoryReaderData
+):
     """
     Simple directory reader.
 
