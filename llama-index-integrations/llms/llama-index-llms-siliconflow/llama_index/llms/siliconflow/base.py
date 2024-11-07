@@ -117,7 +117,7 @@ class SiliconFlow(FunctionCallingLLM):
         ```python
         from llama_index.llms.siliconflow import SiliconFlow
 
-        llm = SiliconFlow(model="glm-4", api_key="YOUR API KEY")
+        llm = SiliconFlow(api_key="YOUR API KEY")
 
         response = llm.complete("who are you?")
         print(response)
@@ -145,8 +145,6 @@ class SiliconFlow(FunctionCallingLLM):
     max_tokens: int = Field(
         default=512,
         description="The maximum number of tokens to generate.",
-        gt=0,
-        le=4096,
     )
     frequency_penalty: float = Field(default=0.5)
     timeout: float = Field(

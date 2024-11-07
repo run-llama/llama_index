@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.llms.siliconflow"
 
 [tool.llamahub.class_authors]
-siliconflow = "nightosong"
+SiliconFlow = "nightosong"
 
 [tool.mypy]
 disallow_untyped_defs = true
