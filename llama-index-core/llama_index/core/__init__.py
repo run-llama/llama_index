@@ -2,8 +2,6 @@
 
 __version__ = "0.11.22"
 
-import logging
-from logging import NullHandler
 from typing import Callable, Optional
 
 # response
@@ -78,10 +76,6 @@ from llama_index.core.utils import get_tokenizer, set_global_tokenizer
 
 # global settings
 from llama_index.core.settings import Settings
-
-# best practices for library logging:
-# https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
-logging.getLogger(__name__).addHandler(NullHandler())
 
 __all__ = [
     "StorageContext",
