@@ -357,11 +357,14 @@ class SimpleDirectoryReader(BaseReader):
         files_to_process = self.input_files
 
         if num_workers and num_workers > 1:
-            if num_workers > multiprocessing.cpu_count():
+            num_cpus = multiprocessing.cpu_count()
+            if num_workers > num_cpus:
                 warnings.warn(
                     "Specified num_workers exceed number of CPUs in the system. "
                     "Setting `num_workers` down to the maximum CPU count."
                 )
+                num_workers = num_cpus
+
             with multiprocessing.get_context("spawn").Pool(num_workers) as p:
                 results = p.starmap(
                     SimpleDirectoryReader.load_file,

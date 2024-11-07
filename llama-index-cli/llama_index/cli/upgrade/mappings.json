@@ -1013,6 +1013,7 @@
   "SyncOpenAI": "llama_index.llms.openai",
   "AsyncOpenAI": "llama_index.llms.openai",
   "LMStudio": "llama_index.llms.lmstudio",
+  "Pipeshift": "llama_index.llms.pipeshift",
   "GradientBaseModelLLM": "llama_index.llms.gradient",
   "GradientModelAdapterLLM": "llama_index.llms.gradient",
   "EntityExtractor": "llama_index.extractors.entity",
