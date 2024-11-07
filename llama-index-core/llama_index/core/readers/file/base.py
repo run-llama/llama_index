@@ -9,7 +9,6 @@ import warnings
 from datetime import datetime
 from functools import reduce
 import asyncio
-from itertools import repeat
 from pathlib import Path, PurePosixPath
 import fsspec
 from fsspec.implementations.local import LocalFileSystem
@@ -712,18 +711,19 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 num_workers = num_cpus
 
             with multiprocessing.get_context("spawn").Pool(num_workers) as p:
-                results = p.starmap(
+                results = p.apply(
                     SimpleDirectoryReader.load_file,
-                    zip(
-                        files_to_process,
-                        repeat(self.file_metadata),
-                        repeat(self.file_extractor),
-                        repeat(self.filename_as_id),
-                        repeat(self.encoding),
-                        repeat(self.errors),
-                        repeat(self.raise_on_error),
-                        repeat(fs),
-                    ),
+                    args=(),
+                    kwds={
+                        "input_file": files_to_process,
+                        "file_metadata": self.file_metadata,
+                        "file_extractor": self.file_extractor,
+                        "filename_as_id": self.filename_as_id,
+                        "encoding": self.encoding,
+                        "errors": self.errors,
+                        "raise_on_error": self.raise_on_error,
+                        "fs": fs,
+                    },
                 )
                 documents = reduce(lambda x, y: x + y, results)
 
