@@ -6,7 +6,7 @@ from unittest import mock
 from requests import Response
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import CompletionResponse
-from llama_index.llms.siliconflow import SiliconFlow, is_function_calling_llm
+from llama_index.llms.siliconflow import SiliconFlow
 
 RESPONSE_JSON = {
     "id": "<string>",
@@ -60,13 +60,6 @@ def test_llm_model_alias():
     llm = SiliconFlow(model=model, api_key=api_key)
     assert llm.model == model
     assert llm.model_kwargs is not None
-
-
-def test_function_calling_model():
-    model = "deepseek-ai/DeepSeek-V2.5"
-    assert is_function_calling_llm(model)
-    model = "THUDM/chatglm3-6b"
-    assert is_function_calling_llm(model) is False
 
 
 def test_llm_complete():
