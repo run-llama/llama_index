@@ -23,6 +23,7 @@ ANTHROPIC_MULTI_MODAL_MODELS = {
     "claude-3-5-sonnet-latest": 180000,
     "claude-3-5-sonnet-20240620": 180000,
     "claude-3-5-sonnet-20241022": 180000,
+    "claude-3-5-haiku-20241022": 180000,
 }
 
 
