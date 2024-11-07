@@ -711,12 +711,11 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 num_workers = num_cpus
 
             with multiprocessing.get_context("spawn").Pool(num_workers) as p:
-                results = []
+                async_results = []
                 for input_file in files_to_process:
-                    results.append(
-                        p.apply(
+                    async_results.append(
+                        p.apply_async(
                             SimpleDirectoryReader.load_file,
-                            args=(),
                             kwds={
                                 "input_file": input_file,
                                 "file_metadata": self.file_metadata,
@@ -729,6 +728,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                             },
                         )
                     )
+                results = [res.get() for res in async_results]
                 documents = reduce(lambda x, y: x + y, results)
 
         else:
