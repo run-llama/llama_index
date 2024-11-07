@@ -4,7 +4,7 @@ from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.extractors import KeywordExtractor
 from llama_index.core.ingestion.pipeline import IngestionPipeline
 from llama_index.core.llms.mock import MockLLM
-from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.node_parser import SentenceSplitter, MarkdownElementNodeParser
 from llama_index.core.readers import ReaderConfig, StringIterableReader
 from llama_index.core.schema import Document
 from llama_index.core.storage.docstore import SimpleDocumentStore
@@ -55,6 +55,25 @@ def test_run_pipeline() -> None:
 
     assert len(nodes) == 2
     assert len(nodes[0].metadata) > 0
+
+
+def test_run_pipeline_with_ref_doc_id():
+    documents = [
+        Document(text="one", doc_id="1"),
+    ]
+    pipeline = IngestionPipeline(
+        documents=documents,
+        transformations=[
+            MarkdownElementNodeParser(),
+            SentenceSplitter(),
+            MockEmbedding(embed_dim=8),
+        ],
+    )
+
+    nodes = pipeline.run()
+
+    assert len(nodes) == 1
+    assert nodes[0].ref_doc_id == "1"
 
 
 def test_save_load_pipeline() -> None:

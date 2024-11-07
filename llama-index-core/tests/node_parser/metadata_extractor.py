@@ -9,10 +9,9 @@ from llama_index.core.extractors import (
 from llama_index.core.ingestion import run_transformations
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.schema import Document, TransformComponent
-from llama_index.core.service_context import ServiceContext
 
 
-def test_metadata_extractor(mock_service_context: ServiceContext) -> None:
+def test_metadata_extractor() -> None:
     extractors: List[TransformComponent] = [
         TitleExtractor(nodes=5),
         QuestionsAnsweredExtractor(questions=3),

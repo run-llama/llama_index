@@ -13,7 +13,7 @@ class RetrievalStartEvent(BaseEvent):
     str_or_query_bundle: QueryType
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "RetrievalStartEvent"
 
@@ -30,6 +30,6 @@ class RetrievalEndEvent(BaseEvent):
     nodes: List[NodeWithScore]
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "RetrievalEndEvent"

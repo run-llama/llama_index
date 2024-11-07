@@ -72,8 +72,8 @@ class Ollama(FunctionCallingLLM):
     temperature: float = Field(
         default=0.75,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
@@ -99,6 +99,10 @@ class Ollama(FunctionCallingLLM):
         default=True,
         description="Whether the model is a function calling model.",
     )
+    keep_alive: Optional[Union[float, str]] = Field(
+        default="5m",
+        description="controls how long the model will stay loaded into memory following the request(default: 5m)",
+    )
 
     _client: Optional[Client] = PrivateAttr()
     _async_client: Optional[AsyncClient] = PrivateAttr()
@@ -116,6 +120,7 @@ class Ollama(FunctionCallingLLM):
         client: Optional[Client] = None,
         async_client: Optional[AsyncClient] = None,
         is_function_calling_model: bool = True,
+        keep_alive: Optional[Union[float, str]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -128,6 +133,7 @@ class Ollama(FunctionCallingLLM):
             json_mode=json_mode,
             additional_kwargs=additional_kwargs,
             is_function_calling_model=is_function_calling_model,
+            keep_alive=keep_alive,
             **kwargs,
         )
 
@@ -183,6 +189,20 @@ class Ollama(FunctionCallingLLM):
             }
             for message in messages
         ]
+
+    def _get_response_token_counts(self, raw_response: dict) -> dict:
+        """Get the token usage reported by the response."""
+        try:
+            prompt_tokens = raw_response["prompt_eval_count"]
+            completion_tokens = raw_response["eval_count"]
+            total_tokens = prompt_tokens + completion_tokens
+        except KeyError:
+            return {}
+        return {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": total_tokens,
+        }
 
     def _prepare_chat_with_tools(
         self,
@@ -265,9 +285,13 @@ class Ollama(FunctionCallingLLM):
             format="json" if self.json_mode else "",
             tools=tools,
             options=self._model_kwargs,
+            keep_alive=self.keep_alive,
         )
 
         tool_calls = response["message"].get("tool_calls", [])
+        token_counts = self._get_response_token_counts(response)
+        if token_counts:
+            response["usage"] = token_counts
 
         return ChatResponse(
             message=ChatMessage(
@@ -294,6 +318,7 @@ class Ollama(FunctionCallingLLM):
                 format="json" if self.json_mode else "",
                 tools=tools,
                 options=self._model_kwargs,
+                keep_alive=self.keep_alive,
             )
 
             response_txt = ""
@@ -305,6 +330,9 @@ class Ollama(FunctionCallingLLM):
                 response_txt += r["message"]["content"]
 
                 tool_calls = r["message"].get("tool_calls", [])
+                token_counts = self._get_response_token_counts(r)
+                if token_counts:
+                    r["usage"] = token_counts
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -334,6 +362,7 @@ class Ollama(FunctionCallingLLM):
                 format="json" if self.json_mode else "",
                 tools=tools,
                 options=self._model_kwargs,
+                keep_alive=self.keep_alive,
             )
 
             response_txt = ""
@@ -345,6 +374,9 @@ class Ollama(FunctionCallingLLM):
                 response_txt += r["message"]["content"]
 
                 tool_calls = r["message"].get("tool_calls", [])
+                token_counts = self._get_response_token_counts(r)
+                if token_counts:
+                    r["usage"] = token_counts
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -373,9 +405,13 @@ class Ollama(FunctionCallingLLM):
             format="json" if self.json_mode else "",
             tools=tools,
             options=self._model_kwargs,
+            keep_alive=self.keep_alive,
         )
 
         tool_calls = response["message"].get("tool_calls", [])
+        token_counts = self._get_response_token_counts(response)
+        if token_counts:
+            response["usage"] = token_counts
 
         return ChatResponse(
             message=ChatMessage(

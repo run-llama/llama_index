@@ -212,4 +212,4 @@ pipeline.run(documents=[...], num_workers=4)
 - [Document Management Pipeline](../../../examples/ingestion/document_management_pipeline.ipynb)
 - [Redis Ingestion Pipeline](../../../examples/ingestion/redis_ingestion_pipeline.ipynb)
 - [Google Drive Ingestion Pipeline](../../../examples/ingestion/ingestion_gdrive.ipynb)
-- [Parallel Execution Pipeline](../../../examples/ingestion/parallel_execution_ingestion_pipeline.ipynb)s
+- [Parallel Execution Pipeline](../../../examples/ingestion/parallel_execution_ingestion_pipeline.ipynb)

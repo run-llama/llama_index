@@ -29,13 +29,13 @@ license = "MIT"
 maintainers = ["logan-markewich"]
 name = "llama-index-packs-chroma-autoretrieval"
 readme = "README.md"
-version = "0.1.3"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
 chromadb = "^0.4.22"
-llama-index-vector-stores-chroma = "^0.1.1"
+llama-index-vector-stores-chroma = "^0.2.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

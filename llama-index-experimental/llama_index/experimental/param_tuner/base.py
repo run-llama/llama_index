@@ -1,6 +1,5 @@
 """Param tuner."""
 
-
 import asyncio
 from abc import abstractmethod
 from copy import deepcopy
@@ -246,7 +245,7 @@ class RayTuneParamTuner(BaseParamTuner):
             tuned_result = self.param_fn(full_param_dict)
             # need to convert RunResult to dict to obey
             # Ray Tune's API
-            return tuned_result.dict()
+            return tuned_result.model_dump()
 
         run_config = RunConfig(**self.run_config_dict) if self.run_config_dict else None
 

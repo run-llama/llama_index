@@ -1,4 +1,5 @@
 """Node parser interface."""
+
 from abc import abstractmethod
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Sequence, cast
@@ -96,7 +97,7 @@ class BaseExtractor(TransformComponent):
 
     async def aprocess_nodes(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         excluded_embed_metadata_keys: Optional[List[str]] = None,
         excluded_llm_metadata_keys: Optional[List[str]] = None,
         **kwargs: Any,
@@ -130,11 +131,11 @@ class BaseExtractor(TransformComponent):
                 if isinstance(node, TextNode):
                     cast(TextNode, node).text_template = self.node_text_template
 
-        return new_nodes
+        return new_nodes  # type: ignore
 
     def process_nodes(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         excluded_embed_metadata_keys: Optional[List[str]] = None,
         excluded_llm_metadata_keys: Optional[List[str]] = None,
         **kwargs: Any,
@@ -148,7 +149,7 @@ class BaseExtractor(TransformComponent):
             )
         )
 
-    def __call__(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[BaseNode]:
         """Post process nodes parsed from documents.
 
         Allows extractors to be chained.
@@ -158,7 +159,7 @@ class BaseExtractor(TransformComponent):
         """
         return self.process_nodes(nodes, **kwargs)
 
-    async def acall(self, nodes: List[BaseNode], **kwargs: Any) -> List[BaseNode]:
+    async def acall(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[BaseNode]:
         """Post process nodes parsed from documents.
 
         Allows extractors to be chained.

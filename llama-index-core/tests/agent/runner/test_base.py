@@ -1,7 +1,7 @@
 """Test agent executor."""
 
 import uuid
-from typing import Any, cast
+from typing import Any, List, cast
 import llama_index.core.instrumentation as instrument
 from llama_index.core.agent.runner.base import AgentRunner
 from llama_index.core.agent.runner.parallel import ParallelAgentRunner
@@ -27,7 +27,7 @@ dispatcher = instrument.get_dispatcher()
 
 
 class _TestEventHandler(BaseEventHandler):
-    events = []
+    events: List[BaseEvent] = []
 
     @classmethod
     def class_name(cls):

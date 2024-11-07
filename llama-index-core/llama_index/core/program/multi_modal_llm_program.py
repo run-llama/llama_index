@@ -1,10 +1,10 @@
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Dict, List, Optional, Type, cast
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.multi_modal_llms import MultiModalLLM
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.core.schema import ImageDocument
+from llama_index.core.schema import ImageNode
 from llama_index.core.types import BasePydanticProgram
 from llama_index.core.utils import print_text
 
@@ -22,7 +22,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         output_parser: PydanticOutputParser,
         prompt: BasePromptTemplate,
         multi_modal_llm: MultiModalLLM,
-        image_documents: Sequence[ImageDocument],
+        image_documents: List[ImageNode],
         verbose: bool = False,
     ) -> None:
         self._output_parser = output_parser
@@ -41,7 +41,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         prompt_template_str: Optional[str] = None,
         prompt: Optional[PromptTemplate] = None,
         multi_modal_llm: Optional[MultiModalLLM] = None,
-        image_documents: Optional[Sequence[ImageDocument]] = None,
+        image_documents: Optional[List[ImageNode]] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "MultiModalLLMCompletionProgram":
@@ -94,12 +94,12 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
     def __call__(
         self,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        image_documents: Optional[Sequence[ImageDocument]] = None,
+        image_documents: Optional[List[ImageNode]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
-        formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)
+        formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)  # type: ignore
 
         response = self._multi_modal_llm.complete(
             formatted_prompt,
@@ -116,12 +116,12 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
     async def acall(
         self,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        image_documents: Optional[Sequence[ImageDocument]] = None,
+        image_documents: Optional[List[ImageNode]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
-        formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)
+        formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)  # type: ignore
 
         response = await self._multi_modal_llm.acomplete(
             formatted_prompt,

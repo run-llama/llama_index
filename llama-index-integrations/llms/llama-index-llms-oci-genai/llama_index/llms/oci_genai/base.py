@@ -74,12 +74,12 @@ class OCIGenAI(LLM):
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
     context_size: int = Field("The maximum number of tokens available for input.")
 
-    service_endpoint: str = Field(
+    service_endpoint: Optional[str] = Field(
         default=None,
         description="service endpoint url.",
     )
 
-    compartment_id: str = Field(
+    compartment_id: Optional[str] = Field(
         default=None,
         description="OCID of compartment.",
     )
@@ -111,8 +111,8 @@ class OCIGenAI(LLM):
         temperature: Optional[float] = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = 512,
         context_size: Optional[int] = None,
-        service_endpoint: str = None,
-        compartment_id: str = None,
+        service_endpoint: Optional[str] = None,
+        compartment_id: Optional[str] = None,
         auth_type: Optional[str] = "API_KEY",
         auth_profile: Optional[str] = "DEFAULT",
         client: Optional[Any] = None,
@@ -153,18 +153,6 @@ class OCIGenAI(LLM):
 
             additional_kwargs (Optional[Dict[str, Any]]): Additional kwargs for the the LLM.
         """
-        self._client = client or create_client(
-            auth_type, auth_profile, service_endpoint
-        )
-
-        self._provider = get_provider(model, provider)
-
-        self._serving_mode = get_serving_mode(model)
-
-        self._completion_generator = get_completion_generator()
-
-        self._chat_generator = get_chat_generator()
-
         context_size = get_context_size(model, context_size)
 
         additional_kwargs = additional_kwargs or {}
@@ -187,6 +175,18 @@ class OCIGenAI(LLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+
+        self._client = client or create_client(
+            auth_type, auth_profile, service_endpoint
+        )
+
+        self._provider = get_provider(model, provider)
+
+        self._serving_mode = get_serving_mode(model)
+
+        self._completion_generator = get_completion_generator()
+
+        self._chat_generator = get_chat_generator()
 
     @classmethod
     def class_name(cls) -> str:

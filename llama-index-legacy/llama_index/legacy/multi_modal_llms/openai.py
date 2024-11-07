@@ -268,6 +268,9 @@ class OpenAIMultiModal(MultiModalLLM):
                 else:
                     delta = ChoiceDelta()
 
+                if delta is None:
+                    continue
+
                 # update using deltas
                 content_delta = delta.content or ""
                 text += content_delta
@@ -301,6 +304,9 @@ class OpenAIMultiModal(MultiModalLLM):
                     delta = response.choices[0].delta
                 else:
                     delta = ChoiceDelta()
+
+                if delta is None:
+                    continue
 
                 # check if this chunk is the start of a function call
                 if delta.tool_calls:
@@ -401,6 +407,9 @@ class OpenAIMultiModal(MultiModalLLM):
                 else:
                     delta = ChoiceDelta()
 
+                if delta is None:
+                    continue
+
                 # update using deltas
                 content_delta = delta.content or ""
                 text += content_delta
@@ -453,6 +462,9 @@ class OpenAIMultiModal(MultiModalLLM):
                     delta = response.choices[0].delta
                 else:
                     delta = ChoiceDelta()
+
+                if delta is None:
+                    continue
 
                 # check if this chunk is the start of a function call
                 if delta.tool_calls:

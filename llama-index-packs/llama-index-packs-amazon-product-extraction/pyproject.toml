@@ -29,12 +29,13 @@ license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-packs-amazon-product-extraction"
 readme = "README.md"
-version = "0.1.3"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
 pyppeteer = "^1.0.2"
+llama-index-multi-modal-llms-openai = "^0.2.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

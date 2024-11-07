@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, Generator, List, Union
+from typing import Any, Dict, Generator, List, Union, Optional
 
 import pytest
 from llama_index.core.schema import (
@@ -155,6 +155,33 @@ def pg_hnsw_hybrid(db_hnsw: None) -> Any:
     yield pg
 
     asyncio.run(pg.close())
+
+
+@pytest.fixture()
+def pg_hnsw_multiple(db_hnsw: None) -> Generator[List[PGVectorStore], None, None]:
+    """
+    This creates multiple instances of PGVectorStore.
+    """
+    pgs = []
+    for _ in range(2):
+        pg = PGVectorStore.from_params(
+            **PARAMS,  # type: ignore
+            database=TEST_DB_HNSW,
+            table_name=TEST_TABLE_NAME,
+            schema_name=TEST_SCHEMA_NAME,
+            embed_dim=TEST_EMBED_DIM,
+            hnsw_kwargs={
+                "hnsw_m": 16,
+                "hnsw_ef_construction": 64,
+                "hnsw_ef_search": 40,
+            },
+        )
+        pgs.append(pg)
+
+    yield pgs
+
+    for pg in pgs:
+        asyncio.run(pg.close())
 
 
 @pytest.fixture(scope="session")
@@ -865,6 +892,41 @@ async def test_delete_nodes_metadata(
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("use_async", [True, False])
+async def test_hnsw_index_creation(
+    pg_hnsw_multiple: List[PGVectorStore],
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    """
+    This test will make sure that creating multiple PGVectorStores handles db initialization properly.
+    """
+    # calling add will make the db initialization run
+    for pg in pg_hnsw_multiple:
+        if use_async:
+            await pg.async_add(node_embeddings)
+        else:
+            pg.add(node_embeddings)
+
+    # these are the actual table and index names that PGVectorStore automatically created
+    data_test_table_name = f"data_{TEST_TABLE_NAME}"
+    data_test_index_name = f"data_{TEST_TABLE_NAME}_embedding_idx"
+
+    # create a connection to the TEST_DB_HNSW database to make sure that one, and only one, index was created
+    with psycopg2.connect(**PARAMS, database=TEST_DB_HNSW) as hnsw_conn:
+        with hnsw_conn.cursor() as c:
+            c.execute(
+                f"SELECT COUNT(*) FROM pg_indexes WHERE schemaname = '{TEST_SCHEMA_NAME}' AND tablename = '{data_test_table_name}' AND indexname LIKE '{data_test_index_name}%';"
+            )
+            index_count = c.fetchone()[0]
+
+    assert (
+        index_count == 1
+    ), f"Expected exactly one '{data_test_index_name}' index, but found {index_count}."
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_clear(
     pg: PGVectorStore, node_embeddings: List[BaseNode], use_async: bool
 ) -> None:
@@ -895,3 +957,77 @@ async def test_clear(
         res = pg.query(q)
     assert all(i not in res.ids for i in ["bbb", "aaa", "ddd", "ccc"])
     assert len(res.ids) == 0
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.parametrize(
+    ("node_ids", "filters", "expected_node_ids"),
+    [
+        (["aaa", "bbb"], None, ["aaa", "bbb"]),
+        (
+            None,
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="test_num",
+                        value=1,
+                        operator=FilterOperator.EQ,
+                    )
+                ]
+            ),
+            ["aaa"],
+        ),
+        (
+            ["bbb", "ccc"],
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="test_key",
+                        value="test_value",
+                        operator=FilterOperator.EQ,
+                    )
+                ]
+            ),
+            ["bbb"],
+        ),
+        (
+            ["ccc"],
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="test_key",
+                        value="test_value",
+                        operator=FilterOperator.EQ,
+                    )
+                ]
+            ),
+            [],
+        ),
+        (
+            ["aaa", "bbb"],
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="test_num",
+                        value=999,
+                        operator=FilterOperator.EQ,
+                    )
+                ]
+            ),
+            [],
+        ),
+    ],
+)
+def test_get_nodes_parametrized(
+    pg: PGVectorStore,
+    node_embeddings: List[TextNode],
+    node_ids: Optional[List[str]],
+    filters: Optional[MetadataFilters],
+    expected_node_ids: List[str],
+) -> None:
+    """Test get_nodes method with various combinations of node_ids and filters."""
+    pg.add(node_embeddings)
+    nodes = pg.get_nodes(node_ids=node_ids, filters=filters)
+    retrieved_ids = [node.node_id for node in nodes]
+    assert set(retrieved_ids) == set(expected_node_ids)
+    assert len(retrieved_ids) == len(expected_node_ids)

@@ -1,8 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, List, Optional
-
-if TYPE_CHECKING:
-    from llama_index.core.service_context import ServiceContext
+from typing import Any, Callable, List, Optional
 
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -249,56 +246,3 @@ class _Settings:
 
 # Singleton
 Settings = _Settings()
-
-
-# -- Helper functions for deprecation/migration --
-
-
-def llm_from_settings_or_context(
-    settings: _Settings, context: Optional["ServiceContext"]
-) -> LLM:
-    """Get settings from either settings or context."""
-    if context is not None:
-        return context.llm
-
-    return settings.llm
-
-
-def embed_model_from_settings_or_context(
-    settings: _Settings, context: Optional["ServiceContext"]
-) -> BaseEmbedding:
-    """Get settings from either settings or context."""
-    if context is not None:
-        return context.embed_model
-
-    return settings.embed_model
-
-
-def callback_manager_from_settings_or_context(
-    settings: _Settings, context: Optional["ServiceContext"]
-) -> CallbackManager:
-    """Get settings from either settings or context."""
-    if context is not None:
-        return context.callback_manager
-
-    return settings.callback_manager
-
-
-def node_parser_from_settings_or_context(
-    settings: _Settings, context: Optional["ServiceContext"]
-) -> NodeParser:
-    """Get settings from either settings or context."""
-    if context is not None:
-        return context.node_parser
-
-    return settings.node_parser
-
-
-def transformations_from_settings_or_context(
-    settings: _Settings, context: Optional["ServiceContext"]
-) -> List[TransformComponent]:
-    """Get settings from either settings or context."""
-    if context is not None:
-        return context.transformations
-
-    return settings.transformations

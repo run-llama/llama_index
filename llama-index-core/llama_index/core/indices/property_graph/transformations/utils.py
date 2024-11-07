@@ -1,10 +1,10 @@
 from typing import Any, Dict, List, Optional
 
 try:
-    from typing import TypeAlias
+    from typing import TypeAlias  # type: ignore
 except ImportError:
     # python 3.8 and 3.9 compatibility
-    TypeAlias = Any
+    from typing import Any as TypeAlias  # type: ignore
 
 from llama_index.core.bridge.pydantic import create_model, Field
 

@@ -3,7 +3,7 @@ import json
 from typing import Any, Dict, List, Optional
 
 import yaml
-from llama_index.core import Document, ServiceContext, VectorStoreIndex
+from llama_index.core import Document, Settings, VectorStoreIndex
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.base.response.schema import RESPONSE_TYPE
@@ -84,7 +84,9 @@ class DenseXRetrievalPack(BaseLlamaPack):
             max_tokens=750,
         )
 
-        embed_model = embed_model or OpenAIEmbedding(embed_batch_size=128)
+        Settings.embed_model = embed_model or OpenAIEmbedding(embed_batch_size=128)
+        Settings.llm = query_llm or OpenAI()
+        Settings.num_output = self._proposition_llm.metadata.num_output
 
         nodes = text_splitter.get_nodes_from_documents(documents)
         sub_nodes = self._gen_propositions(nodes)
@@ -92,15 +94,7 @@ class DenseXRetrievalPack(BaseLlamaPack):
         all_nodes = nodes + sub_nodes
         all_nodes_dict = {n.node_id: n for n in all_nodes}
 
-        service_context = ServiceContext.from_defaults(
-            llm=query_llm or OpenAI(),
-            embed_model=embed_model,
-            num_output=self._proposition_llm.metadata.num_output,
-        )
-
-        self.vector_index = VectorStoreIndex(
-            all_nodes, service_context=service_context, show_progress=True
-        )
+        self.vector_index = VectorStoreIndex(all_nodes, show_progress=True)
 
         self.retriever = RecursiveRetriever(
             "vector",
@@ -113,9 +107,7 @@ class DenseXRetrievalPack(BaseLlamaPack):
         )
 
         self.query_engine = RetrieverQueryEngine.from_args(
-            self.retriever,
-            service_context=service_context,
-            streaming=streaming,
+            self.retriever, streaming=streaming
         )
 
     async def _aget_proposition(self, node: TextNode) -> List[TextNode]:

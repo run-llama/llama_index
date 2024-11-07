@@ -19,7 +19,7 @@ def astra_db_store() -> Iterable[AstraDBVectorStore]:
         token=ASTRA_DB_APPLICATION_TOKEN,
         api_endpoint=ASTRA_DB_API_ENDPOINT,
         collection_name="test_collection",
-        namespace=ASTRA_DB_KEYSPACE,
+        keyspace=ASTRA_DB_KEYSPACE,
         embedding_dimension=2,
     )
     store._collection.delete_many({})

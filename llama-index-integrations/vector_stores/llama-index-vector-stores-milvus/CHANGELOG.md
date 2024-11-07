@@ -1,5 +1,17 @@
 # Changelog
 
+## [v0.2.1]
+
+### Changed
+
+- Changed the default consistency level from "Strong" to "Session".
+
+## [v0.1.23]
+
+### Added
+
+- Added a new parameter `collection_properties` to set collection properties.
+
 ## [v0.1.22]
 
 ### Added

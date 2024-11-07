@@ -164,13 +164,6 @@ class ChromaVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Init params."""
         collection_kwargs = collection_kwargs or {}
-        if chroma_collection is None:
-            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
-            self._collection = client.get_or_create_collection(
-                name=collection_name, **collection_kwargs
-            )
-        else:
-            self._collection = cast(Collection, chroma_collection)
 
         super().__init__(
             host=host,
@@ -181,6 +174,13 @@ class ChromaVectorStore(BasePydanticVectorStore):
             persist_dir=persist_dir,
             collection_kwargs=collection_kwargs or {},
         )
+        if chroma_collection is None:
+            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+            self._collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        else:
+            self._collection = cast(Collection, chroma_collection)
 
     @classmethod
     def from_collection(cls, collection: Any) -> "ChromaVectorStore":
@@ -255,7 +255,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if filters:
             where = _to_chroma_filter(filters)
         else:
-            where = {}
+            where = None
 
         result = self._get(None, where=where, ids=node_ids)
 
@@ -332,7 +332,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if filters:
             where = _to_chroma_filter(filters)
         else:
-            where = {}
+            where = None
 
         self._collection.delete(ids=node_ids, where=where)
 
@@ -363,7 +363,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 )
             where = _to_chroma_filter(query.filters)
         else:
-            where = kwargs.pop("where", {})
+            where = kwargs.pop("where", None)
 
         if not query.query_embedding:
             return self._get(limit=query.similarity_top_k, where=where, **kwargs)

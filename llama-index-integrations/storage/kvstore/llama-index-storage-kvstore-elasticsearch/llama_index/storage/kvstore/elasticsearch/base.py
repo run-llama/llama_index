@@ -9,7 +9,7 @@ from llama_index.core.storage.kvstore.types import (
 import asyncio
 import nest_asyncio
 import elasticsearch
-from elasticsearch.helpers import async_bulk
+from elasticsearch.helpers import async_bulk, async_scan
 
 
 logger = getLogger(__name__)
@@ -280,12 +280,11 @@ class ElasticsearchKVStore(BaseKVStore):
         """
         await self._create_index_if_not_exists(collection)
 
-        q = {"query": {"match_all": {}}}
-        response = await self._client.search(index=collection, body=q, source=True)
         result = {}
-        for r in response["hits"]["hits"]:
-            doc_id = r["_id"]
-            content = r["_source"]
+        q = {"query": {"match_all": {}}}
+        async for doc in async_scan(client=self._client, index=collection, query=q):
+            doc_id = doc["_id"]
+            content = doc["_source"]
             result[doc_id] = content
         return result
 

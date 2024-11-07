@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, Optional, Sequence
 
 import httpx
 from llama_index.core.base.llms.types import ChatMessage
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, root_validator
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, model_validator
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
@@ -93,7 +93,7 @@ class AzureOpenAI(OpenAI):
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
     )
 
-    azure_ad_token_provider: AzureADTokenProvider = Field(
+    azure_ad_token_provider: Optional[AzureADTokenProvider] = Field(
         default=None, description="Callback function to provide Azure Entra ID token."
     )
 
@@ -171,7 +171,7 @@ class AzureOpenAI(OpenAI):
             **kwargs,
         )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate necessary credentials are set."""
         if (

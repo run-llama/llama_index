@@ -1,8 +1,17 @@
 from typing import Any, Dict, Optional
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.llama_pack.base import BaseLlamaPack
-from llama_index.core.query_pipeline import QueryPipeline, InputComponent
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.llms import LLM
+from llama_index.core.workflow import (
+    Workflow,
+    StartEvent,
+    StopEvent,
+    step,
+    Event,
+    Context,
+)
 from llama_index.llms.openai import OpenAI
 
 _REASONING_MODULES = [
@@ -49,96 +58,115 @@ _REASONING_MODULES = [
 
 _REASONING_MODULES = "\n".join(_REASONING_MODULES)
 
+SELECT_PRMOPT_TEMPLATE = PromptTemplate(
+    "Given the task: {task}, which of the following reasoning modules are relevant? Do not elaborate on why.\n\n {reasoning_modules}"
+)
 
-class PipelineConfigurator:
-    """Configures and sets up a query pipeline for a given task and reasoning modules."""
+ADAPT_PROMPT_TEMPLATE = PromptTemplate(
+    "Without working out the full solution, adapt the following reasoning modules to be specific to our task:\n{selected_modules}\n\nOur task:\n{task}"
+)
 
-    def __init__(self, task, reasoning_modules, verbose, llm) -> None:
-        """Initializes the configurator with task details, reasoning modules, and verbosity setting."""
-        self.task = task
-        self.reasoning_modules = reasoning_modules
-        self.verbose = verbose
-        self.pipeline = QueryPipeline(verbose=self.verbose)
-        self.llm = llm
+IMPLEMENT_PROMPT_TEMPLATE = PromptTemplate(
+    "Without working out the full solution, create an actionable reasoning structure for the task using these adapted reasoning modules:\n{adapted_modules}\n\nTask Description:\n{task}"
+)
 
-    def setup_templates(self) -> None:
-        """Sets up prompt templates for different stages of the pipeline."""
-        self.select_prompt_template = PromptTemplate(
-            "Given the task: {task}, which of the following reasoning modules are relevant? Do not elaborate on why.\n\n {reasoning_modules}"
-        )
-        self.adapt_prompt_template = PromptTemplate(
-            "Without working out the full solution, adapt the following reasoning modules to be specific to our task:\n{selected_modules}\n\nOur task:\n{task}"
-        )
-        self.implement_prompt_template = PromptTemplate(
-            "Without working out the full solution, create an actionable reasoning structure for the task using these adapted reasoning modules:\n{adapted_modules}\n\nTask Description:\n{task}"
-        )
-        self.reasoning_prompt_template = PromptTemplate(
-            "Using the following reasoning structure: {reasoning_structure}\n\nSolve this task, providing your final answer: {task}"
-        )
+REASONING_PROMPT_TEMPLATE = PromptTemplate(
+    "Using the following reasoning structure: {reasoning_structure}\n\nSolve this task, providing your final answer: {task}"
+)
 
-    def add_modules(self) -> None:
-        """Adds necessary modules and their configurations to the pipeline."""
-        self.pipeline.add_modules(
-            {
-                "input": InputComponent(),
-                "select_llm": self.llm,
-                "adapt_llm": self.llm,
-                "implement_llm": self.llm,
-                "reasoning_llm": self.llm,
-                "select_prompt_template": self.select_prompt_template,
-                "adapt_prompt_template": self.adapt_prompt_template,
-                "implement_prompt_template": self.implement_prompt_template,
-                "reasoning_prompt_template": self.reasoning_prompt_template,
-            }
-        )
 
-    def setup_links(self) -> None:
-        """Defines the connections (links) between the different pipeline modules."""
-        # STAGE-1: SELECT subset of reasoning Modules.
-        self.pipeline.add_link(
-            "input", "select_prompt_template", src_key="task", dest_key="task"
-        )
-        self.pipeline.add_link(
-            "input",
-            "select_prompt_template",
-            src_key="reasoning_modules",
-            dest_key="reasoning_modules",
-        )
-        self.pipeline.add_link("select_prompt_template", "select_llm")
+class GetModulesEvent(Event):
+    """Event to get modules."""
 
-        # STAGE-1: ADAPT selected reasoning modules to the task.
-        self.pipeline.add_link(
-            "select_llm", "adapt_prompt_template", dest_key="selected_modules"
-        )
-        self.pipeline.add_link(
-            "input", "adapt_prompt_template", src_key="task", dest_key="task"
-        )
-        self.pipeline.add_link("adapt_prompt_template", "adapt_llm")
+    task: str
+    modules: str
 
-        # STAGE-1: IMPLEMENT provides reasoning structure for the task.
-        self.pipeline.add_link(
-            "adapt_llm", "implement_prompt_template", dest_key="adapted_modules"
-        )
-        self.pipeline.add_link(
-            "input", "implement_prompt_template", src_key="task", dest_key="task"
-        )
-        self.pipeline.add_link("implement_prompt_template", "implement_llm")
 
-        # STAGE-2: Uses the generated reasoning structure for the task to generate an answer.
-        self.pipeline.add_link(
-            "implement_llm", "reasoning_prompt_template", dest_key="reasoning_structure"
-        )
-        self.pipeline.add_link(
-            "input", "reasoning_prompt_template", src_key="task", dest_key="task"
-        )
-        self.pipeline.add_link("reasoning_prompt_template", "reasoning_llm")
+class RefineModulesEvent(Event):
+    """Event to refine modules."""
 
-    def configure(self) -> QueryPipeline:
-        """Configures and returns the fully set up pipeline."""
-        self.setup_templates()
-        self.add_modules()
-        self.setup_links()
-        return self.pipeline
+    task: str
+    refined_modules: str
+
+
+class ReasoningStructureEvent(Event):
+    """Event to create reasoning structure."""
+
+    task: str
+    reasoning_structure: str
+
+
+class SelfDiscoverWorkflow(Workflow):
+    """Self discover workflow."""
+
+    @step(pass_context=True)
+    async def get_modules(self, ctx: Context, ev: StartEvent) -> GetModulesEvent:
+        """Get modules step."""
+        # get input data, store llm into ctx
+        task = ev.get("task")
+        llm: LLM = ev.get("llm")
+
+        if task is None or llm is None:
+            raise ValueError("'task' and 'llm' arguments are required.")
+
+        ctx.data["llm"] = llm
+
+        # format prompt and get result from LLM
+        prompt = SELECT_PRMOPT_TEMPLATE.format(
+            task=task, reasoning_modules=_REASONING_MODULES
+        )
+        result = llm.complete(prompt)
+
+        return GetModulesEvent(task=task, modules=str(result))
+
+    @step(pass_context=True)
+    async def refine_modules(
+        self, ctx: Context, ev: GetModulesEvent
+    ) -> RefineModulesEvent:
+        """Refine modules step."""
+        task = ev.task
+        modules = ev.modules
+        llm: LLM = ctx.data["llm"]
+
+        # format prompt and get result
+        prompt = ADAPT_PROMPT_TEMPLATE.format(task=task, selected_modules=modules)
+        result = llm.complete(prompt)
+
+        return RefineModulesEvent(task=task, refined_modules=str(result))
+
+    @step(pass_context=True)
+    async def create_reasoning_structure(
+        self, ctx: Context, ev: RefineModulesEvent
+    ) -> ReasoningStructureEvent:
+        """Create reasoning structures step."""
+        task = ev.task
+        refined_modules = ev.refined_modules
+        llm: LLM = ctx.data["llm"]
+
+        # format prompt, get result
+        prompt = IMPLEMENT_PROMPT_TEMPLATE.format(
+            task=task, adapted_modules=refined_modules
+        )
+        result = llm.complete(prompt)
+
+        return ReasoningStructureEvent(task=task, reasoning_structure=str(result))
+
+    @step(pass_context=True)
+    async def get_final_result(
+        self, ctx: Context, ev: ReasoningStructureEvent
+    ) -> StopEvent:
+        """Gets final result from reasoning structure event."""
+        task = ev.task
+        reasoning_structure = ev.reasoning_structure
+        llm: LLM = ctx.data["llm"]
+
+        # format prompt, get res
+        prompt = REASONING_PROMPT_TEMPLATE.format(
+            task=task, reasoning_structure=reasoning_structure
+        )
+        result = llm.complete(prompt)
+
+        return StopEvent(result=result)
 
 
 class SelfDiscoverPack(BaseLlamaPack):
@@ -154,14 +182,16 @@ class SelfDiscoverPack(BaseLlamaPack):
         self.reasoning_modules = _REASONING_MODULES
         self.verbose = verbose
 
+        self.workflow = SelfDiscoverWorkflow(verbose=verbose)
+
     def get_modules(self) -> Dict[str, Any]:
         """Get modules."""
-        return {"llm": self.llm, "reasoning_modules": self.reasoning_modules}
+        return {
+            "llm": self.llm,
+            "reasoning_modules": self.reasoning_modules,
+            "workflow": self.workflow,
+        }
 
     def run(self, task):
         """Runs the configured pipeline for a specified task and reasoning modules."""
-        configurator = PipelineConfigurator(
-            task, self.reasoning_modules, self.verbose, self.llm
-        )
-        pipeline = configurator.configure()
-        return pipeline.run(task=task, reasoning_modules=self.reasoning_modules)
+        return asyncio_run(self.workflow.run(task=task, llm=self.llm))

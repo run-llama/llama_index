@@ -39,6 +39,8 @@ class JiraReader(BaseReader):
         }
     """
 
+    include_epics: bool = True
+
     def __init__(
         self,
         email: Optional[str] = None,
@@ -47,6 +49,7 @@ class JiraReader(BaseReader):
         BasicAuth: Optional[BasicAuth] = None,
         Oauth2: Optional[Oauth2] = None,
         PATauth: Optional[PATauth] = None,
+        include_epics: bool = True,
     ) -> None:
         from jira import JIRA
 
@@ -75,8 +78,14 @@ class JiraReader(BaseReader):
                 server=f"https://{BasicAuth['server_url']}",
             )
 
-    def load_data(self, query: str) -> List[Document]:
-        relevant_issues = self.jira.search_issues(query)
+        self.include_epics = include_epics
+
+    def load_data(
+        self, query: str, start_at: int = 0, max_results: int = 50
+    ) -> List[Document]:
+        relevant_issues = self.jira.search_issues(
+            query, startAt=start_at, maxResults=max_results
+        )
 
         issues = []
 
@@ -87,14 +96,26 @@ class JiraReader(BaseReader):
         epic_descripton = ""
 
         for issue in relevant_issues:
-            # Iterates through only issues and not epics
-            if "parent" in (issue.raw["fields"]):
-                if issue.fields.assignee:
-                    assignee = issue.fields.assignee.displayName
+            issue_type = issue.fields.issuetype.name
+            if issue_type == "Epic" and not self.include_epics:
+                continue
 
-                if issue.fields.reporter:
-                    reporter = issue.fields.reporter.displayName
+            assignee = ""
+            assignee_email = ""
+            reporter = ""
+            reporter_email = ""
+            epic_key = ""
+            epic_summary = ""
+            epic_descripton = ""
 
+            if issue.fields.assignee:
+                assignee = issue.fields.assignee.displayName
+                assignee_email = issue.fields.assignee.emailAddress
+            if issue.fields.reporter:
+                reporter = issue.fields.reporter.displayName
+                reporter_email = issue.fields.reporter.emailAddress
+
+            if "parent" in issue.raw["fields"]:
                 if issue.raw["fields"]["parent"]["key"]:
                     epic_key = issue.raw["fields"]["parent"]["key"]
 
@@ -109,6 +130,7 @@ class JiraReader(BaseReader):
             issues.append(
                 Document(
                     text=f"{issue.fields.summary} \n {issue.fields.description}",
+                    doc_id=issue.id,
                     extra_info={
                         "id": issue.id,
                         "title": issue.fields.summary,
@@ -118,9 +140,11 @@ class JiraReader(BaseReader):
                         "labels": issue.fields.labels,
                         "status": issue.fields.status.name,
                         "assignee": assignee,
+                        "assignee_email": assignee_email,
                         "reporter": reporter,
+                        "reporter_email": reporter_email,
                         "project": issue.fields.project.name,
-                        "issue_type": issue.fields.issuetype.name,
+                        "issue_type": issue_type,
                         "priority": issue.fields.priority.name,
                         "epic_key": epic_key,
                         "epic_summary": epic_summary,

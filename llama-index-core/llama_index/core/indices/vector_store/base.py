@@ -9,6 +9,7 @@ import asyncio
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
+
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
@@ -23,8 +24,7 @@ from llama_index.core.schema import (
     MetadataMode,
     TransformComponent,
 )
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, embed_model_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import iter_batch
@@ -61,8 +61,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         callback_manager: Optional[CallbackManager] = None,
         transformations: Optional[List[TransformComponent]] = None,
         show_progress: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -71,14 +69,13 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         self._embed_model = (
             resolve_embed_model(embed_model, callback_manager=callback_manager)
             if embed_model
-            else embed_model_from_settings_or_context(Settings, service_context)
+            else Settings.embed_model
         )
 
         self._insert_batch_size = insert_batch_size
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             objects=objects,
@@ -92,8 +89,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         cls,
         vector_store: BasePydanticVectorStore,
         embed_model: Optional[EmbedType] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> "VectorStoreIndex":
         if not vector_store.stores_text:
@@ -107,7 +102,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         return cls(
             nodes=[],
             embed_model=embed_model,
-            service_context=service_context,
             storage_context=storage_context,
             **kwargs,
         )
@@ -149,7 +143,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         results = []
         for node in nodes:
             embedding = id_to_embed_map[node.node_id]
-            result = node.copy()
+            result = node.model_copy()
             result.embedding = embedding
             results.append(result)
         return results
@@ -175,7 +169,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         results = []
         for node in nodes:
             embedding = id_to_embed_map[node.node_id]
-            result = node.copy()
+            result = node.model_copy()
             result.embedding = embedding
             results.append(result)
         return results
@@ -202,7 +196,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             if not self._vector_store.stores_text or self._store_nodes_override:
                 for node, new_id in zip(nodes_batch, new_ids):
                     # NOTE: remove embedding from node to avoid duplication
-                    node_without_embedding = node.copy()
+                    node_without_embedding = node.model_copy()
                     node_without_embedding.embedding = None
 
                     index_struct.add_node(node_without_embedding, text_id=new_id)
@@ -215,7 +209,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 for node, new_id in zip(nodes_batch, new_ids):
                     if isinstance(node, (ImageNode, IndexNode)):
                         # NOTE: remove embedding from node to avoid duplication
-                        node_without_embedding = node.copy()
+                        node_without_embedding = node.model_copy()
                         node_without_embedding.embedding = None
 
                         index_struct.add_node(node_without_embedding, text_id=new_id)
@@ -243,7 +237,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 # we need to add the nodes to the index struct and document store
                 for node, new_id in zip(nodes_batch, new_ids):
                     # NOTE: remove embedding from node to avoid duplication
-                    node_without_embedding = node.copy()
+                    node_without_embedding = node.model_copy()
                     node_without_embedding.embedding = None
 
                     index_struct.add_node(node_without_embedding, text_id=new_id)
@@ -256,7 +250,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 for node, new_id in zip(nodes_batch, new_ids):
                     if isinstance(node, (ImageNode, IndexNode)):
                         # NOTE: remove embedding from node to avoid duplication
-                        node_without_embedding = node.copy()
+                        node_without_embedding = node.model_copy()
                         node_without_embedding.embedding = None
 
                         index_struct.add_node(node_without_embedding, text_id=new_id)
@@ -302,16 +296,18 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             VectorStoreIndex only stores nodes in document store
             if vector store does not store text
         """
-        # raise an error if even one node has no content
-        if any(
-            node.get_content(metadata_mode=MetadataMode.EMBED) == "" for node in nodes
-        ):
-            raise ValueError(
-                "Cannot build index from nodes with no content. "
-                "Please ensure all nodes have content."
-            )
+        # Filter out the nodes that don't have content
+        content_nodes = [
+            node
+            for node in nodes
+            if node.get_content(metadata_mode=MetadataMode.EMBED) != ""
+        ]
 
-        return self._build_index_from_nodes(nodes, **insert_kwargs)
+        # Report if some nodes are missing content
+        if len(content_nodes) != len(nodes):
+            print("Some nodes are missing content, skipping them...")
+
+        return self._build_index_from_nodes(content_nodes, **insert_kwargs)
 
     def _insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Insert a document."""

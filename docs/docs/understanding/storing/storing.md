@@ -33,7 +33,7 @@ index = load_index_from_storage(storage_context)
 
 ## Using Vector Stores
 
-As discussed in [indexing](../indexing/indexing.md), one of the most common types of Index is the VectorStoreIndex. The API calls to create the {ref}`embeddings <what-is-an-embedding>` in a VectorStoreIndex can be expensive in terms of time and money, so you will want to store them to avoid having to constantly re-index things.
+As discussed in [indexing](../indexing/indexing.md), one of the most common types of Index is the VectorStoreIndex. The API calls to create the [embeddings](../indexing/indexing.md#what-is-an-embedding) in a VectorStoreIndex can be expensive in terms of time and money, so you will want to store them to avoid having to constantly re-index things.
 
 LlamaIndex supports a [huge number of vector stores](../../module_guides/storing/vector_stores.md) which vary in architecture, complexity and cost. In this example we'll be using Chroma, an open-source vector store.
 

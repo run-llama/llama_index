@@ -237,6 +237,7 @@ class ReActAgentWorker(BaseAgentWorker):
         if output.message.content is None:
             raise ValueError("Got empty message.")
         message_content = output.message.content
+
         current_reasoning = []
         try:
             reasoning_step = self._output_parser.parse(message_content, is_streaming)
@@ -401,7 +402,9 @@ class ReActAgentWorker(BaseAgentWorker):
             tool.metadata.return_direct and not tool_output.is_error if tool else False,
         )
 
-    def _handle_nonexistent_tool_name(self, reasoning_step):
+    def _handle_nonexistent_tool_name(
+        self, reasoning_step: ActionReasoningStep
+    ) -> ToolOutput:
         # We still emit a `tool_output` object to the task, so that the LLM can know
         # it has hallucinated in the next reasoning step.
         with self.callback_manager.event(
@@ -491,7 +494,7 @@ class ReActAgentWorker(BaseAgentWorker):
                 missed_chunks_storage.append(chunk)
             elif not latest_content.startswith("Thought"):
                 return True
-            elif "Answer: " in latest_content:
+            elif "Answer:" in latest_content:
                 missed_chunks_storage.clear()
                 return True
         return False
@@ -648,7 +651,7 @@ class ReActAgentWorker(BaseAgentWorker):
         full_response = ChatResponse(
             message=ChatMessage(content=None, role="assistant")
         )
-        missed_chunks_storage = []
+        missed_chunks_storage: List[ChatResponse] = []
         is_done = False
         for latest_chunk in chat_stream:
             full_response = latest_chunk
@@ -658,6 +661,8 @@ class ReActAgentWorker(BaseAgentWorker):
             if is_done:
                 break
 
+        non_streaming_agent_response = None
+        agent_response_stream = None
         if not is_done:
             # given react prompt outputs, call tools or return response
             reasoning_steps, is_done = self._process_actions(
@@ -665,34 +670,49 @@ class ReActAgentWorker(BaseAgentWorker):
             )
             task.extra_state["current_reasoning"].extend(reasoning_steps)
             # use _get_response to return intermediate response
-            agent_response: AGENT_CHAT_RESPONSE_TYPE = self._get_response(
+            non_streaming_agent_response = self._get_response(
                 task.extra_state["current_reasoning"], task.extra_state["sources"]
             )
             if is_done:
-                agent_response.is_dummy_stream = True
+                non_streaming_agent_response.is_dummy_stream = True
                 task.extra_state["new_memory"].put(
                     ChatMessage(
-                        content=agent_response.response, role=MessageRole.ASSISTANT
+                        content=non_streaming_agent_response.response,
+                        role=MessageRole.ASSISTANT,
                     )
                 )
         else:
-            # Get the response in a separate thread so we can yield the response
+            # remove "Answer: " from the response, and anything before it
+            start_idx = (latest_chunk.message.content or "").find("Answer:")
+            if start_idx != -1 and latest_chunk.message.content:
+                latest_chunk.message.content = latest_chunk.message.content[
+                    start_idx + len("Answer:") :
+                ].strip()
+
+            # set delta to the content, minus the "Answer: "
+            latest_chunk.delta = latest_chunk.message.content
+
+            # add back the chunks that were missed
             response_stream = self._add_back_chunk_to_stream(
                 chunks=[*missed_chunks_storage, latest_chunk], chat_stream=chat_stream
             )
 
-            agent_response = StreamingAgentChatResponse(
+            # Get the response in a separate thread so we can yield the response
+            agent_response_stream = StreamingAgentChatResponse(
                 chat_stream=response_stream,
                 sources=task.extra_state["sources"],
             )
             thread = Thread(
-                target=agent_response.write_response_to_history,
+                target=agent_response_stream.write_response_to_history,
                 args=(task.extra_state["new_memory"],),
                 kwargs={"on_stream_end_fn": partial(self.finalize_task, task)},
             )
             thread.start()
 
-        return self._get_task_step_response(agent_response, step, is_done)
+        response = agent_response_stream or non_streaming_agent_response
+        assert response is not None
+
+        return self._get_task_step_response(response, step, is_done)
 
     async def _arun_step_stream(
         self,
@@ -723,7 +743,7 @@ class ReActAgentWorker(BaseAgentWorker):
         full_response = ChatResponse(
             message=ChatMessage(content=None, role="assistant")
         )
-        missed_chunks_storage = []
+        missed_chunks_storage: List[ChatResponse] = []
         is_done = False
         async for latest_chunk in chat_stream:
             full_response = latest_chunk
@@ -733,6 +753,8 @@ class ReActAgentWorker(BaseAgentWorker):
             if is_done:
                 break
 
+        non_streaming_agent_response = None
+        agent_response_stream = None
         if not is_done:
             # given react prompt outputs, call tools or return response
             reasoning_steps, is_done = await self._aprocess_actions(
@@ -740,40 +762,55 @@ class ReActAgentWorker(BaseAgentWorker):
             )
             task.extra_state["current_reasoning"].extend(reasoning_steps)
             # use _get_response to return intermediate response
-            agent_response: AGENT_CHAT_RESPONSE_TYPE = self._get_response(
+            non_streaming_agent_response = self._get_response(
                 task.extra_state["current_reasoning"], task.extra_state["sources"]
             )
 
             if is_done:
-                agent_response.is_dummy_stream = True
+                non_streaming_agent_response.is_dummy_stream = True
                 task.extra_state["new_memory"].put(
                     ChatMessage(
-                        content=agent_response.response, role=MessageRole.ASSISTANT
+                        content=non_streaming_agent_response.response,
+                        role=MessageRole.ASSISTANT,
                     )
                 )
         else:
-            # Get the response in a separate thread so we can yield the response
+            # remove "Answer: " from the response, and anything before it
+            start_idx = (latest_chunk.message.content or "").find("Answer:")
+            if start_idx != -1 and latest_chunk.message.content:
+                latest_chunk.message.content = latest_chunk.message.content[
+                    start_idx + len("Answer:") :
+                ].strip()
+
+            # set delta to the content, minus the "Answer: "
+            latest_chunk.delta = latest_chunk.message.content
+
+            # add back the chunks that were missed
             response_stream = self._async_add_back_chunk_to_stream(
                 chunks=[*missed_chunks_storage, latest_chunk], chat_stream=chat_stream
             )
 
-            agent_response = StreamingAgentChatResponse(
+            agent_response_stream = StreamingAgentChatResponse(
                 achat_stream=response_stream,
                 sources=task.extra_state["sources"],
             )
             # create task to write chat response to history
             asyncio.create_task(
-                agent_response.awrite_response_to_history(
+                agent_response_stream.awrite_response_to_history(
                     task.extra_state["new_memory"],
                     on_stream_end_fn=partial(self.finalize_task, task),
                 )
             )
             # wait until response writing is done
-            agent_response._ensure_async_setup()
+            agent_response_stream._ensure_async_setup()
 
-            await agent_response.is_function_false_event.wait()
+            assert agent_response_stream.is_function_false_event is not None
+            await agent_response_stream.is_function_false_event.wait()
 
-        return self._get_task_step_response(agent_response, step, is_done)
+        response = agent_response_stream or non_streaming_agent_response
+        assert response is not None
+
+        return self._get_task_step_response(response, step, is_done)
 
     @trace_method("run_step")
     def run_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:

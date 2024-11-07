@@ -153,11 +153,11 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 auth_config = weaviate.auth.AuthApiKey(auth_config)
 
             client_kwargs = client_kwargs or {}
-            self._client = weaviate.WeaviateClient(
+            client = weaviate.WeaviateClient(
                 auth_client_secret=auth_config, **client_kwargs
             )
         else:
-            self._client = cast(weaviate.WeaviateClient, weaviate_client)
+            client = cast(weaviate.WeaviateClient, weaviate_client)
 
         # validate class prefix starts with a capital letter
         if class_prefix is not None:
@@ -172,8 +172,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             )
 
         # create default schema if does not exist
-        if not class_schema_exists(self._client, index_name):
-            create_default_schema(self._client, index_name)
+        if not class_schema_exists(client, index_name):
+            create_default_schema(client, index_name)
 
         super().__init__(
             url=url,
@@ -182,6 +182,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             auth_config=auth_config.__dict__ if auth_config else {},
             client_kwargs=client_kwargs or {},
         )
+        self._client = client
 
     @classmethod
     def from_params(
@@ -324,16 +325,15 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         return_metatada = wvc.query.MetadataQuery(distance=True, score=True)
 
         vector = query.query_embedding
-        similarity_key = "distance"
+        similarity_key = "score"
         if query.mode == VectorStoreQueryMode.DEFAULT:
             _logger.debug("Using vector search")
             if vector is not None:
                 alpha = 1
         elif query.mode == VectorStoreQueryMode.HYBRID:
             _logger.debug(f"Using hybrid search with alpha {query.alpha}")
-            similarity_key = "score"
             if vector is not None and query.query_str:
-                alpha = query.alpha
+                alpha = query.alpha or 0.5
 
         if query.filters is not None:
             filters = _to_weaviate_filter(query.filters)

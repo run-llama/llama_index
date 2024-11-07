@@ -29,14 +29,14 @@ license = "MIT"
 maintainers = ["amorriscode"]
 name = "llama-index-readers-stripe-docs"
 readme = "README.md"
-version = "0.1.4"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.11.post1"
-html2text = "^2020.1.16"
+html2text = "^2024.2.26"
 urllib3 = "^2.1.0"
-llama-index-readers-web = "^0.1.6"
+llama-index-readers-web = "^0.2.0"
+llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

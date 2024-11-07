@@ -18,7 +18,12 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    SerializeAsAny,
+    ConfigDict,
+)
 from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
@@ -43,7 +48,7 @@ class StructuredLLM(LLM):
 
     """
 
-    llm: LLM
+    llm: SerializeAsAny[LLM]
     output_cls: Type[BaseModel] = Field(
         ..., description="Output class for the structured LLM.", exclude=True
     )
@@ -68,10 +73,12 @@ class StructuredLLM(LLM):
         chat_prompt = ChatPromptTemplate(message_templates=messages)
 
         output = self.llm.structured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt
+            output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=output.json()),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=output.model_dump_json()
+            ),
             raw=output,
         )
 
@@ -82,7 +89,7 @@ class StructuredLLM(LLM):
         chat_prompt = ChatPromptTemplate(message_templates=messages)
 
         stream_output = self.llm.stream_structured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt, **kwargs
+            output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
         for partial_output in stream_output:
             yield ChatResponse(
@@ -120,10 +127,12 @@ class StructuredLLM(LLM):
         chat_prompt = ChatPromptTemplate(message_templates=messages)
 
         output = await self.llm.astructured_predict(
-            output_cls=self.output_cls, prompt=chat_prompt
+            output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
         )
         return ChatResponse(
-            message=ChatMessage(role=MessageRole.ASSISTANT, content=output.json()),
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content=output.model_dump_json()
+            ),
             raw=output,
         )
 
@@ -139,7 +148,7 @@ class StructuredLLM(LLM):
             chat_prompt = ChatPromptTemplate(message_templates=messages)
 
             stream_output = await self.llm.astream_structured_predict(
-                output_cls=self.output_cls, prompt=chat_prompt, **kwargs
+                output_cls=self.output_cls, prompt=chat_prompt, llm_kwargs=kwargs
             )
             async for partial_output in stream_output:
                 yield ChatResponse(
@@ -167,11 +176,12 @@ class StructuredLLM(LLM):
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return query component."""
+        base_component: BaseLLMComponent
         if self.metadata.is_chat_model:
             base_component = LLMChatComponent(llm=self, **kwargs)
         else:
             base_component = LLMCompleteComponent(llm=self, **kwargs)
-        # llm_component = self.llm.as_query_component()
+
         return StructuredLLMComponent(llm_component=base_component)
 
 
@@ -182,10 +192,8 @@ class StructuredLLMComponent(QueryComponent):
 
     """
 
-    llm_component: BaseLLMComponent
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    llm_component: SerializeAsAny[BaseLLMComponent]
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""
@@ -209,7 +217,7 @@ class StructuredLLMComponent(QueryComponent):
 
     async def _arun_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        output = await self.llm_component.arun_component(**kwargs)["output"]
+        output = (await self.llm_component.arun_component(**kwargs))["output"]
         # NOTE: can either be a CompletionResponse or ChatResponse
         # other types are not supported at the moment
         if isinstance(output, CompletionResponse):

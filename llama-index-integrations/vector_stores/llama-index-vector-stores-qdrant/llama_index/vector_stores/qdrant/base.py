@@ -44,9 +44,12 @@ from qdrant_client.http.models import (
     MatchText,
     MatchValue,
     Payload,
+    PayloadField,
     Range,
     HasIdCondition,
+    IsEmptyCondition,
 )
+from qdrant_client.qdrant_fastembed import IDF_EMBEDDING_MODELS
 
 logger = logging.getLogger(__name__)
 import_err_msg = (
@@ -85,6 +88,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_query_fn (Optional[SparseEncoderCallable]): function to encode sparse queries
         hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
         index_doc_id (bool): whether to create a payload index for the document ID. Defaults to True
+        text_key (str): Name of the field holding the text information, Defaults to 'text'
 
     Examples:
         `pip install llama-index-vector-stores-qdrant`
@@ -114,6 +118,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     enable_hybrid: bool
     index_doc_id: bool
     fastembed_sparse_model: Optional[str]
+    text_key: Optional[str]
 
     _client: qdrant_client.QdrantClient = PrivateAttr()
     _aclient: qdrant_client.AsyncQdrantClient = PrivateAttr()
@@ -145,9 +150,24 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_query_fn: Optional[SparseEncoderCallable] = None,
         hybrid_fusion_fn: Optional[HybridFusionCallable] = None,
         index_doc_id: bool = True,
+        text_key: Optional[str] = "text",
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        super().__init__(
+            collection_name=collection_name,
+            url=url,
+            api_key=api_key,
+            batch_size=batch_size,
+            parallel=parallel,
+            max_retries=max_retries,
+            client_kwargs=client_kwargs or {},
+            enable_hybrid=enable_hybrid,
+            index_doc_id=index_doc_id,
+            fastembed_sparse_model=fastembed_sparse_model,
+            text_key=text_key,
+        )
+
         if (
             client is None
             and aclient is None
@@ -200,19 +220,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
         self._sparse_config = sparse_config
         self._dense_config = dense_config
         self._quantization_config = quantization_config
-
-        super().__init__(
-            collection_name=collection_name,
-            url=url,
-            api_key=api_key,
-            batch_size=batch_size,
-            parallel=parallel,
-            max_retries=max_retries,
-            client_kwargs=client_kwargs or {},
-            enable_hybrid=enable_hybrid,
-            index_doc_id=index_doc_id,
-            fastembed_sparse_model=fastembed_sparse_model,
-        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -344,6 +351,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             collection_name=self.collection_name,
             limit=limit or 9999,
             scroll_filter=filter,
+            with_vectors=True,
         )
 
         return self.parse_to_query_result(response[0]).nodes
@@ -389,6 +397,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             collection_name=self.collection_name,
             limit=limit or 9999,
             scroll_filter=filter,
+            with_vectors=True,
         )
 
         return self.parse_to_query_result(response[0]).nodes
@@ -434,6 +443,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Raises:
             ValueError: If trying to using async methods without aclient
         """
+        from qdrant_client.http.exceptions import UnexpectedResponse
+
         collection_initialized = await self._acollection_exists(self.collection_name)
 
         if len(nodes) > 0 and not collection_initialized:
@@ -445,14 +456,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_vector_name = await self.asparse_vector_name()
         points, ids = self._build_points(nodes, sparse_vector_name)
 
-        await self._aclient.upload_points(
-            collection_name=self.collection_name,
-            points=points,
-            batch_size=self.batch_size,
-            parallel=self.parallel,
-            max_retries=self.max_retries,
-            wait=True,
-        )
+        for batch in iter_batch(points, self.batch_size):
+            retries = 0
+            while retries < self.max_retries:
+                try:
+                    await self._aclient.upsert(
+                        collection_name=self.collection_name,
+                        points=batch,
+                    )
+                    break
+                except (RpcError, UnexpectedResponse) as exc:
+                    retries += 1
+                    if retries >= self.max_retries:
+                        raise exc  # noqa: TRY201
 
         return ids
 
@@ -597,8 +613,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             index=rest.SparseIndexParams(),
             modifier=(
                 rest.Modifier.IDF
-                if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
-                else rest.Modifier.NONE
+                if self.fastembed_sparse_model in IDF_EMBEDDING_MODELS
+                else None
             ),
         )
 
@@ -652,8 +668,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             index=rest.SparseIndexParams(),
             modifier=(
                 rest.Modifier.IDF
-                if self.fastembed_sparse_model and "bm42" in self.fastembed_sparse_model
-                else rest.Modifier.NONE
+                if self.fastembed_sparse_model in IDF_EMBEDDING_MODELS
+                else None
             ),
         )
 
@@ -977,8 +993,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         for point in response:
             payload = cast(Payload, point.payload)
+            vector = point.vector
+            embedding = None
+
+            if isinstance(vector, dict):
+                embedding = vector.get(DENSE_VECTOR_NAME, vector.get("", None))
+            elif isinstance(vector, list):
+                embedding = vector
+
             try:
                 node = metadata_dict_to_node(payload)
+
+                if embedding and node.embedding is None:
+                    node.embedding = embedding
             except Exception:
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     payload
@@ -986,11 +1013,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
                 node = TextNode(
                     id_=str(point.id),
-                    text=payload.get("text"),
+                    text=payload.get(self.text_key),
                     metadata=metadata,
                     start_char_idx=node_info.get("start", None),
                     end_char_idx=node_info.get("end", None),
                     relationships=relationships,
+                    embedding=embedding,
                 )
             nodes.append(node)
             ids.append(str(point.id))
@@ -1094,6 +1122,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         key=subfilter.key,
                         match=MatchExcept(**{"except": values}),
                     )
+                )
+            elif subfilter.operator == FilterOperator.IS_EMPTY:
+                # This condition will match all records where the field reports either does not exist, or has null or [] value.
+                # https://qdrant.tech/documentation/concepts/filtering/#is-empty
+                conditions.append(
+                    IsEmptyCondition(is_empty=PayloadField(key=subfilter.key))
                 )
 
         filter = Filter()
