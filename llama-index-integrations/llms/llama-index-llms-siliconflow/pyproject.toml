@@ -31,6 +31,7 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
+aiohttp = "^3.8.6"
 llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
