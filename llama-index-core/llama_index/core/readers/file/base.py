@@ -711,20 +711,24 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 num_workers = num_cpus
 
             with multiprocessing.get_context("spawn").Pool(num_workers) as p:
-                results = p.apply(
-                    SimpleDirectoryReader.load_file,
-                    args=(),
-                    kwds={
-                        "input_file": files_to_process,
-                        "file_metadata": self.file_metadata,
-                        "file_extractor": self.file_extractor,
-                        "filename_as_id": self.filename_as_id,
-                        "encoding": self.encoding,
-                        "errors": self.errors,
-                        "raise_on_error": self.raise_on_error,
-                        "fs": fs,
-                    },
-                )
+                results = []
+                for input_file in files_to_process:
+                    results.append(
+                        p.apply(
+                            SimpleDirectoryReader.load_file,
+                            args=(),
+                            kwds={
+                                "input_file": input_file,
+                                "file_metadata": self.file_metadata,
+                                "file_extractor": self.file_extractor,
+                                "filename_as_id": self.filename_as_id,
+                                "encoding": self.encoding,
+                                "errors": self.errors,
+                                "raise_on_error": self.raise_on_error,
+                                "fs": fs,
+                            },
+                        )
+                    )
                 documents = reduce(lambda x, y: x + y, results)
 
         else:
