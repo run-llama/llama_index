@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.openai"
+import_path = "llama_index.llms.keywordsai"
 
 [tool.llamahub.class_authors]
-KeywordsAI = "llama-index"
+KeywordsAI = "keywordsai"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -25,7 +25,7 @@ authors = ["llama-index"]
 description = "llama-index llms keywordsai integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-llms-openai"
+name = "llama-index-llms-keywordsai"
 readme = "README.md"
 version = "0.2.16"
 
