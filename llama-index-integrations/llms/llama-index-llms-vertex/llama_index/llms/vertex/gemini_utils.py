@@ -8,9 +8,7 @@ def is_gemini_model(model: str) -> bool:
     return model.startswith("gemini")
 
 
-def create_gemini_client(
-    model: str, safety_settings: Optional[SafetySetting]
-) -> Any:
+def create_gemini_client(model: str, safety_settings: Optional[SafetySetting]) -> Any:
     from vertexai.preview.generative_models import GenerativeModel
 
     return GenerativeModel(model_name=model, safety_settings=safety_settings)
@@ -45,8 +43,11 @@ def convert_chat_message_to_gemini_content(
             raise ValueError("Only text and image_url types are supported!")
         return Part.from_image(image)
 
-    if (MessageRole.ASSISTANT == message.role and message.content == "" and "tool_calls" in message.additional_kwargs)\
-            or (MessageRole.TOOL == message.role):
+    if (
+        message.role == MessageRole.ASSISTANT
+        and message.content == ""
+        and "tool_calls" in message.additional_kwargs
+    ) or (message.role == MessageRole.TOOL):
         tool_calls = message.additional_kwargs["tool_calls"]
         if message.role != MessageRole.TOOL:
             parts = [
@@ -56,8 +57,13 @@ def convert_chat_message_to_gemini_content(
             parts.append(Part.from_text(handle_raw_content(message)))
         else:
             ## this handles the case where the Gemini api properly sets the message role to tool instead of assistant
-            if 'name' in message.additional_kwargs:
-                parts = [Part.from_function_response(message.additional_kwargs['name'], message.additional_kwargs.get('args', {}))]
+            if "name" in message.additional_kwargs:
+                parts = [
+                    Part.from_function_response(
+                        message.additional_kwargs["name"],
+                        message.additional_kwargs.get("args", {}),
+                    )
+                ]
             else:
                 raise ValueError("Tool name must be provided!")
 

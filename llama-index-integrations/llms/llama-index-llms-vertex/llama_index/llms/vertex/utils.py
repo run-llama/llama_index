@@ -19,6 +19,8 @@ from vertexai.generative_models import FunctionDeclaration, Tool
 
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 
+from llama_index.llms.vertex.gemini_tool import GeminiToolWrapper
+
 CHAT_MODELS = ["chat-bison", "chat-bison-32k", "chat-bison@001"]
 TEXT_MODELS = [
     "text-bison",
@@ -56,6 +58,8 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
 def to_gemini_tools(tools) -> Any:
     func_list = []
     for i, tool in enumerate(tools):
+        _gemini_tools = GeminiToolWrapper(tool)
+
         func_name = f"func_{i}"
         func_name = FunctionDeclaration(
             name=tool["name"],

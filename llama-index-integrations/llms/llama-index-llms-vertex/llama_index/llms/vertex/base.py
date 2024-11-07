@@ -27,6 +27,8 @@ from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_ca
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.utilities.gemini_utils import merge_neighboring_same_role_messages
+
+from llama_index.llms.vertex.gemini_tool import GeminiToolWrapper
 from llama_index.llms.vertex.gemini_utils import create_gemini_client, is_gemini_model
 from llama_index.llms.vertex.utils import (
     CHAT_MODELS,
@@ -450,11 +452,17 @@ class Vertex(FunctionCallingLLM):
 
         tool_dicts = []
         for tool in tools:
+            if self._is_gemini:
+                tool = GeminiToolWrapper(tool)
+                metadata = tool.metadata()
+            else:
+                metadata = tool.metadata
+
             tool_dicts.append(
                 {
-                    "name": tool.metadata.name,
-                    "description": tool.metadata.description,
-                    "parameters": tool.metadata.get_parameters_dict(),
+                    "name": metadata.name,
+                    "description": metadata.description,
+                    "parameters": metadata.get_parameters_dict(),
                 }
             )
 
