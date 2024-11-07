@@ -1,4 +1,4 @@
-from typing import Dict, List, Sequence
+from typing import Dict, Sequence
 
 from llama_index.core.base.llms.types import (
     ChatResponse,
