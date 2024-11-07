@@ -80,7 +80,7 @@ tools = [
             },
         },
     },
-    ...
+    ...,
 ]
 response = llm.complete("...", tools=tools)
 print(llm.get_tool_calls_from_response(response))
