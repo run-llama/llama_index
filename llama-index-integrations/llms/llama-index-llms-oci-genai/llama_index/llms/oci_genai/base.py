@@ -1,5 +1,6 @@
 import json
 from typing import Any, Callable, Dict, Optional, Sequence, List, Union
+from deprecated import deprecated
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -76,24 +77,24 @@ class OCIGenAI(FunctionCallingLLM):
     _chat_generator: str = PrivateAttr()
 
     def __init__(
-            self,
-            model: str,
-            temperature: Optional[float] = DEFAULT_TEMPERATURE,
-            max_tokens: Optional[int] = 512,
-            context_size: Optional[int] = None,
-            service_endpoint: Optional[str] = None,
-            compartment_id: Optional[str] = None,
-            auth_type: Optional[str] = "API_KEY",
-            auth_profile: Optional[str] = "DEFAULT",
-            client: Optional[Any] = None,
-            provider: Optional[str] = None,
-            additional_kwargs: Optional[Dict[str, Any]] = None,
-            callback_manager: Optional[CallbackManager] = None,
-            system_prompt: Optional[str] = None,
-            messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
-            completion_to_prompt: Optional[Callable[[str], str]] = None,
-            pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
-            output_parser: Optional[BaseOutputParser] = None,
+        self,
+        model: str,
+        temperature: Optional[float] = DEFAULT_TEMPERATURE,
+        max_tokens: Optional[int] = 512,
+        context_size: Optional[int] = None,
+        service_endpoint: Optional[str] = None,
+        compartment_id: Optional[str] = None,
+        auth_type: Optional[str] = "API_KEY",
+        auth_profile: Optional[str] = "DEFAULT",
+        client: Optional[Any] = None,
+        provider: Optional[str] = None,
+        additional_kwargs: Optional[Dict[str, Any]] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         """
         Initializes the OCIGenAI class.
@@ -188,9 +189,10 @@ class OCIGenAI(FunctionCallingLLM):
             **kwargs,
         }
 
+    @deprecated("Deprecated in favor of `chat`, which should be used instead.")
     @llm_completion_callback()
     def complete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = False
@@ -208,9 +210,10 @@ class OCIGenAI(FunctionCallingLLM):
             raw=response.__dict__,
         )
 
+    @deprecated("Deprecated in favor of `stream_chat`, which should be used instead.")
     @llm_completion_callback()
     def stream_complete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = True
@@ -268,11 +271,11 @@ class OCIGenAI(FunctionCallingLLM):
                 additional_kwargs=generation_info,
             ),
             raw=response.__dict__,
-            additional_kwargs=llm_output
+            additional_kwargs=llm_output,
         )
 
     def stream_chat(
-            self, messages: Sequence[ChatMessage], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = True
@@ -303,32 +306,32 @@ class OCIGenAI(FunctionCallingLLM):
         return gen()
 
     async def achat(
-            self, messages: Sequence[ChatMessage], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         raise NotImplementedError("Async chat is not implemented yet.")
 
     async def acomplete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         raise NotImplementedError("Async complete is not implemented yet.")
 
     async def astream_chat(
-            self, messages: Sequence[ChatMessage], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         raise NotImplementedError("Async stream chat is not implemented yet.")
 
     async def astream_complete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError("Async stream complete is not implemented yet.")
 
     # Function tooling integration methods
     def _prepare_chat_with_tools(
-            self,
-            tools: Sequence["BaseTool"],
-            user_msg: Optional[Union[str, ChatMessage]] = None,
-            chat_history: Optional[List[ChatMessage]] = None,
-            **kwargs: Any,
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [self._provider.convert_to_oci_tool(tool) for tool in tools]
 
@@ -350,11 +353,11 @@ class OCIGenAI(FunctionCallingLLM):
         }
 
     def chat_with_tools(
-            self,
-            tools: Sequence["BaseTool"],
-            user_msg: Optional[Union[str, ChatMessage]] = None,
-            chat_history: Optional[List[ChatMessage]] = None,
-            **kwargs: Any,
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        **kwargs: Any,
     ) -> ChatResponse:
         chat_kwargs = self._prepare_chat_with_tools(
             tools,
@@ -370,10 +373,10 @@ class OCIGenAI(FunctionCallingLLM):
         )
 
     def _validate_chat_with_tools_response(
-            self,
-            response: ChatResponse,
-            tools: Sequence["BaseTool"],
-            **kwargs: Any,
+        self,
+        response: ChatResponse,
+        tools: Sequence["BaseTool"],
+        **kwargs: Any,
     ) -> ChatResponse:
         # Placeholder for future implementation details
         return response
