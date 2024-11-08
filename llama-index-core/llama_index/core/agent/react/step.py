@@ -498,7 +498,9 @@ class ReActAgentWorker(BaseAgentWorker):
         )
         # send prompt
         start_time = time.time()
+        print(input_chat)
         chat_response = await self._llm.achat(input_chat)
+        print(chat_response)
         end_time = time.time()
         elapsed_time = end_time - start_time
         print(f'USING LLM: {elapsed_time} seconds')
