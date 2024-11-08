@@ -249,7 +249,10 @@ class ReActAgentWorker(BaseAgentWorker):
 
         # call tool with input
         reasoning_step = cast(ActionReasoningStep, current_reasoning[-1])
+        print('here is the tools dict', str(tools_dict))
+        print('here is the reasoning step action', str(reasoning_step.action))
         tool = tools_dict[reasoning_step.action]
+        print('here is the chosen tool', str(tool))
         with self.callback_manager.event(
             CBEventType.FUNCTION_CALL,
             payload={
