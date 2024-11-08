@@ -70,5 +70,5 @@ def image_documents_to_base64(
                     base64.b64encode(response.content).decode("utf-8")
                 )
             except Exception as e:
-                logger.warning(f"Cannot encode the image url-> {e}")
+                logger.warning(f"Cannot encode the image pulled from URL -> {e}")
     return image_encodings
