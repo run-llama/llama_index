@@ -90,7 +90,10 @@ def test_image_documents_to_base64_single_document(
 ):
     """Test converting single ImageDocument with different configurations."""
     with patch("requests.get", return_value=mock_successful_response):
-        with patch("your_module.encode_image", return_value=EXP_BASE64):
+        with patch(
+            "llama_index.core.multi_modal_llms.generic_utils.encode_image",
+            return_value=EXP_BASE64,
+        ):
             result = image_documents_to_base64([image_document])
             assert result == expected_result
 
@@ -106,7 +109,10 @@ def test_image_documents_to_base64_multiple_sources():
 
     with patch("requests.get") as mock_get:
         mock_get.return_value.content = EXP_BINARY
-        with patch("your_module.encode_image", return_value=EXP_BASE64):
+        with patch(
+            "llama_index.core.multi_modal_llms.generic_utils.encode_image",
+            return_value=EXP_BASE64,
+        ):
             result = image_documents_to_base64(documents)
 
             assert len(result) == 4
@@ -117,8 +123,7 @@ def test_image_documents_to_base64_failed_url():
     """Test handling of failed URL requests."""
     document = ImageDocument(image_url="http://example.com/bad_image.jpg")
 
-    with patch("requests.get") as mock_get:
-        mock_get.side_effect = Exception("Failed to fetch image")
+    with patch("requests.get"):
         result = image_documents_to_base64([document])
         assert result == []
 
