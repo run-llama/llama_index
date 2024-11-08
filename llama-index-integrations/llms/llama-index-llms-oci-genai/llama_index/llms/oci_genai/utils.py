@@ -263,8 +263,11 @@ class CohereProvider(Provider):
         return response.data.chat_response.text
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
-        if "text" in event_data and "finishReason" not in event_data:
-            return event_data.get("text", "")
+        if "text" in event_data:
+            if "finishedReason" in event_data or "toolCalls" in event_data:
+                return ""
+            else:
+                return event_data["text"]
         return ""
 
     def chat_generation_info(self, response: Any) -> Dict[str, Any]:
