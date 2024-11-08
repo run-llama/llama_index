@@ -1,3 +1,4 @@
+import json
 from typing import Optional, Type, Any
 
 from llama_index.core.tools import ToolMetadata
@@ -53,10 +54,22 @@ class GeminiToolMetadataWrapper:
             }
         else:
             parameters = remap_schema(
-                self.fn_schema.model_json_schema(ref_template="#/defs/{model}")
+                {
+                    k: v
+                    for k, v in self.fn_schema.model_json_schema()
+                    if k in ["type", "properties", "required", "definitions", "$defs"]
+                }
             )
 
         return parameters
+
+    @property
+    def fn_schema_str(self) -> str:
+        """Get fn schema as string."""
+        if self.fn_schema is None:
+            raise ValueError("fn_schema is None.")
+        parameters = self.get_parameters_dict()
+        return json.dumps(parameters)
 
     def __getattr__(self, item) -> Any:
         match item:
@@ -84,6 +97,7 @@ class GeminiToolWrapper:
         self.base_obj = base_obj
         # some stuff
 
+    @property
     def metadata(self) -> GeminiToolMetadataWrapper:
         return GeminiToolMetadataWrapper(self.base_obj.metadata)
 
