@@ -10,6 +10,8 @@ from llama_index.core.multi_modal_llms.generic_utils import (
     load_image_urls,
     encode_image,
     image_documents_to_base64,
+    infer_image_mimetype_from_base64,
+    infer_image_mimetype_from_file_path,
 )
 
 # Expected values
@@ -97,3 +99,33 @@ def test_complete_workflow():
     assert len(result) == len(EXP_IMAGE_URLS)
     assert isinstance(result[0], str)
     assert base64.b64decode(result[0]) == EXP_BINARY
+
+
+def test_infer_image_mimetype_from_base64():
+    # Create a minimal valid PNG in base64
+    base64_png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=="
+
+    result = infer_image_mimetype_from_base64(base64_png)
+    assert result == "image/png"
+
+    # Valid, meaningless base64
+    result = infer_image_mimetype_from_base64("lEQVR4nGMAAQAABQABDQ")
+    assert result is None
+
+
+def test_infer_image_mimetype_from_file_path():
+    # JPG/JPEG
+    assert infer_image_mimetype_from_file_path("image.jpg") == "image/jpeg"
+    assert infer_image_mimetype_from_file_path("image.jpeg") == "image/jpeg"
+
+    # PNG
+    assert infer_image_mimetype_from_file_path("image.png") == "image/png"
+
+    # GIF
+    assert infer_image_mimetype_from_file_path("image.gif") == "image/gif"
+
+    # WEBP
+    assert infer_image_mimetype_from_file_path("image.webp") == "image/webp"
+
+    # Catch-all default
+    assert infer_image_mimetype_from_file_path("image.asf32") == "image/jpeg"

@@ -1,6 +1,7 @@
 import base64
+import filetype
 import logging
-from typing import List, Sequence
+from typing import List, Sequence, Optional
 
 import requests
 
@@ -74,3 +75,51 @@ def image_documents_to_base64(
             except Exception as e:
                 logger.warning(f"Cannot encode the image pulled from URL -> {e}")
     return image_encodings
+
+
+def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
+    """Infer the MIME of an image file based on its file extension.
+
+    Currently only supports the following types of images:
+        * image/jpeg
+        * image/png
+        * image/gif
+        * image/webp
+
+    Returns:
+        str: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
+    """
+    # Get the file extension
+    file_extension = image_file_path.split(".")[-1].lower()
+
+    # Map file extensions to mimetypes
+    if file_extension == "jpg" or file_extension == "jpeg":
+        return "image/jpeg"
+    elif file_extension == "png":
+        return "image/png"
+    elif file_extension == "gif":
+        return "image/gif"
+    elif file_extension == "webp":
+        return "image/webp"
+
+    # If the file extension is not recognized
+    return "image/jpeg"
+
+
+def infer_image_mimetype_from_base64(base64_string) -> Optional[str]:
+    """Infer the MIME of an image from the base64 encoding.
+
+    Args:
+        base64_string (str): Base64-encoded string of the image.
+
+    Returns:
+        Optional[str]: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
+    """
+    # Decode the base64 string
+    decoded_data = base64.b64decode(base64_string)
+
+    # Use filetype to guess the MIME type
+    kind = filetype.guess(decoded_data)
+
+    # Return the MIME type if detected, otherwise return None
+    return kind.mime if kind is not None else None
