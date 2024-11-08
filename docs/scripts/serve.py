@@ -1,5 +1,8 @@
 import argparse
+import os
 import subprocess
+import sys
+
 import yaml
 
 
@@ -11,13 +14,23 @@ def _skip_notebook_conversion():
         p for p in config["plugins"] if "mkdocs-jupyter" not in p
     ]
 
+    tmp_config_path = ".mkdocs.tmp.yml"
+    with open(tmp_config_path, "w") as f:
+        yaml.safe_dump(config, f)
+
     try:
-        subprocess.run(
-            ["mkdocs", "serve", "-f", "-"],
-            input=yaml.safe_dump(config).encode("utf-8"),
+        process = subprocess.Popen(
+            ["mkdocs", "serve", "--dirty", "-f", tmp_config_path],
+            stdout=sys.stdout,
+            stderr=sys.stderr,
         )
-    except KeyboardInterrupt:
-        pass
+
+        process.wait()
+
+    finally:
+        os.unlink(tmp_config_path)  # Clean up the temporary file
+        if process.poll() is None:
+            process.terminate()
 
 
 def _serve():

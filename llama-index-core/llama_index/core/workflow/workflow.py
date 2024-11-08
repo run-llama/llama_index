@@ -372,10 +372,15 @@ class Workflow(metaclass=WorkflowMeta):
                 ctx.is_running = False
 
                 if exception_raised:
+                    # cancel the stream
                     ctx.write_event_to_stream(StopEvent())
+
                     raise exception_raised
 
                 if not we_done:
+                    # cancel the stream
+                    ctx.write_event_to_stream(StopEvent())
+
                     msg = f"Operation timed out after {self._timeout} seconds"
                     raise WorkflowTimeoutError(msg)
 
@@ -396,7 +401,7 @@ class Workflow(metaclass=WorkflowMeta):
     @step
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
-        ctx._retval = ev.result or None
+        ctx._retval = ev.result
         ctx.write_event_to_stream(ev)
 
         # Signal we want to stop the workflow
