@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.readers.jira"
+import_path = "llama_index.llms.siliconflow"
 
 [tool.llamahub.class_authors]
-JiraReader = "bearguy"
+SiliconFlow = "nightosong"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,19 +21,17 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index readers jira integration"
+authors = ["nightosong"]
+description = "llama-index llms siliconflow integration"
 exclude = ["**/BUILD"]
-keywords = ["jira"]
 license = "MIT"
-maintainers = ["bearguy"]
-name = "llama-index-readers-jira"
+name = "llama-index-llms-siliconflow"
 readme = "README.md"
-version = "0.3.3"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-jira = "^3.6.0"
+aiohttp = "^3.8.6"
 llama-index-core = "^0.11.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -43,6 +41,7 @@ mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
+pytest-asyncio = "^0.23.7"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
