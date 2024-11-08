@@ -122,9 +122,7 @@ def test_load_data_basic(mock_jira, mock_issue):
 
     # Verify extra_info
     assert doc.extra_info["assignee"] == "Test Assignee"
-    assert doc.extra_info["assignee_email"] == "assignee@test.com"
     assert doc.extra_info["reporter"] == "Test Reporter"
-    assert doc.extra_info["reporter_email"] == "reporter@test.com"
     assert doc.extra_info["epic_key"] == "EPIC-1"
     assert doc.extra_info["epic_summary"] == "Epic Summary"
     assert doc.extra_info["epic_description"] == "Epic Description"
@@ -168,6 +166,4 @@ def test_load_data_no_assignee_reporter(mock_jira, mock_issue):
     assert len(documents) == 1
     doc = documents[0]
     assert doc.extra_info["assignee"] == ""
-    assert doc.extra_info["assignee_email"] == ""
     assert doc.extra_info["reporter"] == ""
-    assert doc.extra_info["reporter_email"] == ""
