@@ -29,6 +29,7 @@ CHAT_MODELS = {
     "meta.llama-3-70b-instruct": 8192,
     "meta.llama-3.1-70b-instruct": 128000,
     "meta.llama-3.1-405b-instruct": 128000,
+    "meta.llama-3.2-90b-vision-instruct": 128000,
 }
 
 OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_MODELS}
@@ -604,7 +605,9 @@ class MetaProvider(Provider):
         self,
         tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
     ) -> Dict[str, Any]:
-        raise NotImplementedError("Tools not supported for Meta models")
+        raise NotImplementedError(
+            "Tools not supported for OCI Generative AI Meta models"
+        )
 
 
 PROVIDERS = {
