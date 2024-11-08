@@ -42,3 +42,10 @@ def test_modelscope_text_embedding_batch(modelscope_embedding, text):
     assert sentence_embedding is not None
     assert len(sentence_embedding) == len(text)
     assert len(sentence_embedding[0]) > 0
+
+
+@pytest.mark.asyncio()
+async def test_modelscope_async_query(modelscope_embedding, query):
+    sentence_embedding = await modelscope_embedding.aget_query_embedding(query)
+    assert sentence_embedding is not None
+    assert len(sentence_embedding) > 0
