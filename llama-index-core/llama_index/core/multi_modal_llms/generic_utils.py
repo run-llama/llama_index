@@ -54,16 +54,18 @@ def image_documents_to_base64(
 
     # Encode image documents to base64
     for image_document in image_documents:
-        if image_document.image:
+        if image_document.image:  # This field is already base64-encoded
             image_encodings.append(image_document.image)
-        elif image_document.image_path:
+        elif (
+            image_document.image_path
+        ):  # This field is a path to the image, which is then encoded.
             image_encodings.append(encode_image(image_document.image_path))
         elif (
             "file_path" in image_document.metadata
             and image_document.metadata["file_path"] != ""
-        ):
+        ):  # Alternative path to the image, which is then encoded.
             image_encodings.append(encode_image(image_document.metadata["file_path"]))
-        elif image_document.image_url:
+        elif image_document.image_url:  # Image can also be pulled from the URL.
             response = requests.get(image_document.image_url)
             try:
                 image_encodings.append(
