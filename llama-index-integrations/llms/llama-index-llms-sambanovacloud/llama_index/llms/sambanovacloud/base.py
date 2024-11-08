@@ -109,7 +109,7 @@ class SambaNovaCloud(LLM):
     Instantiate:
         .. code-block:: python
 
-            from llama_index.llms.sambanova import SambaNovaCloud
+            from llama_index.llms.sambanovacloud import SambaNovaCloud
 
             llm = SambaNovaCloud(
                 sambanova_url = SambaNova cloud endpoint URL,

@@ -9,7 +9,7 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from llama_index.llms.sambanova import SambaNovaCloud
+from llama_index.llms.sambanovacloud import SambaNovaCloud
 import pytest
 
 
