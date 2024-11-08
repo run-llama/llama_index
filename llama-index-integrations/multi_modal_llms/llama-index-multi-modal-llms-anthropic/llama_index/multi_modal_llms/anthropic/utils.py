@@ -63,50 +63,16 @@ def infer_image_mimetype_from_base64(base64_string) -> Optional[str]:
     return kind.mime if kind is not None else None
 
 
-def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
-    """Infer the MIME of an image file based on its file extension.
-
-    Claude 3 supports the following types of images:
-        * image/jpeg
-        * image/png
-        * image/gif
-        * image/webp
-
-    Additional info can be found in the [Anthropic API docs](https://docs.anthropic.com/claude/reference/messages_post).
-
-    Args:
-        image_file_path (str): Path to the image file.
-
-    Returns:
-        str: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
-    """
-    # Get the file extension
-    file_extension = image_file_path.split(".")[-1].lower()
-
-    # Map file extensions to mimetypes
-    if file_extension == "jpg" or file_extension == "jpeg":
-        return "image/jpeg"
-    elif file_extension == "png":
-        return "image/png"
-    elif file_extension == "gif":
-        return "image/gif"
-    elif file_extension == "webp":
-        return "image/webp"
-
-    # If the file extension is not recognized
-    return "image/jpeg"
-
-
 def generate_anthropic_multi_modal_chat_message(
     prompt: str,
     role: str,
     image_documents: Optional[Sequence[ImageDocument]] = None,
 ) -> List[Dict[str, Any]]:
-    # If `image_documents` is empty, return text only chat message
+    # If `image_documents` is empty, just use text-only chat.
     if image_documents is None:
         return [{"role": role, "content": prompt}]
 
-    # If image_documents is not empty, return text with images chat message
+    # If `image_documents` is not empty, return text with images chat message
     completion_content = []
     for image_document in image_documents:
         image_content: Dict[str, Any] = {}
