@@ -58,17 +58,25 @@ def _format_oci_tool_calls(
         # Handle both object and dict formats
         if isinstance(tool_call, dict):
             name = tool_call.get("name", tool_call.get("functionName"))
-            parameters = tool_call.get("parameters", tool_call.get("functionParameters"))
+            parameters = tool_call.get(
+                "parameters", tool_call.get("functionParameters")
+            )
         else:
             name = getattr(tool_call, "name", getattr(tool_call, "functionName", None))
-            parameters = getattr(tool_call, "parameters", getattr(tool_call, "functionParameters", None))
+            parameters = getattr(
+                tool_call, "parameters", getattr(tool_call, "functionParameters", None)
+            )
 
         if name and parameters:
-            formatted_tool_calls.append({
-                "toolUseId": uuid.uuid4().hex[:],
-                "name": name,
-                "input": json.dumps(parameters) if isinstance(parameters, dict) else parameters,
-            })
+            formatted_tool_calls.append(
+                {
+                    "toolUseId": uuid.uuid4().hex[:],
+                    "name": name,
+                    "input": json.dumps(parameters)
+                    if isinstance(parameters, dict)
+                    else parameters,
+                }
+            )
 
     return formatted_tool_calls
 
@@ -265,7 +273,7 @@ class CohereProvider(Provider):
             "documents": response.data.chat_response.documents,
             "citations": response.data.chat_response.citations,
             "search_queries": response.data.chat_response.search_queries,
-            "is_search_required": response.data.chat_response.is_search_required
+            "is_search_required": response.data.chat_response.is_search_required,
         }
         if response.data.chat_response.tool_calls:
             # Only populate tool_calls when 1) present on the response and
@@ -283,16 +291,16 @@ class CohereProvider(Provider):
             "documents": event_data.get("documents", []),
             "citations": event_data.get("citations", []),
             "search_queries": event_data.get("searchQueries", []),
-            "is_search_required": event_data.get("isSearchRequired", False)
+            "is_search_required": event_data.get("isSearchRequired", False),
         }
 
         # Handle tool calls if present
         if "toolCalls" in event_data:
-            generation_info["tool_calls"] = _format_oci_tool_calls(event_data["toolCalls"])
+            generation_info["tool_calls"] = _format_oci_tool_calls(
+                event_data["toolCalls"]
+            )
 
         return {k: v for k, v in generation_info.items() if v is not None}
-
-
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         role_map = {

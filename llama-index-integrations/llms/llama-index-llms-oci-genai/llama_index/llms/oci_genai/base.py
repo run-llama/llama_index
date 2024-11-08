@@ -33,7 +33,8 @@ from llama_index.llms.oci_genai.utils import (
     get_serving_mode,
     get_completion_generator,
     get_chat_generator,
-    get_context_size, _format_oci_tool_calls,
+    get_context_size,
+    _format_oci_tool_calls,
 )
 
 
@@ -382,11 +383,11 @@ class OCIGenAI(FunctionCallingLLM):
         return response
 
     def stream_chat_with_tools(
-            self,
-            tools: Sequence["BaseTool"],
-            user_msg: Optional[Union[str, ChatMessage]] = None,
-            chat_history: Optional[List[ChatMessage]] = None,
-            **kwargs: Any,
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        **kwargs: Any,
     ) -> ChatResponseGen:
         """Stream chat with tools enabled."""
         chat_kwargs = self._prepare_chat_with_tools(
@@ -403,7 +404,9 @@ class OCIGenAI(FunctionCallingLLM):
 
             for response in response_gen:
                 # Get current content and delta
-                content = response.message.content if response.message.content else content
+                content = (
+                    response.message.content if response.message.content else content
+                )
 
                 try:
                     # Parse event data safely
@@ -424,8 +427,12 @@ class OCIGenAI(FunctionCallingLLM):
                         for tool_call in new_tool_calls:
                             # Check if we already have this tool call
                             existing = next(
-                                (t for t in tool_calls_accumulated if t["name"] == tool_call["name"]),
-                                None
+                                (
+                                    t
+                                    for t in tool_calls_accumulated
+                                    if t["name"] == tool_call["name"]
+                                ),
+                                None,
                             )
                             if existing:
                                 # Update existing tool call
@@ -435,7 +442,9 @@ class OCIGenAI(FunctionCallingLLM):
                                 tool_calls_accumulated.append(tool_call)
 
                     # Generate streaming response with current state
-                    generation_info = self._provider.chat_stream_generation_info(event_data)
+                    generation_info = self._provider.chat_stream_generation_info(
+                        event_data
+                    )
                     if tool_calls_accumulated:
                         generation_info["tool_calls"] = tool_calls_accumulated
 
@@ -446,7 +455,7 @@ class OCIGenAI(FunctionCallingLLM):
                             additional_kwargs=generation_info,
                         ),
                         delta=response.delta,
-                        raw=response.raw
+                        raw=response.raw,
                     )
 
                 except json.JSONDecodeError:
