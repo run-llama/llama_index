@@ -17,8 +17,76 @@ class MockResponseDict(dict):
         return self[val]
 
 
+@pytest.mark.parametrize("test_model_id", [])
+def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test valid completion call to OCI Generative AI LLM service."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    provider = llm._provider.__class__.__name__
+
+    def mocked_response(*args):  # type: ignore[no-untyped-def]
+        response_text = "This is the completion."
+
+        if provider == "CohereProvider":
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "inference_response": MockResponseDict(
+                                {
+                                    "generated_texts": [
+                                        MockResponseDict(
+                                            {
+                                                "text": response_text,
+                                            }
+                                        )
+                                    ]
+                                }
+                            )
+                        }
+                    ),
+                }
+            )
+        elif provider == "MetaProvider":
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "inference_response": MockResponseDict(
+                                {
+                                    "choices": [
+                                        MockResponseDict(
+                                            {
+                                                "text": response_text,
+                                            }
+                                        )
+                                    ]
+                                }
+                            )
+                        }
+                    ),
+                }
+            )
+        else:
+            return None
+
+    monkeypatch.setattr(llm._client, "generate_text", mocked_response)
+
+    output = llm.complete("This is a prompt.", temperature=0.2)
+    assert output.text == "This is the completion."
+
+
 @pytest.mark.parametrize(
-    "test_model_id", ["cohere.command-r-16k", "meta.llama-3-70b-instruct"]
+    "test_model_id",
+    [
+        "cohere.command-r-16k",
+        "cohere.command-r-plus",
+        "meta.llama-3-70b-instruct",
+        "meta.llama-3.1-70b-instruct",
+    ],
 )
 def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     """Test valid chat call to OCI Generative AI LLM service."""
