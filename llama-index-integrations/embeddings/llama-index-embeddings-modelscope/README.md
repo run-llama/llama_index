@@ -1,4 +1,4 @@
-# LlamaIndex Llms Integration: ModelScope
+# LlamaIndex Embedding Integration: ModelScope
 
 ## Installation
 
@@ -37,7 +37,7 @@ print(rsp)
 
 ### Generate Batch Embedding
 
-To generate a text embedding for a query, use the `get_text_embedding_batch` method:
+To generate a text embedding for a batch of text, use the `get_text_embedding_batch` method:
 
 ```python
 rsp = model.get_text_embedding_batch(
