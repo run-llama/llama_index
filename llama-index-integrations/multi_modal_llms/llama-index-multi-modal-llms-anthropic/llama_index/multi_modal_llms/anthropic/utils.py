@@ -36,7 +36,23 @@ https://console.anthropic.com/settings/keys
 logger = logging.getLogger(__name__)
 
 
-def infer_image_mimetype_from_base64(base64_string) -> str:
+def infer_image_mimetype_from_base64(base64_string) -> Optional[str]:
+    """Infer the MIME of an image from the base64 encoding.
+
+    Claude 3 supports the following types of images:
+        * image/jpeg
+        * image/png
+        * image/gif
+        * image/webp
+
+    Additional info can be found in the [Anthropic API docs](https://docs.anthropic.com/claude/reference/messages_post).
+
+    Args:
+        base64_string (str): Base64-encoded string of the image.
+
+    Returns:
+        Optional[str]: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
+    """
     # Decode the base64 string
     decoded_data = base64.b64decode(base64_string)
 
@@ -48,12 +64,26 @@ def infer_image_mimetype_from_base64(base64_string) -> str:
 
 
 def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
+    """Infer the MIME of an image file based on its file extension.
+
+    Claude 3 supports the following types of images:
+        * image/jpeg
+        * image/png
+        * image/gif
+        * image/webp
+
+    Additional info can be found in the [Anthropic API docs](https://docs.anthropic.com/claude/reference/messages_post).
+
+    Args:
+        image_file_path (str): Path to the image file.
+
+    Returns:
+        str: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
+    """
     # Get the file extension
     file_extension = image_file_path.split(".")[-1].lower()
 
     # Map file extensions to mimetypes
-    # Claude 3 support the base64 source type for images, and the image/jpeg, image/png, image/gif, and image/webp media types.
-    # https://docs.anthropic.com/claude/reference/messages_post
     if file_extension == "jpg" or file_extension == "jpeg":
         return "image/jpeg"
     elif file_extension == "png":
@@ -62,7 +92,6 @@ def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
         return "image/gif"
     elif file_extension == "webp":
         return "image/webp"
-    # Add more mappings for other image types if needed
 
     # If the file extension is not recognized
     return "image/jpeg"
@@ -73,11 +102,11 @@ def generate_anthropic_multi_modal_chat_message(
     role: str,
     image_documents: Optional[Sequence[ImageDocument]] = None,
 ) -> List[Dict[str, Any]]:
-    # if image_documents is empty, return text only chat message
+    # If `image_documents` is empty, return text only chat message
     if image_documents is None:
         return [{"role": role, "content": prompt}]
 
-    # if image_documents is not empty, return text with images chat message
+    # If image_documents is not empty, return text with images chat message
     completion_content = []
     for image_document in image_documents:
         image_content: Dict[str, Any] = {}
