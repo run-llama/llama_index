@@ -132,16 +132,15 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _hidden_field_keys: List[str] = PrivateAttr()
     _field_mapping: Dict[str, str] = PrivateAttr()
     _index_management: IndexManagement = PrivateAttr()
-    _index_mapping: Callable[
-        [Dict[str, str], Dict[str, Any]], Dict[str, str]
-    ] = PrivateAttr()
-    _metadata_to_index_field_map: Dict[
-        str, Tuple[str, MetadataIndexFieldType]
-    ] = PrivateAttr()
+    _index_mapping: Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]] = (
+        PrivateAttr()
+    )
+    _metadata_to_index_field_map: Dict[str, Tuple[str, MetadataIndexFieldType]] = (
+        PrivateAttr()
+    )
     _vector_profile_name: str = PrivateAttr()
     _compression_type: str = PrivateAttr()
     _user_agent: str = PrivateAttr()
-    
 
     def _normalise_metadata_to_index_fields(
         self,
@@ -615,7 +614,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         super().__init__()
         base_user_agent = "llamaindex-python"
-        self._user_agent = f"{base_user_agent} {user_agent}" if user_agent else base_user_agent
+        self._user_agent = (
+            f"{base_user_agent} {user_agent}" if user_agent else base_user_agent
+        )
 
         self._index_client: SearchIndexClient = cast(SearchIndexClient, None)
         self._async_index_client: AsyncSearchIndexClient = cast(
@@ -643,7 +644,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             if isinstance(search_or_index_client, SearchIndexClient):
                 # If SearchIndexClient is supplied so must index_name
                 self._index_client = cast(SearchIndexClient, search_or_index_client)
-                self._index_client._client._config.user_agent_policy.add_user_agent(self._user_agent)
+                self._index_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
                 if not index_name:
                     raise ValueError(
                         "index_name must be supplied if search_or_index_client is of "
@@ -653,14 +656,18 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._search_client = self._index_client.get_search_client(
                     index_name=index_name
                 )
-                self._search_client._client._config.user_agent_policy.add_user_agent(self._user_agent)
+                self._search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
 
             elif isinstance(search_or_index_client, AsyncSearchIndexClient):
                 # If SearchIndexClient is supplied so must index_name
                 self._async_index_client = cast(
                     AsyncSearchIndexClient, search_or_index_client
                 )
-                self._async_index_client._client._config.user_agent_policy.add_user_agent(self._user_agent)
+                self._async_index_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
 
                 if not index_name:
                     raise ValueError(
@@ -671,11 +678,15 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._async_search_client = self._async_index_client.get_search_client(
                     index_name=index_name
                 )
-                self._async_search_client._client._config.user_agent_policy.add_user_agent(self._user_agent)
+                self._async_search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
 
             elif isinstance(search_or_index_client, SearchClient):
                 self._search_client = cast(SearchClient, search_or_index_client)
-                self._search_client._client._config.user_agent_policy.add_user_agent(self._user_agent)
+                self._search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
                 # Validate index_name
                 if index_name:
                     raise ValueError(
@@ -687,7 +698,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._async_search_client = cast(
                     AsyncSearchClient, search_or_index_client
                 )
-                self._async_search_client._client._config.user_agent_policy.add_user_agent(self._user_agent)
+                self._async_search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
 
                 # Validate index_name
                 if index_name:

@@ -27,13 +27,13 @@ def mock_client_with_user_agent(client_type: str) -> Any:
         client = MagicMock(spec=SearchClient)
     else:
         client = MagicMock(spec=SearchIndexClient)
-    
+
     # Mock the configuration chain
     client._client = MagicMock()
     client._client._config = MagicMock()
     client._client._config.user_agent_policy = MagicMock()
     client._client._config.user_agent_policy.add_user_agent = MagicMock()
-    
+
     return client
 
 
@@ -93,7 +93,7 @@ def test_user_agent_configuration() -> None:
     vector_store = create_mock_vector_store(
         index_client,
         index_name="test-index",
-        index_management=IndexManagement.NO_VALIDATION
+        index_management=IndexManagement.NO_VALIDATION,
     )
 
     # Verify user agent was added with the correct base agent string
