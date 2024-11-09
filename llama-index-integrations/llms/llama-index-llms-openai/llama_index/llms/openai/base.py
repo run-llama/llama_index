@@ -590,7 +590,7 @@ class OpenAI(LLM):
         end_time = time.time()
         elapsed_time = end_time - start_time
 
-        print(f"==> AI took {elapsed_time} seconds")
+        # print(f"==> AI took {elapsed_time} seconds")
 
         message_dict = response.choices[0].message
         message = from_openai_message(message_dict)
