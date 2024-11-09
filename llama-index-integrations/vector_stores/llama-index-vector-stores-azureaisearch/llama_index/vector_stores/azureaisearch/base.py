@@ -132,12 +132,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _hidden_field_keys: List[str] = PrivateAttr()
     _field_mapping: Dict[str, str] = PrivateAttr()
     _index_management: IndexManagement = PrivateAttr()
-    _index_mapping: Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]] = (
-        PrivateAttr()
-    )
-    _metadata_to_index_field_map: Dict[str, Tuple[str, MetadataIndexFieldType]] = (
-        PrivateAttr()
-    )
+    _index_mapping: Callable[
+        [Dict[str, str], Dict[str, Any]], Dict[str, str]
+    ] = PrivateAttr()
+    _metadata_to_index_field_map: Dict[
+        str, Tuple[str, MetadataIndexFieldType]
+    ] = PrivateAttr()
     _vector_profile_name: str = PrivateAttr()
     _compression_type: str = PrivateAttr()
     _user_agent: str = PrivateAttr()
