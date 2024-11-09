@@ -1,5 +1,6 @@
 """Azure AI model inference embeddings client."""
 
+import logging
 from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 
 from llama_index.core.base.embeddings.base import (
@@ -16,6 +17,9 @@ if TYPE_CHECKING:
 from azure.ai.inference import EmbeddingsClient
 from azure.ai.inference.aio import EmbeddingsClient as EmbeddingsClientAsync
 from azure.core.credentials import AzureKeyCredential
+from azure.core.exceptions import HttpResponseError
+
+logger = logging.getLogger(__name__)
 
 
 class AzureAIEmbeddingsModel(BaseEmbedding):
@@ -71,11 +75,12 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
         endpoint: str = None,
         credential: Union[str, AzureKeyCredential, "TokenCredential"] = None,
         model_name: str = None,
+        api_version: str = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
         num_workers: Optional[int] = None,
         client_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         client_kwargs = client_kwargs or {}
 
@@ -104,6 +109,35 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
                 "Pass the credential as a parameter or set the AZURE_INFERENCE_CREDENTIAL"
             )
 
+        if api_version:
+            client_kwargs["api_version"] = api_version
+
+        client = EmbeddingsClient(
+            endpoint=endpoint,
+            credential=credential,
+            user_agent="llamaindex",
+            **client_kwargs,
+        )
+
+        async_client = EmbeddingsClientAsync(
+            endpoint=endpoint,
+            credential=credential,
+            user_agent="llamaindex",
+            **client_kwargs,
+        )
+
+        if not model_name:
+            try:
+                # Get model info from the endpoint. This method may not be supported by all
+                # endpoints.
+                model_info = client.get_model_info()
+                model_name = model_info.get("model_name", None)
+            except HttpResponseError:
+                logger.warning(
+                    f"Endpoint '{self._client._config.endpoint}' does not support model metadata retrieval. "
+                    "Unable to populate model attributes."
+                )
+
         super().__init__(
             model_name=model_name or "unknown",
             embed_batch_size=embed_batch_size,
@@ -111,19 +145,9 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
             num_workers=num_workers,
             **kwargs,
         )
-        self._client = EmbeddingsClient(
-            endpoint=endpoint,
-            credential=credential,
-            user_agent="llamaindex",
-            **client_kwargs,
-        )
 
-        self._async_client = EmbeddingsClientAsync(
-            endpoint=endpoint,
-            credential=credential,
-            user_agent="llamaindex",
-            **client_kwargs,
-        )
+        self._client = client
+        self._async_client = async_client
 
     @classmethod
     def class_name(cls) -> str:

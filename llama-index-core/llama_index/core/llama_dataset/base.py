@@ -3,7 +3,18 @@
 import json
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Generator, Generic, List, Optional, Type, TypeVar, Union
+from typing import (
+    Any,
+    ClassVar,
+    Generator,
+    Generic,
+    List,
+    Sequence,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import tqdm
 from llama_index.core.async_utils import asyncio_module
@@ -62,12 +73,14 @@ class BaseLlamaDataExample(BaseModel):
 
 
 class BaseLlamaPredictionDataset(BaseModel):
-    _prediction_type: Type[BaseLlamaExamplePrediction] = BaseLlamaExamplePrediction  # type: ignore[misc]
+    _prediction_type: ClassVar[Type[BaseLlamaExamplePrediction]]
     predictions: List[BaseLlamaExamplePrediction] = Field(
-        default=list, description="Predictions on train_examples."
+        default_factory=list, description="Predictions on train_examples."
     )
 
-    def __getitem__(self, val: Union[slice, int]) -> List[BaseLlamaExamplePrediction]:
+    def __getitem__(
+        self, val: Union[slice, int]
+    ) -> Union[Sequence[BaseLlamaExamplePrediction], BaseLlamaExamplePrediction]:
         """Enable slicing and indexing.
 
         Returns the desired slice on `predictions`.
@@ -114,7 +127,7 @@ class BaseLlamaPredictionDataset(BaseModel):
 
 
 class BaseLlamaDataset(BaseModel, Generic[P]):
-    _example_type: Type[BaseLlamaDataExample] = BaseLlamaDataExample  # type: ignore[misc]
+    _example_type: ClassVar[Type[BaseLlamaDataExample]]
     examples: List[BaseLlamaDataExample] = Field(
         default=[], description="Data examples of this dataset."
     )
@@ -122,7 +135,9 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
         default_factory=list
     )
 
-    def __getitem__(self, val: Union[slice, int]) -> List[BaseLlamaDataExample]:
+    def __getitem__(
+        self, val: Union[slice, int]
+    ) -> Union[Sequence[BaseLlamaDataExample], BaseLlamaDataExample]:
         """Enable slicing and indexing.
 
         Returns the desired slice on `examples`.
@@ -157,7 +172,7 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
 
     @abstractmethod
     def _construct_prediction_dataset(
-        self, predictions: List[BaseLlamaExamplePrediction]
+        self, predictions: Sequence[BaseLlamaExamplePrediction]
     ) -> BaseLlamaPredictionDataset:
         """Construct the specific prediction dataset.
 
@@ -250,7 +265,7 @@ class BaseLlamaDataset(BaseModel, Generic[P]):
         self,
         batch_size: int = 20,
         start_position: int = 0,
-    ) -> Generator[List[BaseLlamaDataExample], None, None]:
+    ) -> Generator[Sequence[BaseLlamaDataExample], None, None]:
         """Batches examples and predictions with a given batch_size."""
         num_examples = len(self.examples)
         for ndx in range(start_position, num_examples, batch_size):

@@ -20,7 +20,7 @@ disambiguate the document or subsection from other similar documents or subsecti
 (similar with contrastive learning)
 """
 
-from typing import Any, Dict, List, Optional, Sequence, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.core.bridge.pydantic import (
@@ -45,7 +45,7 @@ DEFAULT_TITLE_COMBINE_TEMPLATE = """\
 what is the comprehensive title for this document? Title: """
 
 
-def add_class_name(value: Any, handler, info) -> Dict[str, Any]:
+def add_class_name(value: Any, handler: Callable, info: Any) -> Dict[str, Any]:
     partial_result = handler(value, info)
     if hasattr(value, "class_name"):
         partial_result.update({"class_name": value.class_name()})

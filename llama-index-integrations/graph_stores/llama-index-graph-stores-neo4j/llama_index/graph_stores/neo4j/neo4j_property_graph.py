@@ -40,6 +40,7 @@ EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
 CHUNK_SIZE = 1000
+VECTOR_INDEX_NAME = "entity"
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -69,6 +70,19 @@ WITH * WHERE NOT label IN $EXCLUDED_LABELS
     AND NOT other_node IN $EXCLUDED_LABELS
 RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
+
+
+def convert_operator(operator: str) -> str:
+    # @Todo add custom mapping for any/all
+    mapping = {}
+    mapping["=="] = "="
+    mapping["!="] = "<>"
+    mapping["nin"] = "in"
+
+    try:
+        return mapping[operator]
+    except KeyError:
+        return operator
 
 
 class Neo4jPropertyGraphStore(PropertyGraphStore):
@@ -162,6 +176,13 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_ENTITY_LABEL}`)
             REQUIRE n.id IS UNIQUE;"""
         )
+        # Verify version to check if we can use vector index
+        self.verify_version()
+        if self._supports_vector_index:
+            self.structured_query(
+                f"CREATE VECTOR INDEX {VECTOR_INDEX_NAME} IF NOT EXISTS "
+                "FOR (m:__Entity__) ON m.embedding"
+            )
 
     @property
     def client(self):
@@ -230,7 +251,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             "metadata": {"constraint": constraint, "index": index},
         }
         schema_counts = self.structured_query(
-            "CALL apoc.meta.graphSample() YIELD nodes, relationships "
+            "CALL apoc.meta.subGraph({}) YIELD nodes, relationships "
             "RETURN nodes, [rel in relationships | {name:apoc.any.property"
             "(rel, 'type'), count: apoc.any.property(rel, 'count')}]"
             " AS relationships"
@@ -320,8 +341,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     CALL apoc.create.addLabels(e, [row.label])
                     YIELD node
                     WITH e, row
-                    CALL {{
-                        WITH e, row
+                    CALL (e, row) {{
                         WITH e, row
                         WHERE row.embedding IS NOT NULL
                         CALL db.create.setNodeVectorProperty(e, 'embedding', row.embedding)
@@ -442,7 +462,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
         return_statement = f"""
         WITH e
-        CALL {{
+        CALL (e) {{
             WITH e
             MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t:`{BASE_ENTITY_LABEL}`)
             RETURN e.name AS source_id, [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
@@ -558,49 +578,96 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         return triples
 
     def structured_query(
-        self, query: str, param_map: Optional[Dict[str, Any]] = None
+        self,
+        query: str,
+        param_map: Optional[Dict[str, Any]] = None,
     ) -> Any:
         param_map = param_map or {}
+        try:
+            data, _, _ = self._driver.execute_query(
+                query, database_=self._database, parameters_=param_map
+            )
+            full_result = [d.data() for d in data]
 
+            if self.sanitize_query_output:
+                return [value_sanitize(el) for el in full_result]
+            return full_result
+        except neo4j.exceptions.Neo4jError as e:
+            if not (
+                (
+                    (  # isCallInTransactionError
+                        e.code == "Neo.DatabaseError.Statement.ExecutionFailed"
+                        or e.code
+                        == "Neo.DatabaseError.Transaction.TransactionStartFailed"
+                    )
+                    and "in an implicit transaction" in e.message
+                )
+                or (  # isPeriodicCommitError
+                    e.code == "Neo.ClientError.Statement.SemanticError"
+                    and (
+                        "in an open transaction is not possible" in e.message
+                        or "tried to execute in an explicit transaction" in e.message
+                    )
+                )
+            ):
+                raise
+        # Fallback to allow implicit transactions
         with self._driver.session(database=self._database) as session:
-            result = session.run(query, param_map)
-            full_result = [d.data() for d in result]
+            data = session.run(neo4j.Query(text=query), param_map)
+            full_result = [d.data() for d in data]
 
-        if self.sanitize_query_output:
-            return [value_sanitize(el) for el in full_result]
-        return full_result
+            if self.sanitize_query_output:
+                return [value_sanitize(el) for el in full_result]
+            return full_result
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> Tuple[List[LabelledNode], List[float]]:
         """Query the graph store with a vector store query."""
-        conditions = None
+        conditions = []
+        filter_params = {}
         if query.filters:
-            conditions = [
-                f"e.{filter.key} {filter.operator.value} {filter.value}"
-                for filter in query.filters.filters
-            ]
+            for index, filter in enumerate(query.filters.filters):
+                conditions.append(
+                    f"{'NOT' if filter.operator.value in ['nin'] else ''} e.`{filter.key}` "
+                    f"{convert_operator(filter.operator.value)} $param_{index}"
+                )
+                filter_params[f"param_{index}"] = filter.value
         filters = (
-            f" {query.filters.condition.value} ".join(conditions).replace("==", "=")
-            if conditions is not None
+            f" {query.filters.condition.value} ".join(conditions)
+            if conditions
             else "1 = 1"
         )
-
-        data = self.structured_query(
-            f"""MATCH (e:`{BASE_ENTITY_LABEL}`)
-            WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension AND ({filters})
-            WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
-            ORDER BY score DESC LIMIT toInteger($limit)
-            RETURN e.id AS name,
-               [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS type,
-               e{{.* , embedding: Null, name: Null, id: Null}} AS properties,
-               score""",
-            param_map={
-                "embedding": query.query_embedding,
-                "dimension": len(query.query_embedding),
-                "limit": query.similarity_top_k,
-            },
-        )
+        if not query.filters and self._supports_vector_index:
+            data = self.structured_query(
+                f"""CALL db.index.vector.queryNodes('{VECTOR_INDEX_NAME}', $limit, $embedding)
+                YIELD node, score RETURN node.id AS name,
+                [l in labels(node) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS type,
+                node{{.* , embedding: Null, name: Null, id: Null}} AS properties,
+                score
+                """,
+                param_map={
+                    "embedding": query.query_embedding,
+                    "limit": query.similarity_top_k,
+                },
+            )
+        else:
+            data = self.structured_query(
+                f"""MATCH (e:`{BASE_ENTITY_LABEL}`)
+                WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension AND ({filters})
+                WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
+                ORDER BY score DESC LIMIT toInteger($limit)
+                RETURN e.id AS name,
+                [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS type,
+                e{{.* , embedding: Null, name: Null, id: Null}} AS properties,
+                score""",
+                param_map={
+                    "embedding": query.query_embedding,
+                    "dimension": len(query.query_embedding),
+                    "limit": query.similarity_top_k,
+                    **filter_params,
+                },
+            )
         data = data if data else []
 
         nodes = []
@@ -671,7 +738,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 prop_type = prop["type"]
                 if prop_type == "STRING":
                     with_clauses.append(
-                        f"collect(distinct substring(toString(n.`{prop_name}`), 0, 50)) "
+                        f"collect(distinct substring(toString(coalesce(n.`{prop_name}`, '')), 0, 50)) "
                         f"AS `{prop_name}_values`"
                     )
                     return_clauses.append(
@@ -697,8 +764,8 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     )
                 elif prop_type == "LIST":
                     with_clauses.append(
-                        f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, "
-                        f"max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
+                        f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "
+                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`"
                     )
                     return_clauses.append(
                         f"min_size: `{prop_name}_size_min`, "
@@ -751,7 +818,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 ]:
                     if not prop_index:
                         with_clauses.append(
-                            f"collect(distinct toString(n.`{prop_name}`)) "
+                            f"collect(distinct toString(coalesce(n.`{prop_name}`, ''))) "
                             f"AS `{prop_name}_values`"
                         )
                         return_clauses.append(f"values: `{prop_name}_values`")
@@ -773,8 +840,8 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
                 elif prop_type == "LIST":
                     with_clauses.append(
-                        f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, "
-                        f"max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
+                        f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "
+                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`"
                     )
                     return_clauses.append(
                         f"min_size: `{prop_name}_size_min`, "
@@ -929,6 +996,30 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 "\n".join(formatted_rels),
             ]
         )
+
+    def verify_version(self) -> None:
+        """
+        Check if the connected Neo4j database version supports vector indexing
+        without specifying embedding dimension.
+
+        Queries the Neo4j database to retrieve its version and compares it
+        against a target version (5.23.0) that is known to support vector
+        indexing. Raises a ValueError if the connected Neo4j version is
+        not supported.
+        """
+        db_data = self.structured_query("CALL dbms.components()")
+        version = db_data[0]["versions"][0]
+        if "aura" in version:
+            version_tuple = (*map(int, version.split("-")[0].split(".")), 0)
+        else:
+            version_tuple = tuple(map(int, version.split(".")))
+
+        target_version = (5, 23, 0)
+
+        if version_tuple >= target_version:
+            self._supports_vector_index = True
+        else:
+            self._supports_vector_index = False
 
 
 Neo4jPGStore = Neo4jPropertyGraphStore

@@ -2,7 +2,7 @@ import pytest
 
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StartEvent, StopEvent, Event
-from llama_index.core.workflow.session import WorkflowSession
+from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.workflow import Workflow
 from llama_index.core.bridge.pydantic import Field
 
@@ -44,5 +44,5 @@ def events():
 
 
 @pytest.fixture()
-def session():
-    return WorkflowSession(workflow=Workflow())
+def ctx():
+    return Context(workflow=Workflow())

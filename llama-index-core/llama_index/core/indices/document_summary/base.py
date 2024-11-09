@@ -221,7 +221,9 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             self._vector_store.add(summary_nodes_with_embedding)
 
     def _build_index_from_nodes(
-        self, nodes: Sequence[BaseNode]
+        self,
+        nodes: Sequence[BaseNode],
+        **build_kwargs: Any,
     ) -> IndexDocumentSummary:
         """Build index from nodes."""
         # first get doc_id to nodes_dict, generate a summary for each doc_id,

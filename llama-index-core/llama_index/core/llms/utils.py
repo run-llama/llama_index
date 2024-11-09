@@ -39,7 +39,7 @@ def resolve_llm(
             )  # pants: no-infer-dep
 
             llm = OpenAI()
-            validate_openai_api_key(llm.api_key)
+            validate_openai_api_key(llm.api_key)  # type: ignore
         except ImportError:
             raise ImportError(
                 "`llama-index-llms-openai` package not found, "
@@ -98,6 +98,8 @@ def resolve_llm(
     elif llm is None:
         print("LLM is explicitly disabled. Using MockLLM.")
         llm = MockLLM()
+
+    assert isinstance(llm, LLM)
 
     llm.callback_manager = callback_manager or Settings.callback_manager
 

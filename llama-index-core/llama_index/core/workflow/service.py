@@ -1,7 +1,7 @@
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING, Optional
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
 
 
@@ -16,12 +16,16 @@ class ServiceManager:
     The service is made available to the steps of the main workflow.
     """
 
-    _services: Dict[str, "Workflow"] = {}
+    def __init__(self) -> None:
+        self._services: Dict[str, "Workflow"] = {}
 
-    def get(self, name: str) -> "Workflow":
+    def get(self, name: str, default: Optional["Workflow"] = None) -> "Workflow":
         try:
             return self._services[name]
         except KeyError as e:
+            if default:
+                return default
+
             msg = f"Service {name} not found"
             raise ServiceNotFoundError(msg)
 

@@ -58,4 +58,37 @@ print(result)
 
 Note that because the nested flow is a totally different workflow rather than a step, `draw_all_possible_flows` will only draw the flow of `MainWorkflow`.
 
+## Default workflows
+
+If you're creating a workflow with multiple slots for nested workflows, you might want to provide default workflows for each slot. You can do this by setting the default value of the slot to an instance of the workflow class. Here's an example.
+
+First, let's create a default sub-workflow to use:
+
+```python
+class DefaultSubflow(Workflow):
+    @step()
+    async def sub_start(self, ctx: Context, ev: StartEvent) -> StopEvent:
+        print("Doing basic reflection")
+        return StopEvent(result="Improved query")
+```
+
+Now we can modify the `MainWorkflow` to include a default sub-workflow:
+
+```python
+class MainWorkflow(Workflow):
+    @step()
+    async def start(
+        self,
+        ctx: Context,
+        ev: StartEvent,
+        reflection_workflow: Workflow = DefaultSubflow(),
+    ) -> Step2Event:
+        print("Need to run reflection")
+        res = await reflection_workflow.run(query=ev.query)
+
+        return Step2Event(query=res)
+```
+
+Now, if you run the workflow without providing a custom reflection workflow, it will use the default one. This can be very useful for providing a good "out of the box" experience for users who may not want to customize everything.
+
 Finally, let's take a look at [observability and debugging](observability.md) in workflows.

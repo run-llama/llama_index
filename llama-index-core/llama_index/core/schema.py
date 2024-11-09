@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from dataclasses_json import DataClassJsonMixin
 from llama_index.core.bridge.pydantic import (
@@ -52,13 +52,13 @@ class BaseComponent(BaseModel):
     def __get_pydantic_json_schema__(
         cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
-        json_schema = handler(core_schema)
-        json_schema = handler.resolve_ref_schema(json_schema)
-        json_schema["properties"]["class_name"] = {
-            "title": "Class Name",
-            "type": "string",
-            "default": cls.class_name(),
-        }
+        json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
+        if "properties" in json_schema:
+            json_schema["properties"]["class_name"] = {
+                "title": "Class Name",
+                "type": "string",
+                "default": cls.class_name(),
+            }
         return json_schema
 
     @classmethod
@@ -136,9 +136,11 @@ class BaseComponent(BaseModel):
     # TODO: return type here not supported by current mypy version
     @classmethod
     def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
+        # In SimpleKVStore we rely on shallow coping. Hence, the data will be modified in the store directly.
+        # And it is the same when the user is passing a dictionary to create a component. We can't modify the passed down dictionary.
+        data = dict(data)
         if isinstance(kwargs, dict):
             data.update(kwargs)
-
         data.pop("class_name", None)
         return cls(**data)
 
@@ -154,10 +156,14 @@ class TransformComponent(BaseComponent, DispatcherSpanMixin):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @abstractmethod
-    def __call__(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
+    def __call__(
+        self, nodes: Sequence["BaseNode"], **kwargs: Any
+    ) -> Sequence["BaseNode"]:
         """Transform nodes."""
 
-    async def acall(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
+    async def acall(
+        self, nodes: Sequence["BaseNode"], **kwargs: Any
+    ) -> Sequence["BaseNode"]:
         """Async transform nodes."""
         return self.__call__(nodes, **kwargs)
 
@@ -520,6 +526,17 @@ class ImageNode(TextNode):
         else:
             raise ValueError("No image found in node.")
 
+    @property
+    def hash(self) -> str:
+        """Get hash of node."""
+        # doc identity depends on if image, image_path, or image_url is set
+        image_str = self.image or "None"
+        image_path_str = self.image_path or "None"
+        image_url_str = self.image_url or "None"
+        image_text = self.text or "None"
+        doc_identity = f"{image_str}-{image_path_str}-{image_url_str}-{image_text}"
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
+
 
 class IndexNode(TextNode):
     """Node with reference to any object.
@@ -581,7 +598,7 @@ class IndexNode(TextNode):
 
             # check if its a node, else assume stringable
             try:
-                parsed_obj = json_to_doc(obj)
+                parsed_obj = json_to_doc(obj)  # type: ignore[assignment]
             except Exception:
                 parsed_obj = TextNode(text=str(obj))
 
@@ -709,11 +726,13 @@ class Document(TextNode):
         from llama_index.core.bridge.langchain import Document as LCDocument
 
         metadata = self.metadata or {}
-        return LCDocument(page_content=self.text, metadata=metadata)
+        return LCDocument(page_content=self.text, metadata=metadata, id=self.id_)
 
     @classmethod
     def from_langchain_format(cls, doc: "LCDocument") -> "Document":
         """Convert struct from LangChain document format."""
+        if doc.id:
+            return cls(text=doc.page_content, metadata=doc.metadata, id_=doc.id)
         return cls(text=doc.page_content, metadata=doc.metadata)
 
     def to_haystack_format(self) -> "HaystackDocument":

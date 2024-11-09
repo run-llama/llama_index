@@ -19,6 +19,17 @@ def test_box_tool_search(box_client_ccg_integration_testing: BoxClient):
     assert len(docs) > 0
 
 
+def test_box_tool_search_options(box_client_ccg_integration_testing: BoxClient):
+    options = BoxSearchOptions(file_extensions=["pdf"])
+    options.limit = 5
+
+    box_tool = BoxSearchToolSpec(box_client_ccg_integration_testing, options=options)
+
+    query = "sample"
+    docs = box_tool.box_search(query=query)
+    assert len(docs) > 0
+
+
 def test_box_tool_search_agent(box_client_ccg_integration_testing: BoxClient):
     test_data = get_testing_data()
     openai_api_key = test_data["openai_api_key"]

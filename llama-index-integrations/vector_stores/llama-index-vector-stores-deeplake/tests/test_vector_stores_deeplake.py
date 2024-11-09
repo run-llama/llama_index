@@ -1,4 +1,5 @@
 import pytest
+import jwt  # noqa
 
 from llama_index.core import Document
 from llama_index.core.vector_stores.types import (

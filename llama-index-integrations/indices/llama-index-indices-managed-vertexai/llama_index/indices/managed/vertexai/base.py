@@ -104,8 +104,8 @@ class VertexAIIndex(BaseManagedIndex):
 
         with telemetry.tool_context_manager(self._user_agent):
             return rag.import_files(
-                corpus=self.corpus_name,
-                uris=uris,
+                self.corpus_name,
+                paths=uris,
                 chunk_size=chunk_size,
                 chunk_overlap=chunk_overlap,
                 timeout=timeout,

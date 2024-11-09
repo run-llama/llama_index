@@ -19,7 +19,7 @@ from llama_index.core.output_parsers.base import (
     OutputParserException,
     StructuredOutput,
 )
-from llama_index.core.prompts.base import PromptTemplate
+from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import IndexNode, QueryBundle
 from llama_index.core.settings import Settings
@@ -95,7 +95,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
             prompt_template_str or DEFAULT_VECTOR_STORE_QUERY_PROMPT_TMPL
         )
         self._output_parser = VectorStoreQueryOutputParser()
-        self._prompt = PromptTemplate(template=prompt_template_str)
+        self._prompt: BasePromptTemplate = PromptTemplate(template=prompt_template_str)
 
         # additional config
         self._max_top_k = max_top_k
@@ -190,7 +190,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
         # parse output
         return self._parse_generated_spec(output, query_bundle)
 
-    def _build_retriever_from_spec(
+    def _build_retriever_from_spec(  # type: ignore
         self, spec: VectorStoreQuerySpec
     ) -> Tuple[BaseRetriever, QueryBundle]:
         # construct new query bundle from query_spec

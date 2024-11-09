@@ -10,7 +10,7 @@ Will support different modes, from 1) stuffing chunks into prompt,
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Sequence, AsyncGenerator
+from typing import Any, Dict, Generator, List, Optional, Sequence, AsyncGenerator, Type
 
 from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
@@ -73,7 +73,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         streaming: bool = False,
-        output_cls: Optional[BaseModel] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
     ) -> None:
         """Init params."""
         self._llm = llm or Settings.llm
@@ -160,7 +160,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 
         if isinstance(self._llm, StructuredLLM):
             # convert string to output_cls
-            output = self._llm.output_cls.model_validate_json(response_str)
+            output = self._llm.output_cls.model_validate_json(str(response_str))
             return PydanticResponse(
                 output,
                 source_nodes=source_nodes,
@@ -186,7 +186,7 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
                 metadata=response_metadata,
             )
 
-        if isinstance(response_str, self._output_cls):
+        if self._output_cls is not None and isinstance(response_str, self._output_cls):
             return PydanticResponse(
                 response_str, source_nodes=source_nodes, metadata=response_metadata
             )
@@ -211,16 +211,16 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 
         if len(nodes) == 0:
             if self._streaming:
-                empty_response = StreamingResponse(
+                empty_response_stream = StreamingResponse(
                     response_gen=empty_response_generator()
                 )
                 dispatcher.event(
                     SynthesizeEndEvent(
                         query=query,
-                        response=empty_response,
+                        response=empty_response_stream,
                     )
                 )
-                return empty_response
+                return empty_response_stream
             else:
                 empty_response = Response("Empty Response")
                 dispatcher.event(
@@ -276,16 +276,16 @@ class BaseSynthesizer(ChainableMixin, PromptMixin, DispatcherSpanMixin):
         )
         if len(nodes) == 0:
             if self._streaming:
-                empty_response = AsyncStreamingResponse(
+                empty_response_stream = AsyncStreamingResponse(
                     response_gen=empty_response_agenerator()
                 )
                 dispatcher.event(
                     SynthesizeEndEvent(
                         query=query,
-                        response=empty_response,
+                        response=empty_response_stream,
                     )
                 )
-                return empty_response
+                return empty_response_stream
             else:
                 empty_response = Response("Empty Response")
                 dispatcher.event(

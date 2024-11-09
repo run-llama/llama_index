@@ -6,10 +6,13 @@ from functools import partial
 from typing import (
     Any,
     AsyncGenerator,
+    Callable,
     Dict,
     Generator,
     Generic,
     List,
+    Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -50,9 +53,11 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
         #       or the last message
         if messages:
             if messages[0].role == MessageRole.SYSTEM:
-                messages[0].content = self.format(messages[0].content or "")
+                message_content = messages[0].content or ""
+                messages[0].content = self.format(message_content)
             else:
-                messages[-1].content = self.format(messages[-1].content or "")
+                message_content = messages[-1].content or ""
+                messages[-1].content = self.format(message_content)
 
         return messages
 
@@ -82,18 +87,20 @@ class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
         pass
 
     @abstractmethod
-    def __call__(self, *args: Any, **kwds: Any) -> Model:
+    def __call__(self, *args: Any, **kwargs: Any) -> Model:
         pass
 
-    async def acall(self, *args: Any, **kwds: Any) -> Model:
-        return self(*args, **kwds)
+    async def acall(self, *args: Any, **kwargs: Any) -> Model:
+        return self(*args, **kwargs)
 
-    def stream_call(self, *args: Any, **kwds: Any) -> Generator[Model, None, None]:
+    def stream_call(
+        self, *args: Any, **kwargs: Any
+    ) -> Generator[Union[Model, List[Model]], None, None]:
         raise NotImplementedError("stream_call is not supported by default.")
 
     async def astream_call(
-        self, *args: Any, **kwds: Any
-    ) -> AsyncGenerator[Model, None]:
+        self, *args: Any, **kwargs: Any
+    ) -> AsyncGenerator[Union[Model, List[Model]], None]:
         raise NotImplementedError("astream_call is not supported by default.")
 
 
@@ -114,14 +121,26 @@ class Thread(threading.Thread):
     """
 
     def __init__(
-        self, group=None, target=None, name=None, args=(), kwargs=None, *, daemon=None
+        self,
+        group: Optional[Any] = None,
+        target: Optional[Callable[..., Any]] = None,
+        name: Optional[str] = None,
+        args: Tuple[Any, ...] = (),
+        kwargs: Optional[Dict[str, Any]] = None,
+        *,
+        daemon: Optional[bool] = None
     ) -> None:
+        if target is not None:
+            args = (
+                partial(target, *args, **(kwargs if isinstance(kwargs, dict) else {})),
+            )
+        else:
+            args = ()
+
         super().__init__(
             group=group,
             target=copy_context().run,
             name=name,
-            args=(
-                partial(target, *args, **(kwargs if isinstance(kwargs, dict) else {})),
-            ),
+            args=args,
             daemon=daemon,
         )

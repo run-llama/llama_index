@@ -42,12 +42,9 @@ def llm_chat_callback() -> Callable:
         def wrapper_logic(_self: Any) -> Generator[CallbackManager, None, None]:
             callback_manager = getattr(_self, "callback_manager", None)
             if not isinstance(callback_manager, CallbackManager):
-                raise ValueError(
-                    "Cannot use llm_chat_callback on an instance "
-                    "without a callback_manager attribute."
-                )
+                _self.callback_manager = CallbackManager()
 
-            yield callback_manager
+            yield _self.callback_manager  # type: ignore
 
         async def wrapped_async_llm_chat(
             _self: Any, messages: Sequence[ChatMessage], **kwargs: Any

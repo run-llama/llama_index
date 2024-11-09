@@ -54,4 +54,4 @@ class CompactAndRefine(Refine):
         refine_template = self._refine_template.partial_format(query_str=query_str)
 
         max_prompt = get_biggest_prompt([text_qa_template, refine_template])
-        return self._prompt_helper.repack(max_prompt, text_chunks)
+        return self._prompt_helper.repack(max_prompt, text_chunks, llm=self._llm)

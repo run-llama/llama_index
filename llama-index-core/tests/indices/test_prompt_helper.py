@@ -5,8 +5,9 @@ from typing import Optional, Type, Union
 import pytest
 from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.indices.tree.utils import get_numbered_text_from_nodes
+from llama_index.core.llms import ChatMessage
 from llama_index.core.node_parser.text.utils import truncate_text
-from llama_index.core.prompts.base import PromptTemplate
+from llama_index.core.prompts.base import ChatPromptTemplate, PromptTemplate
 from llama_index.core.prompts.prompt_utils import (
     get_biggest_prompt,
     get_empty_prompt_txt,
@@ -194,3 +195,53 @@ def test_get_biggest_prompt() -> None:
     biggest_prompt = get_biggest_prompt([prompt1, prompt2, prompt3])
 
     assert biggest_prompt == prompt2
+
+
+def test_json_in_prompt() -> None:
+    """Test that a JSON object in the prompt doesn't cause an error."""
+    # test with normal prompt
+    prompt = PromptTemplate(
+        'This is the prompt {text} but it also has {"json": "in it"}'
+    )
+    prompt.partial_format(text="hello_world")
+    prompt_helper = PromptHelper()
+
+    texts = prompt_helper.repack(prompt, ["hello_world"])
+    assert len(texts) == 1
+
+    # test with chat messages
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ChatMessage(
+                role="system",
+                content="You are a helpful assistant that knows about {topic}. Here's some JSON: {'foo': 'bar'}",
+            ),
+            ChatMessage(
+                role="user",
+                content="What is the capital of the moon? Here's some JSON: {'foo': 'bar'}",
+            ),
+        ]
+    )
+    prompt.partial_format(topic="the moon")
+    prompt_helper = PromptHelper()
+
+    texts = prompt_helper.repack(prompt, ["hello_world"])
+    assert len(texts) == 1
+
+    # test with more complex JSON
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ChatMessage(
+                role="system",
+                content=(
+                    "You are a helpful assistant that knows about {topic}\n"
+                    "Here's some JSON: {'foo': 'bar'}\n"
+                    "here's some other stuff: {key: val for val in d.items()}\n"
+                ),
+            ),
+            ChatMessage(
+                role="user",
+                content="What is the capital of the moon? Here's some JSON: {'foo': 'bar'}",
+            ),
+        ]
+    )

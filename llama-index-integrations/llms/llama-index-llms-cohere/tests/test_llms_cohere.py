@@ -2,7 +2,7 @@ from typing import Sequence, Optional, List
 from unittest import mock
 
 import pytest
-from cohere import Message_Chatbot, Message_User, NonStreamedChatResponse, ToolCall
+from cohere import ChatbotMessage, UserMessage, NonStreamedChatResponse, ToolCall
 
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import ChatResponse, ChatMessage, MessageRole
@@ -117,13 +117,12 @@ def test_invoke_tool_calls() -> None:
         "finish_reason": "COMPLETE",
         "tool_calls": [ToolCall(name="multiply", parameters={"a": 3, "b": 4})],
         "chat_history": [
-            Message_User(
-                message="What is 3 times 4 plus 5?", tool_calls=None, role="USER"
+            UserMessage(
+                message="What is 3 times 4 plus 5?",
             ),
-            Message_Chatbot(
+            ChatbotMessage(
                 message="I will use the multiply tool to calculate 3 times 4, then use the add tool to add 5 to the answer.",
                 tool_calls=[ToolCall(name="multiply", parameters={"a": 3, "b": 4})],
-                role="CHATBOT",
             ),
         ],
         "prompt": None,

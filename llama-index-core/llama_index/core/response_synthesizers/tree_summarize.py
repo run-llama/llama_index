@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, Type
 
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.callbacks.base import CallbackManager
@@ -33,7 +33,7 @@ class TreeSummarize(BaseSynthesizer):
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         summary_template: Optional[BasePromptTemplate] = None,
-        output_cls: Optional[BaseModel] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
         streaming: bool = False,
         use_async: bool = False,
         verbose: bool = False,
@@ -68,7 +68,7 @@ class TreeSummarize(BaseSynthesizer):
         summary_template = self._summary_template.partial_format(query_str=query_str)
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._prompt_helper.repack(
-            summary_template, text_chunks=text_chunks
+            summary_template, text_chunks=text_chunks, llm=self._llm
         )
 
         if self._verbose:
@@ -144,7 +144,7 @@ class TreeSummarize(BaseSynthesizer):
         summary_template = self._summary_template.partial_format(query_str=query_str)
         # repack text_chunks so that each chunk fills the context window
         text_chunks = self._prompt_helper.repack(
-            summary_template, text_chunks=text_chunks
+            summary_template, text_chunks=text_chunks, llm=self._llm
         )
 
         if self._verbose:

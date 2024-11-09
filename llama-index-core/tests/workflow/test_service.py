@@ -10,9 +10,13 @@ from llama_index.core.workflow.service import ServiceManager, ServiceNotFoundErr
 class ServiceWorkflow(Workflow):
     """This wokflow is only responsible to generate a number, it knows nothing about the caller."""
 
+    def __init__(self, *args, **kwargs) -> None:
+        self._the_answer = kwargs.pop("the_answer", 42)
+        super().__init__(*args, **kwargs)
+
     @step
     async def generate(self, ev: StartEvent) -> StopEvent:
-        return StopEvent(result=42)
+        return StopEvent(result=self._the_answer)
 
 
 class NumGenerated(Event):
@@ -32,7 +36,10 @@ class DummyWorkflow(Workflow):
 
     @step
     async def get_a_number(
-        self, service_workflow: ServiceWorkflow, ev: StartEvent, ctx: Context
+        self,
+        ev: StartEvent,
+        ctx: Context,
+        service_workflow: ServiceWorkflow = ServiceWorkflow(),
     ) -> NumGenerated:
         res = await service_workflow.run()
         return NumGenerated(num=int(res))
@@ -47,7 +54,15 @@ async def test_e2e():
     wf = DummyWorkflow()
     # We are responsible for passing the ServiceWorkflow instances to the dummy workflow
     # and give it a name, in this case "service_workflow"
-    wf.add_workflows(service_workflow=ServiceWorkflow())
+    wf.add_workflows(service_workflow=ServiceWorkflow(the_answer=1337))
+    res = await wf.run()
+    assert res == 2674
+
+
+@pytest.mark.asyncio()
+async def test_default_value_for_service():
+    wf = DummyWorkflow()
+    # We don't add any workflow to leverage the default value defined by the user
     res = await wf.run()
     assert res == 84
 

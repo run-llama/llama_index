@@ -33,7 +33,8 @@ class StatefulFlow(Workflow):
     async def start(
         self, ctx: Context, ev: StartEvent
     ) -> SetupEvent | StepTwoEvent:
-        if "some_database" not in ctx.data:
+        db = await ctx.get("some_database", default=None)
+        if db is None:
             print("Need to load data")
             return SetupEvent(query=ev.query)
 
@@ -43,7 +44,7 @@ class StatefulFlow(Workflow):
     @step
     async def setup(self, ctx: Context, ev: SetupEvent) -> StartEvent:
         # load data
-        ctx.data["some_database"] = [1, 2, 3]
+        await ctx.set("some_database", [1, 2, 3])
         return StartEvent(query=ev.query)
 ```
 
@@ -53,9 +54,9 @@ Then in `step_two` we can access data directly from the context without having i
 @step
 async def step_two(self, ctx: Context, ev: StepTwoEvent) -> StopEvent:
     # do something with the data
-    print("Data is ", ctx.data["some_database"])
+    print("Data is ", await ctx.get("some_database"))
 
-    return StopEvent(result=ctx.data["some_database"][1])
+    return StopEvent(result=await ctx.get("some_database"))
 
 
 w = StatefulFlow(timeout=10, verbose=False)
@@ -63,8 +64,4 @@ result = await w.run(query="Some query")
 print(result)
 ```
 
-## Context persists between runs
-
-Note that the `Context` object persists between runs of the workflow. This means that you can load data into the context in one run and access it in a later run. This can be useful for caching data or for maintaining state between runs.
-
-Next let's look at [concurrent execution](concurrent_execution.md).
+Up next we'll learn how to [stream events](stream.md) from an in-progress workflow.

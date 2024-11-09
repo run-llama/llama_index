@@ -190,6 +190,9 @@ class GoogleDriveReader(
 
         return creds
 
+    def _get_drive_link(self, file_id: str) -> str:
+        return f"https://drive.google.com/file/d/{file_id}/view"
+
     def _get_fileids_meta(
         self,
         drive_id: Optional[str] = None,
@@ -305,6 +308,7 @@ class GoogleDriveReader(
                                 item["mimeType"],
                                 item["createdTime"],
                                 item["modifiedTime"],
+                                self._get_drive_link(item["id"]),
                             )
                         )
             else:
@@ -331,6 +335,7 @@ class GoogleDriveReader(
                         file["mimeType"],
                         file["createdTime"],
                         file["modifiedTime"],
+                        self._get_drive_link(file["id"]),
                     )
                 )
             return fileids_meta
@@ -589,6 +594,7 @@ class GoogleDriveReader(
             "content_type": meta[3],
             "author": meta[1],
             "created_date": meta[4],
+            "drive_link": meta[6],
         }
 
     def load_resource(self, resource_id: str, **kwargs) -> List[Document]:

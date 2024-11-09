@@ -65,7 +65,7 @@ def create_neptune_database_client(
     try:
         client = None
         if provided_client is not None:
-            client = client
+            client = provided_client
         else:
             if credentials_profile_name is not None:
                 session = boto3.Session(profile_name=credentials_profile_name)

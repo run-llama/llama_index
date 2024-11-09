@@ -53,7 +53,7 @@ def remove_unstable_values(s: str) -> str:
 
 
 def get_transformation_hash(
-    nodes: List[BaseNode], transformation: TransformComponent
+    nodes: Sequence[BaseNode], transformation: TransformComponent
 ) -> str:
     """Get the hash of a transformation."""
     nodes_str = "".join(
@@ -67,13 +67,13 @@ def get_transformation_hash(
 
 
 def run_transformations(
-    nodes: List[BaseNode],
+    nodes: Sequence[BaseNode],
     transformations: Sequence[TransformComponent],
     in_place: bool = True,
     cache: Optional[IngestionCache] = None,
     cache_collection: Optional[str] = None,
     **kwargs: Any,
-) -> List[BaseNode]:
+) -> Sequence[BaseNode]:
     """
     Run a series of transformations on a set of nodes.
 
@@ -103,13 +103,13 @@ def run_transformations(
 
 
 async def arun_transformations(
-    nodes: List[BaseNode],
+    nodes: Sequence[BaseNode],
     transformations: Sequence[TransformComponent],
     in_place: bool = True,
     cache: Optional[IngestionCache] = None,
     cache_collection: Optional[str] = None,
     **kwargs: Any,
-) -> List[BaseNode]:
+) -> Sequence[BaseNode]:
     """
     Run a series of transformations on a set of nodes.
 
@@ -140,13 +140,13 @@ async def arun_transformations(
 
 
 def arun_transformations_wrapper(
-    nodes: List[BaseNode],
+    nodes: Sequence[BaseNode],
     transformations: Sequence[TransformComponent],
     in_place: bool = True,
     cache: Optional[IngestionCache] = None,
     cache_collection: Optional[str] = None,
     **kwargs: Any,
-) -> List[BaseNode]:
+) -> Sequence[BaseNode]:
     """
     Wrapper for async run_transformation. To be used in loop.run_in_executor
     within a ProcessPoolExecutor.
@@ -352,29 +352,32 @@ class IngestionPipeline(BaseModel):
         ]
 
     def _prepare_inputs(
-        self, documents: Optional[List[Document]], nodes: Optional[List[BaseNode]]
-    ) -> List[Document]:
-        input_nodes: List[BaseNode] = []
+        self,
+        documents: Optional[Sequence[Document]],
+        nodes: Optional[Sequence[BaseNode]],
+    ) -> Sequence[BaseNode]:
+        input_nodes: Sequence[BaseNode] = []
+
         if documents is not None:
-            input_nodes += documents
+            input_nodes += documents  # type: ignore
 
         if nodes is not None:
-            input_nodes += nodes
+            input_nodes += nodes  # type: ignore
 
         if self.documents is not None:
-            input_nodes += self.documents
+            input_nodes += self.documents  # type: ignore
 
         if self.readers is not None:
             for reader in self.readers:
-                input_nodes += reader.read()
+                input_nodes += reader.read()  # type: ignore
 
         return input_nodes
 
     def _handle_duplicates(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         store_doc_text: bool = True,
-    ) -> List[BaseNode]:
+    ) -> Sequence[BaseNode]:
         """Handle docstore duplicates by checking all hashes."""
         assert self.docstore is not None
 
@@ -393,9 +396,9 @@ class IngestionPipeline(BaseModel):
 
     def _handle_upserts(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         store_doc_text: bool = True,
-    ) -> List[BaseNode]:
+    ) -> Sequence[BaseNode]:
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
 
@@ -438,8 +441,8 @@ class IngestionPipeline(BaseModel):
 
     @staticmethod
     def _node_batcher(
-        num_batches: int, nodes: Union[List[BaseNode], List[Document]]
-    ) -> Generator[Union[List[BaseNode], List[Document]], Any, Any]:
+        num_batches: int, nodes: Union[Sequence[BaseNode], List[Document]]
+    ) -> Generator[Union[Sequence[BaseNode], List[Document]], Any, Any]:
         """Yield successive n-sized chunks from lst."""
         batch_size = max(1, int(len(nodes) / num_batches))
         for i in range(0, len(nodes), batch_size):
@@ -450,7 +453,7 @@ class IngestionPipeline(BaseModel):
         self,
         show_progress: bool = False,
         documents: Optional[List[Document]] = None,
-        nodes: Optional[List[BaseNode]] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
         cache_collection: Optional[str] = None,
         in_place: bool = True,
         store_doc_text: bool = True,
@@ -467,7 +470,7 @@ class IngestionPipeline(BaseModel):
         Args:
             show_progress (bool, optional): Shows execution progress bar(s). Defaults to False.
             documents (Optional[List[Document]], optional): Set of documents to be transformed. Defaults to None.
-            nodes (Optional[List[BaseNode]], optional): Set of nodes to be transformed. Defaults to None.
+            nodes (Optional[Sequence[BaseNode]], optional): Set of nodes to be transformed. Defaults to None.
             cache_collection (Optional[str], optional): Cache for transformations. Defaults to None.
             in_place (bool, optional): Whether transformations creates a new list for transformed nodes or modifies the
                 array passed to `run_transformations`. Defaults to True.
@@ -515,11 +518,13 @@ class IngestionPipeline(BaseModel):
             nodes_to_run = input_nodes
 
         if num_workers and num_workers > 1:
-            if num_workers > multiprocessing.cpu_count():
+            num_cpus = multiprocessing.cpu_count()
+            if num_workers > num_cpus:
                 warnings.warn(
                     "Specified num_workers exceed number of CPUs in the system. "
                     "Setting `num_workers` down to the maximum CPU count."
                 )
+                num_workers = num_cpus
 
             with multiprocessing.get_context("spawn").Pool(num_workers) as p:
                 node_batches = self._node_batcher(
@@ -535,7 +540,7 @@ class IngestionPipeline(BaseModel):
                         repeat(cache_collection),
                     ),
                 )
-                nodes = reduce(lambda x, y: x + y, nodes_parallel, [])
+                nodes = reduce(lambda x, y: x + y, nodes_parallel, [])  # type: ignore
         else:
             nodes = run_transformations(
                 nodes_to_run,
@@ -547,6 +552,8 @@ class IngestionPipeline(BaseModel):
                 **kwargs,
             )
 
+        nodes = nodes or []
+
         if self.vector_store is not None:
             nodes_with_embeddings = [n for n in nodes if n.embedding is not None]
             if nodes_with_embeddings:
@@ -557,9 +564,9 @@ class IngestionPipeline(BaseModel):
     # ------ async methods ------
     async def _ahandle_duplicates(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         store_doc_text: bool = True,
-    ) -> List[BaseNode]:
+    ) -> Sequence[BaseNode]:
         """Handle docstore duplicates by checking all hashes."""
         assert self.docstore is not None
 
@@ -578,9 +585,9 @@ class IngestionPipeline(BaseModel):
 
     async def _ahandle_upserts(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         store_doc_text: bool = True,
-    ) -> List[BaseNode]:
+    ) -> Sequence[BaseNode]:
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
 
@@ -626,7 +633,7 @@ class IngestionPipeline(BaseModel):
         self,
         show_progress: bool = False,
         documents: Optional[List[Document]] = None,
-        nodes: Optional[List[BaseNode]] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
         cache_collection: Optional[str] = None,
         in_place: bool = True,
         store_doc_text: bool = True,
@@ -643,7 +650,7 @@ class IngestionPipeline(BaseModel):
         Args:
             show_progress (bool, optional): Shows execution progress bar(s). Defaults to False.
             documents (Optional[List[Document]], optional): Set of documents to be transformed. Defaults to None.
-            nodes (Optional[List[BaseNode]], optional): Set of nodes to be transformed. Defaults to None.
+            nodes (Optional[Sequence[BaseNode]], optional): Set of nodes to be transformed. Defaults to None.
             cache_collection (Optional[str], optional): Cache for transformations. Defaults to None.
             in_place (bool, optional): Whether transformations creates a new list for transformed nodes or modifies the
                 array passed to `run_transformations`. Defaults to True.
@@ -691,11 +698,13 @@ class IngestionPipeline(BaseModel):
             nodes_to_run = input_nodes
 
         if num_workers and num_workers > 1:
-            if num_workers > multiprocessing.cpu_count():
+            num_cpus = multiprocessing.cpu_count()
+            if num_workers > num_cpus:
                 warnings.warn(
                     "Specified num_workers exceed number of CPUs in the system. "
                     "Setting `num_workers` down to the maximum CPU count."
                 )
+                num_workers = num_cpus
 
             loop = asyncio.get_event_loop()
             with ProcessPoolExecutor(max_workers=num_workers) as p:
@@ -716,10 +725,10 @@ class IngestionPipeline(BaseModel):
                     )
                     for batch in node_batches
                 ]
-                result: List[List[BaseNode]] = await asyncio.gather(*tasks)
-                nodes = reduce(lambda x, y: x + y, result, [])
+                result: Sequence[Sequence[BaseNode]] = await asyncio.gather(*tasks)
+                nodes: Sequence[BaseNode] = reduce(lambda x, y: x + y, result, [])  # type: ignore
         else:
-            nodes = await arun_transformations(
+            nodes = await arun_transformations(  # type: ignore
                 nodes_to_run,
                 self.transformations,
                 show_progress=show_progress,
@@ -728,6 +737,9 @@ class IngestionPipeline(BaseModel):
                 in_place=in_place,
                 **kwargs,
             )
+            nodes = nodes
+
+        nodes = nodes or []
 
         if self.vector_store is not None:
             nodes_with_embeddings = [n for n in nodes if n.embedding is not None]

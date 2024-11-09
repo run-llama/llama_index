@@ -192,8 +192,6 @@ class Task(BaseModel):
 class BaseAgentWorker(PromptMixin, DispatcherSpanMixin):
     """Base agent worker."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
         # TODO: the ReAct agent does not explicitly specify prompts, would need a

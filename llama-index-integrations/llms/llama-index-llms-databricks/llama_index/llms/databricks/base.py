@@ -1,5 +1,5 @@
 import os
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 from llama_index.llms.openai_like import OpenAILike
 
@@ -45,3 +45,11 @@ class Databricks(OpenAILike):
     def class_name(cls) -> str:
         """Get class name."""
         return "Databricks"
+
+    def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        """Get the kwargs that need to be provided to the model invocation."""
+        # Fix the input to work with the Databricks API
+        if "tool_choice" in kwargs and "tools" not in kwargs:
+            del kwargs["tool_choice"]
+
+        return super()._get_model_kwargs(**kwargs)

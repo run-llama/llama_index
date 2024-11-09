@@ -1,15 +1,12 @@
 """Retrieval evaluators."""
 
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import List, Optional, Tuple
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.bridge.pydantic import Field, SerializeAsAny
 from llama_index.core.evaluation.retrieval.base import (
     BaseRetrievalEvaluator,
     RetrievalEvalMode,
-)
-from llama_index.core.evaluation.retrieval.metrics_base import (
-    BaseRetrievalMetric,
 )
 from llama_index.core.indices.base_retriever import BaseRetriever
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
@@ -33,21 +30,6 @@ class RetrieverEvaluator(BaseRetrievalEvaluator):
     node_postprocessors: Optional[List[SerializeAsAny[BaseNodePostprocessor]]] = Field(
         default=None, description="Optional post-processor"
     )
-
-    def __init__(
-        self,
-        metrics: Sequence[BaseRetrievalMetric],
-        retriever: BaseRetriever,
-        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Init params."""
-        super().__init__(
-            metrics=metrics,
-            retriever=retriever,
-            node_postprocessors=node_postprocessors,
-            **kwargs,
-        )
 
     async def _aget_retrieved_ids_and_texts(
         self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT
@@ -83,21 +65,6 @@ class MultiModalRetrieverEvaluator(BaseRetrievalEvaluator):
     node_postprocessors: Optional[List[SerializeAsAny[BaseNodePostprocessor]]] = Field(
         default=None, description="Optional post-processor"
     )
-
-    def __init__(
-        self,
-        metrics: Sequence[BaseRetrievalMetric],
-        retriever: BaseRetriever,
-        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Init params."""
-        super().__init__(
-            metrics=metrics,
-            retriever=retriever,
-            node_postprocessors=node_postprocessors,
-            **kwargs,
-        )
 
     async def _aget_retrieved_ids_and_texts(
         self, query: str, mode: RetrievalEvalMode = RetrievalEvalMode.TEXT

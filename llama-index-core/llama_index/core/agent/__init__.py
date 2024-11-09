@@ -12,6 +12,7 @@ from llama_index.core.agent.runner.planner import StructuredPlannerAgent
 from llama_index.core.agent.runner.parallel import ParallelAgentRunner
 from llama_index.core.agent.types import Task
 from llama_index.core.chat_engine.types import AgentChatResponse
+from llama_index.core.agent.function_calling.base import FunctionCallingAgent
 from llama_index.core.agent.function_calling.step import FunctionCallingAgentWorker
 
 __all__ = [
@@ -26,6 +27,7 @@ __all__ = [
     "ReActChatFormatter",
     "FunctionCallingAgentWorker",
     "FnAgentWorker",
+    "FunctionCallingAgent",
     # beta
     "MultimodalReActAgentWorker",
     # schema-related

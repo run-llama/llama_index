@@ -1,4 +1,4 @@
-from typing import Any, Optional, List
+from typing import Any, Dict, List, Sequence, Optional
 from llama_index.core.llama_dataset.base import (
     BaseLlamaDataExample,
     BaseLlamaDataset,
@@ -44,11 +44,12 @@ class SimplePredictionDataset(BaseLlamaPredictionDataset):
                 "pandas is required for this function. Please install it with `pip install pandas`."
             )
 
-        data = {}
+        data: Dict[str, List[str]] = {"label": []}
         if self.predictions:
-            data = {
-                "label": [t.label for t in self.predictions],
-            }
+            for t in self.predictions:
+                assert isinstance(t, self._prediction_type)
+
+                data["label"].append(t.label)
 
         return pd.DataFrame(data)
 
@@ -74,8 +75,8 @@ class LabelledSimpleDataExample(BaseLlamaDataExample):
 class LabelledSimpleDataset(BaseLlamaDataset[LLM]):
     _example_type = LabelledSimpleDataExample
 
-    def _construct_prediction_dataset(
-        self, predictions: List[SimpleExamplePrediction]
+    def _construct_prediction_dataset(  # type: ignore
+        self, predictions: Sequence[SimpleExamplePrediction]
     ) -> SimplePredictionDataset:
         """Construct the specific prediction dataset.
 
@@ -96,20 +97,29 @@ class LabelledSimpleDataset(BaseLlamaDataset[LLM]):
                 "pandas is required for this function. Please install it with `pip install pandas`."
             )
 
-        data = {
-            "reference_label": [t.reference_label for t in self.examples],
-            "text": [t.text for t in self.examples],
-            "text_by": [str(t.text_by) for t in self.examples],
+        data: Dict[str, List[str]] = {
+            "reference_label": [],
+            "text": [],
+            "text_by": [],
         }
+        for example in self.examples:
+            if not isinstance(example, self._example_type):
+                raise ValueError(
+                    f"Expected example of type {LabelledSimpleDataExample}, got {type(example)}"
+                )
+
+            data["reference_label"].append(example.reference_label)
+            data["text"].append(example.text)
+            data["text_by"].append(str(example.text_by))
 
         return pd.DataFrame(data)
 
     async def _apredict_example(
         self,
         predictor: LLM,
-        example: LabelledSimpleDataExample,
+        example: BaseLlamaDataExample,
         sleep_time_in_seconds: int,
-    ) -> SimpleExamplePrediction:
+    ) -> BaseLlamaExamplePrediction:
         """Async predict RAG example with a query engine."""
         raise NotImplementedError("This method has not yet been implemented.")
 

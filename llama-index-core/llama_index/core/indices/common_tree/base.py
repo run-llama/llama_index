@@ -99,6 +99,7 @@ class GPTTreeIndexBuilder:
                     node.get_content(metadata_mode=MetadataMode.LLM)
                     for node in cur_nodes_chunk
                 ],
+                llm=self._llm,
             )
             text_chunk = "\n".join(truncated_chunks)
             indices.append(i)

@@ -280,6 +280,20 @@ class VertexMultiModalEmbeddingTest(unittest.TestCase):
         self.assertEqual(keyword_args["dimension"], 1408)
         self.assertTrue(keyword_args["additional_kwarg"])
 
+    def test_schema(self):
+        schema = VertexTextEmbedding.model_json_schema()
+
+        self.assertIsInstance(schema, dict)
+        self.assertEqual(schema["properties"]["embed_mode"].get("default"), "retrieval")
+        self.assertEqual(schema["properties"]["embed_batch_size"].get("default"), 10)
+        self.assertEqual(schema["properties"]["num_workers"].get("default"), None)
+        self.assertEqual(schema["properties"]["client_email"].get("default"), None)
+        self.assertEqual(schema["properties"]["token_uri"].get("default"), None)
+        self.assertEqual(schema["properties"]["private_key_id"].get("default"), None)
+        self.assertEqual(schema["properties"]["private_key"].get("default"), None)
+
+        self.assertEqual(schema.get("required", []), [])
+
 
 if __name__ == "__main__":
     unittest.main()

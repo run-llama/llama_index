@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.llms.databricks"
 
 [tool.llamahub.class_authors]
-DataBricks = "busaud"
+Databricks = "busaud"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -30,7 +30,7 @@ license = "MIT"
 name = "llama-index-llms-databricks"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.0"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"

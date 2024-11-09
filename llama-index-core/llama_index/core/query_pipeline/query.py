@@ -239,9 +239,10 @@ class QueryPipeline(QueryComponent):
         state: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ):
+        state = state or {}
         super().__init__(
             callback_manager=callback_manager or CallbackManager([]),
-            state=state or {},
+            state=state,
             **kwargs,
         )
 
@@ -450,7 +451,7 @@ class QueryPipeline(QueryComponent):
                     **kwargs,
                 )
 
-    def merge_dicts(self, d1, d2):
+    def merge_dicts(self, d1: Dict[str, Any], d2: Dict[str, Any]) -> Dict[str, Any]:
         """Merge two dictionaries recursively, combining values of the same key into a list."""
         merged = {}
         for key in set(d1).union(d2):
@@ -458,10 +459,11 @@ class QueryPipeline(QueryComponent):
                 if isinstance(d1[key], dict) and isinstance(d2[key], dict):
                     merged[key] = self.merge_dicts(d1[key], d2[key])
                 else:
-                    merged[key] = (
-                        [d1[key]] if not isinstance(d1[key], list) else d1[key]
-                    )
-                    merged[key].append(d2[key])
+                    new_val = [d1[key]] if not isinstance(d1[key], list) else d1[key]
+                    assert isinstance(new_val, list)
+
+                    new_val.append(d2[key])
+                    merged[key] = new_val  # type: ignore[assignment]
             else:
                 merged[key] = d1.get(key, d2.get(key))
         return merged
@@ -481,7 +483,7 @@ class QueryPipeline(QueryComponent):
                 payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
             ) as query_event:
                 if batch:
-                    outputs = {}
+                    outputs: Dict[str, Any] = {}
 
                     batch_lengths = {
                         len(values)
@@ -607,7 +609,7 @@ class QueryPipeline(QueryComponent):
                 payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
             ) as query_event:
                 if batch:
-                    outputs = {}
+                    outputs: Dict[str, Any] = {}
 
                     batch_lengths = {
                         len(values)
@@ -754,7 +756,7 @@ class QueryPipeline(QueryComponent):
                 raise ValueError("Length of batch inputs must be the same.")
 
             # List of individual inputs from batch input
-            kwargs = [
+            kwargs_list = [
                 dict(zip(kwargs.keys(), values)) for values in zip(*kwargs.values())
             ]
 
@@ -762,7 +764,7 @@ class QueryPipeline(QueryComponent):
                 self._arun_multi(
                     {root_key: kwarg}, show_intermediates=show_intermediates
                 )
-                for kwarg in kwargs
+                for kwarg in kwargs_list
             ]
 
             results = asyncio_run(run_jobs(jobs, workers=len(jobs)))
@@ -773,15 +775,17 @@ class QueryPipeline(QueryComponent):
                 )
                 intermediates.append(result[1])
 
-            return result_outputs, intermediates
+            return result_outputs, intermediates  # type: ignore[return-value]
         else:
-            result_outputs, intermediates = self._run_multi(
+            result_output_dicts, intermediate_dicts = self._run_multi(
                 {root_key: kwargs}, show_intermediates=show_intermediates
             )
 
             return (
-                self._get_single_result_output(result_outputs, return_values_direct),
-                intermediates,
+                self._get_single_result_output(
+                    result_output_dicts, return_values_direct
+                ),
+                intermediate_dicts,
             )
 
     @dispatcher.span
@@ -810,7 +814,7 @@ class QueryPipeline(QueryComponent):
                 raise ValueError("Length of batch inputs must be the same.")
 
             # List of individual inputs from batch input
-            kwargs = [
+            kwargs_list = [
                 dict(zip(kwargs.keys(), values)) for values in zip(*kwargs.values())
             ]
 
@@ -818,7 +822,7 @@ class QueryPipeline(QueryComponent):
                 self._arun_multi(
                     {root_key: kwarg}, show_intermediates=show_intermediates
                 )
-                for kwarg in kwargs
+                for kwarg in kwargs_list
             ]
 
             results = await run_jobs(jobs, workers=len(jobs))
@@ -829,15 +833,17 @@ class QueryPipeline(QueryComponent):
                 )
                 intermediates.append(result[1])
 
-            return result_outputs, intermediates
+            return result_outputs, intermediates  # type: ignore[return-value]
         else:
-            result_outputs, intermediates = await self._arun_multi(
+            result_output_dicts, intermediate_dicts = await self._arun_multi(
                 {root_key: kwargs}, show_intermediates=show_intermediates
             )
 
             return (
-                self._get_single_result_output(result_outputs, return_values_direct),
-                intermediates,
+                self._get_single_result_output(
+                    result_output_dicts, return_values_direct
+                ),
+                intermediate_dicts,
             )
 
     def _validate_inputs(self, module_input_dict: Dict[str, Any]) -> None:
@@ -855,7 +861,7 @@ class QueryPipeline(QueryComponent):
         output_dict: Dict[str, Any],
         module_key: str,
         run_state: RunState,
-    ):
+    ) -> None:
         """Process component output."""
         if module_key in self._get_leaf_keys():
             run_state.result_outputs[module_key] = output_dict
@@ -911,7 +917,7 @@ class QueryPipeline(QueryComponent):
 
     @dispatcher.span
     def _run_multi(
-        self, module_input_dict: Dict[str, Any], show_intermediates=False
+        self, module_input_dict: Dict[str, Any], show_intermediates: bool = False
     ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:
         """Run the pipeline for multiple roots."""
         self._validate_inputs(module_input_dict)

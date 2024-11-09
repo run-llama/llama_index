@@ -36,7 +36,7 @@ class PydanticOutputParser(ChainableOutputParser):
 
     @property
     def output_cls(self) -> Type[Model]:
-        return self._output_cls
+        return self._output_cls  # type: ignore
 
     @property
     def format_string(self) -> str:

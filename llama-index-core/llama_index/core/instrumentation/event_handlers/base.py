@@ -15,5 +15,5 @@ class BaseEventHandler(BaseModel):
         return "BaseEventHandler"
 
     @abstractmethod
-    def handle(self, event: BaseEvent, **kwargs) -> Any:
+    def handle(self, event: BaseEvent, **kwargs: Any) -> Any:
         """Logic for handling event."""

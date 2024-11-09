@@ -13,7 +13,7 @@ We offer a few different types of Tools:
 - `FunctionTool`: A function tool allows users to easily convert any user-defined function into a Tool. It can also auto-infer the function schema.
 - `QueryEngineTool`: A tool that wraps an existing [query engine](../query_engine/index.md). Note: since our agent abstractions inherit from `BaseQueryEngine`, these tools can also wrap other agents.
 - Community contributed `ToolSpecs` that define one or more tools around a single service (like Gmail)
-- Utiltiy tools for wrapping other tools to handle returning large amounts of data from a tool
+- Utility tools for wrapping other tools to handle returning large amounts of data from a tool
 
 ## FunctionTool
 

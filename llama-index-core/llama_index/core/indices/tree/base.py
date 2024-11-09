@@ -134,7 +134,9 @@ class TreeIndex(BaseIndex[IndexGraph]):
                 f"but retriever mode {retriever_mode} requires trees."
             )
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexGraph:
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **build_kwargs: Any
+    ) -> IndexGraph:
         """Build the index from nodes."""
         index_builder = GPTTreeIndexBuilder(
             self.num_children,

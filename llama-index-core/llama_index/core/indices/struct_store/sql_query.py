@@ -35,7 +35,7 @@ from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.response_synthesizers import (
     get_response_synthesizer,
 )
-from llama_index.core.schema import QueryBundle
+from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Table
@@ -328,6 +328,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         self,
         llm: Optional[LLM] = None,
         synthesize_response: bool = True,
+        markdown_response: bool = False,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         callback_manager: Optional[CallbackManager] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
@@ -352,6 +353,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         _validate_prompt(self._refine_synthesis_prompt, DEFAULT_REFINE_PROMPT)
 
         self._synthesize_response = synthesize_response
+        self._markdown_response = markdown_response
         self._verbose = verbose
         self._streaming = streaming
         super().__init__(callback_manager=callback_manager or Settings.callback_manager)
@@ -373,6 +375,27 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
     @abstractmethod
     def sql_retriever(self) -> NLSQLRetriever:
         """Get SQL retriever."""
+
+    def _format_result_markdown(self, retrieved_nodes: List[NodeWithScore]) -> str:
+        """Format the result in markdown."""
+        tables = []
+        for node_with_score in retrieved_nodes:
+            node = node_with_score.node
+            metadata = node.metadata
+
+            col_keys = metadata.get("col_keys", [])
+            results = metadata.get("result", [])
+            table_header = "| " + " | ".join(col_keys) + " |\n"
+            table_separator = "|" + "|".join(["---"] * len(col_keys)) + "|\n"
+
+            table_rows = ""
+            for row in results:
+                table_rows += "| " + " | ".join(str(item) for item in row) + " |\n"
+
+            markdown_table = table_header + table_separator + table_rows
+            tables.append(markdown_table)
+
+        return "\n\n".join(tables).strip()
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
@@ -402,7 +425,10 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 return cast(StreamingResponse, response)
             return cast(Response, response)
         else:
-            response_str = "\n".join([node.node.text for node in retrieved_nodes])
+            if self._markdown_response:
+                response_str = self._format_result_markdown(retrieved_nodes)
+            else:
+                response_str = "\n".join([node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
@@ -434,7 +460,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 return cast(AsyncStreamingResponse, response)
             return cast(Response, response)
         else:
-            response_str = "\n".join([node.node.text for node in retrieved_nodes])
+            response_str = "\n".join([node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
 
@@ -457,6 +483,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
+        markdown_response: bool = False,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
@@ -483,6 +510,7 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         )
         super().__init__(
             synthesize_response=synthesize_response,
+            markdown_response=markdown_response,
             response_synthesis_prompt=response_synthesis_prompt,
             refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,

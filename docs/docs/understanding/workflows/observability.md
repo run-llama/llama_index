@@ -26,9 +26,9 @@ class ConcurrentFlow(Workflow):
     async def start(
         self, ctx: Context, ev: StartEvent
     ) -> StepAEvent | StepBEvent | StepCEvent:
-        self.send_event(StepAEvent(query="Query 1"))
-        self.send_event(StepBEvent(query="Query 2"))
-        self.send_event(StepCEvent(query="Query 3"))
+        ctx.send_event(StepAEvent(query="Query 1"))
+        ctx.send_event(StepBEvent(query="Query 2"))
+        ctx.send_event(StepCEvent(query="Query 3"))
 
     @step
     async def step_a(self, ctx: Context, ev: StepAEvent) -> StepACompleteEvent:
@@ -101,11 +101,25 @@ Step step_three produced event StopEvent
 
 ## Stepwise execution
 
-In a notebook environment it can be helpful to run a workflow step by step. You can do this by calling `run_step` on the workflow object:
+In a notebook environment it can be helpful to run a workflow step by step. You can do this by calling `run_step` on the handler object:
 
 ```python
 w = ConcurrentFlow(timeout=10, verbose=True)
-await w.run_step()
+handler = w.run()
+
+while not handler.is_done():
+    # run_step returns the step's output event
+    ev = await handler.run_step()
+    # can make modifications to the results before dispatching the event
+    # val = ev.get("some_key")
+    # ev.set("some_key", new_val)
+    # can also inspect context
+    # val = await handler.ctx.get("key")
+    handler.ctx.send_event(ev)
+    continue
+
+# get the result
+result = handler.result()
 ```
 
 You can call `run_step` multiple times to step through the workflow one step at a time.
@@ -128,6 +142,6 @@ You can also use any of the third-party tools for visualizing and debugging that
 
 ![Arize flow](./arize.png)
 
-## That's it!
+## One more thing
 
-Congratulations, you've completed the workflows tutorial!
+Our last step in this tutorial is an alternative syntax for defining workflows using [unbound functions](unbound_functions.md) instead of classes.

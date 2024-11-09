@@ -12,7 +12,7 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 from openai import OpenAI, AsyncOpenAI
-from urllib.parse import urlunparse, urlparse
+from urllib.parse import urlparse
 
 # integrate.api.nvidia.com is the default url for most models, any
 # bespoke endpoints will need to be added to the MODEL_ENDPOINT_MAP
@@ -28,6 +28,7 @@ MODEL_ENDPOINT_MAP = {
     "nvidia/nv-embedqa-mistral-7b-v2": "https://integrate.api.nvidia.com/v1/",
     "nvidia/nv-embedqa-e5-v5": "https://integrate.api.nvidia.com/v1/",
     "baai/bge-m3": "https://integrate.api.nvidia.com/v1/",
+    "nvidia/llama-3.2-nv-embedqa-1b-v1": "https://integrate.api.nvidia.com/v1/",
 }
 
 KNOWN_URLS = list(MODEL_ENDPOINT_MAP.values())
@@ -36,15 +37,14 @@ KNOWN_URLS.append("https://ai.api.nvidia.com/v1/retrieval/snowflake/arctic-embed
 
 class Model(BaseModel):
     id: str
+    base_model: Optional[str] = None
 
 
 class NVIDIAEmbedding(BaseEmbedding):
     """NVIDIA embeddings."""
 
-    model: str = Field(
-        default=DEFAULT_MODEL,
+    model: Optional[str] = Field(
         description="Name of the NVIDIA embedding model to use.\n"
-        "Defaults to 'NV-Embed-QA'.",
     )
 
     truncate: Literal["NONE", "START", "END"] = Field(
@@ -56,13 +56,13 @@ class NVIDIAEmbedding(BaseEmbedding):
     )
 
     timeout: float = Field(
-        default=120, description="The timeout for the API request in seconds.", gte=0
+        default=120, description="The timeout for the API request in seconds.", ge=0
     )
 
     max_retries: int = Field(
         default=5,
         description="The maximum number of retries for the API request.",
-        gte=0,
+        ge=0,
     )
 
     _client: Any = PrivateAttr()
@@ -71,7 +71,7 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model: str = DEFAULT_MODEL,
+        model: Optional[str] = None,
         timeout: Optional[float] = 120,
         max_retries: Optional[int] = 5,
         nvidia_api_key: Optional[str] = None,
@@ -119,10 +119,9 @@ class NVIDIAEmbedding(BaseEmbedding):
             "NO_API_KEY_PROVIDED",
         )
 
-        if (
-            not base_url or base_url in KNOWN_URLS
-        ):  # hosted on API Catalog (build.nvidia.com)
-            self._is_hosted = True
+        base_url = base_url or BASE_URL
+        self._is_hosted = base_url in KNOWN_URLS
+        if self._is_hosted:  # hosted on API Catalog (build.nvidia.com)
             if api_key == "NO_API_KEY_PROVIDED":
                 raise ValueError("An API key is required for hosted NIM.")
             # TODO: we should not assume unknown models are at the base url
@@ -146,6 +145,37 @@ class NVIDIAEmbedding(BaseEmbedding):
         )
         self._aclient._custom_headers = {"User-Agent": "llama-index-embeddings-nvidia"}
 
+        self.model = model
+        if not self.model:
+            if self._is_hosted:
+                self.model = DEFAULT_MODEL
+            else:
+                self.__get_default_model()
+
+        if not self.model.startswith("nvdev/"):
+            self._validate_model(self.model)  ## validate model
+
+    def __get_default_model(self) -> None:
+        """Set default model."""
+        if not self._is_hosted:
+            valid_models = [
+                model.id
+                for model in self.available_models
+                if not model.base_model or model.base_model == model.id
+            ]
+            self.model = next(iter(valid_models), None)
+            if self.model:
+                warnings.warn(
+                    f"Default model is set as: {self.model}. \n"
+                    "Set model using model parameter. \n"
+                    "To get available models use available_models property.",
+                    UserWarning,
+                )
+            else:
+                raise ValueError("No locally hosted model was found.")
+        else:
+            self.model = self.model or DEFAULT_MODEL
+
     def _validate_url(self, base_url):
         """
         Base URL Validation.
@@ -156,27 +186,48 @@ class NVIDIAEmbedding(BaseEmbedding):
         expected_format = "Expected format is 'http://host:port'."
         result = urlparse(base_url)
         if not (result.scheme and result.netloc):
-            raise ValueError(
-                f"Invalid base_url, Expected format is 'http://host:port': {base_url}"
-            )
-        if result.path:
-            normalized_path = result.path.strip("/")
-            if normalized_path == "v1":
-                pass
-            elif normalized_path == "v1/embeddings":
-                warnings.warn(f"{expected_format} Rest is Ignored.")
-            else:
-                raise ValueError(f"Base URL path is not recognized. {expected_format}")
-        return urlunparse((result.scheme, result.netloc, "v1", "", "", ""))
+            raise ValueError(f"Invalid base_url, {expected_format}")
+        if base_url.endswith("embeddings"):
+            warnings.warn(f"{expected_format} Rest is ignored")
+        return base_url.strip("/")
+
+    def _validate_model(self, model_name: str) -> None:
+        """
+        Validates compatibility of the hosted model with the client.
+
+        Args:
+            model_name (str): The name of the model.
+
+        Raises:
+            ValueError: If the model is incompatible with the client.
+        """
+        if self._is_hosted:
+            if model_name not in MODEL_ENDPOINT_MAP:
+                if model_name in [model.id for model in self._client.models.list()]:
+                    warnings.warn(f"Unable to determine validity of {model_name}")
+                else:
+                    raise ValueError(
+                        f"Model {model_name} is incompatible with client {self.class_name()}. "
+                        f"Please check `{self.class_name()}.available_models()`."
+                    )
+        else:
+            if model_name not in [model.id for model in self.available_models]:
+                raise ValueError(f"No locally hosted {model_name} was found.")
 
     @property
     def available_models(self) -> List[Model]:
         """Get available models."""
-        ids = MODEL_ENDPOINT_MAP.keys()
         # TODO: hosted now has a model listing, need to merge known and listed models
         if not self._is_hosted:
-            ids = [model.id for model in self._client.models.list()]
-        return [Model(id=id) for id in ids]
+            return [
+                Model(
+                    id=model.id,
+                    base_model=getattr(model, "params", {}).get("root", None),
+                )
+                for model in self._client.models.list()
+            ]
+        else:
+            return [Model(id=id) for id in MODEL_ENDPOINT_MAP]
 
     @classmethod
     def class_name(cls) -> str:

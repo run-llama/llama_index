@@ -482,14 +482,20 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             else:
                 raise ValueError(f"Invalid query type: {query_type}")
 
-        lance_query = (
-            self._table.search(
+        if query_type == "hybrid":
+            lance_query = (
+                self._table.search(
+                    vector_column_name=self.vector_column_name, query_type="hybrid"
+                )
+                .vector(query.query_embedding)
+                .text(query.query_str)
+            )
+        else:
+            lance_query = self._table.search(
                 query=_query,
                 vector_column_name=self.vector_column_name,
             )
-            .limit(query.similarity_top_k * self.overfetch_factor)
-            .where(where)
-        )
+        lance_query.limit(query.similarity_top_k * self.overfetch_factor).where(where)
 
         if query_type != "fts":
             lance_query.nprobes(self.nprobes)

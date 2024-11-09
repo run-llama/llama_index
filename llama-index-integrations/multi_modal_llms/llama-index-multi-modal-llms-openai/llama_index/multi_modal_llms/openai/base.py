@@ -23,11 +23,12 @@ from llama_index.core.constants import (
 )
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
-from llama_index.core.schema import ImageDocument
+from llama_index.core.schema import ImageNode
 from llama_index.llms.openai.utils import (
     from_openai_message,
     resolve_openai_credentials,
     to_openai_message_dicts,
+    update_tool_calls,
 )
 from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -61,12 +62,12 @@ class OpenAIMultiModal(MultiModalLLM):
     max_retries: int = Field(
         default=3,
         description="Maximum number of retries.",
-        gte=0,
+        ge=0,
     )
     timeout: float = Field(
         default=60.0,
         description="The timeout, in seconds, for API requests.",
-        gte=0,
+        ge=0,
     )
     api_key: str = Field(default=None, description="The OpenAI API key.", exclude=True)
     api_base: str = Field(default=None, description="The base URL for OpenAI API.")
@@ -163,7 +164,7 @@ class OpenAIMultiModal(MultiModalLLM):
         self,
         prompt: str,
         role: str,
-        image_documents: Sequence[ImageDocument],
+        image_documents: Sequence[ImageNode],
         **kwargs: Any,
     ) -> List[ChatCompletionMessageParam]:
         return to_openai_message_dicts(
@@ -210,7 +211,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
     @llm_completion_callback()
     def _complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
@@ -248,7 +249,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
     @llm_completion_callback()
     def _stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
@@ -268,6 +269,9 @@ class OpenAIMultiModal(MultiModalLLM):
                     delta = response.choices[0].delta
                 else:
                     delta = ChoiceDelta()
+
+                if delta is None:
+                    continue
 
                 # update using deltas
                 content_delta = delta.content or ""
@@ -304,6 +308,9 @@ class OpenAIMultiModal(MultiModalLLM):
                 else:
                     delta = ChoiceDelta()
 
+                if delta is None:
+                    continue
+
                 # check if this chunk is the start of a function call
                 if delta.tool_calls:
                     is_function = True
@@ -315,7 +322,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
                 additional_kwargs = {}
                 if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
+                    tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
@@ -332,12 +339,12 @@ class OpenAIMultiModal(MultiModalLLM):
         return gen()
 
     def complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         return self._complete(prompt, image_documents, **kwargs)
 
     def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
         return self._stream_complete(prompt, image_documents, **kwargs)
 
@@ -359,7 +366,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
     @llm_completion_callback()
     async def _acomplete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
@@ -378,13 +385,13 @@ class OpenAIMultiModal(MultiModalLLM):
         )
 
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         return await self._acomplete(prompt, image_documents, **kwargs)
 
     @llm_completion_callback()
     async def _astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
@@ -404,6 +411,9 @@ class OpenAIMultiModal(MultiModalLLM):
                     delta = response.choices[0].delta
                 else:
                     delta = ChoiceDelta()
+
+                if delta is None:
+                    continue
 
                 # update using deltas
                 content_delta = delta.content or ""
@@ -460,6 +470,9 @@ class OpenAIMultiModal(MultiModalLLM):
                 else:
                     delta = ChoiceDelta()
 
+                if delta is None:
+                    continue
+
                 # check if this chunk is the start of a function call
                 if delta.tool_calls:
                     is_function = True
@@ -471,7 +484,7 @@ class OpenAIMultiModal(MultiModalLLM):
 
                 additional_kwargs = {}
                 if is_function:
-                    tool_calls = self._update_tool_calls(tool_calls, delta.tool_calls)
+                    tool_calls = update_tool_calls(tool_calls, delta.tool_calls)
                     additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
@@ -488,7 +501,7 @@ class OpenAIMultiModal(MultiModalLLM):
         return gen()
 
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         return await self._astream_complete(prompt, image_documents, **kwargs)
 

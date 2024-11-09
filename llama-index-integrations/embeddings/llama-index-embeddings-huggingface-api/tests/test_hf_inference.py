@@ -106,3 +106,10 @@ class TestHuggingFaceInferenceAPIEmbeddings:
         assert serialized["model_name"] == STUB_MODEL_NAME
         # Check Hugging Face Inference API Embeddings derived class specifics
         assert serialized["pooling"] == Pooling.CLS
+
+    def test_serde(
+        self, hf_inference_api_embedding: HuggingFaceInferenceAPIEmbedding
+    ) -> None:
+        serialized = hf_inference_api_embedding.model_dump()
+        deserialized = HuggingFaceInferenceAPIEmbedding.model_validate(serialized)
+        assert deserialized.headers == hf_inference_api_embedding.headers
