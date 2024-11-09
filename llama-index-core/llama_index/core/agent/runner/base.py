@@ -579,7 +579,7 @@ class AgentRunner(BaseAgentRunner):
             )
             end_time = time.time()
             elapsed_time = end_time - start_time
-            print(f"TOOL CHOICE: {tool_choice} took {elapsed_time} seconds.")
+            # print(f"TOOL CHOICE: {tool_choice} took {elapsed_time} seconds.")
 
             if cur_step_output.is_last:
                 result_output = cur_step_output
