@@ -94,7 +94,7 @@ from llama_index.readers.chatgpt_conversation_json import (
     ChatGPTConversationsReader,
     ChatGPTMessageNodeParser,
 )
-from llama_index import VectorStoreIndex, StorageContext
+from llama_index.core import VectorStoreIndex, StorageContext
 
 # Step 1: Load conversations
 reader = ChatGPTConversationsReader(input_file="path/to/conversations.json")
