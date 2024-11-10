@@ -33,8 +33,6 @@ class ChatGPTMessageNodeParser(TransformComponent):
             all_nodes.extend(doc_nodes)
         return all_nodes
 
-    # ... (rest of your methods remain the same)
-
     def _split_text_into_messages(self, text: str) -> List[Dict[str, str]]:
         """Split text into messages using speaker identities."""
         # Assuming each message starts with 'user:' or 'assistant:'
