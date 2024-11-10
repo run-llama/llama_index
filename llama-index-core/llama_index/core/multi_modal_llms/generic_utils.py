@@ -87,7 +87,7 @@ def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
         * image/webp
 
     Args:
-        image_file_path (Optional[str]): Path to the image file.
+        image_file_path (str): Path to the image file.
 
     Returns:
         str: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
