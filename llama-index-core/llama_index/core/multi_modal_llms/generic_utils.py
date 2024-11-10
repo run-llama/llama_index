@@ -77,7 +77,7 @@ def image_documents_to_base64(
     return image_encodings
 
 
-def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
+def infer_image_mimetype_from_file_path(image_file_path: Optional[str]) -> str:
     """Infer the MIME of an image file based on its file extension.
 
     Currently only supports the following types of images:
@@ -87,7 +87,7 @@ def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
         * image/webp
 
     Args:
-        image_file_path (str): Path to the image file.
+        image_file_path (Optional[str]): Path to the image file.
 
     Returns:
         str: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
