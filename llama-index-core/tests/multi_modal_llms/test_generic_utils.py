@@ -132,18 +132,22 @@ def test_infer_image_mimetype_from_file_path():
 
     # Catch-all defaults
     assert infer_image_mimetype_from_file_path("image.asf32") == "image/jpeg"
-    assert infer_image_mimetype_from_file_path(None) == "image/jpeg"
+    assert infer_image_mimetype_from_file_path("") == "image/jpeg"
 
 
 def test_set_base64_and_mimetype_for_image_docs():
     """Test setting base64 and mimetype fields for ImageDocument objects."""
-    image_doc = ImageDocument(image=EXP_BASE64)
+    image_docs = [
+        ImageDocument(image=EXP_BASE64),
+        ImageDocument(image_path="test.asdf"),
+    ]
 
     with patch("requests.get") as mock_get:
         mock_get.return_value.content = EXP_BINARY
         with patch("builtins.open", mock_open(read_data=EXP_BINARY)):
-            results = set_base64_and_mimetype_for_image_docs([image_doc])
+            results = set_base64_and_mimetype_for_image_docs(image_docs)
 
-    assert len(results) == 1
+    assert len(results) == 2
     assert results[0].image == EXP_BASE64
     assert results[0].image_mimetype == "image/jpeg"
+    assert results[1].image_mimetype == "image/jpeg"
