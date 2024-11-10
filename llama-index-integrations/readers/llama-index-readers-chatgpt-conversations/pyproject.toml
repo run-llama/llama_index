@@ -15,6 +15,7 @@ import_path = "llama_index.readers.chatgpt_conversations"
 
 [tool.llamahub.class_authors]
 ChatGPTConversationsReader = "jasonnathan"
+ChatGPTMessageNodeParser = "jasonnathan"
 
 [tool.mypy]
 disallow_untyped_defs = true
