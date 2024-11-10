@@ -18,7 +18,7 @@ HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
 
 # AWS Bedrock Anthropic identifiers
-BEDROCK_INFERENCE_CLAUDE_MODELS: Dict[str, int] = {
+BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "anthropic.claude-3-sonnet-20240229-v1:0": 200000,
     "anthropic.claude-3-opus-20240229-v1:0": 200000,
@@ -63,6 +63,7 @@ ANTHROPIC_MODELS: Dict[str, int] = {
 
 # All provider Anthropic identifiers
 CLAUDE_MODELS: Dict[str, int] = {
+    **BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS,
     **BEDROCK_CLAUDE_MODELS,
     **VERTEX_CLAUDE_MODELS,
     **ANTHROPIC_MODELS,
@@ -74,7 +75,16 @@ def is_function_calling_model(modelname: str) -> bool:
 
 
 def anthropic_modelname_to_contextsize(modelname: str) -> int:
-    for model, context_size in BEDROCK_INFERENCE_CLAUDE_MODELS.items():
+    """Get the context size for an Anthropic model.
+
+    Args:
+        modelname (str): Anthropic model name.
+
+    Returns:
+        int: Context size for the specific model.
+    """
+    for model, context_size in BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS.items():
+        # Only US & EU inference profiles are currently supported by AWS
         CLAUDE_MODELS[f"us.{model}"] = context_size
         CLAUDE_MODELS[f"eu.{model}"] = context_size
 
