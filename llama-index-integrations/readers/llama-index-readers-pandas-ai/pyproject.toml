@@ -36,7 +36,7 @@ python = ">=3.9,<4.0"
 pandasai = ">=2.2.12"
 pandas = "*"
 llama-index-core = "^0.11.0"
-llama-index-readers-file = "^0.2.0"
+llama-index-readers-file = "^0.3.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
