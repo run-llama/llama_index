@@ -91,9 +91,16 @@ def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
 
     Returns:
         str: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
+            Defaults to `image/jpeg`.
     """
-    # Get the file extension
-    file_extension = image_file_path.split(".")[-1].lower()
+
+    try:
+        # Get the file extension
+        file_extension = image_file_path.split(".")[-1].lower()
+    except AttributeError:
+        logger.warning(f"Cannot infer image mimetype from {image_file_path}. Defaulting to `image/jpeg`.")
+        # If the image_file_path is `None`
+        return "image/jpeg"
 
     # Map file extensions to mimetypes
     if file_extension == "jpg" or file_extension == "jpeg":
@@ -126,3 +133,22 @@ def infer_image_mimetype_from_base64(base64_string: str) -> Optional[str]:
 
     # Return the MIME type if detected, otherwise return None
     return kind.mime if kind is not None else None
+
+
+def set_base64_and_mimetype_for_image_docs(image_documents: Sequence[ImageDocument]) -> Sequence[ImageDocument]:
+    """Set the base64 and mimetype fields for the image documents.
+
+    Args:
+        image_documents (Sequence[ImageDocument]): Sequence of ImageDocument objects.
+
+    Returns:
+        Sequence[ImageDocument]: ImageDocuments with base64 and detected mimetypes set.
+    """
+    base64_strings = image_documents_to_base64(image_documents)
+    for image_doc, base64_str in zip(image_documents, base64_strings):
+        image_doc.image = base64_str
+        image_doc.image_mimetype = infer_image_mimetype_from_base64(image_doc.image)
+        if not image_doc.image_mimetype:
+            # Defaults to `image/jpeg` if the mimetype cannot be inferred
+            image_doc.image_mimetype = infer_image_mimetype_from_file_path(image_doc.image_path)
+    return image_documents
