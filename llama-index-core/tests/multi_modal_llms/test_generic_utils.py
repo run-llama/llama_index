@@ -12,7 +12,7 @@ from llama_index.core.multi_modal_llms.generic_utils import (
     image_documents_to_base64,
     infer_image_mimetype_from_base64,
     infer_image_mimetype_from_file_path,
-    set_base64_and_mimetype_for_image_docs
+    set_base64_and_mimetype_for_image_docs,
 )
 
 # Expected values
