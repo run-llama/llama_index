@@ -1,7 +1,7 @@
 import base64
 import filetype
 import logging
-from typing import List, Sequence, Optional
+from typing import List, Optional, Sequence
 
 import requests
 
@@ -125,6 +125,7 @@ def infer_image_mimetype_from_base64(base64_string: str) -> Optional[str]:
 
     Returns:
         Optional[str]: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
+          `None` if the MIME type cannot be inferred.
     """
     # Decode the base64 string
     decoded_data = base64.b64decode(base64_string)
