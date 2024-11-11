@@ -4,7 +4,7 @@ This is a quick guide to the high-level concepts you'll encounter frequently whe
 
 ## Large Language Models (LLMs)
 
-LLMs are the fundamental innovation that launched LlamaIndex. They are an artificial intelligence (AI) computer system that can understand, generate, and manipulate natural language, including answering questions based on their training data or data provided to them at query time. You can [learn more about using LLMs](../understanding/using_llms/using_llms/).
+LLMs are the fundamental innovation that launched LlamaIndex. They are an artificial intelligence (AI) computer system that can understand, generate, and manipulate natural language, including answering questions based on their training data or data provided to them at query time. You can [learn more about using LLMs](../understanding/using_llms/using_llms.md).
 
 ## Retrieval Augmented Generation (RAG)
 
@@ -12,13 +12,13 @@ Retrieval-Augmented Generation (RAG) is a core technique for building data-backe
 
 ## Agents
 
-An agent is a piece of software that semi-autonomously performs tasks by combining LLMs with other tools. You can [learn more about agents](../understanding/agents/index.md).
+An agent is a piece of software that semi-autonomously performs tasks by combining LLMs with other tools. You can [learn more about agents](../understanding/agent/index.md).
 
 ## Use cases
 
 There are endless use cases for data-backed LLM applications but they can be roughly grouped into four categories:
 
-[**Structured Data Extraction**](../use_cases/extraction.md/)
+[**Structured Data Extraction**](../use_cases/extraction.md)
 Pydantic extractors allow you to specify a precise data structure to extract from your data and use LLMs to fill in the missing pieces in a type-safe way. This is useful for extracting structured data from unstructured sources like PDFs, websites, and more, and is key to automating workflows.
 
 [**Query Engines**](../module_guides/deploying/query_engine/index.md):

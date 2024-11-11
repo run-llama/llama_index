@@ -1,7 +1,13 @@
 from typing import Any, Dict, Type
 from _collections_abc import dict_keys, dict_items, dict_values
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr, ConfigDict
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    PrivateAttr,
+    ConfigDict,
+    model_serializer,
+)
 
 
 class Event(BaseModel):
@@ -41,7 +47,7 @@ class Event(BaseModel):
         print(evt.field_1)
         print(evt._private_attr_1)
 
-        # `a` and `b` get set in the underliying dict, namely `evt._data`
+        # `a` and `b` get set in the underlying dict, namely `evt._data`
         print((evt.a, evt.b))
         ```
     """
@@ -68,7 +74,8 @@ class Event(BaseModel):
         super().__init__(**fields)
         for private_attr, value in private_attrs.items():
             super().__setattr__(private_attr, value)
-        self._data = data
+        if data:
+            self._data.update(data)
 
     def __getattr__(self, __name: str) -> Any:
         if __name in self.__private_attributes__ or __name in self.model_fields:
@@ -116,6 +123,14 @@ class Event(BaseModel):
 
     def dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return self._data
+
+    @model_serializer(mode="wrap")
+    def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
+        data = handler(self)
+        # include _data in serialization
+        if self._data:
+            data["_data"] = self._data
+        return data
 
 
 class StartEvent(Event):

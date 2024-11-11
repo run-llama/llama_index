@@ -65,8 +65,8 @@ def default_output_processor(llm_output: str, json_value: JSONType) -> Dict[str,
     expressions = [expr.strip() for expr in llm_output.split(",")]
 
     try:
-        from jsonpath_ng.ext import parse
-        from jsonpath_ng.jsonpath import DatumInContext
+        from jsonpath_ng.ext import parse  # pants: no-infer-dep
+        from jsonpath_ng.jsonpath import DatumInContext  # pants: no-infer-dep
     except ImportError as exc:
         IMPORT_ERROR_MSG = "You need to install jsonpath-ng to use this function!"
         raise ImportError(IMPORT_ERROR_MSG) from exc

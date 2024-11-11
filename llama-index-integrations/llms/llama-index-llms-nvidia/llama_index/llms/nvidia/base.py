@@ -118,7 +118,8 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             else:
                 self.__get_default_model()
 
-        self._validate_model(self.model)  ## validate model
+        if not self.model.startswith("nvdev/"):
+            self._validate_model(self.model)  ## validate model
 
     def __get_default_model(self):
         """Set default model."""
