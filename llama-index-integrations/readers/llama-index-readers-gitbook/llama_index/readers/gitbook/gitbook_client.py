@@ -22,9 +22,8 @@ class GitbookClient:
             "Content-Type": "application/json",
         }
 
-    def get_space(self, space_id) -> Dict:
-        """Gets information for a specific space."""
-        url = f"{self.base_url}/spaces/{space_id}"
+    def _make_request(self, url: str) -> Dict:
+        """Helper method to handle common HTTP GET requests."""
         try:
             response = requests.get(url, headers=self.headers)
             response.raise_for_status()
@@ -32,38 +31,30 @@ class GitbookClient:
         except requests.exceptions.RequestException as e:
             return self._handle_error(e)
 
+    def get_space(self, space_id) -> Dict:
+        """Gets information for a specific space."""
+        url = f"{self.base_url}/spaces/{space_id}"
+        return self._make_request(url)
+
     def list_pages(self, space_id) -> List[Dict]:
         """Gets all pages in a specific space."""
         space_info = self.get_space(space_id)
         url = f"{self.base_url}/spaces/{space_id}/content"
+        space = self._make_request(url)
 
-        try:
-            response = requests.get(url, headers=self.headers)
-        except requests.exceptions.RequestException as e:
-            return self._handle_error(e)
-
-        if response.status_code == 200:
-            space = response.json()
-            pages_info = []
-            for page in space.get("pages"):
-                GitbookClient._extract_page_info(
-                    pages_info, page, space_info.get("title", "ROOT")
-                )
-            return pages_info
-        else:
-            return self._handle_error(response)
+        pages_info = []
+        for page in space.get("pages"):
+            GitbookClient._extract_page_info(
+                pages_info, page, space_info.get("title", "ROOT")
+            )
+        return pages_info
 
     def get_page(self, space_id, page_id) -> Dict:
         """Gets the details of a specific page."""
         url = (
             f"{self.base_url}/spaces/{space_id}/content/page/{page_id}?format=markdown"
         )
-        response = requests.get(url, headers=self.headers)
-        return (
-            response.json()
-            if response.status_code == 200
-            else self._handle_error(response)
-        )
+        return self._make_request(url)
 
     def get_page_markdown(self, space_id, page_id) -> str:
         """Gets the content of a specific page in Markdown format."""
@@ -72,7 +63,10 @@ class GitbookClient:
 
     def _handle_error(self, response):
         """Handles HTTP errors."""
-        error_message = f"Error: {response.status_code} - {response.text}"
+        if isinstance(response, requests.exceptions.HTTPError):
+            error_message = f"Error: {response.response.status_code} Client Error: {response.response.reason}"
+        else:
+            error_message = f"Error: {response}"
         raise Exception(error_message)
 
     @staticmethod

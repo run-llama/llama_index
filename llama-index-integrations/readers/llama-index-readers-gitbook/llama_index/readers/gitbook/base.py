@@ -80,3 +80,31 @@ class SimpleGitbookReader(BaseReader):
                 documents.append(Document(text=content, id_=id, metadata=metadata))
 
         return documents
+
+
+if __name__ == "__main__":
+    import os
+    import sys
+
+    def load_env_file():
+        """Load environment variables from .env file."""
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        env_path = os.path.join(current_dir, "../../../.env")
+        if os.path.exists(env_path):
+            with open(env_path) as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        key, value = line.split("=", 1)
+                        os.environ[key.strip()] = value.strip()
+
+    load_env_file()
+    api_token = os.getenv("GITBOOK_API_TOKEN")
+    space_id = os.getenv("GITBOOK_SPACE_ID")
+
+    if not api_token or not space_id:
+        print("Error: GITBOOK_API_TOKEN and GITBOOK_SPACE_ID must be set in .env file")
+        sys.exit(1)
+
+    reader = SimpleGitbookReader(api_token)
+    print(reader.load_data(space_id))

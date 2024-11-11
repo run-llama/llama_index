@@ -22,8 +22,8 @@ reader = SimpleGitbookReader(
     api_token="<Gitbook API Token>",  # Gitbook API Token
 )
 
-# Lazy load data from Gitbook
-documents = reader.lazy_load_data(
+# load data from Gitbook
+documents = reader.load_data(
     space_id="<Gitbook Space Id>",  # Id of the gitbook space
     metadata_names=None,  # Names of the fields to add to metadata attribute (available: 'path', 'title', 'description', 'parent')
 )
