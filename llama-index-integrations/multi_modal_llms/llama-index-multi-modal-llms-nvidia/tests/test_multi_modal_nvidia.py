@@ -15,6 +15,9 @@ from llama_index.core.base.llms.types import (
     ChatResponse,
 )
 from llama_index.core.schema import ImageDocument
+import numpy as np
+from PIL import Image
+import tempfile
 
 # TODO: multiple texts
 # TODO: accuracy tests
@@ -61,6 +64,24 @@ def urlToBase64(url):
     return base64.b64encode(requests.get(url).content).decode("utf-8")
 
 
+@pytest.fixture(scope="session")
+def temp_image_path(suffix: str):
+    # Create a white square image
+    white_square = np.ones((100, 100, 3), dtype=np.uint8) * 255
+    image = Image.fromarray(white_square)
+
+    # Create a temporary file
+    with tempfile.NamedTemporaryFile(suffix=f".{suffix}", delete=False) as temp_file:
+        image.save(temp_file, format=suffix.upper())
+        temp_path = temp_file.name
+
+    yield temp_path
+
+    # Clean up the temporary file after the test
+    os.unlink(temp_path)
+
+
+@pytest.fixture(scope="session")
 def get_asset_id():
     content_type = "image/jpg"
     description = "example-image-from-lc-nv-ai-e-notebook"
@@ -89,21 +110,16 @@ def get_asset_id():
     return create_response.json()["assetId"]
 
 
-@pytest.mark.parametrize(
-    "vlm_model",
-    ["microsoft/phi-3-vision-128k-instruct"],
-)
+def test_class():
+    emb = NVIDIAMultiModal(api_key="BOGUS")
+    assert isinstance(emb, MultiModalLLM)
+
+
 @pytest.mark.parametrize(
     "content",
     [
         [ImageDocument(image_url=image_urls[0])],
         [ImageDocument(image=urlToBase64(image_urls[0]), mimetype="jpeg")],
-        # [ImageDocument(image_path="data/nvidia-picasso.jpg")],
-        # [
-        #     ImageDocument(
-        #         image=encode_image("data/nvidia-picasso.jpg"), mimetype="jpeg"
-        #     )
-        # ],
     ],
 )
 @pytest.mark.parametrize(
@@ -128,37 +144,26 @@ def test_vlm_input_style(
 
 
 @pytest.mark.parametrize(
-    "vlm_model",
-    ["microsoft/phi-3-vision-128k-instruct"],
+    "suffix",
+    ["jpeg", "png", "webp", "gif"],
+    scope="session",
 )
-@pytest.mark.parametrize(
-    "img",
-    [
-        "data/nvidia-picasso.jpg",
-        "data/nvidia-picasso.png",
-        "data/nvidia-picasso.webp",
-        "data/nvidia-picasso.gif",
-    ],
-    ids=["jpg", "png", "webp", "gif"],
-)
-@pytest.mark.skip()
 def test_vlm_image_type(
+    suffix: str,
+    temp_image_path: str,
     vlm_model: str,
-    img: str,
 ) -> None:
     llm = NVIDIAMultiModal(model=vlm_model)
     response = llm.complete(
-        "Describe image", image_documents=[ImageDocument(image_path=img)]
+        "Describe image", image_documents=[ImageDocument(image_path=temp_image_path)]
     )
     assert isinstance(response, CompletionResponse)
     assert isinstance(response.text, str)
 
 
-@pytest.mark.parametrize(
-    "vlm_model",
-    ["microsoft/phi-3-vision-128k-instruct"],
-)
-@pytest.mark.skip()
+pytest.mark.skipif(os.path.isfile("data/nvidia-picasso-large.png"))
+
+
 def test_vlm_image_large(
     vlm_model: str,
 ) -> None:
@@ -171,40 +176,28 @@ def test_vlm_image_large(
     assert isinstance(response.text, str)
 
 
-# def test_vlm_no_images(
-#     vlm_model: str,
-# ) -> None:
-#     chat = NVIDIAMultiModal(model=vlm_model)
-#     pytest.raises()
-#     response = chat.complete(prompt="What is the capital of Massachusetts?")
-#     assert isinstance(response, BaseMessage)
-#     assert isinstance(response.content, str)
-
-
 @pytest.mark.parametrize(
-    "vlm_model",
-    ["microsoft/phi-3-vision-128k-instruct"],
+    "suffix",
+    ["jpeg", "png", "webp", "gif"],
+    scope="session",
 )
-@pytest.mark.skip()
 def test_vlm_two_images(
+    suffix: str,
+    temp_image_path: str,
     vlm_model: str,
 ) -> None:
     chat = NVIDIAMultiModal(model=vlm_model)
     response = chat.complete(
         prompt="Describe image",
         image_documents=[
-            ImageDocument(image_path="data/nvidia-picasso.png"),
-            ImageDocument(image_path="data/nvidia-picasso.jpg"),
+            ImageDocument(image_path=temp_image_path),
+            ImageDocument(image_path=temp_image_path),
         ],
     )
     assert isinstance(response, CompletionResponse)
     assert isinstance(response.text, str)
 
 
-@pytest.mark.parametrize(
-    "vlm_model",
-    ["microsoft/phi-3-vision-128k-instruct"],
-)
 @pytest.mark.parametrize(
     "content",
     [
@@ -219,9 +212,10 @@ def test_vlm_asset_id(
     vlm_model: str,
     content: Union[str, List[Union[str, Dict[str, Any]]]],
     func: str,
+    get_asset_id: str,
 ) -> None:
     assert isinstance(content[0], ImageDocument)
-    content[0].metadata["asset_id"] = get_asset_id()
+    content[0].metadata["asset_id"] = get_asset_id
 
     assert content[0].metadata["asset_id"] != ""
 
@@ -240,10 +234,6 @@ def test_vlm_asset_id(
 ## ------------------------- chat/stream_chat test cases ------------------------- ##
 
 
-@pytest.mark.parametrize(
-    "vlm_model",
-    ["microsoft/phi-3-vision-128k-instruct"],
-)
 @pytest.mark.parametrize(
     "func",
     ["chat", "stream_chat"],
@@ -301,14 +291,11 @@ def test_stream_chat_multiple_messages(vlm_model: str, func: str) -> None:
     "func",
     ["chat", "stream_chat"],
 )
-@pytest.mark.parametrize(
-    "vlm_model",
-    ["microsoft/phi-3-vision-128k-instruct"],
-)
 def test_vlm_asset_id_chat(
     vlm_model: str,
     content: Union[str, List[Union[str, Dict[str, Any]]]],
     func: str,
+    get_asset_id: str,
 ) -> None:
     def fill(
         item: Any,
@@ -326,7 +313,7 @@ def test_vlm_asset_id_chat(
             result = {key: fill(value, asset_id) for key, value in item.items()}
         return result
 
-    asset_id = get_asset_id()
+    asset_id = get_asset_id
     assert asset_id != ""
     content = fill(content, asset_id)
 
@@ -343,33 +330,26 @@ def test_vlm_asset_id_chat(
 @pytest.mark.parametrize(
     "func",
     ["chat", "stream_chat"],
+    scope="session",
 )
 @pytest.mark.parametrize(
-    "vlm_model",
-    ["microsoft/phi-3-vision-128k-instruct"],
+    "suffix",
+    ["jpeg", "png", "webp", "gif"],
+    scope="session",
 )
-@pytest.mark.parametrize(
-    "img",
-    [
-        "data/nvidia-picasso.jpg",
-        "data/nvidia-picasso.png",
-        "data/nvidia-picasso.webp",
-        "data/nvidia-picasso.gif",
-    ],
-    ids=["jpg", "png", "webp", "gif"],
-)
-@pytest.mark.skip()
-def test_vlm_image_type_chat(vlm_model: str, img: str, func: str) -> None:
+def test_vlm_image_type_chat(
+    suffix: str, temp_image_path: str, vlm_model: str, func: str
+) -> None:
     llm = NVIDIAMultiModal(model=vlm_model)
     if func == "chat":
         response = llm.chat(
-            [ChatMessage(content=[{"type": "image_url", "image_url": img}])]
+            [ChatMessage(content=[{"type": "image_url", "image_url": temp_image_path}])]
         )
         assert isinstance(response, ChatResponse)
         assert isinstance(response.delta, str)
     if func == "stream_chat":
         for token in llm.stream_chat(
-            [ChatMessage(content=[{"type": "image_url", "image_url": img}])]
+            [ChatMessage(content=[{"type": "image_url", "image_url": temp_image_path}])]
         ):
             assert isinstance(token, ChatResponse)
 
@@ -378,20 +358,10 @@ def test_vlm_image_type_chat(vlm_model: str, img: str, func: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "vlm_model",
-    ["microsoft/phi-3-vision-128k-instruct"],
-)
-@pytest.mark.parametrize(
     "content",
     [
         [ImageDocument(image_url=image_urls[0])],
         [ImageDocument(image=urlToBase64(image_urls[0]), mimetype="jpeg")],
-        # [ImageDocument(image_path="data/nvidia-picasso.jpg")],
-        # [
-        #     ImageDocument(
-        #         image=encode_image("data/nvidia-picasso.jpg"), mimetype="jpeg"
-        #     )
-        # ],
     ],
 )
 @pytest.mark.asyncio()
@@ -412,10 +382,6 @@ async def test_vlm_input_style_async(
     assert isinstance(response.text, str)
 
 
-@pytest.mark.parametrize(
-    "vlm_model",
-    ["microsoft/phi-3-vision-128k-instruct"],
-)
 @pytest.mark.asyncio()
 async def test_vlm_chat_async(vlm_model: str) -> None:
     llm = NVIDIAMultiModal(model=vlm_model)
@@ -443,10 +409,6 @@ async def test_vlm_chat_async(vlm_model: str) -> None:
     assert isinstance(response.delta, str)
 
 
-@pytest.mark.parametrize(
-    "vlm_model",
-    ["microsoft/phi-3-vision-128k-instruct"],
-)
 @pytest.mark.asyncio()
 async def test_vlm_chat_async_stream(vlm_model: str) -> None:
     llm = NVIDIAMultiModal(model=vlm_model)

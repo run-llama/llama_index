@@ -167,7 +167,9 @@ class NVIDIAMultiModal(MultiModalLLM):
         is_hosted = base_url in KNOWN_URLS
 
         if is_hosted and api_key == "NO_API_KEY_PROVIDED":
-            raise "An API key is required for the hosted NIM. This will become an error in 0.2.0."
+            raise ValueError(
+                "An API key is required for the hosted NIM. This will become an error in 0.2.0."
+            )
 
         super().__init__(
             model=model,
@@ -197,7 +199,7 @@ class NVIDIAMultiModal(MultiModalLLM):
 
     @property
     def available_models(self):
-        self._client.get_model_details()
+        return self._client.get_model_details()
 
     def _get_credential_kwargs(self) -> Dict[str, Any]:
         return {"api_key": self.api_key}
