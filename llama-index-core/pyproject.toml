@@ -71,6 +71,7 @@ pillow = ">=9.0.0"
 PyYAML = ">=6.0.1"
 wrapt = "*"
 pydantic = ">=2.7.0,<3.0.0"
+filetype = "^1.2.0"  # Used for multi-modal MIME utils
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
