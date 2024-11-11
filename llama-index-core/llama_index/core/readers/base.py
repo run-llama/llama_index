@@ -82,7 +82,6 @@ class ResourcesReaderMixin(ABC):
         """
         return self.list_resources(*args, **kwargs)
 
-    @abstractmethod
     def get_permission_info(self, resource_id: str, *args: Any, **kwargs: Any) -> Dict:
         """
         Get a dictionary of information about the permissions of a specific resource.
