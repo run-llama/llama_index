@@ -233,7 +233,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
                 "extract_func": lambda x: json.dumps(x.metadata),
             },
         }
-        column_names = list(self._column_config.keys())
+        column_names = list(column_config.keys())
         column_type_names = [
             column_config[column_name]["type"] for column_name in column_names
         ]
