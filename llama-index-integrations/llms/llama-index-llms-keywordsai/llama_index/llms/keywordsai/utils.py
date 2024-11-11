@@ -1,5 +1,6 @@
 import logging
-from typing import Any, Callable, Optional, Union
+import os
+from typing import Any, Callable, Optional, Union, Tuple
 from functools import lru_cache
 
 from tenacity import (
@@ -12,7 +13,7 @@ from tenacity import (
     wait_random_exponential,
 )
 from tenacity.stop import stop_base
-
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 import openai
 from openai.types.chat import ChatCompletionMessageToolCall
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
@@ -22,10 +23,7 @@ DEFAULT_KEYWORDSAI_API_BASE = "https://api.keywordsai.co/api/"
 DEFAULT_KEYWORDSAI_API_VERSION = ""
 
 MISSING_API_KEY_ERROR_MESSAGE = """No API key found for KeywordsAI.
-Please set either the KEYWORDSAI_API_KEY environment variable or \
-openai.api_key prior to initialization.
-API keys can be found or created at \
-https://platform.openai.com/account/api-keys
+Please set either the KEYWORDSAI_API_KEY environment variable.
 """
 
 logger = logging.getLogger(__name__)
@@ -132,3 +130,37 @@ def is_chat_model(model: str) -> bool:
 def is_function_calling_model(model: str) -> bool:
     models = get_keywords_models()
     return models[model]["function_call"] == 1
+
+
+def resolve_keywordsai_credentials(
+    api_key: Optional[str] = None,
+    api_base: Optional[str] = None,
+    api_version: Optional[str] = None,
+) -> Tuple[Optional[str], str, str]:
+    """ "Resolve KeywordsAI credentials.
+
+    The order of precedence is:
+    1. param
+    2. env
+    3. openai module
+    4. default
+    """
+    # resolve from param or env
+    api_key = get_from_param_or_env("api_key", api_key, "KEYWORDSAI_API_KEY", "")
+    api_base = get_from_param_or_env("api_base", api_base, "KEYWORDSAI_API_BASE", "")
+    api_version = get_from_param_or_env(
+        "api_version", api_version, "KEYWORDSAI_API_VERSION", ""
+    )
+
+    # resolve from openai module or default
+    final_api_key = api_key or ""
+    final_api_base = api_base or DEFAULT_KEYWORDSAI_API_BASE
+
+    return final_api_key, str(final_api_base), api_version
+
+
+def validate_keywordsai_api_key(api_key: Optional[str] = None) -> None:
+    openai_api_key = api_key or os.environ.get("KEYWORDSAI_API_KEY", "")
+
+    if not openai_api_key:
+        raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)

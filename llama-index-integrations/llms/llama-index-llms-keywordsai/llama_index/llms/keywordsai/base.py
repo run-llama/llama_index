@@ -25,13 +25,14 @@ from .utils import (
     is_chat_model,
     is_function_calling_model,
     keywordsai_modelname_to_contextsize,
+    resolve_keywordsai_credentials,
 )
 from openai import OpenAI as SyncOpenAI
 
 import llama_index.core.instrumentation as instrument
 
 from llama_index.llms.openai import OpenAI, AsyncOpenAI
-from llama_index.llms.openai.utils import resolve_openai_credentials, O1_MODELS
+from llama_index.llms.openai.utils import O1_MODELS
 
 dispatcher = instrument.get_dispatcher(__name__)
 
@@ -193,7 +194,7 @@ class KeywordsAI(OpenAI):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
 
-        api_key, api_base, api_version = resolve_openai_credentials(
+        api_key, api_base, api_version = resolve_keywordsai_credentials(
             api_key=api_key,
             api_base=api_base,
             api_version=api_version,
