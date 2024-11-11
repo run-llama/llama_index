@@ -752,6 +752,12 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
                 recursive=recursive,
                 userprincipalname=userprincipalname,
             )
+            if self.required_exts:
+                return [
+                    payload.resource_info["file_path"]
+                    for payload in payloads
+                    if payload.resource_info["file_path"].endswith(tuple(self.required_exts))
+                ]
             return [payload.resource_info["file_path"] for payload in payloads]
         except Exception as e:
             logger.error(

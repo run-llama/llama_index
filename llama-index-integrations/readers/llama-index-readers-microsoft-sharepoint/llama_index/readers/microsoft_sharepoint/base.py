@@ -747,6 +747,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             logger.error("An error occurred while listing files in SharePoint: %s", exp)
             raise
 
+        if self.required_exts:
+            file_paths = [file_path for file_path in file_paths if file_path.suffix in self.required_exts]
+
         return file_paths
 
     def _get_item_from_path(self, input_file: Path) -> Dict[str, Any]:
