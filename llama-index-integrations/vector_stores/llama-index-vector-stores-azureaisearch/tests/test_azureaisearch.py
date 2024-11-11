@@ -21,6 +21,22 @@ except ImportError:
     search_client = None  # type: ignore
 
 
+def mock_client_with_user_agent(client_type: str) -> Any:
+    """Helper function to create a mock client with user agent configuration."""
+    if client_type == "search":
+        client = MagicMock(spec=SearchClient)
+    else:
+        client = MagicMock(spec=SearchIndexClient)
+
+    # Mock the configuration chain
+    client._client = MagicMock()
+    client._client._config = MagicMock()
+    client._client._config.user_agent_policy = MagicMock()
+    client._client._config.user_agent_policy.add_user_agent = MagicMock()
+
+    return client
+
+
 def create_mock_vector_store(
     search_client: Any,
     index_name: Optional[str] = None,
@@ -33,7 +49,7 @@ def create_mock_vector_store(
         embedding_field_key="embedding",
         metadata_string_field_key="metadata",
         doc_id_field_key="doc_id",
-        filterable_metadata_field_keys=[],  # Added to match the updated constructor
+        filterable_metadata_field_keys=[],
         hidden_field_keys=["embedding"],
         index_name=index_name,
         index_management=index_management,
@@ -61,8 +77,36 @@ def create_sample_documents(n: int) -> List[TextNode]:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
+def test_user_agent_configuration() -> None:
+    """Test that user agent is properly configured."""
+    # Test with SearchClient
+    search_client = mock_client_with_user_agent("search")
+    vector_store = create_mock_vector_store(search_client)
+
+    # Verify user agent was added with the correct base agent string
+    search_client._client._config.user_agent_policy.add_user_agent.assert_called_with(
+        "llamaindex-python"
+    )
+
+    # Test with SearchIndexClient
+    index_client = mock_client_with_user_agent("index")
+    vector_store = create_mock_vector_store(
+        index_client,
+        index_name="test-index",
+        index_management=IndexManagement.NO_VALIDATION,
+    )
+
+    # Verify user agent was added with the correct base agent string
+    index_client._client._config.user_agent_policy.add_user_agent.assert_called_with(
+        "llamaindex-python"
+    )
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
 def test_azureaisearch_add_two_batches() -> None:
-    search_client = MagicMock(spec=SearchClient)
+    search_client = mock_client_with_user_agent("search")
 
     with patch("azure.search.documents.IndexDocumentsBatch") as MockIndexDocumentsBatch:
         index_documents_batch_instance = MockIndexDocumentsBatch.return_value
@@ -75,7 +119,7 @@ def test_azureaisearch_add_two_batches() -> None:
 
         assert ids is not None
         assert len(ids) == 11
-        assert call_count == 11  # Adjust this value based on your logic
+        assert call_count == 11
         assert search_client.index_documents.call_count == 1
 
 
@@ -83,7 +127,7 @@ def test_azureaisearch_add_two_batches() -> None:
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
 def test_azureaisearch_add_one_batch() -> None:
-    search_client = MagicMock(spec=SearchClient)
+    search_client = mock_client_with_user_agent("search")
 
     with patch("azure.search.documents.IndexDocumentsBatch") as MockIndexDocumentsBatch:
         index_documents_batch_instance = MockIndexDocumentsBatch.return_value
@@ -96,7 +140,7 @@ def test_azureaisearch_add_one_batch() -> None:
 
         assert ids is not None
         assert len(ids) == 11
-        assert call_count == 11  # Adjust this value based on your logic
+        assert call_count == 11
         assert search_client.index_documents.call_count == 1
 
 
@@ -104,7 +148,7 @@ def test_azureaisearch_add_one_batch() -> None:
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
 def test_invalid_index_management_for_searchclient() -> None:
-    search_client = MagicMock(spec=SearchClient)
+    search_client = mock_client_with_user_agent("search")
 
     # No error
     create_mock_vector_store(
@@ -112,7 +156,6 @@ def test_invalid_index_management_for_searchclient() -> None:
     )
 
     # Cannot supply index name
-    # ruff: noqa: E501
     with pytest.raises(
         ValueError,
         match="index_name cannot be supplied if search_or_index_client is of type azure.search.documents.SearchClient",
@@ -131,7 +174,7 @@ def test_invalid_index_management_for_searchclient() -> None:
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
 def test_invalid_index_management_for_searchindexclient() -> None:
-    search_client = MagicMock(spec=SearchIndexClient)
+    search_client = mock_client_with_user_agent("index")
 
     # Index name must be supplied
     with pytest.raises(
@@ -154,7 +197,7 @@ def test_invalid_index_management_for_searchindexclient() -> None:
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
 def test_azureaisearch_query() -> None:
-    search_client = MagicMock(spec=SearchClient)
+    search_client = mock_client_with_user_agent("search")
 
     # Mock the search method of the search client
     mock_search_results = [
