@@ -107,4 +107,4 @@ if __name__ == "__main__":
         sys.exit(1)
 
     reader = SimpleGitbookReader(api_token)
-    print(reader.load_data(space_id))
+    print(reader.load_data(space_id, show_progress=True))

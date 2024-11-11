@@ -108,7 +108,6 @@ class TestGitbookClient(unittest.TestCase):
             self.client.get_space(self.space_id)
 
         error_message = str(context.value)
-        print(">>>>>", error_message)
         assert "Error" in error_message
         assert "401" in error_message
         assert "Unauthorized" in error_message
