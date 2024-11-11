@@ -34,7 +34,7 @@ version = "0.5.0"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 pypdf = "^5.1.0"
-llama-index-readers-file = "^0.3.0"
+llama-index-readers-file = "^0.2.0"
 llama-index-llms-openai = "^0.2.0"
 
 [tool.poetry.group.dev.dependencies]
