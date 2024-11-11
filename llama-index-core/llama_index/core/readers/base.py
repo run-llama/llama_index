@@ -86,6 +86,9 @@ class ResourcesReaderMixin(ABC):
         """
         Get a dictionary of information about the permissions of a specific resource.
         """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not provide get_permission_info method currently"
+        )
 
     async def aget_permission_info(
         self, resource_id: str, *args: Any, **kwargs: Any
