@@ -64,7 +64,7 @@ jobs:
             done
 
             if [[ "$root" != "." && "$root" != "/" && "$root" != "./" && ! "$FILTER_PATTERNS" =~ "$root" ]]; then
-              FILTER_PATTERNS="${FILTER_PATTERNS}'${root}',"
+              FILTER_PATTERNS="${FILTER_PATTERNS}'${root}/llama_index',"
               CHANGED_ROOTS="${CHANGED_ROOTS} ${root}/::"
             fi
           done
