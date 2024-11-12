@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.llms.databricks"
 
 [tool.llamahub.class_authors]
-DataBricks = "busaud"
+Databricks = "busaud"
 
 [tool.mypy]
 disallow_untyped_defs = true

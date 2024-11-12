@@ -1,5 +1,144 @@
 # ChangeLog
 
+## [2024-11-11]
+
+### `llama-index-core` [0.11.23]
+
+- Fix workflow timeout when streaming and exception happens (#16852)
+- New function for core.multi_modal_llms.generic_utils (#16896)
+- Added docstrings and unit tests for core.multimodal (#16872)
+- actually setting num_workers = num_cpus for ingestion pipeline (#16803)
+
+### `llama-index-embeddings-nvidia` [0.2.5]
+
+- skip model validation for nvdev embedding models (#16883)
+
+### `llama-index-embeddings-modelscope` [0.3.0]
+
+- Add ModelScope embedding support (#16873)
+
+### `llama-index-graph-stores-kuzu` [0.4.0]
+
+- BREAKING: Update relationship table label nomenclature, existing graphs will need to be recreated (#16886)
+
+### `llama-index-llms-anthropic` [0.4.0]
+
+- use new anthropic token counting api (#16909)
+
+### `llama-index-llms-bedrock-converse` [0.3.8]
+
+- Add inference profile support to Bedrock Converse and add Llama 3.1/3.2 (#16827)
+
+### `llama-index-llms-nvidia` [0.2.7]
+
+- skip model validation for nvdev llm models (#16882)
+
+### `llama-index-llms-modelscope` [0.3.0]
+
+- Fix modelscope 'pipeline' referenced before assignment (#16864)
+
+### `llama-index-llms-ollama` [0.3.6]
+
+- fix ignoring tool calls in additional kwargs of messages (#16764)
+
+### `llama-index-llms-siliconflow` [0.1.0]
+
+- add siliconflow llm class (#16861)
+
+### `llama-index-postprocessor-tei-rerank` [0.2.1]
+
+- fix top-n parameter in TEI reranker (#16884)
+
+### `llama-index-readers-gitbook` [0.2.0]
+
+- add gitbook reader (#16862)
+
+### `llama-index-readers-google` [0.4.3]
+
+- feat: add relative file path google drive (#16907)
+
+### `llama-index-readers-file` [0.3.0]
+
+- Bump versions and update pypdf dependency to 5.1.0 (#16905)
+
+### `llama-index-vector-stores-azureaisearch` [0.2.9]
+
+- Add UserAgent header "llamaindex-python" for azure search (#16895)
+
+### `llama-index-vector-stores-clickhouse` [0.3.2]
+
+- fix clickhouse init in vector store (#16903)
+
+## [2024-11-05]
+
+### `llama-index-core` [0.11.22]
+
+- bring back support for prompt templates in context chat engines (#16821)
+- Fixed the JSON Format of Generated Sub-Question (double curly brackets) (#16820)
+- markdown splitter improve metadata (#16789)
+- fix empty index + generation synthesizer (#16785)
+
+### `llama-index-embeddings-azure-inference` [0.2.4]
+
+- Support for api_version and Azure AI model inference service (#16802)
+
+### `llama-index-embeddings-gemini` [0.2.2]
+
+- fix await-async-embeddings (#16790)
+
+### `llama-index-embeddings-siliconflow` [0.1.0]
+
+- add siliconflow embedding class (#16753)
+
+### `llama-index-indices-managed-vectara` [0.2.4]
+
+- Hotfix: Chain Query Configuration (#16818)
+
+### `llama-index-llms-anthropic` [0.3.9]
+
+- Add Anthropic Claude Haiku 3.5 to the list of supported Claude models (#16823)
+
+### `llama-index-llms-azure-inference` [0.2.4]
+
+- Support for api_version and Azure AI model inference service (#16802)
+
+### `llama-index-llms-bedrock` [0.2.6]
+
+- Add Anthropic Claude Haiku 3.5 to the list of supported Claude models for bedrock and bedrock-converse integrations (#16825)
+
+### `llama-index-llms-bedrock-converse` [0.3.7]
+
+- Add Anthropic Claude Haiku 3.5 to the list of supported Claude models for bedrock and bedrock-converse integrations (#16825)
+
+### `llama-index-llms-dashscope` [0.2.5]
+
+- More tolerant definition of LLMMetadata information (#16830)
+- Fix abstract method signature error (#16809)
+
+### `llama-index-llms-vllm` [0.3.0]
+
+- remove beam search param for latest vllm (#16817)
+
+### `llama-index-postprocessor-colpali-rerank` [0.1.0]
+
+- Add ColPali as reranker (#16829)
+
+### `llama-index-postprocessor-siliconflow-rerank` [0.1.0]
+
+- add siliconflow rerank class (#16737)
+
+### `llama-index-readers-microsoft-onedrive` [0.2.2]
+
+- fix: add required_exts for one drive reader (#16822)
+
+### `llama-index-vector-stores-chroma` [0.3.0]
+
+- Support breaking changes to filter syntax in latest chroma (#16806)
+
+### `llama-index-vector-stores-pinecone` [0.3.0]
+
+- support sparse embedding models, fix delete for serverless for pinecone (#16819)
+
 ## [2024-10-31]
 
 ### `llama-index-core` [0.11.21]
@@ -7,7 +146,7 @@
 - Fixed issue with default value set as None for workflow `ctx.get()` (#16756)
 - fix various issues with react agent streaming (#16755)
 - add unit test for query pipeline (#16749)
-- Fix _merge_ref_doc_kv_pairs duped for-loop (#16739)
+- Fix \_merge_ref_doc_kv_pairs duped for-loop (#16739)
 - bugfix: determine if nodes is none when creating index (#16703)
 - fixes LLMRerank default_parse_choice_select_answer_fn parsing issue (#16736)
 - fix return type check on workflows (#16724)

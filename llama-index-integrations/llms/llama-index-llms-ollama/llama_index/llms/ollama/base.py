@@ -186,6 +186,11 @@ class Ollama(FunctionCallingLLM):
             {
                 "role": message.role.value,
                 "content": message.content or "",
+                **(
+                    {"tool_calls": message.additional_kwargs["tool_calls"]}
+                    if "tool_calls" in message.additional_kwargs
+                    else {}
+                ),
             }
             for message in messages
         ]
