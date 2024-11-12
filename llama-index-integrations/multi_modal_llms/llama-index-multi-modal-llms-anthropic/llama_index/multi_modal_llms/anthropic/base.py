@@ -1,6 +1,6 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-import anthropic
+import httpx
 from anthropic.types import ContentBlockDeltaEvent
 from llama_index.core.base.llms.types import (
     CompletionResponse,
@@ -8,7 +8,6 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     MessageRole,
 )
-from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
@@ -16,7 +15,6 @@ from llama_index.core.constants import (
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
@@ -28,167 +26,103 @@ from llama_index.core.schema import ImageNode
 from llama_index.multi_modal_llms.anthropic.utils import (
     ANTHROPIC_MULTI_MODAL_MODELS,
     generate_anthropic_multi_modal_chat_message,
+    resolve_anthropic_credentials,
 )
 
-
-DEFAULT_ANTHROPIC_MULTIMODAL_MODEL = "claude-3-opus-20240229"
-DEFAULT_ANTHROPIC_MAX_TOKENS = 512
+from anthropic import Anthropic, AsyncAnthropic
 
 
 class AnthropicMultiModal(MultiModalLLM):
-    model: str = Field(
-        default=DEFAULT_ANTHROPIC_MULTIMODAL_MODEL,
-        description="The Anthropic multi-modal model to use.",
-    )
-    temperature: float = Field(
-        default=DEFAULT_TEMPERATURE,
-        description="The temperature to use for sampling.",
-        ge=0.0,
-        le=1.0,
-    )
+    model: str = Field(description="The Multi-Modal model to use from Anthropic.")
+    temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: Optional[int] = Field(
-        default=DEFAULT_NUM_OUTPUTS,
-        description=" The maximum numbers of tokens to generate.",
+        description=" The maximum numbers of tokens to generate, ignoring the number of tokens in the prompt",
         gt=0,
     )
-
-    base_url: str = Field(default=None, description="Anthropic API base URL.")
-    timeout: float = Field(
-        default=60.0,
-        description="Timeout, in seconds, for API requests.",
-        ge=0,
+    context_window: Optional[int] = Field(
+        description="The maximum number of context tokens for the model.",
+        gt=0,
     )
     max_retries: int = Field(
         default=3,
         description="Maximum number of retries.",
         ge=0,
     )
+    timeout: float = Field(
+        default=60.0,
+        description="The timeout, in seconds, for API requests.",
+        ge=0,
+    )
+    api_key: str = Field(
+        default=None, description="The Anthropic API key.", exclude=True
+    )
+    system_prompt: str = Field(default="", description="System Prompt.")
+    api_base: str = Field(default=None, description="The base URL for Anthropic API.")
+    api_version: str = Field(description="The API version for Anthropic API.")
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Anthropic API."
     )
-    # context_window: Optional[int] = Field(
-    #     description="The maximum number of context tokens for the model.",
-    #     gt=0,
-    # )
-    # api_key: str = Field(
-    #     default=None, description="The Anthropic API key.", exclude=True
-    # )
-    # system_prompt: str = Field(default="", description="System Prompt.")
-    # base_url: str = Field(default=None, description="The base URL for Anthropic API.")
-    # api_version: str = Field(description="The API version for Anthropic API.")
-    # additional_kwargs: Dict[str, Any] = Field(
-    #     default_factory=dict, description="Additional kwargs for the Anthropic API."
-    # )
-    # default_headers: Optional[Dict[str, str]] = Field(
-    #     default=None, description="The default headers for API requests."
-    # )
+    default_headers: Optional[Dict[str, str]] = Field(
+        default=None, description="The default headers for API requests."
+    )
 
-    _client: Union[
-        anthropic.Anthropic, anthropic.AnthropicVertex, anthropic.AnthropicBedrock
-    ] = PrivateAttr()
-    _aclient: Union[
-        anthropic.AsyncAnthropic,
-        anthropic.AsyncAnthropicVertex,
-        anthropic.AsyncAnthropicBedrock,
-    ] = PrivateAttr()
+    _messages_to_prompt: Callable = PrivateAttr()
+    _completion_to_prompt: Callable = PrivateAttr()
+    _client: Anthropic = PrivateAttr()
+    _aclient: AsyncAnthropic = PrivateAttr()
+    _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
         self,
-        model: str = DEFAULT_ANTHROPIC_MULTIMODAL_MODEL,
+        model: str = "claude-3-opus-20240229",
         temperature: float = DEFAULT_TEMPERATURE,
-        max_tokens: Optional[int] = DEFAULT_NUM_OUTPUTS,
-        base_url: Optional[str] = None,
-        timeout: Optional[float] = 60.0,
-        max_retries: int = 10,
-        api_key: Optional[str] = None,
+        max_tokens: Optional[int] = 300,
         additional_kwargs: Optional[Dict[str, Any]] = None,
+        context_window: Optional[int] = DEFAULT_CONTEXT_WINDOW,
+        max_retries: int = 3,
+        timeout: float = 60.0,
+        api_key: Optional[str] = None,
+        api_base: Optional[str] = None,
+        api_version: Optional[str] = None,
+        messages_to_prompt: Optional[Callable] = None,
+        completion_to_prompt: Optional[Callable] = None,
         callback_manager: Optional[CallbackManager] = None,
         default_headers: Optional[Dict[str, str]] = None,
-        system_prompt: Optional[str] = None,
-        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
-        completion_to_prompt: Optional[Callable[[str], str]] = None,
-        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
-        output_parser: Optional[BaseOutputParser] = None,
-        region: Optional[str] = None,
-        project_id: Optional[str] = None,
-        aws_region: Optional[str] = None,
+        http_client: Optional[httpx.Client] = None,
+        system_prompt: Optional[str] = "",
+        **kwargs: Any,
     ) -> None:
-        additional_kwargs = additional_kwargs or {}
-        callback_manager = callback_manager or CallbackManager([])
-        messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
-        completion_to_prompt = completion_to_prompt or (lambda x: x)
-
-        super().__init__(
-            temperature=temperature,
-            max_tokens=max_tokens,
-            additional_kwargs=additional_kwargs,
-            base_url=base_url,
-            timeout=timeout,
-            max_retries=max_retries,
-            model=model,
-            callback_manager=callback_manager,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-            output_parser=output_parser,
+        api_key, api_base, api_version = resolve_anthropic_credentials(
+            api_key=api_key,
+            api_base=api_base,
+            api_version=api_version,
         )
 
         super().__init__(
+            model=model,
             temperature=temperature,
             max_tokens=max_tokens,
-            additional_kwargs=additional_kwargs,
-            base_url=base_url,
-            timeout=timeout,
+            additional_kwargs=additional_kwargs or {},
+            context_window=context_window,
             max_retries=max_retries,
-            model=model,
+            timeout=timeout,
+            api_key=api_key,
+            api_base=api_base,
+            api_version=api_version,
             callback_manager=callback_manager,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-            output_parser=output_parser,
+            default_headers=default_headers,
+            system_promt=system_prompt,
+            **kwargs,
         )
+        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
+        self._completion_to_prompt = completion_to_prompt or (lambda x: x)
+        self._http_client = http_client
+        self._client, self._aclient = self._get_clients(**kwargs)
 
-        if region and project_id and not aws_region:
-            self._client = anthropic.AnthropicVertex(
-                region=region,
-                project_id=project_id,
-                timeout=timeout,
-                max_retries=max_retries,
-                default_headers=default_headers,
-            )
-
-            self._aclient = anthropic.AsyncAnthropicVertex(
-                region=region,
-                project_id=project_id,
-                timeout=timeout,
-                max_retries=max_retries,
-                default_headers=default_headers,
-            )
-        elif aws_region:
-            # Note: this assumes you have AWS credentials configured.
-            self._client = anthropic.AnthropicBedrock(
-                aws_region=aws_region,
-            )
-            self._aclient = anthropic.AsyncAnthropicBedrock(
-                aws_region=aws_region,
-            )
-        else:
-            self._client = anthropic.Anthropic(
-                api_key=api_key,
-                base_url=base_url,
-                timeout=timeout,
-                max_retries=max_retries,
-                default_headers=default_headers,
-            )
-            self._aclient = anthropic.AsyncAnthropic(
-                api_key=api_key,
-                base_url=base_url,
-                timeout=timeout,
-                max_retries=max_retries,
-                default_headers=default_headers,
-            )
+    def _get_clients(self, **kwargs: Any) -> Tuple[Anthropic, AsyncAnthropic]:
+        client = Anthropic(**self._get_credential_kwargs())
+        aclient = AsyncAnthropic(**self._get_credential_kwargs())
+        return client, aclient
 
     @classmethod
     def class_name(cls) -> str:
@@ -198,10 +132,23 @@ class AnthropicMultiModal(MultiModalLLM):
     def metadata(self) -> MultiModalLLMMetadata:
         """Multi Modal LLM metadata."""
         return MultiModalLLMMetadata(
-            context_window=a or DEFAULT_CONTEXT_WINDOW,
-            num_output=self.max_tokens,
+            num_output=self.max_tokens or DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
         )
+
+    def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        credential_kwargs = {
+            "api_key": self.api_key,
+            "base_url": self.api_base,
+            "max_retries": self.max_retries,
+            "timeout": self.timeout,
+            **kwargs,
+        }
+
+        if self.default_headers:
+            credential_kwargs["default_headers"] = self.default_headers
+
+        return credential_kwargs
 
     def _get_multi_modal_chat_messages(
         self,
