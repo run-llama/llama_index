@@ -461,6 +461,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         file_path: str,
         resource_info: Optional[Dict[str, Any]] = None,
         verbose: bool = False,
+        wait_for_ingestion: bool = True,
     ) -> str:
         """Upload a file to the index."""
         with open(file_path, "rb") as f:
@@ -478,9 +479,10 @@ class LlamaCloudIndex(BaseManagedIndex):
             pipeline_id=pipeline_id, request=[pipeline_file_create]
         )
 
-        self._wait_for_pipeline_ingestion(
-            verbose=verbose, raise_on_partial_success=False
-        )
+        if wait_for_ingestion:
+            self._wait_for_pipeline_ingestion(
+                verbose=verbose, raise_on_partial_success=False
+            )
         return file.id
 
     def upload_file_from_url(
@@ -492,6 +494,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         verify_ssl: bool = True,
         follow_redirects: bool = True,
         verbose: bool = False,
+        wait_for_ingestion: bool = True,
     ) -> str:
         """Upload a file from a URL to the index."""
         file = self._client.files.upload_file_from_url(
@@ -512,9 +515,10 @@ class LlamaCloudIndex(BaseManagedIndex):
             pipeline_id=pipeline_id, request=[pipeline_file_create]
         )
 
-        self._wait_for_pipeline_ingestion(
-            verbose=verbose, raise_on_partial_success=False
-        )
+        if wait_for_ingestion:
+            self._wait_for_pipeline_ingestion(
+                verbose=verbose, raise_on_partial_success=False
+            )
         return file.id
 
     # Nodes related methods (not implemented for LlamaCloudIndex)
