@@ -807,7 +807,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             if (
                 self.attach_permission_metadata
             ):  # changes in access control should trigger a reingestion of the file
-                permissions = self.get_permission_info(item)
+                permissions = self._get_permissions_info(item)
                 info_dict.update(permissions)
 
             return {
