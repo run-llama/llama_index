@@ -1,7 +1,7 @@
 import base64
 import filetype
 import logging
-from typing import List, Sequence, Optional
+from typing import List, Optional, Sequence
 
 import requests
 
@@ -91,6 +91,7 @@ def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
 
     Returns:
         str: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
+            Defaults to `image/jpeg`.
     """
     # Get the file extension
     file_extension = image_file_path.split(".")[-1].lower()
@@ -117,6 +118,7 @@ def infer_image_mimetype_from_base64(base64_string: str) -> Optional[str]:
 
     Returns:
         Optional[str]: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
+          `None` if the MIME type cannot be inferred.
     """
     # Decode the base64 string
     decoded_data = base64.b64decode(base64_string)
@@ -126,3 +128,28 @@ def infer_image_mimetype_from_base64(base64_string: str) -> Optional[str]:
 
     # Return the MIME type if detected, otherwise return None
     return kind.mime if kind is not None else None
+
+
+def set_base64_and_mimetype_for_image_docs(
+    image_documents: Sequence[ImageDocument],
+) -> Sequence[ImageDocument]:
+    """Set the base64 and mimetype fields for the image documents.
+
+    Args:
+        image_documents (Sequence[ImageDocument]): Sequence of ImageDocument objects.
+
+    Returns:
+        Sequence[ImageDocument]: ImageDocuments with base64 and detected mimetypes set.
+    """
+    base64_strings = image_documents_to_base64(image_documents)
+    for image_doc, base64_str in zip(image_documents, base64_strings):
+        image_doc.image = base64_str
+        image_doc.image_mimetype = infer_image_mimetype_from_base64(image_doc.image)
+        if not image_doc.image_mimetype and image_doc.image_path:
+            image_doc.image_mimetype = infer_image_mimetype_from_file_path(
+                image_doc.image_path
+            )
+        else:
+            # Defaults to `image/jpeg` if the mimetype cannot be inferred
+            image_doc.image_mimetype = "image/jpeg"
+    return image_documents
