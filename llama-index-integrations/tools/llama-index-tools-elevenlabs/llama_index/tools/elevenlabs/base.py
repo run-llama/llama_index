@@ -10,12 +10,10 @@ class ElevenLabsToolSpec(BaseToolSpec):
     spec_functions = ["get_voices", "text_to_speech"]
 
     def __init__(
-        self,
-        api_key: str,
-        base_url: Optional[str] = 'https://api.elevenlabs.io'
+        self, api_key: str, base_url: Optional[str] = "https://api.elevenlabs.io"
     ) -> None:
         """Initialize with parameters.
-        
+
         Args:
             api_key (str): Your ElevenLabs API key
             base_url (Optional[str]): The base url of elevenlabs
@@ -26,21 +24,18 @@ class ElevenLabsToolSpec(BaseToolSpec):
     def get_voices(self) -> List[dict]:
         """
         Get list of available voices from ElevenLabs.
-        
+
         Returns:
             List[dict]: List of available voices with their details
         """
         from elevenlabs import ElevenLabs
 
         # Create the client
-        client = ElevenLabs(
-            base_url=self.base_url,
-            api_key=self.api_key
-        )
+        client = ElevenLabs(base_url=self.base_url, api_key=self.api_key)
 
         # Get the voices
         response = client.voices.get_all()
-        
+
         # Return the dumped voice models as dict
         return [voice.model_dump() for voice in response.voices]
 
@@ -53,11 +48,11 @@ class ElevenLabsToolSpec(BaseToolSpec):
         voice_similarity_boost: Optional[float] = None,
         voice_style: Optional[float] = None,
         voice_use_speaker_boost: Optional[bool] = None,
-        model_id: Optional[str] = "eleven_monolingual_v1"
+        model_id: Optional[str] = "eleven_monolingual_v1",
     ) -> str:
         """
         Convert text to speech using ElevenLabs API.
-        
+
         Args:
             text (str): The text to convert to speech
             output_path (str): Where to save the output file
@@ -68,7 +63,7 @@ class ElevenLabsToolSpec(BaseToolSpec):
             voice_style: (Optional[float]): The style setting of the voice
             voice_use_speaker_boost (Optional[bool]): Whether to use speaker boost or not
             model_id (Optional[str]): Override the default model ID
-            
+
         Returns:
             str: Path to the generated audio file
         """
@@ -76,10 +71,7 @@ class ElevenLabsToolSpec(BaseToolSpec):
         from elevenlabs.client import DEFAULT_VOICE
 
         # Create client
-        client = ElevenLabs(
-            base_url=self.base_url,
-            api_key=self.api_key
-        )
+        client = ElevenLabs(base_url=self.base_url, api_key=self.api_key)
 
         # Default the settings if not supplied
         if voice_stability is None:
@@ -99,20 +91,17 @@ class ElevenLabsToolSpec(BaseToolSpec):
             stability=voice_stability,
             similarity_boost=voice_similarity_boost,
             style=voice_style,
-            use_speaker_boost=voice_use_speaker_boost
+            use_speaker_boost=voice_use_speaker_boost,
         )
 
         # Generate audio
         audio = client.generate(
-            text=text,
-            voice=voice_id,
-            voice_settings=voice_settings,
-            model=model_id
+            text=text, voice=voice_id, voice_settings=voice_settings, model=model_id
         )
 
         # Save the audio
         with open(output_path, "wb") as fp:
             fp.write(b"".join(audio))
-        
+
         # Return the save location
         return output_path
