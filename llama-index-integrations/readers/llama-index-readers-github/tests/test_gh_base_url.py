@@ -6,7 +6,7 @@ class MockGithubClient:
     pass
 
 
-@pytest.fixture
+@pytest.fixture()
 def github_reader():
     return GithubRepositoryReader(
         github_client=MockGithubClient(), owner="owner", repo="repo"
@@ -14,7 +14,7 @@ def github_reader():
 
 
 @pytest.mark.parametrize(
-    "blob_url, expected_base_url",
+    ("blob_url", "expected_base_url"),
     [
         ("https://github.com/owner/repo/blob/main/file.py", "https://github.com/"),
         (
