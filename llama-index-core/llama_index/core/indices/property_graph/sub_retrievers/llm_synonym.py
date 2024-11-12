@@ -88,12 +88,12 @@ class LLMSynonymRetriever(BasePGRetriever):
         # capitalize to normalize with ingestion
         return [x.strip().capitalize() for x in matches if x.strip()]
 
-    def _prepare_matches(self, matches: List[str], limit: Optional[int] = 30) -> List[NodeWithScore]:
+    def _prepare_matches(self, matches: List[str], limit: Optional[int] = None) -> List[NodeWithScore]:
         kg_nodes = self._graph_store.get(ids=matches)
         triplets = self._graph_store.get_rel_map(
             kg_nodes,
             depth=self._path_depth,
-            limit=limit,
+            limit=limit or self._limit,
             ignore_rels=[KG_SOURCE_REL],
         )
 
@@ -104,7 +104,7 @@ class LLMSynonymRetriever(BasePGRetriever):
         triplets = await self._graph_store.aget_rel_map(
             kg_nodes,
             depth=self._path_depth,
-            limit=limit,
+            limit=limit or self._limit,
             ignore_rels=[KG_SOURCE_REL],
         )
 
