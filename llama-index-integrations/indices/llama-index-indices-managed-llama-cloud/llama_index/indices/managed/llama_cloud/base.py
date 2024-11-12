@@ -17,6 +17,7 @@ from llama_cloud import (
     ManagedIngestionStatus,
     CloudDocumentCreate,
     CloudDocument,
+    PipelineFileCreate,
 )
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -454,6 +455,67 @@ class LlamaCloudIndex(BaseManagedIndex):
         self._wait_for_pipeline_ingestion(
             verbose=verbose, raise_on_partial_success=False
         )
+
+    def upload_file(
+        self,
+        file_path: str,
+        resource_info: Optional[Dict[str, Any]] = None,
+        verbose: bool = False,
+    ) -> str:
+        """Upload a file to the index."""
+        with open(file_path, "rb") as f:
+            file = self._client.files.upload_file(
+                project_id=self._get_project_id(), upload_file=f
+            )
+            if verbose:
+                print(f"Uploaded file {file.id} with name {file.name}")
+        if resource_info:
+            self._client.files.update(file_id=file.id, request=resource_info)
+        # Add file to pipeline
+        pipeline_id = self._get_pipeline_id()
+        pipeline_file_create = PipelineFileCreate(file_id=file.id)
+        self._client.pipelines.add_files_to_pipeline(
+            pipeline_id=pipeline_id, request=[pipeline_file_create]
+        )
+
+        self._wait_for_pipeline_ingestion(
+            verbose=verbose, raise_on_partial_success=False
+        )
+        return file.id
+
+    def upload_file_from_url(
+        self,
+        file_name: str,
+        url: str,
+        proxy_url: Optional[str] = None,
+        request_headers: Optional[Dict[str, str]] = None,
+        verify_ssl: bool = True,
+        follow_redirects: bool = True,
+        verbose: bool = False,
+    ) -> str:
+        """Upload a file from a URL to the index."""
+        file = self._client.files.upload_file_from_url(
+            project_id=self._get_project_id(),
+            name=file_name,
+            url=url,
+            proxy_url=proxy_url,
+            request_headers=request_headers,
+            verify_ssl=verify_ssl,
+            follow_redirects=follow_redirects,
+        )
+        if verbose:
+            print(f"Uploaded file {file.id} with ID {file.id}")
+        # Add file to pipeline
+        pipeline_id = self._get_pipeline_id()
+        pipeline_file_create = PipelineFileCreate(file_id=file.id)
+        self._client.pipelines.add_files_to_pipeline(
+            pipeline_id=pipeline_id, request=[pipeline_file_create]
+        )
+
+        self._wait_for_pipeline_ingestion(
+            verbose=verbose, raise_on_partial_success=False
+        )
+        return file.id
 
     # Nodes related methods (not implemented for LlamaCloudIndex)
 
