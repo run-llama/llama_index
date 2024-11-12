@@ -1,5 +1,74 @@
 # ChangeLog
 
+## [2024-11-11]
+
+### `llama-index-core` [0.11.23]
+
+- Fix workflow timeout when streaming and exception happens (#16852)
+- New function for core.multi_modal_llms.generic_utils (#16896)
+- Added docstrings and unit tests for core.multimodal (#16872)
+- actually setting num_workers = num_cpus for ingestion pipeline (#16803)
+
+### `llama-index-embeddings-nvidia` [0.2.5]
+
+- skip model validation for nvdev embedding models (#16883)
+
+### `llama-index-embeddings-modelscope` [0.3.0]
+
+- Add ModelScope embedding support (#16873)
+
+### `llama-index-graph-stores-kuzu` [0.4.0]
+
+- BREAKING: Update relationship table label nomenclature, existing graphs will need to be recreated (#16886)
+
+### `llama-index-llms-anthropic` [0.4.0]
+
+- use new anthropic token counting api (#16909)
+
+### `llama-index-llms-bedrock-converse` [0.3.8]
+
+- Add inference profile support to Bedrock Converse and add Llama 3.1/3.2 (#16827)
+
+### `llama-index-llms-nvidia` [0.2.7]
+
+- skip model validation for nvdev llm models (#16882)
+
+### `llama-index-llms-modelscope` [0.3.0]
+
+- Fix modelscope 'pipeline' referenced before assignment (#16864)
+
+### `llama-index-llms-ollama` [0.3.6]
+
+- fix ignoring tool calls in additional kwargs of messages (#16764)
+
+### `llama-index-llms-siliconflow` [0.1.0]
+
+- add siliconflow llm class (#16861)
+
+### `llama-index-postprocessor-tei-rerank` [0.2.1]
+
+- fix top-n parameter in TEI reranker (#16884)
+
+### `llama-index-readers-gitbook` [0.2.0]
+
+- add gitbook reader (#16862)
+
+### `llama-index-readers-google` [0.4.3]
+
+- feat: add relative file path google drive (#16907)
+
+### `llama-index-readers-file` [0.3.0]
+
+- Bump versions and update pypdf dependency to 5.1.0 (#16905)
+
+### `llama-index-vector-stores-azureaisearch` [0.2.9]
+
+- Add UserAgent header "llamaindex-python" for azure search (#16895)
+
+### `llama-index-vector-stores-clickhouse` [0.3.2]
+
+- fix clickhouse init in vector store (#16903)
+
 ## [2024-11-05]
 
 ### `llama-index-core` [0.11.22]
