@@ -108,6 +108,7 @@ nav:
           - ./examples/agent/multi_document_agents-v1.ipynb
           - ./examples/agent/multi_document_agents.ipynb
           - ./examples/agent/nvidia_agent.ipynb
+          - ./examples/agent/nvidia_sub_question_query_engine.ipynb
           - ./examples/agent/openai_agent.ipynb
           - ./examples/agent/openai_agent_context_retrieval.ipynb
           - ./examples/agent/openai_agent_lengthy_tools.ipynb
@@ -247,6 +248,7 @@ nav:
           - ./examples/embeddings/llm_rails.ipynb
           - ./examples/embeddings/mistralai.ipynb
           - ./examples/embeddings/mixedbreadai.ipynb
+          - ./examples/embeddings/modelscope.ipynb
           - ./examples/embeddings/nomic.ipynb
           - ./examples/embeddings/nvidia.ipynb
           - ./examples/embeddings/oci_genai.ipynb
@@ -455,6 +457,7 @@ nav:
           - ./examples/node_parsers/topic_parser.ipynb
       - Node Postprocessors:
           - ./examples/node_postprocessor/CohereRerank.ipynb
+          - ./examples/node_postprocessor/ColPaliRerank.ipynb
           - ./examples/node_postprocessor/ColbertRerank.ipynb
           - ./examples/node_postprocessor/FileNodeProcessors.ipynb
           - ./examples/node_postprocessor/FlagEmbeddingReranker.ipynb
@@ -692,6 +695,7 @@ nav:
       - Workflow:
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
+          - ./examples/workflow/auto_retrieval.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
           - ./examples/workflow/function_calling_agent.ipynb
@@ -904,6 +908,7 @@ nav:
           - ./api_reference/embeddings/llm_rails.md
           - ./api_reference/embeddings/mistralai.md
           - ./api_reference/embeddings/mixedbreadai.md
+          - ./api_reference/embeddings/modelscope.md
           - ./api_reference/embeddings/nomic.md
           - ./api_reference/embeddings/nvidia.md
           - ./api_reference/embeddings/oci_genai.md
@@ -1039,6 +1044,7 @@ nav:
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
           - ./api_reference/llms/sambanovacloud.md
+          - ./api_reference/llms/siliconflow.md
           - ./api_reference/llms/solar.md
           - ./api_reference/llms/text_generation_inference.md
           - ./api_reference/llms/together.md
@@ -1180,6 +1186,7 @@ nav:
           - ./api_reference/postprocessor/auto_prev_next.md
           - ./api_reference/postprocessor/cohere_rerank.md
           - ./api_reference/postprocessor/colbert_rerank.md
+          - ./api_reference/postprocessor/colpali_rerank.md
           - ./api_reference/postprocessor/dashscope_rerank.md
           - ./api_reference/postprocessor/embedding_recency.md
           - ./api_reference/postprocessor/fixed_recency.md
@@ -1325,6 +1332,7 @@ nav:
           - ./api_reference/readers/firestore.md
           - ./api_reference/readers/gcs.md
           - ./api_reference/readers/genius.md
+          - ./api_reference/readers/gitbook.md
           - ./api_reference/readers/github.md
           - ./api_reference/readers/gitlab.md
           - ./api_reference/readers/google.md
@@ -2304,6 +2312,10 @@ plugins:
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-siliconflow-rerank
             - ../llama-index-integrations/callbacks/llama-index-callbacks-opentelemetry
             - ../llama-index-integrations/llms/llama-index-llms-sambanovacloud
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-modelscope
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-colpali-rerank
+            - ../llama-index-integrations/readers/llama-index-readers-gitbook
+            - ../llama-index-integrations/llms/llama-index-llms-siliconflow
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
