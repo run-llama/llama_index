@@ -107,24 +107,24 @@ class LLMSynonymRetriever(BasePGRetriever):
 
         return self._get_nodes_with_score(triplets)
 
-    def retrieve_from_graph(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+    def retrieve_from_graph(self, query_bundle: QueryBundle, limit: int = 30) -> List[NodeWithScore]:
         response = self._llm.predict(
             self._synonym_prompt,
             query_str=query_bundle.query_str,
             max_keywords=self._max_keywords,
         )
-        matches = self._parse_llm_output(response)
+        matches = self._parse_llm_output(response, limit=limit)
 
         return self._prepare_matches(matches)
 
     async def aretrieve_from_graph(
-        self, query_bundle: QueryBundle
+        self, query_bundle: QueryBundle, limit: int = 30
     ) -> List[NodeWithScore]:
         response = await self._llm.apredict(
             self._synonym_prompt,
             query_str=query_bundle.query_str,
             max_keywords=self._max_keywords,
         )
-        matches = self._parse_llm_output(response)
+        matches = self._parse_llm_output(response, limit=limit)
 
         return await self._aprepare_matches(matches)
