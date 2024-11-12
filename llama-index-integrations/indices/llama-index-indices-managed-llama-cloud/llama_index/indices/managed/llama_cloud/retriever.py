@@ -61,7 +61,7 @@ async def _aget_page_screenshot(
 class LlamaCloudRetriever(BaseRetriever):
     def __init__(
         self,
-        name: str,
+        name: Optional[str] = None,
         project_name: str = DEFAULT_PROJECT_NAME,
         organization_id: Optional[str] = None,
         dense_similarity_top_k: Optional[int] = None,
@@ -77,10 +77,19 @@ class LlamaCloudRetriever(BaseRetriever):
         retrieval_mode: Optional[str] = None,
         files_top_k: Optional[int] = None,
         retrieve_image_nodes: Optional[bool] = None,
+        pipeline_id: Optional[str] = None,
+        index_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Retriever."""
         self.name = name
+        self._pipeline_id = pipeline_id or index_id
+
+        if self._pipeline_id is None and name is None:
+            raise ValueError(
+                "Either `name` or `pipeline_id` or `index_id` must be provided."
+            )
+
         self.project_name = project_name
         self._client = get_client(api_key, base_url, app_url, timeout)
         self._aclient = get_aclient(api_key, base_url, app_url, timeout)
@@ -184,22 +193,27 @@ class LlamaCloudRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve from the platform."""
-        pipelines = self._client.pipelines.search_pipelines(
-            project_name=self.project_name,
-            project_id=self.project_id,
-            pipeline_name=self.name,
-            pipeline_type=PipelineType.MANAGED.value,
-        )
-        if len(pipelines) == 0:
-            raise ValueError(
-                f"Unknown index name {self.name}. Please confirm a "
-                "managed index with this name exists."
+        if self._pipeline_id is None:
+            pipelines = self._client.pipelines.search_pipelines(
+                project_name=self.project_name,
+                project_id=self.project_id,
+                pipeline_name=self.name,
+                pipeline_type=PipelineType.MANAGED.value,
             )
-        elif len(pipelines) > 1:
-            raise ValueError(
-                f"Multiple pipelines found with name {self.name} in project {self.project_name}"
+            if len(pipelines) == 0:
+                raise ValueError(
+                    f"Unknown index name {self.name}. Please confirm a "
+                    "managed index with this name exists."
+                )
+            elif len(pipelines) > 1:
+                raise ValueError(
+                    f"Multiple pipelines found with name {self.name} in project {self.project_name}"
+                )
+            pipeline = pipelines[0]
+        else:
+            pipeline = self._client.pipelines.get_pipeline(
+                pipeline_id=self._pipeline_id
             )
-        pipeline = pipelines[0]
 
         if pipeline.id is None:
             raise ValueError(
@@ -227,22 +241,27 @@ class LlamaCloudRetriever(BaseRetriever):
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Asynchronously retrieve from the platform."""
-        pipelines = await self._aclient.pipelines.search_pipelines(
-            project_name=self.project_name,
-            pipeline_name=self.name,
-            pipeline_type=PipelineType.MANAGED.value,
-            project_id=self.project_id,
-        )
-        if len(pipelines) == 0:
-            raise ValueError(
-                f"Unknown index name {self.name}. Please confirm a "
-                "managed index with this name exists."
+        if self._pipeline_id is None:
+            pipelines = await self._aclient.pipelines.search_pipelines(
+                project_name=self.project_name,
+                pipeline_name=self.name,
+                pipeline_type=PipelineType.MANAGED.value,
+                project_id=self.project_id,
             )
-        elif len(pipelines) > 1:
-            raise ValueError(
-                f"Multiple pipelines found with name {self.name} in project {self.project_name}"
+            if len(pipelines) == 0:
+                raise ValueError(
+                    f"Unknown index name {self.name}. Please confirm a "
+                    "managed index with this name exists."
+                )
+            elif len(pipelines) > 1:
+                raise ValueError(
+                    f"Multiple pipelines found with name {self.name} in project {self.project_name}"
+                )
+            pipeline = pipelines[0]
+        else:
+            pipeline = await self._aclient.pipelines.get_pipeline(
+                pipeline_id=self._pipeline_id
             )
-        pipeline = pipelines[0]
 
         if pipeline.id is None:
             raise ValueError(

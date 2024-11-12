@@ -56,7 +56,7 @@ class LlamaCloudIndex(BaseManagedIndex):
 
     def __init__(
         self,
-        name: str,
+        name: Optional[str] = None,
         nodes: Optional[List[BaseNode]] = None,
         transformations: Optional[List[TransformComponent]] = None,
         timeout: int = 60,
@@ -69,6 +69,8 @@ class LlamaCloudIndex(BaseManagedIndex):
         callback_manager: Optional[CallbackManager] = None,
         httpx_client: Optional[httpx.Client] = None,
         async_httpx_client: Optional[httpx.AsyncClient] = None,
+        pipeline_id: Optional[str] = None,
+        index_id: Optional[str] = None,  # alias for pipeline_id
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Index."""
@@ -76,6 +78,10 @@ class LlamaCloudIndex(BaseManagedIndex):
         self.project_name = project_name
         self.organization_id = organization_id
         self.transformations = transformations or []
+        self._pipeline_id = index_id or pipeline_id
+
+        if self._pipeline_id is None and self.name is None:
+            raise ValueError("Either index_id, pipeline_id or name must be provided")
 
         if nodes is not None:
             # TODO: How to handle uploading nodes without running transforms on them?
@@ -199,6 +205,9 @@ class LlamaCloudIndex(BaseManagedIndex):
         return project.id
 
     def _get_pipeline_id(self) -> str:
+        if self._pipeline_id is not None:
+            return self._pipeline_id
+
         project_id = self._get_project_id()
         pipelines = self._client.pipelines.search_pipelines(
             project_id=project_id,
