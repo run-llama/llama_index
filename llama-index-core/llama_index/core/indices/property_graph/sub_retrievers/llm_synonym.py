@@ -88,7 +88,9 @@ class LLMSynonymRetriever(BasePGRetriever):
         # capitalize to normalize with ingestion
         return [x.strip().capitalize() for x in matches if x.strip()]
 
-    def _prepare_matches(self, matches: List[str], limit: Optional[int] = None) -> List[NodeWithScore]:
+    def _prepare_matches(
+        self, matches: List[str], limit: Optional[int] = None
+    ) -> List[NodeWithScore]:
         kg_nodes = self._graph_store.get(ids=matches)
         triplets = self._graph_store.get_rel_map(
             kg_nodes,
@@ -99,7 +101,9 @@ class LLMSynonymRetriever(BasePGRetriever):
 
         return self._get_nodes_with_score(triplets)
 
-    async def _aprepare_matches(self, matches: List[str], limit: Optional[int] = None) -> List[NodeWithScore]:
+    async def _aprepare_matches(
+        self, matches: List[str], limit: Optional[int] = None
+    ) -> List[NodeWithScore]:
         kg_nodes = await self._graph_store.aget(ids=matches)
         triplets = await self._graph_store.aget_rel_map(
             kg_nodes,
@@ -110,7 +114,9 @@ class LLMSynonymRetriever(BasePGRetriever):
 
         return self._get_nodes_with_score(triplets)
 
-    def retrieve_from_graph(self, query_bundle: QueryBundle, limit: Optional[int] = None) -> List[NodeWithScore]:
+    def retrieve_from_graph(
+        self, query_bundle: QueryBundle, limit: Optional[int] = None
+    ) -> List[NodeWithScore]:
         response = self._llm.predict(
             self._synonym_prompt,
             query_str=query_bundle.query_str,
