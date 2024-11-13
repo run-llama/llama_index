@@ -64,7 +64,7 @@ def mock_falkordb():
 @pytest.fixture()
 def falkordb_store(mock_falkordb):
     store = FalkorDBVectorStore(
-        url="bolt://localhost:7687",
+        url="redis://localhost:6379",
         database="testdb",
         index_name="test_index",
         node_label="Chunk",
