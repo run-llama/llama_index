@@ -12,6 +12,8 @@ import os
 import pytest
 from uuid import uuid4
 from llama_cloud.client import LlamaCloud
+from llama_index.core.indices.managed.base import BaseManagedIndex
+import tempfile
 
 base_url = os.environ.get("LLAMA_CLOUD_BASE_URL", None)
 api_key = os.environ.get("LLAMA_CLOUD_API_KEY", None)
