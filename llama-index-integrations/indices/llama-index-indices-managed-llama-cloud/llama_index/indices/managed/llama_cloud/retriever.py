@@ -1,6 +1,11 @@
 from typing import Any, List, Optional
 
-from llama_cloud import TextNodeWithScore, PageScreenshotNodeWithScore
+from llama_cloud import (
+    Pipeline,
+    Project,
+    TextNodeWithScore,
+    PageScreenshotNodeWithScore,
+)
 from llama_cloud.resources.pipelines.client import OMIT, PipelineType
 from llama_cloud.client import LlamaCloud, AsyncLlamaCloud
 from llama_cloud.core import remove_none_from_dict
@@ -58,28 +63,69 @@ async def _aget_page_screenshot(
         raise ApiError(status_code=_response.status_code, body=_response.text)
 
 
+def resolve_project(
+    client: LlamaCloud, project_name: Optional[str], organization_id: Optional[str]
+) -> Project:
+    projects = client.projects.list_projects(
+        project_name=project_name, organization_id=organization_id
+    )
+    if len(projects) == 0:
+        raise ValueError(f"No project found with name {project_name}")
+    return projects[0]
+
+
+def resolve_pipeline(
+    client: LlamaCloud,
+    pipeline_id: Optional[str],
+    project: Project,
+    pipeline_name: Optional[str],
+) -> Pipeline:
+    if pipeline_id is not None:
+        return client.pipelines.get_pipeline(pipeline_id=pipeline_id)
+
+    pipelines = client.pipelines.search_pipelines(
+        project_id=project.id,
+        pipeline_name=pipeline_name,
+        pipeline_type=PipelineType.MANAGED.value,
+    )
+    if len(pipelines) == 0:
+        raise ValueError(
+            f"Unknown index name {pipeline_name}. Please confirm a "
+            "managed index with this name exists."
+        )
+    elif len(pipelines) > 1:
+        raise ValueError(
+            f"Multiple pipelines found with name {pipeline_name} in project {project.name}"
+        )
+    return pipelines[0]
+
+
 class LlamaCloudRetriever(BaseRetriever):
     def __init__(
         self,
+        # index identifier
         name: Optional[str] = None,
-        project_name: str = DEFAULT_PROJECT_NAME,
+        index_id: Optional[str] = None,  # alias for pipeline_id
+        id: Optional[str] = None,  # alias for pipeline_id
+        pipeline_id: Optional[str] = None,
+        # project identifier
+        project_name: Optional[str] = DEFAULT_PROJECT_NAME,
         organization_id: Optional[str] = None,
+        # connection params
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        app_url: Optional[str] = None,
+        timeout: int = 60,
+        # retrieval params
         dense_similarity_top_k: Optional[int] = None,
         sparse_similarity_top_k: Optional[int] = None,
         enable_reranking: Optional[bool] = None,
         rerank_top_n: Optional[int] = None,
         alpha: Optional[float] = None,
         filters: Optional[MetadataFilters] = None,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        app_url: Optional[str] = None,
-        timeout: int = 60,
         retrieval_mode: Optional[str] = None,
         files_top_k: Optional[int] = None,
         retrieve_image_nodes: Optional[bool] = None,
-        pipeline_id: Optional[str] = None,
-        index_id: Optional[str] = None,  # alias for pipeline_id
-        id: Optional[str] = None,  # alias for pipeline_id
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Retriever."""
@@ -91,18 +137,18 @@ class LlamaCloudRetriever(BaseRetriever):
                 "One of `name`, `pipeline_id` or `index_id` must be provided."
             )
 
-        self.project_name = project_name
         self._client = get_client(api_key, base_url, app_url, timeout)
         self._aclient = get_aclient(api_key, base_url, app_url, timeout)
 
-        projects = self._client.projects.list_projects(
-            project_name=project_name, organization_id=organization_id
+        self.project = resolve_project(self._client, project_name, organization_id)
+        self.project_id = self.project.id
+        self.project_name = self.project.name
+
+        self.pipeline = resolve_pipeline(
+            self._client, self._pipeline_id, self.project, self.name
         )
-        if len(projects) == 0:
-            raise ValueError(f"No project found with name {project_name}")
 
-        self.project_id = projects[0].id
-
+        # retrieval params
         self._dense_similarity_top_k = (
             dense_similarity_top_k if dense_similarity_top_k is not None else OMIT
         )
@@ -194,36 +240,9 @@ class LlamaCloudRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve from the platform."""
-        if self._pipeline_id is None:
-            pipelines = self._client.pipelines.search_pipelines(
-                project_name=self.project_name,
-                project_id=self.project_id,
-                pipeline_name=self.name,
-                pipeline_type=PipelineType.MANAGED.value,
-            )
-            if len(pipelines) == 0:
-                raise ValueError(
-                    f"Unknown index name {self.name}. Please confirm a "
-                    "managed index with this name exists."
-                )
-            elif len(pipelines) > 1:
-                raise ValueError(
-                    f"Multiple pipelines found with name {self.name} in project {self.project_name}"
-                )
-            pipeline = pipelines[0]
-        else:
-            pipeline = self._client.pipelines.get_pipeline(
-                pipeline_id=self._pipeline_id
-            )
-
-        if pipeline.id is None:
-            raise ValueError(
-                f"No pipeline found with name {self.name} in project {self.project_name}"
-            )
-
         results = self._client.pipelines.run_search(
             query=query_bundle.query_str,
-            pipeline_id=pipeline.id,
+            pipeline_id=self.pipeline.id,
             dense_similarity_top_k=self._dense_similarity_top_k,
             sparse_similarity_top_k=self._sparse_similarity_top_k,
             enable_reranking=self._enable_reranking,
@@ -242,36 +261,9 @@ class LlamaCloudRetriever(BaseRetriever):
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Asynchronously retrieve from the platform."""
-        if self._pipeline_id is None:
-            pipelines = await self._aclient.pipelines.search_pipelines(
-                project_name=self.project_name,
-                pipeline_name=self.name,
-                pipeline_type=PipelineType.MANAGED.value,
-                project_id=self.project_id,
-            )
-            if len(pipelines) == 0:
-                raise ValueError(
-                    f"Unknown index name {self.name}. Please confirm a "
-                    "managed index with this name exists."
-                )
-            elif len(pipelines) > 1:
-                raise ValueError(
-                    f"Multiple pipelines found with name {self.name} in project {self.project_name}"
-                )
-            pipeline = pipelines[0]
-        else:
-            pipeline = await self._aclient.pipelines.get_pipeline(
-                pipeline_id=self._pipeline_id
-            )
-
-        if pipeline.id is None:
-            raise ValueError(
-                f"No pipeline found with name {self.name} in project {self.project_name}"
-            )
-
         results = await self._aclient.pipelines.run_search(
             query=query_bundle.query_str,
-            pipeline_id=pipeline.id,
+            pipeline_id=self.pipeline.id,
             dense_similarity_top_k=self._dense_similarity_top_k,
             sparse_similarity_top_k=self._sparse_similarity_top_k,
             enable_reranking=self._enable_reranking,

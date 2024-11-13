@@ -19,6 +19,7 @@ base_url = os.environ.get("LLAMA_CLOUD_BASE_URL", None)
 api_key = os.environ.get("LLAMA_CLOUD_API_KEY", None)
 openai_api_key = os.environ.get("OPENAI_API_KEY", None)
 organization_id = os.environ.get("LLAMA_CLOUD_ORGANIZATION_ID", None)
+project_name = os.environ.get("LLAMA_CLOUD_PROJECT_NAME", "Default")
 
 
 @pytest.fixture()
@@ -32,7 +33,7 @@ def _setup_index_with_file(
     client: LlamaCloud, remote_file: Tuple[str, str]
 ) -> LlamaCloudIndex:
     # create project if it doesn't exist
-    project_create = ProjectCreate(name="Default")
+    project_create = ProjectCreate(name=project_name)
     project = client.projects.upsert_project(
         organization_id=organization_id, request=project_create
     )
@@ -76,7 +77,7 @@ def test_retrieve():
     os.environ["OPENAI_API_KEY"] = openai_api_key
     index = LlamaCloudIndex(
         name="test",  # assumes this pipeline exists
-        project_name="Default",
+        project_name=project_name,
         api_key=api_key,
         base_url=base_url,
     )
@@ -162,7 +163,7 @@ def test_upload_file():
     os.environ["OPENAI_API_KEY"] = openai_api_key
     index = LlamaCloudIndex(
         name="test",  # assumes this pipeline exists
-        project_name="Default",
+        project_name=project_name,
         api_key=api_key,
         base_url=base_url,
     )
@@ -198,7 +199,7 @@ def test_upload_file_from_url(remote_file):
     os.environ["OPENAI_API_KEY"] = openai_api_key
     index = LlamaCloudIndex(
         name="test",  # assumes this pipeline exists
-        project_name="Default",
+        project_name=project_name,
         api_key=api_key,
         base_url=base_url,
     )
@@ -224,9 +225,28 @@ def test_index_with_id(remote_file):
 
     index = LlamaCloudIndex(
         pipeline_id=pipeline.id,
-        project_name="Default",
         api_key=api_key,
         base_url=base_url,
+    )
+    assert index is not None
+
+    retriever = index.as_retriever()
+
+    nodes = retriever.retrieve("Hello world.")
+    assert len(nodes) > 0
+
+
+def test_index_with_name(remote_file):
+    """Test that we can instantiate an index with a given name."""
+    client = LlamaCloud(token=api_key, base_url=base_url)
+    pipeline = _setup_index_with_file(client, remote_file)
+
+    index = LlamaCloudIndex(
+        name=pipeline.name,
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        organization_id=organization_id,
     )
     assert index is not None
 
