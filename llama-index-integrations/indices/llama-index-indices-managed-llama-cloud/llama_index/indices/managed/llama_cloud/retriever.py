@@ -1,12 +1,10 @@
 from typing import Any, List, Optional
 
 from llama_cloud import (
-    Pipeline,
-    Project,
     TextNodeWithScore,
     PageScreenshotNodeWithScore,
 )
-from llama_cloud.resources.pipelines.client import OMIT, PipelineType
+from llama_cloud.resources.pipelines.client import OMIT
 from llama_cloud.client import LlamaCloud, AsyncLlamaCloud
 from llama_cloud.core import remove_none_from_dict
 from llama_cloud.core.api_error import ApiError
@@ -19,6 +17,10 @@ from llama_index.core.vector_stores.types import MetadataFilters
 import asyncio
 import urllib.parse
 import base64
+from llama_index.indices.managed.llama_cloud.api_utils import (
+    resolve_project,
+    resolve_pipeline,
+)
 
 
 def _get_page_screenshot(
@@ -61,43 +63,6 @@ async def _aget_page_screenshot(
         return _response.content
     else:
         raise ApiError(status_code=_response.status_code, body=_response.text)
-
-
-def resolve_project(
-    client: LlamaCloud, project_name: Optional[str], organization_id: Optional[str]
-) -> Project:
-    projects = client.projects.list_projects(
-        project_name=project_name, organization_id=organization_id
-    )
-    if len(projects) == 0:
-        raise ValueError(f"No project found with name {project_name}")
-    return projects[0]
-
-
-def resolve_pipeline(
-    client: LlamaCloud,
-    pipeline_id: Optional[str],
-    project: Project,
-    pipeline_name: Optional[str],
-) -> Pipeline:
-    if pipeline_id is not None:
-        return client.pipelines.get_pipeline(pipeline_id=pipeline_id)
-
-    pipelines = client.pipelines.search_pipelines(
-        project_id=project.id,
-        pipeline_name=pipeline_name,
-        pipeline_type=PipelineType.MANAGED.value,
-    )
-    if len(pipelines) == 0:
-        raise ValueError(
-            f"Unknown index name {pipeline_name}. Please confirm a "
-            "managed index with this name exists."
-        )
-    elif len(pipelines) > 1:
-        raise ValueError(
-            f"Multiple pipelines found with name {pipeline_name} in project {project.name}"
-        )
-    return pipelines[0]
 
 
 class LlamaCloudRetriever(BaseRetriever):

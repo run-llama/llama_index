@@ -1,80 +1,65 @@
-from typing import List, Optional
+from typing import Optional
 
 from llama_cloud import (
-    ConfigurableTransformationNames,
-    ConfiguredTransformationItem,
-    PipelineCreate,
+    AutoTransformConfig,
+    Pipeline,
+    PipelineCreateEmbeddingConfig,
+    PipelineCreateEmbeddingConfig_OpenaiEmbedding,
+    PipelineCreateTransformConfig,
     PipelineType,
-    ProjectCreate,
+    Project,
 )
 from llama_cloud.client import LlamaCloud
 
-from llama_index.core.constants import (
-    DEFAULT_PROJECT_NAME,
-)
-from llama_index.core.ingestion.transformations import (
-    ConfiguredTransformation,
-)
-from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core.readers.base import ReaderConfig
-from llama_index.core.schema import BaseNode, TransformComponent
 
-
-def default_transformations() -> List[TransformComponent]:
-    """Default transformations."""
+def default_embedding_config() -> PipelineCreateEmbeddingConfig:
     from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
 
-    return [
-        SentenceSplitter(),
-        OpenAIEmbedding(),
-    ]
-
-
-def get_pipeline_create(
-    pipeline_name: str,
-    client: LlamaCloud,
-    pipeline_type: PipelineType,
-    project_name: str = DEFAULT_PROJECT_NAME,
-    transformations: Optional[List[TransformComponent]] = None,
-    readers: Optional[List[ReaderConfig]] = None,
-    input_nodes: Optional[List[BaseNode]] = None,
-) -> PipelineCreate:
-    """Get a pipeline create object."""
-    transformations = transformations or []
-
-    configured_transformations: List[ConfiguredTransformation] = []
-    for transformation in transformations:
-        try:
-            configured_transformations.append(
-                ConfiguredTransformation.from_component(transformation)
-            )
-        except ValueError:
-            raise ValueError(f"Unsupported transformation: {type(transformation)}")
-
-    configured_transformation_items: List[ConfiguredTransformationItem] = []
-    for item in configured_transformations:
-        name = ConfigurableTransformationNames[
-            item.configurable_transformation_type.name
-        ]
-        configured_transformation_items.append(
-            ConfiguredTransformationItem(
-                transformation_name=name,
-                component=item.component,
-                configurable_transformation_type=item.configurable_transformation_type.name,
-            )
-        )
-
-        # remove callback manager
-        configured_transformation_items[-1].component.pop("callback_manager", None)  # type: ignore
-
-    project = client.projects.upsert_project(request=ProjectCreate(name=project_name))
-    assert project.id is not None, "Project ID should not be None"
-
-    # upload
-    return PipelineCreate(
-        name=pipeline_name,
-        configured_transformations=configured_transformation_items,
-        pipeline_type=pipeline_type,
-        # we are uploading document dicrectly, so we don't need llama parse
-        llama_parse_enabled=False,
+    return PipelineCreateEmbeddingConfig_OpenaiEmbedding(
+        type="OPENAI_EMBEDDING",
+        component=OpenAIEmbedding(),
     )
+
+
+def default_transform_config() -> PipelineCreateTransformConfig:
+    return AutoTransformConfig()
+
+
+def resolve_project(
+    client: LlamaCloud, project_name: Optional[str], organization_id: Optional[str]
+) -> Project:
+    projects = client.projects.list_projects(
+        project_name=project_name, organization_id=organization_id
+    )
+    if len(projects) == 0:
+        raise ValueError(f"No project found with name {project_name}")
+    elif len(projects) > 1:
+        raise ValueError(
+            f"Multiple projects found with name {project_name}. Please specify organization_id."
+        )
+    return projects[0]
+
+
+def resolve_pipeline(
+    client: LlamaCloud,
+    pipeline_id: Optional[str],
+    project: Project,
+    pipeline_name: Optional[str],
+) -> Pipeline:
+    if pipeline_id is not None:
+        return client.pipelines.get_pipeline(pipeline_id=pipeline_id)
+
+    pipelines = client.pipelines.search_pipelines(
+        project_id=project.id,
+        pipeline_name=pipeline_name,
+        pipeline_type=PipelineType.MANAGED.value,
+    )
+    if len(pipelines) == 0:
+        raise ValueError(
+            f"Unknown index name {pipeline_name}. Please confirm an index with this name exists."
+        )
+    elif len(pipelines) > 1:
+        raise ValueError(
+            f"Multiple pipelines found with name {pipeline_name} in project {project.name}"
+        )
+    return pipelines[0]
