@@ -78,7 +78,7 @@ try:
             ) -> Optional[list[str]]:
                 if embedding_function is not None:
                     embedding_data = embedding_function(text)
-                if embedding_tensor is not None:
+                if embedding_tensor is None:
                     embedding_tensor = "embedding"
                 _id = (
                     tensors["id"]
