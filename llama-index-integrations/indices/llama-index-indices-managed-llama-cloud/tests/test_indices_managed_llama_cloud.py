@@ -81,126 +81,127 @@ def _setup_index_with_file(
     return pipeline
 
 
-# def test_class():
-#     names_of_base_classes = [b.__name__ for b in LlamaCloudIndex.__mro__]
-#     assert BaseManagedIndex.__name__ in names_of_base_classes
+def test_class():
+    names_of_base_classes = [b.__name__ for b in LlamaCloudIndex.__mro__]
+    assert BaseManagedIndex.__name__ in names_of_base_classes
 
 
-# @pytest.mark.skipif(
-#     not base_url or not api_key, reason="No platform base url or api key set"
-# )
-# @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-# @pytest.mark.integration()
-# def test_resolve_index_with_id(remote_file):
-#     """Test that we can instantiate an index with a given id."""
-#     client = LlamaCloud(token=api_key, base_url=base_url)
-#     pipeline = _setup_index_with_file(client, remote_file)
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+@pytest.mark.integration()
+def test_resolve_index_with_id(remote_file):
+    """Test that we can instantiate an index with a given id."""
+    client = LlamaCloud(token=api_key, base_url=base_url)
+    pipeline = _setup_index_with_file(client, remote_file)
 
-#     index = LlamaCloudIndex(
-#         pipeline_id=pipeline.id,
-#         api_key=api_key,
-#         base_url=base_url,
-#     )
-#     assert index is not None
+    index = LlamaCloudIndex(
+        pipeline_id=pipeline.id,
+        api_key=api_key,
+        base_url=base_url,
+    )
+    assert index is not None
 
-#     index.wait_for_completion()
-#     retriever = index.as_retriever()
+    index.wait_for_completion()
+    retriever = index.as_retriever()
 
-#     nodes = retriever.retrieve("Hello world.")
-#     assert len(nodes) > 0
-
-
-# @pytest.mark.skipif(
-#     not base_url or not api_key, reason="No platform base url or api key set"
-# )
-# @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-# @pytest.mark.integration()
-# def test_resolve_index_with_name(remote_file):
-#     """Test that we can instantiate an index with a given name."""
-#     client = LlamaCloud(token=api_key, base_url=base_url)
-#     pipeline = _setup_index_with_file(client, remote_file)
-
-#     index = LlamaCloudIndex(
-#         name=pipeline.name,
-#         project_name=project_name,
-#         organization_id=organization_id,
-#         api_key=api_key,
-#         base_url=base_url,
-#     )
-#     assert index is not None
-
-#     index.wait_for_completion()
-#     retriever = index.as_retriever()
-
-#     nodes = retriever.retrieve("Hello world.")
-#     assert len(nodes) > 0
-
-# @pytest.mark.skipif(
-#     not base_url or not api_key, reason="No platform base url or api key set"
-# )
-# @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-# @pytest.mark.integration()
-# def test_upload_file():
-#     pipeline = _setup_empty_index(LlamaCloud(token=api_key, base_url=base_url))
-
-#     index = LlamaCloudIndex(
-#         name=pipeline.name,
-#         project_name=project_name,
-#         organization_id=organization_id,
-#         api_key=api_key,
-#         base_url=base_url,
-#     )
-
-#     # Create a temporary file to upload
-#     with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp_file:
-#         temp_file.write(b"Sample content for testing upload.")
-#         temp_file_path = temp_file.name
-
-#     try:
-#         # Upload the file
-#         file_id = index.upload_file(temp_file_path, verbose=True)
-#         assert file_id is not None
-
-#         # Verify the file is part of the index
-#         docs = index.ref_doc_info
-#         temp_file_name = os.path.basename(temp_file_path)
-#         assert any(
-#             temp_file_name == doc.metadata.get("file_name") for doc in docs.values()
-#         )
-
-#     finally:
-#         # Clean up the temporary file
-#         os.remove(temp_file_path)
+    nodes = retriever.retrieve("Hello world.")
+    assert len(nodes) > 0
 
 
-# @pytest.mark.skipif(
-#     not base_url or not api_key, reason="No platform base url or api key set"
-# )
-# @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-# @pytest.mark.integration()
-# def test_upload_file_from_url(remote_file):
-#     pipeline = _setup_empty_index(LlamaCloud(token=api_key, base_url=base_url))
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+@pytest.mark.integration()
+def test_resolve_index_with_name(remote_file):
+    """Test that we can instantiate an index with a given name."""
+    client = LlamaCloud(token=api_key, base_url=base_url)
+    pipeline = _setup_index_with_file(client, remote_file)
 
-#     index = LlamaCloudIndex(
-#         name=pipeline.name,
-#         project_name=project_name,
-#         organization_id=organization_id,
-#         api_key=api_key,
-#         base_url=base_url,
-#     )
+    index = LlamaCloudIndex(
+        name=pipeline.name,
+        project_name=project_name,
+        organization_id=organization_id,
+        api_key=api_key,
+        base_url=base_url,
+    )
+    assert index is not None
 
-#     # Define a URL to a file for testing
-#     test_file_url, test_file_name = remote_file
+    index.wait_for_completion()
+    retriever = index.as_retriever()
 
-#     # Upload the file from the URL
-#     file_id = index.upload_file_from_url(
-#         file_name=test_file_name, url=test_file_url, verbose=True
-#     )
-#     assert file_id is not None
+    nodes = retriever.retrieve("Hello world.")
+    assert len(nodes) > 0
 
-#     # Verify the file is part of the index
-#     docs = index.ref_doc_info
-#     assert any(test_file_name == doc.metadata.get("file_name") for doc in docs.values())
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+@pytest.mark.integration()
+def test_upload_file():
+    pipeline = _setup_empty_index(LlamaCloud(token=api_key, base_url=base_url))
+
+    index = LlamaCloudIndex(
+        name=pipeline.name,
+        project_name=project_name,
+        organization_id=organization_id,
+        api_key=api_key,
+        base_url=base_url,
+    )
+
+    # Create a temporary file to upload
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp_file:
+        temp_file.write(b"Sample content for testing upload.")
+        temp_file_path = temp_file.name
+
+    try:
+        # Upload the file
+        file_id = index.upload_file(temp_file_path, verbose=True)
+        assert file_id is not None
+
+        # Verify the file is part of the index
+        docs = index.ref_doc_info
+        temp_file_name = os.path.basename(temp_file_path)
+        assert any(
+            temp_file_name == doc.metadata.get("file_name") for doc in docs.values()
+        )
+
+    finally:
+        # Clean up the temporary file
+        os.remove(temp_file_path)
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+@pytest.mark.integration()
+def test_upload_file_from_url(remote_file):
+    pipeline = _setup_empty_index(LlamaCloud(token=api_key, base_url=base_url))
+
+    index = LlamaCloudIndex(
+        name=pipeline.name,
+        project_name=project_name,
+        organization_id=organization_id,
+        api_key=api_key,
+        base_url=base_url,
+    )
+
+    # Define a URL to a file for testing
+    test_file_url, test_file_name = remote_file
+
+    # Upload the file from the URL
+    file_id = index.upload_file_from_url(
+        file_name=test_file_name, url=test_file_url, verbose=True
+    )
+    assert file_id is not None
+
+    # Verify the file is part of the index
+    docs = index.ref_doc_info
+    assert any(test_file_name == doc.metadata.get("file_name") for doc in docs.values())
 
 
 @pytest.mark.skipif(
