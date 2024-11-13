@@ -326,4 +326,5 @@ class DockerCodeToolSpec(BaseToolSpec):
 
     def __del__(self) -> None:
         """Clean up resources when the object is deleted."""
+        self.container.stop()
         self.client.close()
