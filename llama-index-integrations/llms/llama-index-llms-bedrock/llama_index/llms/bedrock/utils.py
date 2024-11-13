@@ -61,7 +61,6 @@ CHAT_ONLY_MODELS = {
     "mistral.mistral-large-2407-v1:0": 32000,
     "ai21.jamba-1-5-mini-v1:0": 256000,
     "ai21.jamba-1-5-large-v1:0": 256000,
-    
     "us.anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "us.anthropic.claude-3-opus-20240229-v1:0": 200000,
     "us.anthropic.claude-3-sonnet-20240229-v1:0": 200000,
@@ -109,7 +108,7 @@ STREAMING_MODELS = {
     "mistral.mistral-7b-instruct-v0:2",
     "mistral.mixtral-8x7b-instruct-v0:1",
     "mistral.mistral-large-2402-v1:0",
-    "mistral.mistral-large-2407-v1:0",,
+    "mistral.mistral-large-2407-v1:0",
     "us.anthropic.claude-3-haiku-20240307-v1:0",
     "us.anthropic.claude-3-opus-20240229-v1:0",
     "us.anthropic.claude-3-sonnet-20240229-v1:0",
