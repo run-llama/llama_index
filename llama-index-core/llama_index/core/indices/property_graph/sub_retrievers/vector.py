@@ -1,4 +1,5 @@
-from typing import Any, List, Sequence, Optional
+import dataclasses
+from typing import Any, List, Sequence, Optional, Dict, Set
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.indices.property_graph.sub_retrievers.base import (
@@ -43,23 +44,41 @@ class VectorContextRetriever(BasePGRetriever):
         self,
         graph_store: PropertyGraphStore,
         include_text: bool = True,
+        include_properties: bool = False,
         embed_model: Optional[BaseEmbedding] = None,
         vector_store: Optional[BasePydanticVectorStore] = None,
         similarity_top_k: int = 4,
         path_depth: int = 1,
+        limit: int = 30,
         similarity_score: Optional[float] = None,
         filters: Optional[MetadataFilters] = None,
         **kwargs: Any,
     ) -> None:
-        self._retriever_kwargs = kwargs or {}
+        self._retriever_kwargs = self._filter_vector_store_query_kwargs(kwargs or {})
         self._embed_model = embed_model or Settings.embed_model
         self._similarity_top_k = similarity_top_k
         self._vector_store = vector_store
         self._path_depth = path_depth
+        self._limit = limit
         self._similarity_score = similarity_score
         self._filters = filters
 
-        super().__init__(graph_store=graph_store, include_text=include_text, **kwargs)
+        super().__init__(
+            graph_store=graph_store,
+            include_text=include_text,
+            include_properties=include_properties,
+            **kwargs,
+        )
+
+    @staticmethod
+    def _get_valid_vector_store_params() -> Set[str]:
+        return {x.name for x in dataclasses.fields(VectorStoreQuery)}
+
+    def _filter_vector_store_query_kwargs(
+        self, kwargs: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        valid_params = self._get_valid_vector_store_params()
+        return {k: v for k, v in kwargs.items() if k in valid_params}
 
     def _get_vector_store_query(self, query_bundle: QueryBundle) -> VectorStoreQuery:
         if query_bundle.embedding is None:
@@ -95,7 +114,9 @@ class VectorContextRetriever(BasePGRetriever):
             **self._retriever_kwargs,
         )
 
-    def retrieve_from_graph(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+    def retrieve_from_graph(
+        self, query_bundle: QueryBundle, limit: Optional[int] = None
+    ) -> List[NodeWithScore]:
         vector_store_query = self._get_vector_store_query(query_bundle)
 
         triplets = []
@@ -109,7 +130,10 @@ class VectorContextRetriever(BasePGRetriever):
 
             kg_ids = [node.id for node in kg_nodes]
             triplets = self._graph_store.get_rel_map(
-                kg_nodes, depth=self._path_depth, ignore_rels=[KG_SOURCE_REL]
+                kg_nodes,
+                depth=self._path_depth,
+                limit=limit or self._limit,
+                ignore_rels=[KG_SOURCE_REL],
             )
 
         elif self._vector_store is not None:
@@ -119,7 +143,10 @@ class VectorContextRetriever(BasePGRetriever):
                 scores = query_result.similarities
                 kg_nodes = self._graph_store.get(ids=kg_ids)
                 triplets = self._graph_store.get_rel_map(
-                    kg_nodes, depth=self._path_depth, ignore_rels=[KG_SOURCE_REL]
+                    kg_nodes,
+                    depth=self._path_depth,
+                    limit=limit or self._limit,
+                    ignore_rels=[KG_SOURCE_REL],
                 )
 
             elif query_result.ids is not None and query_result.similarities is not None:
@@ -127,7 +154,10 @@ class VectorContextRetriever(BasePGRetriever):
                 scores = query_result.similarities
                 kg_nodes = self._graph_store.get(ids=kg_ids)
                 triplets = self._graph_store.get_rel_map(
-                    kg_nodes, depth=self._path_depth, ignore_rels=[KG_SOURCE_REL]
+                    kg_nodes,
+                    depth=self._path_depth,
+                    limit=limit or self._limit,
+                    ignore_rels=[KG_SOURCE_REL],
                 )
 
         for triplet in triplets:
@@ -157,7 +187,7 @@ class VectorContextRetriever(BasePGRetriever):
         return self._get_nodes_with_score([x[0] for x in top_k], [x[1] for x in top_k])
 
     async def aretrieve_from_graph(
-        self, query_bundle: QueryBundle
+        self, query_bundle: QueryBundle, limit: Optional[int] = None
     ) -> List[NodeWithScore]:
         vector_store_query = await self._aget_vector_store_query(query_bundle)
 
@@ -172,7 +202,10 @@ class VectorContextRetriever(BasePGRetriever):
             kg_nodes, scores = result
             kg_ids = [node.id for node in kg_nodes]
             triplets = await self._graph_store.aget_rel_map(
-                kg_nodes, depth=self._path_depth, ignore_rels=[KG_SOURCE_REL]
+                kg_nodes,
+                depth=self._path_depth,
+                limit=limit or self._limit,
+                ignore_rels=[KG_SOURCE_REL],
             )
 
         elif self._vector_store is not None:
@@ -182,7 +215,10 @@ class VectorContextRetriever(BasePGRetriever):
                 scores = query_result.similarities
                 kg_nodes = await self._graph_store.aget(ids=kg_ids)
                 triplets = await self._graph_store.aget_rel_map(
-                    kg_nodes, depth=self._path_depth, ignore_rels=[KG_SOURCE_REL]
+                    kg_nodes,
+                    depth=self._path_depth,
+                    limit=limit or self._limit,
+                    ignore_rels=[KG_SOURCE_REL],
                 )
 
             elif query_result.ids is not None and query_result.similarities is not None:
@@ -190,7 +226,10 @@ class VectorContextRetriever(BasePGRetriever):
                 scores = query_result.similarities
                 kg_nodes = await self._graph_store.aget(ids=kg_ids)
                 triplets = await self._graph_store.aget_rel_map(
-                    kg_nodes, depth=self._path_depth, ignore_rels=[KG_SOURCE_REL]
+                    kg_nodes,
+                    depth=self._path_depth,
+                    limit=limit or self._limit,
+                    ignore_rels=[KG_SOURCE_REL],
                 )
 
         for triplet in triplets:

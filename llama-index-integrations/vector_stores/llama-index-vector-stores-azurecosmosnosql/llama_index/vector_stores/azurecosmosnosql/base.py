@@ -5,7 +5,9 @@ An index that is built on top of an existing vector store.
 """
 import logging
 from typing import Any, Optional, Dict, cast, List
+from datetime import date
 
+from azure.identity import ClientSecretCredential
 from azure.cosmos import CosmosClient
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
@@ -20,6 +22,7 @@ from llama_index.core.vector_stores.utils import (
 )
 
 logger = logging.getLogger(__name__)
+USER_AGENT = ("LlamaIndex-CDBNoSql-VectorStore-Python",)
 
 
 class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
@@ -152,6 +155,110 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             vector_embedding_policy=self._vector_embedding_policy,
         )
 
+    @classmethod
+    def from_host_and_key(
+        cls,
+        host: str,
+        key: str,
+        vector_embedding_policy: Dict[str, Any],
+        indexing_policy: Dict[str, Any],
+        cosmos_container_properties: Dict[str, Any],
+        cosmos_database_properties: Optional[Dict[str, Any]] = None,
+        database_name: str = "vectorSearchDB",
+        container_name: str = "vectorSearchContainer",
+        create_container: bool = True,
+        id_key: str = "id",
+        text_key: str = "text",
+        metadata_key: str = "metadata",
+        **kwargs: Any,
+    ) -> "AzureCosmosDBNoSqlVectorSearch":
+        """Initialize the vector store using the cosmosDB host and key."""
+        cosmos_client = CosmosClient(host, key, user_agent=USER_AGENT)
+        return cls(
+            cosmos_client,
+            vector_embedding_policy,
+            indexing_policy,
+            cosmos_container_properties,
+            cosmos_database_properties,
+            database_name,
+            container_name,
+            create_container,
+            id_key,
+            text_key,
+            metadata_key,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_connection_string(
+        cls,
+        connection_string: str,
+        vector_embedding_policy: Dict[str, Any],
+        indexing_policy: Dict[str, Any],
+        cosmos_container_properties: Dict[str, Any],
+        cosmos_database_properties: Optional[Dict[str, Any]] = None,
+        database_name: str = "vectorSearchDB",
+        container_name: str = "vectorSearchContainer",
+        create_container: bool = True,
+        id_key: str = "id",
+        text_key: str = "text",
+        metadata_key: str = "metadata",
+        **kwargs: Any,
+    ) -> "AzureCosmosDBNoSqlVectorSearch":
+        """Initialize the vector store using the cosmosDB connection string."""
+        cosmos_client = CosmosClient.from_connection_string(
+            connection_string, user_agent=USER_AGENT
+        )
+        return cls(
+            cosmos_client,
+            vector_embedding_policy,
+            indexing_policy,
+            cosmos_container_properties,
+            cosmos_database_properties,
+            database_name,
+            container_name,
+            create_container,
+            id_key,
+            text_key,
+            metadata_key,
+            **kwargs,
+        )
+
+    @classmethod
+    def from_uri_and_managed_identity(
+        cls,
+        cosmos_uri: str,
+        vector_embedding_policy: Dict[str, Any],
+        indexing_policy: Dict[str, Any],
+        cosmos_container_properties: Dict[str, Any],
+        cosmos_database_properties: Optional[Dict[str, Any]] = None,
+        database_name: str = "vectorSearchDB",
+        container_name: str = "vectorSearchContainer",
+        create_container: bool = True,
+        id_key: str = "id",
+        text_key: str = "text",
+        metadata_key: str = "metadata",
+        **kwargs: Any,
+    ) -> "AzureCosmosDBNoSqlVectorSearch":
+        """Initialize the vector store using the cosmosDB uri and managed identity."""
+        cosmos_client = CosmosClient(
+            cosmos_uri, ClientSecretCredential, user_agent=USER_AGENT
+        )
+        return cls(
+            cosmos_client,
+            vector_embedding_policy,
+            indexing_policy,
+            cosmos_container_properties,
+            cosmos_database_properties,
+            database_name,
+            container_name,
+            create_container,
+            id_key,
+            text_key,
+            metadata_key,
+            **kwargs,
+        )
+
     def add(
         self,
         nodes: List[BaseNode],
@@ -182,6 +289,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                 self._embedding_key: node.get_embedding(),
                 self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
+                "timeStamp": date.today(),
             }
             data_to_insert.append(entry)
             ids.append(node.node_id)
@@ -206,23 +314,48 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         """Return CosmosDB client."""
         return self._cosmos_client
 
-    def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+    def _query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         params: Dict[str, Any] = {
             "vector": query.query_embedding,
             "path": self._embedding_key,
             "k": query.similarity_top_k,
         }
 
+        pre_filter = kwargs.get("pre_filter", {})
+
+        query = "SELECT "
+
+        # If limit_offset_clause is not specified, add TOP clause
+        if pre_filter is None or pre_filter.get("limit_offset_clause") is None:
+            query += "TOP @limit "
+
+        query += (
+            "c.id, c.{}, c.text, c.metadata, "
+            "VectorDistance(c.@embeddingKey, @embeddings) AS SimilarityScore FROM c"
+        )
+
+        # Add where_clause if specified
+        if pre_filter is not None and pre_filter.get("where_clause") is not None:
+            query += " {}".format(pre_filter["where_clause"])
+
+        query += " ORDER BY VectorDistance(c.@embeddingKey, @embeddings)"
+
+        # Add limit_offset_clause if specified
+        if pre_filter is not None and pre_filter.get("limit_offset_clause") is not None:
+            query += " {}".format(pre_filter["limit_offset_clause"])
+        parameters = [
+            {"name": "@limit", "value": params["k"]},
+            {"name": "@embeddingKey", "value": self._embedding_key},
+            {"name": "@embeddings", "value": params["vector"]},
+        ]
+
         top_k_nodes = []
         top_k_ids = []
         top_k_scores = []
 
         for item in self._container.query_items(
-            query="SELECT TOP @k c.id, c.embedding, c.text, c.metadata, VectorDistance(c.embedding,@embedding) AS SimilarityScore FROM c ORDER BY VectorDistance(c.embedding,@embedding)",
-            parameters=[
-                {"name": "@k", "value": params["k"]},
-                {"name": "@embedding", "value": params["vector"]},
-            ],
+            query=query,
+            parameters=parameters,
             enable_cross_partition_query=True,
         ):
             node = metadata_dict_to_node(item[self._metadata_key])
@@ -248,4 +381,4 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         Returns:
             A VectorStoreQueryResult containing the results of the query.
         """
-        return self._query(query)
+        return self._query(query, **kwargs)

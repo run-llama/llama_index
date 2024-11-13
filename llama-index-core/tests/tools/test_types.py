@@ -1,7 +1,7 @@
 import pytest
 
 from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.program.function_program import _get_function_tool
+from llama_index.core.program.function_program import get_function_tool
 from llama_index.core.tools.types import ToolMetadata
 
 
@@ -26,7 +26,7 @@ def test_toolmetadata_openai_tool_description_max_length() -> None:
 
 
 def test_nested_tool_schema() -> None:
-    tool = _get_function_tool(Outer)
+    tool = get_function_tool(Outer)
     schema = tool.metadata.get_parameters_dict()
 
     assert "$defs" in schema

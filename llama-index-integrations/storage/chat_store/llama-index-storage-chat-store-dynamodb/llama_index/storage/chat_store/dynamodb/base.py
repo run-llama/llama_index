@@ -95,6 +95,8 @@ class DynamoDBChatStore(BaseChatStore):
 
     _client: ServiceResource = PrivateAttr()
     _table: Any = PrivateAttr()
+    _aclient: ServiceResource = PrivateAttr()
+    _atable: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -163,6 +165,23 @@ class DynamoDBChatStore(BaseChatStore):
         self._client = session.resource("dynamodb", config=config, **resource_kwargs)
         self._table = self._client.Table(table_name)
 
+    async def init_async_table(self):
+        """Initialize asynchronous table."""
+        if self._atable is None:
+            try:
+                import aioboto3
+
+                async_session = aioboto3.Session(**self.session_kwargs)
+            except ImportError:
+                raise ImportError(
+                    "aioboto3 package not found, install with 'pip install aioboto3'"
+                )
+
+            async with async_session.resource(
+                "dynamodb", config=self.botocore_config, **self.resource_kwargs
+            ) as dynamodb:
+                self._atable = await dynamodb.Table(self.table_name)
+
     @classmethod
     def class_name(self) -> str:
         return "DynamoDBChatStore"
@@ -182,6 +201,12 @@ class DynamoDBChatStore(BaseChatStore):
             Item={self.primary_key: key, "History": _messages_to_dict(messages)}
         )
 
+    async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
+        self.init_async_table()
+        await self._atable.put_item(
+            Item={self.primary_key: key, "History": _messages_to_dict(messages)}
+        )
+
     def get_messages(self, key: str) -> List[ChatMessage]:
         """Retrieve all messages for the given key.
 
@@ -192,6 +217,17 @@ class DynamoDBChatStore(BaseChatStore):
             List[ChatMessage]: The messages associated with the key.
         """
         response = self._table.get_item(Key={self.primary_key: key})
+
+        if response and "Item" in response:
+            message_history = response["Item"]["History"]
+        else:
+            message_history = []
+
+        return [_dict_to_message(message) for message in message_history]
+
+    async def aget_messages(self, key: str) -> List[ChatMessage]:
+        self.init_async_table()
+        response = await self._atable.get_item(Key={self.primary_key: key})
 
         if response and "Item" in response:
             message_history = response["Item"]["History"]
@@ -216,6 +252,15 @@ class DynamoDBChatStore(BaseChatStore):
 
         self._table.put_item(Item={self.primary_key: key, "History": current_messages})
 
+    async def async_add_message(self, key: str, message: ChatMessage) -> None:
+        self.init_async_table()
+        current_messages = _messages_to_dict(await self.aget_messages(key))
+        current_messages.append(_message_to_dict(message))
+
+        await self._atable.put_item(
+            Item={self.primary_key: key, "History": current_messages}
+        )
+
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
         """Deletes the entire chat history for the given key (i.e. the row).
 
@@ -228,6 +273,12 @@ class DynamoDBChatStore(BaseChatStore):
         """
         messages_to_delete = self.get_messages(key)
         self._table.delete_item(Key={self.primary_key: key})
+        return messages_to_delete
+
+    async def adelete_messages(self, key: str) -> Optional[List[ChatMessage]]:
+        self.init_async_table()
+        messages_to_delete = await self.aget_messages(key)
+        await self._atable.delete_item(Key={self.primary_key: key})
         return messages_to_delete
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
@@ -253,6 +304,20 @@ class DynamoDBChatStore(BaseChatStore):
             )
             return None
 
+    async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
+        self.init_async_table()
+        current_messages = await self.aget_messages(key)
+        try:
+            message_to_delete = current_messages[idx]
+            del current_messages[idx]
+            await self.aset_messages(key, current_messages)
+            return message_to_delete
+        except IndexError:
+            logger.error(
+                IndexError(f"No message exists at index, {idx}, for key {key}")
+            )
+            return None
+
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Deletes the last message in the chat history for the given key.
 
@@ -265,6 +330,9 @@ class DynamoDBChatStore(BaseChatStore):
         """
         return self.delete_message(key, -1)
 
+    async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
+        return self.adelete_message(key, -1)
+
     def get_keys(self) -> List[str]:
         """Retrieve all keys in the table.
 
@@ -275,6 +343,18 @@ class DynamoDBChatStore(BaseChatStore):
         keys = [item[self.primary_key] for item in response["Items"]]
         while "LastEvaluatedKey" in response:
             response = self._table.scan(
+                ProjectionExpression=self.primary_key,
+                ExclusiveStartKey=response["LastEvaluatedKey"],
+            )
+            keys.extend([item[self.primary_key] for item in response["Items"]])
+        return keys
+
+    async def aget_keys(self) -> List[str]:
+        self.init_async_table()
+        response = await self._atable.scan(ProjectionExpression=self.primary_key)
+        keys = [item[self.primary_key] for item in response["Items"]]
+        while "LastEvaluatedKey" in response:
+            response = await self._atable.scan(
                 ProjectionExpression=self.primary_key,
                 ExclusiveStartKey=response["LastEvaluatedKey"],
             )

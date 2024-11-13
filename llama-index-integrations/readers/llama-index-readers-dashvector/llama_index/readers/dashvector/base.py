@@ -1,7 +1,7 @@
 """DashVector reader."""
 
 from typing import Dict, List, Optional
-
+import json
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
@@ -23,31 +23,36 @@ class DashVectorReader(BaseReader):
                 "`dashvector` package not found, please run `pip install dashvector`"
             )
 
-        self._client = dashvector.Client(api_key=api_key, endpoint=endpoint)
+        self._client: dashvector.Client = dashvector.Client(
+            api_key=api_key, endpoint=endpoint
+        )
 
     def load_data(
         self,
         collection_name: str,
-        id_to_text_map: Dict[str, str],
         vector: Optional[List[float]],
-        top_k: int,
-        separate_documents: bool = True,
+        topk: int,
         filter: Optional[str] = None,
         include_vector: bool = True,
+        partition: Optional[str] = None,
+        output_fields: Optional[List[str]] = None,
+        sparse_vector: Optional[Dict[int, float]] = None,
     ) -> List[Document]:
         """Load data from DashVector.
 
         Args:
             collection_name (str): Name of the collection.
-            id_to_text_map (Dict[str, str]): A map from ID's to text.
-            separate_documents (Optional[bool]): Whether to return separate
-                documents per retrieved entry. Defaults to True.
             vector (List[float]): Query vector.
-            top_k (int): Number of results to return.
-            filter (Optional[str]): doc fields filter conditions that meet the SQL
-                where clause specification.
-            include_vector (bool): Whether to include the embedding in the response.
-                Defaults to True.
+            topk (int): Number of results to return.
+            filter (Optional[str]): doc fields filter
+                conditions that meet the SQL where clause specification.detail in https://help.aliyun.com/document_detail/2513006.html?spm=a2c4g.2510250.0.0.40d25637QMI4eV
+            include_vector (bool): Whether to include the embedding in the response.Defaults to True.
+            partition (Optional[str]): The partition name
+                to query. Defaults to None.
+            output_fields (Optional[List[str]]): The fields
+                to return. Defaults to None, meaning all fields
+            sparse_vector (Optional[Dict[int, float]]): The
+                sparse vector to query.Defaults to None.
 
         Returns:
             List[Document]: A list of documents.
@@ -58,28 +63,29 @@ class DashVectorReader(BaseReader):
                 f"Failed to get collection: {collection_name}," f"Error: {collection}"
             )
 
-        resp = collection.query(
+        ret = collection.query(
             vector=vector,
-            topk=top_k,
+            topk=topk,
             filter=filter,
             include_vector=include_vector,
+            partition=partition,
+            output_fields=output_fields,
+            sparse_vector=sparse_vector,
         )
-        if not resp:
-            raise Exception(f"Failed to query document," f"Error: {resp}")
+        if not ret:
+            raise Exception(f"Failed to query document," f"Error: {ret}")
 
+        doc_metas = ret.output
         documents = []
-        for doc in resp:
-            if doc.id not in id_to_text_map:
-                raise ValueError("ID not found in id_to_text_map.")
-            text = id_to_text_map[doc.id]
-            embedding = doc.vector
-            if len(embedding) == 0:
-                embedding = None
-            documents.append(Document(text=text, embedding=embedding))
 
-        if not separate_documents:
-            text_list = [doc.get_content() for doc in documents]
-            text = "\n\n".join(text_list)
-            documents = [Document(text=text)]
+        for doc_meta in doc_metas:
+            node_content = json.loads(doc_meta.fields["_node_content"])
+            document = Document(
+                id_=doc_meta.id,
+                text=node_content["text"],
+                metadata=node_content["metadata"],
+                embedding=doc_meta.vector,
+            )
+            documents.append(document)
 
         return documents

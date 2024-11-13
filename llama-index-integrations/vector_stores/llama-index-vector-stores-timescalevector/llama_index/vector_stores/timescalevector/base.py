@@ -1,7 +1,7 @@
 import enum
 import uuid
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, ClassVar
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.constants import DEFAULT_EMBEDDING_DIM
@@ -48,8 +48,8 @@ class TimescaleVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
 
     service_url: str
     table_name: str
@@ -81,6 +81,11 @@ class TimescaleVectorStore(BasePydanticVectorStore):
     @classmethod
     def class_name(cls) -> str:
         return "TimescaleVectorStore"
+
+    @property
+    def client(self) -> Any:
+        """Get client."""
+        return self._sync_client
 
     async def close(self) -> None:
         self._sync_client.close()
@@ -269,7 +274,7 @@ class TimescaleVectorStore(BasePydanticVectorStore):
         filter: Dict[str, str] = {"doc_id": ref_doc_id}
         self._sync_client.delete_by_metadata(filter)
 
-    DEFAULT_INDEX_TYPE = IndexType.TIMESCALE_VECTOR
+    DEFAULT_INDEX_TYPE: ClassVar = IndexType.TIMESCALE_VECTOR
 
     def create_index(
         self, index_type: IndexType = DEFAULT_INDEX_TYPE, **kwargs: Any

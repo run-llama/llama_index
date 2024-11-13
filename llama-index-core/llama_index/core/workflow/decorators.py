@@ -31,7 +31,7 @@ def step(
     *args: Any,
     workflow: Optional[Type["Workflow"]] = None,
     pass_context: bool = False,
-    num_workers: int = 1,
+    num_workers: int = 4,
     retry_policy: Optional[RetryPolicy] = None,
 ) -> Callable:
     """Decorator used to mark methods and functions as workflow steps.
@@ -40,6 +40,13 @@ def step(
     starting the communication channels until runtime. For this reason,
     we temporarily store the list of events that will be consumed by this
     step in the function object itself.
+
+    Args:
+        workflow: Workflow class to which the decorated step will be added. Only needed when using the
+            decorator on free functions instead of class methods.
+        num_workers: The number of workers that will process events for the decorated step. The default
+            value works most of the times.
+        retry_policy: The policy used to retry a step that encountered an error while running.
     """
 
     def decorator(func: Callable) -> Callable:

@@ -30,11 +30,11 @@ license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-packs-recursive-retriever"
 readme = "README.md"
-version = "0.3.0"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-llama-index-readers-file = "^0.2.0"
+llama-index-readers-file = "^0.3.0"
 lxml = "^5.1.0"
 unstructured = "0.10.18"
 llama-index-llms-openai = "^0.2.0"

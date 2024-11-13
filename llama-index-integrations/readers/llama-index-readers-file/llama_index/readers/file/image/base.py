@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, cast, Any
 from fsspec import AbstractFileSystem
+from io import BytesIO
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document, ImageDocument

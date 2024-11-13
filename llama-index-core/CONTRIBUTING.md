@@ -69,7 +69,7 @@ It is responsible for splitting text (via text splitters) and explicitly modelin
 
 **Examples**:
 
-- [Simple Node Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/node_parser/simple.py)
+- [Simple Node Parser](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/node_parser/file/simple_file.py)
 
 See [the API reference](https://docs.llamaindex.ai/en/latest/api_reference/index.html) for full details.
 
@@ -87,9 +87,9 @@ Text splitter splits a long text `str` into smaller text `str` chunks with desir
 
 **Examples**:
 
-- [Token Text Splitter](https://github.com/jerryjliu/llama_index/blob/main/llama_index/langchain_helpers/text_splitter.py#L26)
-- [Sentence Splitter](https://github.com/jerryjliu/llama_index/blob/main/llama_index/langchain_helpers/text_splitter.py#L276)
-- [Code Splitter](https://github.com/jerryjliu/llama_index/blob/main/llama_index/langchain_helpers/text_splitter.py#L476)
+- [Token Text Splitter](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/node_parser/text/token.py#L22)
+- [Sentence Splitter](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/node_parser/text/sentence.py#L34)
+- [Code Splitter](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/node_parser/text/code.py#L17)
 
 ---
 
@@ -128,10 +128,10 @@ These serve as the main data store and retrieval engine for our vector index.
 
 **Examples**:
 
-- [Pinecone](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/pinecone.py)
-- [Faiss](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/faiss.py)
-- [Chroma](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/chroma.py)
-- [DashVector](https://github.com/jerryjliu/llama_index/blob/main/llama_index/vector_stores/dashvector.py)
+- [Pinecone](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/vector_stores/llama-index-vector-stores-pinecone/llama_index/vector_stores/pinecone/base.py)
+- [Faiss](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/vector_stores/llama-index-vector-stores-faiss/llama_index/vector_stores/faiss/base.py)
+- [Chroma](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/vector_stores/llama-index-vector-stores-chroma/llama_index/vector_stores/chroma/base.py)
+- [DashVector](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/vector_stores/llama-index-vector-stores-dashvector/llama_index/vector_stores/dashvector/base.py)
 
 **Ideas**:
 
@@ -157,9 +157,9 @@ data if you wish.
 
 **Examples**:
 
-- [Vector Index Retriever](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/vector_store/retrievers.py)
-- [List Index Retriever](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/list/retrievers.py)
-- [Transform Retriever](https://github.com/jerryjliu/llama_index/blob/main/llama_index/retrievers/transform_retriever.py)
+- [Vector Index Retriever](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/indices/vector_store/retrievers/retriever.py#L24)
+- [List Index Retriever](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/indices/list/retrievers.py)
+- [Transform Retriever](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/retrievers/transform_retriever.py)
 
 **Ideas**:
 
@@ -182,8 +182,8 @@ They may take in other query engine classes as input too.
 
 **Examples**:
 
-- [Retriever Query Engine](https://github.com/jerryjliu/llama_index/blob/main/llama_index/query_engine/retriever_query_engine.py)
-- [Transform Query Engine](https://github.com/jerryjliu/llama_index/blob/main/llama_index/query_engine/transform_query_engine.py)
+- [Retriever Query Engine](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/query_engine/retriever_query_engine.py#L25)
+- [Transform Query Engine](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/query_engine/transform_query_engine.py#L11)
 
 ---
 
@@ -196,8 +196,8 @@ This can interpreted as a pre-processing stage, before the core index query logi
 
 **Examples**:
 
-- [Hypothetical Document Embeddings](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/query/query_transform/base.py#L77)
-- [Query Decompose](https://github.com/jerryjliu/llama_index/blob/main/llama_index/indices/query/query_transform/base.py#L124)
+- [Hypothetical Document Embeddings](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/indices/query/query_transform/base.py#L108)
+- [Query Decompose](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/indices/query/query_transform/base.py#L164)
 
 See [guide](https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/query_transformations.html#hyde-hypothetical-document-embeddings) for more information.
 
@@ -211,7 +211,7 @@ A token usage optimizer refines the retrieved `Nodes` to reduce token usage duri
 
 **Examples**:
 
-- [Sentence Embedding Optimizer](https://github.com/jerryjliu/llama_index/blob/main/llama_index/optimization/optimizer.py)
+- [Sentence Embedding Optimizer](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/postprocessor/optimizer.py#L16)
 
 ---
 
@@ -223,9 +223,9 @@ A node postprocessor refines a list of retrieved nodes given configuration and c
 
 **Examples**:
 
-- [Keyword Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama_index/postprocessor/node.py#L32): filters nodes based on keyword match
-- [Similarity Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama_index/postprocessor/node.py#L74): filers nodes based on similarity threshold
-- [Prev Next Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama_index/postprocessor/node.py#L175): fetches additional nodes to augment context based on node relationships.
+- [Keyword Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/postprocessor/node.py#L26): filters nodes based on keyword match
+- [Similarity Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/postprocessor/node.py#L70): filers nodes based on similarity threshold
+- [Prev Next Postprocessor](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/postprocessor/node.py#L149): fetches additional nodes to augment context based on node relationships.
 
 ---
 
@@ -240,8 +240,8 @@ An output parser enables us to extract structured output from the plain text out
 
 **Examples**:
 
-- [Guardrails Output Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/output_parsers/guardrails.py)
-- [Langchain Output Parser](https://github.com/jerryjliu/llama_index/blob/main/llama_index/output_parsers/langchain.py)
+- [Guardrails Output Parser](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/output_parsers/llama-index-output-parsers-guardrails/llama_index/output_parsers/guardrails/base.py#L17)
+- [Langchain Output Parser](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/output_parsers/llama-index-output-parsers-langchain/llama_index/output_parsers/langchain/base.py#L12)
 
 See [guide](https://docs.llamaindex.ai/en/stable/module_guides/querying/structured_outputs/output_parser.html) for more information.
 

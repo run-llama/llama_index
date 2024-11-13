@@ -17,6 +17,10 @@ LLAMA_MODELS = {
     "accounts/fireworks/models/llama-v3p1-8b-instruct": 131072,
     "accounts/fireworks/models/llama-v3p1-70b-instruct": 131072,
     "accounts/fireworks/models/llama-v3p1-405b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p2-1b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p2-3b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p2-11b-vision-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p2-90b-vision-instruct": 131072,
 }
 
 MISTRAL_MODELS = {

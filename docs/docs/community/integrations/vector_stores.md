@@ -25,6 +25,7 @@ as the storage backend for `VectorStoreIndex`.
 - Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
 - Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- Hnswlib (`HnswlibVectorStore`). [Installation](https://github.com/nmslib/hnswlib?tab=readme-ov-file#bindings-installation).
 - txtai (`TxtaiVectorStore`). [Installation](https://neuml.github.io/txtai/install/).
 - Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
 - Lantern (`LanternVectorStore`). [Quickstart](https://docs.lantern.dev/get-started/overview).
@@ -33,6 +34,7 @@ as the storage backend for `VectorStoreIndex`.
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart](https://www.mongodb.com/atlas/database).
 - MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
 - Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
+- OceanBase (`OceanBaseVectorStore`). [OceanBase Overview](https://github.com/oceanbase/oceanbase). [Quickstart](../../examples/vector_stores/OceanBaseVectorStore.ipynb). [Python Client](https://github.com/oceanbase/pyobvector)
 - Pinecone (`PineconeVectorStore`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - LanceDB (`LanceDBVectorStore`) [Installation/Quickstart](https://lancedb.github.io/lancedb/basic/)

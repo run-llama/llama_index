@@ -190,6 +190,59 @@ class GoogleDriveReader(
 
         return creds
 
+    def _get_drive_link(self, file_id: str) -> str:
+        return f"https://drive.google.com/file/d/{file_id}/view"
+
+    def _get_relative_path(
+        self, service, file_id: str, root_folder_id: Optional[str] = None
+    ) -> str:
+        """Get the relative path from root_folder_id to file_id."""
+        try:
+            # Get file details including parents
+            file = (
+                service.files()
+                .get(fileId=file_id, supportsAllDrives=True, fields="name, parents")
+                .execute()
+            )
+
+            path_parts = [file["name"]]
+
+            if not root_folder_id:
+                return file["name"]
+
+            # Traverse up through parents until we reach root_folder_id or can't access anymore
+            try:
+                current_parent = file.get("parents", [None])[0]
+                while current_parent:
+                    # If we reach the root folder, stop
+                    if current_parent == root_folder_id:
+                        break
+
+                    try:
+                        parent = (
+                            service.files()
+                            .get(
+                                fileId=current_parent,
+                                supportsAllDrives=True,
+                                fields="name, parents",
+                            )
+                            .execute()
+                        )
+                        path_parts.insert(0, parent["name"])
+                        current_parent = parent.get("parents", [None])[0]
+                    except Exception as e:
+                        logger.debug(f"Stopped at parent {current_parent}: {e!s}")
+                        break
+
+            except Exception as e:
+                logger.debug(f"Could not access parents for {file_id}: {e!s}")
+
+            return "/".join(path_parts)
+
+        except Exception as e:
+            logger.warning(f"Could not get path for file {file_id}: {e}")
+            return file["name"]
+
     def _get_fileids_meta(
         self,
         drive_id: Optional[str] = None,
@@ -197,6 +250,7 @@ class GoogleDriveReader(
         file_id: Optional[str] = None,
         mime_types: Optional[List[str]] = None,
         query_string: Optional[str] = None,
+        current_path: Optional[str] = None,
     ) -> List[List[str]]:
         """Get file ids present in folder/ file id
         Args:
@@ -214,7 +268,22 @@ class GoogleDriveReader(
         try:
             service = build("drive", "v3", credentials=self._creds)
             fileids_meta = []
-            if folder_id:
+
+            if folder_id and not file_id:
+                try:
+                    folder = (
+                        service.files()
+                        .get(fileId=folder_id, supportsAllDrives=True, fields="name")
+                        .execute()
+                    )
+                    current_path = (
+                        f"{current_path}/{folder['name']}"
+                        if current_path
+                        else folder["name"]
+                    )
+                except Exception as e:
+                    logger.warning(f"Could not get folder name: {e}")
+
                 folder_mime_type = "application/vnd.google-apps.folder"
                 query = "('" + folder_id + "' in parents)"
 
@@ -270,6 +339,12 @@ class GoogleDriveReader(
                         break
 
                 for item in items:
+                    item_path = (
+                        f"{current_path}/{item['name']}"
+                        if current_path
+                        else item["name"]
+                    )
+
                     if item["mimeType"] == folder_mime_type:
                         if drive_id:
                             fileids_meta.extend(
@@ -278,6 +353,7 @@ class GoogleDriveReader(
                                     folder_id=item["id"],
                                     mime_types=mime_types,
                                     query_string=query_string,
+                                    current_path=current_path,
                                 )
                             )
                         else:
@@ -286,6 +362,7 @@ class GoogleDriveReader(
                                     folder_id=item["id"],
                                     mime_types=mime_types,
                                     query_string=query_string,
+                                    current_path=current_path,
                                 )
                             )
                     else:
@@ -296,15 +373,15 @@ class GoogleDriveReader(
                             if not is_shared_drive
                             else "Shared Drive"
                         )
-
                         fileids_meta.append(
                             (
                                 item["id"],
                                 author,
-                                item["name"],
+                                item_path,
                                 item["mimeType"],
                                 item["createdTime"],
                                 item["modifiedTime"],
+                                self._get_drive_link(item["id"]),
                             )
                         )
             else:
@@ -315,7 +392,6 @@ class GoogleDriveReader(
                     .execute()
                 )
                 # Get metadata of the file
-                # Check if file doesn't belong to a Shared Drive. "owners" doesn't exist in a Shared Drive
                 is_shared_drive = "driveId" in file
                 author = (
                     file["owners"][0]["displayName"]
@@ -323,14 +399,20 @@ class GoogleDriveReader(
                     else "Shared Drive"
                 )
 
+                # Get the full file path
+                file_path = self._get_relative_path(
+                    service, file_id, folder_id or self.folder_id
+                )
+
                 fileids_meta.append(
                     (
                         file["id"],
                         author,
-                        file["name"],
+                        file_path,
                         file["mimeType"],
                         file["createdTime"],
                         file["modifiedTime"],
+                        self._get_drive_link(file["id"]),
                     )
                 )
             return fileids_meta
@@ -418,7 +500,7 @@ class GoogleDriveReader(
                     metadata[final_filepath] = {
                         "file id": fileid_meta[0],
                         "author": fileid_meta[1],
-                        "file name": fileid_meta[2],
+                        "file path": fileid_meta[2],
                         "mime type": fileid_meta[3],
                         "created at": fileid_meta[4],
                         "modified at": fileid_meta[5],
@@ -589,6 +671,7 @@ class GoogleDriveReader(
             "content_type": meta[3],
             "author": meta[1],
             "created_date": meta[4],
+            "drive_link": meta[6],
         }
 
     def load_resource(self, resource_id: str, **kwargs) -> List[Document]:

@@ -12,6 +12,7 @@ from typing import (
     get_args,
     runtime_checkable,
     TYPE_CHECKING,
+    Type,
 )
 from typing_extensions import Annotated
 
@@ -37,6 +38,7 @@ from llama_index.core.bridge.pydantic import (
     field_validator,
     model_validator,
     ConfigDict,
+    ValidationError,
 )
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.base.llms.base import BaseLLM
@@ -81,7 +83,14 @@ class ToolSelection(BaseModel):
     tool_id: str = Field(description="Tool ID to select.")
     tool_name: str = Field(description="Tool name to select.")
     tool_kwargs: Dict[str, Any] = Field(description="Keyword arguments for the tool.")
-    # NOTE: no args for now
+
+    @field_validator("tool_kwargs", mode="wrap")
+    @classmethod
+    def ignore_non_dict_arguments(cls, v: Any, handler: Any) -> Dict[str, Any]:
+        try:
+            return handler(v)
+        except ValidationError:
+            return handler({})
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -313,7 +322,7 @@ class LLM(BaseLLM):
     @dispatcher.span
     def structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
@@ -325,6 +334,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -367,8 +378,9 @@ class LLM(BaseLLM):
     @dispatcher.span
     async def astructured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> BaseModel:
         r"""Async Structured predict.
@@ -378,6 +390,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -414,14 +428,14 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        result = await program.acall(**prompt_args)
+        result = await program.acall(llm_kwargs=llm_kwargs, **prompt_args)
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
     @dispatcher.span
     def stream_structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
@@ -433,6 +447,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -480,7 +496,7 @@ class LLM(BaseLLM):
     @dispatcher.span
     async def astream_structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
@@ -492,6 +508,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -755,11 +773,16 @@ class LLM(BaseLLM):
             handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
-        if isinstance(user_msg, ChatMessage):
+        if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
             user_msg = user_msg.content
         elif isinstance(user_msg, str):
             pass
-        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+        elif (
+            not user_msg
+            and chat_history is not None
+            and len(chat_history) > 0
+            and isinstance(chat_history[-1].content, str)
+        ):
             user_msg = chat_history[-1].content
         else:
             raise ValueError("No user message provided or found in chat history.")
@@ -813,11 +836,16 @@ class LLM(BaseLLM):
             handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
-        if isinstance(user_msg, ChatMessage):
+        if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
             user_msg = user_msg.content
         elif isinstance(user_msg, str):
             pass
-        elif not user_msg and chat_history is not None and len(chat_history) > 0:
+        elif (
+            not user_msg
+            and chat_history is not None
+            and len(chat_history) > 0
+            and isinstance(chat_history[-1].content, str)
+        ):
             user_msg = chat_history[-1].content
         else:
             raise ValueError("No user message provided or found in chat history.")
@@ -846,7 +874,7 @@ class LLM(BaseLLM):
 
     def as_structured_llm(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         **kwargs: Any,
     ) -> "StructuredLLM":
         """Return a structured LLM around a given object."""
