@@ -223,8 +223,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
     token: Optional[str]
     read_only: Optional[bool]
     dataset_path: str
-    vectorstore: Any =  "VectorStore"
-
+    vectorstore: Any = "VectorStore"
 
     _embedding_dimension: int = PrivateAttr()
     _ttl_seconds: Optional[int] = PrivateAttr()
