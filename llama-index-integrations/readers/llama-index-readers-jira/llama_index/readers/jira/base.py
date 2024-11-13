@@ -101,19 +101,15 @@ class JiraReader(BaseReader):
                 continue
 
             assignee = ""
-            assignee_email = ""
             reporter = ""
-            reporter_email = ""
             epic_key = ""
             epic_summary = ""
             epic_descripton = ""
 
             if issue.fields.assignee:
                 assignee = issue.fields.assignee.displayName
-                assignee_email = issue.fields.assignee.emailAddress
             if issue.fields.reporter:
                 reporter = issue.fields.reporter.displayName
-                reporter_email = issue.fields.reporter.emailAddress
 
             if "parent" in issue.raw["fields"]:
                 if issue.raw["fields"]["parent"]["key"]:
@@ -140,9 +136,7 @@ class JiraReader(BaseReader):
                         "labels": issue.fields.labels,
                         "status": issue.fields.status.name,
                         "assignee": assignee,
-                        "assignee_email": assignee_email,
                         "reporter": reporter,
-                        "reporter_email": reporter_email,
                         "project": issue.fields.project.name,
                         "issue_type": issue_type,
                         "priority": issue.fields.priority.name,

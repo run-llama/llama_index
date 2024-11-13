@@ -1,4 +1,5 @@
 from typing import Optional
+import tempfile
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.indices.managed.llama_cloud import LlamaCloudIndex
 from llama_index.core.schema import Document
@@ -18,7 +19,7 @@ def test_class():
 
 
 @pytest.mark.skipif(
-    not base_url or not api_key, reason="No platform base url or api keyset"
+    not base_url or not api_key, reason="No platform base url or api key set"
 )
 @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.integration()
@@ -40,7 +41,7 @@ def test_retrieve():
 
 @pytest.mark.parametrize("organization_id", [None, organization_id])
 @pytest.mark.skipif(
-    not base_url or not api_key, reason="No platform base url or api keyset"
+    not base_url or not api_key, reason="No platform base url or api key set"
 )
 @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.integration()
@@ -101,3 +102,68 @@ def test_documents_crud(organization_id: Optional[str]):
     docs = index.ref_doc_info
     assert len(docs) == 2
     assert "3" not in docs
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+@pytest.mark.integration()
+def test_upload_file():
+    os.environ["OPENAI_API_KEY"] = openai_api_key
+    index = LlamaCloudIndex(
+        name="test",  # assumes this pipeline exists
+        project_name="Default",
+        api_key=api_key,
+        base_url=base_url,
+    )
+
+    # Create a temporary file to upload
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as temp_file:
+        temp_file.write(b"Sample content for testing upload.")
+        temp_file_path = temp_file.name
+
+    try:
+        # Upload the file
+        file_id = index.upload_file(temp_file_path, verbose=True)
+        assert file_id is not None
+
+        # Verify the file is part of the index
+        docs = index.ref_doc_info
+        temp_file_name = os.path.basename(temp_file_path)
+        assert any(
+            temp_file_name == doc.metadata.get("file_name") for doc in docs.values()
+        )
+
+    finally:
+        # Clean up the temporary file
+        os.remove(temp_file_path)
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+@pytest.mark.integration()
+def test_upload_file_from_url():
+    os.environ["OPENAI_API_KEY"] = openai_api_key
+    index = LlamaCloudIndex(
+        name="test",  # assumes this pipeline exists
+        project_name="Default",
+        api_key=api_key,
+        base_url=base_url,
+    )
+
+    # Define a URL to a file for testing
+    test_file_url = "https://www.google.com/robots.txt"
+    test_file_name = "google_robots.txt"
+
+    # Upload the file from the URL
+    file_id = index.upload_file_from_url(
+        file_name=test_file_name, url=test_file_url, verbose=True
+    )
+    assert file_id is not None
+
+    # Verify the file is part of the index
+    docs = index.ref_doc_info
+    assert any(test_file_name == doc.metadata.get("file_name") for doc in docs.values())

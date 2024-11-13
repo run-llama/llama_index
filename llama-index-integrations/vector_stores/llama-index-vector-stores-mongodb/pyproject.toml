@@ -29,7 +29,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-mongodb"
 readme = "README.md"
-version = "0.3.2"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
@@ -40,7 +40,7 @@ ipython = "8.10.0"
 jupyter = "^1.0.0"
 llama-index-embeddings-openai = "^0.1.5"
 llama-index-llms-openai = "^0.1.13"
-llama-index-readers-file = "^0.1.4"
+llama-index-readers-file = "^0.3.0"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
