@@ -29,7 +29,7 @@ vector_store = FalkorDBVectorStore(
     embedding_node_property="embedding",
     text_node_property="text",
     distance_strategy="cosine",
-    embedding_dimension=1536
+    embedding_dimension=1536,
 )
 ```
 
@@ -42,7 +42,7 @@ from llama_index.core.schema import Document
 
 documents = [
     Document("This is the first document."),
-    Document("This is the second document.")
+    Document("This is the second document."),
 ]
 
 vector_store.add(documents)
@@ -105,18 +105,21 @@ vector_store.delete(ref_doc_id)
 You can use metadata filters when querying the vector store:
 
 ```python
-from llama_index.core.vector_stores.types import MetadataFilters, MetadataFilter
+from llama_index.core.vector_stores.types import (
+    MetadataFilters,
+    MetadataFilter,
+)
 
 filters = MetadataFilters(
     filters=[
-        MetadataFilter(key="category", value="science", operator=FilterOperator.EQ)
+        MetadataFilter(
+            key="category", value="science", operator=FilterOperator.EQ
+        )
     ]
 )
 
 query = VectorStoreQuery(
-    query_embedding=query_embedding,
-    similarity_top_k=5,
-    filters=filters
+    query_embedding=query_embedding, similarity_top_k=5, filters=filters
 )
 
 results = vector_store.query(query)

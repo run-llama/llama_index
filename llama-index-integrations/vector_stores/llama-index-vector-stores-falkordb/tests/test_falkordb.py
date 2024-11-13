@@ -1,8 +1,7 @@
 import pytest
-from typing import List
 from unittest.mock import MagicMock, patch
 
-from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
+from llama_index.core.schema import TextNode
 from llama_index.vector_stores.falkordb import FalkorDBVectorStore
 from llama_index.vector_stores.types import (
     VectorStoreQuery,
@@ -10,9 +9,10 @@ from llama_index.vector_stores.types import (
     ExactMatchFilter,
 )
 
+
 # Mock FalkorDB client
 class MockFalkorDBClient:
-    def __init__(self):
+    def __init__(self) -> None:
         self.nodes = {}
         self.query_results = []
         self.index_exists = False
@@ -51,7 +51,8 @@ class MockFalkorDBClient:
     def set_query_results(self, results):
         self.query_results = results
 
-@pytest.fixture
+
+@pytest.fixture()
 def mock_falkordb():
     with patch("falkordb.FalkorDB") as mock:
         client = MockFalkorDBClient()
@@ -59,7 +60,8 @@ def mock_falkordb():
         mock.from_url.return_value.select_graph.return_value = client
         yield client
 
-@pytest.fixture
+
+@pytest.fixture()
 def falkordb_store(mock_falkordb):
     store = FalkorDBVectorStore(
         url="bolt://localhost:7687",
@@ -72,6 +74,7 @@ def falkordb_store(mock_falkordb):
     # Ensure store uses the mock client
     store._client = mock_falkordb
     return store
+
 
 def test_falkordb_add(falkordb_store):
     nodes = [
@@ -94,6 +97,7 @@ def test_falkordb_add(falkordb_store):
     assert falkordb_store._client.nodes["1"]["text"] == "Hello world"
     assert falkordb_store._client.nodes["2"]["text"] == "Hello world 2"
 
+
 def test_falkordb_delete(falkordb_store):
     node = TextNode(
         text="Hello world",
@@ -106,20 +110,27 @@ def test_falkordb_delete(falkordb_store):
     falkordb_store.delete("test_node")
     assert "test_node" not in falkordb_store._client.nodes
 
+
 def test_falkordb_query(falkordb_store):
     mock_results = [
-        {"n": {
-            "text": "Hello world",
-            "id": "1",
-            "embedding": [1.0, 0.0, 0.0],
-            "metadata": {"key": "value"}
-        }, "score": 0.9},
-        {"n": {
-            "text": "Hello world 2",
-            "id": "2",
-            "embedding": [0.0, 1.0, 0.0],
-            "metadata": {"key2": "value2"}
-        }, "score": 0.7},
+        {
+            "n": {
+                "text": "Hello world",
+                "id": "1",
+                "embedding": [1.0, 0.0, 0.0],
+                "metadata": {"key": "value"},
+            },
+            "score": 0.9,
+        },
+        {
+            "n": {
+                "text": "Hello world 2",
+                "id": "2",
+                "embedding": [0.0, 1.0, 0.0],
+                "metadata": {"key2": "value2"},
+            },
+            "score": 0.7,
+        },
     ]
     falkordb_store._client.set_query_results(mock_results)
 
@@ -134,14 +145,18 @@ def test_falkordb_query(falkordb_store):
     assert results.nodes[1].text == "Hello world 2"
     assert results.similarities == [0.9, 0.7]
 
+
 def test_falkordb_query_with_filters(falkordb_store):
     mock_results = [
-        {"n": {
-            "text": "Hello world",
-            "id": "1",
-            "embedding": [1.0, 0.0, 0.0],
-            "metadata": {"key": "value"}
-        }, "score": 0.9},
+        {
+            "n": {
+                "text": "Hello world",
+                "id": "1",
+                "embedding": [1.0, 0.0, 0.0],
+                "metadata": {"key": "value"},
+            },
+            "score": 0.9,
+        },
     ]
     falkordb_store._client.set_query_results(mock_results)
 
@@ -155,6 +170,7 @@ def test_falkordb_query_with_filters(falkordb_store):
     assert len(results.nodes) == 1
     assert results.nodes[0].text == "Hello world"
     assert results.similarities == [0.9]
+
 
 def test_falkordb_update(falkordb_store):
     node = TextNode(
@@ -174,6 +190,7 @@ def test_falkordb_update(falkordb_store):
     assert falkordb_store._client.nodes["update_node"]["text"] == "Updated text"
     assert falkordb_store._client.nodes["update_node"]["embedding"] == [0.0, 1.0, 0.0]
 
+
 def test_falkordb_get(falkordb_store):
     node = TextNode(
         text="Get test",
@@ -187,9 +204,11 @@ def test_falkordb_get(falkordb_store):
     assert retrieved_node.text == "Get test"
     assert retrieved_node.embedding == [1.0, 1.0, 1.0]
 
+
 def test_falkordb_nonexistent_get(falkordb_store):
     retrieved_node = falkordb_store.get("nonexistent_node")
     assert retrieved_node is None
+
 
 if __name__ == "__main__":
     pytest.main()
