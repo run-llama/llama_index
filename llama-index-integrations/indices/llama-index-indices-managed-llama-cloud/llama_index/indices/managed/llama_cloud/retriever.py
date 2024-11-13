@@ -78,16 +78,17 @@ class LlamaCloudRetriever(BaseRetriever):
         files_top_k: Optional[int] = None,
         retrieve_image_nodes: Optional[bool] = None,
         pipeline_id: Optional[str] = None,
-        index_id: Optional[str] = None,
+        index_id: Optional[str] = None,  # alias for pipeline_id
+        id: Optional[str] = None,  # alias for pipeline_id
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Retriever."""
         self.name = name
-        self._pipeline_id = pipeline_id or index_id
+        self._pipeline_id = id or index_id or pipeline_id
 
         if self._pipeline_id is None and name is None:
             raise ValueError(
-                "Either `name` or `pipeline_id` or `index_id` must be provided."
+                "One of `name`, `pipeline_id` or `index_id` must be provided."
             )
 
         self.project_name = project_name
