@@ -76,7 +76,7 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
     text_node_property: str
     embedding_dimension: int
 
-    _driver: FalkorDB = PrivateAttr()
+    _client: FalkorDB = PrivateAttr()
     _database: str = PrivateAttr()
 
     def __init__(
@@ -104,7 +104,7 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
         if distance_strategy not in ["cosine", "euclidean"]:
             raise ValueError("distance_strategy must be either 'euclidean' or 'cosine'")
 
-        self._driver = driver or FalkorDB.from_url(url).select_graph(database)
+        self._client = driver or FalkorDB.from_url(url).select_graph(database)
         self._database = database
 
         # Inline check_if_not_null function
@@ -125,7 +125,7 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
 
     @property
     def client(self) -> FalkorDB:
-        return self._driver
+        return self._client
 
     def create_new_index(self) -> None:
         index_query = (
@@ -134,10 +134,10 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
             f"ON (n.`{self.embedding_node_property}`) "
             f"OPTIONS {{dimension: {self.embedding_dimension}, metric: '{self.distance_strategy}'}}"
         )
-        self._driver.query(index_query)
+        self._client.query(index_query)
 
     def retrieve_existing_index(self) -> bool:
-        index_information = self._driver.query(
+        index_information = self._client.query(
             "CALL db.indexes() "
             "YIELD label, properties, types, options, entitytype "
             "WHERE types = ['VECTOR'] AND label = $index_name",
@@ -162,7 +162,7 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
             "c += row.metadata"
         )
 
-        self._driver.query(import_query, params={"data": clean_params(nodes)})
+        self._client.query(import_query, params={"data": clean_params(nodes)})
         return ids
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -198,7 +198,7 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
             **filter_params,
         }
 
-        results = self._driver.query(full_query, params=parameters)
+        results = self._client.query(full_query, params=parameters)
 
         nodes = []
         similarities = []
@@ -213,7 +213,7 @@ class FalkorDBVectorStore(BasePydanticVectorStore):
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        self._driver.query(
+        self._client.query(
             f"MATCH (n:`{self.node_label}`) WHERE n.ref_doc_id = $id DETACH DELETE n",
             params={"id": ref_doc_id},
         )
