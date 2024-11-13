@@ -223,12 +223,13 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
     token: Optional[str]
     read_only: Optional[bool]
     dataset_path: str
+    vectorstore: Any =  "VectorStore"
+
 
     _embedding_dimension: int = PrivateAttr()
     _ttl_seconds: Optional[int] = PrivateAttr()
     _deeplake_db: Any = PrivateAttr()
     _deeplake_db_collection: Any = PrivateAttr()
-    _vectorstore: "VectorStore" = PrivateAttr()
     _id_tensor_name: str = PrivateAttr()
 
     def __init__(
@@ -294,7 +295,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
                 "Please install it with `pip install deeplake`."
             )
 
-        self._vectorstore = VectorStore(
+        self.vectorstore = VectorStore(
             path=dataset_path,
             ingestion_batch_size=ingestion_batch_size,
             num_workers=ingestion_num_workers,
@@ -307,7 +308,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         )
         try:
             self._id_tensor_name = (
-                "ids" if "ids" in self._vectorstore.tensors() else "id"
+                "ids" if "ids" in self.vectorstore.tensors() else "id"
             )
         except AttributeError:
             self._id_tensor_name = "id"
@@ -319,7 +320,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         Returns:
             Any: DeepLake vectorstore dataset.
         """
-        return self._vectorstore.dataset
+        return self.vectorstore.dataset
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into DeepLake.
@@ -350,7 +351,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
             self._id_tensor_name: id_,
         }
 
-        return self._vectorstore.add(
+        return self.vectorstore.add(
             embedding_data=embedding,
             metadata=metadata,
             embedding_tensor="embedding",
@@ -367,7 +368,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self._vectorstore.delete(filter={"metadata": {"doc_id": ref_doc_id}})
+        self.vectorstore.delete(filter={"metadata": {"doc_id": ref_doc_id}})
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
@@ -385,7 +386,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         query_embedding = cast(List[float], query.query_embedding)
         exec_option = kwargs.get("exec_option")
         deep_memory = kwargs.get("deep_memory")
-        data = self._vectorstore.search(
+        data = self.vectorstore.search(
             embedding=query_embedding,
             exec_option=exec_option,
             k=query.similarity_top_k,
