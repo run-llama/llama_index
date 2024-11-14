@@ -82,6 +82,22 @@ class ResourcesReaderMixin(ABC):
         """
         return self.list_resources(*args, **kwargs)
 
+    def get_permission_info(self, resource_id: str, *args: Any, **kwargs: Any) -> Dict:
+        """
+        Get a dictionary of information about the permissions of a specific resource.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not provide get_permission_info method currently"
+        )
+
+    async def aget_permission_info(
+        self, resource_id: str, *args: Any, **kwargs: Any
+    ) -> Dict:
+        """
+        Get a dictionary of information about the permissions of a specific resource asynchronously.
+        """
+        return self.get_permission_info(resource_id, *args, **kwargs)
+
     @abstractmethod
     def get_resource_info(self, resource_id: str, *args: Any, **kwargs: Any) -> Dict:
         """
