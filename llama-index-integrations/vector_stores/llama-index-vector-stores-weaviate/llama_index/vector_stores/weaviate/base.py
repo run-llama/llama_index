@@ -354,6 +354,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 return_metadata=return_metatada,
                 return_properties=all_properties,
                 include_vector=True,
+                **kwargs,
             )
         except weaviate.exceptions.WeaviateQueryError as e:
             raise ValueError(f"Invalid query, got errors: {e.message}")
