@@ -17,6 +17,7 @@ from llama_cloud import (
     ManagedIngestionStatus,
     CloudDocumentCreate,
     CloudDocument,
+    PipelineFileCreate,
 )
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -117,6 +118,40 @@ class LlamaCloudIndex(BaseManagedIndex):
                 and status == ManagedIngestionStatus.PARTIAL_SUCCESS
             ):
                 raise ValueError(f"Pipeline ingestion failed for {pipeline_id}")
+            elif status in [
+                ManagedIngestionStatus.NOT_STARTED,
+                ManagedIngestionStatus.IN_PROGRESS,
+            ]:
+                if verbose:
+                    print(".", end="")
+                time.sleep(0.5)
+            else:
+                is_done = True
+                if verbose:
+                    print("Done!")
+
+    def _wait_for_file_ingestion(
+        self,
+        file_id: str,
+        verbose: bool = False,
+        raise_on_error: bool = False,
+    ) -> None:
+        pipeline_id = self._get_pipeline_id()
+        client = self._client
+        if verbose:
+            print("Loading file: ", end="")
+
+        # wait until the file is loaded
+        is_done = False
+        while not is_done:
+            status = client.pipelines.get_pipeline_file_status(
+                pipeline_id=pipeline_id, file_id=file_id
+            ).status
+            if status == ManagedIngestionStatus.ERROR:
+                if verbose:
+                    print(f"File ingestion failed for {file_id}")
+                if raise_on_error:
+                    raise ValueError(f"File ingestion failed for {file_id}")
             elif status in [
                 ManagedIngestionStatus.NOT_STARTED,
                 ManagedIngestionStatus.IN_PROGRESS,
@@ -454,6 +489,73 @@ class LlamaCloudIndex(BaseManagedIndex):
         self._wait_for_pipeline_ingestion(
             verbose=verbose, raise_on_partial_success=False
         )
+
+    def upload_file(
+        self,
+        file_path: str,
+        resource_info: Optional[Dict[str, Any]] = None,
+        verbose: bool = False,
+        wait_for_ingestion: bool = True,
+        raise_on_error: bool = False,
+    ) -> str:
+        """Upload a file to the index."""
+        with open(file_path, "rb") as f:
+            file = self._client.files.upload_file(
+                project_id=self._get_project_id(), upload_file=f
+            )
+            if verbose:
+                print(f"Uploaded file {file.id} with name {file.name}")
+        if resource_info:
+            self._client.files.update(file_id=file.id, request=resource_info)
+        # Add file to pipeline
+        pipeline_id = self._get_pipeline_id()
+        pipeline_file_create = PipelineFileCreate(file_id=file.id)
+        self._client.pipelines.add_files_to_pipeline(
+            pipeline_id=pipeline_id, request=[pipeline_file_create]
+        )
+
+        if wait_for_ingestion:
+            self._wait_for_file_ingestion(
+                file.id, verbose=verbose, raise_on_error=raise_on_error
+            )
+        return file.id
+
+    def upload_file_from_url(
+        self,
+        file_name: str,
+        url: str,
+        proxy_url: Optional[str] = None,
+        request_headers: Optional[Dict[str, str]] = None,
+        verify_ssl: bool = True,
+        follow_redirects: bool = True,
+        verbose: bool = False,
+        wait_for_ingestion: bool = True,
+        raise_on_error: bool = False,
+    ) -> str:
+        """Upload a file from a URL to the index."""
+        file = self._client.files.upload_file_from_url(
+            project_id=self._get_project_id(),
+            name=file_name,
+            url=url,
+            proxy_url=proxy_url,
+            request_headers=request_headers,
+            verify_ssl=verify_ssl,
+            follow_redirects=follow_redirects,
+        )
+        if verbose:
+            print(f"Uploaded file {file.id} with ID {file.id}")
+        # Add file to pipeline
+        pipeline_id = self._get_pipeline_id()
+        pipeline_file_create = PipelineFileCreate(file_id=file.id)
+        self._client.pipelines.add_files_to_pipeline(
+            pipeline_id=pipeline_id, request=[pipeline_file_create]
+        )
+
+        if wait_for_ingestion:
+            self._wait_for_file_ingestion(
+                file.id, verbose=verbose, raise_on_error=raise_on_error
+            )
+        return file.id
 
     # Nodes related methods (not implemented for LlamaCloudIndex)
 

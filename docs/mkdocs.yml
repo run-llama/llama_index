@@ -6,7 +6,7 @@ extra_css:
   - css/style.css
   - css/algolia.css
 extra_javascript:
-  - javascript/mendablesearch.js
+  - javascript/runllm.js
   - javascript/algolia.js
 markdown_extensions:
   - attr_list
@@ -856,7 +856,6 @@ nav:
           - ./api_reference/callbacks/literalai.md
           - ./api_reference/callbacks/llama_debug.md
           - ./api_reference/callbacks/openinference.md
-          - ./api_reference/callbacks/opentelemetry.md
           - ./api_reference/callbacks/opik.md
           - ./api_reference/callbacks/promptlayer.md
           - ./api_reference/callbacks/token_counter.md
@@ -2310,7 +2309,6 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-siliconflow
             - ../llama-index-integrations/memory/llama-index-memory-mem0
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-siliconflow-rerank
-            - ../llama-index-integrations/callbacks/llama-index-callbacks-opentelemetry
             - ../llama-index-integrations/llms/llama-index-llms-sambanovacloud
             - ../llama-index-integrations/embeddings/llama-index-embeddings-modelscope
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-colpali-rerank
