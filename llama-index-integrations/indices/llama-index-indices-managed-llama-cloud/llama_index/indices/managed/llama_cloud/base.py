@@ -12,6 +12,9 @@ from typing import Any, List, Optional, Sequence, Type
 from urllib.parse import quote_plus
 
 from llama_cloud import (
+    PipelineCreate,
+    PipelineCreateEmbeddingConfig,
+    PipelineCreateTransformConfig,
     PipelineType,
     ProjectCreate,
     ManagedIngestionStatus,
@@ -31,10 +34,6 @@ from llama_index.core.ingestion.api_utils import (
     get_aclient,
     get_client,
 )
-from llama_index.indices.managed.llama_cloud.api_utils import (
-    default_transformations,
-    get_pipeline_create,
-)
 from llama_index.core.schema import BaseNode, Document, TransformComponent
 from llama_index.core.settings import Settings
 from typing import Any, Dict, List, Optional, Sequence, Type
@@ -47,47 +46,107 @@ from llama_index.core.settings import (
     Settings,
 )
 from llama_index.core.storage.docstore.types import RefDocInfo
+from llama_index.indices.managed.llama_cloud.api_utils import (
+    default_embedding_config,
+    default_transform_config,
+    resolve_project_and_pipeline,
+)
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 class LlamaCloudIndex(BaseManagedIndex):
-    """LlamaIndex Platform Index."""
+    """
+    A managed index that stores documents in LlamaCloud.
+
+    There are two main ways to use this index:
+
+    1. Connect to an existing LlamaCloud index:
+        ```python
+        # Connect using index ID (same as pipeline ID)
+        index = LlamaCloudIndex(id="<index_id>")
+
+        # Or connect using index name
+        index = LlamaCloudIndex(
+            name="my_index",
+            project_name="my_project",
+            organization_id="my_org_id"
+        )
+        ```
+
+    2. Create a new index with documents:
+        ```python
+        documents = [Document(...), Document(...)]
+        index = LlamaCloudIndex.from_documents(
+            documents,
+            name="my_new_index",
+            project_name="my_project",
+            organization_id="my_org_id"
+        )
+        ```
+
+    The index supports standard operations like retrieval and querying
+    through the as_query_engine() and as_retriever() methods.
+    """
 
     def __init__(
         self,
-        name: str,
-        nodes: Optional[List[BaseNode]] = None,
-        transformations: Optional[List[TransformComponent]] = None,
-        timeout: int = 60,
+        # index identifier
+        name: Optional[str] = None,
+        pipeline_id: Optional[str] = None,
+        index_id: Optional[str] = None,  # alias for pipeline_id
+        id: Optional[str] = None,  # alias for pipeline_id
+        # project identifier
+        project_id: Optional[str] = None,
         project_name: str = DEFAULT_PROJECT_NAME,
         organization_id: Optional[str] = None,
+        # connection params
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         app_url: Optional[str] = None,
-        show_progress: bool = False,
-        callback_manager: Optional[CallbackManager] = None,
+        timeout: int = 60,
         httpx_client: Optional[httpx.Client] = None,
         async_httpx_client: Optional[httpx.AsyncClient] = None,
+        # misc
+        show_progress: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
+        # deprecated
+        nodes: Optional[List[BaseNode]] = None,
+        transformations: Optional[List[TransformComponent]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Index."""
-        self.name = name
-        self.project_name = project_name
-        self.organization_id = organization_id
-        self.transformations = transformations or []
+        if sum([bool(id), bool(index_id), bool(pipeline_id), bool(name)]) != 1:
+            raise ValueError(
+                "Exactly one of `name`, `id`, `pipeline_id` or `index_id` must be provided to identify the index."
+            )
 
         if nodes is not None:
             # TODO: How to handle uploading nodes without running transforms on them?
             raise ValueError("LlamaCloudIndex does not support nodes on initialization")
 
+        if transformations is not None:
+            raise ValueError(
+                "Setting transformations is deprecated for LlamaCloudIndex, please use the `transform_config` and `embedding_config` parameters instead."
+            )
+
+        # initialize clients
         self._httpx_client = httpx_client
         self._async_httpx_client = async_httpx_client
         self._client = get_client(api_key, base_url, app_url, timeout, httpx_client)
         self._aclient = get_aclient(
             api_key, base_url, app_url, timeout, async_httpx_client
         )
+
+        self.organization_id = organization_id
+        pipeline_id = id or index_id or pipeline_id
+
+        self.project, self.pipeline = resolve_project_and_pipeline(
+            self._client, name, pipeline_id, project_name, project_id, organization_id
+        )
+        self.name = self.pipeline.name
+        self.project_name = self.project.name
 
         self._api_key = api_key
         self._base_url = base_url
@@ -97,27 +156,24 @@ class LlamaCloudIndex(BaseManagedIndex):
         self._service_context = None
         self._callback_manager = callback_manager or Settings.callback_manager
 
-    def _wait_for_pipeline_ingestion(
+    def wait_for_completion(
         self,
         verbose: bool = False,
         raise_on_partial_success: bool = False,
     ) -> None:
-        pipeline_id = self._get_pipeline_id()
-        client = self._client
-
         if verbose:
             print("Syncing pipeline: ", end="")
 
         is_done = False
         while not is_done:
-            status = client.pipelines.get_pipeline_status(
-                pipeline_id=pipeline_id
+            status = self._client.pipelines.get_pipeline_status(
+                pipeline_id=self.pipeline.id
             ).status
             if status == ManagedIngestionStatus.ERROR or (
                 raise_on_partial_success
                 and status == ManagedIngestionStatus.PARTIAL_SUCCESS
             ):
-                raise ValueError(f"Pipeline ingestion failed for {pipeline_id}")
+                raise ValueError(f"Pipeline ingestion failed for {self.pipeline.id}")
             elif status in [
                 ManagedIngestionStatus.NOT_STARTED,
                 ManagedIngestionStatus.IN_PROGRESS,
@@ -136,16 +192,14 @@ class LlamaCloudIndex(BaseManagedIndex):
         verbose: bool = False,
         raise_on_error: bool = False,
     ) -> None:
-        pipeline_id = self._get_pipeline_id()
-        client = self._client
         if verbose:
             print("Loading file: ", end="")
 
         # wait until the file is loaded
         is_done = False
         while not is_done:
-            status = client.pipelines.get_pipeline_file_status(
-                pipeline_id=pipeline_id, file_id=file_id
+            status = self._client.pipelines.get_pipeline_file_status(
+                pipeline_id=self.pipeline.id, file_id=file_id
             ).status
             if status == ManagedIngestionStatus.ERROR:
                 if verbose:
@@ -170,8 +224,6 @@ class LlamaCloudIndex(BaseManagedIndex):
         verbose: bool = False,
         raise_on_error: bool = False,
     ) -> None:
-        pipeline_id = self._get_pipeline_id()
-        client = self._client
         if verbose:
             print("Loading data: ", end="")
 
@@ -181,8 +233,9 @@ class LlamaCloudIndex(BaseManagedIndex):
             docs_to_remove = set()
             for doc in pending_docs:
                 # we have to quote the doc id twice because it is used as a path parameter
-                status = client.pipelines.get_pipeline_document_status(
-                    pipeline_id=pipeline_id, document_id=quote_plus(quote_plus(doc))
+                status = self._client.pipelines.get_pipeline_document_status(
+                    pipeline_id=self.pipeline.id,
+                    document_id=quote_plus(quote_plus(doc)),
                 )
                 if status in [
                     ManagedIngestionStatus.NOT_STARTED,
@@ -210,60 +263,13 @@ class LlamaCloudIndex(BaseManagedIndex):
 
         # we have to wait for pipeline ingestion because retrieval only works when
         # the pipeline status is success
-        self._wait_for_pipeline_ingestion(verbose, raise_on_error)
-
-    def _get_project_id(self) -> str:
-        projects = self._client.projects.list_projects(
-            organization_id=self.organization_id,
-            project_name=self.project_name,
-        )
-        if len(projects) == 0:
-            raise ValueError(
-                f"Unknown project name {self.project_name}. Please confirm a "
-                "managed project with this name exists."
-            )
-        elif len(projects) > 1:
-            raise ValueError(
-                f"Multiple projects found with name {self.project_name}. Please specify organization_id."
-            )
-        project = projects[0]
-
-        if project.id is None:
-            raise ValueError(f"No project found with name {self.project_name}")
-
-        return project.id
-
-    def _get_pipeline_id(self) -> str:
-        project_id = self._get_project_id()
-        pipelines = self._client.pipelines.search_pipelines(
-            project_id=project_id,
-            pipeline_name=self.name,
-            pipeline_type=PipelineType.MANAGED.value,
-        )
-        if len(pipelines) == 0:
-            raise ValueError(
-                f"Unknown index name {self.name}. Please confirm a "
-                "managed index with this name exists."
-            )
-        elif len(pipelines) > 1:
-            raise ValueError(
-                f"Multiple pipelines found with name {self.name} in project {self.project_name}"
-            )
-        pipeline = pipelines[0]
-
-        if pipeline.id is None:
-            raise ValueError(
-                f"No pipeline found with name {self.name} in project {self.project_name}"
-            )
-
-        return pipeline.id
+        self.wait_for_completion(verbose, raise_on_error)
 
     @classmethod
     def from_documents(  # type: ignore
         cls: Type["LlamaCloudIndex"],
         documents: List[Document],
         name: str,
-        transformations: Optional[List[TransformComponent]] = None,
         project_name: str = DEFAULT_PROJECT_NAME,
         organization_id: Optional[str] = None,
         api_key: Optional[str] = None,
@@ -272,21 +278,23 @@ class LlamaCloudIndex(BaseManagedIndex):
         timeout: int = 60,
         verbose: bool = False,
         raise_on_error: bool = False,
+        # ingestion configs
+        embedding_config: Optional[PipelineCreateEmbeddingConfig] = None,
+        transform_config: Optional[PipelineCreateTransformConfig] = None,
+        # deprecated
+        transformations: Optional[List[TransformComponent]] = None,
         **kwargs: Any,
     ) -> "LlamaCloudIndex":
         """Build a LlamaCloud managed index from a sequence of documents."""
         app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
         client = get_client(api_key, base_url, app_url, timeout)
 
-        pipeline_create = get_pipeline_create(
-            name,
-            client,
-            PipelineType.MANAGED,
-            project_name=project_name,
-            transformations=transformations or default_transformations(),
-            input_nodes=documents,
-        )
+        if transformations is not None:
+            raise ValueError(
+                "Setting transformations is deprecated for LlamaCloudIndex"
+            )
 
+        # create project if it doesn't exist
         project = client.projects.upsert_project(
             organization_id=organization_id, request=ProjectCreate(name=project_name)
         )
@@ -295,6 +303,15 @@ class LlamaCloudIndex(BaseManagedIndex):
         if verbose:
             print(f"Created project {project.id} with name {project.name}")
 
+        # create pipeline
+        pipeline_create = PipelineCreate(
+            name=name,
+            pipeline_type=PipelineType.MANAGED,
+            embedding_config=embedding_config or default_embedding_config(),
+            transform_config=transform_config or default_transform_config(),
+            # we are uploading document directly, so we don't need llama parse
+            llama_parse_enabled=False,
+        )
         pipeline = client.pipelines.upsert_pipeline(
             project_id=project.id, request=pipeline_create
         )
@@ -305,8 +322,7 @@ class LlamaCloudIndex(BaseManagedIndex):
 
         index = cls(
             name,
-            transformations=transformations,
-            project_name=project_name,
+            project_name=project.name,
             organization_id=project.organization_id,
             api_key=api_key,
             base_url=base_url,
@@ -329,6 +345,7 @@ class LlamaCloudIndex(BaseManagedIndex):
                 for doc in documents
             ],
         )
+
         doc_ids = [doc.id for doc in upserted_documents]
         index._wait_for_documents_ingestion(
             doc_ids, verbose=verbose, raise_on_error=raise_on_error
@@ -350,9 +367,9 @@ class LlamaCloudIndex(BaseManagedIndex):
             dense_similarity_top_k = similarity_top_k
 
         return LlamaCloudRetriever(
-            self.name,
-            project_name=self.project_name,
-            api_key=self._api_key,
+            project_id=self.project.id,
+            pipeline_id=self.pipeline.id,
+            aoi_key=self._api_key,
             base_url=self._base_url,
             app_url=self._app_url,
             timeout=self._timeout,
@@ -374,7 +391,7 @@ class LlamaCloudIndex(BaseManagedIndex):
     @property
     def ref_doc_info(self, batch_size: int = 100) -> Dict[str, RefDocInfo]:
         """Retrieve a dict mapping of ingested documents and their metadata. The nodes list is empty."""
-        pipeline_id = self._get_pipeline_id()
+        pipeline_id = self.pipeline.id
         pipeline_documents: List[CloudDocument] = []
         skip = 0
         limit = batch_size
@@ -398,9 +415,8 @@ class LlamaCloudIndex(BaseManagedIndex):
     ) -> None:
         """Insert a document."""
         with self._callback_manager.as_trace("insert"):
-            pipeline_id = self._get_pipeline_id()
             upserted_documents = self._client.pipelines.create_batch_pipeline_documents(
-                pipeline_id=pipeline_id,
+                pipeline_id=self.pipeline.id,
                 request=[
                     CloudDocumentCreate(
                         text=document.text,
@@ -421,9 +437,8 @@ class LlamaCloudIndex(BaseManagedIndex):
     ) -> None:
         """Upserts a document and its corresponding nodes."""
         with self._callback_manager.as_trace("update"):
-            pipeline_id = self._get_pipeline_id()
             upserted_documents = self._client.pipelines.upsert_batch_pipeline_documents(
-                pipeline_id=pipeline_id,
+                pipeline_id=self.pipeline.id,
                 request=[
                     CloudDocumentCreate(
                         text=document.text,
@@ -444,9 +459,8 @@ class LlamaCloudIndex(BaseManagedIndex):
     ) -> List[bool]:
         """Refresh an index with documents that have changed."""
         with self._callback_manager.as_trace("refresh"):
-            pipeline_id = self._get_pipeline_id()
             upserted_documents = self._client.pipelines.upsert_batch_pipeline_documents(
-                pipeline_id=pipeline_id,
+                pipeline_id=self.pipeline.id,
                 request=[
                     CloudDocumentCreate(
                         text=doc.text,
@@ -473,11 +487,11 @@ class LlamaCloudIndex(BaseManagedIndex):
         **delete_kwargs: Any,
     ) -> None:
         """Delete a document and its nodes by using ref_doc_id."""
-        pipeline_id = self._get_pipeline_id()
         try:
             # we have to quote the ref_doc_id twice because it is used as a path parameter
             self._client.pipelines.delete_pipeline_document(
-                pipeline_id=pipeline_id, document_id=quote_plus(quote_plus(ref_doc_id))
+                pipeline_id=self.pipeline.id,
+                document_id=quote_plus(quote_plus(ref_doc_id)),
             )
         except ApiError as e:
             if e.status_code == 404 and not raise_if_not_found:
@@ -486,9 +500,7 @@ class LlamaCloudIndex(BaseManagedIndex):
                 raise
 
         # we have to wait for the pipeline instead of the document, because the document is already deleted
-        self._wait_for_pipeline_ingestion(
-            verbose=verbose, raise_on_partial_success=False
-        )
+        self.wait_for_completion(verbose=verbose, raise_on_partial_success=False)
 
     def upload_file(
         self,
@@ -501,17 +513,16 @@ class LlamaCloudIndex(BaseManagedIndex):
         """Upload a file to the index."""
         with open(file_path, "rb") as f:
             file = self._client.files.upload_file(
-                project_id=self._get_project_id(), upload_file=f
+                project_id=self.project.id, upload_file=f
             )
             if verbose:
                 print(f"Uploaded file {file.id} with name {file.name}")
         if resource_info:
             self._client.files.update(file_id=file.id, request=resource_info)
         # Add file to pipeline
-        pipeline_id = self._get_pipeline_id()
         pipeline_file_create = PipelineFileCreate(file_id=file.id)
         self._client.pipelines.add_files_to_pipeline(
-            pipeline_id=pipeline_id, request=[pipeline_file_create]
+            pipeline_id=self.pipeline.id, request=[pipeline_file_create]
         )
 
         if wait_for_ingestion:
@@ -534,7 +545,7 @@ class LlamaCloudIndex(BaseManagedIndex):
     ) -> str:
         """Upload a file from a URL to the index."""
         file = self._client.files.upload_file_from_url(
-            project_id=self._get_project_id(),
+            project_id=self.project.id,
             name=file_name,
             url=url,
             proxy_url=proxy_url,
@@ -544,11 +555,11 @@ class LlamaCloudIndex(BaseManagedIndex):
         )
         if verbose:
             print(f"Uploaded file {file.id} with ID {file.id}")
+
         # Add file to pipeline
-        pipeline_id = self._get_pipeline_id()
         pipeline_file_create = PipelineFileCreate(file_id=file.id)
         self._client.pipelines.add_files_to_pipeline(
-            pipeline_id=pipeline_id, request=[pipeline_file_create]
+            pipeline_id=self.pipeline.id, request=[pipeline_file_create]
         )
 
         if wait_for_ingestion:
