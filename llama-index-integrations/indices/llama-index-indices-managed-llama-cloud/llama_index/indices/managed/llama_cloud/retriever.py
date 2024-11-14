@@ -19,8 +19,7 @@ import asyncio
 import urllib.parse
 import base64
 from llama_index.indices.managed.llama_cloud.api_utils import (
-    resolve_project,
-    resolve_pipeline,
+    resolve_project_and_pipeline,
 )
 
 
@@ -76,6 +75,7 @@ class LlamaCloudRetriever(BaseRetriever):
         pipeline_id: Optional[str] = None,
         # project identifier
         project_name: Optional[str] = DEFAULT_PROJECT_NAME,
+        project_id: Optional[str] = None,
         organization_id: Optional[str] = None,
         # connection params
         api_key: Optional[str] = None,
@@ -110,17 +110,12 @@ class LlamaCloudRetriever(BaseRetriever):
             api_key, base_url, app_url, timeout, async_httpx_client
         )
 
-        # resolve project
-        self.project = resolve_project(self._client, project_name, organization_id)
-        self.project_id = self.project.id
-        self.project_name = self.project.name
-
-        # resolve pipeline
-        self._pipeline_id = id or index_id or pipeline_id
-        self.pipeline = resolve_pipeline(
-            self._client, self._pipeline_id, self.project, name
+        pipeline_id = id or index_id or pipeline_id
+        self.project, self.pipeline = resolve_project_and_pipeline(
+            self._client, name, pipeline_id, project_name, project_id, organization_id
         )
         self.name = self.pipeline.name
+        self.project_name = self.project.name
 
         # retrieval params
         self._dense_similarity_top_k = (

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 from llama_cloud import (
     AutoTransformConfig,
@@ -69,3 +69,30 @@ def resolve_pipeline(
                 f"Multiple pipelines found with name {pipeline_name} in project {project.name}"
             )
         return pipelines[0]
+
+
+def resolve_project_and_pipeline(
+    client: LlamaCloud,
+    pipeline_name: Optional[str],
+    pipeline_id: Optional[str],
+    project_name: Optional[str],
+    project_id: Optional[str],
+    organization_id: Optional[str],
+) -> Tuple[Project, Pipeline]:
+    # resolve pipeline by ID
+    if pipeline_id is not None:
+        pipeline = resolve_pipeline(
+            client, pipeline_id=pipeline_id, project=None, pipeline_name=None
+        )
+        project_id = pipeline.project_id
+
+    # resolve project
+    project = resolve_project(client, project_name, project_id, organization_id)
+
+    # resolve pipeline by name
+    if pipeline_id is None:
+        pipeline = resolve_pipeline(
+            client, pipeline_id=None, project=project, pipeline_name=pipeline_name
+        )
+
+    return project, pipeline

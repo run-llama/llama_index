@@ -47,10 +47,9 @@ from llama_index.core.settings import (
 )
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.indices.managed.llama_cloud.api_utils import (
-    resolve_project,
-    resolve_pipeline,
     default_embedding_config,
     default_transform_config,
+    resolve_project_and_pipeline,
 )
 import logging
 
@@ -143,27 +142,11 @@ class LlamaCloudIndex(BaseManagedIndex):
         self.organization_id = organization_id
         pipeline_id = id or index_id or pipeline_id
 
-        # resolve pipeline by ID
-        if pipeline_id is not None:
-            self.pipeline = resolve_pipeline(
-                self._client, pipeline_id=pipeline_id, project=None, pipeline_name=None
-            )
-            self.name = self.pipeline.name
-            project_id = self.pipeline.project_id
-
-        # resolve project
-        self.project = resolve_project(
-            self._client, project_name, project_id, organization_id
+        self.project, self.pipeline = resolve_project_and_pipeline(
+            self._client, name, pipeline_id, project_name, project_id, organization_id
         )
-        self.project_id = self.project.id
+        self.name = self.pipeline.name
         self.project_name = self.project.name
-
-        # resolve pipeline by name
-        if pipeline_id is None:
-            self.pipeline = resolve_pipeline(
-                self._client, pipeline_id=None, project=self.project, pipeline_name=name
-            )
-            self.name = self.pipeline.name
 
         self._api_key = api_key
         self._base_url = base_url
@@ -384,10 +367,9 @@ class LlamaCloudIndex(BaseManagedIndex):
             dense_similarity_top_k = similarity_top_k
 
         return LlamaCloudRetriever(
-            self.name,
-            project_name=self.project_name,
+            project_id=self.project.id,
             pipeline_id=self.pipeline.id,
-            api_key=self._api_key,
+            aoi_key=self._api_key,
             base_url=self._base_url,
             app_url=self._app_url,
             timeout=self._timeout,
