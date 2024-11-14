@@ -770,13 +770,27 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         return response.json()
 
+    def get_permission_info(self, resource_id: str, **kwargs) -> Dict:
+        """
+        Get a dictionary of information about the permissions of a specific resource.
+        """
+        try:
+            item = self._get_item_from_path(Path(resource_id))
+            return self._get_permissions_info(item)
+        except Exception as exp:
+            logger.error(
+                "An error occurred while fetching file information from SharePoint: %s",
+                exp,
+            )
+            raise
+
     def get_resource_info(self, resource_id: str, **kwargs) -> Dict:
         """
         Retrieves metadata for a specified file in SharePoint without downloading it.
 
         Args:
             input_file (Path): The path of the file in SharePoint. The path should include
-                                the SharePoint site name and the folder path. e.g. "site_name/folder_path/file_name".
+                the SharePoint site name and the folder path. e.g. "site_name/folder_path/file_name".
         """
         try:
             item = self._get_item_from_path(Path(resource_id))
