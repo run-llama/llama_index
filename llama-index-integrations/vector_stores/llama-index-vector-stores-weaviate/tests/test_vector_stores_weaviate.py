@@ -61,3 +61,18 @@ def test_hybrid_search(vector_store):
     assert results.nodes[1].text == "This is a test."
 
     assert results.similarities[0] > results.similarities[1]
+
+
+def test_query_kwargs(vector_store):
+    query = VectorStoreQuery(
+        query_embedding=[0.0, 0.3, 0.0],
+        similarity_top_k=2,
+        query_str="world",
+        mode=VectorStoreQueryMode.HYBRID,
+    )
+
+    results = vector_store.query(
+        query,
+        max_vector_distance=0.0,
+    )
+    assert len(results.nodes) == 0
