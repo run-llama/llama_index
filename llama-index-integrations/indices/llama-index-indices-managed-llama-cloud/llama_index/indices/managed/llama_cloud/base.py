@@ -87,8 +87,8 @@ class LlamaCloudIndex(BaseManagedIndex):
         )
         ```
 
-    The index supports standard operations like querying and retrieving documents
-    through the query_engine() and as_retriever() methods.
+    The index supports standard operations like retrieval and querying
+    through the as_query_engine() and as_retriever() methods.
     """
 
     def __init__(
