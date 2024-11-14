@@ -86,13 +86,10 @@ class LlamaCloudIndex(BaseManagedIndex):
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Index."""
-        self.name = name
-        self.project_name = project_name
-        self.organization_id = organization_id
-        self._pipeline_id = id or index_id or pipeline_id
-
-        if self._pipeline_id is None and self.name is None:
-            raise ValueError("One of index_id, pipeline_id or name must be provided")
+        if sum([bool(id), bool(index_id), bool(pipeline_id), bool(name)]) != 1:
+            raise ValueError(
+                "Exactly one of `name`, `id`, `pipeline_id` or `index_id` must be provided to identify the index."
+            )
 
         if nodes is not None:
             # TODO: How to handle uploading nodes without running transforms on them?
@@ -100,9 +97,10 @@ class LlamaCloudIndex(BaseManagedIndex):
 
         if transformations is not None:
             raise ValueError(
-                "Setting transformations is deprecated for LlamaCloudIndex"
+                "Setting transformations is deprecated for LlamaCloudIndex, please use the `transform_config` and `embedding_config` parameters instead."
             )
 
+        # initialize clients
         self._httpx_client = httpx_client
         self._async_httpx_client = async_httpx_client
         self._client = get_client(api_key, base_url, app_url, timeout, httpx_client)
@@ -110,8 +108,18 @@ class LlamaCloudIndex(BaseManagedIndex):
             api_key, base_url, app_url, timeout, async_httpx_client
         )
 
+        # resolve project
+        self.organization_id = organization_id
         self.project = resolve_project(self._client, project_name, organization_id)
-        self.pipeline = resolve_pipeline(self._client, pipeline_id, self.project, name)
+        self.project_id = self.project.id
+        self.project_name = self.project.name
+
+        # resolve pipeline
+        self._pipeline_id = id or index_id or pipeline_id
+        self.pipeline = resolve_pipeline(
+            self._client, self._pipeline_id, self.project, name
+        )
+        self.name = self.pipeline.name
 
         self._api_key = api_key
         self._base_url = base_url

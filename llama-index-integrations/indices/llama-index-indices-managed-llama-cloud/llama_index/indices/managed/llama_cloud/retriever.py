@@ -1,5 +1,6 @@
 from typing import Any, List, Optional
 
+import httpx
 from llama_cloud import (
     TextNodeWithScore,
     PageScreenshotNodeWithScore,
@@ -28,7 +29,7 @@ def _get_page_screenshot(
 ) -> str:
     """Get the page screenshot."""
     # TODO: this currently uses requests, should be replaced with the client
-    _response = client._client_wrapper.httpx_client.request(
+    _response = client._client_wrapper.tpx_client.request(
         "GET",
         urllib.parse.urljoin(
             f"{client._client_wrapper.get_base_url()}/",
@@ -81,6 +82,8 @@ class LlamaCloudRetriever(BaseRetriever):
         base_url: Optional[str] = None,
         app_url: Optional[str] = None,
         timeout: int = 60,
+        httpx_client: Optional[httpx.Client] = None,
+        async_httpx_client: Optional[httpx.AsyncClient] = None,
         # retrieval params
         dense_similarity_top_k: Optional[int] = None,
         sparse_similarity_top_k: Optional[int] = None,
@@ -94,24 +97,30 @@ class LlamaCloudRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Retriever."""
-        self.name = name
-        self._pipeline_id = id or index_id or pipeline_id
-
-        if self._pipeline_id is None and name is None:
+        if sum([bool(id), bool(index_id), bool(pipeline_id), bool(name)]) != 1:
             raise ValueError(
-                "One of `name`, `pipeline_id` or `index_id` must be provided."
+                "Exactly one of `name`, `id`, `pipeline_id` or `index_id` must be provided to identify the index."
             )
 
-        self._client = get_client(api_key, base_url, app_url, timeout)
-        self._aclient = get_aclient(api_key, base_url, app_url, timeout)
+        # initialize clients
+        self._httpx_client = httpx_client
+        self._async_httpx_client = async_httpx_client
+        self._client = get_client(api_key, base_url, app_url, timeout, httpx_client)
+        self._aclient = get_aclient(
+            api_key, base_url, app_url, timeout, async_httpx_client
+        )
 
+        # resolve project
         self.project = resolve_project(self._client, project_name, organization_id)
         self.project_id = self.project.id
         self.project_name = self.project.name
 
+        # resolve pipeline
+        self._pipeline_id = id or index_id or pipeline_id
         self.pipeline = resolve_pipeline(
-            self._client, self._pipeline_id, self.project, self.name
+            self._client, self._pipeline_id, self.project, name
         )
+        self.name = self.pipeline.name
 
         # retrieval params
         self._dense_similarity_top_k = (
