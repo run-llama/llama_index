@@ -1,6 +1,6 @@
 # LlamaIndex LLM Integration: SambaNova LLM
 
-SambaNovaLLM is a custom LLM (Language Model) interface that allows you to interact with AI models hosted on SambaNova's offerings - SambaNova Cloud and SambaStudio
+SambaNova Systems LLMs are custom LLMs (Language Models) interfaces that allow you to interact with AI models hosted on SambaNova's offerings - SambaNova Cloud and SambaStudio
 
 ## Key Features:
 
@@ -13,13 +13,13 @@ SambaNovaLLM is a custom LLM (Language Model) interface that allows you to inter
 ## Installation
 
 ```bash
-pip install llama-index-llms-sambanova
+pip install llama-index-llms-sambanovasystems
 ```
 
 ## Usage
 
 ```python
-from llama_index.llms.sambanova import SambaNovaCloud
+from llama_index.llms.sambanovasystems import SambaNovaCloud
 
 SambaNovaCloud(
     sambanova_url="SambaNova cloud endpoint URL",
@@ -31,7 +31,7 @@ SambaNovaCloud(
 ## Usage
 
 ```python
-from llama_index.llms.sambanova import SambaStudio
+from llama_index.llms.sambanovasystems import SambaStudio
 
 SambaStudio(
     sambastudio_url="SambaStudio endpoint URL",

@@ -9,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.sambanova"
+import_path = "llama_index.llms.sambanovasystems"
 
 [tool.llamahub.class_authors]
 SambaNova = "rodrigo-92"
@@ -23,7 +23,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Rodrigo Maldonado <rodrigo.maldonado@pucp.edu.pe>"]
 description = "llama-index llms sambanova cloud and sambastudio integration"
-name = "llama-index-llms-sambanova"
+name = "llama-index-llms-sambanovasystems"
 readme = "README.md"
 version = "0.3.2"
 
