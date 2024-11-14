@@ -58,7 +58,38 @@ logger = logging.getLogger(__name__)
 
 
 class LlamaCloudIndex(BaseManagedIndex):
-    """LlamaIndex Platform Index."""
+    """
+    A managed index that stores documents in LlamaCloud.
+
+    There are two main ways to use this index:
+
+    1. Connect to an existing LlamaCloud index:
+        ```python
+        # Connect using index ID (same as pipeline ID)
+        index = LlamaCloudIndex(id="<index_id>")
+
+        # Or connect using index name
+        index = LlamaCloudIndex(
+            name="my_index",
+            project_name="my_project",
+            organization_id="my_org_id"
+        )
+        ```
+
+    2. Create a new index with documents:
+        ```python
+        documents = [Document(...), Document(...)]
+        index = LlamaCloudIndex.from_documents(
+            documents,
+            name="my_new_index",
+            project_name="my_project",
+            organization_id="my_org_id"
+        )
+        ```
+
+    The index supports standard operations like querying and retrieving documents
+    through the query_engine() and as_retriever() methods.
+    """
 
     def __init__(
         self,
@@ -68,6 +99,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         index_id: Optional[str] = None,  # alias for pipeline_id
         id: Optional[str] = None,  # alias for pipeline_id
         # project identifier
+        project_id: Optional[str] = None,
         project_name: str = DEFAULT_PROJECT_NAME,
         organization_id: Optional[str] = None,
         # connection params
@@ -108,18 +140,30 @@ class LlamaCloudIndex(BaseManagedIndex):
             api_key, base_url, app_url, timeout, async_httpx_client
         )
 
-        # resolve project
         self.organization_id = organization_id
-        self.project = resolve_project(self._client, project_name, organization_id)
+        pipeline_id = id or index_id or pipeline_id
+
+        # resolve pipeline by ID
+        if pipeline_id is not None:
+            self.pipeline = resolve_pipeline(
+                self._client, pipeline_id=pipeline_id, project=None, pipeline_name=None
+            )
+            self.name = self.pipeline.name
+            project_id = self.pipeline.project_id
+
+        # resolve project
+        self.project = resolve_project(
+            self._client, project_name, project_id, organization_id
+        )
         self.project_id = self.project.id
         self.project_name = self.project.name
 
-        # resolve pipeline
-        self._pipeline_id = id or index_id or pipeline_id
-        self.pipeline = resolve_pipeline(
-            self._client, self._pipeline_id, self.project, name
-        )
-        self.name = self.pipeline.name
+        # resolve pipeline by name
+        if pipeline_id is None:
+            self.pipeline = resolve_pipeline(
+                self._client, pipeline_id=None, project=self.project, pipeline_name=name
+            )
+            self.name = self.pipeline.name
 
         self._api_key = api_key
         self._base_url = base_url
