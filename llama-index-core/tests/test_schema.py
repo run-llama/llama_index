@@ -1,5 +1,5 @@
 import pytest
-from llama_index.core.schema import NodeWithScore, TextNode, ImageNode
+from llama_index.core.schema import ImageNode, Node, NodeWithScore, TextNode
 
 
 @pytest.fixture()
@@ -60,3 +60,7 @@ def test_image_node_hash() -> None:
     node3 = ImageNode(image_url="base64", id_="id")
     node4 = ImageNode(image_url="base64", id_="id2")
     assert node3.hash == node4.hash
+
+
+def test_node() -> None:
+    node = Node(id_="test_node")

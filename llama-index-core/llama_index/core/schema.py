@@ -10,28 +10,32 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, override
 
 from dataclasses_json import DataClassJsonMixin
+from typing_extensions import Self
+
 from llama_index.core.bridge.pydantic import (
+    AnyUrl,
     BaseModel,
+    ConfigDict,
     Field,
     GetJsonSchemaHandler,
-    SerializeAsAny,
     JsonSchemaValue,
-    ConfigDict,
+    SerializeAsAny,
     model_serializer,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.utils import SAMPLE_TEXT, truncate_text
-from typing_extensions import Self
 
 if TYPE_CHECKING:
     from haystack.schema import Document as HaystackDocument
-    from llama_index.core.bridge.langchain import Document as LCDocument
-    from semantic_kernel.memory.memory_record import MemoryRecord
     from llama_cloud.types.cloud_document import CloudDocument
+    from semantic_kernel.memory.memory_record import MemoryRecord
+
+    from llama_index.core.bridge.langchain import Document as LCDocument
 
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
@@ -192,6 +196,14 @@ class ObjectType(str, Enum):
     IMAGE = auto()
     INDEX = auto()
     DOCUMENT = auto()
+    MULTIMODAL = auto()
+
+
+class Modality(str, Enum):
+    TEXT = auto()
+    IMAGE = auto()
+    AUDIO = auto()
+    VIDEO = auto()
 
 
 class MetadataMode(str, Enum):
@@ -257,6 +269,17 @@ class BaseNode(BaseComponent):
         default_factory=dict,
         description="A mapping of relationships to other node information.",
     )
+    metadata_template: str = Field(
+        default=DEFAULT_METADATA_TMPL,
+        description=(
+            "Template for how metadata is formatted, with {key} and "
+            "{value} placeholders."
+        ),
+    )
+    metadata_separator: str = Field(
+        default="\n",
+        description="Separator between metadata fields when converting to string.",
+    )
 
     @classmethod
     @abstractmethod
@@ -267,9 +290,28 @@ class BaseNode(BaseComponent):
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.ALL) -> str:
         """Get object content."""
 
-    @abstractmethod
     def get_metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
-        """Metadata string."""
+        """Metadata info string."""
+        if mode == MetadataMode.NONE:
+            return ""
+
+        usable_metadata_keys = set(self.metadata.keys())
+        if mode == MetadataMode.LLM:
+            for key in self.excluded_llm_metadata_keys:
+                if key in usable_metadata_keys:
+                    usable_metadata_keys.remove(key)
+        elif mode == MetadataMode.EMBED:
+            for key in self.excluded_embed_metadata_keys:
+                if key in usable_metadata_keys:
+                    usable_metadata_keys.remove(key)
+
+        return self.metadata_separator.join(
+            [
+                self.metadata_template.format(key=key, value=str(value))
+                for key, value in self.metadata.items()
+                if key in usable_metadata_keys
+            ]
+        )
 
     @abstractmethod
     def set_content(self, value: Any) -> None:
@@ -389,7 +431,123 @@ class BaseNode(BaseComponent):
         )
 
 
+class MediaResource(BaseModel):
+    """A container class for media content.
+
+    This class represents a generic media resource that can be stored and accessed
+    in multiple ways - as raw bytes, on the filesystem, or via URL. It also supports
+    storing vector embeddings for the media content.
+
+    Attributes:
+        embeddings: Dense vector representation of this resource for embedding-based search/retrieval
+        sparse: Sparse vector representation of this resource
+        data: Raw binary data of the media content
+        mimetype: The MIME type indicating the format/type of the media content
+        path: Local filesystem path where the media content can be accessed
+        url: URL where the media content can be accessed remotely
+    """
+
+    embeddings: list[float] | None = Field(
+        default=None, description="Vector representation of this resource."
+    )
+    sparse: list[float] | None = Field(
+        default=None, description="Sparse vector representation of this resource."
+    )
+    data: bytes | None = Field(
+        default=None, exclude=True, description="Binary data of this resource."
+    )
+    mimetype: str | None = Field(
+        default="text/plain", description="MIME type of this resource."
+    )
+    path: Path | None = Field(
+        default=None, description="Filesystem path of this resource."
+    )
+    url: AnyUrl | None = Field(default=None, description="URL to reach this resource.")
+
+    @property
+    def hash(self) -> str:
+        """Generate a hash to uniquely identify the media resource.
+
+        The hash is generated based on the available content (data, path, or url).
+        Returns an empty string if no content is available.
+        """
+        if self.data is not None:
+            # Hash the binary data if available
+            return str(sha256(self.data).hexdigest())
+        elif self.path is not None:
+            # Hash the file contents if a path is provided
+            return str(sha256(self.path.read_bytes()).hexdigest())
+        elif self.url is not None:
+            # Use the URL string as basis for hash
+            return str(sha256(str(self.url).encode("utf-8")).hexdigest())
+        else:
+            # Return empty string if no content is available
+            return ""
+
+
+class Node(BaseNode):
+    text: MediaResource | None = Field(
+        default=None, description="Text content of the node."
+    )
+    image: MediaResource | None = Field(
+        default=None, description="Image content of the node."
+    )
+    audio: MediaResource | None = Field(
+        default=None, description="Audio content of the node."
+    )
+    video: MediaResource | None = Field(
+        default=None, description="Video content of the node."
+    )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "Node"
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get Object type."""
+        return ObjectType.MULTIMODAL
+
+    @override
+    def get_content(
+        self,
+        metadata_mode: MetadataMode = MetadataMode.ALL,
+        modality: Modality = Modality.TEXT,
+    ) -> Any:
+        """Get object content."""
+        return ""
+
+    @override
+    def set_content(self, value: Any, modality: Modality = Modality.TEXT) -> None:
+        """Set the content of the node."""
+
+    @property
+    def hash(self) -> str:
+        doc_identity = []
+        if self.audio is not None:
+            doc_identity.append(self.audio.hash)
+        if self.image is not None:
+            doc_identity.append(self.image.hash)
+        if self.text is not None:
+            doc_identity.append(self.text.hash)
+        if self.video is not None:
+            doc_identity.append(self.video.hash)
+
+        doc_identity = "-".join(doc_identity)
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
+
+
 class TextNode(BaseNode):
+    """Provided for backward compatibility.
+
+    Note: we keep the field with the typo "seperator" to maintain backward compatibility for
+    serialized objects.
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        """This is needed to help static checkers with inherited fields."""
+        super().__init__(*args, **kwargs)
+
     text: str = Field(default="", description="Text content of the node.")
     mimetype: str = Field(
         default="text/plain", description="MIME type of the node content."
@@ -400,23 +558,16 @@ class TextNode(BaseNode):
     end_char_idx: Optional[int] = Field(
         default=None, description="End char index of the node."
     )
+    metadata_seperator: str = Field(
+        default="\n",
+        description="Separator between metadata fields when converting to string.",
+    )
     text_template: str = Field(
         default=DEFAULT_TEXT_NODE_TMPL,
         description=(
             "Template for how text is formatted, with {content} and "
             "{metadata_str} placeholders."
         ),
-    )
-    metadata_template: str = Field(
-        default=DEFAULT_METADATA_TMPL,
-        description=(
-            "Template for how metadata is formatted, with {key} and "
-            "{value} placeholders."
-        ),
-    )
-    metadata_seperator: str = Field(
-        default="\n",
-        description="Separator between metadata fields when converting to string.",
     )
 
     @classmethod
@@ -481,10 +632,6 @@ class TextNode(BaseNode):
     def node_info(self) -> Dict[str, Any]:
         """Deprecated: Get node info."""
         return self.get_node_info()
-
-
-# TODO: legacy backport of old Node class
-Node = TextNode
 
 
 class ImageNode(TextNode):
@@ -588,7 +735,7 @@ class IndexNode(TextNode):
     def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
         output = super().from_dict(data, **kwargs)
 
-        obj = data.get("obj", None)
+        obj = data.get("obj")
         parsed_obj = None
 
         if isinstance(obj, str):
