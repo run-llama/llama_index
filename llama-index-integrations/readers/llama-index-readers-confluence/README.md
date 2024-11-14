@@ -68,7 +68,11 @@ base_url = "https://yoursite.atlassian.com/wiki"
 page_ids = ["<page_id_1>", "<page_id_2>", "<page_id_3"]
 space_key = "<space_key>"
 
-reader = ConfluenceReader(base_url=base_url, oauth2=oauth2_dict)
+reader = ConfluenceReader(
+    base_url=base_url,
+    oauth2=oauth2_dict,
+    client_args={"backoff_and_retry": True},
+)
 documents = reader.load_data(
     space_key=space_key, include_attachments=True, page_status="current"
 )
