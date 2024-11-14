@@ -88,6 +88,11 @@ def test_class():
     assert BaseManagedIndex.__name__ in names_of_base_classes
 
 
+def test_conflicting_index_identifiers():
+    with pytest.raises(ValueError):
+        LlamaCloudIndex(name="test", pipeline_id="test", index_id="test")
+
+
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
