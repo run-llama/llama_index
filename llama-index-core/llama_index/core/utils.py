@@ -504,7 +504,7 @@ async def aprint_text(
     if response_hook:
         await response_hook(text)
     text_to_print = _get_colored_text(text, color) if color is not None else text
-    print(text_to_print, end=end)
+    # print(text_to_print, end=end) # TEST
 
 def infer_torch_device() -> str:
     """Infer the input to torch.device."""
