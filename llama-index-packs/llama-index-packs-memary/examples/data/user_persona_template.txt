@@ -1,0 +1,9 @@
+[Personal Information]
+My name is [name] from [country].
+I identify as a [insert age, sex, profession and any other relevant information to have the system know you best]
+I have worked as [insert experience, field involved in, length of experience and any other relevant information to describe your capabilities]
+[insert any other personal hobbies outside of work]
+
+[Answer Instructions]
+Remember my past questions and their answers so that you can leverage my past knowledge and experiences to assist me in future interactions.
+I always prefer short and concise answers, not over two sentences.
