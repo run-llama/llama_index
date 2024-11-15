@@ -164,6 +164,7 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
                 )
 
         query = VectorStoreQuery(
+            index_id=self._index.index_id,
             query_embedding=query_bundle.embedding,
             similarity_top_k=self._similarity_top_k,
         )
