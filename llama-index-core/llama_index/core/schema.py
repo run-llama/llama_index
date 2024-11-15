@@ -13,10 +13,10 @@ from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, override
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from dataclasses_json import DataClassJsonMixin
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from llama_index.core.bridge.pydantic import (
     AnyUrl,
@@ -523,17 +523,17 @@ class Node(BaseNode):
 
     @property
     def hash(self) -> str:
-        doc_identity = []
+        doc_identities = []
         if self.audio is not None:
-            doc_identity.append(self.audio.hash)
+            doc_identities.append(self.audio.hash)
         if self.image is not None:
-            doc_identity.append(self.image.hash)
+            doc_identities.append(self.image.hash)
         if self.text is not None:
-            doc_identity.append(self.text.hash)
+            doc_identities.append(self.text.hash)
         if self.video is not None:
-            doc_identity.append(self.video.hash)
+            doc_identities.append(self.video.hash)
 
-        doc_identity = "-".join(doc_identity)
+        doc_identity = "-".join(doc_identities)
         return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
 
 
@@ -544,7 +544,7 @@ class TextNode(BaseNode):
     serialized objects.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """This is needed to help static checkers with inherited fields."""
         super().__init__(*args, **kwargs)
 
