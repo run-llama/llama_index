@@ -1,5 +1,7 @@
 """Base schema for data structures."""
 
+from __future__ import annotations
+
 import json
 import logging
 import pickle
@@ -160,14 +162,12 @@ class TransformComponent(BaseComponent, DispatcherSpanMixin):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @abstractmethod
-    def __call__(
-        self, nodes: Sequence["BaseNode"], **kwargs: Any
-    ) -> Sequence["BaseNode"]:
+    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
         """Transform nodes."""
 
     async def acall(
-        self, nodes: Sequence["BaseNode"], **kwargs: Any
-    ) -> Sequence["BaseNode"]:
+        self, nodes: Sequence[BaseNode], **kwargs: Any
+    ) -> Sequence[BaseNode]:
         """Async transform nodes."""
         return self.__call__(nodes, **kwargs)
 
@@ -722,7 +722,7 @@ class IndexNode(TextNode):
         cls,
         node: TextNode,
         index_id: str,
-    ) -> "IndexNode":
+    ) -> IndexNode:
         """Create index node from text node."""
         # copy all attributes from text node, add index id
         return cls(
@@ -868,7 +868,7 @@ class Document(TextNode):
             name = self._compat_fields[name]
         super().__setattr__(name, value)
 
-    def to_langchain_format(self) -> "LCDocument":
+    def to_langchain_format(self) -> LCDocument:
         """Convert struct to LangChain document format."""
         from llama_index.core.bridge.langchain import Document as LCDocument
 
@@ -876,13 +876,13 @@ class Document(TextNode):
         return LCDocument(page_content=self.text, metadata=metadata, id=self.id_)
 
     @classmethod
-    def from_langchain_format(cls, doc: "LCDocument") -> "Document":
+    def from_langchain_format(cls, doc: LCDocument) -> Document:
         """Convert struct from LangChain document format."""
         if doc.id:
             return cls(text=doc.page_content, metadata=doc.metadata, id_=doc.id)
         return cls(text=doc.page_content, metadata=doc.metadata)
 
-    def to_haystack_format(self) -> "HaystackDocument":
+    def to_haystack_format(self) -> HaystackDocument:
         """Convert struct to Haystack document format."""
         from haystack.schema import Document as HaystackDocument
 
@@ -891,7 +891,7 @@ class Document(TextNode):
         )
 
     @classmethod
-    def from_haystack_format(cls, doc: "HaystackDocument") -> "Document":
+    def from_haystack_format(cls, doc: HaystackDocument) -> Document:
         """Convert struct from Haystack document format."""
         return cls(
             text=doc.content, metadata=doc.meta, embedding=doc.embedding, id_=doc.id
@@ -905,7 +905,7 @@ class Document(TextNode):
         }
 
     @classmethod
-    def from_embedchain_format(cls, doc: Dict[str, Any]) -> "Document":
+    def from_embedchain_format(cls, doc: Dict[str, Any]) -> Document:
         """Convert struct from EmbedChain document format."""
         return cls(
             text=doc["data"]["content"],
@@ -913,7 +913,7 @@ class Document(TextNode):
             id_=doc["doc_id"],
         )
 
-    def to_semantic_kernel_format(self) -> "MemoryRecord":
+    def to_semantic_kernel_format(self) -> MemoryRecord:
         """Convert struct to Semantic Kernel document format."""
         import numpy as np
         from semantic_kernel.memory.memory_record import MemoryRecord
@@ -926,7 +926,7 @@ class Document(TextNode):
         )
 
     @classmethod
-    def from_semantic_kernel_format(cls, doc: "MemoryRecord") -> "Document":
+    def from_semantic_kernel_format(cls, doc: MemoryRecord) -> Document:
         """Convert struct from Semantic Kernel document format."""
         return cls(
             text=doc._text,
@@ -946,7 +946,7 @@ class Document(TextNode):
             client.embed(f.name)
 
     @classmethod
-    def example(cls) -> "Document":
+    def example(cls) -> Document:
         return Document(
             text=SAMPLE_TEXT,
             metadata={"filename": "README.md", "category": "codebase"},
@@ -956,7 +956,7 @@ class Document(TextNode):
     def class_name(cls) -> str:
         return "Document"
 
-    def to_cloud_document(self) -> "CloudDocument":
+    def to_cloud_document(self) -> CloudDocument:
         """Convert to LlamaCloud document type."""
         from llama_cloud.types.cloud_document import CloudDocument
 
@@ -971,8 +971,8 @@ class Document(TextNode):
     @classmethod
     def from_cloud_document(
         cls,
-        doc: "CloudDocument",
-    ) -> "Document":
+        doc: CloudDocument,
+    ) -> Document:
         """Convert from LlamaCloud document type."""
         return Document(
             text=doc.text,
