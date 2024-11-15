@@ -27,7 +27,7 @@ license = "MIT"
 name = "llama-index-multi-modal-llms-nvidia"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
