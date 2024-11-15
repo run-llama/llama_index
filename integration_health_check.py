@@ -1,3 +1,14 @@
+"""
+Calculate the relative health of a package compared to llama-index-core.
+
+Output is a score between 0 and 1.
+
+At the time of writing, llama-index-llms-openai has a score of 0.38.
+
+Example usage:
+python ./integration_health_check.py llama-index-integrations/llms/llama-index-llms-openai
+"""
+
 import git
 import json
 import os
