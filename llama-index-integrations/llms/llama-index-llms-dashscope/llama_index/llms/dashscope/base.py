@@ -122,7 +122,6 @@ class DashScope(CustomLLM):
         ```
     """
 
-
     """ In Pydantic V2, protected_namespaces is a configuration option used to prevent certain namespace keywords
       (such as model_, etc.) from being used as field names. so we need to disable it here.
     """
