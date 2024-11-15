@@ -352,7 +352,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
         index_id: Optional[str] = None,
     ) -> List[BaseNode]:
         """Asynchronously get nodes from vector store."""
-        return self.get_nodes(node_ids, index_id, filters)
+        return self.get_nodes(node_ids, filters, index_id)
 
     @abstractmethod
     def add(

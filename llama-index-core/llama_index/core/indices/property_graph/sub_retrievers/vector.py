@@ -85,7 +85,6 @@ class VectorContextRetriever(BasePGRetriever):
             )
 
         return VectorStoreQuery(
-            index_id=self._index.index_id,
             query_embedding=query_bundle.embedding,
             similarity_top_k=self._similarity_top_k,
             filters=self._filters,
@@ -107,7 +106,6 @@ class VectorContextRetriever(BasePGRetriever):
             )
 
         return VectorStoreQuery(
-            index_id=self._index.index_id,
             query_embedding=query_bundle.embedding,
             similarity_top_k=self._similarity_top_k,
             filters=self._filters,

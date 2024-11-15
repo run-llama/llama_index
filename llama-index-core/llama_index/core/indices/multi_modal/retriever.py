@@ -109,7 +109,6 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self, query_bundle_with_embeddings: QueryBundle, similarity_top_k: int
     ) -> VectorStoreQuery:
         return VectorStoreQuery(
-            index_id=self._index.index_id,
             query_embedding=query_bundle_with_embeddings.embedding,
             similarity_top_k=similarity_top_k,
             node_ids=self._node_ids,
