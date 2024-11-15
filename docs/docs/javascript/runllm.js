@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
     script.setAttribute("runllm-assistant-id", "209");
     script.setAttribute("runllm-position", "BOTTOM_RIGHT");
     script.setAttribute("runllm-keyboard-shortcut", "Mod+j");
+    script.setAttribute("runllm-disable-ask-a-person", true);
     script.setAttribute(
       "runllm-slack-community-url",
       "https://discord.com/invite/eN6D2HQ4aX"
