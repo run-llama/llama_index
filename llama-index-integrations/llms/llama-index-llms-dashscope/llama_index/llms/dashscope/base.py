@@ -2,6 +2,7 @@
 
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+from pydantic import ConfigDict
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -120,6 +121,11 @@ class DashScope(CustomLLM):
         print(response.text)
         ```
     """
+
+    """ In Pydantic V2, protected_namespaces is a configuration option used to prevent certain namespace keywords
+      (such as model_, etc.) from being used as field names. so we need to disable it here.
+    """
+    model_config = ConfigDict(protected_namespaces=())
 
     model_name: str = Field(
         default=DashScopeGenerationModels.QWEN_MAX,
