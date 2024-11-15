@@ -103,9 +103,9 @@ class RedisVectorStore(BasePydanticVectorStore):
         )
     """
 
-    stores_text = True
-    stores_node = True
-    flat_metadata = False
+    stores_text: bool = True
+    stores_node: bool = True
+    flat_metadata: bool = False
 
     _index: SearchIndex = PrivateAttr()
     _overwrite: bool = PrivateAttr()
@@ -120,6 +120,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         return_fields: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> None:
+        super().__init__()
         # check for indicators of old schema
         self._flag_old_kwargs(**kwargs)
 
@@ -150,8 +151,6 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         # Create index
         self.create_index()
-
-        super().__init__()
 
     def _flag_old_kwargs(self, **kwargs):
         old_kwargs = [
@@ -251,7 +250,7 @@ class RedisVectorStore(BasePydanticVectorStore):
                 NODE_ID_FIELD_NAME: node.node_id,
                 DOC_ID_FIELD_NAME: node.ref_doc_id,
                 TEXT_FIELD_NAME: node.get_content(metadata_mode=MetadataMode.NONE),
-                VECTOR_FIELD_NAME: array_to_buffer(embedding),
+                VECTOR_FIELD_NAME: array_to_buffer(embedding, dtype="FLOAT32"),
             }
             # parse and append metadata
             additional_metadata = node_to_metadata_dict(
@@ -431,9 +430,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             raise ValueError("Query embedding is required for querying.")
 
         redis_query = self._to_redis_query(query)
-        logger.info(
-            f"Querying index {self._index.name} with filters {redis_query.get_filter()}"
-        )
+        logger.info(f"Querying index {self._index.name} with query {redis_query!s}")
 
         try:
             results = self._index.query(redis_query)

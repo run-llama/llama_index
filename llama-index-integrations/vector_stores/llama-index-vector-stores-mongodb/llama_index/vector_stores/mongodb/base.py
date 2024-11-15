@@ -88,7 +88,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     """
 
     stores_text: bool = True
-    flat_metadata: bool = True
+    flat_metadata: bool = False
 
     _mongodb_client: Any = PrivateAttr()
     _collection: Any = PrivateAttr()
@@ -139,6 +139,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             index_name: DEPRECATED: Please use vector_index_name.
 
         """
+        super().__init__()
+
         if mongodb_client is not None:
             self._mongodb_client = cast(MongoClient, mongodb_client)
         else:
@@ -170,7 +172,6 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         self._fulltext_index_name = fulltext_index_name
         self._insert_kwargs = insert_kwargs or {}
         self._oversampling_factor = oversampling_factor
-        super().__init__()
 
     def add(
         self,
@@ -232,6 +233,10 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         return self._collection
 
     def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
+        hybrid_top_k = query.hybrid_top_k or query.similarity_top_k
+        sparse_top_k = query.sparse_top_k or query.similarity_top_k
+        dense_top_k = query.similarity_top_k
+
         if query.mode == VectorStoreQueryMode.DEFAULT:
             if not query.query_embedding:
                 raise ValueError("query_embedding in VectorStoreQueryMode.DEFAULT")
@@ -243,7 +248,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                     query_vector=query.query_embedding,
                     search_field=self._embedding_key,
                     index_name=self._vector_index_name,
-                    limit=query.similarity_top_k,
+                    limit=dense_top_k,
                     filter=filter,
                     oversampling_factor=self._oversampling_factor,
                 ),
@@ -262,15 +267,11 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 index_name=self._fulltext_index_name,
                 operator="text",
                 filter=filter,
-                limit=query.similarity_top_k,
+                limit=sparse_top_k,
             )
             pipeline.append({"$set": {"score": {"$meta": "searchScore"}}})
 
         elif query.mode == VectorStoreQueryMode.HYBRID:
-            if query.hybrid_top_k is None:
-                raise ValueError(
-                    f"hybrid_top_k not set. You must use this, not similarity_top_k in hybrid mode."
-                )
             # Combines Vector and Full-Text searches with Reciprocal Rank Fusion weighting
             logger.debug(f"Running {query.mode} mode query pipeline")
             scores_fields = ["vector_score", "fulltext_score"]
@@ -283,7 +284,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                         query_vector=query.query_embedding,
                         search_field=self._embedding_key,
                         index_name=self._vector_index_name,
-                        limit=query.hybrid_top_k,
+                        limit=dense_top_k,
                         filter=filter,
                         oversampling_factor=self._oversampling_factor,
                     )
@@ -299,7 +300,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                     index_name=self._fulltext_index_name,
                     operator="text",
                     filter=filter,
-                    limit=query.hybrid_top_k,
+                    limit=sparse_top_k,
                 )
                 text_pipeline.extend(reciprocal_rank_stage("fulltext_score"))
                 combine_pipelines(pipeline, text_pipeline, self._collection.name)
@@ -309,7 +310,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 query.alpha or 0.5
             )  # If no alpha is given, equal weighting is applied
             pipeline += final_hybrid_stage(
-                scores_fields=scores_fields, limit=query.hybrid_top_k, alpha=alpha
+                scores_fields=scores_fields, limit=hybrid_top_k, alpha=alpha
             )
 
             # Remove embeddings unless requested.

@@ -20,10 +20,7 @@ from langchain.chains.prompt_selector import (
 )  # pants: no-infer-dep
 from langchain.chat_models.base import BaseChatModel  # pants: no-infer-dep
 from langchain.docstore.document import Document  # pants: no-infer-dep
-from langchain.memory import (
-    ChatMessageHistory,
-    ConversationBufferMemory,
-)  # pants: no-infer-dep
+from langchain.memory import ConversationBufferMemory  # pants: no-infer-dep
 
 # chat and memory
 from langchain.memory.chat_memory import BaseChatMemory  # pants: no-infer-dep
@@ -63,6 +60,9 @@ from langchain.text_splitter import (
     TextSplitter,
 )  # pants: no-infer-dep
 from langchain.tools import BaseTool, StructuredTool, Tool  # pants: no-infer-dep
+from langchain_community.chat_message_histories import (
+    ChatMessageHistory,
+)  # pants: no-infer-dep
 from langchain_community.chat_models import (
     ChatAnyscale,
     ChatOpenAI,

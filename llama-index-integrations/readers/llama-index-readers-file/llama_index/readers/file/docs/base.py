@@ -53,7 +53,7 @@ class PDFReader(BaseReader):
                 "pypdf is required to read PDF files: `pip install pypdf`"
             )
         fs = fs or get_default_fs()
-        with fs.open(file, "rb") as fp:
+        with fs.open(str(file), "rb") as fp:
             # Load the file in memory if the filesystem is not the default one to avoid
             # issues with pypdf
             stream = fp if is_default_fs(fs) else io.BytesIO(fp.read())
@@ -119,7 +119,7 @@ class DocxReader(BaseReader):
             )
 
         if fs:
-            with fs.open(file) as f:
+            with fs.open(str(file)) as f:
                 text = docx2txt.process(f)
         else:
             text = docx2txt.process(file)

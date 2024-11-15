@@ -95,7 +95,7 @@ def test_vectorstore(
         query = VectorStoreQuery(
             query_str="llamaindex",
             query_embedding=query_embedding,  # "What are LLMs useful for?"
-            hybrid_top_k=n_similar,
+            similarity_top_k=n_similar,
             mode=VectorStoreQueryMode.HYBRID,
             alpha=0.5,
         )

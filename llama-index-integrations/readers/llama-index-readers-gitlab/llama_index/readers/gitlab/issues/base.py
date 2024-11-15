@@ -84,7 +84,7 @@ class GitLabIssuesReader(BaseReader):
         title = issue_dict["title"]
         description = issue_dict["description"]
         document = Document(
-            doc_id=issue_dict["iid"],
+            doc_id=str(issue_dict["iid"]),
             text=f"{title}\n{description}",
         )
         extra_info = {

@@ -106,10 +106,6 @@ class Vllm(LLM):
         description="Integer that controls the number of top tokens to consider.",
     )
 
-    use_beam_search: bool = Field(
-        default=False, description="Whether to use beam search instead of sampling."
-    )
-
     stop: Optional[List[str]] = Field(
         default=None,
         description="List of strings that stop the generation when they are generated.",
@@ -161,7 +157,6 @@ class Vllm(LLM):
         frequency_penalty: float = 0.0,
         top_p: float = 1.0,
         top_k: int = -1,
-        use_beam_search: bool = False,
         stop: Optional[List[str]] = None,
         ignore_eos: bool = False,
         max_new_tokens: int = 512,
@@ -177,6 +172,31 @@ class Vllm(LLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
+        callback_manager = callback_manager or CallbackManager([])
+        super().__init__(
+            model=model,
+            temperature=temperature,
+            n=n,
+            best_of=best_of,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
+            top_p=top_p,
+            top_k=top_k,
+            stop=stop,
+            ignore_eos=ignore_eos,
+            max_new_tokens=max_new_tokens,
+            logprobs=logprobs,
+            dtype=dtype,
+            download_dir=download_dir,
+            vllm_kwargs=vllm_kwargs,
+            api_url=api_url,
+            callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+        )
         if not api_url:
             try:
                 from vllm import LLM as VLLModel
@@ -195,32 +215,6 @@ class Vllm(LLM):
             )
         else:
             self._client = None
-        callback_manager = callback_manager or CallbackManager([])
-        super().__init__(
-            model=model,
-            temperature=temperature,
-            n=n,
-            best_of=best_of,
-            presence_penalty=presence_penalty,
-            frequency_penalty=frequency_penalty,
-            top_p=top_p,
-            top_k=top_k,
-            use_beam_search=use_beam_search,
-            stop=stop,
-            ignore_eos=ignore_eos,
-            max_new_tokens=max_new_tokens,
-            logprobs=logprobs,
-            dtype=dtype,
-            download_dir=download_dir,
-            vllm_kwargs=vllm_kwargs,
-            api_url=api_url,
-            callback_manager=callback_manager,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-            output_parser=output_parser,
-        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -238,7 +232,6 @@ class Vllm(LLM):
             "n": self.n,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
-            "use_beam_search": self.use_beam_search,
             "best_of": self.best_of,
             "ignore_eos": self.ignore_eos,
             "stop": self.stop,
@@ -373,7 +366,6 @@ class VllmServer(Vllm):
         frequency_penalty: float = 0.0,
         top_p: float = 1.0,
         top_k: int = -1,
-        use_beam_search: bool = False,
         stop: Optional[List[str]] = None,
         ignore_eos: bool = False,
         max_new_tokens: int = 512,
@@ -386,7 +378,6 @@ class VllmServer(Vllm):
         callback_manager: Optional[CallbackManager] = None,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        self._client = None
         messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         completion_to_prompt = completion_to_prompt or (lambda x: x)
         callback_manager = callback_manager or CallbackManager([])
@@ -400,7 +391,6 @@ class VllmServer(Vllm):
             frequency_penalty=frequency_penalty,
             top_p=top_p,
             top_k=top_k,
-            use_beam_search=use_beam_search,
             stop=stop,
             ignore_eos=ignore_eos,
             max_new_tokens=max_new_tokens,
@@ -414,6 +404,7 @@ class VllmServer(Vllm):
             callback_manager=callback_manager,
             output_parser=output_parser,
         )
+        self._client = None
 
     @classmethod
     def class_name(cls) -> str:

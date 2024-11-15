@@ -35,13 +35,8 @@ from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.response_synthesizers import (
     get_response_synthesizer,
 )
-from llama_index.core.schema import QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.settings import Settings
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Table
 
@@ -104,11 +99,7 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
             sql_context_container or index.sql_context_container
         )
         self._sql_only = sql_only
-        super().__init__(
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, index.service_context
-            )
-        )
+        super().__init__(callback_manager=Settings.callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt modules."""
@@ -183,10 +174,9 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
     ) -> None:
         """Initialize params."""
         self._index = index
-        self._llm = llm_from_settings_or_context(Settings, index.service_context)
+        self._llm = Settings.llm
         self._sql_database = index.sql_database
         self._sql_context_container = index.sql_context_container
-        self._service_context = index.service_context
         self._ref_doc_id_column = index.ref_doc_id_column
 
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
@@ -196,16 +186,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         self._context_query_kwargs = context_query_kwargs or {}
         self._synthesize_response = synthesize_response
         self._sql_only = sql_only
-        super().__init__(
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, index.service_context
-            )
-        )
-
-    @property
-    def service_context(self) -> Optional[ServiceContext]:
-        """Get service context."""
-        return self._service_context
+        super().__init__(callback_manager=Settings.callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt modules."""
@@ -347,18 +328,16 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         self,
         llm: Optional[LLM] = None,
         synthesize_response: bool = True,
+        markdown_response: bool = False,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         callback_manager: Optional[CallbackManager] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         verbose: bool = False,
         streaming: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._service_context = service_context
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         if callback_manager is not None:
             self._llm.callback_manager = callback_manager
 
@@ -374,12 +353,10 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
         _validate_prompt(self._refine_synthesis_prompt, DEFAULT_REFINE_PROMPT)
 
         self._synthesize_response = synthesize_response
+        self._markdown_response = markdown_response
         self._verbose = verbose
         self._streaming = streaming
-        super().__init__(
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context),
-        )
+        super().__init__(callback_manager=callback_manager or Settings.callback_manager)
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
@@ -399,10 +376,26 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
     def sql_retriever(self) -> NLSQLRetriever:
         """Get SQL retriever."""
 
-    @property
-    def service_context(self) -> Optional[ServiceContext]:
-        """Get service context."""
-        return self._service_context
+    def _format_result_markdown(self, retrieved_nodes: List[NodeWithScore]) -> str:
+        """Format the result in markdown."""
+        tables = []
+        for node_with_score in retrieved_nodes:
+            node = node_with_score.node
+            metadata = node.metadata
+
+            col_keys = metadata.get("col_keys", [])
+            results = metadata.get("result", [])
+            table_header = "| " + " | ".join(col_keys) + " |\n"
+            table_separator = "|" + "|".join(["---"] * len(col_keys)) + "|\n"
+
+            table_rows = ""
+            for row in results:
+                table_rows += "| " + " | ".join(str(item) for item in row) + " |\n"
+
+            markdown_table = table_header + table_separator + table_rows
+            tables.append(markdown_table)
+
+        return "\n\n".join(tables).strip()
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
@@ -432,7 +425,10 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 return cast(StreamingResponse, response)
             return cast(Response, response)
         else:
-            response_str = "\n".join([node.node.text for node in retrieved_nodes])
+            if self._markdown_response:
+                response_str = self._format_result_markdown(retrieved_nodes)
+            else:
+                response_str = "\n".join([node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
@@ -464,7 +460,7 @@ class BaseSQLTableQueryEngine(BaseQueryEngine):
                 return cast(AsyncStreamingResponse, response)
             return cast(Response, response)
         else:
-            response_str = "\n".join([node.node.text for node in retrieved_nodes])
+            response_str = "\n".join([node.text for node in retrieved_nodes])
             return Response(response=response_str, metadata=metadata)
 
 
@@ -487,10 +483,10 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         synthesize_response: bool = True,
+        markdown_response: bool = False,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
-        service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
         embed_model: Optional[BaseEmbedding] = None,
         sql_only: bool = False,
@@ -507,7 +503,6 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             context_query_kwargs=context_query_kwargs,
             tables=tables,
             context_str_prefix=context_str_prefix,
-            service_context=service_context,
             embed_model=embed_model,
             sql_only=sql_only,
             callback_manager=callback_manager,
@@ -515,10 +510,10 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         )
         super().__init__(
             synthesize_response=synthesize_response,
+            markdown_response=markdown_response,
             response_synthesis_prompt=response_synthesis_prompt,
             refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
-            service_context=service_context,
             callback_manager=callback_manager,
             verbose=verbose,
             **kwargs,
@@ -555,7 +550,6 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
-        service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
         sql_only: bool = False,
         callback_manager: Optional[CallbackManager] = None,
@@ -571,7 +565,6 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
             tables=tables,
             sql_parser_mode=SQLParserMode.PGVECTOR,
             context_str_prefix=context_str_prefix,
-            service_context=service_context,
             sql_only=sql_only,
             callback_manager=callback_manager,
         )
@@ -580,7 +573,6 @@ class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
             response_synthesis_prompt=response_synthesis_prompt,
             refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
-            service_context=service_context,
             callback_manager=callback_manager,
             **kwargs,
         )
@@ -604,7 +596,6 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         synthesize_response: bool = True,
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
-        service_context: Optional[ServiceContext] = None,
         context_str_prefix: Optional[str] = None,
         sql_only: bool = False,
         callback_manager: Optional[CallbackManager] = None,
@@ -618,7 +609,6 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
             context_query_kwargs=context_query_kwargs,
             table_retriever=table_retriever,
             context_str_prefix=context_str_prefix,
-            service_context=service_context,
             sql_only=sql_only,
             callback_manager=callback_manager,
         )
@@ -627,7 +617,6 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
             response_synthesis_prompt=response_synthesis_prompt,
             refine_synthesis_prompt=refine_synthesis_prompt,
             llm=llm,
-            service_context=service_context,
             callback_manager=callback_manager,
             **kwargs,
         )

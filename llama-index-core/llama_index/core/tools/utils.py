@@ -1,12 +1,12 @@
 from inspect import signature
-from typing import Any, Callable, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Awaitable, Callable, List, Optional, Tuple, Type, Union, cast
 
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo, create_model
 
 
 def create_schema_from_function(
     name: str,
-    func: Callable[..., Any],
+    func: Union[Callable[..., Any], Callable[..., Awaitable[Any]]],
     additional_fields: Optional[
         List[Union[Tuple[str, Type, Any], Tuple[str, Type]]]
     ] = None,

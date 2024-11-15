@@ -1,9 +1,9 @@
 """Utils for keyword table."""
 
 import re
+from collections import Counter
 from typing import Optional, Set
 
-import pandas as pd
 from llama_index.core.indices.utils import expand_tokens_with_subtokens
 from llama_index.core.utils import globals_helper
 
@@ -15,8 +15,9 @@ def simple_extract_keywords(
     tokens = [t.strip().lower() for t in re.findall(r"\w+", text_chunk)]
     if filter_stopwords:
         tokens = [t for t in tokens if t not in globals_helper.stopwords]
-    value_counts = pd.Series(tokens).value_counts()
-    keywords = value_counts.index.tolist()[:max_keywords]
+
+    token_counts = Counter(tokens)
+    keywords = [keyword for keyword, count in token_counts.most_common(max_keywords)]
     return set(keywords)
 
 

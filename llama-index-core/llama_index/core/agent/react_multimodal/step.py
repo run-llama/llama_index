@@ -134,7 +134,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
 
             self._add_user_step_to_reasoning = partial(
                 add_user_step_to_reasoning,
-                generate_chat_message_fn=generate_openai_multi_modal_chat_message,
+                generate_chat_message_fn=generate_openai_multi_modal_chat_message,  # type: ignore
             )
         except ImportError:
             raise ImportError(
@@ -165,7 +165,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "MultimodalReActAgentWorker":
-        """Convenience constructor method from set of of BaseTools (Optional).
+        """Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -244,6 +244,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         if output.message.content is None:
             raise ValueError("Got empty message.")
         message_content = output.message.content
+
         current_reasoning = []
         try:
             reasoning_step = self._output_parser.parse(message_content, is_streaming)

@@ -3,7 +3,7 @@
 import json
 import logging
 import uuid
-from typing import Any, List, Optional, cast
+from typing import Any, List, Optional, Sequence, cast
 import asyncio
 import llama_index.core.instrumentation as instrument
 from llama_index.core.agent.types import (
@@ -45,7 +45,7 @@ dispatcher = instrument.get_dispatcher(__name__)
 DEFAULT_MAX_FUNCTION_CALLS = 5
 
 
-def get_function_by_name(tools: List[BaseTool], name: str) -> Optional[BaseTool]:
+def get_function_by_name(tools: Sequence[BaseTool], name: str) -> Optional[BaseTool]:
     """Get function by name. If the function is not found, None is returned."""
     name_to_tool = {tool.metadata.name: tool for tool in tools}
     return name_to_tool.get(name, None)
@@ -100,7 +100,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         """Init params."""
         if not llm.metadata.is_function_calling_model:
             raise ValueError(
-                f"Model name {llm.model} does not support function calling API. "
+                f"Model name {llm.metadata.model_name} does not support function calling API. "
             )
         self._llm = llm
         self._verbose = verbose
@@ -128,6 +128,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         llm: Optional[FunctionCallingLLM] = None,
         verbose: bool = False,
         max_function_calls: int = DEFAULT_MAX_FUNCTION_CALLS,
+        allow_parallel_tool_calls: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
@@ -142,7 +143,11 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         """
         tools = tools or []
 
-        llm = llm or Settings.llm
+        llm = llm or Settings.llm  # type: ignore
+        assert isinstance(
+            llm, FunctionCallingLLM
+        ), "llm must be an instance of FunctionCallingLLM"
+
         if callback_manager is not None:
             llm.callback_manager = callback_manager
 
@@ -163,6 +168,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             verbose=verbose,
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
             **kwargs,
         )
 
@@ -198,7 +204,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
 
     def _call_function(
         self,
-        tools: List[BaseTool],
+        tools: Sequence[BaseTool],
         tool_call: ToolSelection,
         memory: BaseMemory,
         sources: List[ToolOutput],
@@ -244,7 +250,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
 
     async def _acall_function(
         self,
-        tools: List[BaseTool],
+        tools: Sequence[BaseTool],
         tool_call: ToolSelection,
         memory: BaseMemory,
         sources: List[ToolOutput],
@@ -439,7 +445,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             # check if any of the tools return directly -- only works if there is one tool call
             if len(return_directs) == 1 and return_directs[0]:
                 is_done = True
-                response = tool_outputs[-1].content
+                response = tool_outputs[-1].content  # type: ignore
 
             task.extra_state["n_function_calls"] += len(tool_calls)
             # put tool output in sources and memory

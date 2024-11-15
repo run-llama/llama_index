@@ -192,8 +192,6 @@ class Qianfan(CustomLLM):
         if llm_type != "chat":
             raise NotImplementedError("Only the chat type is supported.")
 
-        self._client = Client(access_key, secret_key)
-
         super().__init__(
             model_name=model_name,
             endpoint_url=endpoint_url,
@@ -202,6 +200,7 @@ class Qianfan(CustomLLM):
             secret_key=secret_key,
             llm_type=llm_type,
         )
+        self._client = Client(access_key, secret_key)
 
     @classmethod
     def from_model_name(

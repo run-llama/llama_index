@@ -22,7 +22,7 @@ INDEX_STRUCT_TYPE_TO_INDEX_CLASS: Dict[IndexStructType, Type[BaseIndex]] = {
     IndexStructType.KEYWORD_TABLE: KeywordTableIndex,
     IndexStructType.VECTOR_STORE: VectorStoreIndex,
     IndexStructType.SQL: SQLStructStoreIndex,
-    IndexStructType.PANDAS: PandasIndex,
+    IndexStructType.PANDAS: PandasIndex,  # type: ignore
     IndexStructType.KG: KnowledgeGraphIndex,
     IndexStructType.SIMPLE_LPG: PropertyGraphIndex,
     IndexStructType.EMPTY: EmptyIndex,

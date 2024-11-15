@@ -110,7 +110,6 @@ class PremAI(LLM):
                 "You can either pass it in as an argument or set it `PREMAI_API_KEY`. You can get your API key here: https://app.premai.io/api_keys/"
             )
 
-        self._client = Prem(api_key=api_key)
         additional_kwargs = {**(additional_kwargs or {}), **kwargs}
 
         super().__init__(
@@ -129,6 +128,7 @@ class PremAI(LLM):
             max_retries=max_retries,
             repositories=repositories,
         )
+        self._client = Prem(api_key=api_key)
 
     @classmethod
     def class_name(cls) -> str:

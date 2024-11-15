@@ -5,18 +5,18 @@ Memory backed by a vector database.
 """
 
 import uuid
-from typing import Any, Dict, List, Optional
-from llama_index.core.bridge.pydantic import validator
+from typing import Any, Dict, List, Optional, Union
+from llama_index.core.bridge.pydantic import field_validator
 
 from llama_index.core.schema import TextNode
-from llama_index.core.vector_stores.types import VectorStore
+from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.embeddings.utils import EmbedType
 
 
-def _stringify_obj(d: Any):
+def _stringify_obj(d: Any) -> Union[str, list, dict]:
     """Utility function to convert all keys in a dictionary to strings."""
     if isinstance(d, list):
         return [_stringify_obj(v) for v in d]
@@ -68,7 +68,8 @@ class VectorMemory(BaseMemory):
         description="The super node for the current active user-message batch.",
     )
 
-    @validator("vector_index")
+    @field_validator("vector_index")
+    @classmethod
     def validate_vector_index(cls, value: Any) -> Any:
         """Validate vector index."""
         # NOTE: we can't import VectorStoreIndex directly due to circular imports,
@@ -89,15 +90,16 @@ class VectorMemory(BaseMemory):
     @classmethod
     def from_defaults(
         cls,
-        vector_store: Optional[VectorStore] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
         embed_model: Optional[EmbedType] = None,
         index_kwargs: Optional[Dict] = None,
         retriever_kwargs: Optional[Dict] = None,
+        **kwargs: Any,
     ) -> "VectorMemory":
         """Create vector memory.
 
         Args:
-            vector_store (Optional[VectorStore]): vector store (note: delete_nodes must
+            vector_store (Optional[BasePydanticVectorStore]): vector store (note: delete_nodes must
                 be implemented. At time of writing (May 2024), Chroma, Qdrant and
                 SimpleVectorStore all support delete_nodes.
             embed_model (Optional[EmbedType]): embedding model
@@ -106,6 +108,9 @@ class VectorMemory(BaseMemory):
 
         """
         from llama_index.core.indices.vector_store import VectorStoreIndex
+
+        if kwargs:
+            raise ValueError(f"Unexpected kwargs: {kwargs}")
 
         index_kwargs = index_kwargs or {}
         retriever_kwargs = retriever_kwargs or {}
@@ -135,7 +140,7 @@ class VectorMemory(BaseMemory):
 
         # retrieve underlying messages
         return [
-            ChatMessage.parse_obj(sub_dict)
+            ChatMessage.model_validate(sub_dict)
             for node in nodes
             for sub_dict in node.metadata["sub_dicts"]
         ]
@@ -193,4 +198,4 @@ class VectorMemory(BaseMemory):
         self.vector_index.vector_store.clear()
 
 
-VectorMemory.update_forward_refs()
+VectorMemory.model_rebuild()

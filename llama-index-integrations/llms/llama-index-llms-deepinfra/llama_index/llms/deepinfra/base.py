@@ -76,8 +76,8 @@ class DeepInfraLLM(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: Optional[int] = Field(
         default=DEFAULT_MAX_TOKENS,
@@ -86,10 +86,10 @@ class DeepInfraLLM(FunctionCallingLLM):
     )
 
     timeout: Optional[float] = Field(
-        default=None, description="The timeout to use in seconds.", gte=0
+        default=None, description="The timeout to use in seconds.", ge=0
     )
     max_retries: int = Field(
-        default=10, description="The maximum number of API retries.", gte=0
+        default=10, description="The maximum number of API retries.", ge=0
     )
 
     _api_key: Optional[str] = PrivateAttr()
@@ -119,13 +119,7 @@ class DeepInfraLLM(FunctionCallingLLM):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
-        self._api_key = get_from_param_or_env("api_key", api_key, ENV_VARIABLE)
-        self._client = DeepInfraClient(
-            api_key=self._api_key,
-            api_base=api_base,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
+
         super().__init__(
             model=model,
             api_base=api_base,
@@ -141,6 +135,13 @@ class DeepInfraLLM(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+        )
+        self._api_key = get_from_param_or_env("api_key", api_key, ENV_VARIABLE)
+        self._client = DeepInfraClient(
+            api_key=self._api_key,
+            api_base=api_base,
+            timeout=timeout,
+            max_retries=max_retries,
         )
 
     @classmethod

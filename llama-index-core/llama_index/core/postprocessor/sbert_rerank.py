@@ -37,14 +37,14 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
                 "please `pip install torch sentence-transformers`",
             )
         device = infer_torch_device() if device is None else device
-        self._model = CrossEncoder(
-            model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH, device=device
-        )
         super().__init__(
             top_n=top_n,
             model=model,
             device=device,
             keep_retrieval_score=keep_retrieval_score,
+        )
+        self._model = CrossEncoder(
+            model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH, device=device
         )
 
     @classmethod

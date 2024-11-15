@@ -29,11 +29,10 @@ Please delete options that are not relevant.
 
 ## How Has This Been Tested?
 
-Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce. Please also list any relevant details for your test configuration
+Your pull-request will likely not be merged unless it is covered by some form of impactful unit testing.
 
-- [ ] Added new unit/integration tests
-- [ ] Added new notebook (that tests end-to-end)
-- [ ] I stared at the code and made sure it makes sense
+- [ ] I added new unit tests to cover this change
+- [ ] I believe this change is already covered by existing unit tests
 
 ## Suggested Checklist:
 

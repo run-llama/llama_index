@@ -16,7 +16,7 @@ class OptimumEmbedding(BaseEmbedding):
     folder_name: str = Field(description="Folder name to load from.")
     max_length: int = Field(description="Maximum length of input.")
     pooling: str = Field(description="Pooling strategy. One of ['cls', 'mean'].")
-    normalize: str = Field(default=True, description="Normalize embeddings or not.")
+    normalize: bool = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
         description="Instruction to prepend to query text."
     )
@@ -24,7 +24,7 @@ class OptimumEmbedding(BaseEmbedding):
         description="Instruction to prepend to text."
     )
     cache_folder: Optional[str] = Field(
-        description="Cache folder for huggingface files."
+        description="Cache folder for huggingface files.", default=None
     )
 
     _model: Any = PrivateAttr()
@@ -45,20 +45,20 @@ class OptimumEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         device: Optional[str] = None,
     ):
-        self._model = model or ORTModelForFeatureExtraction.from_pretrained(folder_name)
-        self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
-        self._device = device or infer_torch_device()
+        model = model or ORTModelForFeatureExtraction.from_pretrained(folder_name)
+        tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
+        device = device or infer_torch_device()
 
         if max_length is None:
             try:
-                max_length = int(self._model.config.max_position_embeddings)
+                max_length = int(model.config.max_position_embeddings)
             except Exception:
                 raise ValueError(
                     "Unable to find max_length from model config. "
                     "Please provide max_length."
                 )
             try:
-                max_length = min(max_length, int(self._tokenizer.model_max_length))
+                max_length = min(max_length, int(tokenizer.model_max_length))
             except Exception as exc:
                 print(f"An error occurred while retrieving tokenizer max length: {exc}")
 
@@ -75,6 +75,9 @@ class OptimumEmbedding(BaseEmbedding):
             query_instruction=query_instruction,
             text_instruction=text_instruction,
         )
+        self._model = model
+        self._device = device
+        self._tokenizer = tokenizer
 
     @classmethod
     def class_name(cls) -> str:

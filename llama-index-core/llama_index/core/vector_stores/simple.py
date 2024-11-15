@@ -4,7 +4,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Optional, cast
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, cast
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
@@ -49,7 +49,7 @@ def _build_metadata_filter_fn(
 ) -> Callable[[str], bool]:
     """Build metadata filter function."""
     filter_list = metadata_filters.filters if metadata_filters else []
-    if not filter_list:
+    if not filter_list or not metadata_filters:
         return lambda _: True
 
     filter_condition = cast(MetadataFilters, metadata_filters.condition)
@@ -90,13 +90,23 @@ def _build_metadata_filter_fn(
 
         filter_matches_list = []
         for filter_ in filter_list:
-            filter_matches = True
+            if isinstance(filter_, MetadataFilters):
+                raise ValueError("Nested MetadataFilters are not supported.")
 
-            filter_matches = _process_filter_match(
-                operator=filter_.operator,
-                value=filter_.value,
-                metadata_value=metadata.get(filter_.key, None),
-            )
+            filter_matches = True
+            metadata_value = metadata.get(filter_.key, None)
+            if filter_.operator == FilterOperator.IS_EMPTY:
+                filter_matches = (
+                    metadata_value is None
+                    or metadata_value == ""
+                    or metadata_value == []
+                )
+            else:
+                filter_matches = _process_filter_match(
+                    operator=filter_.operator,
+                    value=filter_.value,
+                    metadata_value=metadata_value,
+                )
 
             filter_matches_list.append(filter_matches)
 
@@ -149,21 +159,18 @@ class SimpleVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(data=data or SimpleVectorStoreData())
+        super().__init__(data=data or SimpleVectorStoreData())  # type: ignore[call-arg]
         self._fs = fs or fsspec.filesystem("file")
 
     @classmethod
     def from_persist_dir(
         cls,
         persist_dir: str = DEFAULT_PERSIST_DIR,
-        namespace: Optional[str] = None,
+        namespace: str = DEFAULT_VECTOR_STORE,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleVectorStore":
         """Load from persist dir."""
-        if namespace:
-            persist_fname = f"{namespace}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}"
-        else:
-            persist_fname = DEFAULT_PERSIST_FNAME
+        persist_fname = f"{namespace}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}"
 
         if fs is not None:
             persist_path = concat_dirs(persist_dir, persist_fname)
@@ -239,7 +246,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
 
     def add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index."""
@@ -409,9 +416,9 @@ class SimpleVectorStore(BasePydanticVectorStore):
         return cls(data)
 
     @classmethod
-    def from_dict(cls, save_dict: dict) -> "SimpleVectorStore":
-        data = SimpleVectorStoreData.from_dict(save_dict)
-        return cls(data)
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> "SimpleVectorStore":
+        save_data = SimpleVectorStoreData.from_dict(data)
+        return cls(save_data)
 
-    def to_dict(self) -> dict:
+    def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         return self.data.to_dict()

@@ -53,20 +53,20 @@ class IntelEmbedding(BaseEmbedding):
                 "optimum-intel neural-compressor intel_extension_for_pytorch`"
             )
 
-        self._model = model or IPEXModel.from_pretrained(folder_name)
-        self._tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
-        self._device = device or infer_torch_device()
+        model = model or IPEXModel.from_pretrained(folder_name)
+        tokenizer = tokenizer or AutoTokenizer.from_pretrained(folder_name)
+        device = device or infer_torch_device()
 
         if max_length is None:
             try:
-                max_length = int(self._model.config.max_position_embeddings)
+                max_length = int(model.config.max_position_embeddings)
             except Exception:
                 raise ValueError(
                     "Unable to find max_length from model config. "
                     "Please provide max_length."
                 )
             try:
-                max_length = min(max_length, int(self._tokenizer.model_max_length))
+                max_length = min(max_length, int(tokenizer.model_max_length))
             except Exception as exc:
                 print(f"An error occurred while retrieving tokenizer max length: {exc}")
 
@@ -83,6 +83,9 @@ class IntelEmbedding(BaseEmbedding):
             query_instruction=query_instruction,
             text_instruction=text_instruction,
         )
+        self._model = model
+        self._tokenizer = tokenizer
+        self._device = device
 
     @classmethod
     def class_name(cls) -> str:

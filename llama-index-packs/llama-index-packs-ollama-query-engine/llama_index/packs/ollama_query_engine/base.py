@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List
 
-from llama_index.core import ServiceContext, VectorStoreIndex
+from llama_index.core import Settings, VectorStoreIndex
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.llama_pack.base import BaseLlamaPack
@@ -21,17 +21,13 @@ class OllamaQueryEnginePack(BaseLlamaPack):
     ) -> None:
         self._model = model
         self._base_url = base_url
+        self.llm = Ollama(model=self._model, base_url=self._base_url)
 
-        llm = Ollama(model=self._model, base_url=self._base_url)
-
-        embed_model = OllamaEmbedding(model_name=self._model, base_url=self._base_url)
-
-        service_context = ServiceContext.from_defaults(llm=llm, embed_model=embed_model)
-
-        self.llm = llm
-        self.index = VectorStoreIndex.from_documents(
-            documents, service_context=service_context
+        Settings.llm = self.llm
+        Settings.embed_model = OllamaEmbedding(
+            model_name=self._model, base_url=self._base_url
         )
+        self.index = VectorStoreIndex.from_documents(documents)
 
     def get_modules(self) -> Dict[str, Any]:
         """Get modules."""

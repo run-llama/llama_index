@@ -61,26 +61,26 @@ class LMStudio(CustomLLM):
     )
     num_output: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
-        description=LLMMetadata.__fields__["num_output"].field_info.description,
+        description=LLMMetadata.model_fields["num_output"].description,
     )
 
     is_chat_model: bool = Field(
         default=True,
         description=(
             "LM Studio API supports chat."
-            + LLMMetadata.__fields__["is_chat_model"].field_info.description
+            + LLMMetadata.model_fields["is_chat_model"].description
         ),
     )
 
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description=("The temperature to use for sampling."),
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
 
     timeout: float = Field(
-        default=120, description=("The timeout to use in seconds."), gte=0
+        default=120, description=("The timeout to use in seconds."), ge=0
     )
 
     additional_kwargs: Dict[str, Any] = Field(

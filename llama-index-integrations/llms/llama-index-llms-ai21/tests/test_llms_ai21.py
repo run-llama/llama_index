@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Type, Any, Iterable
 from unittest import mock
 
@@ -22,14 +23,29 @@ from ai21.models.chat import (
     ChoicesChunk,
     ChoiceDelta,
     ChatMessage as AI21ChatMessage,
+    AssistantMessage,
+    ToolCall,
+    ToolFunction,
+    ToolMessage as AI21ToolMessage,
+    SystemMessage,
+    UserMessage,
 )
 from ai21.models.usage_info import UsageInfo
 from ai21_tokenizer import JurassicTokenizer, JambaInstructTokenizer, BaseTokenizer
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.base.llms.types import ChatResponse, CompletionResponse
+from llama_index.core.base.llms.types import (
+    ChatResponse,
+    CompletionResponse,
+    MessageRole,
+)
 from llama_index.core.llms import ChatMessage
 
 from llama_index.llms.ai21 import AI21
+from llama_index.llms.ai21.utils import (
+    from_ai21_message_to_chat_message,
+    is_function_calling_model,
+    message_to_ai21_message,
+)
 
 _PROMPT = "What is the meaning of life?"
 _FAKE_API_KEY = "fake-api-key"
@@ -39,7 +55,7 @@ _FAKE_CHAT_COMPLETIONS_RESPONSE = ChatCompletionResponse(
     choices=[
         ChatCompletionResponseChoice(
             index=0,
-            message=AI21ChatMessage(role="assistant", content="42"),
+            message=AssistantMessage(role="assistant", content="42"),
         )
     ],
     usage=UsageInfo(
@@ -105,7 +121,7 @@ def test_chat():
     messages = ChatMessage(role="user", content="What is the meaning of life?")
     expected_chat_response = ChatResponse(
         message=ChatMessage(role="assistant", content="42"),
-        raw=_FAKE_CHAT_COMPLETIONS_RESPONSE.to_dict(),
+        raw=_FAKE_CHAT_COMPLETIONS_RESPONSE.model_dump(),
     )
 
     with mock.patch("llama_index.llms.ai21.base.AI21Client"):
@@ -118,7 +134,7 @@ def test_chat():
     assert actual_response == expected_chat_response
 
     llm._client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=False,
         **llm._get_all_kwargs(),
     )
@@ -190,7 +206,7 @@ def test_stream_chat():
     assert list(actual_response) == expected_chunks
 
     llm._client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=True,
         **llm._get_all_kwargs(),
     )
@@ -213,7 +229,7 @@ def test_complete():
 
     # Since we actually call chat.completions - check that the call was made to it
     llm._client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=False,
         **llm._get_all_kwargs(),
     )
@@ -267,7 +283,7 @@ def test_stream_complete():
 
     # Since we actually call chat.completions - check that the call was made to it
     llm._client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=True,
         **llm._get_all_kwargs(),
     )
@@ -295,7 +311,7 @@ async def test_achat():
     assert actual_response == expected_chat_response
 
     llm._async_client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=False,
         **llm._get_all_kwargs(),
     )
@@ -323,7 +339,7 @@ async def test_acomplete():
 
     # Since we actually call chat.completions - check that the call was made to it
     llm._async_client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=False,
         **llm._get_all_kwargs(),
     )
@@ -363,7 +379,7 @@ async def test_astream_chat():
     assert list(actual_response) == expected_chunks
 
     llm._async_client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=True,
         **llm._get_all_kwargs(),
     )
@@ -392,7 +408,7 @@ async def test_astream_complete():
 
     # Since we actually call chat.completions - check that the call was made to it
     llm._async_client.chat.completions.create.assert_called_once_with(
-        messages=[AI21ChatMessage(role="user", content="What is the meaning of life?")],
+        messages=[UserMessage(content="What is the meaning of life?")],
         stream=True,
         **llm._get_all_kwargs(),
     )
@@ -448,3 +464,93 @@ async def test_astream_complete_when_j2__should_raise_error():
 def test_tokenizer(model: str, expected_tokenizer_type: Type[BaseTokenizer]):
     llm = AI21(api_key=_FAKE_API_KEY, model=model)
     assert isinstance(llm.tokenizer, expected_tokenizer_type)
+
+
+def test_from_ai21_message_to_chat_message_no_tool_calls():
+    ai21_message = AssistantMessage(role="assistant", content="Hello!", tool_calls=None)
+
+    chat_message = from_ai21_message_to_chat_message(ai21_message)
+
+    assert isinstance(chat_message, ChatMessage)
+    assert chat_message.role == "assistant"
+    assert chat_message.content == "Hello!"
+    assert chat_message.additional_kwargs == {}
+
+
+def test_from_ai21_message_to_chat_message_with_tool_calls():
+    tool_call = ToolCall(
+        id="some_id",
+        function=ToolFunction(
+            name="some_function",
+            arguments=json.dumps({"x": 42}),
+        ),
+    )
+    ai21_message = AssistantMessage(
+        role="assistant", content="Here is a response.", tool_calls=[tool_call]
+    )
+
+    chat_message = from_ai21_message_to_chat_message(ai21_message)
+
+    assert isinstance(chat_message, ChatMessage)
+    assert chat_message.role == "assistant"
+    assert chat_message.content == "Here is a response."
+    assert chat_message.additional_kwargs == {"tool_calls": [tool_call]}
+
+
+@pytest.mark.parametrize(
+    ids=[
+        "when_j2_mid__should_return_false",
+        "when_j2_ultra__should_return_false",
+        "when_jamba-instruct__should_return_false",
+        "when_jamba-1.5-mini__should_return_true",
+        "when_jamba-1.5-large__should_return_true",
+    ],
+    argnames=["model", "expected_result"],
+    argvalues=[
+        ("j2-mid", False),
+        ("j2-ultra", False),
+        ("jamba-instruct", False),
+        ("jamba-1.5-mini", True),
+        ("jamba-1.5-large", True),
+    ],
+)
+def test_is_function_calling_model(model: str, expected_result: bool):
+    assert is_function_calling_model(model) == expected_result
+
+
+@pytest.mark.parametrize(
+    ids=[
+        "when_tool_message",
+        "when_user_message",
+        "when_assistant_message",
+        "when_system_message",
+    ],
+    argvalues=[
+        (
+            ChatMessage(
+                role=MessageRole.TOOL,
+                content="Tool message",
+                additional_kwargs={"tool_call_id": "tool_id_1"},
+            ),
+            AI21ToolMessage(content="Tool message", tool_call_id="tool_id_1"),
+        ),
+        (
+            ChatMessage(role=MessageRole.USER, content="User message"),
+            UserMessage(content="User message"),
+        ),
+        (
+            ChatMessage(role=MessageRole.ASSISTANT, content="Assistant message"),
+            AssistantMessage(content="Assistant message"),
+        ),
+        (
+            ChatMessage(role=MessageRole.SYSTEM, content="Assistant message"),
+            SystemMessage(content="Assistant message"),
+        ),
+    ],
+    argnames=["message", "expected_result"],
+)
+def test_message_to_ai21_message(
+    message: ChatMessage, expected_result: AI21ChatMessage
+) -> None:
+    result = message_to_ai21_message(message)
+    assert result == expected_result
