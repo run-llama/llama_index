@@ -8,4 +8,4 @@ def test_available_models() -> None:
     models = NVIDIAMultiModal().available_models
     assert models
     assert isinstance(models, list)
-    assert all(isinstance(model, str) for model in models)
+    assert all(isinstance(model.id, str) for model in models)

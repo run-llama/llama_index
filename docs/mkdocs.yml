@@ -61,6 +61,11 @@ nav:
           - Nested workflows: ./understanding/workflows/nested.md
           - Observability: ./understanding/workflows/observability.md
           - Unbound syntax: ./understanding/workflows/unbound_functions.md
+      - Structured Data Extraction:
+          - Introduction: ./understanding/extraction/index.md
+          - Using Structured LLMs: ./understanding/extraction/structured_llms.md
+          - Structured Prediction: ./understanding/extraction/structured_prediction.md
+          - Lower-level extraction: ./understanding/extraction/lower_level.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
