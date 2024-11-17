@@ -18,7 +18,7 @@ explicit_package_bases = true
 ignore_missing_imports = true
 namespace_packages = true
 plugins = "pydantic.mypy"
-python_version = "3.8"
+python_version = "3.9"
 
 [tool.poetry]
 authors = ["Jerry Liu <jerry@llamaindex.ai>"]
@@ -56,8 +56,8 @@ fsspec = ">=2023.5.0"
 httpx = "*"
 nest-asyncio = "^1.5.8"
 nltk = ">3.8.1"
-numpy = "<2.0.0"  # Pin until we adapt to Numpy v2
-python = ">=3.8.1,<4.0"
+numpy = "*"
+python = ">=3.9,<4.0"
 tenacity = ">=8.2.0,!=8.4.0,<9.0.0"  # Avoid 8.4.0 which lacks tenacity.asyncio
 tiktoken = ">=0.3.3"
 typing-extensions = ">=4.5.0"
@@ -72,6 +72,7 @@ PyYAML = ">=6.0.1"
 wrapt = "*"
 pydantic = ">=2.7.0,<3.0.0"
 filetype = "^1.2.0"  # Used for multi-modal MIME utils
+eval-type-backport = {python = "<3.10", version = "^0.2.0"}
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
