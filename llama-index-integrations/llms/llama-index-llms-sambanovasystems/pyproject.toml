@@ -12,7 +12,8 @@ contains_example = false
 import_path = "llama_index.llms.sambanovasystems"
 
 [tool.llamahub.class_authors]
-SambaNova = "rodrigo-92"
+SambaNovaCloud = "rodrigo-92"
+SambaStudio = "rodrigo-92"
 
 [tool.mypy]
 disallow_untyped_defs = true

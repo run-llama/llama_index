@@ -1049,7 +1049,7 @@ nav:
           - ./api_reference/llms/replicate.md
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
-          - ./api_reference/llms/sambanovacloud.md
+          - ./api_reference/llms/sambanovasystems.md
           - ./api_reference/llms/siliconflow.md
           - ./api_reference/llms/solar.md
           - ./api_reference/llms/text_generation_inference.md
@@ -2319,7 +2319,7 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-siliconflow
             - ../llama-index-integrations/memory/llama-index-memory-mem0
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-siliconflow-rerank
-            - ../llama-index-integrations/llms/llama-index-llms-sambanovacloud
+            - ../llama-index-integrations/llms/llama-index-llms-sambanovasystems
             - ../llama-index-integrations/embeddings/llama-index-embeddings-modelscope
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-colpali-rerank
             - ../llama-index-integrations/readers/llama-index-readers-gitbook
