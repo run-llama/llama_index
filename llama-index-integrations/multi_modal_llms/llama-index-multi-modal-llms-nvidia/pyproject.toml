@@ -13,6 +13,9 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 contains_example = false
 import_path = "llama_index.multi_modal_llms.nvidia"
 
+[tool.llamahub.class_authors]
+NVIDIAMultiModal = "llama-index"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
@@ -27,10 +30,10 @@ license = "MIT"
 name = "llama-index-multi-modal-llms-nvidia"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 llama-index-core = "^0.10.0"
 filetype = "^1.2.0"
 

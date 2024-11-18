@@ -29,13 +29,13 @@ license = "MIT"
 maintainers = ["batmanscode"]
 name = "llama-index-readers-whatsapp"
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 pandas = "^2.2.0"
 chat-miner = "^0.5.1"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
