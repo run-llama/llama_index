@@ -27,11 +27,11 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-multi-modal-llms-mistralai"
 readme = "README.md"
-version = "0.2"
+version = "0.3"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-mistralai = ">=1.1.0"
+mistralai = ">=1.2.3"
 llama-index-core = "^0.11.0"
 filetype = "^1.2.0"
 
