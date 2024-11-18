@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import pickle
@@ -15,6 +16,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
 
+import filetype
 from dataclasses_json import DataClassJsonMixin
 from typing_extensions import Self, override
 
@@ -27,6 +29,7 @@ from llama_index.core.bridge.pydantic import (
     JsonSchemaValue,
     SerializeAsAny,
     model_serializer,
+    model_validator,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -457,12 +460,27 @@ class MediaResource(BaseModel):
         default=None, exclude=True, description="Binary data of this resource."
     )
     mimetype: str | None = Field(
-        default="text/plain", description="MIME type of this resource."
+        default=None, description="MIME type of this resource."
     )
     path: Path | None = Field(
         default=None, description="Filesystem path of this resource."
     )
     url: AnyUrl | None = Field(default=None, description="URL to reach this resource.")
+
+    @model_validator(mode="after")
+    def guess_mimetype(self) -> Self:
+        """Guess the mimetype when possible.
+
+        In case the model was built passing its content but without a mimetype,
+        we try to guess it using the filetype library. To avoid resource-intense
+        operations, we won't load the path or the URL to guess the mimetype.
+        """
+        if self.data and self.mimetype is None:
+            decoded_data = base64.b64decode(self.data)
+            guess = filetype.guess(decoded_data)
+            self.mimetype = guess.mime if guess else None
+
+        return self
 
     @property
     def hash(self) -> str:
