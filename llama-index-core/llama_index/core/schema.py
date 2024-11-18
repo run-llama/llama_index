@@ -13,7 +13,7 @@ from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
 
 from dataclasses_json import DataClassJsonMixin
 from typing_extensions import Self, override
@@ -431,6 +431,9 @@ class BaseNode(BaseComponent):
         )
 
 
+EmbeddingKind = Literal["sparse", "dense"]
+
+
 class MediaResource(BaseModel):
     """A container class for media content.
 
@@ -447,11 +450,8 @@ class MediaResource(BaseModel):
         url: URL where the media content can be accessed remotely
     """
 
-    embeddings: list[float] | None = Field(
+    embeddings: dict[EmbeddingKind, list[float]] | None = Field(
         default=None, description="Vector representation of this resource."
-    )
-    sparse: list[float] | None = Field(
-        default=None, description="Sparse vector representation of this resource."
     )
     data: bytes | None = Field(
         default=None, exclude=True, description="Binary data of this resource."
