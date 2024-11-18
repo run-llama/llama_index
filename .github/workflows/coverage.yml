@@ -32,8 +32,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-          cache-dependency-path: "**/poetry.lock"
       - name: Install Poetry
         run: pipx install poetry==${{ env.POETRY_VERSION }}
       - uses: pantsbuild/actions/init-pants@v5-scie-pants
