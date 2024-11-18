@@ -58,7 +58,7 @@ class ElevenLabsToolSpec(BaseToolSpec):
             output_path (str): Where to save the output file
             output_path (str): Path to save the audio file. If None, generates one
             voice_id (Optional[str]): Override the default voice ID
-            voice_stability (Optional[float]): The stabilty setting of the voice
+            voice_stability (Optional[float]): The stability setting of the voice
             voice_similarity_boost (Optional[float]): The similarity boost setting of the voice
             voice_style: (Optional[float]): The style setting of the voice
             voice_use_speaker_boost (Optional[bool]): Whether to use speaker boost or not
