@@ -1,19 +1,18 @@
-import time
 import asyncio
+import time
+import os
+import pytest
 from llama_index.core.base.llms.types import (
     ChatMessage,
     MessageRole,
 )
-
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from llama_index.llms.sambanovacloud import SambaNovaCloud
-import pytest
+from llama_index.core.llms.llm import LLM
+from llama_index.llms.sambanovasystems import SambaNovaCloud, SambaStudio
 
 
 sambanova_api_key = os.environ.get("SAMBANOVA_API_KEY", None)
+sambastudio_url = os.environ.get("SAMBASTUDIO_URL", None)
+sambastudio_api_key = os.environ.get("SAMBASTUDIO_API_KEY", None)
 
 
 @pytest.mark.asyncio()
@@ -45,8 +44,8 @@ def get_execution_time(fn, chat_msgs, is_async=False, number=10):
     )
 
 
-@pytest.mark.skipif(not sambanova_api_key, reason="No openai api key set")
-def test_sambanovacloud():
+@pytest.mark.skipif(not sambanova_api_key, reason="No api key set")
+def test_calls(sambanova_client: LLM):
     # chat interaction example
     user_message = ChatMessage(
         role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence"
@@ -56,32 +55,28 @@ def test_sambanovacloud():
         user_message,
     ]
 
-    sambanovacloud_client = SambaNovaCloud()
-
     # sync
-    print(f"chat response: {sambanovacloud_client.chat(chat_text_msgs)}\n")
+    print(f"chat response: {sambanova_client.chat(chat_text_msgs)}\n")
     print(
-        f"stream chat response: {[x.message.content for x in sambanovacloud_client.stream_chat(chat_text_msgs)]}\n"
+        f"stream chat response: {[x.message.content for x in sambanova_client.stream_chat(chat_text_msgs)]}\n"
     )
 
+    print(f"complete response: {sambanova_client.complete(user_message.content)}\n")
     print(
-        f"complete response: {sambanovacloud_client.complete(user_message.content)}\n"
-    )
-    print(
-        f"stream complete response: {[x.text for x in sambanovacloud_client.stream_complete(user_message.content)]}\n"
+        f"stream complete response: {[x.text for x in sambanova_client.stream_complete(user_message.content)]}\n"
     )
 
     # async
     print(
-        f"async chat response: {asyncio.run(sambanovacloud_client.achat(chat_text_msgs))}\n"
+        f"async chat response: {asyncio.run(sambanova_client.achat(chat_text_msgs))}\n"
     )
     print(
-        f"async complete response: {asyncio.run(sambanovacloud_client.acomplete(user_message.content))}\n"
+        f"async complete response: {asyncio.run(sambanova_client.acomplete(user_message.content))}\n"
     )
 
 
-@pytest.mark.skipif(not sambanova_api_key, reason="No openai api key set")
-def test_sambanovacloud_performance():
+@pytest.mark.skipif(not sambanova_api_key, reason="No api key set")
+def test_performance(sambanova_client: LLM):
     # chat interaction example
     user_message = ChatMessage(
         role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence"
@@ -91,23 +86,19 @@ def test_sambanovacloud_performance():
         user_message,
     ]
 
-    sambanovacloud_client = SambaNovaCloud()
-
     # chat
-    get_execution_time(sambanovacloud_client.chat, chat_text_msgs, number=5)
-    get_execution_time(
-        sambanovacloud_client.achat, chat_text_msgs, is_async=True, number=5
-    )
+    get_execution_time(sambanova_client.chat, chat_text_msgs, number=5)
+    get_execution_time(sambanova_client.achat, chat_text_msgs, is_async=True, number=5)
 
     # complete
-    get_execution_time(sambanovacloud_client.complete, user_message.content, number=5)
+    get_execution_time(sambanova_client.complete, user_message.content, number=5)
     get_execution_time(
-        sambanovacloud_client.acomplete, user_message.content, is_async=True, number=5
+        sambanova_client.acomplete, user_message.content, is_async=True, number=5
     )
 
 
-@pytest.mark.skipif(not sambanova_api_key, reason="No openai api key set")
-def test_hiperparameters():
+@pytest.mark.skipif(not sambanova_api_key, reason="No api key set")
+def test_hiperparameters(sambanova_cls: LLM, testing_model: str):
     user_message = ChatMessage(
         role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence"
     )
@@ -116,29 +107,27 @@ def test_hiperparameters():
         user_message,
     ]
 
-    model_list = ["llama3-8b", "llama3-70b"]
     max_tokens_list = [10, 100]
     temperature_list = [0, 1]
     top_p_list = [0, 1]
     top_k_list = [1, 50]
     stream_options_list = [{"include_usage": False}, {"include_usage": True}]
 
-    for model in model_list:
-        sambanovacloud_client = SambaNovaCloud(
-            model=model,
-            max_tokens=max_tokens_list[0],
-            temperature=temperature_list[0],
-            top_p=top_p_list[0],
-            top_k=top_k_list[0],
-            stream_options=stream_options_list[0],
-        )
-        print(
-            f"model: {model}, generation: {sambanovacloud_client.chat(chat_text_msgs)}"
-        )
+    sambanovacloud_client = sambanova_cls(
+        model=testing_model,
+        max_tokens=max_tokens_list[0],
+        temperature=temperature_list[0],
+        top_p=top_p_list[0],
+        top_k=top_k_list[0],
+        stream_options=stream_options_list[0],
+    )
+    print(
+        f"model: {testing_model}, generation: {sambanovacloud_client.chat(chat_text_msgs)}"
+    )
 
     for max_tokens in max_tokens_list:
-        sambanovacloud_client = SambaNovaCloud(
-            model=model_list[0],
+        sambanovacloud_client = sambanova_cls(
+            model=testing_model,
             max_tokens=max_tokens,
             temperature=temperature_list[0],
             top_p=top_p_list[0],
@@ -150,8 +139,8 @@ def test_hiperparameters():
         )
 
     for temperature in temperature_list:
-        sambanovacloud_client = SambaNovaCloud(
-            model=model_list[0],
+        sambanovacloud_client = sambanova_cls(
+            model=testing_model,
             max_tokens=max_tokens_list[0],
             temperature=temperature,
             top_p=top_p_list[0],
@@ -163,8 +152,8 @@ def test_hiperparameters():
         )
 
     for top_p in top_p_list:
-        sambanovacloud_client = SambaNovaCloud(
-            model=model_list[0],
+        sambanovacloud_client = sambanova_cls(
+            model=testing_model,
             max_tokens=max_tokens_list[0],
             temperature=temperature_list[0],
             top_p=top_p,
@@ -176,8 +165,8 @@ def test_hiperparameters():
         )
 
     for top_k in top_k_list:
-        sambanovacloud_client = SambaNovaCloud(
-            model=model_list[0],
+        sambanovacloud_client = sambanova_cls(
+            model=testing_model,
             max_tokens=max_tokens_list[0],
             temperature=temperature_list[0],
             top_p=top_p_list[0],
@@ -189,8 +178,8 @@ def test_hiperparameters():
         )
 
     for stream_options in stream_options_list:
-        sambanovacloud_client = SambaNovaCloud(
-            model=model_list[0],
+        sambanovacloud_client = sambanova_cls(
+            model=testing_model,
             max_tokens=max_tokens_list[0],
             temperature=temperature_list[0],
             top_p=top_p_list[0],
@@ -202,7 +191,24 @@ def test_hiperparameters():
         )
 
 
+@pytest.mark.skipif(not sambanova_api_key, reason="No api key set")
+def test_sambanovacloud():
+    testing_model = "llama3-8b"
+    sambanova_client = SambaNovaCloud()
+    test_calls(sambanova_client)
+    test_performance(sambanova_client)
+    test_hiperparameters(SambaNovaCloud, testing_model)
+
+
+@pytest.mark.skipif(not sambastudio_api_key, reason="No api key set")
+def test_sambastudio():
+    testing_model = "Meta-Llama-3-70B-Instruct-4096"
+    sambanova_client = SambaStudio(model=testing_model)
+    test_calls(sambanova_client)
+    test_performance(sambanova_client)
+    test_hiperparameters(SambaStudio, testing_model)
+
+
 if __name__ == "__main__":
     test_sambanovacloud()
-    test_sambanovacloud_performance()
-    test_hiperparameters()
+    test_sambastudio()
