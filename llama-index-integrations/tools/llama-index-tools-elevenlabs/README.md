@@ -16,9 +16,11 @@ agent = OpenAIAgent.from_tools(
     speech_tool.to_tool_list(),
     verbose=True,
 )
-print(agent.chat(
-    'Create speech from the following text "Hello world!" and output the file to "speech.wav"'
-))
+print(
+    agent.chat(
+        'Create speech from the following text "Hello world!" and output the file to "speech.wav"'
+    )
+)
 ```
 
 `text_to_speech`: Takes an input string and synthesizes audio to play on the users computer
