@@ -31,7 +31,11 @@ from llama_index.vector_stores.mongodb.pipelines import (
     reciprocal_rank_stage,
     vector_search_stage,
 )
-from .index import create_vector_search_index, drop_vector_search_index, update_vector_search_index
+from .index import (
+    create_vector_search_index,
+    drop_vector_search_index,
+    update_vector_search_index,
+)
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
@@ -434,9 +438,18 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 until search index is ready.
             kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
         """
-        return create_vector_search_index(self, self._vector_index_name, dimensions, path, similarity, filters, wait_until_complete=wait_until_complete)
-    
-    def drop_vector_search_index(self,
+        return create_vector_search_index(
+            self,
+            self._vector_index_name,
+            dimensions,
+            path,
+            similarity,
+            filters,
+            wait_until_complete=wait_until_complete,
+        )
+
+    def drop_vector_search_index(
+        self,
         *,
         wait_until_complete: Optional[float] = None,
     ) -> None:
@@ -446,9 +459,12 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             wait_until_complete (Optional[float]): If provided, number of seconds to wait
                 until search index is ready.
         """
-        return drop_vector_search_index(self, self._vector_index_name, wait_until_complete=wait_until_complete)
-    
-    def update_vector_search_index(self, 
+        return drop_vector_search_index(
+            self, self._vector_index_name, wait_until_complete=wait_until_complete
+        )
+
+    def update_vector_search_index(
+        self,
         dimensions: int,
         path: str,
         similarity: str,
@@ -470,9 +486,18 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 until search index is ready.
             kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
         """
-        return update_vector_search_index(self, self._vector_index_name, dimensions, path, similarity, filters, wait_until_complete=wait_until_complete)
-    
-    def create_fulltext_search_index(self,
+        return update_vector_search_index(
+            self,
+            self._vector_index_name,
+            dimensions,
+            path,
+            similarity,
+            filters,
+            wait_until_complete=wait_until_complete,
+        )
+
+    def create_fulltext_search_index(
+        self,
         field: str,
         field_type: str = "string",
         *,
@@ -487,4 +512,10 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 until search index is ready
             kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
         """
-        return create_vector_search_index(self, self._fulltext_index_name, field, field_type, wait_until_complete=wait_until_complete)
+        return create_vector_search_index(
+            self,
+            self._fulltext_index_name,
+            field,
+            field_type,
+            wait_until_complete=wait_until_complete,
+        )

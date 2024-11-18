@@ -12,7 +12,12 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch, index
 
 from .conftest import lock
-from .test_index_commands import DIMENSIONS, TIMEOUT, FILTER_FIELD_NAME, FILTER_FIELD_TYPE
+from .test_index_commands import (
+    DIMENSIONS,
+    TIMEOUT,
+    FILTER_FIELD_NAME,
+    FILTER_FIELD_TYPE,
+)
 
 
 def test_documents(documents: List[Document]) -> None:
@@ -129,7 +134,9 @@ def test_vectorstore(
 @pytest.mark.skipif(
     os.environ.get("MONGODB_URI") is None, reason="Requires MONGODB_URI in os.environ"
 )
-def test_search_index_commands_vectorstore(vector_store: MongoDBAtlasVectorSearch) -> None:
+def test_search_index_commands_vectorstore(
+    vector_store: MongoDBAtlasVectorSearch,
+) -> None:
     """Tests create, update, and drop index utility functions."""
     dimensions = DIMENSIONS
     text_index_name = vector_store._fulltext_index_name
@@ -193,9 +200,7 @@ def test_search_index_commands_vectorstore(vector_store: MongoDBAtlasVectorSearc
     indexes = list(collection.list_search_indexes())
     assert len(indexes) == 2
     assert any(idx["name"] == text_index_name for idx in indexes)
-    idx_fulltext = (
-        indexes[0] if indexes[0]["name"] == text_index_name else indexes[1]
-    )
+    idx_fulltext = indexes[0] if indexes[0]["name"] == text_index_name else indexes[1]
     assert idx_fulltext["type"] == "search"
     fields = idx_fulltext["latestDefinition"]["mappings"]["fields"]
     assert fields == {FILTER_FIELD_NAME: [{"type": FILTER_FIELD_TYPE}]}
