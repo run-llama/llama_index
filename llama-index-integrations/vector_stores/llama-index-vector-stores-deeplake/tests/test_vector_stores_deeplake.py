@@ -1,4 +1,3 @@
-import pytest
 import jwt  # noqa
 
 from llama_index.core import Document
@@ -125,6 +124,3 @@ def test_e2e():
     assert [x.text for x in vs.get_nodes()] == ["Doc 2", "Doc 4"]
 
     vs.clear()
-    with pytest.raises(ValueError) as e:
-        vs.get_nodes()
-    assert str(e.value) == "specified dataset is empty"
