@@ -357,15 +357,27 @@ async def converse_with_retry_async(
         converse_kwargs, {k: v for k, v in kwargs.items() if k != "tools"}
     )
 
+    ## NOTE: Returning the generator directly from converse_stream doesn't work
+    # So, we have to use two separate functions for streaming and non-streaming
+    # This differs from the synchronous version, and is a bit of a hack
+    # Further investigation is needed
+
     @retry_decorator
     async def _conversion_with_retry(**kwargs: Any) -> Any:
-        # the async boto3 client needs to be defined inside this async with, otherwise it will raise an error
         async with session.client("bedrock-runtime", config=config) as client:
-            if stream:
-                return await client.converse_stream(**kwargs)
             return await client.converse(**kwargs)
 
-    return await _conversion_with_retry(**converse_kwargs)
+    @retry_decorator
+    async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
+        async with session.client("bedrock-runtime", config=config) as client:
+            response = await client.converse_stream(**kwargs)
+            async for event in response["stream"]:
+                yield event
+
+    if stream:
+        return _conversion_stream_with_retry(**converse_kwargs)
+    else:
+        return await _conversion_with_retry(**converse_kwargs)
 
 
 def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:

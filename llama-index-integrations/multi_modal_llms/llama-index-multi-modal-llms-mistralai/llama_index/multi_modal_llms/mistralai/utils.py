@@ -14,6 +14,7 @@ DEFAULT_MISTRALAI_API_VERSION = ""
 
 MISTRALAI_MULTI_MODAL_MODELS = {
     "pixtral-12b-2409": 128000,
+    "pixtral-large-latest": 128000,
 }
 
 

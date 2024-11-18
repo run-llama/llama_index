@@ -89,6 +89,9 @@ class VectaraRetriever(BaseRetriever):
         summary_response_lang: language to use for summary generation.
         summary_num_results: number of results to use for summary generation.
         summary_prompt_name: name of the prompt to use for summary generation.
+        prompt_text: the custom prompt, using appropriate prompt variables and functions.
+            See (https://docs.vectara.com/docs/1.0/prompts/custom-prompts-with-metadata)
+            for more details.
         citations_style: The style of the citations in the summary generation,
             either "numeric", "html", "markdown", or "none".
             This is a Vectara Scale only feature. Defaults to None.
@@ -118,6 +121,7 @@ class VectaraRetriever(BaseRetriever):
         summary_response_lang: str = "eng",
         summary_num_results: int = 7,
         summary_prompt_name: str = "vectara-summary-ext-24-05-sml",
+        prompt_text: Optional[str] = None,
         citations_style: Optional[str] = None,
         citations_url_pattern: Optional[str] = None,
         citations_text_pattern: Optional[str] = None,
@@ -132,6 +136,7 @@ class VectaraRetriever(BaseRetriever):
         self._n_sentences_before = n_sentences_before
         self._n_sentences_after = n_sentences_after
         self._filter = filter
+        self._prompt_text = prompt_text
         self._citations_style = citations_style.upper() if citations_style else None
         self._citations_url_pattern = citations_url_pattern
         self._citations_text_pattern = citations_text_pattern
@@ -286,6 +291,8 @@ class VectaraRetriever(BaseRetriever):
                 "summarizerPromptName": self._summary_prompt_name,
             }
             data["query"][0]["summary"] = [summary_config]
+            if self._prompt_text:
+                data["query"][0]["summary"][0]["promptText"] = self._prompt_text
             if chat:
                 data["query"][0]["summary"][0]["chat"] = {
                     "store": True,
