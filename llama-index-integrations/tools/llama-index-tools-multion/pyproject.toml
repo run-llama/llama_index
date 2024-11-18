@@ -28,14 +28,14 @@ license = "MIT"
 maintainers = ["ajhofmann"]
 name = "llama-index-tools-multion"
 readme = "README.md"
-version = "0.3.0"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 multion = "^0.3.11"
 pytesseract = "^0.3.10"
 pillow = "^10.2.0"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

@@ -31,15 +31,15 @@ license = "MIT"
 maintainers = ["ajhofmann"]
 name = "llama-index-tools-google"
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 google-api-python-client = "^2.115.0"
 google-auth-httplib2 = "^0.2.0"
 google-auth-oauthlib = "^1.2.0"
 beautifulsoup4 = "^4.12.3"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

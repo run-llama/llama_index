@@ -32,7 +32,7 @@ version = "0.3"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 mistralai = ">=1.2.3"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 filetype = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
