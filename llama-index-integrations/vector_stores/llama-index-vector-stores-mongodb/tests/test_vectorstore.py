@@ -1,6 +1,6 @@
 import os
 from time import sleep
-from typing import List
+from typing import List, Optional
 
 import pytest
 from llama_index.core.schema import Document, TextNode
@@ -9,9 +9,10 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
 )
 from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch
+from llama_index.vector_stores.mongodb import MongoDBAtlasVectorSearch, index
 
 from .conftest import lock
+from .test_index_commands import DIMENSIONS, TIMEOUT, FILTER_FIELD_NAME, FILTER_FIELD_TYPE
 
 
 def test_documents(documents: List[Document]) -> None:
@@ -123,3 +124,88 @@ def test_vectorstore(
             else:
                 retries = 0
         assert n_remaining == n_docs - 1
+
+
+@pytest.mark.skipif(
+    os.environ.get("MONGODB_URI") is None, reason="Requires MONGODB_URI in os.environ"
+)
+def test_search_index_commands_vectorstore(vector_store: MongoDBAtlasVectorSearch) -> None:
+    """Tests create, update, and drop index utility functions."""
+    dimensions = DIMENSIONS
+    text_index_name = vector_store._fulltext_index_name
+    vector_index_name = vector_store._vector_index_name
+    path = "embedding"
+    similarity = "cosine"
+    filters: Optional[List[str]] = None
+    wait_until_complete = TIMEOUT
+
+    collection = vector_store.collection
+    for index_info in collection.list_search_indexes():
+        index.drop_vector_search_index(
+            collection, index_info["name"], wait_until_complete=wait_until_complete
+        )
+    assert len(list(collection.list_search_indexes())) == 0
+
+    # Create a Vector Search Index on index_name
+    vector_store.create_vector_search_index(
+        dimensions=dimensions,
+        path=path,
+        similarity=similarity,
+        filters=filters,
+        wait_until_complete=wait_until_complete,
+    )
+
+    indexes = list(collection.list_search_indexes())
+    assert len(indexes) == 1
+    assert indexes[0]["name"] == vector_index_name
+
+    # Update that index by adding a filter
+    # This will additionally index the "bar" and "foo"  fields
+    new_similarity = "euclidean"
+    vector_store.update_vector_search_index(
+        dimensions=DIMENSIONS,
+        path="embedding",
+        similarity=new_similarity,
+        filters=[FILTER_FIELD_NAME],
+        wait_until_complete=wait_until_complete,
+    )
+
+    indexes = list(collection.list_search_indexes())
+    assert len(indexes) == 1
+    assert indexes[0]["name"] == vector_index_name
+    fields = indexes[0]["latestDefinition"]["fields"]
+    assert len(fields) == 2
+    assert {"type": "filter", "path": FILTER_FIELD_NAME} in fields
+    assert {
+        "numDimensions": DIMENSIONS,
+        "path": "embedding",
+        "similarity": f"{new_similarity}",
+        "type": "vector",
+    } in fields
+
+    # Now add a full-text search index for the filter field
+    vector_store.create_fulltext_search_index(
+        field=FILTER_FIELD_NAME,
+        field_type=FILTER_FIELD_TYPE,
+        wait_until_complete=TIMEOUT,
+    )
+
+    indexes = list(collection.list_search_indexes())
+    assert len(indexes) == 2
+    assert any(idx["name"] == text_index_name for idx in indexes)
+    idx_fulltext = (
+        indexes[0] if indexes[0]["name"] == text_index_name else indexes[1]
+    )
+    assert idx_fulltext["type"] == "search"
+    fields = idx_fulltext["latestDefinition"]["mappings"]["fields"]
+    assert fields == {FILTER_FIELD_NAME: [{"type": FILTER_FIELD_TYPE}]}
+
+    # Finally, drop the index
+    for name in [text_index_name, vector_index_name]:
+        index.drop_vector_search_index(
+            collection, name, wait_until_complete=wait_until_complete
+        )
+
+    indexes = list(collection.list_search_indexes())
+    for idx in indexes:
+        assert idx["status"] == "DELETING"

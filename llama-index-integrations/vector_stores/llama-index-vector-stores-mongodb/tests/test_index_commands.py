@@ -44,7 +44,7 @@ def vector_store(atlas_client: MongoClient) -> MongoDBAtlasVectorSearch:
 @pytest.mark.skipif(
     os.environ.get("MONGODB_URI") is None, reason="Requires MONGODB_URI in os.environ"
 )
-def test_search_index_commands(collection: Collection) -> None:
+def test_search_index_commands_standalone(collection: Collection) -> None:
     """Tests create, update, and drop index utility functions."""
     index_name = VECTOR_INDEX_NAME
     dimensions = DIMENSIONS
