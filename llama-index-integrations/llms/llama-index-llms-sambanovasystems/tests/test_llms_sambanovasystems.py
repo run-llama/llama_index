@@ -1,16 +1,13 @@
-import time
 import asyncio
+import time
+import os
+import pytest
 from llama_index.core.base.llms.types import (
     ChatMessage,
     MessageRole,
 )
 from llama_index.core.llms.llm import LLM
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from llama_index.llms.sambanovasystems import SambaNovaCloud, SambaStudio
-import pytest
 
 
 sambanova_api_key = os.environ.get("SAMBANOVA_API_KEY", None)
@@ -47,7 +44,7 @@ def get_execution_time(fn, chat_msgs, is_async=False, number=10):
     )
 
 
-@pytest.mark.skipif(not sambanova_api_key, reason="No openai api key set")
+@pytest.mark.skipif(not sambanova_api_key, reason="No api key set")
 def test_calls(sambanova_client: LLM):
     # chat interaction example
     user_message = ChatMessage(
@@ -78,7 +75,7 @@ def test_calls(sambanova_client: LLM):
     )
 
 
-@pytest.mark.skipif(not sambanova_api_key, reason="No openai api key set")
+@pytest.mark.skipif(not sambanova_api_key, reason="No api key set")
 def test_performance(sambanova_client: LLM):
     # chat interaction example
     user_message = ChatMessage(
@@ -100,7 +97,7 @@ def test_performance(sambanova_client: LLM):
     )
 
 
-@pytest.mark.skipif(not sambanova_api_key, reason="No openai api key set")
+@pytest.mark.skipif(not sambanova_api_key, reason="No api key set")
 def test_hiperparameters(sambanova_cls: LLM, testing_model: str):
     user_message = ChatMessage(
         role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence"
@@ -194,6 +191,7 @@ def test_hiperparameters(sambanova_cls: LLM, testing_model: str):
         )
 
 
+@pytest.mark.skipif(not sambanova_api_key, reason="No api key set")
 def test_sambanovacloud():
     testing_model = "llama3-8b"
     sambanova_client = SambaNovaCloud()
@@ -202,6 +200,7 @@ def test_sambanovacloud():
     test_hiperparameters(SambaNovaCloud, testing_model)
 
 
+@pytest.mark.skipif(not sambastudio_api_key, reason="No api key set")
 def test_sambastudio():
     testing_model = "Meta-Llama-3-70B-Instruct-4096"
     sambanova_client = SambaStudio(model=testing_model)
