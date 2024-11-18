@@ -28,12 +28,12 @@ jobs:
           fetch-depth: 0
       - name: update rustc
         run: rustup update stable
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
       - name: Set up python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
       - uses: pantsbuild/actions/init-pants@v5-scie-pants
         with:
           # v0 makes it easy to bust the cache if needed
