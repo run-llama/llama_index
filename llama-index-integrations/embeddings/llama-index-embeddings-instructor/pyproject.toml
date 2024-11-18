@@ -27,14 +27,14 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-instructor"
 readme = "README.md"
-version = "0.2.1"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 instructorembedding = "^1.0.1"
 torch = "^2.1.2"
 sentence-transformers = "^2.2.2"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
