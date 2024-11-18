@@ -42,7 +42,7 @@ class Pipeshift(OpenAILike):
         # os.environ["PIPESHIFT_API_KEY"] = "your api key"
 
         llm = Pipeshift(
-            model="mistralai/Mistral-7B-Instruct-v0.3", api_key="your_api_key"
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct", api_key="your_api_key"
         )
 
         resp = llm.complete("How fast is porsche gt3 rs?")

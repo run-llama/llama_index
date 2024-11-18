@@ -29,12 +29,12 @@ license = "MIT"
 maintainers = ["erika-cardenas"]
 name = "llama-index-packs-retry-engine-weaviate"
 readme = "README.md"
-version = "0.3.0"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 weaviate-client = "^4.7.1"
-llama-index-vector-stores-weaviate = "^1.1.0"
+llama-index-vector-stores-weaviate = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

@@ -27,13 +27,13 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-question-gen-guidance"
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 guidance = "^0.1.16"
-llama-index-program-guidance = "^0.2.0"
-llama-index-core = "^0.11.0"
+llama-index-program-guidance = "^0.3.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
