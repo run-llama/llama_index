@@ -11,3 +11,5 @@ python_test_utils(
         "llama-index-core:poetry#eval-type-backport"
     ],
 )
+
+python_tests()
