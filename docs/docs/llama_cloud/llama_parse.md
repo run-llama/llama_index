@@ -15,11 +15,8 @@ It comes equipped with the following features:
 
 LlamaParse exists as a standalone API and also as part of the LlamaCloud platform. The API is self-serve and available to everyone. The LlamaCloud platform is in private preview ([come talk to us if interested](https://www.llamaindex.ai/contact)).
 
-## Pricing
-
-You get 1k free pages a day. If you sign up for the paid plan, you get 7k free pages a week, and then $0.003 for each page.
-
 ## Resources
 
-- [Signup here](https://cloud.llamaindex.ai/)
+- [LlamaParse documentation](https://docs.cloud.llamaindex.ai/llamaparse/getting_started/web_ui)
+- [Sign up by signing up for LlamaCloud](https://cloud.llamaindex.ai/)
 - [Launch blog post](https://www.llamaindex.ai/blog/launching-the-first-genai-native-document-parsing-platform)

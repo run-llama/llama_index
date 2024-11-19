@@ -47,7 +47,7 @@ def test_base_url_invalid_not_hosted(
 @pytest.mark.parametrize(
     "base_url",
     [
-        "http://0.0.0.0:8888/v1/rankings",
+        "http://0.0.0.0:8888/v1",
     ],
 )
 def test_base_url_valid_not_hosted(base_url: str, mock_v1_local_models2: None) -> None:
@@ -60,4 +60,4 @@ def test_base_url_valid_not_hosted(base_url: str, mock_v1_local_models2: None) -
     ["https://ai.api.nvidia.com/v1"],
 )
 def test_base_url_valid_hosted(base_url: str, mock_v1_local_models2: None) -> None:
-    Interface(base_url=base_url)
+    Interface(base_url=base_url, api_key="BOGUS")

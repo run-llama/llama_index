@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Callable, Optional, Union
+from typing import Any, Callable, Optional, Sequence, Union
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.indices.property_graph.utils import (
@@ -16,7 +16,7 @@ from llama_index.core.prompts import PromptTemplate
 from llama_index.core.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
 )
-from llama_index.core.schema import TransformComponent, BaseNode
+from llama_index.core.schema import TransformComponent, BaseNode, MetadataMode
 
 
 class SimpleLLMPathExtractor(TransformComponent):
@@ -70,8 +70,8 @@ class SimpleLLMPathExtractor(TransformComponent):
         return "SimpleLLMPathExtractor"
 
     def __call__(
-        self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
-    ) -> List[BaseNode]:
+        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
+    ) -> Sequence[BaseNode]:
         """Extract triples from nodes."""
         return asyncio.run(self.acall(nodes, show_progress=show_progress, **kwargs))
 
@@ -79,7 +79,7 @@ class SimpleLLMPathExtractor(TransformComponent):
         """Extract triples from a node."""
         assert hasattr(node, "text")
 
-        text = node.get_content(metadata_mode="llm")
+        text = node.get_content(metadata_mode=MetadataMode.LLM)
         try:
             llm_response = await self.llm.apredict(
                 self.extract_prompt,
@@ -113,8 +113,8 @@ class SimpleLLMPathExtractor(TransformComponent):
         return node
 
     async def acall(
-        self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
-    ) -> List[BaseNode]:
+        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
+    ) -> Sequence[BaseNode]:
         """Extract triples from nodes async."""
         jobs = []
         for node in nodes:

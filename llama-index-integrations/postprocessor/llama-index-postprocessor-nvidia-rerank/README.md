@@ -20,7 +20,7 @@ Below is an example on how to use some common functionality surrounding text-gen
 ## Installation
 
 ```shell
-pip install --upgrade llama-index llama-index-core llama-index-nvidia-rerank
+pip install --upgrade llama-index llama-index-core llama-index-postprocessor-nvidia-rerank
 ```
 
 ## Setup
@@ -68,12 +68,12 @@ rerank = NVIDIARerank(base_url="http://localhost:1976/v1")
 
 ## Supported models
 
-Querying `get_available_models` will still give you all of the other models offered by your API credentials.
+Querying `available_models` will still give you all of the other models offered by your API credentials.
 
 ```python
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
 
-NVIDIARerank.get_available_models()
+rerank.available_models
 ```
 
 **To find out more about a specific model, please navigate to the NVIDIA NIM section of ai.nvidia.com [as linked here](https://docs.api.nvidia.com/nim/).**

@@ -1,7 +1,12 @@
-from typing import Any, Dict, Optional
+from typing import Annotated, Any, Dict, Optional
 
 import httpx
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, root_validator
+from llama_index.core.bridge.pydantic import (
+    Field,
+    PrivateAttr,
+    WithJsonSchema,
+    model_validator,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
@@ -17,22 +22,37 @@ from llama_index.llms.azure_openai.utils import (
 from openai import AsyncAzureOpenAI, AzureOpenAI
 from openai.lib.azure import AzureADTokenProvider
 
+# Used to serialized provider in schema
+AnnotatedProvider = Annotated[
+    AzureADTokenProvider,
+    WithJsonSchema({"type": "string"}, mode="serialization"),
+    WithJsonSchema({"type": "string"}, mode="validation"),
+]
+
 
 class AzureOpenAIEmbedding(OpenAIEmbedding):
     azure_endpoint: Optional[str] = Field(
-        default=None, description="The Azure endpoint to use."
+        default=None, description="The Azure endpoint to use.", validate_default=True
     )
     azure_deployment: Optional[str] = Field(
-        default=None, description="The Azure deployment to use."
+        default=None, description="The Azure deployment to use.", validate_default=True
     )
 
-    api_base: str = Field(default="", description="The base URL for Azure deployment.")
+    api_base: str = Field(
+        default="",
+        description="The base URL for Azure deployment.",
+        validate_default=True,
+    )
     api_version: str = Field(
-        default="", description="The version for Azure OpenAI API."
+        default="",
+        description="The version for Azure OpenAI API.",
+        validate_default=True,
     )
 
-    azure_ad_token_provider: AzureADTokenProvider = Field(
-        default=None, description="Callback function to provide Azure AD token."
+    azure_ad_token_provider: Optional[AnnotatedProvider] = Field(
+        default=None,
+        description="Callback function to provide Azure AD token.",
+        exclude=True,
     )
     use_azure_ad: bool = Field(
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
@@ -94,18 +114,19 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             **kwargs,
         )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate necessary credentials are set."""
         if (
-            values["api_base"] == "https://api.openai.com/v1"
-            and values["azure_endpoint"] is None
+            values.get("api_base") == "https://api.openai.com/v1"
+            and values.get("azure_endpoint") is None
         ):
             raise ValueError(
                 "You must set OPENAI_API_BASE to your Azure endpoint. "
                 "It should look like https://YOUR_RESOURCE_NAME.openai.azure.com/"
             )
-        if values["api_version"] is None:
+        if values.get("api_version") is None:
             raise ValueError("You must set OPENAI_API_VERSION for Azure OpenAI.")
 
         return values

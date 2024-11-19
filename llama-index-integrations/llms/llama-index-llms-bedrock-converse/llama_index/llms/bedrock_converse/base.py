@@ -79,8 +79,8 @@ class BedrockConverse(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
     profile_name: Optional[str] = Field(
@@ -157,6 +157,29 @@ class BedrockConverse(FunctionCallingLLM):
             "aws_session_token": aws_session_token,
             "botocore_session": botocore_session,
         }
+
+        super().__init__(
+            temperature=temperature,
+            max_tokens=max_tokens,
+            additional_kwargs=additional_kwargs,
+            timeout=timeout,
+            max_retries=max_retries,
+            model=model,
+            callback_manager=callback_manager,
+            system_prompt=system_prompt,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+            profile_name=profile_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+            region_name=region_name,
+            botocore_session=botocore_session,
+            botocore_config=botocore_config,
+        )
+
         self._config = None
         try:
             import boto3
@@ -190,21 +213,6 @@ class BedrockConverse(FunctionCallingLLM):
             self._client = session.client("bedrock-runtime", config=self._config)
         else:
             self._client = session.client("bedrock", config=self._config)
-
-        super().__init__(
-            temperature=temperature,
-            max_tokens=max_tokens,
-            additional_kwargs=additional_kwargs,
-            timeout=timeout,
-            max_retries=max_retries,
-            model=model,
-            callback_manager=callback_manager,
-            system_prompt=system_prompt,
-            messages_to_prompt=messages_to_prompt,
-            completion_to_prompt=completion_to_prompt,
-            pydantic_program_mode=pydantic_program_mode,
-            output_parser=output_parser,
-        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -446,7 +454,7 @@ class BedrockConverse(FunctionCallingLLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
-        response = await converse_with_retry_async(
+        response_gen = await converse_with_retry_async(
             session=self._asession,
             config=self._config,
             messages=converse_messages,
@@ -459,7 +467,7 @@ class BedrockConverse(FunctionCallingLLM):
         async def gen() -> ChatResponseAsyncGen:
             content = {}
             role = MessageRole.ASSISTANT
-            for chunk in response["stream"]:
+            async for chunk in response_gen:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
@@ -481,7 +489,7 @@ class BedrockConverse(FunctionCallingLLM):
                             },
                         ),
                         delta=content_delta.get("text", ""),
-                        raw=response,
+                        raw=chunk,
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
                     tool_use = content_block_start["toolUse"]
@@ -503,7 +511,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 "status": status,
                             },
                         ),
-                        raw=response,
+                        raw=chunk,
                     )
 
         return gen()
@@ -522,6 +530,7 @@ class BedrockConverse(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_choice: Optional[dict] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the arguments needed to let the LLM chat with tools."""
@@ -532,11 +541,15 @@ class BedrockConverse(FunctionCallingLLM):
             chat_history.append(user_msg)
 
         # convert Llama Index tools to AWS Bedrock Converse tools
-        tool_dicts = tools_to_converse_tools(tools)
+        tool_config = tools_to_converse_tools(tools)
+        if tool_choice:
+            # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
+            # e.g. { "auto": {} }
+            tool_config["toolChoice"] = tool_choice
 
         return {
             "messages": chat_history,
-            "tools": tool_dicts or None,
+            "tools": tool_config,
             **kwargs,
         }
 

@@ -84,7 +84,7 @@ class CoAAgentWorker(BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "CoAAgentWorker":
-        """Convenience constructor method from set of of BaseTools (Optional).
+        """Convenience constructor method from set of BaseTools (Optional).
 
         Returns:
             LLMCompilerAgentWorker: the LLMCompilerAgentWorker instance

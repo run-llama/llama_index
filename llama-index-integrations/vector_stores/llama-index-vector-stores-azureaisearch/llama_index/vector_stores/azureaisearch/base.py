@@ -28,6 +28,12 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from llama_index.vector_stores.azureaisearch.azureaisearch_utils import (
+    create_node_from_result,
+    process_batch_results,
+    create_search_request,
+    handle_search_error,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +82,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # Azure AI Search setup
         search_service_api_key = "YOUR-AZURE-SEARCH-SERVICE-ADMIN-KEY"
         search_service_endpoint = "YOUR-AZURE-SEARCH-SERVICE-ENDPOINT"
-        search_service_api_version = "2023-11-01"
+        search_service_api_version = "2024-07-01"
         credential = AzureKeyCredential(search_service_api_key)
 
         # Index name to use
@@ -98,6 +104,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         vector_store = AzureAISearchVectorStore(
             search_or_index_client=index_client,
             filterable_metadata_field_keys=metadata_fields,
+            hidden_field_keys=["embedding"],
             index_name=index_name,
             index_management=IndexManagement.CREATE_IF_NOT_EXISTS,
             id_field_key="id",
@@ -122,6 +129,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _async_search_client: AsyncSearchClient = PrivateAttr()
     _embedding_dimensionality: int = PrivateAttr()
     _language_analyzer: str = PrivateAttr()
+    _hidden_field_keys: List[str] = PrivateAttr()
     _field_mapping: Dict[str, str] = PrivateAttr()
     _index_management: IndexManagement = PrivateAttr()
     _index_mapping: Callable[
@@ -131,6 +139,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         str, Tuple[str, MetadataIndexFieldType]
     ] = PrivateAttr()
     _vector_profile_name: str = PrivateAttr()
+    _compression_type: str = PrivateAttr()
+    _user_agent: str = PrivateAttr()
 
     def _normalise_metadata_to_index_fields(
         self,
@@ -205,6 +215,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         for v in self._metadata_to_index_field_map.values():
             field_name, field_type = v
 
+            # Skip if the field is already mapped
+            if field_name in self._field_mapping.values():
+                continue
+
             if field_type == MetadataIndexFieldType.STRING:
                 index_field_type = "Edm.String"
             elif field_type == MetadataIndexFieldType.INT32:
@@ -218,10 +232,33 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             elif field_type == MetadataIndexFieldType.COLLECTION:
                 index_field_type = "Collection(Edm.String)"
 
-            field = SimpleField(name=field_name, type=index_field_type, filterable=True)
+            field = SimpleField(
+                name=field_name,
+                type=index_field_type,
+                filterable=True,
+                hidden=field_name in self._hidden_field_keys,
+            )
             index_fields.append(field)
 
         return index_fields
+
+    def _get_compressions(self) -> List[Any]:
+        """Get the compressions for the vector search."""
+        from azure.search.documents.indexes.models import (
+            BinaryQuantizationCompression,
+            ScalarQuantizationCompression,
+        )
+
+        compressions = []
+        if self._compression_type == "binary":
+            compressions.append(
+                BinaryQuantizationCompression(compression_name="myBinaryCompression")
+            )
+        elif self._compression_type == "scalar":
+            compressions.append(
+                ScalarQuantizationCompression(compression_name="myScalarCompression")
+            )
+        return compressions
 
     def _create_index(self, index_name: Optional[str]) -> None:
         """
@@ -250,11 +287,18 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         logger.info(f"Configuring {index_name} fields for Azure AI Search")
         fields = [
-            SimpleField(name=self._field_mapping["id"], type="Edm.String", key=True),
+            SimpleField(
+                name=self._field_mapping["id"],
+                type="Edm.String",
+                key=True,
+                filterable=True,
+                hidden=self._field_mapping["id"] in self._hidden_field_keys,
+            ),
             SearchableField(
                 name=self._field_mapping["chunk"],
                 type="Edm.String",
                 analyzer_name=self._language_analyzer,
+                hidden=self._field_mapping["chunk"] in self._hidden_field_keys,
             ),
             SearchField(
                 name=self._field_mapping["embedding"],
@@ -262,23 +306,36 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 searchable=True,
                 vector_search_dimensions=self._embedding_dimensionality,
                 vector_search_profile_name=self._vector_profile_name,
+                hidden=self._field_mapping["embedding"] in self._hidden_field_keys,
             ),
-            SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
             SimpleField(
-                name=self._field_mapping["doc_id"], type="Edm.String", filterable=True
+                name=self._field_mapping["metadata"],
+                type="Edm.String",
+                hidden=self._field_mapping["metadata"] in self._hidden_field_keys,
+            ),
+            SimpleField(
+                name=self._field_mapping["doc_id"],
+                type="Edm.String",
+                filterable=True,
+                hidden=self._field_mapping["doc_id"] in self._hidden_field_keys,
             ),
         ]
         logger.info(f"Configuring {index_name} metadata fields")
         metadata_index_fields = self._create_metadata_index_fields()
         fields.extend(metadata_index_fields)
         logger.info(f"Configuring {index_name} vector search")
+        # Determine the compression type
+        compressions = self._get_compressions()
+
+        logger.info(
+            f"Configuring {index_name} vector search with {self._compression_type} compression"
+        )
         # Configure the vector search algorithms and profiles
         vector_search = VectorSearch(
             algorithms=[
                 HnswAlgorithmConfiguration(
                     name="myHnsw",
                     kind=VectorSearchAlgorithmKind.HNSW,
-                    # For more information on HNSw parameters, visit https://learn.microsoft.com//azure/search/vector-search-ranking#creating-the-hnsw-graph
                     parameters=HnswParameters(
                         m=4,
                         ef_construction=400,
@@ -294,17 +351,20 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     ),
                 ),
             ],
+            compressions=compressions,
             profiles=[
                 VectorSearchProfile(
                     name="myHnswProfile",
                     algorithm_configuration_name="myHnsw",
+                    compression_name=(
+                        compressions[0].compression_name if compressions else None
+                    ),
                 ),
-                # Add more profiles if needed
                 VectorSearchProfile(
                     name="myExhaustiveKnnProfile",
                     algorithm_configuration_name="myExhaustiveKnn",
+                    compression_name=None,  # Exhaustive KNN doesn't support compression at the moment
                 ),
-                # Add more profiles if needed
             ],
         )
         logger.info(f"Configuring {index_name} semantic search")
@@ -329,18 +389,19 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
     async def _acreate_index(self, index_name: Optional[str]) -> None:
         """
-        Creates a default index based on the supplied index name, key field names and
-        metadata filtering keys.
+        Asynchronous version of index creation with optional compression.
+
+            Creates a default index based on the supplied index name, key field names, and metadata filtering keys.
         """
         from azure.search.documents.indexes.models import (
             ExhaustiveKnnAlgorithmConfiguration,
             ExhaustiveKnnParameters,
             HnswAlgorithmConfiguration,
             HnswParameters,
-            SearchableField,
             SearchField,
             SearchFieldDataType,
             SearchIndex,
+            SearchableField,
             SemanticConfiguration,
             SemanticField,
             SemanticPrioritizedFields,
@@ -359,6 +420,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 name=self._field_mapping["chunk"],
                 type="Edm.String",
                 analyzer_name=self._language_analyzer,
+                hidden=self._field_mapping["chunk"] in self._hidden_field_keys,
             ),
             SearchField(
                 name=self._field_mapping["embedding"],
@@ -366,16 +428,29 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 searchable=True,
                 vector_search_dimensions=self._embedding_dimensionality,
                 vector_search_profile_name=self._vector_profile_name,
+                hidden=self._field_mapping["embedding"] in self._hidden_field_keys,
             ),
-            SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
             SimpleField(
-                name=self._field_mapping["doc_id"], type="Edm.String", filterable=True
+                name=self._field_mapping["metadata"],
+                type="Edm.String",
+                hidden=self._field_mapping["metadata"] in self._hidden_field_keys,
+            ),
+            SimpleField(
+                name=self._field_mapping["doc_id"],
+                type="Edm.String",
+                filterable=True,
+                hidden=self._field_mapping["doc_id"] in self._hidden_field_keys,
             ),
         ]
         logger.info(f"Configuring {index_name} metadata fields")
         metadata_index_fields = self._create_metadata_index_fields()
         fields.extend(metadata_index_fields)
-        logger.info(f"Configuring {index_name} vector search")
+        # Determine the compression type
+        compressions = self._get_compressions()
+
+        logger.info(
+            f"Configuring {index_name} vector search with {self._compression_type} compression"
+        )
         # Configure the vector search algorithms and profiles
         vector_search = VectorSearch(
             algorithms=[
@@ -398,17 +473,20 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     ),
                 ),
             ],
+            compressions=compressions,
             profiles=[
                 VectorSearchProfile(
                     name="myHnswProfile",
                     algorithm_configuration_name="myHnsw",
+                    compression_name=(
+                        compressions[0].compression_name if compressions else None
+                    ),
                 ),
-                # Add more profiles if needed
                 VectorSearchProfile(
                     name="myExhaustiveKnnProfile",
                     algorithm_configuration_name="myExhaustiveKnn",
+                    compression_name=None,  # Exhaustive KNN doesn't support compression at the moment
                 ),
-                # Add more profiles if needed
             ],
         )
         logger.info(f"Configuring {index_name} semantic search")
@@ -428,6 +506,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             semantic_search=semantic_search,
         )
         logger.debug(f"Creating {index_name} search index")
+
         await self._async_index_client.create_index(index)
 
     def _validate_index(self, index_name: Optional[str]) -> None:
@@ -457,6 +536,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 Dict[str, Tuple[str, MetadataIndexFieldType]],
             ]
         ] = None,
+        hidden_field_keys: Optional[List[str]] = None,
         index_name: Optional[str] = None,
         index_mapping: Optional[
             Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]]
@@ -467,6 +547,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # If we have content in other languages, it is better to enable the language analyzer to be adjusted in searchable fields.
         # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
         language_analyzer: str = "en.lucene",
+        compression_type: str = "none",
+        user_agent: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         # ruff: noqa: E501
@@ -489,6 +571,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 as separate fields in the index, use filterable_metadata_field_keys
                 to specify the metadata values that should be stored in these filterable fields
             doc_id_field_key (str): Index field storing doc_id
+            hidden_field_keys (List[str]):
+                List of index fields that should be hidden from the client.
+                This is useful for fields that are not needed for retrieving,
+                but are used for similarity search, like the embedding field.
             index_mapping:
                 Optional function with definition
                 (enriched_doc: Dict[str, str], metadata: Dict[str, Any]): Dict[str,str]
@@ -526,6 +612,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
+        super().__init__()
+        base_user_agent = "llamaindex-python"
+        self._user_agent = (
+            f"{base_user_agent} {user_agent}" if user_agent else base_user_agent
+        )
+
         self._index_client: SearchIndexClient = cast(SearchIndexClient, None)
         self._async_index_client: AsyncSearchIndexClient = cast(
             AsyncSearchIndexClient, None
@@ -545,13 +637,16 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             )
 
         self._language_analyzer = language_analyzer
+        self._compression_type = compression_type.lower()
 
         # Validate search_or_index_client
         if search_or_index_client is not None:
             if isinstance(search_or_index_client, SearchIndexClient):
                 # If SearchIndexClient is supplied so must index_name
                 self._index_client = cast(SearchIndexClient, search_or_index_client)
-
+                self._index_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
                 if not index_name:
                     raise ValueError(
                         "index_name must be supplied if search_or_index_client is of "
@@ -561,11 +656,17 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._search_client = self._index_client.get_search_client(
                     index_name=index_name
                 )
+                self._search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
 
             elif isinstance(search_or_index_client, AsyncSearchIndexClient):
                 # If SearchIndexClient is supplied so must index_name
                 self._async_index_client = cast(
                     AsyncSearchIndexClient, search_or_index_client
+                )
+                self._async_index_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
                 )
 
                 if not index_name:
@@ -577,10 +678,15 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._async_search_client = self._async_index_client.get_search_client(
                     index_name=index_name
                 )
+                self._async_search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
 
             elif isinstance(search_or_index_client, SearchClient):
                 self._search_client = cast(SearchClient, search_or_index_client)
-
+                self._search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
                 # Validate index_name
                 if index_name:
                     raise ValueError(
@@ -591,6 +697,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             elif isinstance(search_or_index_client, AsyncSearchClient):
                 self._async_search_client = cast(
                     AsyncSearchClient, search_or_index_client
+                )
+                self._async_search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
                 )
 
                 # Validate index_name
@@ -639,6 +748,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         }
 
         self._field_mapping = field_mapping
+        self._hidden_field_keys = hidden_field_keys or []
 
         self._index_mapping = (
             self._default_index_mapping if index_mapping is None else index_mapping
@@ -657,8 +767,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
             if self._index_management == IndexManagement.VALIDATE_INDEX:
                 self._validate_index(index_name)
-
-        super().__init__()
 
     @property
     def client(self) -> Any:
@@ -1005,14 +1113,13 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             # Join values with ' or ' to create an OR condition inside the any function
             metadata_mapping = self._metadata_to_index_field_map.get(subfilter.key)
 
-            index_field = metadata_mapping[0]
-
             if not metadata_mapping:
                 raise ValueError(
                     f"Metadata field '{subfilter.key}' is missing a mapping to an index field, "
                     "provide entry in 'filterable_metadata_field_keys' for this "
                     "vector store"
                 )
+            index_field = metadata_mapping[0]
 
             if subfilter.operator == FilterOperator.IN:
                 value_str = " or ".join(
@@ -1102,6 +1209,128 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 query, self._field_mapping, odata_filter, self._async_search_client
             )
         return await azure_query_result_search.asearch()
+
+    def _build_filter_str(
+        self,
+        field_mapping: Dict[str, str],
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> Optional[str]:
+        """Build OData filter string from node IDs and metadata filters.
+
+        Args:
+            field_mapping (Dict[str, str]): Field mapping dictionary
+            node_ids (Optional[List[str]]): List of node IDs to filter by
+            filters (Optional[MetadataFilters]): Metadata filters to apply
+
+        Returns:
+            Optional[str]: OData filter string or None if no filters
+        """
+        filter_str = None
+        if node_ids is not None:
+            filter_str = " or ".join(
+                [f"{field_mapping['id']} eq '{node_id}'" for node_id in node_ids]
+            )
+
+        if filters is not None:
+            metadata_filter = self._create_odata_filter(filters)
+            if filter_str is not None:
+                filter_str = f"({filter_str}) or ({metadata_filter})"
+            else:
+                filter_str = metadata_filter
+
+        return filter_str
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        limit: Optional[int] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from the Azure AI Search index.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to retrieve.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+            limit (Optional[int]): Maximum number of nodes to retrieve.
+
+        Returns:
+            List[BaseNode]: List of nodes retrieved from the index.
+        """
+        if not self._search_client:
+            raise ValueError("Search client not initialized")
+
+        filter_str = self._build_filter_str(self._field_mapping, node_ids, filters)
+        nodes = []
+        batch_size = 1000  # Azure Search batch size limit
+
+        while True:
+            try:
+                search_request = create_search_request(
+                    self._field_mapping, filter_str, batch_size, len(nodes)
+                )
+                results = self._search_client.search(**search_request)
+            except Exception as e:
+                handle_search_error(e)
+                break
+
+            batch_nodes = [
+                create_node_from_result(result, self._field_mapping)
+                for result in results
+            ]
+
+            nodes, continue_fetching = process_batch_results(
+                batch_nodes, nodes, batch_size, limit
+            )
+            if not continue_fetching:
+                break
+
+        return nodes
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        limit: Optional[int] = None,
+    ) -> List[BaseNode]:
+        """Get nodes asynchronously from the Azure AI Search index.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to retrieve.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+            limit (Optional[int]): Maximum number of nodes to retrieve.
+
+        Returns:
+            List[BaseNode]: List of nodes retrieved from the index.
+        """
+        if not self._async_search_client:
+            raise ValueError("Async Search client not initialized")
+
+        filter_str = self._build_filter_str(self._field_mapping, node_ids, filters)
+        nodes = []
+        batch_size = 1000  # Azure Search batch size limit
+
+        while True:
+            try:
+                search_request = create_search_request(
+                    self._field_mapping, filter_str, batch_size, len(nodes)
+                )
+                results = await self._async_search_client.search(**search_request)
+            except Exception as e:
+                handle_search_error(e)
+                break
+
+            batch_nodes = []
+            async for result in results:
+                batch_nodes.append(create_node_from_result(result, self._field_mapping))
+
+            nodes, continue_fetching = process_batch_results(
+                batch_nodes, nodes, batch_size, limit
+            )
+            if not continue_fetching:
+                break
+
+        return nodes
 
 
 class AzureQueryResultSearchBase:

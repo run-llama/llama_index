@@ -60,7 +60,7 @@ def sharepoint_reader():
     return sharepoint_reader
 
 
-def mock_requests_get(url, headers):
+def mock_send_get_with_retry(url):
     mock_response = MagicMock()
     mock_response.status_code = 200
 
@@ -145,8 +145,8 @@ def mock_sharepoint_api_calls():
         SharePointReader, "_get_sharepoint_folder_id", return_value="dummy_folder_id"
     ), patch.object(
         SharePointReader, "_get_drive_id", return_value="dummy_drive_id"
-    ), patch(
-        "requests.get", side_effect=mock_requests_get
+    ), patch.object(
+        SharePointReader, "_send_get_with_retry", side_effect=mock_send_get_with_retry
     ):
         yield
 
@@ -204,3 +204,47 @@ def test_load_documents_with_metadata(sharepoint_reader):
         assert documents[1].metadata["file_name"] == "file2.txt"
         assert documents[0].text == "File 1 content"
         assert documents[1].text == "File 2 content"
+
+
+def test_required_exts():
+    sharepoint_reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+        sharepoint_site_name="dummy_site_name",
+        sharepoint_folder_path="dummy_folder_path",
+        drive_name="dummy_drive_name",
+        required_exts=[".md"],
+    )
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        readme_file_path = os.path.join(tmpdirname, "readme.md")
+        audio_file_path = os.path.join(tmpdirname, "audio.aac")
+        with open(readme_file_path, "w") as f:
+            f.write("Readme content")
+        with open(audio_file_path, "wb") as f:
+            f.write(bytearray([0xFF, 0xF1, 0x50, 0x80, 0x00, 0x7F, 0xFC, 0x00]))
+
+        file_metadata = {
+            readme_file_path: {
+                "file_id": "readme_file_id",
+                "file_name": "readme.md",
+                "url": "http://dummyurl/readme.md",
+                "file_path": readme_file_path,
+            },
+            audio_file_path: {
+                "file_id": "audio_file_id",
+                "file_name": "audio.aac",
+                "url": "http://dummyurl/audio.aac",
+                "file_path": audio_file_path,
+            },
+        }
+
+        documents = sharepoint_reader._load_documents_with_metadata(
+            file_metadata, tmpdirname, recursive=False
+        )
+
+        assert documents is not None
+        assert len(documents) == 1
+        assert documents[0].metadata["file_name"] == "readme.md"
+        assert documents[0].text == "Readme content"

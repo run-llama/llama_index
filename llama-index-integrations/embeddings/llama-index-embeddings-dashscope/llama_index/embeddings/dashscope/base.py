@@ -178,13 +178,13 @@ class DashScopeEmbedding(MultiModalEmbedding):
         embed_batch_size: int = EMBED_MAX_BATCH_SIZE,
         **kwargs: Any,
     ) -> None:
-        self._api_key = api_key
-        self._text_type = text_type
         super().__init__(
             model_name=model_name,
             embed_batch_size=embed_batch_size,
             **kwargs,
         )
+        self._api_key = api_key
+        self._text_type = text_type
 
     @classmethod
     def class_name(cls) -> str:

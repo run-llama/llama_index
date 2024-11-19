@@ -8,22 +8,22 @@ on:
 
 env:
   POETRY_VERSION: "1.8.3"
+  SYSTEM_VERSION_COMPAT: "1"
 
 jobs:
   test:
     runs-on: ubuntu-latest-unit-tester
     strategy:
-      # You can use PyPy versions in python-version.
-      # For example, pypy-2.7 and pypy-3.8
+      fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
       - name: clear space
         env:
           CI: true
         shell: bash
         run: rm -rf /opt/hostedtoolcache/*
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: update rustc
@@ -31,11 +31,9 @@ jobs:
       - name: Install Poetry
         run: pipx install poetry==${{ env.POETRY_VERSION }}
       - name: Set up python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-          cache-dependency-path: "**/poetry.lock"
       - uses: pantsbuild/actions/init-pants@v5-scie-pants
         with:
           # v0 makes it easy to bust the cache if needed
@@ -51,4 +49,4 @@ jobs:
         env:
           CI: true
         shell: bash
-        run: poetry run make -s test
+        run: poetry run make test

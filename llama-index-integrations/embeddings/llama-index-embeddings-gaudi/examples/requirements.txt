@@ -1,0 +1,8 @@
+python-dotenv==1.0.0
+llama_index
+llama-index-llms-gaudi
+llama-index-embeddings-gaudi
+llama-index-graph-stores-neo4j
+llama-index-readers-wikipedia
+wikipedia
+InstructorEmbedding==1.0.1

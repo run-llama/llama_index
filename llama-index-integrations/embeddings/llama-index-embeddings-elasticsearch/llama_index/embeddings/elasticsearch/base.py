@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, List
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -35,8 +36,8 @@ class ElasticsearchEmbedding(BaseEmbedding):
         input_field: str = "text_field",
         **kwargs: Any,
     ):
-        self._client = client
         super().__init__(model_id=model_id, input_field=input_field, **kwargs)
+        self._client = client
 
     @classmethod
     def from_es_connection(
@@ -157,8 +158,11 @@ class ElasticsearchEmbedding(BaseEmbedding):
     def _get_query_embedding(self, query: str) -> List[float]:
         return self._get_embedding(query)
 
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        return await asyncio.to_thread(self._get_text_embedding, text)
+
     async def _aget_query_embedding(self, query: str) -> List[float]:
-        return self._get_query_embedding(query)
+        return await asyncio.to_thread(self._get_query_embedding, query)
 
 
 ElasticsearchEmbeddings = ElasticsearchEmbedding

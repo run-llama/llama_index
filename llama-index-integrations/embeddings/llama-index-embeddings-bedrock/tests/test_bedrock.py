@@ -190,3 +190,9 @@ class TestBedrockEmbedding(TestCase):
         )
 
         assert bedrock_embedding.list_supported_models() == exp_dict
+
+    def test_optional_args_in_json_schema(self) -> None:
+        json_schema = BedrockEmbedding.model_json_schema()
+        assert "botocore_session" in json_schema["properties"]
+        assert json_schema["properties"]["botocore_session"].get("default") is None
+        assert "botocore_session" not in json_schema.get("required", [])

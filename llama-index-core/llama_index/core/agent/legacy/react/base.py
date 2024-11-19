@@ -101,7 +101,7 @@ class ReActAgent(BaseAgent):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActAgent":
-        """Convenience constructor method from set of of BaseTools (Optional).
+        """Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -151,6 +151,7 @@ class ReActAgent(BaseAgent):
         if output.message.content is None:
             raise ValueError("Got empty message.")
         message_content = output.message.content
+
         current_reasoning = []
         try:
             reasoning_step = self._output_parser.parse(message_content, is_streaming)
@@ -268,6 +269,7 @@ class ReActAgent(BaseAgent):
             bool: Boolean on whether the chunk is the start of the final response
         """
         latest_content = chunk.message.content
+
         if latest_content:
             if not latest_content.startswith(
                 "Thought"
@@ -335,7 +337,7 @@ class ReActAgent(BaseAgent):
         if chat_history is not None:
             self._memory.set(chat_history)
 
-        self._memory.put(ChatMessage(content=message, role="user"))
+        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
@@ -374,7 +376,7 @@ class ReActAgent(BaseAgent):
         if chat_history is not None:
             self._memory.set(chat_history)
 
-        self._memory.put(ChatMessage(content=message, role="user"))
+        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
@@ -412,7 +414,7 @@ class ReActAgent(BaseAgent):
 
         if chat_history is not None:
             self._memory.set(chat_history)
-        self._memory.put(ChatMessage(content=message, role="user"))
+        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
@@ -431,7 +433,7 @@ class ReActAgent(BaseAgent):
 
             # iterate over stream, break out if is final answer after the "Answer: "
             full_response = ChatResponse(
-                message=ChatMessage(content=None, role="assistant")
+                message=ChatMessage(content=None, role=MessageRole.ASSISTANT)
             )
             for latest_chunk in chat_stream:
                 full_response = latest_chunk
@@ -473,7 +475,7 @@ class ReActAgent(BaseAgent):
         if chat_history is not None:
             self._memory.set(chat_history)
 
-        self._memory.put(ChatMessage(content=message, role="user"))
+        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
@@ -493,7 +495,7 @@ class ReActAgent(BaseAgent):
             # iterate over stream, break out if is final answer
             is_done = False
             full_response = ChatResponse(
-                message=ChatMessage(content=None, role="assistant")
+                message=ChatMessage(content=None, role=MessageRole.ASSISTANT)
             )
             async for latest_chunk in chat_stream:
                 full_response = latest_chunk

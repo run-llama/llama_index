@@ -87,6 +87,7 @@ class FireCrawlWebReader(BasePydanticReader):
             )
         elif self.mode == "crawl":
             firecrawl_docs = self.firecrawl.crawl_url(url, params=self.params)
+            firecrawl_docs = firecrawl_docs.get("data", [])
             for doc in firecrawl_docs:
                 documents.append(
                     Document(

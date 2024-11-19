@@ -29,14 +29,13 @@ license = "MIT"
 maintainers = ["Disiok"]
 name = "llama-index-packs-resume-screener"
 readme = "README.md"
-version = "0.1.6"
+version = "0.7.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.57"
-pypdf = "^4.0.1"
-llama-index-readers-file = "^0.1.1"
-llama-index-llms-openai = "^0.1.13"
+python = ">=3.9,<4.0"
+pypdf = "^5.1.0"
+llama-index-readers-file = "^0.4.0"
+llama-index-llms-openai = "^0.3.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

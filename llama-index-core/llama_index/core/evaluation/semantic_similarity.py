@@ -7,8 +7,7 @@ from llama_index.core.base.embeddings.base import (
 )
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, embed_model_from_settings_or_context
+from llama_index.core.settings import Settings
 
 
 class SemanticSimilarityEvaluator(BaseEvaluator):
@@ -23,7 +22,6 @@ class SemanticSimilarityEvaluator(BaseEvaluator):
         https://arxiv.org/pdf/2108.06130.pdf
 
     Args:
-        service_context (Optional[ServiceContext]): Service context.
         similarity_threshold (float): Embedding similarity threshold for "passing".
             Defaults to 0.8.
     """
@@ -34,12 +32,9 @@ class SemanticSimilarityEvaluator(BaseEvaluator):
         similarity_fn: Optional[Callable[..., float]] = None,
         similarity_mode: Optional[SimilarityMode] = None,
         similarity_threshold: float = 0.8,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> None:
-        self._embed_model = embed_model or embed_model_from_settings_or_context(
-            Settings, service_context
-        )
+        self._embed_model = embed_model or Settings.embed_model
+
         if similarity_fn is None:
             similarity_mode = similarity_mode or SimilarityMode.DEFAULT
             self._similarity_fn = lambda x, y: similarity(x, y, mode=similarity_mode)

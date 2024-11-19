@@ -141,7 +141,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    stores_text = True
+    stores_text: bool = True
     flat_metadata: bool = True
     uri: Optional[str]
     vector_column_name: Optional[str]
@@ -182,6 +182,22 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        super().__init__(
+            uri=uri,
+            table_name=table_name,
+            vector_column_name=vector_column_name,
+            nprobes=nprobes,
+            refine_factor=refine_factor,
+            text_key=text_key,
+            doc_id_key=doc_id_key,
+            mode=mode,
+            query_type=query_type,
+            overfetch_factor=overfetch_factor,
+            api_key=api_key,
+            region=region,
+            **kwargs,
+        )
+
         self._table_name = table_name
         self._metadata_keys = None
         self._fts_index = None
@@ -235,20 +251,6 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                 self._table = self._connection.open_table(table_name)
             else:
                 self._table = None
-
-        super().__init__(
-            uri=uri,
-            table_name=table_name,
-            vector_column_name=vector_column_name,
-            nprobes=nprobes,
-            refine_factor=refine_factor,
-            text_key=text_key,
-            doc_id_key=doc_id_key,
-            mode=mode,
-            query_type=query_type,
-            overfetch_factor=overfetch_factor,
-            **kwargs,
-        )
 
     @property
     def client(self) -> None:
@@ -480,14 +482,20 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             else:
                 raise ValueError(f"Invalid query type: {query_type}")
 
-        lance_query = (
-            self._table.search(
+        if query_type == "hybrid":
+            lance_query = (
+                self._table.search(
+                    vector_column_name=self.vector_column_name, query_type="hybrid"
+                )
+                .vector(query.query_embedding)
+                .text(query.query_str)
+            )
+        else:
+            lance_query = self._table.search(
                 query=_query,
                 vector_column_name=self.vector_column_name,
             )
-            .limit(query.similarity_top_k * self.overfetch_factor)
-            .where(where)
-        )
+        lance_query.limit(query.similarity_top_k * self.overfetch_factor).where(where)
 
         if query_type != "fts":
             lance_query.nprobes(self.nprobes)

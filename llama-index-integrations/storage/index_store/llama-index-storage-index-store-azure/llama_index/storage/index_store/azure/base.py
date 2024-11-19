@@ -68,6 +68,28 @@ class AzureIndexStore(KVIndexStore):
         return cls(azure_kvstore, namespace, collection_suffix)
 
     @classmethod
+    def from_account_and_id(
+        cls,
+        account_name: str,
+        namespace: Optional[str] = None,
+        endpoint: Optional[str] = None,
+        service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
+        collection_suffix: Optional[str] = None,
+    ) -> "AzureIndexStore":
+        """Load an AzureIndexStore from an account name and managed ID.
+
+        Args:
+            account_name (str): Azure Storage Account Name
+            namespace (Optional[str]): namespace for the AzureIndexStore
+            service_mode (ServiceMode): CosmosDB or Azure Table service mode
+        """
+        azure_kvstore = AzureKVStore.from_account_and_id(
+            account_name, endpoint, service_mode, partition_key
+        )
+        return cls(azure_kvstore, namespace, collection_suffix)
+
+    @classmethod
     def from_sas_token(
         cls,
         endpoint: str,

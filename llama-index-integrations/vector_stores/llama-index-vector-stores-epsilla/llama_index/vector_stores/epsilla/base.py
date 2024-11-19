@@ -67,7 +67,7 @@ class EpsillaVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    stores_text = True
+    stores_text: bool = True
     flat_metadata: bool = False
 
     _client: vectordb.Client = PrivateAttr()
