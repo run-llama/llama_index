@@ -369,7 +369,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         return LlamaCloudRetriever(
             project_id=self.project.id,
             pipeline_id=self.pipeline.id,
-            aoi_key=self._api_key,
+            api_key=self._api_key,
             base_url=self._base_url,
             app_url=self._app_url,
             timeout=self._timeout,
