@@ -77,7 +77,7 @@ def test_search_index_commands_standalone(collection: Collection) -> None:
     # Update that index by adding a filter
     # This will additionally index the "bar" and "foo"  fields
     # The Update method is not yet supported in Atlas Local.
-    if "localhost" not in os.environ.get("MONGODB_URI"):
+    if "mongodb+srv" in os.environ.get("MONGODB_URI"):
         new_similarity = "euclidean"
         index.update_vector_search_index(
             collection=collection,

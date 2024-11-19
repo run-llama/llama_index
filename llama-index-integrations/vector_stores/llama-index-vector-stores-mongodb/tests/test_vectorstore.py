@@ -169,7 +169,7 @@ def test_search_index_commands_vectorstore(
     # Update that index by adding a filter
     # This will additionally index the "bar" and "foo"  fields
     # The Update method is not yet supported in Atlas Local.
-    if "localhost" not in os.environ.get("MONGODB_URI"):
+    if "mongodb+srv" in os.environ.get("MONGODB_URI"):
         new_similarity = "euclidean"
         vector_store.update_vector_search_index(
             dimensions=DIMENSIONS,
