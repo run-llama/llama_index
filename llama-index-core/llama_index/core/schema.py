@@ -35,12 +35,12 @@ from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.utils import SAMPLE_TEXT, truncate_text
 
-if TYPE_CHECKING:
-    from haystack.schema import Document as HaystackDocument
+if TYPE_CHECKING:  # pragma: no cover
+    from haystack.schema import Document as HaystackDocument  # type: ignore
     from llama_cloud.types.cloud_document import CloudDocument
-    from semantic_kernel.memory.memory_record import MemoryRecord
+    from semantic_kernel.memory.memory_record import MemoryRecord  # type: ignore
 
-    from llama_index.core.bridge.langchain import Document as LCDocument
+    from llama_index.core.bridge.langchain import Document as LCDocument  # type: ignore
 
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
@@ -393,7 +393,7 @@ class BaseNode(BaseComponent):
         return relation
 
     @property
-    def ref_doc_id(self) -> Optional[str]:
+    def ref_doc_id(self) -> Optional[str]:  # pragma: no cover
         """Deprecated: Get ref doc id."""
         source_node = self.source_node
         if source_node is None:
@@ -401,7 +401,7 @@ class BaseNode(BaseComponent):
         return source_node.node_id
 
     @property
-    def extra_info(self) -> Dict[str, Any]:
+    def extra_info(self) -> Dict[str, Any]:  # pragma: no cover
         """TODO: DEPRECATED: Extra info."""
         return self.metadata
 
@@ -475,12 +475,17 @@ class MediaResource(BaseModel):
         we try to guess it using the filetype library. To avoid resource-intense
         operations, we won't load the path or the URL to guess the mimetype.
         """
-        if self.data and self.mimetype is None:
+        if not self.data or self.mimetype:
+            return self
+
+        try:
             decoded_data = base64.b64decode(self.data)
             guess = filetype.guess(decoded_data)
             self.mimetype = guess.mime if guess else None
-
-        return self
+        except Exception as e:
+            logging.debug("Data is not base64 encoded, cannot guess mimetype")
+        finally:
+            return self
 
     @property
     def hash(self) -> str:
