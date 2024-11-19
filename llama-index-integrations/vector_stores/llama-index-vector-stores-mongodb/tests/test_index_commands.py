@@ -119,9 +119,7 @@ def test_search_index_commands_standalone(collection: Collection) -> None:
     )
     assert idx_fulltext["type"] == "search"
     fields = idx_fulltext["latestDefinition"]["mappings"]["fields"]
-    assert FILTER_FIELD_NAME in fields
-    assert len(fields[FILTER_FIELD_NAME]) == 1
-    assert fields[FILTER_FIELD_NAME][0]["type"] == FILTER_FIELD_TYPE
+    assert fields == {FILTER_FIELD_NAME: [{"type": FILTER_FIELD_TYPE}]}
 
     # Finally, drop the index
     for name in [FULLTEXT_INDEX_NAME, VECTOR_INDEX_NAME]:

@@ -204,8 +204,7 @@ def test_search_index_commands_vectorstore(
     idx_fulltext = indexes[0] if indexes[0]["name"] == text_index_name else indexes[1]
     assert idx_fulltext["type"] == "search"
     fields = idx_fulltext["latestDefinition"]["mappings"]["fields"]
-    assert list(fields.keys()) == FILTER_FIELD_NAME
-    assert fields[FILTER_FIELD_NAME]["type"] == FILTER_FIELD_TYPE
+    assert fields == {FILTER_FIELD_NAME: [{"type": FILTER_FIELD_TYPE}]}
 
     # Finally, drop the index
     for name in [text_index_name, vector_index_name]:
