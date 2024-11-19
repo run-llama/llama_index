@@ -10,7 +10,7 @@ from llama_index.core.schema import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def MyNode():
     class MyNode(BaseNode):
         def __init__(self, *args, **kwargs) -> None:

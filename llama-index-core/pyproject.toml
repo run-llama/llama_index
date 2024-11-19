@@ -228,7 +228,7 @@ unfixable = [
 mypy-init-return = true
 
 [tool.ruff.lint.flake8-pytest-style]
-fixture-parentheses = false
+fixture-parentheses = true
 
 [tool.ruff.pydocstyle]
 convention = "google"
