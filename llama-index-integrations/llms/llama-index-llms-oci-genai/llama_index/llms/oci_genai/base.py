@@ -241,8 +241,11 @@ class OCIGenAI(FunctionCallingLLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = False
+        tools = kwargs.pop("tools", None)
         all_kwargs = self._get_all_kwargs(**kwargs)
         chat_params = {**all_kwargs, **oci_params}
+        if tools:
+            chat_params["tools"] = [self._provider.convert_to_oci_tool(tool) for tool in tools]
 
         request = self._chat_generator(
             compartment_id=self.compartment_id,
@@ -265,10 +268,9 @@ class OCIGenAI(FunctionCallingLLM):
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=self._provider.chat_response_to_text(response),
-                additional_kwargs=generation_info,
+                additional_kwargs=generation_info
             ),
             raw=response.__dict__,
-            additional_kwargs=llm_output
         )
 
     def stream_chat(
@@ -276,8 +278,11 @@ class OCIGenAI(FunctionCallingLLM):
     ) -> ChatResponseGen:
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = True
+        tools = kwargs.pop("tools", None)
         all_kwargs = self._get_all_kwargs(**kwargs)
         chat_params = {**all_kwargs, **oci_params}
+        if tools:
+            chat_params["tools"] = [self._provider.convert_to_oci_tool(tool) for tool in tools]
 
         request = self._chat_generator(
             compartment_id=self.compartment_id,
