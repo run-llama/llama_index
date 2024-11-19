@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, 
 
 import filetype
 from dataclasses_json import DataClassJsonMixin
-from typing_extensions import Self, override
+from typing_extensions import Self
 
 from llama_index.core.bridge.pydantic import (
     AnyUrl,
@@ -218,7 +218,7 @@ class MetadataMode(str, Enum):
 
 class RelatedNodeInfo(BaseComponent):
     node_id: str
-    node_type: Optional[ObjectType] = None
+    node_type: ObjectType | str | None = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     hash: Optional[str] = None
 
@@ -445,8 +445,8 @@ class MediaResource(BaseModel):
     storing vector embeddings for the media content.
 
     Attributes:
-        embeddings: Dense vector representation of this resource for embedding-based search/retrieval
-        sparse: Sparse vector representation of this resource
+        embeddings: Multi-vector dict representation of this resource for embedding-based search/retrieval
+        text: Plain text representation of this resource
         data: Raw binary data of the media content
         mimetype: The MIME type indicating the format/type of the media content
         path: Local filesystem path where the media content can be accessed
@@ -457,7 +457,12 @@ class MediaResource(BaseModel):
         default=None, description="Vector representation of this resource."
     )
     data: bytes | None = Field(
-        default=None, exclude=True, description="Binary data of this resource."
+        default=None,
+        exclude=True,
+        description="base64 binary representation of this resource.",
+    )
+    text: str | None = Field(
+        default=None, description="Text representation of this resource."
     )
     mimetype: str | None = Field(
         default=None, description="MIME type of this resource."
@@ -491,21 +496,26 @@ class MediaResource(BaseModel):
     def hash(self) -> str:
         """Generate a hash to uniquely identify the media resource.
 
-        The hash is generated based on the available content (data, path, or url).
+        The hash is generated based on the available content (data, path, text or url).
         Returns an empty string if no content is available.
         """
+        bits: list[str] = []
+        if self.text is not None:
+            bits.append(self.text)
         if self.data is not None:
             # Hash the binary data if available
-            return str(sha256(self.data).hexdigest())
-        elif self.path is not None:
+            bits.append(str(sha256(self.data).hexdigest()))
+        if self.path is not None:
             # Hash the file contents if a path is provided
-            return str(sha256(self.path.read_bytes()).hexdigest())
-        elif self.url is not None:
+            bits.append(str(sha256(self.path.read_bytes()).hexdigest()))
+        if self.url is not None:
             # Use the URL string as basis for hash
-            return str(sha256(str(self.url).encode("utf-8")).hexdigest())
-        else:
-            # Return empty string if no content is available
+            bits.append(str(sha256(str(self.url).encode("utf-8")).hexdigest()))
+
+        doc_identity = "".join(bits)
+        if not doc_identity:
             return ""
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
 
 
 class Node(BaseNode):
@@ -531,18 +541,21 @@ class Node(BaseNode):
         """Get Object type."""
         return ObjectType.MULTIMODAL
 
-    @override
-    def get_content(
-        self,
-        metadata_mode: MetadataMode = MetadataMode.ALL,
-        modality: Modality = Modality.TEXT,
-    ) -> Any:
-        """Get object content."""
+    def get_content(self, metadata_mode: MetadataMode = MetadataMode.ALL) -> str:
+        """Get the text content for the node if available.
+
+        Provided for backward compatibility, use self.text directly instead.
+        """
+        if self.text:
+            return self.text.text or ""
         return ""
 
-    @override
-    def set_content(self, value: Any, modality: Modality = Modality.TEXT) -> None:
-        """Set the content of the node."""
+    def set_content(self, value: str) -> None:
+        """Set the text content of the node.
+
+        Provided for backward compatibility, set self.text instead.
+        """
+        self.text = MediaResource(text=value)
 
     @property
     def hash(self) -> str:

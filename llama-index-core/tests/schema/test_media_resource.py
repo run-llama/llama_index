@@ -24,15 +24,7 @@ def test_hash():
     path = Path(__file__).parent / "data" / "data.txt"
     url = AnyUrl("http://example.com")
     assert (
-        MediaResource(data=data, path=path, url=url).hash
-        == "4be66ea6f5222861df37e88d4635bffb99e183435f79fba13055b835b5dc420b"
-    )
-    assert (
-        MediaResource(path=path, url=url).hash
-        == "c0f5efbef0fe98aa90619444250b1a5eb23158d6686f0b190838f3d544ec85b9"
-    )
-    assert (
-        MediaResource(url=url).hash
-        == "2a1b402420ef46577471cdc7409b0fa2c6a204db316e59ade2d805435489a067"
+        MediaResource(data=data, path=path, url=url, text="some text").hash
+        == "30ffd5d92992d12d59991a97a6da08fec784c8cb527f34a96c1cdc43edcdb661"
     )
     assert MediaResource().hash == ""
