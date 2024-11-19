@@ -76,16 +76,20 @@ def test_search_index_commands_standalone(collection: Collection) -> None:
 
     # Update that index by adding a filter
     # This will additionally index the "bar" and "foo"  fields
-    new_similarity = "euclidean"
-    index.update_vector_search_index(
-        collection=collection,
-        index_name=index_name,
-        dimensions=DIMENSIONS,
-        path="embedding",
-        similarity=new_similarity,
-        filters=[FILTER_FIELD_NAME],
-        wait_until_complete=wait_until_complete,
-    )
+    # The Update method is not yet supported in Atlas Local.
+    if "localhost" not in os.environ.get("MONGODB_URI"):
+        new_similarity = "euclidean"
+        index.update_vector_search_index(
+            collection=collection,
+            index_name=index_name,
+            dimensions=DIMENSIONS,
+            path="embedding",
+            similarity=new_similarity,
+            filters=[FILTER_FIELD_NAME],
+            wait_until_complete=wait_until_complete,
+        )
+    else:
+        new_similarity = similarity
 
     indexes = list(collection.list_search_indexes())
     assert len(indexes) == 1
