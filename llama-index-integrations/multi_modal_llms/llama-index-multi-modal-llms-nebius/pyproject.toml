@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.nebius"
+import_path = "llama_index.multi_modal_llms.nebius"
 
 [tool.llamahub.class_authors]
-NebiusLLM = "llama-index"
+NebiusMultiModal = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,17 +22,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Akim Tsvigun <aktsvigun@nebius.com>"]
-description = "llama-index llms Nebius AI Studio integration"
+description = "llama-index multi-modal-llms nebius ai studio integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-llms-nebius"
+name = "llama-index-multi-modal-llms-nebius"
 readme = "README.md"
-version = "0.0.1"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-index-llms-openai-like = "^0.2.0"
-llama-index-core = "^0.11.0"
+python = ">=3.9,<4.0"
+llama-index-multi-modal-llms-openai = "^0.3.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
