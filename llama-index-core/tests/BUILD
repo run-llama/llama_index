@@ -11,4 +11,8 @@ python_test_utils(
     ],
 )
 
-python_tests()
+python_tests(
+    dependencies=[
+        "llama-index-core:poetry#eval-type-backport"
+    ]
+)
