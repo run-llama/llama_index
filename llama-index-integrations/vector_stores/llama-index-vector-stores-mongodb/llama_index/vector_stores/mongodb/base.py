@@ -439,7 +439,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
         """
         return create_vector_search_index(
-            self,
+            self.collection,
             self._vector_index_name,
             dimensions,
             path,
@@ -460,7 +460,9 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 until search index is ready.
         """
         return drop_vector_search_index(
-            self, self._vector_index_name, wait_until_complete=wait_until_complete
+            self.collection,
+            self._vector_index_name,
+            wait_until_complete=wait_until_complete,
         )
 
     def update_vector_search_index(
@@ -487,7 +489,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
         """
         return update_vector_search_index(
-            self,
+            self.collection,
             self._vector_index_name,
             dimensions,
             path,
@@ -513,7 +515,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
         """
         return create_vector_search_index(
-            self,
+            self.collection,
             self._fulltext_index_name,
             field,
             field_type,
