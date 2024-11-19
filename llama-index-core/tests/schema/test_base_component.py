@@ -5,7 +5,7 @@ from llama_index.core.schema import BaseComponent
 from pydantic.fields import PrivateAttr
 
 
-@pytest.fixture
+@pytest.fixture()
 def my_component():
     class MyComponent(BaseComponent):
         foo: str = "bar"

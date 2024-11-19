@@ -2,7 +2,7 @@ import pytest
 from llama_index.core.schema import ImageNode, Node, NodeWithScore, TextNode
 
 
-@pytest.fixture
+@pytest.fixture()
 def text_node() -> TextNode:
     return TextNode(
         text="hello world",
@@ -11,7 +11,7 @@ def text_node() -> TextNode:
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def node_with_score(text_node: TextNode) -> NodeWithScore:
     return NodeWithScore(
         node=text_node,
