@@ -21,7 +21,7 @@ def test_mimetype():
 
 def test_hash():
     data = b"test bytes"
-    path = Path(__file__).parent.resolve() / "data" / "data.txt"
+    path = Path(__file__).resolve().parent / "data" / "data.txt"
     url = AnyUrl("http://example.com")
     assert (
         MediaResource(data=data, path=path, url=url, text="some text").hash
