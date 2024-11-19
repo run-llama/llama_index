@@ -7,8 +7,7 @@ from http import HTTPStatus
 from typing import Any, Dict, List
 
 import requests
-from llama_index.core import Document
-
+from llama_index.core.schema import Document, MetadataMode
 from llama_index.core.readers.base import BaseReader
 
 from llama_index.readers.pebblo.utility import (
@@ -95,18 +94,18 @@ class PebbloSafeReader(BaseReader):
                                         loading by reader. Defaults to False.
         """
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
-        doc_content = [doc.to_langchain_format().dict() for doc in self.docs]
+
         docs = []
         self._set_reader_details(**kwargs)
-        for doc in doc_content:
-            page_content = str(doc.get("page_content"))
+        for doc in self.docs:
+            page_content = str(doc.get_content(metadata_mode=MetadataMode.NONE))
             page_content_size = self.calculate_content_size(page_content)
             self.source_aggr_size += page_content_size
             docs.append(
                 {
                     "doc": page_content,
                     "source_path": self.source_path,
-                    "last_modified": doc.get("metadata", {}).get("last_modified", None),
+                    "last_modified": doc.metadata.get("last_modified", None),
                     "file_owner": self.source_owner,
                     **(
                         {"source_path_size": self.source_path_size}

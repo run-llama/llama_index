@@ -449,6 +449,7 @@ nav:
           - ./examples/multi_modal/multi_modal_retrieval.ipynb
           - ./examples/multi_modal/multi_modal_video_RAG.ipynb
           - ./examples/multi_modal/multi_modal_videorag_videodb.ipynb
+          - ./examples/multi_modal/nvidia_multi_modal.ipynb
           - ./examples/multi_modal/ollama_cookbook.ipynb
           - ./examples/multi_modal/openai_multi_modal.ipynb
           - ./examples/multi_modal/openvino_multimodal.ipynb
@@ -861,6 +862,7 @@ nav:
           - ./api_reference/callbacks/literalai.md
           - ./api_reference/callbacks/llama_debug.md
           - ./api_reference/callbacks/openinference.md
+          - ./api_reference/callbacks/opentelemetry.md
           - ./api_reference/callbacks/opik.md
           - ./api_reference/callbacks/promptlayer.md
           - ./api_reference/callbacks/token_counter.md
@@ -1047,7 +1049,7 @@ nav:
           - ./api_reference/llms/replicate.md
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
-          - ./api_reference/llms/sambanovacloud.md
+          - ./api_reference/llms/sambanovasystems.md
           - ./api_reference/llms/siliconflow.md
           - ./api_reference/llms/solar.md
           - ./api_reference/llms/text_generation_inference.md
@@ -1159,6 +1161,7 @@ nav:
           - ./api_reference/multi_modal_llms/huggingface.md
           - ./api_reference/multi_modal_llms/index.md
           - ./api_reference/multi_modal_llms/mistralai.md
+          - ./api_reference/multi_modal_llms/nvidia.md
           - ./api_reference/multi_modal_llms/ollama.md
           - ./api_reference/multi_modal_llms/openai.md
           - ./api_reference/multi_modal_llms/openvino.md
@@ -1590,6 +1593,7 @@ nav:
               - ./api_reference/storage/vector_store/rocksetdb.md
               - ./api_reference/storage/vector_store/simple.md
               - ./api_reference/storage/vector_store/singlestoredb.md
+              - ./api_reference/storage/vector_store/sqlalchemy.md
               - ./api_reference/storage/vector_store/supabase.md
               - ./api_reference/storage/vector_store/tablestore.md
               - ./api_reference/storage/vector_store/tair.md
@@ -1619,6 +1623,7 @@ nav:
           - ./api_reference/tools/code_interpreter.md
           - ./api_reference/tools/cogniswitch.md
           - ./api_reference/tools/database.md
+          - ./api_reference/tools/docker_code.md
           - ./api_reference/tools/duckduckgo.md
           - ./api_reference/tools/exa.md
           - ./api_reference/tools/finance.md
@@ -2314,11 +2319,12 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-siliconflow
             - ../llama-index-integrations/memory/llama-index-memory-mem0
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-siliconflow-rerank
-            - ../llama-index-integrations/llms/llama-index-llms-sambanovacloud
+            - ../llama-index-integrations/llms/llama-index-llms-sambanovasystems
             - ../llama-index-integrations/embeddings/llama-index-embeddings-modelscope
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-colpali-rerank
             - ../llama-index-integrations/readers/llama-index-readers-gitbook
             - ../llama-index-integrations/llms/llama-index-llms-siliconflow
+            - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-nvidia
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

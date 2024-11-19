@@ -24,18 +24,18 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Yash Parmar <Yash-1511>"]
+authors = ["Yash Parmar <Yash-1511@users.noreply.github.com>"]
 description = "llama-index tools jina integration"
 license = "MIT"
 name = "llama-index-tools-jina"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 yarl = "^1.9.4"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

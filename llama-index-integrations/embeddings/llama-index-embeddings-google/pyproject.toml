@@ -29,12 +29,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-google"
 readme = "README.md"
-version = "0.2.1"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 google-generativeai = "^0.5.2"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.dependencies.tensorflow-hub]
 optional = true
