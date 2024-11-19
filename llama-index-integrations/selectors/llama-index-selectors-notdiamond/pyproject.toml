@@ -29,7 +29,7 @@ description = "llama-index selectors Not Diamond integration"
 name = "llama-index-selectors-notdiamond"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.1"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.10.0,<3.12"

@@ -39,6 +39,12 @@ from llama_index.multi_modal_llms.nvidia.utils import (
 import aiohttp
 import json
 
+from llama_index.core.bridge.pydantic import BaseModel
+
+
+class Model(BaseModel):
+    id: str
+
 
 class NVIDIAClient:
     def __init__(
@@ -58,14 +64,14 @@ class NVIDIAClient:
         headers["accept"] = "text/event-stream" if stream else "application/json"
         return headers
 
-    def get_model_details(self) -> List[str]:
+    def get_model_details(self) -> List[Model]:
         """
         Get model details.
 
         Returns:
             List of models
         """
-        return list(NVIDIA_MULTI_MODAL_MODELS.keys())
+        return [Model(id=model) for model in NVIDIA_MULTI_MODAL_MODELS]
 
     def request(
         self,
@@ -198,7 +204,7 @@ class NVIDIAMultiModal(MultiModalLLM):
         )
 
     @property
-    def available_models(self):
+    def available_models(self) -> List[Model]:
         return self._client.get_model_details()
 
     def _get_credential_kwargs(self) -> Dict[str, Any]:
