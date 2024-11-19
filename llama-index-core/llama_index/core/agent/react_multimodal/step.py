@@ -132,7 +132,10 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
                 from llama_index.multi_modal_llms.openai.utils import (
                     generate_openai_multi_modal_chat_message,
                 )  # pants: no-infer-dep
-                self._generate_chat_message_fn = generate_openai_multi_modal_chat_message
+
+                self._generate_chat_message_fn = (
+                    generate_openai_multi_modal_chat_message
+                )
 
             except ImportError:
                 raise ImportError(
