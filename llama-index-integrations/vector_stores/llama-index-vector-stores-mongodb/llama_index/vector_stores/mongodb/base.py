@@ -35,6 +35,7 @@ from .index import (
     create_vector_search_index,
     drop_vector_search_index,
     update_vector_search_index,
+    create_fulltext_search_index,
 )
 from pymongo import MongoClient
 from pymongo.collection import Collection
@@ -446,6 +447,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             similarity,
             filters,
             wait_until_complete=wait_until_complete,
+            **kwargs,
         )
 
     def drop_vector_search_index(
@@ -496,6 +498,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             similarity,
             filters,
             wait_until_complete=wait_until_complete,
+            **kwargs,
         )
 
     def create_fulltext_search_index(
@@ -514,10 +517,11 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 until search index is ready
             kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
         """
-        return create_vector_search_index(
+        return create_fulltext_search_index(
             self.collection,
             self._fulltext_index_name,
             field,
             field_type,
             wait_until_complete=wait_until_complete,
+            **kwargs,
         )
