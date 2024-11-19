@@ -14,7 +14,17 @@ from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+)
 
 import filetype
 from dataclasses_json import DataClassJsonMixin
@@ -27,6 +37,7 @@ from llama_index.core.bridge.pydantic import (
     Field,
     GetJsonSchemaHandler,
     JsonSchemaValue,
+    PlainSerializer,
     SerializeAsAny,
     model_serializer,
     model_validator,
@@ -52,6 +63,10 @@ WRAP_WIDTH = 70
 ImageType = Union[str, BytesIO]
 
 logger = logging.getLogger(__name__)
+
+EnumNameSerializer = PlainSerializer(
+    lambda e: e.value, return_type="str", when_used="always"
+)
 
 
 class BaseComponent(BaseModel):
@@ -218,7 +233,7 @@ class MetadataMode(str, Enum):
 
 class RelatedNodeInfo(BaseComponent):
     node_id: str
-    node_type: ObjectType | str | None = None
+    node_type: Annotated[ObjectType, EnumNameSerializer] | str | None = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     hash: Optional[str] = None
 
@@ -268,7 +283,10 @@ class BaseNode(BaseComponent):
         default_factory=list,
         description="Metadata keys that are excluded from text for the LLM.",
     )
-    relationships: Dict[NodeRelationship, RelatedNodeType] = Field(
+    relationships: Dict[
+        Annotated[NodeRelationship, EnumNameSerializer],
+        RelatedNodeType,
+    ] = Field(
         default_factory=dict,
         description="A mapping of relationships to other node information.",
     )
