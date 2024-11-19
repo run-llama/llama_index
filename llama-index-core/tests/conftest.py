@@ -18,6 +18,12 @@ from tests.mock_utils.mock_predict import (
 )
 from tests.mock_utils.mock_text_splitter import patch_token_splitter_newline
 
+try:
+    # Make pants aware of this package
+    import eval_type_backport  # noqa # type: ignore
+except ImportError:
+    pass
+
 # @pytest.fixture(autouse=True)
 # def no_networking(monkeypatch: pytest.MonkeyPatch) -> None:
 #     def deny_network(*args: Any, **kwargs: Any) -> None:
