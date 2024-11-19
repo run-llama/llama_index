@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from llama_index.core.bridge.pydantic import AnyUrl
 from llama_index.core.schema import MediaResource
 
@@ -20,11 +18,13 @@ def test_mimetype():
 
 
 def test_hash():
-    data = b"test bytes"
-    path = Path(__file__).resolve().parent / "data" / "data.txt"
-    url = AnyUrl("http://example.com")
     assert (
-        MediaResource(data=data, path=path, url=url, text="some text").hash
-        == "30ffd5d92992d12d59991a97a6da08fec784c8cb527f34a96c1cdc43edcdb661"
+        MediaResource(
+            data=b"test bytes",
+            path="foo/bar/baz",
+            url=AnyUrl("http://example.com"),
+            text="some text",
+        ).hash
+        == "7ac964db7843a9ffb37cda7b5b9822b0f84111d6a271b4991dd26d1fc68490d3"
     )
     assert MediaResource().hash == ""
