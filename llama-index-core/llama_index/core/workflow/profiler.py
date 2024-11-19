@@ -11,7 +11,16 @@ class Checkpoint(BaseModel):
     prev_id: Optional[str] = Field(
         description="Id of previous checkpoint. None if there is no prev checkpoint."
     )
-    run_id: str = Field(description="The id of the run this checkpoint is a part of.")
+    original_run_id: str = Field(
+        description="The id of the run this checkpoint originally emenated from of."
+    )
+    child_runs: List[str] = Field(
+        default_factory=list,
+        description="Run ids of the runs started off from this checkpoint.",
+    )
+    context_delta: Any = Field(
+        description="The delta wrt to Context between this Checkpoint and its predecessor."
+    )
 
 
 class WorkflowProfiler:
