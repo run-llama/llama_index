@@ -88,21 +88,19 @@ def test_search_index_commands_standalone(collection: Collection) -> None:
             filters=[FILTER_FIELD_NAME],
             wait_until_complete=wait_until_complete,
         )
-    else:
-        new_similarity = similarity
 
-    indexes = list(collection.list_search_indexes())
-    assert len(indexes) == 1
-    assert indexes[0]["name"] == index_name
-    fields = indexes[0]["latestDefinition"]["fields"]
-    assert len(fields) == 2
-    assert {"type": "filter", "path": FILTER_FIELD_NAME} in fields
-    assert {
-        "numDimensions": DIMENSIONS,
-        "path": "embedding",
-        "similarity": f"{new_similarity}",
-        "type": "vector",
-    } in fields
+        indexes = list(collection.list_search_indexes())
+        assert len(indexes) == 1
+        assert indexes[0]["name"] == index_name
+        fields = indexes[0]["latestDefinition"]["fields"]
+        assert len(fields) == 2
+        assert {"type": "filter", "path": FILTER_FIELD_NAME} in fields
+        assert {
+            "numDimensions": DIMENSIONS,
+            "path": "embedding",
+            "similarity": f"{new_similarity}",
+            "type": "vector",
+        } in fields
 
     # Now add a full-text search index for the filter field
     index.create_fulltext_search_index(
