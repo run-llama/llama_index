@@ -577,24 +577,26 @@ class OpenAI(LLM):
     ) -> ChatResponse:
         aclient = self._get_aclient()
         message_dicts = to_openai_message_dicts(messages)
-        
 
-        start_time = time.time()
+        # start_time = time.time()
         # try:
         response = await aclient.chat.completions.create(
-            messages=message_dicts, stream=False, **self._get_model_kwargs(**kwargs)
+            messages=message_dicts,
+            stream=False,
+            **self._get_model_kwargs(**kwargs),
+            # logprobs=True,
         )
         # except Exception:
         #     redis_client.json().numincrby("aichat", "$['errors']", 1)
         #     raise SystemError
-        end_time = time.time()
-        elapsed_time = end_time - start_time
+        # end_time = time.time()
+        # elapsed_time = end_time - start_time
 
         # print(f"==> AI took {elapsed_time} seconds")
 
         message_dict = response.choices[0].message
         message = from_openai_message(message_dict)
-        logprobs_dict = response.choices[0].logprobs
+        # logprobs_dict = response.choices[0].logprobs
         return ChatResponse(
             message=message,
             raw=response,
