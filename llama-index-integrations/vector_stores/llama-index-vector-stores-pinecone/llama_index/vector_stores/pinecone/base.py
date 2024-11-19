@@ -366,6 +366,38 @@ class PineconeVectorStore(BasePydanticVectorStore):
         )
         return ids
 
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[List[MetadataFilters]] = None,
+        limit: int = 100,
+    ) -> List[BaseNode]:
+        filter = None
+        if filters is not None:
+            filter = _to_pinecone_filter(filters)
+
+        if node_ids is not None:
+            raise ValueError(
+                "Getting nodes by node id not supported by Pinecone at the time of writing."
+            )
+
+        if node_ids is None and filters is None:
+            raise ValueError("Filters must be specified")
+
+        # Pinecone requires a query vector, so default to 0s if not provided
+        query_vector = [0.0] * self._pinecone_index.describe_index_stats()["dimension"]
+
+        response = self._pinecone_index.query(
+            top_k=limit,
+            vector=query_vector,
+            namespace=self.namespace,
+            filter=filter,
+            include_values=True,
+            include_metadata=True,
+        )
+
+        return [metadata_dict_to_node(match.metadata) for match in response.matches]
+
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id.
