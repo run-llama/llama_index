@@ -61,6 +61,30 @@ CHAT_ONLY_MODELS = {
     "mistral.mistral-large-2407-v1:0": 32000,
     "ai21.jamba-1-5-mini-v1:0": 256000,
     "ai21.jamba-1-5-large-v1:0": 256000,
+    "us.anthropic.claude-3-haiku-20240307-v1:0": 200000,
+    "us.anthropic.claude-3-opus-20240229-v1:0": 200000,
+    "us.anthropic.claude-3-sonnet-20240229-v1:0": 200000,
+    "us.anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
+    "us.anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
+    "us.anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "us.meta.llama3-1-70b-instruct-v1:0": 8192,
+    "us.meta.llama3-1-8b-instruct-v1:0": 8192,
+    "us.meta.llama3-2-11b-instruct-v1:0": 8192,
+    "us.meta.llama3-2-1b-instruct-v1:0": 8192,
+    "us.meta.llama3-2-3b-instruct-v1:0": 8192,
+    "us.meta.llama3-2-90b-instruct-v1:0": 8192,
+    "eu.anthropic.claude-3-haiku-20240307-v1:0": 200000,
+    "eu.anthropic.claude-3-opus-20240229-v1:0": 200000,
+    "eu.anthropic.claude-3-sonnet-20240229-v1:0": 200000,
+    "eu.anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
+    "eu.anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
+    "eu.anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "eu.meta.llama3-1-70b-instruct-v1:0": 8192,
+    "eu.meta.llama3-1-8b-instruct-v1:0": 8192,
+    "eu.meta.llama3-2-11b-instruct-v1:0": 8192,
+    "eu.meta.llama3-2-1b-instruct-v1:0": 8192,
+    "eu.meta.llama3-2-3b-instruct-v1:0": 8192,
+    "eu.meta.llama3-2-90b-instruct-v1:0": 8192,
 }
 BEDROCK_FOUNDATION_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}
 
@@ -85,6 +109,18 @@ STREAMING_MODELS = {
     "mistral.mixtral-8x7b-instruct-v0:1",
     "mistral.mistral-large-2402-v1:0",
     "mistral.mistral-large-2407-v1:0",
+    "us.anthropic.claude-3-haiku-20240307-v1:0",
+    "us.anthropic.claude-3-opus-20240229-v1:0",
+    "us.anthropic.claude-3-sonnet-20240229-v1:0",
+    "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+    "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "eu.anthropic.claude-3-haiku-20240307-v1:0",
+    "eu.anthropic.claude-3-opus-20240229-v1:0",
+    "eu.anthropic.claude-3-sonnet-20240229-v1:0",
+    "eu.anthropic.claude-3-5-haiku-20241022-v1:0",
+    "eu.anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "eu.anthropic.claude-3-5-sonnet-20241022-v2:0",
 }
 
 
@@ -223,7 +259,10 @@ PROVIDERS = {
 
 
 def get_provider(model: str) -> Provider:
-    provider_name = model.split(".")[0]
+    model_split = model.split(".")
+    provider_name = model_split[0]
+    if len(model_split) == 3:
+        provider_name = model_split[1]
     if provider_name not in PROVIDERS:
         raise ValueError(f"Provider {provider_name} for model {model} is not supported")
     return PROVIDERS[provider_name]

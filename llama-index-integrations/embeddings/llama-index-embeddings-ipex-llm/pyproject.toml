@@ -30,11 +30,11 @@ license = "MIT"
 name = "llama-index-embeddings-ipex-llm"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.2"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 ipex-llm = {allow-prereleases = true, extras = ["llama-index"], version = ">=2.1.0b20240529"}
 torch = {optional = true, source = "ipex-xpu-src-us", version = "2.1.0a0"}
 torchvision = {optional = true, source = "ipex-xpu-src-us", version = "0.16.0a0"}

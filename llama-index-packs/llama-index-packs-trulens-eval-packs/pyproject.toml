@@ -31,12 +31,12 @@ license = "MIT"
 maintainers = ["joshreini1"]
 name = "llama-index-packs-trulens-eval-packs"
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.9.7 || >3.9.7,<3.12"
+python = ">=3.9,<3.9.7 || >3.9.7,<3.12"
 trulens-eval = "^0.21.0"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
