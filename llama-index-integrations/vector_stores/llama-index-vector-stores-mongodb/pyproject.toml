@@ -33,7 +33,7 @@ version = "0.6.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-index-core = "^0.10"  # TODO Check if required
+llama-index-core = ">=0.12.0,<0.13.0"
 pymongo = "^4.6.1"
 
 [tool.poetry.group.dev.dependencies]
