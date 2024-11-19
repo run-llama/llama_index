@@ -25,7 +25,7 @@ print(response)
 
 # Call complete with stop
 response = ZhipuAI(model="glm-4", api_key=api_key).complete(
-    prompt="who are you", stop="Zhipu"
+    prompt="who are you", stop=["Zhipu"]
 )
 print(response)
 
