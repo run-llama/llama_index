@@ -130,11 +130,11 @@ def test_create_checkpoint(workflow: DummyWorkflow):
     ctx_snapshot = ctx.to_dict()
     ctx._create_checkpoint(
         last_completed_step="start_step",
-        incoming_ev=incoming_ev,
+        input_ev=incoming_ev,
         output_ev=output_ev,
     )
     ckpt: Checkpoint = ctx._broker_log[0]
-    assert ckpt.incoming_event == incoming_ev
+    assert ckpt.input_event == incoming_ev
     assert ckpt.output_event == output_ev
     assert ckpt.last_completed_step == "start_step"
     # should be the same since nothing happened between snapshot and creating ckpt

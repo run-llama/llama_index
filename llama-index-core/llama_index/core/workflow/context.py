@@ -244,39 +244,47 @@ class Context:
                 )
 
     def _create_checkpoint(
-        self, last_completed_step: Optional[str], incoming_ev: Event, output_ev: Event
+        self, last_completed_step: Optional[str], input_ev: Event, output_ev: Event
     ) -> Checkpoint:
         """Build a checkpoint around the last completed step."""
         checkpoint = Checkpoint(
             last_completed_step=last_completed_step,
-            incoming_event=incoming_ev,
+            input_event=input_ev,
             output_event=output_ev,
             ctx_state=self.to_dict(),
         )
         self._broker_log.append(checkpoint)
 
     def _checkpoint_filter_condition(
-        ckpt: Checkpoint, step: Optional[str], event_type: Optional[Type[Event]]
+        ckpt: Checkpoint,
+        last_completed_step: Optional[str],
+        input_event_type: Optional[Type[Event]],
+        output_event_type: Optional[Type[Event]],
     ) -> bool:
-        if step and ckpt.step != step:
+        if last_completed_step and ckpt.last_completed_step != last_completed_step:
             return False
-        if event_type and type(ckpt.event) != event_type:
+        if input_event_type and type(ckpt.input_event) != input_event_type:
+            return False
+        if output_event_type and type(ckpt.output_event) != output_event_type:
             return False
         return True
 
     def filter_checkpoints(
         self,
-        step: Optional[str] = None,
-        event_type: Optional[Type[Event]] = None,
+        last_completed_step: Optional[str] = None,
+        input_event_type: Optional[Type[Event]] = None,
+        output_event_type: Optional[Type[Event]] = None,
     ) -> List[Checkpoint]:
         """Returns a list of Checkpoint's based on user provided filters."""
-        if not step and not event_type:
+        if not last_completed_step and not input_event_type and not output_event_type:
             raise ValueError("Please specify a filter.")
 
         return [
             ckpt
             for ckpt in self._broker_log
-            if self._checkpoint_filter_condition(ckpt, step, event_type)
+            if self._checkpoint_filter_condition(
+                ckpt, last_completed_step, input_event_type, output_event_type
+            )
         ]
 
     def write_event_to_stream(self, ev: Optional[Event]) -> None:

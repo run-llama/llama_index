@@ -7,6 +7,6 @@ from .events import Event
 class Checkpoint(BaseModel):
     id_: str = Field(default_factory=lambda: str(uuid.uuid4()))
     last_completed_step: Optional[str]
-    incoming_event: Optional[Event]
+    input_event: Optional[Event]
     output_event: Event
     ctx_state: Dict
