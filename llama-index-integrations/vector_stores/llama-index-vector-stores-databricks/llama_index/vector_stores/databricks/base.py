@@ -5,6 +5,7 @@ Supports Delta Sync indexes and Direct Access indexes in Databricks Vector Searc
 """
 
 import json
+import ast
 import logging
 from typing import (
     Any,
@@ -223,7 +224,7 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
             node_metadata = node_to_metadata_dict(
                 node, remove_text=True, flat_metadata=True
             )
-            node_content = json.loads(node_metadata.get("_node_content", None))
+            node_content = json.loads(node_metadata.get("_node_content", {}))
             metadata = node_content.get("metadata", {})
 
             # add node_info (star_char, end_char, relationships)
@@ -354,13 +355,9 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
                 if col not in [self._primary_key, self.text_column, "doc_id"]
             }
             metadata = {
-                col: value
-                for col, value in metadata_dict.items()
-                if col not in ["node_info"]
+                col: value for col, value in metadata_dict.items() if col != "node_info"
             }
-            node_info = json.loads(
-                metadata_dict.get("node_info", "{}").replace("'", '"')
-            )
+            node_info = ast.literal_eval(metadata_dict.get("node_info", "{}"))
             score = result[-1]
             node = TextNode(
                 text=text_content,
