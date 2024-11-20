@@ -4,7 +4,7 @@ import uuid
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Sequence, Dict, Union, Type, Callable, Optional, List
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole, ChatResponse
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.tools import BaseTool
 from oci.generative_ai_inference.models import CohereTool
@@ -662,3 +662,9 @@ def validate_tool_call(tool_call: Dict[str, Any]):
         or "name" not in tool_call
     ):
         raise ValueError("Invalid tool call.")
+
+
+def force_single_tool_call(response: ChatResponse) -> None:
+    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    if len(tool_calls) > 1:
+        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
