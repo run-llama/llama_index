@@ -10,6 +10,7 @@ from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.errors import WorkflowRuntimeError
 from llama_index.core.workflow.events import StartEvent, StopEvent, Event
 from llama_index.core.workflow.workflow import Workflow
+from llama_index.core.workflow.checkpoint import Checkpoint
 
 from .conftest import OneTestEvent, AnotherTestEvent
 
@@ -73,7 +74,9 @@ def test_send_event_step_is_none(ctx):
     ctx.send_event(ev)
     for q in ctx._queues.values():
         q.put_nowait.assert_called_with(ev)
-    assert ctx._broker_log == [ev]
+    checkpoint: Checkpoint = ctx._broker_log[0]
+    assert checkpoint.step is None
+    assert checkpoint.event == ev
 
 
 def test_send_event_to_non_existent_step(ctx):
