@@ -1,6 +1,5 @@
 import json
-from typing import Any, Callable, Dict, Optional, Sequence, List, Union
-from deprecated import deprecated
+from typing import Any, Callable, Dict, Optional, Sequence, List, Union, TYPE_CHECKING
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -13,6 +12,10 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.core.base.llms.generic_utils import (
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+)
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 
@@ -23,7 +26,7 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 from llama_index.llms.oci_genai.utils import (
@@ -35,7 +38,12 @@ from llama_index.llms.oci_genai.utils import (
     get_chat_generator,
     get_context_size,
     _format_oci_tool_calls,
+    force_single_tool_call,
+    validate_tool_call,
 )
+
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
 
 
 class OCIGenAI(FunctionCallingLLM):
@@ -190,56 +198,19 @@ class OCIGenAI(FunctionCallingLLM):
             **kwargs,
         }
 
-    @deprecated("Deprecated in favor of `chat`, which should be used instead.")
     @llm_completion_callback()
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        inference_params = self._get_all_kwargs(**kwargs)
-        inference_params["is_stream"] = False
-        inference_params["prompt"] = prompt
+        complete_fn = chat_to_completion_decorator(self.chat)
+        return complete_fn(prompt, **kwargs)
 
-        request = self._completion_generator(
-            compartment_id=self.compartment_id,
-            serving_mode=self._serving_mode,
-            inference_request=self._provider.oci_completion_request(**inference_params),
-        )
-
-        response = self._client.generate_text(request)
-        return CompletionResponse(
-            text=self._provider.completion_response_to_text(response),
-            raw=response.__dict__,
-        )
-
-    @deprecated("Deprecated in favor of `stream_chat`, which should be used instead.")
     @llm_completion_callback()
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        inference_params = self._get_all_kwargs(**kwargs)
-        inference_params["is_stream"] = True
-        inference_params["prompt"] = prompt
-
-        request = self._completion_generator(
-            compartment_id=self.compartment_id,
-            serving_mode=self._serving_mode,
-            inference_request=self._provider.oci_completion_request(**inference_params),
-        )
-
-        response = self._client.generate_text(request)
-
-        def gen() -> CompletionResponseGen:
-            content = ""
-            for event in response.data.events():
-                content_delta = self._provider.completion_stream_to_text(
-                    json.loads(event.data)
-                )
-                content += content_delta
-                yield CompletionResponse(
-                    text=content, delta=content_delta, raw=event.__dict__
-                )
-
-        return gen()
+        stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
+        return stream_complete_fn(prompt, **kwargs)
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -398,6 +369,8 @@ class OCIGenAI(FunctionCallingLLM):
         tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [self._provider.convert_to_oci_tool(tool) for tool in tools]
@@ -418,3 +391,51 @@ class OCIGenAI(FunctionCallingLLM):
             **oci_params,
             **chat_params,
         }
+
+    def _validate_chat_with_tools_response(
+        self,
+        response: ChatResponse,
+        tools: List["BaseTool"],
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Validate the response from chat_with_tools."""
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
+
+    def get_tool_calls_from_response(
+        self,
+        response: "ChatResponse",
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        """Predict and call the tool."""
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            validate_tool_call(tool_call)
+            argument_dict = (
+                json.loads(tool_call["input"])
+                if isinstance(tool_call["input"], str)
+                else tool_call["input"]
+            )
+
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call["toolUseId"],
+                    tool_name=tool_call["name"],
+                    tool_kwargs=argument_dict,
+                )
+            )
+
+        return tool_selections
