@@ -1,4 +1,5 @@
 import inspect
+from importlib import import_module
 from typing import (
     get_args,
     get_origin,
@@ -173,3 +174,15 @@ def is_free_function(qualname: str) -> bool:
         return False
     else:
         return toks[-2] == "<locals>"
+
+
+def get_qualified_name(value: Any) -> str:
+    """Get the qualified name of a value."""
+    return value.__module__ + "." + value.__class__.__name__
+
+
+def import_module_from_qualified_name(qualified_name: str) -> Any:
+    """Import a module from a qualified name."""
+    module_path = qualified_name.rsplit(".", 1)
+    module = import_module(module_path[0])
+    return getattr(module, module_path[1])

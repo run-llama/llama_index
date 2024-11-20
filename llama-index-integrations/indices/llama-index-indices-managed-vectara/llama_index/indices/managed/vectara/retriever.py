@@ -41,9 +41,18 @@ UDF_RERANKER_ID = 272725722
 class VectaraReranker(str, Enum):
     NONE = "none"
     MMR = "mmr"
-    SLINGSHOT_ALT_NAME = "slingshot"
     SLINGSHOT = "multilingual_reranker_v1"
+    SLINGSHOT_ALT_NAME = "slingshot"
     UDF = "udf"
+    CHAIN = "chain"
+
+
+CHAIN_RERANKER_NAMES = {
+    VectaraReranker.MMR: "Maximum Marginal Relevance Reranker",
+    VectaraReranker.SLINGSHOT: "Rerank_Multilingual_v1",
+    VectaraReranker.SLINGSHOT_ALT_NAME: "Rerank_Multilingual_v1",
+    VectaraReranker.UDF: "User_Defined_Function_Reranker",
+}
 
 
 class VectaraRetriever(BaseRetriever):
@@ -53,8 +62,6 @@ class VectaraRetriever(BaseRetriever):
     Args:
         index (VectaraIndex): the Vectara Index
         similarity_top_k (int): number of top k results to return, defaults to 5.
-        reranker (str): reranker to use: none, mmr, multilingual_reranker_v1, or udf.
-            Note that "multilingual_reranker_v1" is a Vectara Scale feature only.
         lambda_val (float): for hybrid search.
             0 = neural search only.
             1 = keyword match only.
@@ -64,6 +71,8 @@ class VectaraRetriever(BaseRetriever):
         n_sentences_after (int):
             number of sentences after the matched sentence to return in the node
         filter: metadata filter (if specified)
+        reranker (str): reranker to use: none, mmr, slingshot/multilingual_reranker_v1, udf, or chain.
+            Note that "multilingual_reranker_v1" is a Vectara Scale feature only.
         rerank_k: number of results to fetch for Reranking, defaults to 50.
         mmr_diversity_bias: number between 0 and 1 that determines the degree
             of diversity among the results with 0 corresponding
@@ -72,10 +81,17 @@ class VectaraRetriever(BaseRetriever):
         udf_expression: the user defined expression for reranking results.
             See (https://docs.vectara.com/docs/learn/user-defined-function-reranker)
             for more details about syntax for udf reranker expressions.
+        rerank_chain: a list of rerankers to be applied in a sequence and their associated parameters
+            for the chain reranker. Each element should specify the "type" of reranker (mmr, slingshot, udf)
+            and any other parameters (e.g. "limit" or "cutoff" for any type,  "diversity_bias" for mmr, and "user_function" for udf).
+            If using slingshot/multilingual_reranker_v1, it must be first in the list.
         summary_enabled: whether to generate summaries or not. Defaults to False.
         summary_response_lang: language to use for summary generation.
         summary_num_results: number of results to use for summary generation.
         summary_prompt_name: name of the prompt to use for summary generation.
+        prompt_text: the custom prompt, using appropriate prompt variables and functions.
+            See (https://docs.vectara.com/docs/1.0/prompts/custom-prompts-with-metadata)
+            for more details.
         citations_style: The style of the citations in the summary generation,
             either "numeric", "html", "markdown", or "none".
             This is a Vectara Scale only feature. Defaults to None.
@@ -85,7 +101,7 @@ class VectaraRetriever(BaseRetriever):
                  #citation-format-in-summary) for more details.
             This is a Vectara Scale only feature. Defaults to None.
         citations_text_pattern: The displayed text for citations.
-            Must be specified for html and markdown citations.
+            If not specified, numeric citations are displayed for text.
     """
 
     def __init__(
@@ -100,10 +116,12 @@ class VectaraRetriever(BaseRetriever):
         rerank_k: int = 50,
         mmr_diversity_bias: float = 0.3,
         udf_expression: str = None,
+        rerank_chain: List[Dict] = None,
         summary_enabled: bool = False,
         summary_response_lang: str = "eng",
         summary_num_results: int = 7,
         summary_prompt_name: str = "vectara-summary-ext-24-05-sml",
+        prompt_text: Optional[str] = None,
         citations_style: Optional[str] = None,
         citations_url_pattern: Optional[str] = None,
         citations_text_pattern: Optional[str] = None,
@@ -118,6 +136,7 @@ class VectaraRetriever(BaseRetriever):
         self._n_sentences_before = n_sentences_before
         self._n_sentences_after = n_sentences_after
         self._filter = filter
+        self._prompt_text = prompt_text
         self._citations_style = citations_style.upper() if citations_style else None
         self._citations_url_pattern = citations_url_pattern
         self._citations_text_pattern = citations_text_pattern
@@ -140,6 +159,15 @@ class VectaraRetriever(BaseRetriever):
             self._rerank_k = rerank_k
             self._udf_expression = udf_expression
             self._reranker_id = UDF_RERANKER_ID
+        elif (
+            reranker == VectaraReranker.CHAIN
+            and rerank_chain is not None
+            and len(rerank_chain) > 0
+        ):
+            self._rerank = True
+            self._rerank_k = rerank_k
+            self._rerank_chain = rerank_chain
+            self._reranker_id = None
         else:
             self._rerank = False
 
@@ -219,7 +247,7 @@ class VectaraRetriever(BaseRetriever):
                 }
             ]
         }
-        if self._rerank:
+        if self._rerank and self._reranker_id is not None:
             reranking_config = {
                 "rerankerId": self._reranker_id,
             }
@@ -232,6 +260,30 @@ class VectaraRetriever(BaseRetriever):
 
             data["query"][0]["rerankingConfig"] = reranking_config
 
+        elif self._rerank:
+            reranking_config = current_config = {}
+
+            for i, rerank_info in enumerate(self._rerank_chain):
+                rerank_type = rerank_info.get("type", None)
+                if rerank_type is None:
+                    print("Missing argument 'type' in chain reranker")
+                else:
+                    current_config["reranker_name"] = CHAIN_RERANKER_NAMES[rerank_type]
+
+                    current_config.update(
+                        {
+                            param: value
+                            for param, value in rerank_info.items()
+                            if param != "type"
+                        }
+                    )
+
+                    if i < len(self._rerank_chain) - 1:
+                        current_config["next_reranking_config"] = {}
+                        current_config = current_config["next_reranking_config"]
+
+            data["query"][0]["rerankingConfig"] = reranking_config
+
         if self._summary_enabled:
             summary_config = {
                 "responseLang": self._summary_response_lang,
@@ -239,6 +291,8 @@ class VectaraRetriever(BaseRetriever):
                 "summarizerPromptName": self._summary_prompt_name,
             }
             data["query"][0]["summary"] = [summary_config]
+            if self._prompt_text:
+                data["query"][0]["summary"][0]["promptText"] = self._prompt_text
             if chat:
                 data["query"][0]["summary"][0]["chat"] = {
                     "store": True,
@@ -250,7 +304,8 @@ class VectaraRetriever(BaseRetriever):
                     data["query"][0]["summary"][0]["citationParams"] = {
                         "style": self._citations_style,
                     }
-                elif self._citations_url_pattern and self._citations_text_pattern:
+
+                elif self._citations_url_pattern:
                     data["query"][0]["summary"][0]["citationParams"] = {
                         "style": self._citations_style,
                         "urlPattern": self._citations_url_pattern,

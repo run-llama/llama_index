@@ -8,9 +8,9 @@
 LlamaIndex (GPT Index) is a data framework for your LLM application. Building with LlamaIndex typically involves working with LlamaIndex core and a chosen set of integrations (or plugins). There are two ways to start building with LlamaIndex in
 Python:
 
-1. **Starter**: `llama-index` (https://pypi.org/project/llama-index/). A starter Python package that includes core LlamaIndex as well as a selection of integrations.
+1. **Starter**: [`llama-index`](https://pypi.org/project/llama-index/). A starter Python package that includes core LlamaIndex as well as a selection of integrations.
 
-2. **Customized**: `llama-index-core` (https://pypi.org/project/llama-index-core/). Install core LlamaIndex and add your chosen LlamaIndex integration packages on [LlamaHub](https://llamahub.ai/)
+2. **Customized**: [`llama-index-core`](https://pypi.org/project/llama-index-core/). Install core LlamaIndex and add your chosen LlamaIndex integration packages on [LlamaHub](https://llamahub.ai/)
    that are required for your application. There are over 300 LlamaIndex integration
    packages that work seamlessly with core, allowing you to build with your preferred
    LLM, embedding, and vector store providers.
@@ -33,18 +33,18 @@ from llama_index.llms.openai import OpenAI
 
 ### Important Links
 
-LlamaIndex.TS (Typescript/Javascript): https://github.com/run-llama/LlamaIndexTS.
+LlamaIndex.TS [(Typescript/Javascript)](https://github.com/run-llama/LlamaIndexTS)
 
-Documentation: https://docs.llamaindex.ai/en/stable/.
+[Documentation](https://docs.llamaindex.ai/en/stable/)
 
-Twitter: https://twitter.com/llama_index.
+[Twitter](https://twitter.com/llama_index)
 
-Discord: https://discord.gg/dGcwcsnxhU.
+[Discord](https://discord.gg/dGcwcsnxhU)
 
 ### Ecosystem
 
-- LlamaHub (community library of data loaders): https://llamahub.ai.
-- LlamaLab (cutting-edge AGI projects using LlamaIndex): https://github.com/run-llama/llama-lab.
+- LlamaHub [(community library of data loaders)](https://llamahub.ai)
+- LlamaLab [(cutting-edge AGI projects using LlamaIndex)](https://github.com/run-llama/llama-lab)
 
 ## 🚀 Overview
 
@@ -64,7 +64,7 @@ That's where **LlamaIndex** comes in. LlamaIndex is a "data framework" to help y
 - Offers **data connectors** to ingest your existing data sources and data formats (APIs, PDFs, docs, SQL, etc.).
 - Provides ways to **structure your data** (indices, graphs) so that this data can be easily used with LLMs.
 - Provides an **advanced retrieval/query interface over your data**: Feed in any LLM input prompt, get back retrieved context and knowledge-augmented output.
-- Allows easy integrations with your outer application framework (e.g. with LangChain, Flask, Docker, ChatGPT, anything else).
+- Allows easy integrations with your outer application framework (e.g. with LangChain, Flask, Docker, ChatGPT, or anything else).
 
 LlamaIndex provides tools for both beginner users and advanced users. Our high-level API allows beginner users to use LlamaIndex to ingest and query their data in
 5 lines of code. Our lower-level APIs allow advanced users to customize and extend any module (data connectors, indices, retrievers, query engines, reranking modules),
@@ -77,7 +77,7 @@ integrations that build on the core are both accepted and highly encouraged! See
 
 ## 📄 Documentation
 
-Full documentation can be found here: https://docs.llamaindex.ai/en/latest/.
+Full documentation can be found [here](https://docs.llamaindex.ai/en/latest/)
 
 Please check it out for the most up-to-date tutorials, how-to guides, references, and other resources!
 

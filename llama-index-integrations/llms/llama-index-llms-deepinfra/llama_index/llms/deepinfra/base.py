@@ -76,8 +76,8 @@ class DeepInfraLLM(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: Optional[int] = Field(
         default=DEFAULT_MAX_TOKENS,
@@ -86,10 +86,10 @@ class DeepInfraLLM(FunctionCallingLLM):
     )
 
     timeout: Optional[float] = Field(
-        default=None, description="The timeout to use in seconds.", gte=0
+        default=None, description="The timeout to use in seconds.", ge=0
     )
     max_retries: int = Field(
-        default=10, description="The maximum number of API retries.", gte=0
+        default=10, description="The maximum number of API retries.", ge=0
     )
 
     _api_key: Optional[str] = PrivateAttr()

@@ -98,7 +98,9 @@ class SQLDocumentContextBuilder:
 
         text_splitter = (
             self._text_splitter
-            or self._prompt_helper.get_text_splitter_given_prompt(prompt_with_schema)
+            or self._prompt_helper.get_text_splitter_given_prompt(
+                prompt_with_schema, llm=self._llm
+            )
         )
         # we use the ResponseBuilder to iteratively go through all texts
         response_builder = get_response_synthesizer(

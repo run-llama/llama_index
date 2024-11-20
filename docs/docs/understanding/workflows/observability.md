@@ -101,11 +101,25 @@ Step step_three produced event StopEvent
 
 ## Stepwise execution
 
-In a notebook environment it can be helpful to run a workflow step by step. You can do this by calling `run_step` on the workflow object:
+In a notebook environment it can be helpful to run a workflow step by step. You can do this by calling `run_step` on the handler object:
 
 ```python
 w = ConcurrentFlow(timeout=10, verbose=True)
-await w.run_step()
+handler = w.run()
+
+while not handler.is_done():
+    # run_step returns the step's output event
+    ev = await handler.run_step()
+    # can make modifications to the results before dispatching the event
+    # val = ev.get("some_key")
+    # ev.set("some_key", new_val)
+    # can also inspect context
+    # val = await handler.ctx.get("key")
+    handler.ctx.send_event(ev)
+    continue
+
+# get the result
+result = handler.result()
 ```
 
 You can call `run_step` multiple times to step through the workflow one step at a time.

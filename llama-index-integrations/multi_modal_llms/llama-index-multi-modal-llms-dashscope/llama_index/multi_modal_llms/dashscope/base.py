@@ -85,7 +85,7 @@ class DashScopeMultiModal(MultiModalLLM):
         description="Sample probability threshold when generate."
     )
     seed: Optional[int] = Field(
-        description="Random seed when generate.", default=1234, gte=0
+        description="Random seed when generate.", default=1234, ge=0
     )
     api_key: Optional[str] = Field(
         default=None, description="The DashScope API key.", exclude=True

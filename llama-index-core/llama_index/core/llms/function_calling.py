@@ -244,6 +244,7 @@ class FunctionCallingLLM(LLM):
             allow_parallel_tool_calls=allow_parallel_tool_calls,
             **kwargs,
         )
+
         tool_calls = self.get_tool_calls_from_response(
             response, error_on_no_tool_call=error_on_no_tool_call
         )

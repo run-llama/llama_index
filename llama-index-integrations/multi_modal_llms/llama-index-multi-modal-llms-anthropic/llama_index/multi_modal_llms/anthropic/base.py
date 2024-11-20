@@ -46,12 +46,12 @@ class AnthropicMultiModal(MultiModalLLM):
     max_retries: int = Field(
         default=3,
         description="Maximum number of retries.",
-        gte=0,
+        ge=0,
     )
     timeout: float = Field(
         default=60.0,
         description="The timeout, in seconds, for API requests.",
-        gte=0,
+        ge=0,
     )
     api_key: str = Field(
         default=None, description="The Anthropic API key.", exclude=True
@@ -137,13 +137,18 @@ class AnthropicMultiModal(MultiModalLLM):
         )
 
     def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        return {
+        credential_kwargs = {
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
             "timeout": self.timeout,
             **kwargs,
         }
+
+        if self.default_headers:
+            credential_kwargs["default_headers"] = self.default_headers
+
+        return credential_kwargs
 
     def _get_multi_modal_chat_messages(
         self,

@@ -29,14 +29,15 @@ license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-readers-pandas-ai"
 readme = "README.md"
-version = "0.2.0"
+version = "0.4.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 pandasai = ">=2.2.12"
 pandas = "*"
-llama-index-core = "^0.11.0"
-llama-index-readers-file = "^0.2.0"
+numpy = "<2.0"
+llama-index-core = "^0.12.0"
+llama-index-readers-file = "^0.4.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

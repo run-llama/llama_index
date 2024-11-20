@@ -250,7 +250,7 @@ class RedisVectorStore(BasePydanticVectorStore):
                 NODE_ID_FIELD_NAME: node.node_id,
                 DOC_ID_FIELD_NAME: node.ref_doc_id,
                 TEXT_FIELD_NAME: node.get_content(metadata_mode=MetadataMode.NONE),
-                VECTOR_FIELD_NAME: array_to_buffer(embedding),
+                VECTOR_FIELD_NAME: array_to_buffer(embedding, dtype="FLOAT32"),
             }
             # parse and append metadata
             additional_metadata = node_to_metadata_dict(

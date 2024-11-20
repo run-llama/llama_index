@@ -53,9 +53,11 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
         #       or the last message
         if messages:
             if messages[0].role == MessageRole.SYSTEM:
-                messages[0].content = self.format(messages[0].content or "")
+                message_content = messages[0].content or ""
+                messages[0].content = self.format(message_content)
             else:
-                messages[-1].content = self.format(messages[-1].content or "")
+                message_content = messages[-1].content or ""
+                messages[-1].content = self.format(message_content)
 
         return messages
 

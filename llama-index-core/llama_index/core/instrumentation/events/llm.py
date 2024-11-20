@@ -1,5 +1,5 @@
 from typing import Any, List, Optional
-from llama_index.core.bridge.pydantic import BaseModel, SerializeAsAny, ConfigDict
+from llama_index.core.bridge.pydantic import SerializeAsAny, ConfigDict
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -69,7 +69,7 @@ class LLMStructuredPredictEndEvent(BaseEvent):
         output (BaseModel): Predicted output class.
     """
 
-    output: SerializeAsAny[BaseModel]
+    output: SerializeAsAny[Any]
 
     @classmethod
     def class_name(cls) -> str:
@@ -84,7 +84,7 @@ class LLMStructuredPredictInProgressEvent(BaseEvent):
         output (BaseModel): Predicted output class.
     """
 
-    output: SerializeAsAny[BaseModel]
+    output: SerializeAsAny[Any]
 
     @classmethod
     def class_name(cls) -> str:

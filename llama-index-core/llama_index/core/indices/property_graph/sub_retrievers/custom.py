@@ -32,9 +32,15 @@ class CustomPGRetriever(BasePGRetriever):
         self,
         graph_store: PropertyGraphStore,
         include_text: bool = False,
+        include_properties: bool = False,
         **kwargs: Any,
     ) -> None:
-        super().__init__(graph_store=graph_store, include_text=include_text, **kwargs)
+        super().__init__(
+            graph_store=graph_store,
+            include_text=include_text,
+            include_properties=include_properties,
+            **kwargs,
+        )
         self.init(**kwargs)
 
     @property

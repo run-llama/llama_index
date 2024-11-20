@@ -28,7 +28,9 @@ from llama_index.llms.modelscope.utils import (
     modelscope_message_to_chat_response,
 )
 
-DEFAULT_MODELSCOPE_MODEL = "qwen/Qwen-7B-Chat"
+from modelscope.pipelines import pipeline as pipeline_builder
+
+DEFAULT_MODELSCOPE_MODEL = "Qwen/Qwen2-0.5B-Instruct"
 DEFAULT_MODELSCOPE_MODEL_REVISION = "master"
 DEFAULT_MODELSCOPE_TASK = "chat"
 DEFAULT_MODELSCOPE_DTYPE = "float16"
@@ -128,7 +130,7 @@ class ModelScopeLLM(CustomLLM):
         if model:
             pipeline = model
         else:
-            pipeline = pipeline(
+            pipeline = pipeline_builder(
                 task=task_name,
                 model=model_name,
                 model_revision=model_revision,

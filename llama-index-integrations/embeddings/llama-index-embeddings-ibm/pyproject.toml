@@ -31,12 +31,13 @@ license = "MIT"
 name = "llama-index-embeddings-ibm"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-ibm-watsonx-ai = "^1.0.1"
-llama-index-core = "^0.11.0"
+ibm-watsonx-ai = ">=1.0.1"
+pyarrow = "*"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

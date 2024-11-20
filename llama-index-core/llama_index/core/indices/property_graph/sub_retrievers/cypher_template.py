@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Type
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.graph_stores.types import PropertyGraphStore
@@ -15,7 +15,7 @@ class CypherTemplateRetriever(BasePGRetriever):
     Args:
         graph_store (PropertyGraphStore):
             The graph store to retrieve data from.
-        output_cls (BaseModel):
+        output_cls (Type[BaseModel]):
             The output class to use for the LLM.
             Should contain the params needed for the cypher query.
         cypher_query (str):
@@ -27,7 +27,7 @@ class CypherTemplateRetriever(BasePGRetriever):
     def __init__(
         self,
         graph_store: PropertyGraphStore,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         cypher_query: str,
         llm: Optional[LLM] = None,
         **kwargs: Any,
@@ -38,10 +38,14 @@ class CypherTemplateRetriever(BasePGRetriever):
             )
 
         self.llm = llm or Settings.llm
-        self.output_cls = output_cls
+        # Explicit type hint to suppress:
+        #   `Expected type '_SpecialForm[BaseModel]', got 'Type[BaseModel]' instead`
+        self.output_cls: Type[BaseModel] = output_cls
         self.cypher_query = cypher_query
 
-        super().__init__(graph_store=graph_store, include_text=False)
+        super().__init__(
+            graph_store=graph_store, include_text=False, include_properties=False
+        )
 
     def retrieve_from_graph(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         question = query_bundle.query_str

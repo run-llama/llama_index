@@ -46,10 +46,10 @@ class AlephAlphaEmbedding(BaseEmbedding):
         default=DEFAULT_ALEPHALPHA_HOST, description="The hostname of the API base_url."
     )
     timeout: Optional[float] = Field(
-        default=None, description="The timeout to use in seconds.", gte=0
+        default=None, description="The timeout to use in seconds.", ge=0
     )
     max_retries: int = Field(
-        default=10, description="The maximum number of API retries.", gte=0
+        default=10, description="The maximum number of API retries.", ge=0
     )
     normalize: Optional[bool] = Field(
         default=False, description="Return normalized embeddings."

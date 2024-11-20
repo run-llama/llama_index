@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Type
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -64,13 +64,14 @@ class RetrieverQueryEngine(BaseQueryEngine):
         llm: Optional[LLM] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        callback_manager: Optional[CallbackManager] = None,
         # response synthesizer args
         response_mode: ResponseMode = ResponseMode.COMPACT,
         text_qa_template: Optional[BasePromptTemplate] = None,
         refine_template: Optional[BasePromptTemplate] = None,
         summary_template: Optional[BasePromptTemplate] = None,
         simple_template: Optional[BasePromptTemplate] = None,
-        output_cls: Optional[BaseModel] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
         use_async: bool = False,
         streaming: bool = False,
         **kwargs: Any,
@@ -79,20 +80,22 @@ class RetrieverQueryEngine(BaseQueryEngine):
 
         Args:
             retriever (BaseRetriever): A retriever object.
+            llm (Optional[LLM]): An instance of an LLM.
+            response_synthesizer (Optional[BaseSynthesizer]): An instance of a response
+                synthesizer.
             node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
                 node postprocessors.
-            verbose (bool): Whether to print out debug info.
+            callback_manager (Optional[CallbackManager]): A callback manager.
             response_mode (ResponseMode): A ResponseMode object.
             text_qa_template (Optional[BasePromptTemplate]): A BasePromptTemplate
                 object.
             refine_template (Optional[BasePromptTemplate]): A BasePromptTemplate object.
+            summary_template (Optional[BasePromptTemplate]): A BasePromptTemplate object.
             simple_template (Optional[BasePromptTemplate]): A BasePromptTemplate object.
-
+            output_cls (Optional[Type[BaseModel]]): The pydantic model to pass to the
+                response synthesizer.
             use_async (bool): Whether to use async.
             streaming (bool): Whether to use streaming.
-            optimizer (Optional[BaseTokenUsageOptimizer]): A BaseTokenUsageOptimizer
-                object.
-
         """
         llm = llm or Settings.llm
 
@@ -108,7 +111,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             streaming=streaming,
         )
 
-        callback_manager = Settings.callback_manager
+        callback_manager = callback_manager or Settings.callback_manager
 
         return cls(
             retriever=retriever,
