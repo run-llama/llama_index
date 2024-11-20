@@ -1,14 +1,13 @@
 import os
 import tempfile
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import torch
-from PIL import Image
-
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import Node, NodeWithScore, QueryBundle
+from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.postprocessor.colpali_rerank import ColPaliRerank
+from PIL import Image
 
 
 def test_class():
@@ -45,10 +44,10 @@ def test_postprocess(mock_colpali):
 
         # Create mock nodes
         node1 = NodeWithScore(
-            node=Node(text="test1", metadata={"file_path": image1_path}), score=0.8
+            node=TextNode(text="test1", metadata={"file_path": image1_path}), score=0.8
         )
         node2 = NodeWithScore(
-            node=Node(text="test2", metadata={"file_path": image2_path}), score=0.6
+            node=TextNode(text="test2", metadata={"file_path": image2_path}), score=0.6
         )
         nodes = [node1, node2]
 

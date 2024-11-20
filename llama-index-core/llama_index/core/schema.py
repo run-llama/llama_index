@@ -1,5 +1,8 @@
 """Base schema for data structures."""
 
+from __future__ import annotations
+
+import base64
 import json
 import logging
 import pickle
@@ -10,28 +13,45 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+)
 
+import filetype
 from dataclasses_json import DataClassJsonMixin
+from typing_extensions import Self
+
 from llama_index.core.bridge.pydantic import (
+    AnyUrl,
     BaseModel,
+    ConfigDict,
     Field,
     GetJsonSchemaHandler,
-    SerializeAsAny,
     JsonSchemaValue,
-    ConfigDict,
+    PlainSerializer,
+    SerializeAsAny,
     model_serializer,
+    model_validator,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.utils import SAMPLE_TEXT, truncate_text
-from typing_extensions import Self
 
-if TYPE_CHECKING:
-    from haystack.schema import Document as HaystackDocument
-    from llama_index.core.bridge.langchain import Document as LCDocument
-    from semantic_kernel.memory.memory_record import MemoryRecord
+if TYPE_CHECKING:  # pragma: no cover
+    from haystack.schema import Document as HaystackDocument  # type: ignore
     from llama_cloud.types.cloud_document import CloudDocument
+    from semantic_kernel.memory.memory_record import MemoryRecord  # type: ignore
+
+    from llama_index.core.bridge.langchain import Document as LCDocument  # type: ignore
 
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
@@ -43,6 +63,10 @@ WRAP_WIDTH = 70
 ImageType = Union[str, BytesIO]
 
 logger = logging.getLogger(__name__)
+
+EnumNameSerializer = PlainSerializer(
+    lambda e: e.value, return_type="str", when_used="always"
+)
 
 
 class BaseComponent(BaseModel):
@@ -156,14 +180,12 @@ class TransformComponent(BaseComponent, DispatcherSpanMixin):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @abstractmethod
-    def __call__(
-        self, nodes: Sequence["BaseNode"], **kwargs: Any
-    ) -> Sequence["BaseNode"]:
+    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
         """Transform nodes."""
 
     async def acall(
-        self, nodes: Sequence["BaseNode"], **kwargs: Any
-    ) -> Sequence["BaseNode"]:
+        self, nodes: Sequence[BaseNode], **kwargs: Any
+    ) -> Sequence[BaseNode]:
         """Async transform nodes."""
         return self.__call__(nodes, **kwargs)
 
@@ -192,6 +214,14 @@ class ObjectType(str, Enum):
     IMAGE = auto()
     INDEX = auto()
     DOCUMENT = auto()
+    MULTIMODAL = auto()
+
+
+class Modality(str, Enum):
+    TEXT = auto()
+    IMAGE = auto()
+    AUDIO = auto()
+    VIDEO = auto()
 
 
 class MetadataMode(str, Enum):
@@ -203,7 +233,7 @@ class MetadataMode(str, Enum):
 
 class RelatedNodeInfo(BaseComponent):
     node_id: str
-    node_type: Optional[ObjectType] = None
+    node_type: Annotated[ObjectType, EnumNameSerializer] | str | None = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     hash: Optional[str] = None
 
@@ -253,9 +283,23 @@ class BaseNode(BaseComponent):
         default_factory=list,
         description="Metadata keys that are excluded from text for the LLM.",
     )
-    relationships: Dict[NodeRelationship, RelatedNodeType] = Field(
+    relationships: Dict[
+        Annotated[NodeRelationship, EnumNameSerializer],
+        RelatedNodeType,
+    ] = Field(
         default_factory=dict,
         description="A mapping of relationships to other node information.",
+    )
+    metadata_template: str = Field(
+        default=DEFAULT_METADATA_TMPL,
+        description=(
+            "Template for how metadata is formatted, with {key} and "
+            "{value} placeholders."
+        ),
+    )
+    metadata_separator: str = Field(
+        default="\n",
+        description="Separator between metadata fields when converting to string.",
     )
 
     @classmethod
@@ -267,9 +311,28 @@ class BaseNode(BaseComponent):
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.ALL) -> str:
         """Get object content."""
 
-    @abstractmethod
     def get_metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
-        """Metadata string."""
+        """Metadata info string."""
+        if mode == MetadataMode.NONE:
+            return ""
+
+        usable_metadata_keys = set(self.metadata.keys())
+        if mode == MetadataMode.LLM:
+            for key in self.excluded_llm_metadata_keys:
+                if key in usable_metadata_keys:
+                    usable_metadata_keys.remove(key)
+        elif mode == MetadataMode.EMBED:
+            for key in self.excluded_embed_metadata_keys:
+                if key in usable_metadata_keys:
+                    usable_metadata_keys.remove(key)
+
+        return self.metadata_separator.join(
+            [
+                self.metadata_template.format(key=key, value=str(value))
+                for key, value in self.metadata.items()
+                if key in usable_metadata_keys
+            ]
+        )
 
     @abstractmethod
     def set_content(self, value: Any) -> None:
@@ -348,7 +411,7 @@ class BaseNode(BaseComponent):
         return relation
 
     @property
-    def ref_doc_id(self) -> Optional[str]:
+    def ref_doc_id(self) -> Optional[str]:  # pragma: no cover
         """Deprecated: Get ref doc id."""
         source_node = self.source_node
         if source_node is None:
@@ -356,7 +419,7 @@ class BaseNode(BaseComponent):
         return source_node.node_id
 
     @property
-    def extra_info(self) -> Dict[str, Any]:
+    def extra_info(self) -> Dict[str, Any]:  # pragma: no cover
         """TODO: DEPRECATED: Extra info."""
         return self.metadata
 
@@ -389,7 +452,156 @@ class BaseNode(BaseComponent):
         )
 
 
+EmbeddingKind = Literal["sparse", "dense"]
+
+
+class MediaResource(BaseModel):
+    """A container class for media content.
+
+    This class represents a generic media resource that can be stored and accessed
+    in multiple ways - as raw bytes, on the filesystem, or via URL. It also supports
+    storing vector embeddings for the media content.
+
+    Attributes:
+        embeddings: Multi-vector dict representation of this resource for embedding-based search/retrieval
+        text: Plain text representation of this resource
+        data: Raw binary data of the media content
+        mimetype: The MIME type indicating the format/type of the media content
+        path: Local filesystem path where the media content can be accessed
+        url: URL where the media content can be accessed remotely
+    """
+
+    embeddings: dict[EmbeddingKind, list[float]] | None = Field(
+        default=None, description="Vector representation of this resource."
+    )
+    data: bytes | None = Field(
+        default=None,
+        exclude=True,
+        description="base64 binary representation of this resource.",
+    )
+    text: str | None = Field(
+        default=None, description="Text representation of this resource."
+    )
+    mimetype: str | None = Field(
+        default=None, description="MIME type of this resource."
+    )
+    path: Path | None = Field(
+        default=None, description="Filesystem path of this resource."
+    )
+    url: AnyUrl | None = Field(default=None, description="URL to reach this resource.")
+
+    @model_validator(mode="after")
+    def guess_mimetype(self) -> Self:
+        """Guess the mimetype when possible.
+
+        In case the model was built passing its content but without a mimetype,
+        we try to guess it using the filetype library. To avoid resource-intense
+        operations, we won't load the path or the URL to guess the mimetype.
+        """
+        if not self.data or self.mimetype:
+            return self
+
+        try:
+            decoded_data = base64.b64decode(self.data)
+            guess = filetype.guess(decoded_data)
+            self.mimetype = guess.mime if guess else None
+        except Exception as e:
+            logging.debug("Data is not base64 encoded, cannot guess mimetype")
+        finally:
+            return self
+
+    @property
+    def hash(self) -> str:
+        """Generate a hash to uniquely identify the media resource.
+
+        The hash is generated based on the available content (data, path, text or url).
+        Returns an empty string if no content is available.
+        """
+        bits: list[str] = []
+        if self.text is not None:
+            bits.append(self.text)
+        if self.data is not None:
+            # Hash the binary data if available
+            bits.append(str(sha256(self.data).hexdigest()))
+        if self.path is not None:
+            # Hash the file path if provided
+            bits.append(str(sha256(str(self.path).encode("utf-8")).hexdigest()))
+        if self.url is not None:
+            # Use the URL string as basis for hash
+            bits.append(str(sha256(str(self.url).encode("utf-8")).hexdigest()))
+
+        doc_identity = "".join(bits)
+        if not doc_identity:
+            return ""
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
+
+
+class Node(BaseNode):
+    text: MediaResource | None = Field(
+        default=None, description="Text content of the node."
+    )
+    image: MediaResource | None = Field(
+        default=None, description="Image content of the node."
+    )
+    audio: MediaResource | None = Field(
+        default=None, description="Audio content of the node."
+    )
+    video: MediaResource | None = Field(
+        default=None, description="Video content of the node."
+    )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "Node"
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get Object type."""
+        return ObjectType.MULTIMODAL
+
+    def get_content(self, metadata_mode: MetadataMode = MetadataMode.ALL) -> str:
+        """Get the text content for the node if available.
+
+        Provided for backward compatibility, use self.text directly instead.
+        """
+        if self.text:
+            return self.text.text or ""
+        return ""
+
+    def set_content(self, value: str) -> None:
+        """Set the text content of the node.
+
+        Provided for backward compatibility, set self.text instead.
+        """
+        self.text = MediaResource(text=value)
+
+    @property
+    def hash(self) -> str:
+        doc_identities = []
+        if self.audio is not None:
+            doc_identities.append(self.audio.hash)
+        if self.image is not None:
+            doc_identities.append(self.image.hash)
+        if self.text is not None:
+            doc_identities.append(self.text.hash)
+        if self.video is not None:
+            doc_identities.append(self.video.hash)
+
+        doc_identity = "-".join(doc_identities)
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
+
+
 class TextNode(BaseNode):
+    """Provided for backward compatibility.
+
+    Note: we keep the field with the typo "seperator" to maintain backward compatibility for
+    serialized objects.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """This is needed to help static checkers with inherited fields."""
+        super().__init__(*args, **kwargs)
+
     text: str = Field(default="", description="Text content of the node.")
     mimetype: str = Field(
         default="text/plain", description="MIME type of the node content."
@@ -400,23 +612,16 @@ class TextNode(BaseNode):
     end_char_idx: Optional[int] = Field(
         default=None, description="End char index of the node."
     )
+    metadata_seperator: str = Field(
+        default="\n",
+        description="Separator between metadata fields when converting to string.",
+    )
     text_template: str = Field(
         default=DEFAULT_TEXT_NODE_TMPL,
         description=(
             "Template for how text is formatted, with {content} and "
             "{metadata_str} placeholders."
         ),
-    )
-    metadata_template: str = Field(
-        default=DEFAULT_METADATA_TMPL,
-        description=(
-            "Template for how metadata is formatted, with {key} and "
-            "{value} placeholders."
-        ),
-    )
-    metadata_seperator: str = Field(
-        default="\n",
-        description="Separator between metadata fields when converting to string.",
     )
 
     @classmethod
@@ -481,10 +686,6 @@ class TextNode(BaseNode):
     def node_info(self) -> Dict[str, Any]:
         """Deprecated: Get node info."""
         return self.get_node_info()
-
-
-# TODO: legacy backport of old Node class
-Node = TextNode
 
 
 class ImageNode(TextNode):
@@ -575,7 +776,7 @@ class IndexNode(TextNode):
         cls,
         node: TextNode,
         index_id: str,
-    ) -> "IndexNode":
+    ) -> IndexNode:
         """Create index node from text node."""
         # copy all attributes from text node, add index id
         return cls(
@@ -588,7 +789,7 @@ class IndexNode(TextNode):
     def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
         output = super().from_dict(data, **kwargs)
 
-        obj = data.get("obj", None)
+        obj = data.get("obj")
         parsed_obj = None
 
         if isinstance(obj, str):
@@ -721,7 +922,7 @@ class Document(TextNode):
             name = self._compat_fields[name]
         super().__setattr__(name, value)
 
-    def to_langchain_format(self) -> "LCDocument":
+    def to_langchain_format(self) -> LCDocument:
         """Convert struct to LangChain document format."""
         from llama_index.core.bridge.langchain import Document as LCDocument
 
@@ -729,13 +930,13 @@ class Document(TextNode):
         return LCDocument(page_content=self.text, metadata=metadata, id=self.id_)
 
     @classmethod
-    def from_langchain_format(cls, doc: "LCDocument") -> "Document":
+    def from_langchain_format(cls, doc: LCDocument) -> Document:
         """Convert struct from LangChain document format."""
         if doc.id:
             return cls(text=doc.page_content, metadata=doc.metadata, id_=doc.id)
         return cls(text=doc.page_content, metadata=doc.metadata)
 
-    def to_haystack_format(self) -> "HaystackDocument":
+    def to_haystack_format(self) -> HaystackDocument:
         """Convert struct to Haystack document format."""
         from haystack.schema import Document as HaystackDocument
 
@@ -744,7 +945,7 @@ class Document(TextNode):
         )
 
     @classmethod
-    def from_haystack_format(cls, doc: "HaystackDocument") -> "Document":
+    def from_haystack_format(cls, doc: HaystackDocument) -> Document:
         """Convert struct from Haystack document format."""
         return cls(
             text=doc.content, metadata=doc.meta, embedding=doc.embedding, id_=doc.id
@@ -758,7 +959,7 @@ class Document(TextNode):
         }
 
     @classmethod
-    def from_embedchain_format(cls, doc: Dict[str, Any]) -> "Document":
+    def from_embedchain_format(cls, doc: Dict[str, Any]) -> Document:
         """Convert struct from EmbedChain document format."""
         return cls(
             text=doc["data"]["content"],
@@ -766,7 +967,7 @@ class Document(TextNode):
             id_=doc["doc_id"],
         )
 
-    def to_semantic_kernel_format(self) -> "MemoryRecord":
+    def to_semantic_kernel_format(self) -> MemoryRecord:
         """Convert struct to Semantic Kernel document format."""
         import numpy as np
         from semantic_kernel.memory.memory_record import MemoryRecord
@@ -779,7 +980,7 @@ class Document(TextNode):
         )
 
     @classmethod
-    def from_semantic_kernel_format(cls, doc: "MemoryRecord") -> "Document":
+    def from_semantic_kernel_format(cls, doc: MemoryRecord) -> Document:
         """Convert struct from Semantic Kernel document format."""
         return cls(
             text=doc._text,
@@ -799,7 +1000,7 @@ class Document(TextNode):
             client.embed(f.name)
 
     @classmethod
-    def example(cls) -> "Document":
+    def example(cls) -> Document:
         return Document(
             text=SAMPLE_TEXT,
             metadata={"filename": "README.md", "category": "codebase"},
@@ -809,7 +1010,7 @@ class Document(TextNode):
     def class_name(cls) -> str:
         return "Document"
 
-    def to_cloud_document(self) -> "CloudDocument":
+    def to_cloud_document(self) -> CloudDocument:
         """Convert to LlamaCloud document type."""
         from llama_cloud.types.cloud_document import CloudDocument
 
@@ -824,8 +1025,8 @@ class Document(TextNode):
     @classmethod
     def from_cloud_document(
         cls,
-        doc: "CloudDocument",
-    ) -> "Document":
+        doc: CloudDocument,
+    ) -> Document:
         """Convert from LlamaCloud document type."""
         return Document(
             text=doc.text,
