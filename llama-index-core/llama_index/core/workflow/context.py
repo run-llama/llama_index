@@ -8,6 +8,7 @@ from .context_serializers import BaseSerializer, JsonSerializer
 from .decorators import StepConfig
 from .events import Event
 from .errors import WorkflowRuntimeError
+from .checkpoint import Checkpoint
 
 if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
@@ -36,7 +37,7 @@ class Context:
         # Broker machinery
         self._queues: Dict[str, asyncio.Queue] = {}
         self._tasks: Set[asyncio.Task] = set()
-        self._broker_log: List[Event] = []
+        self._broker_log: List[Checkpoint] = []
         self._cancel_flag: asyncio.Event = asyncio.Event()
         self._step_flags: Dict[str, asyncio.Event] = {}
         self._step_event_holding: Optional[Event] = None
@@ -223,6 +224,9 @@ class Context:
         If step is None, the event is sent to all the receivers and we let
         them discard events they don't want.
         """
+        # take snapshot of ctx.state for checkpointing
+        ctx_snapshot = self.to_dict()
+
         if step is None:
             for queue in self._queues.values():
                 queue.put_nowait(message)
@@ -242,7 +246,9 @@ class Context:
                     f"Step {step} does not accept event of type {type(message)}"
                 )
 
-        self._broker_log.append(message)
+        # create checkpoint
+        checkpoint = Checkpoint(step=step, ctx_state=ctx_snapshot, event=message)
+        self._broker_log.append(checkpoint)
 
     def write_event_to_stream(self, ev: Optional[Event]) -> None:
         self._streaming_queue.put_nowait(ev)
