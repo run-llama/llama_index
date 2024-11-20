@@ -12,6 +12,7 @@ from llama_index.core.multi_modal_llms.generic_utils import (
     image_documents_to_base64,
     infer_image_mimetype_from_base64,
     infer_image_mimetype_from_file_path,
+    set_base64_and_mimetype_for_image_docs,
 )
 
 # Expected values
@@ -102,6 +103,7 @@ def test_complete_workflow():
 
 
 def test_infer_image_mimetype_from_base64():
+    """Test inferring image mimetype from base64-encoded data."""
     # Create a minimal valid PNG in base64
     base64_png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=="
 
@@ -109,11 +111,12 @@ def test_infer_image_mimetype_from_base64():
     assert result == "image/png"
 
     # Valid, meaningless base64
-    result = infer_image_mimetype_from_base64("lEQVR4nGMAAQAABQABDQ")
+    result = infer_image_mimetype_from_base64(EXP_BASE64)
     assert result is None
 
 
 def test_infer_image_mimetype_from_file_path():
+    """Test inferring image mimetype from file extensions."""
     # JPG/JPEG
     assert infer_image_mimetype_from_file_path("image.jpg") == "image/jpeg"
     assert infer_image_mimetype_from_file_path("image.jpeg") == "image/jpeg"
@@ -127,5 +130,24 @@ def test_infer_image_mimetype_from_file_path():
     # WEBP
     assert infer_image_mimetype_from_file_path("image.webp") == "image/webp"
 
-    # Catch-all default
+    # Catch-all defaults
     assert infer_image_mimetype_from_file_path("image.asf32") == "image/jpeg"
+    assert infer_image_mimetype_from_file_path("") == "image/jpeg"
+
+
+def test_set_base64_and_mimetype_for_image_docs():
+    """Test setting base64 and mimetype fields for ImageDocument objects."""
+    image_docs = [
+        ImageDocument(image=EXP_BASE64),
+        ImageDocument(image_path="test.asdf"),
+    ]
+
+    with patch("requests.get") as mock_get:
+        mock_get.return_value.content = EXP_BINARY
+        with patch("builtins.open", mock_open(read_data=EXP_BINARY)):
+            results = set_base64_and_mimetype_for_image_docs(image_docs)
+
+    assert len(results) == 2
+    assert results[0].image == EXP_BASE64
+    assert results[0].image_mimetype == "image/jpeg"
+    assert results[1].image_mimetype == "image/jpeg"
