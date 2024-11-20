@@ -248,7 +248,7 @@ class Context:
         last_completed_step: Optional[str],
         input_ev: Optional[Event],
         output_ev: Event,
-    ) -> Checkpoint:
+    ) -> None:
         """Build a checkpoint around the last completed step."""
         checkpoint = Checkpoint(
             last_completed_step=last_completed_step,
