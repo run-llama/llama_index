@@ -189,3 +189,7 @@ async def test_filter_checkpoints(workflow: DummyWorkflow):
         # by output_event_type
         checkpoints_by_output_event = ctx.filter_checkpoints(output_event_type=evt_type)
         assert len(checkpoints_by_output_event) == num_runs, f"fails on {evt_type}"
+
+    # no filters raises error
+    with pytest.raises(ValueError):
+        ctx.filter_checkpoints()
