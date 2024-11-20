@@ -78,24 +78,24 @@ class OCIGenAI(FunctionCallingLLM):
     _chat_generator: str = PrivateAttr()
 
     def __init__(
-            self,
-            model: str,
-            temperature: Optional[float] = DEFAULT_TEMPERATURE,
-            max_tokens: Optional[int] = 512,
-            context_size: Optional[int] = None,
-            service_endpoint: Optional[str] = None,
-            compartment_id: Optional[str] = None,
-            auth_type: Optional[str] = "API_KEY",
-            auth_profile: Optional[str] = "DEFAULT",
-            client: Optional[Any] = None,
-            provider: Optional[str] = None,
-            additional_kwargs: Optional[Dict[str, Any]] = None,
-            callback_manager: Optional[CallbackManager] = None,
-            system_prompt: Optional[str] = None,
-            messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
-            completion_to_prompt: Optional[Callable[[str], str]] = None,
-            pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
-            output_parser: Optional[BaseOutputParser] = None,
+        self,
+        model: str,
+        temperature: Optional[float] = DEFAULT_TEMPERATURE,
+        max_tokens: Optional[int] = 512,
+        context_size: Optional[int] = None,
+        service_endpoint: Optional[str] = None,
+        compartment_id: Optional[str] = None,
+        auth_type: Optional[str] = "API_KEY",
+        auth_profile: Optional[str] = "DEFAULT",
+        client: Optional[Any] = None,
+        provider: Optional[str] = None,
+        additional_kwargs: Optional[Dict[str, Any]] = None,
+        callback_manager: Optional[CallbackManager] = None,
+        system_prompt: Optional[str] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
         """
         Initializes the OCIGenAI class.
@@ -193,7 +193,7 @@ class OCIGenAI(FunctionCallingLLM):
     @deprecated("Deprecated in favor of `chat`, which should be used instead.")
     @llm_completion_callback()
     def complete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = False
@@ -214,7 +214,7 @@ class OCIGenAI(FunctionCallingLLM):
     @deprecated("Deprecated in favor of `stream_chat`, which should be used instead.")
     @llm_completion_callback()
     def stream_complete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
         inference_params = self._get_all_kwargs(**kwargs)
         inference_params["is_stream"] = True
@@ -249,7 +249,9 @@ class OCIGenAI(FunctionCallingLLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
         chat_params = {**all_kwargs, **oci_params}
         if tools:
-            chat_params["tools"] = [self._provider.convert_to_oci_tool(tool) for tool in tools]
+            chat_params["tools"] = [
+                self._provider.convert_to_oci_tool(tool) for tool in tools
+            ]
 
         request = self._chat_generator(
             compartment_id=self.compartment_id,
@@ -272,13 +274,13 @@ class OCIGenAI(FunctionCallingLLM):
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=self._provider.chat_response_to_text(response),
-                additional_kwargs=generation_info
+                additional_kwargs=generation_info,
             ),
             raw=response.__dict__,
         )
 
     def stream_chat(
-            self, messages: Sequence[ChatMessage], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = True
@@ -286,7 +288,9 @@ class OCIGenAI(FunctionCallingLLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
         chat_params = {**all_kwargs, **oci_params}
         if tools:
-            chat_params["tools"] = [self._provider.convert_to_oci_tool(tool) for tool in tools]
+            chat_params["tools"] = [
+                self._provider.convert_to_oci_tool(tool) for tool in tools
+            ]
 
         request = self._chat_generator(
             compartment_id=self.compartment_id,
@@ -319,15 +323,21 @@ class OCIGenAI(FunctionCallingLLM):
                         new_tool_calls = _format_oci_tool_calls(tool_calls_data)
                         for tool_call in new_tool_calls:
                             existing = next(
-                                (t for t in tool_calls_accumulated if t["name"] == tool_call["name"]),
-                                None
+                                (
+                                    t
+                                    for t in tool_calls_accumulated
+                                    if t["name"] == tool_call["name"]
+                                ),
+                                None,
                             )
                             if existing:
                                 existing.update(tool_call)
                             else:
                                 tool_calls_accumulated.append(tool_call)
 
-                    generation_info = self._provider.chat_stream_generation_info(event_data)
+                    generation_info = self._provider.chat_stream_generation_info(
+                        event_data
+                    )
                     if tool_calls_accumulated:
                         generation_info["tool_calls"] = tool_calls_accumulated
 
@@ -338,12 +348,14 @@ class OCIGenAI(FunctionCallingLLM):
                             additional_kwargs=generation_info,
                         ),
                         delta=content_delta,
-                        raw=event.__dict__
+                        raw=event.__dict__,
                     )
 
                 except json.JSONDecodeError:
                     yield ChatResponse(
-                        message=ChatMessage(role=MessageRole.ASSISTANT, content=content),
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT, content=content
+                        ),
                         delta=content_delta,
                         raw=event.__dict__,
                     )
@@ -351,7 +363,9 @@ class OCIGenAI(FunctionCallingLLM):
                 except Exception as e:
                     print(f"Error processing stream chunk: {e}")
                     yield ChatResponse(
-                        message=ChatMessage(role=MessageRole.ASSISTANT, content=content),
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT, content=content
+                        ),
                         delta=content_delta,
                         raw=event.__dict__,
                     )
@@ -359,32 +373,32 @@ class OCIGenAI(FunctionCallingLLM):
         return gen()
 
     async def achat(
-            self, messages: Sequence[ChatMessage], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         raise NotImplementedError("Async chat is not implemented yet.")
 
     async def acomplete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         raise NotImplementedError("Async complete is not implemented yet.")
 
     async def astream_chat(
-            self, messages: Sequence[ChatMessage], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         raise NotImplementedError("Async stream chat is not implemented yet.")
 
     async def astream_complete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError("Async stream complete is not implemented yet.")
 
     # Function tooling integration methods
     def _prepare_chat_with_tools(
-            self,
-            tools: Sequence["BaseTool"],
-            user_msg: Optional[Union[str, ChatMessage]] = None,
-            chat_history: Optional[List[ChatMessage]] = None,
-            **kwargs: Any,
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [self._provider.convert_to_oci_tool(tool) for tool in tools]
 
@@ -404,4 +418,3 @@ class OCIGenAI(FunctionCallingLLM):
             **oci_params,
             **chat_params,
         }
-

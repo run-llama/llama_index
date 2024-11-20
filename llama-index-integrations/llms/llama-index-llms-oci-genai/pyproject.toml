@@ -38,7 +38,6 @@ python = ">=3.8.1,<4.0"
 oci = "^2.134.0"
 llama-index-core = "^0.11.0"
 
-
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
