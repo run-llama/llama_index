@@ -159,13 +159,20 @@ def test_search_with_filter(
     year_indexed: str,
     metadata_filters: MetadataFilters,
 ) -> None:
-    """Tests vector search with a filter."""
+    """Tests vector search with a filter.
+
+    similarity_top_k=3 > len(vector_store.query(query).nodes)
+    """
     query = VectorStoreQuery(
         query_embedding=(np.ones(DIMENSIONS) * 0.5).tolist(),
         query_str="winter",
         filters=metadata_filters,
         mode=VectorStoreQueryMode.DEFAULT,
+        similarity_top_k=3,
     )
     result = vector_store.query(query)
-    assert len(result.nodes) == 1
-    assert result.nodes[0].metadata == {"year": 2023, "country": "Canada"}
+    assert len(result.nodes) == 2
+    result_metadata = [result.nodes[i].metadata for i in range(len(result.nodes))]
+    assert {"year": 2024, "country": "France"} in result_metadata
+    assert {"year": 2023, "country": "Canada"} in result_metadata
+    assert {"year": 2022, "country": "Chile"} not in result_metadata
