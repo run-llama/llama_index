@@ -267,7 +267,7 @@ class Workflow(metaclass=WorkflowMeta):
 
                     # Checkpoint
                     ctx._create_checkpoint(
-                        last_completed_step=name, incoming_ev=ev, output_ev=new_ev
+                        last_completed_step=name, input_ev=ev, output_ev=new_ev
                     )
 
                     if not isinstance(new_ev, Event):
@@ -347,7 +347,7 @@ class Workflow(metaclass=WorkflowMeta):
                     # create checkpoint just before start of workflow run
                     start_ev = StartEvent(**kwargs)
                     ctx._create_checkpoint(
-                        last_completed_step=None, incoming_ev=None, output_ev=start_ev
+                        last_completed_step=None, input_ev=None, output_ev=start_ev
                     )
 
                     # Send the first event
