@@ -21,7 +21,7 @@ class OCIAuthType(Enum):
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
-COMPLETION_MODELS = {}
+COMPLETION_MODELS = {}  # completion endpoint has been deprecated
 
 CHAT_MODELS = {
     "cohere.command-r-16k": 16000,
@@ -29,6 +29,7 @@ CHAT_MODELS = {
     "meta.llama-3-70b-instruct": 8192,
     "meta.llama-3.1-70b-instruct": 128000,
     "meta.llama-3.1-405b-instruct": 128000,
+    "meta.llama-3.2-90b-vision-instruct": 128000,
 }
 
 OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_MODELS}
@@ -44,7 +45,7 @@ JSON_TO_PYTHON_TYPES = {
 
 
 def _format_oci_tool_calls(
-        tool_calls: Optional[List[Any]] = None,
+    tool_calls: Optional[List[Any]] = None,
 ) -> List[Dict]:
     """
     Formats an OCI GenAI API response into the tool call format used in LlamaIndex.
@@ -58,17 +59,25 @@ def _format_oci_tool_calls(
         # Handle both object and dict formats
         if isinstance(tool_call, dict):
             name = tool_call.get("name", tool_call.get("functionName"))
-            parameters = tool_call.get("parameters", tool_call.get("functionParameters"))
+            parameters = tool_call.get(
+                "parameters", tool_call.get("functionParameters")
+            )
         else:
             name = getattr(tool_call, "name", getattr(tool_call, "functionName", None))
-            parameters = getattr(tool_call, "parameters", getattr(tool_call, "functionParameters", None))
+            parameters = getattr(
+                tool_call, "parameters", getattr(tool_call, "functionParameters", None)
+            )
 
         if name and parameters:
-            formatted_tool_calls.append({
-                "toolUseId": uuid.uuid4().hex[:],
-                "name": name,
-                "input": json.dumps(parameters) if isinstance(parameters, dict) else parameters,
-            })
+            formatted_tool_calls.append(
+                {
+                    "toolUseId": uuid.uuid4().hex[:],
+                    "name": name,
+                    "input": json.dumps(parameters)
+                    if isinstance(parameters, dict)
+                    else parameters,
+                }
+            )
 
     return formatted_tool_calls
 
@@ -214,8 +223,8 @@ class Provider(ABC):
 
     @abstractmethod
     def convert_to_oci_tool(
-            self,
-            tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        self,
+        tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
     ) -> Dict[str, Any]:
         ...
 
@@ -255,8 +264,11 @@ class CohereProvider(Provider):
         return response.data.chat_response.text
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
-        if "text" in event_data and "finishReason" not in event_data:
-            return event_data.get("text", "")
+        if "text" in event_data:
+            if "finishedReason" in event_data or "toolCalls" in event_data:
+                return ""
+            else:
+                return event_data["text"]
         return ""
 
     def chat_generation_info(self, response: Any) -> Dict[str, Any]:
@@ -265,7 +277,7 @@ class CohereProvider(Provider):
             "documents": response.data.chat_response.documents,
             "citations": response.data.chat_response.citations,
             "search_queries": response.data.chat_response.search_queries,
-            "is_search_required": response.data.chat_response.is_search_required
+            "is_search_required": response.data.chat_response.is_search_required,
         }
         if response.data.chat_response.tool_calls:
             # Only populate tool_calls when 1) present on the response and
@@ -283,16 +295,16 @@ class CohereProvider(Provider):
             "documents": event_data.get("documents", []),
             "citations": event_data.get("citations", []),
             "search_queries": event_data.get("searchQueries", []),
-            "is_search_required": event_data.get("isSearchRequired", False)
+            "is_search_required": event_data.get("isSearchRequired", False),
         }
 
         # Handle tool calls if present
         if "toolCalls" in event_data:
-            generation_info["tool_calls"] = _format_oci_tool_calls(event_data["toolCalls"])
+            generation_info["tool_calls"] = _format_oci_tool_calls(
+                event_data["toolCalls"]
+            )
 
         return {k: v for k, v in generation_info.items() if v is not None}
-
-
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         role_map = {
@@ -354,12 +366,12 @@ class CohereProvider(Provider):
                     message
                     for message in current_chat_turn_messages
                     if message.role == MessageRole.ASSISTANT
-                       and "tool_calls" in message.additional_kwargs
+                    and "tool_calls" in message.additional_kwargs
                 ]
                 if previous_ai_msgs:
                     previous_ai_msg = previous_ai_msgs[-1]
                     for li_tool_call in previous_ai_msg.additional_kwargs.get(
-                            "tool_calls", []
+                        "tool_calls", []
                     ):
                         validate_tool_call(li_tool_call)
                         if li_tool_call[
@@ -390,8 +402,8 @@ class CohereProvider(Provider):
         return {k: v for k, v in oci_params.items() if v is not None}
 
     def convert_to_oci_tool(
-            self,
-            tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+        self,
+        tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
     ) -> CohereTool:
         """
         Convert a Pydantic class, JSON schema dict, callable, or BaseTool to a CohereTool format for OCI.
@@ -430,13 +442,13 @@ class CohereProvider(Provider):
                         ),
                         description=p_def.get("description", ""),
                         is_required=p_name
-                                    in tool.metadata.get_parameters_dict().get("required", []),
+                        in tool.metadata.get_parameters_dict().get("required", []),
                     )
                     for p_name, p_def in tool.metadata.get_parameters_dict()
                     .get("properties", {})
                     .items()
                 },
-                    )
+            )
 
         elif isinstance(tool, dict):
             # Ensure dict-based tools follow a standard schema format
@@ -590,10 +602,12 @@ class MetaProvider(Provider):
         }
 
     def convert_to_oci_tool(
-            self,
-            tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        self,
+        tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
     ) -> Dict[str, Any]:
-        raise NotImplementedError("Tools not supported for Meta models")
+        raise NotImplementedError(
+            "Tools not supported for OCI Generative AI Meta models"
+        )
 
 
 PROVIDERS = {
@@ -641,8 +655,8 @@ def get_context_size(model: str, context_size: int = None) -> int:
 
 def validate_tool_call(tool_call: Dict[str, Any]):
     if (
-            "input" not in tool_call
-            or "toolUseId" not in tool_call
-            or "name" not in tool_call
+        "input" not in tool_call
+        or "toolUseId" not in tool_call
+        or "name" not in tool_call
     ):
         raise ValueError("Invalid tool call.")

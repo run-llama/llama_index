@@ -1,12 +1,11 @@
 import asyncio
-
 import pytest
 
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
-from llama_index.core.workflow.errors import WorkflowRuntimeError
+from llama_index.core.workflow.errors import WorkflowRuntimeError, WorkflowTimeoutError
 
 from .conftest import OneTestEvent
 
@@ -68,6 +67,28 @@ async def test_task_raised():
 
     # Make sure the await actually caught the exception
     with pytest.raises(ValueError, match="The step raised an error!"):
+        await r
+
+
+@pytest.mark.asyncio()
+async def test_task_timeout():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            ctx.write_event_to_stream(OneTestEvent(test_param="foo"))
+            await asyncio.sleep(2)
+            return StopEvent()
+
+    wf = DummyWorkflow(timeout=1)
+    r = wf.run()
+
+    # Make sure we don't block indefinitely here because the step raised
+    async for ev in r.stream_events():
+        if not isinstance(ev, StopEvent):
+            assert ev.test_param == "foo"
+
+    # Make sure the await actually caught the exception
+    with pytest.raises(WorkflowTimeoutError, match="Operation timed out"):
         await r
 
 

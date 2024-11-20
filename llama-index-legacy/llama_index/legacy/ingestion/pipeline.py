@@ -446,11 +446,13 @@ class IngestionPipeline(BaseModel):
             nodes_to_run = input_nodes
 
         if num_workers and num_workers > 1:
-            if num_workers > multiprocessing.cpu_count():
+            num_cpus = multiprocessing.cpu_count()
+            if num_workers > num_cpus:
                 warnings.warn(
                     "Specified num_workers exceed number of CPUs in the system. "
                     "Setting `num_workers` down to the maximum CPU count."
                 )
+                num_workers = num_cpus
 
             with multiprocessing.get_context("spawn").Pool(num_workers) as p:
                 node_batches = self._node_batcher(
@@ -602,11 +604,13 @@ class IngestionPipeline(BaseModel):
             nodes_to_run = input_nodes
 
         if num_workers and num_workers > 1:
-            if num_workers > multiprocessing.cpu_count():
+            num_cpus = multiprocessing.cpu_count()
+            if num_workers > num_cpus:
                 warnings.warn(
                     "Specified num_workers exceed number of CPUs in the system. "
                     "Setting `num_workers` down to the maximum CPU count."
                 )
+                num_workers = num_cpus
 
             loop = asyncio.get_event_loop()
             with ProcessPoolExecutor(max_workers=num_workers) as p:

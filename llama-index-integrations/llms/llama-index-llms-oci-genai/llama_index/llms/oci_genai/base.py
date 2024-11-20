@@ -1,5 +1,6 @@
 import json
 from typing import Any, Callable, Dict, Optional, Sequence, List, Union
+from deprecated import deprecated
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -32,7 +33,8 @@ from llama_index.llms.oci_genai.utils import (
     get_serving_mode,
     get_completion_generator,
     get_chat_generator,
-    get_context_size, _format_oci_tool_calls,
+    get_context_size,
+    _format_oci_tool_calls,
 )
 
 
@@ -188,6 +190,7 @@ class OCIGenAI(FunctionCallingLLM):
             **kwargs,
         }
 
+    @deprecated("Deprecated in favor of `chat`, which should be used instead.")
     @llm_completion_callback()
     def complete(
             self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -208,6 +211,7 @@ class OCIGenAI(FunctionCallingLLM):
             raw=response.__dict__,
         )
 
+    @deprecated("Deprecated in favor of `stream_chat`, which should be used instead.")
     @llm_completion_callback()
     def stream_complete(
             self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -294,16 +298,63 @@ class OCIGenAI(FunctionCallingLLM):
 
         def gen() -> ChatResponseGen:
             content = ""
+            tool_calls_accumulated = []
+
             for event in response.data.events():
                 content_delta = self._provider.chat_stream_to_text(
                     json.loads(event.data)
                 )
                 content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(role=MessageRole.ASSISTANT, content=content),
-                    delta=content_delta,
-                    raw=event.__dict__,
-                )
+
+                try:
+                    event_data = json.loads(event.data)
+
+                    tool_calls_data = None
+                    for key in ["toolCalls", "tool_calls", "functionCalls"]:
+                        if key in event_data:
+                            tool_calls_data = event_data[key]
+                            break
+
+                    if tool_calls_data:
+                        new_tool_calls = _format_oci_tool_calls(tool_calls_data)
+                        for tool_call in new_tool_calls:
+                            existing = next(
+                                (t for t in tool_calls_accumulated if t["name"] == tool_call["name"]),
+                                None
+                            )
+                            if existing:
+                                existing.update(tool_call)
+                            else:
+                                tool_calls_accumulated.append(tool_call)
+
+                    generation_info = self._provider.chat_stream_generation_info(event_data)
+                    if tool_calls_accumulated:
+                        generation_info["tool_calls"] = tool_calls_accumulated
+
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT,
+                            content=content,
+                            additional_kwargs=generation_info,
+                        ),
+                        delta=content_delta,
+                        raw=event.__dict__
+                    )
+
+                except json.JSONDecodeError:
+                    yield ChatResponse(
+                        message=ChatMessage(role=MessageRole.ASSISTANT, content=content),
+                        delta=content_delta,
+                        raw=event.__dict__,
+                    )
+
+                except Exception as e:
+                    print(f"Error processing stream chunk: {e}")
+                    yield ChatResponse(
+                        message=ChatMessage(role=MessageRole.ASSISTANT, content=content),
+                        delta=content_delta,
+                        raw=event.__dict__,
+                    )
 
         return gen()
 
@@ -354,109 +405,3 @@ class OCIGenAI(FunctionCallingLLM):
             **chat_params,
         }
 
-    def chat_with_tools(
-            self,
-            tools: Sequence["BaseTool"],
-            user_msg: Optional[Union[str, ChatMessage]] = None,
-            chat_history: Optional[List[ChatMessage]] = None,
-            **kwargs: Any,
-    ) -> ChatResponse:
-        chat_kwargs = self._prepare_chat_with_tools(
-            tools,
-            user_msg=user_msg,
-            chat_history=chat_history,
-            **kwargs,
-        )
-        response = self.chat(**chat_kwargs)
-        return self._validate_chat_with_tools_response(
-            response,
-            tools,
-            **kwargs,
-        )
-
-    def _validate_chat_with_tools_response(
-            self,
-            response: ChatResponse,
-            tools: Sequence["BaseTool"],
-            **kwargs: Any,
-    ) -> ChatResponse:
-        # Placeholder for future implementation details
-        return response
-
-    def stream_chat_with_tools(
-            self,
-            tools: Sequence["BaseTool"],
-            user_msg: Optional[Union[str, ChatMessage]] = None,
-            chat_history: Optional[List[ChatMessage]] = None,
-            **kwargs: Any,
-    ) -> ChatResponseGen:
-        """Stream chat with tools enabled."""
-        chat_kwargs = self._prepare_chat_with_tools(
-            tools,
-            user_msg=user_msg,
-            chat_history=chat_history,
-            **kwargs,
-        )
-        response_gen = self.stream_chat(**chat_kwargs)
-
-        def wrapped_gen() -> ChatResponseGen:
-            content = ""
-            tool_calls_accumulated = []
-
-            for response in response_gen:
-                # Get current content and delta
-                content = response.message.content if response.message.content else content
-
-                try:
-                    # Parse event data safely
-                    event_data = json.loads(response.raw.get("data", "{}"))
-
-                    # Check for tool calls using different possible keys
-                    tool_calls_data = None
-                    for key in ["toolCalls", "tool_calls", "functionCalls"]:
-                        if key in event_data:
-                            tool_calls_data = event_data[key]
-                            break
-
-                    if tool_calls_data:
-                        # Format tool calls for this chunk
-                        new_tool_calls = _format_oci_tool_calls(tool_calls_data)
-
-                        # Update accumulated tool calls
-                        for tool_call in new_tool_calls:
-                            # Check if we already have this tool call
-                            existing = next(
-                                (t for t in tool_calls_accumulated if t["name"] == tool_call["name"]),
-                                None
-                            )
-                            if existing:
-                                # Update existing tool call
-                                existing.update(tool_call)
-                            else:
-                                # Add new tool call
-                                tool_calls_accumulated.append(tool_call)
-
-                    # Generate streaming response with current state
-                    generation_info = self._provider.chat_stream_generation_info(event_data)
-                    if tool_calls_accumulated:
-                        generation_info["tool_calls"] = tool_calls_accumulated
-
-                    yield ChatResponse(
-                        message=ChatMessage(
-                            role=MessageRole.ASSISTANT,
-                            content=content,
-                            additional_kwargs=generation_info,
-                        ),
-                        delta=response.delta,
-                        raw=response.raw
-                    )
-
-                except json.JSONDecodeError:
-                    # Handle cases where the event data isn't valid JSON
-                    yield response
-
-                except Exception as e:
-                    print(f"Error processing stream chunk: {e}")
-                    yield response
-
-        return wrapped_gen()

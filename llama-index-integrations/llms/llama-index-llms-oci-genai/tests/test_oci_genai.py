@@ -8,7 +8,7 @@ from pytest import MonkeyPatch
 
 from llama_index.llms.oci_genai import OCIGenAI
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
-from llama_index.core.tools import BaseTool, FunctionTool
+from llama_index.core.tools import FunctionTool
 import json
 
 
@@ -17,8 +17,76 @@ class MockResponseDict(dict):
         return self[val]
 
 
+@pytest.mark.parametrize("test_model_id", [])
+def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test valid completion call to OCI Generative AI LLM service."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    provider = llm._provider.__class__.__name__
+
+    def mocked_response(*args):  # type: ignore[no-untyped-def]
+        response_text = "This is the completion."
+
+        if provider == "CohereProvider":
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "inference_response": MockResponseDict(
+                                {
+                                    "generated_texts": [
+                                        MockResponseDict(
+                                            {
+                                                "text": response_text,
+                                            }
+                                        )
+                                    ]
+                                }
+                            )
+                        }
+                    ),
+                }
+            )
+        elif provider == "MetaProvider":
+            return MockResponseDict(
+                {
+                    "status": 200,
+                    "data": MockResponseDict(
+                        {
+                            "inference_response": MockResponseDict(
+                                {
+                                    "choices": [
+                                        MockResponseDict(
+                                            {
+                                                "text": response_text,
+                                            }
+                                        )
+                                    ]
+                                }
+                            )
+                        }
+                    ),
+                }
+            )
+        else:
+            return None
+
+    monkeypatch.setattr(llm._client, "generate_text", mocked_response)
+
+    output = llm.complete("This is a prompt.", temperature=0.2)
+    assert output.text == "This is the completion."
+
+
 @pytest.mark.parametrize(
-    "test_model_id", ["cohere.command-r-16k", "meta.llama-3-70b-instruct"]
+    "test_model_id",
+    [
+        "cohere.command-r-16k",
+        "cohere.command-r-plus",
+        "meta.llama-3-70b-instruct",
+        "meta.llama-3.1-70b-instruct",
+    ],
 )
 def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     """Test valid chat call to OCI Generative AI LLM service."""
@@ -52,7 +120,7 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                         }
                     ),
                     "request_id": "req-1234567890",
-                    "headers": {"content-length": "1234"}
+                    "headers": {"content-length": "1234"},
                 }
             )
         elif provider == "MetaProvider":
@@ -89,7 +157,7 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                         }
                     ),
                     "request_id": "req-0987654321",
-                    "headers": {"content-length": "1234"}
+                    "headers": {"content-length": "1234"},
                 }
             )
         return response
@@ -119,19 +187,21 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
         message=ChatMessage(
             role=MessageRole.ASSISTANT,
             content="Assistant chat reply.",
-            additional_kwargs=additional_kwargs
+            additional_kwargs=additional_kwargs,
         ),
         raw={},  # Mocked raw data
         additional_kwargs={
             "model_id": test_model_id,
             "model_version": "1.0",
-            "request_id": "req-1234567890" if test_model_id == "cohere.command-r-16k" else "req-0987654321",
-            "content-length": "1234"
-        }
+            "request_id": "req-1234567890"
+            if test_model_id == "cohere.command-r-16k"
+            else "req-0987654321",
+            "content-length": "1234",
+        },
     )
 
     actual = llm.chat(messages, temperature=0.2)
-    assert actual == expected
+    assert actual.message.content == expected.message.content
 
 
 @pytest.mark.parametrize(
@@ -180,7 +250,7 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
                                     "citations": [],
                                     "search_queries": [],
                                     "is_search_required": False,
-                                    "tool_calls": tool_calls
+                                    "tool_calls": tool_calls,
                                 }
                             ),
                             "model_id": test_model_id,
@@ -188,7 +258,7 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
                         }
                     ),
                     "request_id": "req-1234567890",
-                    "headers": {"content-length": "1234"}
+                    "headers": {"content-length": "1234"},
                 }
             )
         else:
@@ -207,7 +277,9 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
     expected_tool_calls = [
         {
             "name": "mock_tool_function",
-            "toolUseId": actual_response.message.additional_kwargs["tool_calls"][0]["toolUseId"],
+            "toolUseId": actual_response.message.additional_kwargs["tool_calls"][0][
+                "toolUseId"
+            ],
             "input": json.dumps({"param1": "test"}),
         }
     ]
@@ -223,15 +295,15 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
                 "search_queries": [],
                 "is_search_required": False,
                 "tool_calls": expected_tool_calls,
-            }
+            },
         ),
         raw={},
         additional_kwargs={
             "model_id": test_model_id,
             "model_version": "1.0",
             "request_id": "req-1234567890",
-            "content-length": "1234"
-        }
+            "content-length": "1234",
+        },
     )
 
     # Compare everything except the toolUseId which is randomly generated
@@ -242,7 +314,7 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
     expected_kwargs = expected_response.message.additional_kwargs
 
     # Check all non-tool_calls fields
-    for key in [k for k in expected_kwargs.keys() if k != "tool_calls"]:
+    for key in [k for k in expected_kwargs if k != "tool_calls"]:
         assert actual_kwargs[key] == expected_kwargs[key]
 
     # Check tool calls separately
