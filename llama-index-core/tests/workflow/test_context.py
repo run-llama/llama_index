@@ -12,7 +12,7 @@ from llama_index.core.workflow.events import StartEvent, StopEvent, Event
 from llama_index.core.workflow.workflow import Workflow, WorkflowHandler
 from llama_index.core.workflow.checkpoint import Checkpoint
 
-from .conftest import OneTestEvent, AnotherTestEvent, DummyWorkflow
+from .conftest import OneTestEvent, AnotherTestEvent, DummyWorkflow, LastEvent
 
 
 @pytest.mark.asyncio()
@@ -161,5 +161,31 @@ async def test_checkpoints_after_successive_runs(workflow: DummyWorkflow):
 
 
 @pytest.mark.asyncio()
-async def test_filter_checkpoints():
-    assert True
+async def test_filter_checkpoints(workflow: DummyWorkflow):
+    num_runs = 2
+    ctx = Context(workflow=workflow)
+    for _ in range(num_runs):
+        handler: WorkflowHandler = workflow.run(ctx=ctx)
+        await handler
+
+    # filter by last complete step
+    steps = ["start_step", "middle_step", "end_step"]  # sequential workflow
+    for step in steps:
+        checkpoints = ctx.filter_checkpoints(last_completed_step=step)
+        assert len(checkpoints) == num_runs, f"fails on step: {step.__name__}"
+
+    # filter by input and output event
+    event_types = [StartEvent, OneTestEvent, LastEvent, StopEvent]
+    for evt_type in event_types:
+        # by input_event_type
+        if evt_type != StopEvent:
+            checkpoints_by_input_event = ctx.filter_checkpoints(
+                input_event_type=evt_type
+            )
+            assert (
+                len(checkpoints_by_input_event) == num_runs
+            ), f"fails on {evt_type.__name__}"
+
+        # by output_event_type
+        checkpoints_by_output_event = ctx.filter_checkpoints(output_event_type=evt_type)
+        assert len(checkpoints_by_output_event) == num_runs, f"fails on {evt_type}"
