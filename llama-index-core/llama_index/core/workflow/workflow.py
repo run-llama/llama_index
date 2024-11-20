@@ -265,6 +265,11 @@ class Workflow(metaclass=WorkflowMeta):
                     # Store the accepted event for the drawing operations
                     ctx._accepted_events.append((name, type(ev).__name__))
 
+                    # Checkpoint
+                    ctx._create_checkpoint(
+                        last_completed_step=name, incoming_ev=ev, output_ev=new_ev
+                    )
+
                     if not isinstance(new_ev, Event):
                         warnings.warn(
                             f"Step function {name} returned {type(new_ev).__name__} instead of an Event instance."
@@ -339,8 +344,14 @@ class Workflow(metaclass=WorkflowMeta):
                 await self._sem.acquire()
             try:
                 if not ctx.is_running:
+                    # create checkpoint just before start of workflow run
+                    start_ev = StartEvent(**kwargs)
+                    ctx._create_checkpoint(
+                        last_completed_step=None, incoming_ev=None, output_ev=start_ev
+                    )
+
                     # Send the first event
-                    ctx.send_event(StartEvent(**kwargs))
+                    ctx.send_event(start_ev)
 
                     # the context is now running
                     ctx.is_running = True

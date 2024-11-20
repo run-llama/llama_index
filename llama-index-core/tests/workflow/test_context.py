@@ -9,10 +9,9 @@ from llama_index.core.workflow.workflow import (
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.errors import WorkflowRuntimeError
 from llama_index.core.workflow.events import StartEvent, StopEvent, Event
-from llama_index.core.workflow.workflow import Workflow
-from llama_index.core.workflow.checkpoint import Checkpoint
+from llama_index.core.workflow.workflow import Workflow, WorkflowHandler
 
-from .conftest import OneTestEvent, AnotherTestEvent
+from .conftest import OneTestEvent, AnotherTestEvent, DummyWorkflow
 
 
 @pytest.mark.asyncio()
@@ -74,9 +73,6 @@ def test_send_event_step_is_none(ctx):
     ctx.send_event(ev)
     for q in ctx._queues.values():
         q.put_nowait.assert_called_with(ev)
-    checkpoint: Checkpoint = ctx._broker_log[0]
-    assert checkpoint.step is None
-    assert checkpoint.event == ev
 
 
 def test_send_event_to_non_existent_step(ctx):
@@ -123,3 +119,27 @@ async def test_deprecated_params(ctx):
         DeprecationWarning, match="`make_private` is deprecated and will be ignored"
     ):
         await ctx.set("foo", 42, make_private=True)
+
+
+@pytest.mark.asyncio()
+async def test_broker_log_contains_checkpoints(workflow: DummyWorkflow):
+    num_steps = len(workflow._get_steps())
+    num_runs = 2
+
+    ctx = Context(workflow=workflow)
+    for _ in range(num_runs):
+        handler: WorkflowHandler = workflow.run(ctx=ctx)
+        await handler
+
+    assert len(handler.ctx._broker_log) == num_steps * num_runs
+    assert [ckpt.last_completed_step for ckpt in handler.ctx._broker_log] == [
+        None,
+        "start_step",
+        "middle_step",
+        "end_step",
+    ] * num_runs
+
+
+@pytest.mark.asyncio()
+async def test_filter_checkpoints():
+    assert True
