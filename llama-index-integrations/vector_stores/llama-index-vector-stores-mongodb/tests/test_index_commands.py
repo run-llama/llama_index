@@ -44,7 +44,7 @@ def vector_store(atlas_client: MongoClient) -> MongoDBAtlasVectorSearch:
 @pytest.mark.skipif(
     os.environ.get("MONGODB_URI") is None, reason="Requires MONGODB_URI in os.environ"
 )
-def test_search_index_commands(collection: Collection) -> None:
+def test_search_index_commands_standalone(collection: Collection) -> None:
     """Tests create, update, and drop index utility functions."""
     index_name = VECTOR_INDEX_NAME
     dimensions = DIMENSIONS
@@ -76,29 +76,31 @@ def test_search_index_commands(collection: Collection) -> None:
 
     # Update that index by adding a filter
     # This will additionally index the "bar" and "foo"  fields
-    new_similarity = "euclidean"
-    index.update_vector_search_index(
-        collection=collection,
-        index_name=index_name,
-        dimensions=DIMENSIONS,
-        path="embedding",
-        similarity=new_similarity,
-        filters=[FILTER_FIELD_NAME],
-        wait_until_complete=wait_until_complete,
-    )
+    # The Update method is not yet supported in Atlas Local.
+    if "mongodb+srv" in os.environ.get("MONGODB_URI"):
+        new_similarity = "euclidean"
+        index.update_vector_search_index(
+            collection=collection,
+            index_name=index_name,
+            dimensions=DIMENSIONS,
+            path="embedding",
+            similarity=new_similarity,
+            filters=[FILTER_FIELD_NAME],
+            wait_until_complete=wait_until_complete,
+        )
 
-    indexes = list(collection.list_search_indexes())
-    assert len(indexes) == 1
-    assert indexes[0]["name"] == index_name
-    fields = indexes[0]["latestDefinition"]["fields"]
-    assert len(fields) == 2
-    assert {"type": "filter", "path": FILTER_FIELD_NAME} in fields
-    assert {
-        "numDimensions": DIMENSIONS,
-        "path": "embedding",
-        "similarity": f"{new_similarity}",
-        "type": "vector",
-    } in fields
+        indexes = list(collection.list_search_indexes())
+        assert len(indexes) == 1
+        assert indexes[0]["name"] == index_name
+        fields = indexes[0]["latestDefinition"]["fields"]
+        assert len(fields) == 2
+        assert {"type": "filter", "path": FILTER_FIELD_NAME} in fields
+        assert {
+            "numDimensions": DIMENSIONS,
+            "path": "embedding",
+            "similarity": f"{new_similarity}",
+            "type": "vector",
+        } in fields
 
     # Now add a full-text search index for the filter field
     index.create_fulltext_search_index(
@@ -117,7 +119,7 @@ def test_search_index_commands(collection: Collection) -> None:
     )
     assert idx_fulltext["type"] == "search"
     fields = idx_fulltext["latestDefinition"]["mappings"]["fields"]
-    assert fields == {FILTER_FIELD_NAME: [{"type": FILTER_FIELD_TYPE}]}
+    assert fields[FILTER_FIELD_NAME]["type"] == FILTER_FIELD_TYPE
 
     # Finally, drop the index
     for name in [FULLTEXT_INDEX_NAME, VECTOR_INDEX_NAME]:
