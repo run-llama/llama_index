@@ -15,6 +15,8 @@ import os
 import pypistats
 import statistics
 import sys
+import concurrent.futures
+from functools import lru_cache
 
 from datetime import datetime, timedelta
 from math import exp
@@ -29,7 +31,7 @@ class IntegrationActivityAnalyzer:
         self.package_name = package_name
         self.repo_path = repo_path
 
-    def get_time_weight(self, date_str: str, decay_factor: float = 0.1) -> float:
+    def get_time_weight(self, date_str: str, decay_factor: float = 0.5) -> float:
         """Calculate time-based weight using exponential decay.
 
         Args:
@@ -43,11 +45,10 @@ class IntegrationActivityAnalyzer:
         days_ago = (datetime.now() - date).days
         return exp(-decay_factor * days_ago / 30)  # Normalize by month
 
+    @lru_cache(maxsize=128)
     def get_download_trends(self) -> Dict[str, float]:
         """Get download trends for the package.
-
-        Analyzes PyPI download trends over the last 12 months
-        Returns trend metrics including growth rate and stability
+        Cache results to avoid repeated PyPI API calls.
         """
         # Using PyPI Stats API for monthly data
         try:
@@ -107,33 +108,26 @@ class IntegrationActivityAnalyzer:
         }
 
     def get_commit_activity(self) -> Dict[str, float]:
-        """Get commit activity for the package.
-
-        Analyzes git commit patterns over the last 6 months
-        Returns commit frequency and consistency metrics
-        """
+        """Get commit activity for the package."""
         repo = git.Repo("./")
         now = datetime.now()
         six_months_ago = now - timedelta(days=365 // 2)
 
-        # Get commits from the last year that modified files in the package directory
-        commits = []
+        # Get all commits once and cache them at module level
+        global commit_cache
+        if not commit_cache:
+            # Use a set for faster lookups
+            commit_cache = {
+                commit: {file for file in commit.stats.files}  # noqa: C416
+                for commit in repo.iter_commits(since=six_months_ago)
+            }
 
-        # use cache if available
-        if len(commit_cache) == 0:
-            for commit in repo.iter_commits(since=six_months_ago):
-                # Check if any files in this commit are in the package directory
-                for file in commit.stats.files:
-                    if self.package_name in file:
-                        commits.append(commit)
-                commit_cache.append(commit)
-        else:
-            for commit in commit_cache:
-                # Check if any files in this commit are in the package directory
-                for file in commit.stats.files:
-                    if self.package_name in file:
-                        commits.append(commit)
-                        break
+        # Filter commits for this package more efficiently
+        commits = [
+            commit
+            for commit, files in commit_cache.items()
+            if any(self.package_name in file for file in files)
+        ]
 
         if not commits:
             return {"commit_frequency": 0, "commit_consistency": 0, "total_commits": 0}
@@ -170,9 +164,13 @@ class IntegrationActivityAnalyzer:
         Calculate relative health score compared to llama-index-core.
         """
         if os.path.exists("./core_package_metrics.json"):
+            print(
+                "Loading cached existing core package metrics from ./core_package_metrics.json"
+            )
             with open("./core_package_metrics.json") as f:
                 core_package_metrics = json.load(f)
         else:
+            print("No cached existing core package metrics found, calculating...")
             core_package_metrics = {
                 "downloads": IntegrationActivityAnalyzer(
                     "./llama-index-core", "llama-index-core"
@@ -226,33 +224,33 @@ class IntegrationActivityAnalyzer:
 
         # Weight the different factors
         # Max score is 1.0
-        ratios = [download_ratio * 2.0, commit_ratio * 0.5]
+        ratios = [download_ratio * 4.0, commit_ratio * 1.0]
         return sum(ratios) / len(ratios)
 
 
+def analyze_package(package_path: str) -> tuple[str, float]:
+    """Analyze a single package. Helper function for parallel processing."""
+    package_name = package_path.strip().lstrip("./").rstrip("/").split("/")[-1]
+    analyzer = IntegrationActivityAnalyzer(package_name, package_path)
+    health_score = analyzer.calculate_relative_health()
+    return (package_name, health_score)
+
+
 def analyze_multiple_packages(
-    package_paths: list[str], bottom_percent: float = 0.25
+    package_paths: list[str],
+    bottom_percent: float | None = None,
+    threshold: float | None = None,
 ) -> list[tuple[str, float]]:
-    """
-    Analyze multiple packages and return the bottom X% scoring packages.
-
-    Args:
-        package_paths: List of package paths to analyze
-        bottom_percent: Percentage of lowest scoring packages to return (0.0 to 1.0)
-
-    Returns:
-        List of tuples containing (package_name, health_score) sorted by score ascending
-    """
+    """Analyze multiple packages in parallel."""
     if os.path.exists("./all_package_metrics.json"):
+        print("Loading cached existing package metrics from ./all_package_metrics.json")
         with open("./all_package_metrics.json") as f:
             results = json.load(f)
     else:
-        results = []
-        for package_path in package_paths:
-            package_name = package_path.strip().lstrip("./").rstrip("/").split("/")[-1]
-            analyzer = IntegrationActivityAnalyzer(package_name, package_path)
-            health_score = analyzer.calculate_relative_health()
-            results.append((package_name, health_score))
+        print("No cached existing package metrics found, calculating...")
+        # Use ThreadPoolExecutor for parallel processing
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            results = list(executor.map(analyze_package, package_paths))
 
         with open("./all_package_metrics.json", "w") as f:
             json.dump(results, f)
@@ -261,7 +259,17 @@ def analyze_multiple_packages(
     results.sort(key=lambda x: x[1])
 
     # Calculate how many packages to return
-    num_packages = max(1, int(len(results) * bottom_percent))
+    if bottom_percent is not None:
+        num_packages = max(1, int(len(results) * bottom_percent))
+    elif threshold is not None:
+        num_packages = next(
+            (i for i, (_, score) in enumerate(results) if score >= threshold),
+            len(results),
+        )
+    else:
+        raise ValueError(
+            "Either bottom_percent or threshold must be provided, but not both."
+        )
 
     return results[:num_packages]
 
@@ -269,13 +277,23 @@ def analyze_multiple_packages(
 if __name__ == "__main__":
     arg = sys.argv[1]
     try:
-        percent = float(arg)
+        val = float(arg)
+        is_threshold = sys.argv[2] == "threshold"
+        is_percent = sys.argv[2] == "percent"
         all_packages = []
         for root, dirs, files in os.walk("./llama-index-integrations"):
             if "pyproject.toml" in files:
                 all_packages.append(root)
 
-        packages_to_remove = analyze_multiple_packages(all_packages, percent)
+        if is_percent:
+            packages_to_remove = analyze_multiple_packages(
+                all_packages, bottom_percent=val
+            )
+        elif is_threshold:
+            packages_to_remove = analyze_multiple_packages(all_packages, threshold=val)
+        else:
+            raise ValueError("Invalid argument for bottom_percent or threshold")
+
         print(f"Found {len(packages_to_remove)} packages to remove.")
         print("\n".join([str(x) for x in packages_to_remove]))
     except ValueError:
