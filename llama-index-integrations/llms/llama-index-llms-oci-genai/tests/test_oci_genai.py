@@ -222,7 +222,9 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
     mock_tool = FunctionTool.from_defaults(fn=mock_tool_function)
     tools = [mock_tool]
 
-    user_msg = "User message"
+    messages = [
+        ChatMessage(role="user", content="User message"),
+    ]
 
     # Mock the client response
     def mocked_response(*args, **kwargs):
@@ -268,9 +270,9 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
 
     monkeypatch.setattr(llm._client, "chat", mocked_response)
 
-    actual_response = llm.chat_with_tools(
+    actual_response = llm.chat(
+        messages=messages,
         tools=tools,
-        user_msg=user_msg,
     )
 
     # Expected response structure
@@ -298,12 +300,6 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
             },
         ),
         raw={},
-        additional_kwargs={
-            "model_id": test_model_id,
-            "model_version": "1.0",
-            "request_id": "req-1234567890",
-            "content-length": "1234",
-        },
     )
 
     # Compare everything except the toolUseId which is randomly generated
