@@ -10,6 +10,7 @@ from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.errors import WorkflowRuntimeError
 from llama_index.core.workflow.events import StartEvent, StopEvent, Event
 from llama_index.core.workflow.workflow import Workflow, WorkflowHandler
+from llama_index.core.workflow.checkpoint import Checkpoint
 
 from .conftest import OneTestEvent, AnotherTestEvent, DummyWorkflow
 
@@ -121,8 +122,27 @@ async def test_deprecated_params(ctx):
         await ctx.set("foo", 42, make_private=True)
 
 
+def test_create_checkpoint(workflow: DummyWorkflow):
+    incoming_ev = StartEvent()
+    output_ev = OneTestEvent()
+
+    ctx = Context(workflow=Workflow)
+    ctx_snapshot = ctx.to_dict()
+    ctx._create_checkpoint(
+        last_completed_step="start_step",
+        incoming_ev=incoming_ev,
+        output_ev=output_ev,
+    )
+    ckpt: Checkpoint = ctx._broker_log[0]
+    assert ckpt.incoming_event == incoming_ev
+    assert ckpt.output_event == output_ev
+    assert ckpt.last_completed_step == "start_step"
+    # should be the same since nothing happened between snapshot and creating ckpt
+    assert ckpt.ctx_state == ctx_snapshot
+
+
 @pytest.mark.asyncio()
-async def test_broker_log_contains_checkpoints(workflow: DummyWorkflow):
+async def test_checkpoints_after_successive_runs(workflow: DummyWorkflow):
     num_steps = len(workflow._get_steps())
     num_runs = 2
 
