@@ -40,6 +40,7 @@ llm = NebiusLLM(
 ### Launching
 
 #### Load images
+
 ```python
 from llama_index.core.multi_modal_llms.generic_utils import load_image_urls
 

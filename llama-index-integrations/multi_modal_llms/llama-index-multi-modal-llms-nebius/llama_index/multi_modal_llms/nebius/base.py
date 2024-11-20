@@ -6,6 +6,7 @@ from llama_index.multi_modal_llms.openai import OpenAIMultiModal
 
 DEFAULT_API_BASE = "https://api.studio.nebius.ai/v1"
 
+
 class NebiusMultiModal(OpenAIMultiModal):
     """
     Nebius AI Studio Multimodal class.
