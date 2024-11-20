@@ -17,10 +17,12 @@ import statistics
 import sys
 import concurrent.futures
 from functools import lru_cache
+import pathlib
+import ast
+from typing import Dict, List
 
 from datetime import datetime, timedelta
 from math import exp
-from typing import Dict
 
 # cache of commits to avoid re-reading from disk
 commit_cache = []
@@ -159,6 +161,69 @@ class IntegrationActivityAnalyzer:
             "total_commits": len(commits),  # Could also weight this but less meaningful
         }
 
+    def _count_tests_in_file(self, file_path: pathlib.Path) -> int:
+        """
+        Count the number of test functions in a Python file.
+        Looks for functions that start with 'test_' or methods in classes that start with 'Test'.
+        """
+        try:
+            with open(file_path, encoding="utf-8") as f:
+                tree = ast.parse(f.read())
+
+            test_count = 0
+
+            for node in ast.walk(tree):
+                # Count standalone test functions
+                if isinstance(node, ast.FunctionDef) and node.name.startswith("test_"):
+                    test_count += 1
+
+                # Count test methods in test classes
+                elif isinstance(node, ast.ClassDef) and node.name.startswith("Test"):
+                    test_methods = [
+                        method
+                        for method in node.body
+                        if isinstance(method, ast.FunctionDef)
+                        and (method.name.startswith("test_") or method.name == "test")
+                    ]
+                    test_count += len(test_methods)
+
+            return test_count
+        except Exception:
+            # If we can't parse the file, return 0
+            return 0
+
+    def check_test_coverage(self) -> float:
+        """
+        Check if package has adequate test coverage.
+        Returns 1.0 if package has at least 5 test functions, 0.5 if it has 2-4 tests,
+        and 0.0 if it has less than 2 tests.
+        """
+        package_path = pathlib.Path(self.repo_path)
+
+        # Look for tests in common test directory locations
+        test_files: List[pathlib.Path] = []
+        test_dirs = [
+            package_path / "tests",
+            package_path / "test",
+            package_path.parent / "tests" / package_path.name,
+        ]
+
+        for test_dir in test_dirs:
+            if test_dir.exists() and test_dir.is_dir():
+                test_files.extend(test_dir.glob("test_*.py"))
+                test_files.extend(test_dir.glob("*_test.py"))
+
+        # Count total number of test functions across all files
+        total_tests = sum(self._count_tests_in_file(file) for file in test_files)
+
+        # Return score based on number of tests
+        if total_tests >= 5:
+            return 1.0
+        elif total_tests >= 2:
+            return 0.5
+        else:
+            return 0.0
+
     def calculate_relative_health(self) -> float:
         """
         Calculate relative health score compared to llama-index-core.
@@ -224,7 +289,12 @@ class IntegrationActivityAnalyzer:
 
         # Weight the different factors
         # Max score is 1.0
-        ratios = [download_ratio * 4.0, commit_ratio * 1.0]
+        test_score = self.check_test_coverage()
+        ratios = [
+            download_ratio * 4.0,  # 40% weight for downloads
+            commit_ratio * 1.0,  # 10% weight for commits
+            test_score * 5.0,  # 50% weight for test coverage
+        ]
         return sum(ratios) / len(ratios)
 
 
