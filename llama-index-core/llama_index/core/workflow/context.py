@@ -224,9 +224,6 @@ class Context:
         If step is None, the event is sent to all the receivers and we let
         them discard events they don't want.
         """
-        # take snapshot of ctx.state for checkpointing
-        ctx_snapshot = self.to_dict()
-
         if step is None:
             for queue in self._queues.values():
                 queue.put_nowait(message)
@@ -246,9 +243,41 @@ class Context:
                     f"Step {step} does not accept event of type {type(message)}"
                 )
 
-        # create checkpoint
-        checkpoint = Checkpoint(step=step, ctx_state=ctx_snapshot, event=message)
+    def _create_checkpoint(
+        self, last_completed_step: Optional[str], incoming_ev: Event, output_ev: Event
+    ) -> Checkpoint:
+        """Build a checkpoint around the last completed step."""
+        checkpoint = Checkpoint(
+            last_completed_step=last_completed_step,
+            incoming_event=incoming_ev,
+            output_event=output_ev,
+            ctx_state=self.to_dict(),
+        )
         self._broker_log.append(checkpoint)
+
+    def _checkpoint_filter_condition(
+        ckpt: Checkpoint, step: Optional[str], event_type: Optional[Type[Event]]
+    ) -> bool:
+        if step and ckpt.step != step:
+            return False
+        if event_type and type(ckpt.event) != event_type:
+            return False
+        return True
+
+    def filter_checkpoints(
+        self,
+        step: Optional[str] = None,
+        event_type: Optional[Type[Event]] = None,
+    ) -> List[Checkpoint]:
+        """Returns a list of Checkpoint's based on user provided filters."""
+        if not step and not event_type:
+            raise ValueError("Please specify a filter.")
+
+        return [
+            ckpt
+            for ckpt in self._broker_log
+            if self._checkpoint_filter_condition(ckpt, step, event_type)
+        ]
 
     def write_event_to_stream(self, ev: Optional[Event]) -> None:
         self._streaming_queue.put_nowait(ev)
