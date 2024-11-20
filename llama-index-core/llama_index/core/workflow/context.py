@@ -244,7 +244,10 @@ class Context:
                 )
 
     def _create_checkpoint(
-        self, last_completed_step: Optional[str], input_ev: Event, output_ev: Event
+        self,
+        last_completed_step: Optional[str],
+        input_ev: Optional[Event],
+        output_ev: Event,
     ) -> Checkpoint:
         """Build a checkpoint around the last completed step."""
         checkpoint = Checkpoint(
