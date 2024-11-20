@@ -256,6 +256,7 @@ class Context:
         self._broker_log.append(checkpoint)
 
     def _checkpoint_filter_condition(
+        self,
         ckpt: Checkpoint,
         last_completed_step: Optional[str],
         input_event_type: Optional[Type[Event]],
