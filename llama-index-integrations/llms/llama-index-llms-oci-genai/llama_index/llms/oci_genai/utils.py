@@ -25,7 +25,9 @@ COMPLETION_MODELS = {}  # completion endpoint has been deprecated
 
 CHAT_MODELS = {
     "cohere.command-r-16k": 16000,
-    "cohere.command-r-plus": 128000,  # placeholder for future support
+    "cohere.command-r-plus": 128000,
+    "cohere.command-r-08-2024": 128000,
+    "cohere.command-r-plus-08-2024": 128000,
     "meta.llama-3-70b-instruct": 8192,
     "meta.llama-3.1-70b-instruct": 128000,
     "meta.llama-3.1-405b-instruct": 128000,
