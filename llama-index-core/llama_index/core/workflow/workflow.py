@@ -22,7 +22,9 @@ from .utils import (
     get_steps_from_instance,
     ServiceDefinition,
 )
+from .checkpoint import Checkpoint
 from .handler import WorkflowHandler
+from .context_serializers import JsonSerializer
 
 
 dispatcher = get_dispatcher(__name__)
@@ -417,6 +419,26 @@ class Workflow(metaclass=WorkflowMeta):
 
         asyncio.create_task(_run_workflow())
         return result
+
+    @dispatcher.span
+    def run_from(
+        self, ctx: Optional[Context], checkpoint: Checkpoint, **kwargs: Any
+    ) -> WorkflowHandler:
+        """Run from a specified Checkpoint. If a `Context` obj is supplied,
+        then the _broker_log of this `Context` will replace the `_broker_log` of
+        the loaded checkpoint's `Context`. This is typically done in order to
+        preserve the list of past checkpoints that are stored in the supplied
+        `Context` object.
+        """
+        # load the `Context` from the checkpoint
+        loaded_ctx = Context.from_dict(
+            self, checkpoint.ctx_state, serializer=JsonSerializer()
+        )
+        if ctx:  # preserve the checkpoints of the supplied Context
+            loaded_ctx._broker_log = ctx._broker_log
+        handler: WorkflowHandler = self.run(ctx=loaded_ctx, **kwargs)
+        handler.ctx.send_event(checkpoint.output_event)
+        return handler
 
     def is_done(self) -> bool:
         """Checks if the workflow is done."""

@@ -198,6 +198,10 @@ class Context:
         warnings.warn(msg, DeprecationWarning)
         return self
 
+    @property
+    def checkpoints(self) -> List[Checkpoint]:
+        return self._broker_log
+
     def collect_events(
         self, ev: Event, expected: List[Type[Event]]
     ) -> Optional[List[Event]]:
