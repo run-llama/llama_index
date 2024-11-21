@@ -424,7 +424,7 @@ class Workflow(metaclass=WorkflowMeta):
         if ctx:  # preserve the checkpoints of the supplied Context
             loaded_ctx._broker_log = ctx._broker_log
         handler: WorkflowHandler = self.run(ctx=loaded_ctx, **kwargs)
-        handler.ctx.send_event(checkpoint.output_event)
+        loaded_ctx.send_event(checkpoint.output_event)
         return handler
 
     def is_done(self) -> bool:
