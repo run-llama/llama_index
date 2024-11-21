@@ -148,7 +148,7 @@ async def test_checkpoints_after_successive_runs(workflow: DummyWorkflow):
 
     ctx = Context(workflow=workflow)
     for _ in range(num_runs):
-        handler: WorkflowHandler = workflow.run(ctx=ctx)
+        handler: WorkflowHandler = workflow.run(ctx=ctx, store_checkpoints=True)
         await handler
 
     assert len(handler.ctx._checkpoints) == num_steps * num_runs
@@ -165,7 +165,7 @@ async def test_filter_checkpoints(workflow: DummyWorkflow):
     num_runs = 2
     ctx = Context(workflow=workflow)
     for _ in range(num_runs):
-        handler: WorkflowHandler = workflow.run(ctx=ctx)
+        handler: WorkflowHandler = workflow.run(ctx=ctx, store_checkpoints=True)
         await handler
 
     # filter by last complete step
@@ -196,9 +196,9 @@ async def test_filter_checkpoints(workflow: DummyWorkflow):
 
 
 @pytest.mark.asyncio()
-async def test_disable_checkpoints(workflow: DummyWorkflow):
+async def test_default_disabled_checkpoints(workflow: DummyWorkflow):
     ctx = Context(workflow=workflow)
-    handler: WorkflowHandler = workflow.run(ctx=ctx, store_checkpoints=False)
+    handler: WorkflowHandler = workflow.run(ctx=ctx)
     await handler
 
     assert len(handler.ctx._checkpoints) == 0
