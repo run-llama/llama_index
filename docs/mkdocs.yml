@@ -386,7 +386,7 @@ nav:
           - ./examples/llm/qianfan.ipynb
           - ./examples/llm/rungpt.ipynb
           - ./examples/llm/sagemaker_endpoint_llm.ipynb
-          - ./examples/llm/sambanova.ipynb
+          - ./examples/llm/sambanovasystems.ipynb
           - ./examples/llm/solar.ipynb
           - ./examples/llm/together.ipynb
           - ./examples/llm/unify.ipynb
@@ -451,6 +451,7 @@ nav:
           - ./examples/multi_modal/multi_modal_retrieval.ipynb
           - ./examples/multi_modal/multi_modal_video_RAG.ipynb
           - ./examples/multi_modal/multi_modal_videorag_videodb.ipynb
+          - ./examples/multi_modal/nebius_multi_modal.ipynb
           - ./examples/multi_modal/nvidia_multi_modal.ipynb
           - ./examples/multi_modal/ollama_cookbook.ipynb
           - ./examples/multi_modal/openai_multi_modal.ipynb
@@ -1630,6 +1631,7 @@ nav:
           - ./api_reference/tools/database.md
           - ./api_reference/tools/docker_code.md
           - ./api_reference/tools/duckduckgo.md
+          - ./api_reference/tools/elevenlabs.md
           - ./api_reference/tools/exa.md
           - ./api_reference/tools/finance.md
           - ./api_reference/tools/function.md
@@ -2332,6 +2334,8 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-gitbook
             - ../llama-index-integrations/llms/llama-index-llms-siliconflow
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-nvidia
+            - ../llama-index-integrations/tools/llama-index-tools-elevenlabs
+            - ../llama-index-integrations/llms/llama-index-llms-nebius
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

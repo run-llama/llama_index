@@ -1,5 +1,36 @@
 # ChangeLog
 
+## [2024-11-20]
+
+### `llama-index-core` [0.12.1]
+
+- Pin pydantic to `<2.10` temporarily
+- feat[react-multimodal]: add gemini support for images in MultimodalReActAgentWorker (#16992)
+
+### `llama-index-indices-managed-llama-cloud` [0.6.2]
+
+- api_key typo in llama-cloud-index (#17001)
+
+### `llama-index-llms-openai` [0.3.1]
+
+- Add support for latest gpt-4o model (#17015)
+
+### `llama-index-llms-zhipuai` [0.2.1]
+
+- zhipuai add stop param to api (#16996)
+
+### `llama-index-multi-modal-llms-mistralai` [0.3.1]
+
+- Add support for mistral latest models (#16991)
+
+### `llama-index-multi-modal-llms-replicate` [0.3.1]
+
+- Fix: Correct typo in replicate multi modal package (#16998)
+
+### `llama-index-vector-stores-pinecone` [0.4.1]
+
+- add get_nodes to pinecone (#17007)
+
 ## [2024-11-17]
 
 **NOTE:** Updating to v0.12.0 will require bumping every other `llama-index-*` package! Every package has had a version bump. Only notable changes are below.
