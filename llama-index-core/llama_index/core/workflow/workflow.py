@@ -422,7 +422,7 @@ class Workflow(metaclass=WorkflowMeta):
 
     @dispatcher.span
     def run_from(
-        self, ctx: Optional[Context], checkpoint: Checkpoint, **kwargs: Any
+        self, checkpoint: Checkpoint, ctx: Optional[Context] = None, **kwargs: Any
     ) -> WorkflowHandler:
         """Run from a specified Checkpoint. If a `Context` obj is supplied,
         then the _broker_log of this `Context` will replace the `_broker_log` of

@@ -252,13 +252,14 @@ class Context:
         last_completed_step: Optional[str],
         input_ev: Optional[Event],
         output_ev: Event,
+        serializer: Optional[BaseSerializer] = None,
     ) -> None:
         """Build a checkpoint around the last completed step."""
         checkpoint = Checkpoint(
             last_completed_step=last_completed_step,
             input_event=input_ev,
             output_event=output_ev,
-            ctx_state=self.to_dict(),
+            ctx_state=self.to_dict(serializer),
         )
         self._broker_log.append(checkpoint)
 
