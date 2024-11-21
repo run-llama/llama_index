@@ -24,7 +24,7 @@ from .utils import (
 )
 from .checkpoint import Checkpoint
 from .handler import WorkflowHandler
-from .context_serializers import JsonSerializer
+from .context_serializers import JsonSerializer, BaseSerializer
 
 
 dispatcher = get_dispatcher(__name__)
@@ -57,6 +57,7 @@ class Workflow(metaclass=WorkflowMeta):
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
         num_concurrent_runs: Optional[int] = None,
+        context_serializer: Optional[BaseSerializer] = None,
     ) -> None:
         """Create an instance of the workflow.
 
@@ -88,6 +89,7 @@ class Workflow(metaclass=WorkflowMeta):
         # Broker machinery
         self._contexts: Set[Context] = set()
         self._stepwise_context: Optional[Context] = None
+        self._context_serializer = context_serializer or JsonSerializer()
         # Services management
         self._service_manager = service_manager or ServiceManager()
 
@@ -275,7 +277,10 @@ class Workflow(metaclass=WorkflowMeta):
                     # Checkpoint
                     if store_checkpoints:
                         ctx._create_checkpoint(
-                            last_completed_step=name, input_ev=ev, output_ev=new_ev
+                            last_completed_step=name,
+                            input_ev=ev,
+                            output_ev=new_ev,
+                            serializer=self._context_serializer,
                         )
 
                     if not isinstance(new_ev, Event):
@@ -362,7 +367,10 @@ class Workflow(metaclass=WorkflowMeta):
                     start_ev = StartEvent(**kwargs)
                     if store_checkpoints:
                         ctx._create_checkpoint(
-                            last_completed_step=None, input_ev=None, output_ev=start_ev
+                            last_completed_step=None,
+                            input_ev=None,
+                            output_ev=start_ev,
+                            serializer=self._context_serializer,
                         )
 
                     # Send the first event
