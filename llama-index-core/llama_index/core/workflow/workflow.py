@@ -57,7 +57,7 @@ class Workflow(metaclass=WorkflowMeta):
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
         num_concurrent_runs: Optional[int] = None,
-        context_serializer: Optional[BaseSerializer] = None,
+        checkpoint_serializer: Optional[BaseSerializer] = None,
     ) -> None:
         """Create an instance of the workflow.
 
@@ -89,7 +89,7 @@ class Workflow(metaclass=WorkflowMeta):
         # Broker machinery
         self._contexts: Set[Context] = set()
         self._stepwise_context: Optional[Context] = None
-        self._context_serializer = context_serializer or JsonSerializer()
+        self._checkpoint_serializer = checkpoint_serializer or JsonSerializer()
         # Services management
         self._service_manager = service_manager or ServiceManager()
 
@@ -293,7 +293,7 @@ class Workflow(metaclass=WorkflowMeta):
                             last_completed_step=name,
                             input_ev=ev,
                             output_ev=new_ev,
-                            serializer=self._context_serializer,
+                            serializer=self._checkpoint_serializer,
                         )
 
                     if not isinstance(new_ev, Event):
@@ -383,7 +383,7 @@ class Workflow(metaclass=WorkflowMeta):
                             last_completed_step=None,
                             input_ev=None,
                             output_ev=start_ev,
-                            serializer=self._context_serializer,
+                            serializer=self._checkpoint_serializer,
                         )
 
                     # Send the first event
