@@ -701,13 +701,15 @@ async def test_workflow_run_num_concurrent(
 async def test_run_from_checkpoint(workflow):
     num_steps = len(workflow._get_steps())
     ctx = Context(workflow=workflow)
-    handler: WorkflowHandler = workflow.run(ctx=ctx)
+    handler: WorkflowHandler = workflow.run(ctx=ctx, store_checkpoints=True)
     await handler
     num_checkpoints_after_first_run = len(handler.ctx.checkpoints)
 
     # get the checkpoint after middle_step completed
     ckpt = handler.ctx.filter_checkpoints(last_completed_step="middle_step")[0]
-    handler: WorkflowHandler = workflow.run_from(checkpoint=ckpt, ctx=ctx)
+    handler: WorkflowHandler = workflow.run_from(
+        checkpoint=ckpt, ctx=ctx, store_checkpoints=True
+    )
     await handler
 
     num_new_checkpoints = len(handler.ctx.checkpoints) - num_checkpoints_after_first_run

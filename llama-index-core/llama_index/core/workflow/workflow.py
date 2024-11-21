@@ -166,7 +166,7 @@ class Workflow(metaclass=WorkflowMeta):
         self,
         stepwise: bool = False,
         ctx: Optional[Context] = None,
-        store_checkpoints: bool = True,
+        store_checkpoints: bool = False,
     ) -> Context:
         """Sets up the queues and tasks for each declared step.
 
@@ -340,7 +340,7 @@ class Workflow(metaclass=WorkflowMeta):
         self,
         ctx: Optional[Context] = None,
         stepwise: bool = False,
-        store_checkpoints: bool = True,
+        store_checkpoints: bool = False,
         **kwargs: Any,
     ) -> WorkflowHandler:
         """Runs the workflow until completion."""
@@ -433,7 +433,7 @@ class Workflow(metaclass=WorkflowMeta):
         self,
         checkpoint: Checkpoint,
         ctx: Optional[Context] = None,
-        store_checkpoints: bool = True,
+        store_checkpoints: bool = False,
         **kwargs: Any,
     ) -> WorkflowHandler:
         """Run from a specified Checkpoint. If a `Context` obj is supplied,
