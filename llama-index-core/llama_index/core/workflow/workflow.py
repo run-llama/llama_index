@@ -412,7 +412,7 @@ class Workflow(metaclass=WorkflowMeta):
         self, checkpoint: Checkpoint, ctx: Optional[Context] = None, **kwargs: Any
     ) -> WorkflowHandler:
         """Run from a specified Checkpoint. If a `Context` obj is supplied,
-        then the _broker_log of this `Context` will replace the `_broker_log` of
+        then the _checkpoints of this `Context` will replace the `_checkpoints` of
         the loaded checkpoint's `Context`. This is typically done in order to
         preserve the list of past checkpoints that are stored in the supplied
         `Context` object.
@@ -422,7 +422,7 @@ class Workflow(metaclass=WorkflowMeta):
             self, checkpoint.ctx_state, serializer=JsonSerializer()
         )
         if ctx:  # preserve the checkpoints of the supplied Context
-            loaded_ctx._broker_log = ctx._broker_log
+            loaded_ctx._checkpoints = ctx._checkpoints
         handler: WorkflowHandler = self.run(ctx=loaded_ctx, **kwargs)
         loaded_ctx.send_event(checkpoint.output_event)
         return handler
