@@ -37,7 +37,7 @@ class Context:
         # Broker machinery
         self._queues: Dict[str, asyncio.Queue] = {}
         self._tasks: Set[asyncio.Task] = set()
-        self._broker_log: List[Checkpoint] = []
+        self._checkpoints: List[Checkpoint] = []
         self._cancel_flag: asyncio.Event = asyncio.Event()
         self._step_flags: Dict[str, asyncio.Event] = {}
         self._step_event_holding: Optional[Event] = None
@@ -108,7 +108,7 @@ class Context:
                 for k, v in self._events_buffer.items()
             },
             "accepted_events": self._accepted_events,
-            "broker_log": [serializer.serialize(ev) for ev in self._broker_log],
+            "broker_log": [serializer.serialize(ev) for ev in self._checkpoints],
             "is_running": self.is_running,
         }
 
@@ -135,7 +135,7 @@ class Context:
             for k, v in data["events_buffer"].items()
         }
         context._accepted_events = data["accepted_events"]
-        context._broker_log = [serializer.deserialize(ev) for ev in data["broker_log"]]
+        context._checkpoints = [serializer.deserialize(ev) for ev in data["broker_log"]]
         context.is_running = data["is_running"]
         return context
 
@@ -200,7 +200,7 @@ class Context:
 
     @property
     def checkpoints(self) -> List[Checkpoint]:
-        return self._broker_log
+        return self._checkpoints
 
     def collect_events(
         self, ev: Event, expected: List[Type[Event]]
@@ -261,7 +261,7 @@ class Context:
             output_event=output_ev,
             ctx_state=self.to_dict(serializer),
         )
-        self._broker_log.append(checkpoint)
+        self._checkpoints.append(checkpoint)
 
     def _checkpoint_filter_condition(
         self,
@@ -290,7 +290,7 @@ class Context:
 
         return [
             ckpt
-            for ckpt in self._broker_log
+            for ckpt in self._checkpoints
             if self._checkpoint_filter_condition(
                 ckpt, last_completed_step, input_event_type, output_event_type
             )

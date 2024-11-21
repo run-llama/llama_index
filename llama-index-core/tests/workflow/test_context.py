@@ -133,7 +133,7 @@ def test_create_checkpoint(workflow: DummyWorkflow):
         input_ev=incoming_ev,
         output_ev=output_ev,
     )
-    ckpt: Checkpoint = ctx._broker_log[0]
+    ckpt: Checkpoint = ctx._checkpoints[0]
     assert ckpt.input_event == incoming_ev
     assert ckpt.output_event == output_ev
     assert ckpt.last_completed_step == "start_step"
@@ -151,8 +151,8 @@ async def test_checkpoints_after_successive_runs(workflow: DummyWorkflow):
         handler: WorkflowHandler = workflow.run(ctx=ctx)
         await handler
 
-    assert len(handler.ctx._broker_log) == num_steps * num_runs
-    assert [ckpt.last_completed_step for ckpt in handler.ctx._broker_log] == [
+    assert len(handler.ctx._checkpoints) == num_steps * num_runs
+    assert [ckpt.last_completed_step for ckpt in handler.ctx._checkpoints] == [
         None,
         "start_step",
         "middle_step",
