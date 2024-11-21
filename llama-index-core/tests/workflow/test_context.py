@@ -193,3 +193,12 @@ async def test_filter_checkpoints(workflow: DummyWorkflow):
     # no filters raises error
     with pytest.raises(ValueError):
         ctx.filter_checkpoints()
+
+
+@pytest.mark.asyncio()
+async def test_disable_checkpoints(workflow: DummyWorkflow):
+    ctx = Context(workflow=workflow)
+    handler: WorkflowHandler = workflow.run(ctx=ctx, store_checkpoints=False)
+    await handler
+
+    assert len(handler.ctx._checkpoints) == 0

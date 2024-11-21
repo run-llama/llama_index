@@ -160,7 +160,12 @@ class Workflow(metaclass=WorkflowMeta):
         """Returns all the steps, whether defined as methods or free functions."""
         return {**get_steps_from_instance(self), **self._step_functions}  # type: ignore[attr-defined]
 
-    def _start(self, stepwise: bool = False, ctx: Optional[Context] = None) -> Context:
+    def _start(
+        self,
+        stepwise: bool = False,
+        ctx: Optional[Context] = None,
+        store_checkpoints: bool = True,
+    ) -> Context:
         """Sets up the queues and tasks for each declared step.
 
         This method also launches each step as an async task.
@@ -268,9 +273,10 @@ class Workflow(metaclass=WorkflowMeta):
                     ctx._accepted_events.append((name, type(ev).__name__))
 
                     # Checkpoint
-                    ctx._create_checkpoint(
-                        last_completed_step=name, input_ev=ev, output_ev=new_ev
-                    )
+                    if store_checkpoints:
+                        ctx._create_checkpoint(
+                            last_completed_step=name, input_ev=ev, output_ev=new_ev
+                        )
 
                     if not isinstance(new_ev, Event):
                         warnings.warn(
@@ -326,7 +332,11 @@ class Workflow(metaclass=WorkflowMeta):
 
     @dispatcher.span
     def run(
-        self, ctx: Optional[Context] = None, stepwise: bool = False, **kwargs: Any
+        self,
+        ctx: Optional[Context] = None,
+        stepwise: bool = False,
+        store_checkpoints: bool = True,
+        **kwargs: Any,
     ) -> WorkflowHandler:
         """Runs the workflow until completion."""
         # Validate the workflow if needed
@@ -337,7 +347,9 @@ class Workflow(metaclass=WorkflowMeta):
             )
 
         # Start the machinery in a new Context or use the provided one
-        ctx = self._start(ctx=ctx, stepwise=stepwise)
+        ctx = self._start(
+            ctx=ctx, stepwise=stepwise, store_checkpoints=store_checkpoints
+        )
 
         result = WorkflowHandler(ctx=ctx)
 
@@ -348,9 +360,10 @@ class Workflow(metaclass=WorkflowMeta):
                 if not ctx.is_running:
                     # create checkpoint just before start of workflow run
                     start_ev = StartEvent(**kwargs)
-                    ctx._create_checkpoint(
-                        last_completed_step=None, input_ev=None, output_ev=start_ev
-                    )
+                    if store_checkpoints:
+                        ctx._create_checkpoint(
+                            last_completed_step=None, input_ev=None, output_ev=start_ev
+                        )
 
                     # Send the first event
                     ctx.send_event(start_ev)
@@ -409,7 +422,11 @@ class Workflow(metaclass=WorkflowMeta):
 
     @dispatcher.span
     def run_from(
-        self, checkpoint: Checkpoint, ctx: Optional[Context] = None, **kwargs: Any
+        self,
+        checkpoint: Checkpoint,
+        ctx: Optional[Context] = None,
+        store_checkpoints: bool = True,
+        **kwargs: Any,
     ) -> WorkflowHandler:
         """Run from a specified Checkpoint. If a `Context` obj is supplied,
         then the _checkpoints of this `Context` will replace the `_checkpoints` of
@@ -423,7 +440,9 @@ class Workflow(metaclass=WorkflowMeta):
         )
         if ctx:  # preserve the checkpoints of the supplied Context
             loaded_ctx._checkpoints = ctx._checkpoints
-        handler: WorkflowHandler = self.run(ctx=loaded_ctx, **kwargs)
+        handler: WorkflowHandler = self.run(
+            ctx=loaded_ctx, store_checkpoints=store_checkpoints, **kwargs
+        )
         loaded_ctx.send_event(checkpoint.output_event)
         return handler
 
