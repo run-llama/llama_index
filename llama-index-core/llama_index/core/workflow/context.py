@@ -108,7 +108,7 @@ class Context:
                 for k, v in self._events_buffer.items()
             },
             "accepted_events": self._accepted_events,
-            "broker_log": [serializer.serialize(ev) for ev in self._checkpoints],
+            "checkpoints": [serializer.serialize(ckpt) for ckpt in self._checkpoints],
             "is_running": self.is_running,
         }
 
@@ -135,7 +135,9 @@ class Context:
             for k, v in data["events_buffer"].items()
         }
         context._accepted_events = data["accepted_events"]
-        context._checkpoints = [serializer.deserialize(ev) for ev in data["broker_log"]]
+        context._checkpoints = [
+            serializer.deserialize(ckpt) for ckpt in data["checkpoints"]
+        ]
         context.is_running = data["is_running"]
         return context
 
