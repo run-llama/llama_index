@@ -476,7 +476,7 @@ async def test_workflow_pickle():
             await ctx.set("test_fn", test_fn)
             return StopEvent(result="Done")
 
-    wf = DummyWorkflow()
+    wf = DummyWorkflow(context_serializer=JsonPickleSerializer())
     handler = wf.run()
     _ = await handler
 
