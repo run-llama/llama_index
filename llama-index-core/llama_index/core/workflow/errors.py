@@ -16,3 +16,11 @@ class WorkflowDone(Exception):
 
 class WorkflowCancelledByUser(Exception):
     pass
+
+
+class RunIdMismatchError(Exception):
+    pass
+
+
+class MissingWorkflowRunIdError(Exception):
+    pass
