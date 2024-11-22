@@ -18,6 +18,10 @@ from llama_index.core.workflow.events import (
 )
 from llama_index.core.workflow.workflow import Workflow
 from llama_index.core.workflow.context import Context
+from llama_index.core.workflow.context_serializers import (
+    JsonPickleSerializer,
+    JsonSerializer,
+)
 
 __all__ = [
     "Context",
@@ -34,4 +38,6 @@ __all__ = [
     "Context",
     "InputRequiredEvent",
     "HumanResponseEvent",
+    "JsonPickleSerializer",
+    "JsonSerializer",
 ]
