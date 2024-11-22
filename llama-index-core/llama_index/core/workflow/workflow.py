@@ -230,14 +230,18 @@ class Workflow(metaclass=WorkflowMeta):
                                 break  # exit the retrying loop
                             except Exception as e:
                                 if config.retry_policy is None:
-                                    raise e from None
+                                    raise WorkflowRuntimeError(
+                                        f"Error in step '{name}': {e!s}"
+                                    ) from e
 
                                 delay = config.retry_policy.next(
                                     retry_start_at + time.time(), attempts, e
                                 )
                                 if delay is None:
                                     # We're done retrying
-                                    raise e from None
+                                    raise WorkflowRuntimeError(
+                                        f"Error in step '{name}': {e!s}"
+                                    ) from e
 
                                 attempts += 1
                                 if self._verbose:
@@ -247,10 +251,15 @@ class Workflow(metaclass=WorkflowMeta):
                                 await asyncio.sleep(delay)
 
                     else:
-                        run_task = functools.partial(instrumented_step, **kwargs)
-                        new_ev = await asyncio.get_event_loop().run_in_executor(
-                            None, run_task
-                        )
+                        try:
+                            run_task = functools.partial(instrumented_step, **kwargs)
+                            new_ev = await asyncio.get_event_loop().run_in_executor(
+                                None, run_task
+                            )
+                        except Exception as e:
+                            raise WorkflowRuntimeError(
+                                f"Error in step '{name}': {e!s}"
+                            ) from e
 
                     if self._verbose and name != "_done":
                         if new_ev is not None:
