@@ -46,7 +46,7 @@ name = "llama-index-core"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.12.0"
+version = "0.12.1"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}
@@ -70,7 +70,7 @@ tqdm = "^4.66.1"
 pillow = ">=9.0.0"
 PyYAML = ">=6.0.1"
 wrapt = "*"
-pydantic = ">=2.7.0,<3.0.0"
+pydantic = ">=2.7.0,<2.10.0"  # TODO: 2.10 was breaking many things, unpin when it settles down
 filetype = "^1.2.0"  # Used for multi-modal MIME utils
 eval-type-backport = {python = "<3.10", version = "^0.2.0"}
 
@@ -226,6 +226,9 @@ unfixable = [
 
 [tool.ruff.flake8-annotations]
 mypy-init-return = true
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = true
 
 [tool.ruff.pydocstyle]
 convention = "google"

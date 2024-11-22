@@ -1,9 +1,8 @@
 import json
 
-from llama_index.core.schema import Document as LIDocument
-
-from llama_index.node_parser.docling import DoclingNodeParser
 from llama_index.core.schema import BaseNode
+from llama_index.core.schema import Document as LIDocument
+from llama_index.node_parser.docling import DoclingNodeParser
 
 in_json_str = json.dumps(
     {
@@ -20,6 +19,7 @@ in_json_str = json.dumps(
         "text_template": "{metadata_str}\n\n{content}",
         "metadata_template": "{key}: {value}",
         "metadata_seperator": "\n",
+        "metadata_separator": "\n",
         "class_name": "Document",
     }
 )
@@ -99,6 +99,7 @@ out_get_nodes = {
             "text_template": "{metadata_str}\n\n{content}",
             "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "metadata_separator": "\n",
             "class_name": "TextNode",
         },
         {
@@ -174,6 +175,7 @@ out_get_nodes = {
             "text_template": "{metadata_str}\n\n{content}",
             "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "metadata_separator": "\n",
             "class_name": "TextNode",
         },
     ]
@@ -231,6 +233,7 @@ out_parse_nodes = {
             "text_template": "{metadata_str}\n\n{content}",
             "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "metadata_separator": "\n",
             "class_name": "TextNode",
         },
         {
@@ -282,6 +285,7 @@ out_parse_nodes = {
             "text_template": "{metadata_str}\n\n{content}",
             "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "metadata_separator": "\n",
             "class_name": "TextNode",
         },
     ]
