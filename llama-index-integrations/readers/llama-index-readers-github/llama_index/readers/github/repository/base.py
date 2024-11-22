@@ -13,6 +13,7 @@ import enum
 import logging
 import os
 import pathlib
+import re
 import tempfile
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -385,6 +386,13 @@ class GithubRepositoryReader(BaseReader):
             )
         return blobs_and_full_paths
 
+    def _get_base_url(self, blob_url):
+        match = re.match(r"(https://[^/]+\.com/)", blob_url)
+        if match:
+            return match.group(1)
+        else:
+            return "https://github.com/"
+
     async def _generate_documents(
         self,
         blobs_and_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]],
@@ -455,7 +463,12 @@ class GithubRepositoryReader(BaseReader):
                 + f"- adding to documents - {full_path}",
             )
             url = os.path.join(
-                "https://github.com/", self._owner, self._repo, "blob/", id, full_path
+                self._get_base_url(blob_data.url),
+                self._owner,
+                self._repo,
+                "blob/",
+                id,
+                full_path,
             )
             document = Document(
                 text=decoded_text,

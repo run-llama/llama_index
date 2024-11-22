@@ -23,6 +23,15 @@ print(response)
 # Output
 # I am an AI assistant named ZhiPuQingYan（智谱清言）, you can call me Xiaozhi🤖, which is developed based on the language model jointly trained by Tsinghua University KEG Lab and Zhipu AI Company in 2023. My job is to provide appropriate answers and support to users' questions and requests.
 
+# Call complete with stop
+response = ZhipuAI(model="glm-4", api_key=api_key).complete(
+    prompt="who are you", stop=["Zhipu"]
+)
+print(response)
+
+# Output
+# I am an AI assistant named ZhiPuQingYan（智谱清言）, you can call me Xiaozhi🤖, which is developed based on the language model jointly trained by Tsinghua University KEG Lab and Zhipu
+
 # Call chat with a list of messages
 from llama_index.core.llms import ChatMessage
 

@@ -90,7 +90,7 @@ class ReplicateMultiModal(MultiModalLLM):
             image_key=image_key,
             callback_manager=callback_manager,
         )
-        self._messages_to_rompt = messages_to_prompt or generic_messages_to_prompt
+        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
 
     @classmethod

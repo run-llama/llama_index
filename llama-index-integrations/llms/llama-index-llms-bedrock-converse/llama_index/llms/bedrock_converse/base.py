@@ -454,7 +454,7 @@ class BedrockConverse(FunctionCallingLLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
-        response = await converse_with_retry_async(
+        response_gen = await converse_with_retry_async(
             session=self._asession,
             config=self._config,
             messages=converse_messages,
@@ -467,7 +467,7 @@ class BedrockConverse(FunctionCallingLLM):
         async def gen() -> ChatResponseAsyncGen:
             content = {}
             role = MessageRole.ASSISTANT
-            async for chunk in response["stream"]:
+            async for chunk in response_gen:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
@@ -489,7 +489,7 @@ class BedrockConverse(FunctionCallingLLM):
                             },
                         ),
                         delta=content_delta.get("text", ""),
-                        raw=response,
+                        raw=chunk,
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
                     tool_use = content_block_start["toolUse"]
@@ -511,7 +511,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 "status": status,
                             },
                         ),
-                        raw=response,
+                        raw=chunk,
                     )
 
         return gen()
