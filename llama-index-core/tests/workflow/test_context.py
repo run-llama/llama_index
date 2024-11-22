@@ -9,10 +9,9 @@ from llama_index.core.workflow.workflow import (
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.errors import WorkflowRuntimeError
 from llama_index.core.workflow.events import StartEvent, StopEvent, Event
-from llama_index.core.workflow.workflow import Workflow, WorkflowHandler
-from llama_index.core.workflow.checkpoint import Checkpoint
+from llama_index.core.workflow.workflow import Workflow
 
-from .conftest import OneTestEvent, AnotherTestEvent, DummyWorkflow, LastEvent
+from .conftest import OneTestEvent, AnotherTestEvent
 
 
 @pytest.mark.asyncio()
@@ -74,6 +73,7 @@ def test_send_event_step_is_none(ctx):
     ctx.send_event(ev)
     for q in ctx._queues.values():
         q.put_nowait.assert_called_with(ev)
+    assert ctx._broker_log == [ev]
 
 
 def test_send_event_to_non_existent_step(ctx):
@@ -120,85 +120,3 @@ async def test_deprecated_params(ctx):
         DeprecationWarning, match="`make_private` is deprecated and will be ignored"
     ):
         await ctx.set("foo", 42, make_private=True)
-
-
-def test_create_checkpoint(workflow: DummyWorkflow):
-    incoming_ev = StartEvent()
-    output_ev = OneTestEvent()
-
-    ctx = Context(workflow=Workflow)
-    ctx_snapshot = ctx.to_dict()
-    ctx._create_checkpoint(
-        last_completed_step="start_step",
-        input_ev=incoming_ev,
-        output_ev=output_ev,
-    )
-    ckpt: Checkpoint = ctx._checkpoints[0]
-    assert ckpt.input_event == incoming_ev
-    assert ckpt.output_event == output_ev
-    assert ckpt.last_completed_step == "start_step"
-    # should be the same since nothing happened between snapshot and creating ckpt
-    assert ckpt.ctx_state == ctx_snapshot
-
-
-@pytest.mark.asyncio()
-async def test_checkpoints_after_successive_runs(workflow: DummyWorkflow):
-    num_steps = len(workflow._get_steps())
-    num_runs = 2
-
-    ctx = Context(workflow=workflow)
-    for _ in range(num_runs):
-        handler: WorkflowHandler = workflow.run(ctx=ctx, store_checkpoints=True)
-        await handler
-
-    assert len(handler.ctx._checkpoints) == num_steps * num_runs
-    assert [ckpt.last_completed_step for ckpt in handler.ctx._checkpoints] == [
-        None,
-        "start_step",
-        "middle_step",
-        "end_step",
-    ] * num_runs
-
-
-@pytest.mark.asyncio()
-async def test_filter_checkpoints(workflow: DummyWorkflow):
-    num_runs = 2
-    ctx = Context(workflow=workflow)
-    for _ in range(num_runs):
-        handler: WorkflowHandler = workflow.run(ctx=ctx, store_checkpoints=True)
-        await handler
-
-    # filter by last complete step
-    steps = ["start_step", "middle_step", "end_step"]  # sequential workflow
-    for step in steps:
-        checkpoints = ctx.filter_checkpoints(last_completed_step=step)
-        assert len(checkpoints) == num_runs, f"fails on step: {step.__name__}"
-
-    # filter by input and output event
-    event_types = [StartEvent, OneTestEvent, LastEvent, StopEvent]
-    for evt_type in event_types:
-        # by input_event_type
-        if evt_type != StopEvent:
-            checkpoints_by_input_event = ctx.filter_checkpoints(
-                input_event_type=evt_type
-            )
-            assert (
-                len(checkpoints_by_input_event) == num_runs
-            ), f"fails on {evt_type.__name__}"
-
-        # by output_event_type
-        checkpoints_by_output_event = ctx.filter_checkpoints(output_event_type=evt_type)
-        assert len(checkpoints_by_output_event) == num_runs, f"fails on {evt_type}"
-
-    # no filters raises error
-    with pytest.raises(ValueError):
-        ctx.filter_checkpoints()
-
-
-@pytest.mark.asyncio()
-async def test_default_disabled_checkpoints(workflow: DummyWorkflow):
-    ctx = Context(workflow=workflow)
-    handler: WorkflowHandler = workflow.run(ctx=ctx)
-    await handler
-
-    assert len(handler.ctx._checkpoints) == 0
