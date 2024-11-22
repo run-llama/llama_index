@@ -13,5 +13,5 @@ class Checkpoint(BaseModel):
     id_: str = Field(default_factory=lambda: str(uuid.uuid4()))
     last_completed_step: Optional[str]
     input_event: Optional[Event]
-    output_event: Any  # since we allow for bogus step return types
+    output_event: Event  # since we allow for bogus step return types
     ctx_state: Dict[str, Any]

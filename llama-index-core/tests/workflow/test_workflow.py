@@ -703,21 +703,26 @@ async def test_workflow_run_num_concurrent(
 
 def test_create_checkpoint(workflow: DummyWorkflow):
     incoming_ev = StartEvent()
-    output_ev = OneTestEvent()
+    incoming_ev._assign_new_run_id()
 
-    ctx = Context(workflow=Workflow)
-    ctx_snapshot = ctx.to_dict()
-    ctx._create_checkpoint(
+    output_ev = OneTestEvent()
+    output_ev._assign_same_run_id_as(incoming_ev)
+
+    ctx = Context(workflow=workflow)
+    workflow._create_checkpoint(
         last_completed_step="start_step",
         input_ev=incoming_ev,
         output_ev=output_ev,
+        ctx=ctx,
     )
-    ckpt: Checkpoint = ctx._checkpoints[0]
+
+    ckpts = workflow.checkpoints[incoming_ev.run_id]
+    ckpt = ckpts[0]
     assert ckpt.input_event == incoming_ev
     assert ckpt.output_event == output_ev
     assert ckpt.last_completed_step == "start_step"
     # should be the same since nothing happened between snapshot and creating ckpt
-    assert ckpt.ctx_state == ctx_snapshot
+    assert ckpt.ctx_state == ctx.to_dict()
 
 
 @pytest.mark.asyncio()

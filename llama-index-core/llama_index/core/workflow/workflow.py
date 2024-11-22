@@ -592,7 +592,7 @@ class Workflow(metaclass=WorkflowMeta):
                 "Input and Output event's don't belong to the same run."
             )
 
-        if input_ev:
+        if input_ev and input_ev.run_id:
             run_id = input_ev.run_id
         else:
             try:
@@ -608,6 +608,7 @@ class Workflow(metaclass=WorkflowMeta):
             output_event=output_ev,
             ctx_state=ctx.to_dict(serializer=self._checkpoint_serializer),
         )
+        # make mypy happy
         if run_id in self._checkpoints:
             self._checkpoints[run_id].append(checkpoint)
         else:

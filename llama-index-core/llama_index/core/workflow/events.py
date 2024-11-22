@@ -158,7 +158,7 @@ class StopEvent(Event):
 
     result: Any = Field(default=None)
 
-    def __init__(self, result: Any = None, **kwargs) -> None:
+    def __init__(self, result: Any = None, **kwargs: Any) -> None:
         # forces the user to provide a result
         super().__init__(result=result, **kwargs)
 
