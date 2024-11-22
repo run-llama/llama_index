@@ -55,11 +55,9 @@ def test_chat_message_content_legacy_set():
         m.content = "test content"
 
 
-def test_chat_message_content_returns_blocks():
+def test_chat_message_content_returns_empty_string():
     m = ChatMessage(content=[TextBlock(text="test content"), ImageBlock()])
-    assert isinstance(m.content, list)
-    assert isinstance(m.content[0], TextBlock)
-    assert isinstance(m.content[1], ImageBlock)
+    assert m.content == ""
 
 
 def test__str__():
@@ -82,23 +80,3 @@ def test_serializer():
         },
         "blocks": [{}],
     }
-
-
-{
-    "description": "Base component object to capture class names.",
-    "properties": {},
-    "title": "BaseComponent",
-    "type": "object",
-}
-{
-    "description": "Base component object to capture class names.",
-    "properties": {
-        "class_name": {
-            "default": "base_component",
-            "title": "Class Name",
-            "type": "string",
-        }
-    },
-    "title": "BaseComponent",
-    "type": "object",
-}
