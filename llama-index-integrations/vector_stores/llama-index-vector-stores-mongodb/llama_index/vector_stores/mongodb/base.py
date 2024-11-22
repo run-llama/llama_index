@@ -191,6 +191,9 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         self._insert_kwargs = insert_kwargs or {}
         self._oversampling_factor = oversampling_factor
 
+        if collection_name not in self._mongodb_client[db_name].list_collection_names():
+            self._mongodb_client[db_name].create_collection(collection_name)
+
     def add(
         self,
         nodes: List[BaseNode],
