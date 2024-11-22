@@ -1,18 +1,38 @@
+import asyncio
 import uuid
+import functools
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     Field,
     ConfigDict,
 )
-from typing import Optional, Dict, Any, List
-from llama_index.core.workflow import (
-    Workflow,
-    Context,
-    JsonSerializer,
+from typing import (
+    Optional,
+    Dict,
+    Any,
+    List,
+    Protocol,
+    TYPE_CHECKING,
+    Type,
 )
-from llama_index.core.workflow.context_serializers import BaseSerializer
+from llama_index.core.workflow.context import Context
+from llama_index.core.workflow.context_serializers import BaseSerializer, JsonSerializer
 from llama_index.core.workflow.handler import WorkflowHandler
 from .events import Event
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .workflow import Workflow
+
+
+class CheckpointCallable(Protocol):
+    def __call__(
+        self,
+        last_completed_step: Optional[str],
+        input_ev: Optional[Event],
+        output_ev: Event,
+        ctx: Context,
+    ) -> None:
+        ...
 
 
 class Checkpoint(BaseModel):
@@ -27,18 +47,30 @@ class Checkpoint(BaseModel):
 class WorkflowCheckpointer:
     def __init__(
         self,
-        workflow: Workflow,
+        workflow: "Workflow",
         checkpoint_serializer: Optional[BaseSerializer] = None,
     ):
         self.workflow = workflow
-        self.checkpoints = Dict[str, List[Checkpoint]] = {}
+        self._checkpoints: Dict[str, List[Checkpoint]] = {}
         self._checkpoint_serializer = checkpoint_serializer or JsonSerializer()
+        self._lock: asyncio.Lock = asyncio.Lock()
 
-    def run(self) -> WorkflowHandler:
-        ...
+    def generate_run_id(self) -> str:
+        return str(uuid.uuid4())
 
-    def run_from(self, checkpoint: Checkpoint) -> WorkflowHandler:
-        handler = self.workflow.run_from(checkpoint, self)
+    def run(self, **kwargs) -> WorkflowHandler:
+        return self.workflow.run(
+            checkpointer=self.new_checkpointer(),
+            **kwargs,
+        )
+
+    def run_from(self, checkpoint: Checkpoint, **kwargs) -> WorkflowHandler:
+        return self.workflow.run_from(
+            checkpoint=checkpoint,
+            ctx_serializer=self._checkpoint_serializer,
+            checkpointer=self.new_checkpointer(),
+            **kwargs,
+        )
 
     def get_run_result(self, run_id: str) -> Any:
         ...
@@ -50,43 +82,29 @@ class WorkflowCheckpointer:
     def checkpoints(self) -> Dict[str, List[Checkpoint]]:
         return self._checkpoints
 
-    def _create_checkpoint(
-        self,
-        last_completed_step: Optional[str],
-        input_ev: Optional[Event],
-        output_ev: Event,
-        ctx: Context,
-    ) -> None:
-        """Build a checkpoint around the last completed step."""
-        try:
-            run_id = output_ev.run_id
-        except AttributeError:
-            raise MissingWorkflowRunIdError(
-                "No run_id found from `output_ev`. Make sure that step "
-                f"with name '{last_completed_step}' returns an Event type."
-            )
+    def new_checkpointer(self) -> CheckpointCallable:
+        run_id = self.generate_run_id()
 
-        if input_ev and run_id != input_ev.run_id:
-            raise RunIdMismatchError(
-                "run_id on input_ev and output_ev do not match, indicating "
-                "that these event's don't belong to the same run."
+        async def _create_checkpoint(
+            last_completed_step: Optional[str],
+            input_ev: Optional[Event],
+            output_ev: Event,
+            ctx: Context,
+        ) -> None:
+            """Build a checkpoint around the last completed step."""
+            checkpoint = Checkpoint(
+                last_completed_step=last_completed_step,
+                input_event=input_ev,
+                output_event=output_ev,
+                ctx_state=ctx.to_dict(serializer=self._checkpoint_serializer),
             )
+            async with self._lock:
+                if run_id in self.checkpoints:
+                    self.checkpoints[run_id].append(checkpoint)
+                else:
+                    self.checkpoints[run_id] = [checkpoint]
 
-        if run_id is None:
-            raise MissingWorkflowRunIdError(
-                "No run_id found from input_ev nor output_ev."
-            )
-
-        checkpoint = Checkpoint(
-            last_completed_step=last_completed_step,
-            input_event=input_ev,
-            output_event=output_ev,
-            ctx_state=ctx.to_dict(serializer=self._checkpoint_serializer),
-        )
-        if run_id in self._checkpoints:
-            self._checkpoints[run_id].append(checkpoint)
-        else:
-            self._checkpoints[run_id] = [checkpoint]
+        return _create_checkpoint
 
     def _checkpoint_filter_condition(
         self,
@@ -132,8 +150,3 @@ class WorkflowCheckpointer:
                 ckpt, last_completed_step, input_event_type, output_event_type
             )
         ]
-
-
-wflow_ckptr = WorkflowCheckpointer(workflow=w)
-handler = wflow_ckptr.run_from(...)
-await handler

@@ -31,7 +31,7 @@ from .utils import (
     get_steps_from_instance,
     ServiceDefinition,
 )
-from .checkpointer import Checkpoint, WorkflowCheckpointer
+from .checkpointer import Checkpoint, CheckpointCallable
 from .handler import WorkflowHandler
 from .context_serializers import JsonSerializer, BaseSerializer
 
@@ -176,7 +176,7 @@ class Workflow(metaclass=WorkflowMeta):
         self,
         stepwise: bool = False,
         ctx: Optional[Context] = None,
-        workflow_checkpointer: Optional[WorkflowCheckpointer] = None,
+        checkpointer: Optional[CheckpointCallable] = None,
     ) -> Context:
         """Sets up the queues and tasks for each declared step.
 
@@ -298,8 +298,8 @@ class Workflow(metaclass=WorkflowMeta):
                     ctx._accepted_events.append((name, type(ev).__name__))
 
                     # Checkpoint
-                    if workflow_checkpointer:
-                        workflow_checkpointer._create_checkpoint(
+                    if checkpointer:
+                        await checkpointer(
                             ctx=ctx,
                             last_completed_step=name,
                             input_ev=ev,
@@ -363,7 +363,7 @@ class Workflow(metaclass=WorkflowMeta):
         self,
         ctx: Optional[Context] = None,
         stepwise: bool = False,
-        workflow_checkpointer: Optional[WorkflowCheckpointer] = None,
+        checkpointer: Optional[CheckpointCallable] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
         """Runs the workflow until completion."""
@@ -375,9 +375,7 @@ class Workflow(metaclass=WorkflowMeta):
             )
 
         # Start the machinery in a new Context or use the provided one
-        ctx = self._start(
-            ctx=ctx, stepwise=stepwise, workflow_checkpointer=workflow_checkpointer
-        )
+        ctx = self._start(ctx=ctx, stepwise=stepwise, checkpointer=checkpointer)
 
         result = WorkflowHandler(ctx=ctx)
 
@@ -388,8 +386,8 @@ class Workflow(metaclass=WorkflowMeta):
                 if not ctx.is_running:
                     # create checkpoint just before start of workflow run
                     start_ev = StartEvent(**kwargs)
-                    if workflow_checkpointer:
-                        workflow_checkpointer._create_checkpoint(
+                    if checkpointer:
+                        await checkpointer(
                             last_completed_step=None,
                             input_ev=None,
                             output_ev=start_ev,
@@ -455,7 +453,8 @@ class Workflow(metaclass=WorkflowMeta):
     def run_from(
         self,
         checkpoint: Checkpoint,
-        workflow_checkpointer: Optional[WorkflowCheckpointer] = None,
+        ctx_serializer: Optional[BaseSerializer] = None,
+        checkpointer: Optional[CheckpointCallable] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
         """Run from a specified Checkpoint.
@@ -464,9 +463,10 @@ class Workflow(metaclass=WorkflowMeta):
         to execute the `Workflow`.
         """
         # load the `Context` from the checkpoint
-        ctx = Context.from_dict(self, checkpoint.ctx_state, serializer=JsonSerializer())
+        ctx_serializer = ctx_serializer or JsonSerializer()
+        ctx = Context.from_dict(self, checkpoint.ctx_state, serializer=ctx_serializer)
         handler: WorkflowHandler = self.run(
-            ctx=ctx, workflow_checkpointer=workflow_checkpointer, **kwargs
+            ctx=ctx, checkpointer=checkpointer, **kwargs
         )
 
         ctx.send_event(checkpoint.output_event)
