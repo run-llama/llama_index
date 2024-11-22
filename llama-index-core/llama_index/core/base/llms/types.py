@@ -80,17 +80,23 @@ class ChatMessage(BaseModel):
         super().__init__(**data)
 
     @property
-    def content(self) -> str | list[ContentBlock]:
+    def content(self) -> str:
         """Keeps backward compatibility with the old `content` field.
 
-        If there's a single TextBlock, return its content as string.
+        Returns:
+            The block content if there's a single TextBlock, an empty string otherwise.
         """
         if len(self.blocks) == 1 and isinstance(self.blocks[0], TextBlock):
             return self.blocks[0].text
-        return self.blocks
+        return ""
 
     @content.setter
     def content(self, content: str) -> None:
+        """Keeps backward compatibility with the old `content` field.
+
+        Raises:
+            ValueError: if blocks contains more than a block, or a block that's not TextBlock.
+        """
         if not self.blocks:
             self.blocks = [TextBlock(text=content)]
         elif len(self.blocks) == 1 and isinstance(self.blocks[0], TextBlock):
