@@ -1,5 +1,4 @@
-import uuid
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Type
 from _collections_abc import dict_keys, dict_items, dict_values
 
 from llama_index.core.bridge.pydantic import (
@@ -54,7 +53,6 @@ class Event(BaseModel):
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    run_id: Optional[str] = Field(default=None)
     _data: Dict[str, Any] = PrivateAttr(default_factory=dict)
 
     def __init__(self, **params: Any):
@@ -134,20 +132,6 @@ class Event(BaseModel):
             data["_data"] = self._data
         return data
 
-    def _generate_run_id(self) -> str:
-        return str(uuid.uuid4())
-
-    def _assign_new_run_id(self) -> None:
-        self.run_id = self._generate_run_id()
-
-    def _assign_same_run_id_as(self, ev: "Event") -> None:
-        self.run_id = ev.run_id
-
-    def _copy_with_new_run_id(self) -> "Event":
-        copy = self.model_copy(deep=True)
-        copy.run_id = self._generate_run_id()
-        return copy
-
 
 class StartEvent(Event):
     """StartEvent is implicitly sent when a workflow runs."""
@@ -158,9 +142,9 @@ class StopEvent(Event):
 
     result: Any = Field(default=None)
 
-    def __init__(self, result: Any = None, **kwargs: Any) -> None:
+    def __init__(self, result: Any = None) -> None:
         # forces the user to provide a result
-        super().__init__(result=result, **kwargs)
+        super().__init__(result=result)
 
 
 class InputRequiredEvent(Event):
