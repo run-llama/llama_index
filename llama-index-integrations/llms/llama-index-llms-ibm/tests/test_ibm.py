@@ -55,6 +55,10 @@ def mock_generate(*args: Any, **kwargs: Any) -> Dict[str, Any]:
     }
 
 
+async def mock_agenerate(*args: Any, **kwargs: Any) -> Dict[str, Any]:
+    return mock_generate(args=args, kwargs=kwargs)
+
+
 def mock_chat(*args: Any, **kwargs: Any) -> Dict[str, Any]:
     return {
         "model_id": "mistralai/mistral-large",
@@ -70,6 +74,10 @@ def mock_chat(*args: Any, **kwargs: Any) -> Dict[str, Any]:
             }
         ],
     }
+
+
+async def mock_achat(*args: Any, **kwargs: Any) -> Dict[str, Any]:
+    return mock_chat(args=args, kwargs=kwargs)
 
 
 def mock_stream_chat(*args: Any, **kwargs: Any) -> Generator[dict, None, None]:
@@ -263,17 +271,18 @@ class TestWasonxLLMInference:
         mock_instance._return_guardrails_stats.side_effect = (
             mock_return_guardrails_stats
         )
-        mock_instance.generate.return_value = mock_generate()
+        mock_instance.agenerate.return_value = mock_agenerate()
         watsonxllm = WatsonxLLM(
             model=self.TEST_MODEL,
             url=self.TEST_URL,
             apikey=self.TEST_APIKEY,
             project_id=self.TEST_PROJECT_ID,
         )
+
         response = await watsonxllm.acomplete("What do you think about Gen AI?")
         assert response.text == "\n\nTEST"
 
-        mock_instance.chat.return_value = mock_chat()
+        mock_instance.achat.return_value = mock_achat()
         message = ChatMessage(role="user", content="test message")
         chat_response = await watsonxllm.achat([message])
         assert chat_response.message.content == "\n\nTEST"
