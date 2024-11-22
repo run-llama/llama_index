@@ -465,11 +465,10 @@ class Workflow(metaclass=WorkflowMeta):
         store_checkpoints: bool = False,
         **kwargs: Any,
     ) -> WorkflowHandler:
-        """Run from a specified Checkpoint. If a `Context` obj is supplied,
-        then the _checkpoints of this `Context` will replace the `_checkpoints` of
-        the loaded checkpoint's `Context`. This is typically done in order to
-        preserve the list of past checkpoints that are stored in the supplied
-        `Context` object.
+        """Run from a specified Checkpoint.
+
+        The `Context` snapshot contained in the checkpoint is loaded and used
+        to execute the `Workflow`.
         """
         # load the `Context` from the checkpoint
         ctx = Context.from_dict(self, checkpoint.ctx_state, serializer=JsonSerializer())
@@ -477,7 +476,8 @@ class Workflow(metaclass=WorkflowMeta):
             ctx=ctx, store_checkpoints=store_checkpoints, **kwargs
         )
 
-        # create the event to kickstart this run
+        # create the event to kickstart this run which is a copy of output event
+        # but with a new run_id.
         if isinstance(checkpoint.output_event, Event):
             ev = checkpoint.output_event._copy_with_new_run_id()
             ctx.send_event(ev)
