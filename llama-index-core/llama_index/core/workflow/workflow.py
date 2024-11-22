@@ -612,7 +612,6 @@ class Workflow(metaclass=WorkflowMeta):
             output_event=output_ev,
             ctx_state=ctx.to_dict(serializer=self._checkpoint_serializer),
         )
-        # make mypy happy
         if run_id in self._checkpoints:
             self._checkpoints[run_id].append(checkpoint)
         else:
