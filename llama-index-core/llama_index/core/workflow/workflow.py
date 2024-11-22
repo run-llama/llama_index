@@ -11,7 +11,6 @@ from typing import (
     Set,
     Tuple,
     List,
-    Type,
 )
 
 from llama_index.core.instrumentation import get_dispatcher
@@ -32,7 +31,7 @@ from .utils import (
     get_steps_from_instance,
     ServiceDefinition,
 )
-from .checkpoint import Checkpoint
+from .checkpointer import Checkpoint, WorkflowCheckpointer
 from .handler import WorkflowHandler
 from .context_serializers import JsonSerializer, BaseSerializer
 
@@ -177,7 +176,7 @@ class Workflow(metaclass=WorkflowMeta):
         self,
         stepwise: bool = False,
         ctx: Optional[Context] = None,
-        store_checkpoints: bool = False,
+        workflow_checkpointer: Optional[WorkflowCheckpointer] = None,
     ) -> Context:
         """Sets up the queues and tasks for each declared step.
 
@@ -299,13 +298,8 @@ class Workflow(metaclass=WorkflowMeta):
                     ctx._accepted_events.append((name, type(ev).__name__))
 
                     # Checkpoint
-                    if store_checkpoints:
-                        try:
-                            new_ev._assign_same_run_id_as(ev=ev)
-                        except Exception:
-                            pass
-
-                        self._create_checkpoint(
+                    if workflow_checkpointer:
+                        workflow_checkpointer._create_checkpoint(
                             ctx=ctx,
                             last_completed_step=name,
                             input_ev=ev,
@@ -369,7 +363,7 @@ class Workflow(metaclass=WorkflowMeta):
         self,
         ctx: Optional[Context] = None,
         stepwise: bool = False,
-        store_checkpoints: bool = False,
+        workflow_checkpointer: Optional[WorkflowCheckpointer] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
         """Runs the workflow until completion."""
@@ -382,7 +376,7 @@ class Workflow(metaclass=WorkflowMeta):
 
         # Start the machinery in a new Context or use the provided one
         ctx = self._start(
-            ctx=ctx, stepwise=stepwise, store_checkpoints=store_checkpoints
+            ctx=ctx, stepwise=stepwise, workflow_checkpointer=workflow_checkpointer
         )
 
         result = WorkflowHandler(ctx=ctx)
@@ -394,9 +388,8 @@ class Workflow(metaclass=WorkflowMeta):
                 if not ctx.is_running:
                     # create checkpoint just before start of workflow run
                     start_ev = StartEvent(**kwargs)
-                    if store_checkpoints:
-                        start_ev._assign_new_run_id()
-                        self._create_checkpoint(
+                    if workflow_checkpointer:
+                        workflow_checkpointer._create_checkpoint(
                             last_completed_step=None,
                             input_ev=None,
                             output_ev=start_ev,
@@ -462,7 +455,7 @@ class Workflow(metaclass=WorkflowMeta):
     def run_from(
         self,
         checkpoint: Checkpoint,
-        store_checkpoints: bool = False,
+        workflow_checkpointer: Optional[WorkflowCheckpointer] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
         """Run from a specified Checkpoint.
@@ -473,21 +466,10 @@ class Workflow(metaclass=WorkflowMeta):
         # load the `Context` from the checkpoint
         ctx = Context.from_dict(self, checkpoint.ctx_state, serializer=JsonSerializer())
         handler: WorkflowHandler = self.run(
-            ctx=ctx, store_checkpoints=store_checkpoints, **kwargs
+            ctx=ctx, workflow_checkpointer=workflow_checkpointer, **kwargs
         )
 
-        # create the event to kickstart this run which is a copy of output event
-        # but with a new run_id.
-        if isinstance(checkpoint.output_event, Event):
-            ev = checkpoint.output_event._copy_with_new_run_id()
-            ctx.send_event(ev)
-        else:
-            warnings.warn(
-                f"This checkpoint's last completed step was {checkpoint.last_completed_step} "
-                f"which returned {type(checkpoint.output_event).__name__} instead of an Event instance. "
-                f"You may need to send an event in order to continue the Workflow execution from this point."
-            )
-
+        ctx.send_event(checkpoint.output_event)
         return handler
 
     def is_done(self) -> bool:
@@ -574,90 +556,3 @@ class Workflow(metaclass=WorkflowMeta):
             InputRequiredEvent in produced_events
             or HumanResponseEvent in consumed_events
         )
-
-    @property
-    def checkpoints(self) -> Dict[str, List[Checkpoint]]:
-        return self._checkpoints
-
-    def _create_checkpoint(
-        self,
-        last_completed_step: Optional[str],
-        input_ev: Optional[Event],
-        output_ev: Event,
-        ctx: Context,
-    ) -> None:
-        """Build a checkpoint around the last completed step."""
-        try:
-            run_id = output_ev.run_id
-        except AttributeError:
-            raise MissingWorkflowRunIdError(
-                "No run_id found from `output_ev`. Make sure that step "
-                f"with name '{last_completed_step}' returns an Event type."
-            )
-
-        if input_ev and run_id != input_ev.run_id:
-            raise RunIdMismatchError(
-                "run_id on input_ev and output_ev do not match, indicating "
-                "that these event's don't belong to the same run."
-            )
-
-        if run_id is None:
-            raise MissingWorkflowRunIdError(
-                "No run_id found from input_ev nor output_ev."
-            )
-
-        checkpoint = Checkpoint(
-            last_completed_step=last_completed_step,
-            input_event=input_ev,
-            output_event=output_ev,
-            ctx_state=ctx.to_dict(serializer=self._checkpoint_serializer),
-        )
-        if run_id in self._checkpoints:
-            self._checkpoints[run_id].append(checkpoint)
-        else:
-            self._checkpoints[run_id] = [checkpoint]
-
-    def _checkpoint_filter_condition(
-        self,
-        ckpt: Checkpoint,
-        last_completed_step: Optional[str],
-        input_event_type: Optional[Type[Event]],
-        output_event_type: Optional[Type[Event]],
-    ) -> bool:
-        if last_completed_step and ckpt.last_completed_step != last_completed_step:
-            return False
-        if input_event_type and type(ckpt.input_event) != input_event_type:
-            return False
-        if output_event_type and type(ckpt.output_event) != output_event_type:
-            return False
-        return True
-
-    def filter_checkpoints(
-        self,
-        run_id: Optional[str] = None,
-        last_completed_step: Optional[str] = None,
-        input_event_type: Optional[Type[Event]] = None,
-        output_event_type: Optional[Type[Event]] = None,
-    ) -> List[Checkpoint]:
-        """Returns a list of Checkpoint's based on user provided filters."""
-        if (
-            not run_id
-            and not last_completed_step
-            and not input_event_type
-            and not output_event_type
-        ):
-            raise ValueError("Please specify a filter.")
-
-        candidate_ckpts = (
-            self.checkpoints[run_id]
-            if run_id
-            else functools.reduce(lambda a, b: a + b, self.checkpoints.values())
-        )
-
-        return [
-            ckpt
-            for ckpt in candidate_ckpts
-            if self._checkpoint_filter_condition(
-                ckpt, last_completed_step, input_event_type, output_event_type
-            )
-        ]
