@@ -1,15 +1,9 @@
+from __future__ import annotations
+
 import base64
 from enum import Enum
 from io import BytesIO
-from typing import (
-    Any,
-    AsyncGenerator,
-    Dict,
-    Generator,
-    List,
-    Optional,
-    Union,
-)
+from typing import Any, AsyncGenerator, Generator, List, Optional, Union
 
 import requests
 from typing_extensions import Self
@@ -22,14 +16,6 @@ from llama_index.core.bridge.pydantic import (
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.schema import ImageType
-
-try:  # pragma: no cover
-    from pydantic import BaseModel as V2BaseModel
-    from pydantic.v1 import BaseModel as V1BaseModel
-except ImportError:  # pragma: no cover
-    from pydantic import BaseModel as V2BaseModel
-
-    V1BaseModel = V2BaseModel  # type: ignore
 
 
 class MessageRole(str, Enum):
@@ -76,7 +62,7 @@ class ChatMessage(BaseModel):
     """Chat message."""
 
     role: MessageRole = MessageRole.USER
-    additional_kwargs: dict = Field(default_factory=dict)
+    additional_kwargs: dict[str, Any] = Field(default_factory=dict)
     blocks: list[ContentBlock] = Field(default_factory=list)
 
     def __init__(self, /, content: Any | None = None, **data: Any) -> None:
@@ -129,7 +115,7 @@ class ChatMessage(BaseModel):
         return cls(role=role, blocks=[TextBlock(text=content)], **kwargs)
 
     def _recursive_serialization(self, value: Any) -> Any:
-        if isinstance(value, V2BaseModel):
+        if isinstance(value, BaseModel):
             value.model_rebuild()  # ensures all fields are initialized and serializable
             return value.model_dump()  # type: ignore
         if isinstance(value, dict):
@@ -144,9 +130,6 @@ class ChatMessage(BaseModel):
     @field_serializer("additional_kwargs", check_fields=False)
     def serialize_additional_kwargs(self, value: Any, _info: Any) -> Any:
         return self._recursive_serialization(value)
-
-    def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        return self.model_dump(**kwargs)
 
 
 class LogProb(BaseModel):

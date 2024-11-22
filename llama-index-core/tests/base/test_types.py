@@ -1,5 +1,10 @@
 import pytest
-from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ImageBlock,
+    MessageRole,
+    TextBlock,
+)
 from llama_index.core.bridge.pydantic import BaseModel
 
 
@@ -61,7 +66,7 @@ def test__str__():
     assert str(ChatMessage(content="test content")) == "user: test content"
 
 
-def test_dict():
+def test_serializer():
     class SimpleModel(BaseModel):
         some_field: str = ""
 
@@ -69,4 +74,31 @@ def test_dict():
         content="test content",
         additional_kwargs={"some_list": ["a", "b", "c"], "some_object": SimpleModel()},
     )
-    assert m.dict() == m.model_dump()
+    assert m.model_dump() == {
+        "role": MessageRole.USER,
+        "additional_kwargs": {
+            "some_list": ["a", "b", "c"],
+            "some_object": {"some_field": ""},
+        },
+        "blocks": [{}],
+    }
+
+
+{
+    "description": "Base component object to capture class names.",
+    "properties": {},
+    "title": "BaseComponent",
+    "type": "object",
+}
+{
+    "description": "Base component object to capture class names.",
+    "properties": {
+        "class_name": {
+            "default": "base_component",
+            "title": "Class Name",
+            "type": "string",
+        }
+    },
+    "title": "BaseComponent",
+    "type": "object",
+}
