@@ -155,10 +155,10 @@ class ModelScopeLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=None,
-            num_output=None,
+            context_window=self.context_window,
+            num_output=self.max_new_tokens,
             model_name=self.model_name,
-            is_chat_model=self.is_chat_model,
+            is_chat_model=False,
         )
 
     @llm_completion_callback()

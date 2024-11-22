@@ -121,6 +121,7 @@ class SambaNovaCloud(LLM):
                 top_p = model top p,
                 top_k = model top k,
                 stream_options = include usage to get generation metrics
+                context_window = model context window
             )
     Complete:
         .. code-block:: python
@@ -185,6 +186,8 @@ class SambaNovaCloud(LLM):
         description="Whether to use streaming handler when using non streaming methods",
     )
 
+    context_window: int = Field(default=4096, description="context window")
+
     max_tokens: int = Field(default=1024, description="max tokens to generate")
 
     temperature: float = Field(default=0.7, description="model temperature")
@@ -205,7 +208,7 @@ class SambaNovaCloud(LLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=None,
+            context_window=self.context_window,
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
@@ -659,6 +662,7 @@ class SambaStudio(LLM):
                 model = model or expert name (set for CoE endpoints),
                 max_tokens = max number of tokens to generate,
                 temperature = model temperature,
+                context_window = model context window,
                 top_p = model top p,
                 top_k = model top k,
                 do_sample = whether to do sample
@@ -679,6 +683,8 @@ class SambaStudio(LLM):
             Whether to use streaming
         max_tokens: inthandler when using non streaming methods
             max tokens to generate
+        context_window: int
+            model context window
         temperature: float
             model temperature
         top_p: float
@@ -715,6 +721,7 @@ class SambaStudio(LLM):
                 model = model or expert name (set for CoE endpoints),
                 max_tokens = max number of tokens to generate,
                 temperature = model temperature,
+                context_window = model context window,
                 top_p = model top p,
                 top_k = model top k,
                 do_sample = whether to do sample
@@ -797,6 +804,8 @@ class SambaStudio(LLM):
         description="Whether to use streaming handler when using non streaming methods",
     )
 
+    context_window: int = Field(default=4096, description="context window")
+
     max_tokens: int = Field(default=1024, description="max tokens to generate")
 
     temperature: Optional[float] = Field(default=0.7, description="model temperature")
@@ -840,7 +849,7 @@ class SambaStudio(LLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=None,
+            context_window=self.context_window,
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
