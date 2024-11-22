@@ -587,20 +587,24 @@ class Workflow(metaclass=WorkflowMeta):
         ctx: Context,
     ) -> None:
         """Build a checkpoint around the last completed step."""
-        if input_ev and (input_ev.run_id != output_ev.run_id):
-            raise RunIdMismatchError(
-                "Input and Output event's don't belong to the same run."
+        try:
+            run_id = output_ev.run_id
+        except AttributeError:
+            raise MissingWorkflowRunIdError(
+                "No run_id found from `output_ev`. Make sure that step "
+                f"with name '{last_completed_step}' returns an Event type."
             )
 
-        if input_ev and input_ev.run_id:
-            run_id = input_ev.run_id
-        else:
-            try:
-                run_id = output_ev.run_id
-            except Exception as e:
-                raise MissingWorkflowRunIdError(
-                    "Unable to extract run_id from input and output events."
-                ) from e
+        if input_ev and run_id != input_ev.run_id:
+            raise RunIdMismatchError(
+                "run_id on input_ev and output_ev do not match, indicating "
+                "that these event's don't belong to the same run."
+            )
+
+        if run_id is None:
+            raise MissingWorkflowRunIdError(
+                "No run_id found from input_ev nor output_ev."
+            )
 
         checkpoint = Checkpoint(
             last_completed_step=last_completed_step,
