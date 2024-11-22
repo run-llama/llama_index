@@ -27,7 +27,7 @@ from llama_index.core.workflow.workflow import (
 )
 from llama_index.core.workflow.context_serializers import JsonPickleSerializer
 
-from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
+from .conftest import OneTestEvent, AnotherTestEvent, DummyWorkflow, LastEvent
 
 
 class TestEvent(Event):
@@ -701,23 +701,109 @@ async def test_workflow_run_num_concurrent(
     assert results == [f"Run {ix}: Done" for ix in range(1, 5)]
 
 
+def test_create_checkpoint(workflow: DummyWorkflow):
+    incoming_ev = StartEvent()
+    output_ev = OneTestEvent()
+
+    ctx = Context(workflow=Workflow)
+    ctx_snapshot = ctx.to_dict()
+    ctx._create_checkpoint(
+        last_completed_step="start_step",
+        input_ev=incoming_ev,
+        output_ev=output_ev,
+    )
+    ckpt: Checkpoint = ctx._checkpoints[0]
+    assert ckpt.input_event == incoming_ev
+    assert ckpt.output_event == output_ev
+    assert ckpt.last_completed_step == "start_step"
+    # should be the same since nothing happened between snapshot and creating ckpt
+    assert ckpt.ctx_state == ctx_snapshot
+
+
+@pytest.mark.asyncio()
+async def test_checkpoints_after_successive_runs(workflow: DummyWorkflow):
+    num_steps = len(workflow._get_steps())
+    num_runs = 2
+
+    for _ in range(num_runs):
+        handler: WorkflowHandler = workflow.run(store_checkpoints=True)
+        await handler
+
+    assert len(workflow.checkpoints) == num_runs
+    for ckpts in workflow.checkpoints.values():
+        assert len(ckpts) == num_steps
+        assert [ckpt.last_completed_step for ckpt in ckpts] == [
+            None,
+            "start_step",
+            "middle_step",
+            "end_step",
+        ]
+
+
+@pytest.mark.asyncio()
+async def test_filter_checkpoints(workflow: DummyWorkflow):
+    num_runs = 2
+    for _ in range(num_runs):
+        handler: WorkflowHandler = workflow.run(store_checkpoints=True)
+        await handler
+
+    # filter by last complete step
+    steps = ["start_step", "middle_step", "end_step"]  # sequential workflow
+    for step in steps:
+        checkpoints = workflow.filter_checkpoints(last_completed_step=step)
+        assert len(checkpoints) == num_runs, f"fails on step: {step.__name__}"
+
+    # filter by input and output event
+    event_types = [StartEvent, OneTestEvent, LastEvent, StopEvent]
+    for evt_type in event_types:
+        # by input_event_type
+        if evt_type != StopEvent:
+            checkpoints_by_input_event = workflow.filter_checkpoints(
+                input_event_type=evt_type
+            )
+            assert (
+                len(checkpoints_by_input_event) == num_runs
+            ), f"fails on {evt_type.__name__}"
+
+        # by output_event_type
+        checkpoints_by_output_event = workflow.filter_checkpoints(
+            output_event_type=evt_type
+        )
+        assert len(checkpoints_by_output_event) == num_runs, f"fails on {evt_type}"
+
+    # no filters raises error
+    with pytest.raises(ValueError):
+        workflow.filter_checkpoints()
+
+
+@pytest.mark.asyncio()
+async def test_default_disabled_checkpoints(workflow: DummyWorkflow):
+    handler: WorkflowHandler = workflow.run()
+    await handler
+
+    assert len(workflow.checkpoints) == 0
+
+
 @pytest.mark.asyncio()
 async def test_run_from_checkpoint(workflow):
     num_steps = len(workflow._get_steps())
-    ctx = Context(workflow=workflow)
-    handler: WorkflowHandler = workflow.run(ctx=ctx, store_checkpoints=True)
+    handler: WorkflowHandler = workflow.run(store_checkpoints=True)
     await handler
-    num_checkpoints_after_first_run = len(handler.ctx.checkpoints)
+
+    assert len(workflow.checkpoints) == 1
 
     # get the checkpoint after middle_step completed
-    ckpt = handler.ctx.filter_checkpoints(last_completed_step="middle_step")[0]
+    ckpt = workflow.filter_checkpoints(last_completed_step="middle_step")[0]
     handler: WorkflowHandler = workflow.run_from(
-        checkpoint=ckpt, ctx=ctx, store_checkpoints=True
+        checkpoint=ckpt, store_checkpoints=True
     )
     await handler
 
-    num_new_checkpoints = len(handler.ctx.checkpoints) - num_checkpoints_after_first_run
-    assert (
-        num_new_checkpoints,
-        1,
-    )  # only checkpoint after `end_step` should be newly added
+    assert len(workflow.checkpoints) == 2
+
+    # full run should have 2 checkpoints, where as the run_from call should only store 1 checkpoint
+    num_checkpoints = []
+    for ckpts in workflow.checkpoints.values():
+        num_checkpoints.append(len(ckpts))
+    num_checkpoints = sorted(num_checkpoints)
+    assert num_checkpoints == [1, num_steps]

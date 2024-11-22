@@ -158,9 +158,9 @@ class StopEvent(Event):
 
     result: Any = Field(default=None)
 
-    def __init__(self, result: Any = None) -> None:
+    def __init__(self, result: Any = None, **kwargs) -> None:
         # forces the user to provide a result
-        super().__init__(result=result)
+        super().__init__(result=result, **kwargs)
 
 
 class InputRequiredEvent(Event):
