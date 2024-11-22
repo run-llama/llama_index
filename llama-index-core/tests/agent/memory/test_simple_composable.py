@@ -1,15 +1,16 @@
 """Test simple composable memory."""
 
-import pytest
 from typing import Any, List
-from llama_index.core.memory import (
-    VectorMemory,
-    SimpleComposableMemory,
-    ChatMemoryBuffer,
-)
-from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from unittest.mock import patch
+
+import pytest
+from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.llms import ChatMessage
+from llama_index.core.memory import (
+    ChatMemoryBuffer,
+    SimpleComposableMemory,
+    VectorMemory,
+)
 
 
 @pytest.fixture()
@@ -110,6 +111,7 @@ def test_repeated_secondary_history(
 
     # act
     retrieved_msgs = composable_memory.get("What does Jerry like?")
+    print(retrieved_msgs)
 
     # assert
     assert len(retrieved_msgs) == 2

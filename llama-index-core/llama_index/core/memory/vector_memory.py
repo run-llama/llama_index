@@ -6,14 +6,13 @@ Memory backed by a vector database.
 
 import uuid
 from typing import Any, Dict, List, Optional, Union
-from llama_index.core.bridge.pydantic import field_validator
 
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.bridge.pydantic import Field, field_validator
+from llama_index.core.embeddings.utils import EmbedType
+from llama_index.core.memory.types import BaseMemory
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import Field
-from llama_index.core.memory.types import BaseMemory
-from llama_index.core.embeddings.utils import EmbedType
 
 
 def _stringify_obj(d: Any) -> Union[str, list, dict]:
@@ -30,6 +29,7 @@ def _stringify_chat_message(msg: ChatMessage) -> Dict:
     """Utility function to convert chatmessage to serializable dict."""
     msg_dict = msg.dict()
     msg_dict["additional_kwargs"] = _stringify_obj(msg_dict["additional_kwargs"])
+    msg_dict["content"] = msg.content
     return msg_dict
 
 
