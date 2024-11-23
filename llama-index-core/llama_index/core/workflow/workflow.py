@@ -319,7 +319,7 @@ class Workflow(metaclass=WorkflowMeta):
                                         output_ev=new_ev,
                                     )
                         else:
-                            # Checkpoint before firing the next event
+                            # for regular execution, Checkpoint just before firing the next event
                             if checkpoint_callback:
                                 await checkpoint_callback(
                                     ctx=ctx,
