@@ -190,3 +190,33 @@ async def test_checkpointer_with_stepwise(
     assert [
         c.last_completed_step for c in workflow_checkpointer.checkpoints[regular_run_id]
     ] == ["end_step"]
+
+
+@pytest.mark.asyncio()
+@patch("llama_index.core.workflow.checkpointer.uuid")
+async def test_disable_and_enable_checkpoints(
+    mock_uuid: MagicMock,
+    workflow_checkpointer: WorkflowCheckpointer,
+):
+    # disable checkpoint at middle_step
+    first_run_id = "42"
+    mock_uuid.uuid4.return_value = first_run_id
+    workflow_checkpointer.disable_checkpoint("middle_step")
+
+    handler = workflow_checkpointer.run()
+    await handler
+
+    # enable checkpoint at middle_step
+    second_run_id = "84"
+    mock_uuid.uuid4.return_value = second_run_id
+    workflow_checkpointer.enable_checkpoint("middle_step")
+
+    handler = workflow_checkpointer.run()
+    await handler
+
+    assert [
+        c.last_completed_step for c in workflow_checkpointer.checkpoints[first_run_id]
+    ] == ["start_step", "end_step"]
+    assert [
+        c.last_completed_step for c in workflow_checkpointer.checkpoints[second_run_id]
+    ] == ["start_step", "middle_step", "end_step"]
