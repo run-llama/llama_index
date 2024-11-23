@@ -27,6 +27,8 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class CheckpointCallback(Protocol):
+    checkpoints_config: Dict[str, bool]
+
     def __call__(
         self,
         last_completed_step: Optional[str],
@@ -126,6 +128,7 @@ class WorkflowCheckpointer:
                 else:
                     self.checkpoints[run_id] = [checkpoint]
 
+        _create_checkpoint.checkpoints_config = self.checkpoints_config
         return _create_checkpoint
 
     def _checkpoint_filter_condition(
