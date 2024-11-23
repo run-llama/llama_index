@@ -6,7 +6,17 @@ from llama_index.core.bridge.pydantic import (
     Field,
     ConfigDict,
 )
-from typing import Optional, Dict, Any, List, Protocol, TYPE_CHECKING, Type, Union
+from typing import (
+    Optional,
+    Dict,
+    Any,
+    List,
+    Protocol,
+    TYPE_CHECKING,
+    Type,
+    Union,
+    Awaitable,
+)
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.context_serializers import BaseSerializer, JsonSerializer
 from llama_index.core.workflow.handler import WorkflowHandler
@@ -23,7 +33,7 @@ class CheckpointCallable(Protocol):
         input_ev: Optional[Event],
         output_ev: Event,
         ctx: Context,
-    ) -> None:
+    ) -> Awaitable[None]:
         ...
 
 
@@ -48,22 +58,22 @@ class WorkflowCheckpointer:
         self._checkpoint_serializer = checkpoint_serializer or JsonSerializer()
         self._lock: asyncio.Lock = asyncio.Lock()
 
-    def enable_checkpoints(step: Union[str, List[str]]) -> None:
+    def enable_checkpoints(self, step: Union[str, List[str]]) -> None:
         ...
 
-    def disable_checkpoints(step: Union[str, List[str]]) -> None:
+    def disable_checkpoints(self, step: Union[str, List[str]]) -> None:
         ...
 
     def generate_run_id(self) -> str:
         return str(uuid.uuid4())
 
-    def run(self, **kwargs) -> WorkflowHandler:
+    def run(self, **kwargs: Any) -> WorkflowHandler:
         return self.workflow.run(
             checkpointer=self.new_checkpointer(),
             **kwargs,
         )
 
-    def run_from(self, checkpoint: Checkpoint, **kwargs) -> WorkflowHandler:
+    def run_from(self, checkpoint: Checkpoint, **kwargs: Any) -> WorkflowHandler:
         return self.workflow.run_from(
             checkpoint=checkpoint,
             ctx_serializer=self._checkpoint_serializer,
