@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch, MagicMock
 
 from llama_index.core.workflow.events import StartEvent, StopEvent
 from llama_index.core.workflow.handler import WorkflowHandler
@@ -116,7 +117,6 @@ async def test_checkpoints_works_with_new_instances(
 
 @pytest.mark.asyncio()
 async def test_run_from_checkpoint(workflow_checkpointer: WorkflowCheckpointer):
-    print(f"{workflow_checkpointer.workflow._get_steps()}", flush=True)
     num_steps = len(workflow_checkpointer.workflow._get_steps())
     num_ckpts_in_single_run = num_steps - 1
     handler: WorkflowHandler = workflow_checkpointer.run(store_checkpoints=True)
@@ -138,6 +138,55 @@ async def test_run_from_checkpoint(workflow_checkpointer: WorkflowCheckpointer):
     for ckpts in workflow_checkpointer.checkpoints.values():
         num_checkpoints.append(len(ckpts))
     num_checkpoints = sorted(num_checkpoints)
-    for k, v in workflow_checkpointer.checkpoints.items():
-        print(f"{k}: {[c.last_completed_step for c in v]}")
     assert num_checkpoints == [1, num_ckpts_in_single_run]
+
+
+@pytest.mark.asyncio()
+@patch("llama_index.core.workflow.checkpointer.uuid")
+async def test_checkpointer_with_stepwise(
+    mock_uuid: MagicMock,
+    workflow_checkpointer: WorkflowCheckpointer,
+):
+    # -------------------------------
+    # Stepwise run with checkpointing
+    stepwise_run_id = "stepwise_run"
+    mock_uuid.uuid4.return_value = stepwise_run_id
+    handler = workflow_checkpointer.run(stepwise=True)
+
+    event = await handler.run_step()
+    assert len(workflow_checkpointer.checkpoints[stepwise_run_id]) == 1
+    handler.ctx.send_event(event)
+
+    event = await handler.run_step()
+    assert len(workflow_checkpointer.checkpoints[stepwise_run_id]) == 2
+    handler.ctx.send_event(event)
+
+    event = await handler.run_step()
+    assert len(workflow_checkpointer.checkpoints[stepwise_run_id]) == 3
+    handler.ctx.send_event(event)
+
+    _ = await handler.run_step()
+    result = await handler
+    assert result == "Workflow completed"
+    # -------------------------------
+
+    # -------------------------------
+    # Regular run but from a saved checkpoint from the previous stepwise run
+    regular_run_id = "regular_run_id"
+    ckpt = workflow_checkpointer.filter_checkpoints(last_completed_step="middle_step")[
+        0
+    ]
+    mock_uuid.uuid4.return_value = regular_run_id
+    handler = workflow_checkpointer.run_from(checkpoint=ckpt)
+    result = await handler
+    assert result == "Workflow completed"
+    # -------------------------------
+
+    assert [
+        c.last_completed_step
+        for c in workflow_checkpointer.checkpoints[stepwise_run_id]
+    ] == ["start_step", "middle_step", "end_step"]
+
+    assert [
+        c.last_completed_step for c in workflow_checkpointer.checkpoints[regular_run_id]
+    ] == ["end_step"]
