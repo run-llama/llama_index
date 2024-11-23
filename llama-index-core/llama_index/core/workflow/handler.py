@@ -89,7 +89,8 @@ class WorkflowHandler(asyncio.Future):
                     if exception_raised:
                         raise exception_raised
 
-                    self.set_result(self.ctx.get_result())
+                    if not self.done():
+                        self.set_result(self.ctx.get_result())
                 else:  # continue with running next step
                     # notify unblocked task that we're ready to accept next event
                     async with self.ctx._step_condition:

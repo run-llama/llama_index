@@ -27,7 +27,7 @@ from llama_index.core.workflow.workflow import (
 )
 from llama_index.core.workflow.context_serializers import JsonPickleSerializer
 
-from .conftest import OneTestEvent, AnotherTestEvent, LastEvent
+from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
 
 
 class TestEvent(Event):
@@ -476,7 +476,7 @@ async def test_workflow_pickle():
             await ctx.set("test_fn", test_fn)
             return StopEvent(result="Done")
 
-    wf = DummyWorkflow(checkpoint_serializer=JsonPickleSerializer())
+    wf = DummyWorkflow()
     handler = wf.run()
     _ = await handler
 
