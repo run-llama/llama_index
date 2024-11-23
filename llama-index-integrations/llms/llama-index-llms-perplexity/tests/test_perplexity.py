@@ -1,0 +1,217 @@
+import inspect
+from typing import AsyncIterator, Iterator
+import pytest
+import os
+
+from unittest import mock
+
+from llama_index.llms.perplexity import Perplexity
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    CompletionResponse,
+    MessageRole,
+)
+
+@pytest.fixture()
+def perplexity_llm():
+    api_key = os.getenv("PPLX_API_KEY")
+    if api_key is None:
+        pytest.skip("PPLX_API_KEY not set in environment")
+    return Perplexity(api_key=api_key)
+
+def test_chat(perplexity_llm):
+    messages_dict = [
+        {"role": "system", "content": "Be precise and concise."},
+        {"role": "user", "content": "Tell me 5 sentences about Perplexity."},
+    ]
+    messages = [ChatMessage(**msg) for msg in messages_dict]
+    response = perplexity_llm.chat(messages)
+    assert isinstance(response, ChatResponse)
+    assert response.message.content.strip(), "Chat response should not be empty"
+    print(f"\nChat response:\n{response.message.content}")
+
+
+def test_complete(perplexity_llm):
+    prompt = "Perplexity is a company that provides"
+    response = perplexity_llm.complete(prompt)
+    assert isinstance(response, CompletionResponse)
+    assert response.text.strip(), "Completion response should not be empty"
+    print(f"\nCompletion response:\n{response.text}")
+
+
+def test_stream_chat(perplexity_llm):
+    messages_dict = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Name the first 5 elements in the periodic table."},
+    ]
+    messages = [
+        ChatMessage(**msg) for msg in messages_dict
+    ]
+    stream = perplexity_llm.stream_chat(messages)
+    assert inspect.isgenerator(stream), "stream_chat should return a generator"
+
+    full_response = ""
+    for chunk in stream:
+        assert isinstance(chunk, ChatResponse)
+        full_response += chunk.delta
+        print(chunk.delta, end="", flush=True)
+
+    assert full_response.strip(), "Streamed chat response should not be empty"
+    print(f"\n\nFull streamed chat response:\n{full_response}")
+
+
+def test_stream_complete(perplexity_llm):
+    prompt = "List the first 5 planets in the solar system:"
+    stream = perplexity_llm.stream_complete(prompt)
+    assert inspect.isgenerator(stream), "stream_complete should return a generator"
+
+    full_response = ""
+    for chunk in stream:
+        assert isinstance(chunk, CompletionResponse)
+        full_response += chunk.delta
+        print(chunk.delta, end="", flush=True)
+
+    assert full_response.strip(), "Streamed completion response should not be empty"
+    print(f"\n\nFull streamed completion response:\n{full_response}")
+
+
+@pytest.mark.asyncio()
+async def test_achat(perplexity_llm):
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+        ChatMessage(
+            role=MessageRole.USER,
+            content="What is the largest planet in our solar system?",
+        ),
+    ]
+    response = await perplexity_llm.achat(messages)
+    assert isinstance(response, ChatResponse)
+    assert response.message.content.strip(), "Async chat response should not be empty"
+    print(f"\nAsync chat response:\n{response.message.content}")
+
+
+@pytest.mark.asyncio()
+async def test_acomplete(perplexity_llm):
+    prompt = "The largest planet in our solar system is"
+    response = await perplexity_llm.acomplete(prompt)
+    assert isinstance(response, CompletionResponse)
+    assert response.text.strip(), "Async completion response should not be empty"
+    print(f"\nAsync completion response:\n{response.text}")
+
+
+@pytest.mark.asyncio()
+async def test_astream_chat(perplexity_llm):
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+        ChatMessage(
+            role=MessageRole.USER,
+            content="Name the first 5 elements in the periodic table.",
+        ),
+    ]
+    stream = await perplexity_llm.astream_chat(messages)
+    assert isinstance(
+        stream, AsyncIterator
+    ), "astream_chat should return an async generator"
+
+    full_response = ""
+    async for chunk in stream:
+        assert isinstance(chunk, ChatResponse)
+        full_response += chunk.delta
+        print(chunk.delta, end="", flush=True)
+
+    assert full_response.strip(), "Async streamed chat response should not be empty"
+    print(f"\n\nFull async streamed chat response:\n{full_response}")
+
+
+@pytest.mark.asyncio()
+async def test_astream_complete(perplexity_llm):
+    prompt = "List the first 5 elements in the periodic table:"
+    stream = await perplexity_llm.astream_complete(prompt)
+    assert isinstance(
+        stream, AsyncIterator
+    ), "astream_complete should return an async generator"
+
+    full_response = ""
+    async for chunk in stream:
+        assert isinstance(chunk, CompletionResponse)
+        full_response += chunk.delta
+        print(chunk.delta, end="", flush=True)
+
+    assert (
+        full_response.strip()
+    ), "Async streamed completion response should not be empty"
+    print(f"\n\nFull async streamed completion response:\n{full_response}")
+
+
+@pytest.fixture()
+def mock_perplexity_llm():
+    return Perplexity(api_key="dummy", temperature=0.3)
+
+def test_chat_mock(mock_perplexity_llm):
+    with mock.patch.object(mock_perplexity_llm, "_chat") as mock_chat:
+        mock_chat.return_value = ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content="Mocked chat response"
+            ),
+            raw={},
+        )
+
+        messages = [ChatMessage(role=MessageRole.USER, content="Test message")]
+        response = mock_perplexity_llm.chat(messages)
+
+        assert isinstance(response, ChatResponse)
+        assert response.message.content == "Mocked chat response"
+        assert response.message.role == MessageRole.ASSISTANT
+        mock_chat.assert_called_once()
+
+
+def test_complete_mock(mock_perplexity_llm):
+    with mock.patch.object(mock_perplexity_llm, "_complete") as mock_complete:
+        mock_complete.return_value = CompletionResponse(
+            text="Mocked completion response", raw={}
+        )
+
+        response = mock_perplexity_llm.complete("Test prompt")
+
+        assert isinstance(response, CompletionResponse)
+        assert response.text == "Mocked completion response"
+        mock_complete.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_achat_mock(mock_perplexity_llm):
+    with mock.patch.object(mock_perplexity_llm, "_achat") as mock_achat:
+        mock_achat.return_value = ChatResponse(
+            message=ChatMessage(
+                role=MessageRole.ASSISTANT, content="Mocked async chat response"
+            ),
+            raw={},
+        )
+
+        messages = [ChatMessage(role=MessageRole.USER, content="Async test")]
+        response = await mock_perplexity_llm.achat(messages)
+
+        assert isinstance(response, ChatResponse)
+        assert response.message.content == "Mocked async chat response"
+        assert response.message.role == MessageRole.ASSISTANT
+        mock_achat.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_acomplete_mock(mock_perplexity_llm):
+    with mock.patch.object(mock_perplexity_llm, "_acomplete") as mock_aacomplete:
+        mock_aacomplete.return_value = CompletionResponse(
+            text="Mocked async completion response", raw={}
+        )
+
+        response = await mock_perplexity_llm.acomplete("Async test prompt")
+
+        assert isinstance(response, CompletionResponse)
+        assert response.text == "Mocked async completion response"
+        mock_aacomplete.assert_called_once()
+
+
+
+
+
