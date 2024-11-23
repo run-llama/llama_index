@@ -1,10 +1,16 @@
 """Init file of LlamaIndex."""
 
-__version__ = "0.12.0"
+__version__ = "0.12.1"
 
 import logging
 from logging import NullHandler
 from typing import Callable, Optional
+
+try:
+    # Force pants to install eval_type_backport on 3.9
+    import eval_type_backport  # noqa  # type: ignore
+except ImportError:
+    pass
 
 # response
 from llama_index.core.base.response.schema import Response
@@ -28,8 +34,8 @@ from llama_index.core.indices import (
     GPTVectorStoreIndex,
     KeywordTableIndex,
     KnowledgeGraphIndex,
-    PropertyGraphIndex,
     ListIndex,
+    PropertyGraphIndex,
     RAKEKeywordTableIndex,
     SimpleKeywordTableIndex,
     SummaryIndex,
@@ -67,6 +73,9 @@ from llama_index.core.service_context import (
     set_global_service_context,
 )
 
+# global settings
+from llama_index.core.settings import Settings
+
 # storage
 from llama_index.core.storage.storage_context import StorageContext
 
@@ -75,9 +84,6 @@ from llama_index.core.utilities.sql_wrapper import SQLDatabase
 
 # global tokenizer
 from llama_index.core.utils import get_tokenizer, set_global_tokenizer
-
-# global settings
-from llama_index.core.settings import Settings
 
 # best practices for library logging:
 # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
