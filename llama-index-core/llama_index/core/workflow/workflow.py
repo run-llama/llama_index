@@ -228,6 +228,8 @@ class Workflow(metaclass=WorkflowMeta):
                             try:
                                 new_ev = await instrumented_step(**kwargs)
                                 break  # exit the retrying loop
+                            except WorkflowDone:
+                                raise
                             except Exception as e:
                                 if config.retry_policy is None:
                                     raise WorkflowRuntimeError(
@@ -256,6 +258,8 @@ class Workflow(metaclass=WorkflowMeta):
                             new_ev = await asyncio.get_event_loop().run_in_executor(
                                 None, run_task
                             )
+                        except WorkflowDone:
+                            raise
                         except Exception as e:
                             raise WorkflowRuntimeError(
                                 f"Error in step '{name}': {e!s}"
