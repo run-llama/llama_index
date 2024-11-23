@@ -23,7 +23,7 @@ async def test_create_checkpoint(workflow_checkpointer: WorkflowCheckpointer):
     incoming_ev = StartEvent()
     output_ev = OneTestEvent()
     ctx = Context(workflow=workflow_checkpointer.workflow)
-    checkpointer = workflow_checkpointer.new_checkpointer()
+    checkpointer = workflow_checkpointer.new_checkpoint_callback_for_run()
 
     # execute checkpoint asynccallable
     await checkpointer(
