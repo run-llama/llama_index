@@ -62,7 +62,7 @@ class WorkflowCheckpointer:
             k: True for k in workflow._get_steps() if k != "_done"
         }
         for step_name in disabled_steps:
-            self.disable_checkpoints(step_name)
+            self.disable_checkpoint(step_name)
 
     def enable_checkpoint(self, step: str) -> Dict[str, bool]:
         """Enable checkpointing after the completion of the specified step."""
