@@ -309,17 +309,25 @@ class Workflow(metaclass=WorkflowMeta):
                                 await ctx._step_condition.wait()
                                 ctx._step_event_holding = new_ev
                                 ctx._step_event_written.notify()  # shares same lock
-                        else:
-                            ctx.send_event(new_ev)
 
-                    # Checkpoint
-                    if checkpoint_callback:
-                        await checkpoint_callback(
-                            ctx=ctx,
-                            last_completed_step=name,
-                            input_ev=ev,
-                            output_ev=new_ev,
-                        )
+                                # for stepwise Checkpoint after handler.run_step() call
+                                if checkpoint_callback:
+                                    await checkpoint_callback(
+                                        ctx=ctx,
+                                        last_completed_step=name,
+                                        input_ev=ev,
+                                        output_ev=new_ev,
+                                    )
+                        else:
+                            # Checkpoint before firing the next event
+                            if checkpoint_callback:
+                                await checkpoint_callback(
+                                    ctx=ctx,
+                                    last_completed_step=name,
+                                    input_ev=ev,
+                                    output_ev=new_ev,
+                                )
+                            ctx.send_event(new_ev)
 
             for _ in range(step_config.num_workers):
                 ctx._tasks.add(
@@ -386,18 +394,8 @@ class Workflow(metaclass=WorkflowMeta):
                 await self._sem.acquire()
             try:
                 if not ctx.is_running:
-                    # create checkpoint just before start of workflow run
-                    start_ev = StartEvent(**kwargs)
-                    if checkpoint_callback:
-                        await checkpoint_callback(
-                            last_completed_step=None,
-                            input_ev=None,
-                            output_ev=start_ev,
-                            ctx=ctx,
-                        )
-
                     # Send the first event
-                    ctx.send_event(start_ev)
+                    ctx.send_event(StartEvent(**kwargs))
 
                     # the context is now running
                     ctx.is_running = True

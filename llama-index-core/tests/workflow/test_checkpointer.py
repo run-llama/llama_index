@@ -55,9 +55,8 @@ async def test_checkpoints_after_successive_runs(
 
     assert len(workflow_checkpointer.checkpoints) == num_runs
     for ckpts in workflow_checkpointer.checkpoints.values():
-        assert len(ckpts) == num_steps
+        assert len(ckpts) == num_steps - 1  # don't checkpoint after _done step
         assert [ckpt.last_completed_step for ckpt in ckpts] == [
-            None,
             "start_step",
             "middle_step",
             "end_step",
@@ -90,10 +89,11 @@ async def test_filter_checkpoints(workflow_checkpointer: WorkflowCheckpointer):
             ), f"fails on {evt_type.__name__}"
 
         # by output_event_type
-        checkpoints_by_output_event = workflow_checkpointer.filter_checkpoints(
-            output_event_type=evt_type
-        )
-        assert len(checkpoints_by_output_event) == num_runs, f"fails on {evt_type}"
+        if evt_type != StartEvent:
+            checkpoints_by_output_event = workflow_checkpointer.filter_checkpoints(
+                output_event_type=evt_type
+            )
+            assert len(checkpoints_by_output_event) == num_runs, f"fails on {evt_type}"
 
     # no filters raises error
     with pytest.raises(ValueError):
@@ -116,7 +116,9 @@ async def test_checkpoints_works_with_new_instances(
 
 @pytest.mark.asyncio()
 async def test_run_from_checkpoint(workflow_checkpointer: WorkflowCheckpointer):
+    print(f"{workflow_checkpointer.workflow._get_steps()}", flush=True)
     num_steps = len(workflow_checkpointer.workflow._get_steps())
+    num_ckpts_in_single_run = num_steps - 1
     handler: WorkflowHandler = workflow_checkpointer.run(store_checkpoints=True)
     await handler
 
@@ -136,4 +138,6 @@ async def test_run_from_checkpoint(workflow_checkpointer: WorkflowCheckpointer):
     for ckpts in workflow_checkpointer.checkpoints.values():
         num_checkpoints.append(len(ckpts))
     num_checkpoints = sorted(num_checkpoints)
-    assert num_checkpoints == [1, num_steps]
+    for k, v in workflow_checkpointer.checkpoints.items():
+        print(f"{k}: {[c.last_completed_step for c in v]}")
+    assert num_checkpoints == [1, num_ckpts_in_single_run]
