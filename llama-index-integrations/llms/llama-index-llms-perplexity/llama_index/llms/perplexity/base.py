@@ -76,7 +76,7 @@ class Perplexity(LLM):
 
     def __init__(
         self,
-        model: str = "mistral-7b-instruct",
+        model: str = "llama-3.1-sonar-small-128k-online",
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         api_key: Optional[str] = None,
@@ -138,48 +138,20 @@ class Perplexity(LLM):
     def _get_context_window(self) -> int:
         # Check https://docs.perplexity.ai/docs/model-cards for latest model information
         model_context_windows = {
-            # Legacy Perplexity Models (will be deprecated on August 12th 2024)
-            "llama-3-sonar-small-32k-chat": 32768,
-            "llama-3-sonar-small-32k-online": 28000,
-            "llama-3-sonar-large-32k-chat": 32768,
-            "llama-3-sonar-large-32k-online": 28000,
-            # Latest Perplexity Models
-            "llama-3.1-sonar-small-128k-chat": 127072,
-            "llama-3.1-sonar-small-128k-online": 131072,
-            "llama-3.1-sonar-large-128k-chat": 127072,
-            "llama-3.1-sonar-large-128k-online": 131072,
-            # Legacy Open Source Models (will be deprecated on August 12th 2024)
-            "llama-3-8b-instruct": 8192,
-            "llama-3-70b-instruct": 8192,
-            "mixtral-8x7b-instruct": 16384,
-            # Latest Open Source Models
-            "llama-3.1-8b-instruct": 131072,
-            "llama-3.1-70b-instruct": 131072,
+            "llama-3.1-sonar-small-128k-online": 127072,
+            "llama-3.1-sonar-large-128k-online": 127072,
+            "llama-3.1-sonar-huge-128k-online": 127072
         }
         return model_context_windows.get(
-            self.model, 4096
-        )  # Default to 4096 if model not found
+            self.model, 127072
+        )  # Default to 127072 tokens if model is not found
 
     def _is_chat_model(self) -> bool:
         # Check https://docs.perplexity.ai/docs/model-cards for latest model information
         chat_models = {
-            # Legacy Perplexity Models (will be deprecated on August 12th 2024)
-            "llama-3-sonar-small-32k-chat",
-            "llama-3-sonar-small-32k-online",
-            "llama-3-sonar-large-32k-chat",
-            "llama-3-sonar-large-32k-online",
-            # Latest Perplexity Models
-            "llama-3.1-sonar-small-128k-chat",
             "llama-3.1-sonar-small-128k-online",
-            "llama-3.1-sonar-large-128k-chat",
             "llama-3.1-sonar-large-128k-online",
-            # Legacy Open Source Models (will be deprecated on August 12th 2024)
-            "llama-3-8b-instruct",
-            "llama-3-70b-instruct",
-            "mixtral-8x7b-instruct",
-            # Latest Open Source Models
-            "llama-3.1-8b-instruct",
-            "llama-3.1-70b-instruct",
+            "llama-3.1-sonar-huge-128k-online",
         }
         return self.model in chat_models
 
