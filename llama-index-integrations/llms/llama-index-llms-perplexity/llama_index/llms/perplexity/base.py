@@ -136,7 +136,7 @@ class Perplexity(LLM):
         )
 
     def _get_context_window(self) -> int:
-        # Check https://docs.perplexity.ai/docs/model-cards for latest model information
+        # Check https://docs.perplexity.ai/guides/model-cards for latest model information
         model_context_windows = {
             "llama-3.1-sonar-small-128k-online": 127072,
             "llama-3.1-sonar-large-128k-online": 127072,
@@ -145,15 +145,6 @@ class Perplexity(LLM):
         return model_context_windows.get(
             self.model, 127072
         )  # Default to 127072 tokens if model is not found
-
-    def _is_chat_model(self) -> bool:
-        # Check https://docs.perplexity.ai/docs/model-cards for latest model information
-        chat_models = {
-            "llama-3.1-sonar-small-128k-online",
-            "llama-3.1-sonar-large-128k-online",
-            "llama-3.1-sonar-huge-128k-online",
-        }
-        return self.model in chat_models
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         """Get all data for the request as a dictionary."""
@@ -167,28 +158,23 @@ class Perplexity(LLM):
 
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         url = f"{self.api_base}/chat/completions"
+        messages = [{"role": "user", "content": prompt}]
+        if self.system_prompt:
+            messages.insert(0, {"role": "system", "content": self.system_prompt})
         payload = {
             "model": self.model,
-            "messages": [
-                {"role": "system", "content": self.system_prompt},
-                {
-                    "role": "user",
-                    "content": prompt,
-                },
-            ],
+            "messages": messages,
             **self._get_all_kwargs(**kwargs),
         }
         response = requests.post(url, json=payload, headers=self.headers)
         response.raise_for_status()
         data = response.json()
-        return CompletionResponse(text=data["choices"][0]["message"], raw=data)
+        return CompletionResponse(text=data["choices"][0]["message"]["content"], raw=data)
 
     @llm_completion_callback()
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        if self._is_chat_model():
-            raise ValueError("The complete method is not supported for chat models.")
         return self._complete(prompt, **kwargs)
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -214,23 +200,24 @@ class Perplexity(LLM):
 
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         url = f"{self.api_base}/chat/completions"
+        messages = [{"role": "user", "content": prompt}]
+        if self.system_prompt:
+            messages.insert(0, {"role": "system", "content": self.system_prompt})
         payload = {
             "model": self.model,
-            "prompt": prompt,
+            "messages": messages,
             **self._get_all_kwargs(**kwargs),
         }
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload, headers=self.headers)
         response.raise_for_status()
         data = response.json()
-        return CompletionResponse(text=data["choices"][0]["text"], raw=data)
+        return CompletionResponse(text=data["choices"][0]["message"]["content"], raw=data)
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        if self._is_chat_model():
-            raise ValueError("The complete method is not supported for chat models.")
         return await self._acomplete(prompt, **kwargs)
 
     async def _achat(
@@ -261,12 +248,17 @@ class Perplexity(LLM):
 
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         url = f"{self.api_base}/chat/completions"
+        messages = [{"role": "user", "content": prompt}]
+        if self.system_prompt:
+            messages.insert(0, {"role": "system", "content": self.system_prompt})
         payload = {
             "model": self.model,
-            "prompt": prompt,
+            # "prompt": prompt,
+            "messages": messages,
             "stream": True,
             **self._get_all_kwargs(**kwargs),
         }
+        print(payload)
 
         def gen() -> CompletionResponseGen:
             with requests.Session() as session:
@@ -280,7 +272,7 @@ class Perplexity(LLM):
                     ):  # decode lines to Unicode
                         if line.startswith("data:"):
                             data = json.loads(line[5:])
-                            delta = data["choices"][0]["text"]
+                            delta = data["choices"][0]["message"]["content"]
                             text += delta
                             yield CompletionResponse(delta=delta, text=text, raw=data)
 
@@ -290,8 +282,6 @@ class Perplexity(LLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        if self._is_chat_model():
-            raise ValueError("The complete method is not supported for chat models.")
         stream_complete_fn = self._stream_complete
         return stream_complete_fn(prompt, **kwargs)
 
@@ -301,9 +291,12 @@ class Perplexity(LLM):
         import aiohttp
 
         url = f"{self.api_base}/chat/completions"
+        messages = [{"role": "user", "content": prompt}]
+        if self.system_prompt:
+            messages.insert(0, {"role": "system", "content": self.system_prompt})
         payload = {
             "model": self.model,
-            "prompt": prompt,
+            "messages": messages,
             "stream": True,
             **self._get_all_kwargs(**kwargs),
         }
@@ -319,7 +312,7 @@ class Perplexity(LLM):
                         line_text = line.decode("utf-8").strip()
                         if line_text.startswith("data:"):
                             data = json.loads(line_text[5:])
-                            delta = data["choices"][0]["text"]
+                            delta = data["choices"][0]["message"]["content"]
                             text += delta
                             yield CompletionResponse(delta=delta, text=text, raw=data)
 
@@ -329,8 +322,6 @@ class Perplexity(LLM):
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        if self._is_chat_model():
-            raise ValueError("The complete method is not supported for chat models.")
         return await self._astream_complete(prompt, **kwargs)
 
     def _stream_chat(
