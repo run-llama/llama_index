@@ -51,9 +51,16 @@ class WorkflowCheckpointer:
         checkpoint_serializer: Optional[BaseSerializer] = None,
     ):
         self.workflow = workflow
+        self.checkpoints_config: Dict = {}
         self._checkpoints: Dict[str, List[Checkpoint]] = {}
         self._checkpoint_serializer = checkpoint_serializer or JsonSerializer()
         self._lock: asyncio.Lock = asyncio.Lock()
+
+    def enable_checkpoints(step: str | List[str]) -> None:
+        ...
+
+    def disable_checkpoints(step: str | List[str]) -> None:
+        ...
 
     def generate_run_id(self) -> str:
         return str(uuid.uuid4())
@@ -71,12 +78,6 @@ class WorkflowCheckpointer:
             checkpointer=self.new_checkpointer(),
             **kwargs,
         )
-
-    def get_run_result(self, run_id: str) -> Any:
-        ...
-
-    def get_run(self, run_id: str) -> List[Checkpoint]:
-        ...
 
     @property
     def checkpoints(self) -> Dict[str, List[Checkpoint]]:

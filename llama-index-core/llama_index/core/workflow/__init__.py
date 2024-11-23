@@ -22,6 +22,10 @@ from llama_index.core.workflow.context_serializers import (
     JsonPickleSerializer,
     JsonSerializer,
 )
+from llama_index.core.workflow.checkpointer import (
+    Checkpoint,
+    WorkflowCheckpointer,
+)
 
 __all__ = [
     "Context",
@@ -40,4 +44,6 @@ __all__ = [
     "HumanResponseEvent",
     "JsonPickleSerializer",
     "JsonSerializer",
+    "WorkflowCheckpointer",
+    "Checkpoint",
 ]
