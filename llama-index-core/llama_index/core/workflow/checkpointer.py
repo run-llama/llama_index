@@ -27,8 +27,6 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class CheckpointCallback(Protocol):
-    checkpoints_config: Dict[str, bool]
-
     def __call__(
         self,
         last_completed_step: Optional[str],
@@ -108,6 +106,9 @@ class WorkflowCheckpointer:
     def new_checkpoint_callback_for_run(self) -> CheckpointCallback:
         """Closure to generate a new `CheckpointCallback` with a unique run-id."""
         run_id = self.generate_run_id()
+        enabled_steps = [
+            step for step, enabled in self.checkpoints_config.items() if enabled
+        ]
 
         async def _create_checkpoint(
             last_completed_step: Optional[str],
@@ -116,6 +117,9 @@ class WorkflowCheckpointer:
             ctx: Context,
         ) -> None:
             """Build a checkpoint around the last completed step."""
+            if last_completed_step not in enabled_steps:
+                return
+
             checkpoint = Checkpoint(
                 last_completed_step=last_completed_step,
                 input_event=input_ev,
@@ -128,7 +132,6 @@ class WorkflowCheckpointer:
                 else:
                     self.checkpoints[run_id] = [checkpoint]
 
-        _create_checkpoint.checkpoints_config = self.checkpoints_config
         return _create_checkpoint
 
     def _checkpoint_filter_condition(

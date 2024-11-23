@@ -311,10 +311,7 @@ class Workflow(metaclass=WorkflowMeta):
                                 ctx._step_event_written.notify()  # shares same lock
 
                                 # for stepwise Checkpoint after handler.run_step() call
-                                if (
-                                    checkpoint_callback
-                                    and checkpoint_callback.checkpoints_config[name]
-                                ):
+                                if checkpoint_callback:
                                     await checkpoint_callback(
                                         ctx=ctx,
                                         last_completed_step=name,
@@ -323,10 +320,7 @@ class Workflow(metaclass=WorkflowMeta):
                                     )
                         else:
                             # for regular execution, Checkpoint just before firing the next event
-                            if (
-                                checkpoint_callback
-                                and checkpoint_callback.checkpoints_config[name]
-                            ):
+                            if checkpoint_callback:
                                 await checkpoint_callback(
                                     ctx=ctx,
                                     last_completed_step=name,
