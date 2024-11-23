@@ -31,7 +31,7 @@ from .utils import (
     get_steps_from_instance,
     ServiceDefinition,
 )
-from .checkpointer import Checkpoint, CheckpointCallable
+from .checkpointer import Checkpoint, CheckpointCallback
 from .handler import WorkflowHandler
 from .context_serializers import JsonSerializer, BaseSerializer
 
@@ -176,7 +176,7 @@ class Workflow(metaclass=WorkflowMeta):
         self,
         stepwise: bool = False,
         ctx: Optional[Context] = None,
-        checkpointer: Optional[CheckpointCallable] = None,
+        checkpoint_callback: Optional[CheckpointCallback] = None,
     ) -> Context:
         """Sets up the queues and tasks for each declared step.
 
@@ -297,15 +297,6 @@ class Workflow(metaclass=WorkflowMeta):
                     # Store the accepted event for the drawing operations
                     ctx._accepted_events.append((name, type(ev).__name__))
 
-                    # Checkpoint
-                    if checkpointer:
-                        await checkpointer(
-                            ctx=ctx,
-                            last_completed_step=name,
-                            input_ev=ev,
-                            output_ev=new_ev,
-                        )
-
                     if not isinstance(new_ev, Event):
                         warnings.warn(
                             f"Step function {name} returned {type(new_ev).__name__} instead of an Event instance."
@@ -320,6 +311,15 @@ class Workflow(metaclass=WorkflowMeta):
                                 ctx._step_event_written.notify()  # shares same lock
                         else:
                             ctx.send_event(new_ev)
+
+                    # Checkpoint
+                    if checkpoint_callback:
+                        await checkpoint_callback(
+                            ctx=ctx,
+                            last_completed_step=name,
+                            input_ev=ev,
+                            output_ev=new_ev,
+                        )
 
             for _ in range(step_config.num_workers):
                 ctx._tasks.add(
@@ -363,7 +363,7 @@ class Workflow(metaclass=WorkflowMeta):
         self,
         ctx: Optional[Context] = None,
         stepwise: bool = False,
-        checkpointer: Optional[CheckpointCallable] = None,
+        checkpoint_callback: Optional[CheckpointCallback] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
         """Runs the workflow until completion."""
@@ -375,7 +375,9 @@ class Workflow(metaclass=WorkflowMeta):
             )
 
         # Start the machinery in a new Context or use the provided one
-        ctx = self._start(ctx=ctx, stepwise=stepwise, checkpointer=checkpointer)
+        ctx = self._start(
+            ctx=ctx, stepwise=stepwise, checkpoint_callback=checkpoint_callback
+        )
 
         result = WorkflowHandler(ctx=ctx)
 
@@ -386,8 +388,8 @@ class Workflow(metaclass=WorkflowMeta):
                 if not ctx.is_running:
                     # create checkpoint just before start of workflow run
                     start_ev = StartEvent(**kwargs)
-                    if checkpointer:
-                        await checkpointer(
+                    if checkpoint_callback:
+                        await checkpoint_callback(
                             last_completed_step=None,
                             input_ev=None,
                             output_ev=start_ev,
@@ -454,7 +456,7 @@ class Workflow(metaclass=WorkflowMeta):
         self,
         checkpoint: Checkpoint,
         ctx_serializer: Optional[BaseSerializer] = None,
-        checkpointer: Optional[CheckpointCallable] = None,
+        checkpoint_callback: Optional[CheckpointCallback] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
         """Run from a specified Checkpoint.
@@ -466,7 +468,7 @@ class Workflow(metaclass=WorkflowMeta):
         ctx_serializer = ctx_serializer or JsonSerializer()
         ctx = Context.from_dict(self, checkpoint.ctx_state, serializer=ctx_serializer)
         handler: WorkflowHandler = self.run(
-            ctx=ctx, checkpointer=checkpointer, **kwargs
+            ctx=ctx, checkpoint_callback=checkpoint_callback, **kwargs
         )
 
         ctx.send_event(checkpoint.output_event)

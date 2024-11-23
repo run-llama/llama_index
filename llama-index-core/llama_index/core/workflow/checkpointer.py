@@ -26,7 +26,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
 
 
-class CheckpointCallable(Protocol):
+class CheckpointCallback(Protocol):
     def __call__(
         self,
         last_completed_step: Optional[str],
@@ -69,7 +69,7 @@ class WorkflowCheckpointer:
 
     def run(self, **kwargs: Any) -> WorkflowHandler:
         return self.workflow.run(
-            checkpointer=self.new_checkpointer(),
+            checkpoint_callback=self.new_checkpointer(),
             **kwargs,
         )
 
@@ -77,7 +77,7 @@ class WorkflowCheckpointer:
         return self.workflow.run_from(
             checkpoint=checkpoint,
             ctx_serializer=self._checkpoint_serializer,
-            checkpointer=self.new_checkpointer(),
+            checkpoint_callback=self.new_checkpointer(),
             **kwargs,
         )
 
@@ -85,7 +85,7 @@ class WorkflowCheckpointer:
     def checkpoints(self) -> Dict[str, List[Checkpoint]]:
         return self._checkpoints
 
-    def new_checkpointer(self) -> CheckpointCallable:
+    def new_checkpointer(self) -> CheckpointCallback:
         run_id = self.generate_run_id()
 
         async def _create_checkpoint(
