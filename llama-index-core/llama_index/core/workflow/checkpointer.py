@@ -14,13 +14,13 @@ from typing import (
     Protocol,
     TYPE_CHECKING,
     Type,
-    Union,
     Awaitable,
 )
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.context_serializers import BaseSerializer, JsonSerializer
 from llama_index.core.workflow.handler import WorkflowHandler
 from .events import Event
+from .errors import *
 
 if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
@@ -51,18 +51,36 @@ class WorkflowCheckpointer:
         self,
         workflow: "Workflow",
         checkpoint_serializer: Optional[BaseSerializer] = None,
+        disabled_steps: List[str] = [],
     ):
-        self.workflow = workflow
-        self.checkpoints_config: Dict = {}
         self._checkpoints: Dict[str, List[Checkpoint]] = {}
         self._checkpoint_serializer = checkpoint_serializer or JsonSerializer()
         self._lock: asyncio.Lock = asyncio.Lock()
 
-    def enable_checkpoints(self, step: Union[str, List[str]]) -> None:
-        ...
+        self.workflow = workflow
+        self.checkpoints_config: Dict[str, bool] = {
+            k: True for k in workflow._get_steps() if k != "_done"
+        }
+        for step_name in disabled_steps:
+            self.disable_checkpoints(step_name)
 
-    def disable_checkpoints(self, step: Union[str, List[str]]) -> None:
-        ...
+    def enable_checkpoint(self, step: str) -> Dict[str, bool]:
+        """Enable checkpointing after the completion of the specified step."""
+        try:
+            self.checkpoints_config[step] = True
+        except KeyError:
+            msg = f"This workflow does not contain a step with name {step}"
+            raise WorkflowStepDoesNotExistError(msg)
+        return {k: self.checkpoints_config[k] for k in [step]}
+
+    def disable_checkpoint(self, step: str) -> Dict[str, bool]:
+        """Disable checkpointing after the completion of the specified step."""
+        try:
+            self.checkpoints_config[step] = False
+        except KeyError:
+            msg = f"This workflow does not contain a step with name {step}"
+            raise WorkflowStepDoesNotExistError(msg)
+        return {k: self.checkpoints_config[k] for k in [step]}
 
     def generate_run_id(self) -> str:
         return str(uuid.uuid4())
