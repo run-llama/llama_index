@@ -57,7 +57,7 @@ def test_chat_message_content_legacy_set():
 
 def test_chat_message_content_returns_empty_string():
     m = ChatMessage(content=[TextBlock(text="test content"), ImageBlock()])
-    assert m.content == ""
+    assert m.content is None
 
 
 def test__str__():
@@ -78,5 +78,19 @@ def test_serializer():
             "some_list": ["a", "b", "c"],
             "some_object": {"some_field": ""},
         },
-        "blocks": [{}],
+        "blocks": [{"text": "test content"}],
+    }
+
+
+def test_legacy_roundtrip():
+    legacy_message = {
+        "role": MessageRole.USER,
+        "content": "foo",
+        "additional_kwargs": {},
+    }
+    m = ChatMessage(**legacy_message)
+    assert m.model_dump() == {
+        "additional_kwargs": {},
+        "blocks": [{"text": "foo"}],
+        "role": MessageRole.USER,
     }
