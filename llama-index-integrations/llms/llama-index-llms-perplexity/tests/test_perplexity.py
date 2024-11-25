@@ -1,5 +1,5 @@
 import inspect
-from typing import AsyncIterator, Iterator
+from typing import AsyncIterator
 import pytest
 import os
 
@@ -13,12 +13,14 @@ from llama_index.core.base.llms.types import (
     MessageRole,
 )
 
+
 @pytest.fixture()
 def perplexity_llm():
     api_key = os.getenv("PPLX_API_KEY")
     if api_key is None:
         pytest.skip("PPLX_API_KEY not set in environment")
     return Perplexity(api_key=api_key)
+
 
 def test_chat(perplexity_llm):
     messages_dict = [
@@ -45,9 +47,7 @@ def test_stream_chat(perplexity_llm):
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "Name the first 5 elements in the periodic table."},
     ]
-    messages = [
-        ChatMessage(**msg) for msg in messages_dict
-    ]
+    messages = [ChatMessage(**msg) for msg in messages_dict]
     stream = perplexity_llm.stream_chat(messages)
     assert inspect.isgenerator(stream), "stream_chat should return a generator"
 
@@ -148,6 +148,7 @@ async def test_astream_complete(perplexity_llm):
 def mock_perplexity_llm():
     return Perplexity(api_key="dummy", temperature=0.3)
 
+
 def test_chat_mock(mock_perplexity_llm):
     with mock.patch.object(mock_perplexity_llm, "_chat") as mock_chat:
         mock_chat.return_value = ChatResponse(
@@ -210,8 +211,3 @@ async def test_acomplete_mock(mock_perplexity_llm):
         assert isinstance(response, CompletionResponse)
         assert response.text == "Mocked async completion response"
         mock_aacomplete.assert_called_once()
-
-
-
-
-

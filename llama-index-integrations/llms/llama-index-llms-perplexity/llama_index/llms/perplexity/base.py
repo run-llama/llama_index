@@ -140,7 +140,7 @@ class Perplexity(LLM):
         model_context_windows = {
             "llama-3.1-sonar-small-128k-online": 127072,
             "llama-3.1-sonar-large-128k-online": 127072,
-            "llama-3.1-sonar-huge-128k-online": 127072
+            "llama-3.1-sonar-huge-128k-online": 127072,
         }
         return model_context_windows.get(
             self.model, 127072
@@ -169,7 +169,9 @@ class Perplexity(LLM):
         response = requests.post(url, json=payload, headers=self.headers)
         response.raise_for_status()
         data = response.json()
-        return CompletionResponse(text=data["choices"][0]["message"]["content"], raw=data)
+        return CompletionResponse(
+            text=data["choices"][0]["message"]["content"], raw=data
+        )
 
     @llm_completion_callback()
     def complete(
@@ -212,7 +214,9 @@ class Perplexity(LLM):
             response = await client.post(url, json=payload, headers=self.headers)
         response.raise_for_status()
         data = response.json()
-        return CompletionResponse(text=data["choices"][0]["message"]["content"], raw=data)
+        return CompletionResponse(
+            text=data["choices"][0]["message"]["content"], raw=data
+        )
 
     @llm_completion_callback()
     async def acomplete(
