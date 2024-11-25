@@ -1,5 +1,8 @@
+import asyncio
 import pytest
+import random
 from unittest.mock import patch, MagicMock
+from typing import Coroutine
 
 from llama_index.core.workflow.events import StartEvent, StopEvent
 from llama_index.core.workflow.handler import WorkflowHandler
@@ -102,17 +105,33 @@ async def test_filter_checkpoints(workflow_checkpointer: WorkflowCheckpointer):
 
 
 @pytest.mark.asyncio()
-async def test_checkpoints_works_with_new_instances(
+async def test_checkpoints_works_with_new_instances_concurrently(
     workflow_checkpointer: WorkflowCheckpointer,
 ):
     num_instances = 3
+    tasks = []
+
+    async def add_random_startup(coro: Coroutine):
+        """To randomly mix up the processing of the 3 runs."""
+        startup = random.random()
+        await asyncio.sleep(startup)
+        await coro
+
     for _ in range(num_instances):
         workflow = DummyWorkflow()
         workflow_checkpointer.workflow = workflow
-        handler: WorkflowHandler = workflow_checkpointer.run()
-        await handler
+        task = asyncio.create_task(add_random_startup(workflow_checkpointer.run()))
+        tasks.append(task)
+
+    await asyncio.gather(*tasks)
 
     assert len(workflow_checkpointer.checkpoints) == num_instances
+    for ckpts in workflow_checkpointer.checkpoints.values():
+        assert [c.last_completed_step for c in ckpts] == [
+            "start_step",
+            "middle_step",
+            "end_step",
+        ]
 
 
 @pytest.mark.asyncio()
