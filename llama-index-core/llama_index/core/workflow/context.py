@@ -49,7 +49,7 @@ class Context:
         )
         self._accepted_events: List[Tuple[str, str]] = []
         self._retval: Any = None
-        self._active_steps: Dict[str, Event] = defaultdict(list)
+        self._active_steps: Dict[str, List[Event]] = defaultdict(list)
         # Streaming machinery
         self._streaming_queue: asyncio.Queue = asyncio.Queue()
         # Global data storage
