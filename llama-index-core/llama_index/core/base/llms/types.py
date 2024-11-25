@@ -80,7 +80,7 @@ class ChatMessage(BaseModel):
         super().__init__(**data)
 
     @property
-    def content(self) -> str:
+    def content(self) -> str | None:
         """Keeps backward compatibility with the old `content` field.
 
         Returns:
@@ -88,7 +88,7 @@ class ChatMessage(BaseModel):
         """
         if len(self.blocks) == 1 and isinstance(self.blocks[0], TextBlock):
             return self.blocks[0].text
-        return ""
+        return None
 
     @content.setter
     def content(self, content: str) -> None:
@@ -135,6 +135,17 @@ class ChatMessage(BaseModel):
 
     @field_serializer("additional_kwargs", check_fields=False)
     def serialize_additional_kwargs(self, value: Any, _info: Any) -> Any:
+        return self._recursive_serialization(value)
+
+    @field_serializer("blocks", check_fields=False)
+    def serialize_blocks(self, value: Any, _info: Any) -> Any:
+        """Serializes the 'blocks' field.
+
+        'blocks' is defined as list[ContentBlock] and Pydantic won't serialize
+        it automatically since 'ContentBlock' is the base type. We can reuse
+        the custom serialization method from additional_kwargs to explicitly
+        serialize each block item in the 'blocks' field.
+        """
         return self._recursive_serialization(value)
 
 
