@@ -234,7 +234,7 @@ class RedisVectorStore(BasePydanticVectorStore):
     def _create_key_mapping(self, node, ids: list):
         mapping = {
             "id": node.node_id,
-            "doc_id": node.ref_doc_id,
+            "doc_id": f"{self._prefix}_{node.node_id}",
             "text": node.get_content(metadata_mode=MetadataMode.NONE),
             self._vector_key: array_to_buffer(node.get_embedding()),
         }
@@ -259,6 +259,33 @@ class RedisVectorStore(BasePydanticVectorStore):
             await self._redis_client_async.delete(
                 "_".join([self._prefix, str(node_id)])
             )
+    
+    async def async_delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using the ref_doc_id.
+
+        Args:
+            ref_doc_id (str): The doc_id of the document to delete.
+
+        """
+        # use tokenizer to escape dashes in query
+        query_str = "@doc_id:{%s}" % self._tokenizer.escape(ref_doc_id)
+        # find all documents that match a doc_id
+        results = await self._redis_client_async.ft(self._index_name).search(query_str)
+        if len(results.docs) == 0:
+            # don't raise an error but warn the user that document wasn't found
+            # could be a result of eviction policy
+            _logger.warning(
+                f"Document with doc_id {ref_doc_id} not found "
+                f"in index {self._index_name}"
+            )
+            return
+
+        for doc in results.docs:
+            await self._redis_client_async.delete(doc.id)
+        _logger.info(
+            f"Deleted {len(results.docs)} documents from index {self._index_name}"
+        )
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -269,6 +296,8 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         """
         # use tokenizer to escape dashes in query
+        # NOTE: This doesn't seem to work, using id with just the node_id works instead
+        # Not updating currently to prevent possible issues with other code
         query_str = "@doc_id:{%s}" % self._tokenizer.escape(ref_doc_id)
         # find all documents that match a doc_id
         results = self._redis_client.ft(self._index_name).search(query_str)
@@ -280,7 +309,6 @@ class RedisVectorStore(BasePydanticVectorStore):
                 f"in index {self._index_name}"
             )
             return
-
         for doc in results.docs:
             self._redis_client.delete(doc.id)
         _logger.info(
