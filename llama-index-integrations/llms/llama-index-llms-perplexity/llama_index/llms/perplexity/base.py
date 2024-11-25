@@ -33,7 +33,7 @@ class Perplexity(LLM):
         pplx_api_key = "your-perplexity-api-key"
 
         llm = Perplexity(
-            api_key=pplx_api_key, model="mistral-7b-instruct", temperature=0.5
+            api_key=pplx_api_key, model="llama-3.1-sonar-small-128k-online", temperature=0.5
         )
 
         messages_dict = [

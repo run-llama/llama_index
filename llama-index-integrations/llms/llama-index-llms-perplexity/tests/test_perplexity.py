@@ -4,6 +4,7 @@ import pytest
 import os
 
 from unittest import mock
+from unittest.mock import AsyncMock, patch, Mock
 
 from llama_index.llms.perplexity import Perplexity
 from llama_index.core.base.llms.types import (
@@ -211,3 +212,119 @@ async def test_acomplete_mock(mock_perplexity_llm):
         assert isinstance(response, CompletionResponse)
         assert response.text == "Mocked async completion response"
         mock_aacomplete.assert_called_once()
+
+
+def test_stream_complete_mock(mock_perplexity_llm):
+    with mock.patch.object(
+        mock_perplexity_llm, "_stream_complete"
+    ) as mock_stream_complete:
+        mock_stream_complete.return_value = [
+            CompletionResponse(delta="Mocked ", text="Mocked "),
+            CompletionResponse(delta="streamed ", text="Mocked streamed "),
+            CompletionResponse(delta="completion", text="Mocked streamed completion"),
+        ]
+
+        stream = mock_perplexity_llm._stream_complete("Test prompt")
+        full_response = stream[-1].text
+
+        assert full_response == "Mocked streamed completion"
+        mock_stream_complete.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_astream_complete(mock_perplexity_llm):
+    prompt = "Test prompt"
+    mock_astream_complete = AsyncMock(
+        return_value=[
+            CompletionResponse(delta="Mocked ", text="Mocked "),
+            CompletionResponse(delta="streamed ", text="Mocked streamed "),
+            CompletionResponse(delta="completion", text="Mocked streamed completion"),
+        ]
+    )
+
+    with patch.object(mock_perplexity_llm, "_astream_complete", mock_astream_complete):
+        stream = await mock_perplexity_llm._astream_complete(prompt)
+        full_response = stream[-1].text
+
+        assert full_response == "Mocked streamed completion"
+        mock_astream_complete.assert_called_once_with(prompt)
+
+
+def test_stream_chat(mock_perplexity_llm):
+    messages = [
+        ChatMessage(role=MessageRole.USER, content="Test message 1"),
+        ChatMessage(role=MessageRole.USER, content="Test message 2"),
+    ]
+    mock_stream_chat = Mock(
+        return_value=[
+            ChatResponse(
+                message=ChatMessage(
+                    role=MessageRole.ASSISTANT, content="Mocked ", raw={}
+                ),
+                delta="Mocked ",
+                raw={},
+            ),
+            ChatResponse(
+                message=ChatMessage(
+                    role=MessageRole.ASSISTANT, content="Mocked streamed ", raw={}
+                ),
+                delta="streamed ",
+                raw={},
+            ),
+            ChatResponse(
+                message=ChatMessage(
+                    role=MessageRole.ASSISTANT, content="Mocked streamed chat", raw={}
+                ),
+                delta="chat",
+                raw={},
+            ),
+        ]
+    )
+
+    with patch.object(mock_perplexity_llm, "_stream_chat", mock_stream_chat):
+        stream = mock_perplexity_llm._stream_chat(messages)
+        # full_response = "".join(chunk.message.content for chunk in stream)
+        full_response = stream[-1].message.content
+
+        assert full_response == "Mocked streamed chat"
+        mock_stream_chat.assert_called_once_with(messages)
+
+
+@pytest.mark.asyncio()
+async def test_astream_chat(mock_perplexity_llm):
+    messages = [
+        ChatMessage(role=MessageRole.USER, content="Test message 1"),
+        ChatMessage(role=MessageRole.USER, content="Test message 2"),
+    ]
+    mock_astream_chat = AsyncMock(
+        return_value=[
+            ChatResponse(
+                message=ChatMessage(
+                    role=MessageRole.ASSISTANT, content="Mocked ", raw={}
+                ),
+                delta="Mocked ",
+                raw={},
+            ),
+            ChatResponse(
+                message=ChatMessage(
+                    role=MessageRole.ASSISTANT, content="Mocked streamed ", raw={}
+                ),
+                delta="streamed ",
+                raw={},
+            ),
+            ChatResponse(
+                message=ChatMessage(
+                    role=MessageRole.ASSISTANT, content="Mocked streamed chat", raw={}
+                ),
+                delta="chat",
+                raw={},
+            ),
+        ]
+    )
+
+    with patch.object(mock_perplexity_llm, "_astream_chat", mock_astream_chat):
+        stream = await mock_perplexity_llm._astream_chat(messages)
+        full_response = stream[-1].message.content
+
+        assert full_response == "Mocked streamed chat"
+        mock_astream_chat.assert_called_once_with(messages)
