@@ -67,13 +67,17 @@ nltk = ">3.8.1"  # avoids a CVE, temp until next release, should be in llama-ind
 black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 ipykernel = "^6.29.5"
-mypy = "0.991"
+mypy = "1.11.0"
+openai = "*"
+pandas = "*"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = ">=8.2.1"
 pytest-asyncio = ">=0.23.7"
 pytest-mock = ">=3.14.0"
 ruff = "0.0.292"
+tree-sitter = "0.20.0"  # 0.22 seems to break for now
+tree-sitter-languages = "1.9.1"
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
 types-protobuf = "^4.24.0.4"
