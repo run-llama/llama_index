@@ -38,7 +38,7 @@ jobs:
         with:
           # v0 makes it easy to bust the cache if needed
           # just increase the integer to start with a fresh cache
-          named-caches-hash: v3-py${{ matrix.python_version }}
+          named-caches-hash: v3-py${{ matrix.python_version }}-${{ hashFiles('./**/pyproject.toml') }}
           pants-ci-config: pants.toml
       - name: Check BUILD files
         run: |
