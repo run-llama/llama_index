@@ -531,6 +531,7 @@ nav:
           - ./examples/property_graph/property_graph_basic.ipynb
           - ./examples/property_graph/property_graph_custom_retriever.ipynb
           - ./examples/property_graph/property_graph_neo4j.ipynb
+          - ./examples/property_graph/property_graph_memgraph.ipynb
       - Query Engines:
           - ./examples/query_engine/CustomRetrievers.ipynb
           - ./examples/query_engine/JSONalyze_query_engine.ipynb
