@@ -76,8 +76,8 @@ pytest = ">=8.2.1"
 pytest-asyncio = ">=0.23.7"
 pytest-mock = ">=3.14.0"
 ruff = "0.0.292"
-tree-sitter = "0.20.0"  # 0.22 seems to break for now
-tree-sitter-languages = "1.9.1"
+tree-sitter = {python = "<3.12", version = "0.20.0"}  # 0.22 seems to break for now
+tree-sitter-languages = {python = "<3.12", version = "1.9.1"}
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
 types-protobuf = "^4.24.0.4"
