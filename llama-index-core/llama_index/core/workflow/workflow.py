@@ -10,7 +10,6 @@ from typing import (
     AsyncGenerator,
     Set,
     Tuple,
-    List,
 )
 
 from llama_index.core.instrumentation import get_dispatcher
@@ -66,7 +65,6 @@ class Workflow(metaclass=WorkflowMeta):
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
         num_concurrent_runs: Optional[int] = None,
-        checkpoint_serializer: Optional[BaseSerializer] = None,
     ) -> None:
         """Create an instance of the workflow.
 
@@ -98,8 +96,6 @@ class Workflow(metaclass=WorkflowMeta):
         # Broker machinery
         self._contexts: Set[Context] = set()
         self._stepwise_context: Optional[Context] = None
-        self._checkpoint_serializer = checkpoint_serializer or JsonSerializer()
-        self._checkpoints: Dict[str, List[Checkpoint]] = {}
         # Services management
         self._service_manager = service_manager or ServiceManager()
 
