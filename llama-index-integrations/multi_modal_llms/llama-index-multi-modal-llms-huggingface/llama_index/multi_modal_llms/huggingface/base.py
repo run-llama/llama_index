@@ -19,7 +19,7 @@ from transformers import (
     AutoConfig,
     Qwen2VLForConditionalGeneration,
     PaliGemmaForConditionalGeneration,
-    MllamaForConditionalGeneration
+    MllamaForConditionalGeneration,
 )
 from qwen_vl_utils import (
     process_vision_info,
@@ -186,7 +186,7 @@ class HuggingFaceMultiModal(MultiModalLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         raise NotImplementedError(
-            "HuggingFaceMultiModal does not support async streaming chat yet."
+            "HuggingFaceMultiModal does not support streaming chat yet."
         )
 
     async def astream_complete(
