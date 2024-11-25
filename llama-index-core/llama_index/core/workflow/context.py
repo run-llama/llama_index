@@ -49,7 +49,7 @@ class Context:
         )
         self._accepted_events: List[Tuple[str, str]] = []
         self._retval: Any = None
-        self._active_steps: Dict[str, List[Event]] = defaultdict(list)
+        self._in_progress: Dict[str, List[Event]] = defaultdict(list)
         # Streaming machinery
         self._streaming_queue: asyncio.Queue = asyncio.Queue()
         # Global data storage
@@ -111,9 +111,9 @@ class Context:
                 k: [serializer.serialize(ev) for ev in v]
                 for k, v in self._events_buffer.items()
             },
-            "active_steps": {
+            "in_progress": {
                 k: [serializer.serialize(ev) for ev in v]
-                for k, v in self._active_steps.items()
+                for k, v in self._in_progress.items()
             },
             "accepted_events": self._accepted_events,
             "broker_log": [serializer.serialize(ev) for ev in self._broker_log],
@@ -126,7 +126,7 @@ class Context:
         workflow: "Workflow",
         data: Dict[str, Any],
         serializer: Optional[BaseSerializer] = None,
-        return_active_steps: bool = True,
+        return_in_progress: bool = True,
     ) -> "Context":
         serializer = serializer or JsonSerializer()
 
@@ -144,18 +144,18 @@ class Context:
         context._accepted_events = data["accepted_events"]
         context._broker_log = [serializer.deserialize(ev) for ev in data["broker_log"]]
         context.is_running = data["is_running"]
-        if return_active_steps:
-            return_active_steps_events = data["active_steps"]
-            context._active_steps = defaultdict(list)
+        if return_in_progress:
+            return_in_progress_events = data["in_progress"]
+            context._in_progress = defaultdict(list)
         else:
-            return_active_steps_events = {}
-            context._active_steps = {
+            return_in_progress_events = {}
+            context._in_progress = {
                 k: [serializer.deserialize(ev) for ev in v]
-                for k, v in data["active_steps"].items()
+                for k, v in data["in_progress"].items()
             }
         context._queues = {
             k: context._deserialize_queue(
-                v, serializer, prefix_queue_objs=return_active_steps_events.get(k, [])
+                v, serializer, prefix_queue_objs=return_in_progress_events.get(k, [])
             )
             for k, v in data["queues"].items()
         }
@@ -179,26 +179,26 @@ class Context:
         async with self.lock:
             self._globals[key] = value
 
-    async def add_active_step(self, name: str, ev: Event) -> None:
-        """Add input event to active steps.
+    async def mark_in_progress(self, name: str, ev: Event) -> None:
+        """Add input event to in_progress dict.
 
         Args:
-            name (str): _description_
-            ev (Event): _description_
+            name (str): The name of the step that is in progress.
+            ev (Event): The input event that kicked off this step.
         """
         async with self.lock:
-            self._active_steps[name].append(ev)
+            self._in_progress[name].append(ev)
 
-    async def remove_active_step(self, name: str, ev: Event) -> None:
+    async def remove_from_in_progress(self, name: str, ev: Event) -> None:
         """Remove input event from active steps.
 
         Args:
-            name (str): _description_
-            ev (Event): _description_
+            name (str): The name of the step that has been completed.
+            ev (Event): The associated input event that kicked of this completed step.
         """
         async with self.lock:
-            events = [e for e in self._active_steps[name] if e != ev]
-            self._active_steps[name] = events
+            events = [e for e in self._in_progress[name] if e != ev]
+            self._in_progress[name] = events
 
     async def get(self, key: str, default: Optional[Any] = Ellipsis) -> Any:
         """Get the value corresponding to `key` from the Context.
