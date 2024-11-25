@@ -293,7 +293,7 @@ class Workflow(metaclass=WorkflowMeta):
 
                     # handle the return value
                     if new_ev is None:
-                        await ctx.remove_active_step(name=name, completed_ev=ev)
+                        await ctx.remove_active_step(name=name, ev=ev)
                         continue
 
                     # Store the accepted event for the drawing operations
@@ -312,7 +312,7 @@ class Workflow(metaclass=WorkflowMeta):
                                 ctx._step_event_holding = new_ev
                                 ctx._step_event_written.notify()  # shares same lock
 
-                                await ctx.remove_active_step(name=name, completed_ev=ev)
+                                await ctx.remove_active_step(name=name, ev=ev)
 
                                 # for stepwise Checkpoint after handler.run_step() call
                                 if checkpoint_callback:
@@ -324,7 +324,7 @@ class Workflow(metaclass=WorkflowMeta):
                                     )
                         else:
                             # for regular execution, Checkpoint just before firing the next event
-                            await ctx.remove_active_step(name=name, completed_ev=ev)
+                            await ctx.remove_active_step(name=name, ev=ev)
                             if checkpoint_callback:
                                 await checkpoint_callback(
                                     ctx=ctx,
