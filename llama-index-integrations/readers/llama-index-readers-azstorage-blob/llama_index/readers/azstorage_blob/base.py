@@ -7,6 +7,7 @@ A loader that fetches a file or iterates through a directory from Azure Storage 
 import logging
 import math
 import os
+from pathlib import Path
 import tempfile
 import time
 from typing import Any, Dict, List, Optional, Union
@@ -229,3 +230,9 @@ class AzStorageBlobReader(
             logger.info("Document creation starting")
 
             return self._load_documents_with_metadata(files_metadata, temp_dir)
+
+    def get_file_name(self, resource_id: str) -> str:
+        return Path(resource_id).name
+
+    def get_file_path(self, resource_id: str) -> str:
+        return resource_id

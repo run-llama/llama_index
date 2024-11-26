@@ -816,3 +816,9 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
             if len(documents) > 0:
                 yield documents
+
+    def get_file_name(self, resource_id: str) -> str:
+        return Path(resource_id).name
+
+    def get_file_path(self, resource_id: str) -> str:
+        return resource_id

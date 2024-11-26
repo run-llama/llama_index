@@ -273,3 +273,9 @@ class GCSReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin)
         except Exception as e:
             logger.error(f"Error reading file content from GCS: {e!s}")
             raise
+
+    def get_file_name(self, resource_id: str) -> str:
+        return Path(resource_id).name
+
+    def get_file_path(self, resource_id: str) -> str:
+        return resource_id

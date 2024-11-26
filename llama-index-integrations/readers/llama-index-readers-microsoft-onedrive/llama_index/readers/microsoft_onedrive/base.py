@@ -2,6 +2,7 @@
 
 import logging
 import os
+from pathlib import Path
 import tempfile
 import time
 from typing import Any, Dict, List, Optional, Union
@@ -835,3 +836,9 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
 
     async def aread_file_content(self, resource_id: str, **kwargs) -> bytes:
         return self.read_file_content(resource_id, **kwargs)
+
+    def get_file_name(self, resource_id: str) -> str:
+        return Path(resource_id).name
+
+    def get_file_path(self, resource_id: str) -> str:
+        return resource_id

@@ -689,3 +689,25 @@ class GoogleDriveReader(
             downloaded_file = self._download_file(resource_id, temp_file)
             with open(downloaded_file, "rb") as file:
                 return file.read()
+
+    def get_file_name(self, resource_id: str) -> str:
+        """Get the file name from the resource ID."""
+        from googleapiclient.discovery import build
+
+        self._creds = self._get_credentials()
+
+        service = build("drive", "v3", credentials=self._creds)
+        file = service.files().get(fileId=resource_id, supportsAllDrives=True).execute()
+        return file["name"]
+
+    def get_file_path(self, resource_id: str) -> str:
+        """Get the file path from the resource ID."""
+        from googleapiclient.discovery import build
+
+        self._creds = self._get_credentials()
+
+        service = build("drive", "v3", credentials=self._creds)
+
+        return self._get_relative_path(
+            service, file_id=resource_id, folder_id=self.folder_id
+        )

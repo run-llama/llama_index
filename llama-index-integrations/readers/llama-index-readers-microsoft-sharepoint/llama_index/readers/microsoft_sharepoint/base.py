@@ -863,3 +863,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 "An error occurred while reading file content from SharePoint: %s", exp
             )
             raise
+
+    def get_file_name(self, resource_id: str) -> str:
+        return Path(resource_id).name
+
+    def get_file_path(self, resource_id: str) -> str:
+        return resource_id

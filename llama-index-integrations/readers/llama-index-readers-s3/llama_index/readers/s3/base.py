@@ -213,3 +213,9 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
     def read_file_content(self, resource_id: str, **kwargs) -> bytes:
         simple_directory_reader = self._get_simple_directory_reader()
         return simple_directory_reader.read_file_content(Path(resource_id), **kwargs)
+
+    def get_file_name(self, resource_id: str) -> str:
+        return Path(resource_id).name
+
+    def get_file_path(self, resource_id: str) -> str:
+        return resource_id

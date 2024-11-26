@@ -378,3 +378,12 @@ class BoxReader(BoxReaderBase):
             file.downloaded_file_path = local_path
             box_files_with_path.append(file)
         return box_files_with_path
+
+    def get_file_name(self, resource_id: str) -> str:
+        box_file = get_box_files_details(
+            box_client=self._box_client, file_ids=[resource_id]
+        )
+        return box_file[0].name
+
+    def get_file_path(self, resource_id: str) -> str:
+        return self.get_file_name(resource_id)
