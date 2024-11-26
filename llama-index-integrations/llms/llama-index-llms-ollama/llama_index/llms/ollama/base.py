@@ -293,6 +293,8 @@ class Ollama(FunctionCallingLLM):
             keep_alive=self.keep_alive,
         )
 
+        response = dict(response)
+
         tool_calls = response["message"].get("tool_calls", [])
         token_counts = self._get_response_token_counts(response)
         if token_counts:
@@ -331,6 +333,8 @@ class Ollama(FunctionCallingLLM):
             for r in response:
                 if r["message"]["content"] is None:
                     continue
+
+                r = dict(r)
 
                 response_txt += r["message"]["content"]
 
@@ -376,6 +380,8 @@ class Ollama(FunctionCallingLLM):
                 if r["message"]["content"] is None:
                     continue
 
+                r = dict(r)
+
                 response_txt += r["message"]["content"]
 
                 tool_calls = r["message"].get("tool_calls", [])
@@ -412,6 +418,8 @@ class Ollama(FunctionCallingLLM):
             options=self._model_kwargs,
             keep_alive=self.keep_alive,
         )
+
+        response = dict(response)
 
         tool_calls = response["message"].get("tool_calls", [])
         token_counts = self._get_response_token_counts(response)

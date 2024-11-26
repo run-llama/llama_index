@@ -254,6 +254,7 @@ nav:
           - ./examples/embeddings/mistralai.ipynb
           - ./examples/embeddings/mixedbreadai.ipynb
           - ./examples/embeddings/modelscope.ipynb
+          - ./examples/embeddings/nebius.ipynb
           - ./examples/embeddings/nomic.ipynb
           - ./examples/embeddings/nvidia.ipynb
           - ./examples/embeddings/oci_genai.ipynb
@@ -358,6 +359,7 @@ nav:
           - ./examples/llm/modelscope.ipynb
           - ./examples/llm/monsterapi.ipynb
           - ./examples/llm/mymagic.ipynb
+          - ./examples/llm/nebius.ipynb
           - ./examples/llm/neutrino.ipynb
           - ./examples/llm/nvidia.ipynb
           - ./examples/llm/nvidia_nim.ipynb
@@ -384,7 +386,7 @@ nav:
           - ./examples/llm/qianfan.ipynb
           - ./examples/llm/rungpt.ipynb
           - ./examples/llm/sagemaker_endpoint_llm.ipynb
-          - ./examples/llm/sambanova.ipynb
+          - ./examples/llm/sambanovasystems.ipynb
           - ./examples/llm/solar.ipynb
           - ./examples/llm/together.ipynb
           - ./examples/llm/unify.ipynb
@@ -449,6 +451,7 @@ nav:
           - ./examples/multi_modal/multi_modal_retrieval.ipynb
           - ./examples/multi_modal/multi_modal_video_RAG.ipynb
           - ./examples/multi_modal/multi_modal_videorag_videodb.ipynb
+          - ./examples/multi_modal/nebius_multi_modal.ipynb
           - ./examples/multi_modal/nvidia_multi_modal.ipynb
           - ./examples/multi_modal/ollama_cookbook.ipynb
           - ./examples/multi_modal/openai_multi_modal.ipynb
@@ -528,6 +531,7 @@ nav:
           - ./examples/property_graph/property_graph_basic.ipynb
           - ./examples/property_graph/property_graph_custom_retriever.ipynb
           - ./examples/property_graph/property_graph_neo4j.ipynb
+          - ./examples/property_graph/property_graph_memgraph.ipynb
       - Query Engines:
           - ./examples/query_engine/CustomRetrievers.ipynb
           - ./examples/query_engine/JSONalyze_query_engine.ipynb
@@ -915,6 +919,7 @@ nav:
           - ./api_reference/embeddings/mistralai.md
           - ./api_reference/embeddings/mixedbreadai.md
           - ./api_reference/embeddings/modelscope.md
+          - ./api_reference/embeddings/nebius.md
           - ./api_reference/embeddings/nomic.md
           - ./api_reference/embeddings/nvidia.md
           - ./api_reference/embeddings/oci_genai.md
@@ -1024,6 +1029,7 @@ nav:
           - ./api_reference/llms/modelscope.md
           - ./api_reference/llms/monsterapi.md
           - ./api_reference/llms/mymagic.md
+          - ./api_reference/llms/nebius.md
           - ./api_reference/llms/neutrino.md
           - ./api_reference/llms/nvidia.md
           - ./api_reference/llms/nvidia_tensorrt.md
@@ -1161,6 +1167,7 @@ nav:
           - ./api_reference/multi_modal_llms/huggingface.md
           - ./api_reference/multi_modal_llms/index.md
           - ./api_reference/multi_modal_llms/mistralai.md
+          - ./api_reference/multi_modal_llms/nebius.md
           - ./api_reference/multi_modal_llms/nvidia.md
           - ./api_reference/multi_modal_llms/ollama.md
           - ./api_reference/multi_modal_llms/openai.md
@@ -1625,6 +1632,7 @@ nav:
           - ./api_reference/tools/database.md
           - ./api_reference/tools/docker_code.md
           - ./api_reference/tools/duckduckgo.md
+          - ./api_reference/tools/elevenlabs.md
           - ./api_reference/tools/exa.md
           - ./api_reference/tools/finance.md
           - ./api_reference/tools/function.md
@@ -1882,6 +1890,7 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-elasticsearch
             - ../llama-index-integrations/embeddings/llama-index-embeddings-azure-openai
             - ../llama-index-integrations/embeddings/llama-index-embeddings-text-embeddings-inference
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-nebius
             - ../llama-index-integrations/callbacks/llama-index-callbacks-uptrain
             - ../llama-index-integrations/callbacks/llama-index-callbacks-deepeval
             - ../llama-index-integrations/callbacks/llama-index-callbacks-openinference
@@ -1909,6 +1918,7 @@ plugins:
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-gemini
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-replicate-multi-modal
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-dashscope
+            - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-nebius
             - ../llama-index-integrations/agent/llama-index-agent-openai
             - ../llama-index-integrations/agent/llama-index-agent-openai-legacy
             - ../llama-index-integrations/agent/llama-index-agent-dashscope
@@ -2325,6 +2335,8 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-gitbook
             - ../llama-index-integrations/llms/llama-index-llms-siliconflow
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-nvidia
+            - ../llama-index-integrations/tools/llama-index-tools-elevenlabs
+            - ../llama-index-integrations/llms/llama-index-llms-nebius
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2500,6 +2512,7 @@ plugins:
         ./examples/embeddings/llamafile.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/llamafile/
         ./examples/embeddings/llm_rails.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/llm_rails/
         ./examples/embeddings/mistralai.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/mistralai/
+        ./examples/embeddings/nebius.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/nebius/
         ./examples/embeddings/nomic.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/nomic/
         ./examples/embeddings/ollama_embedding.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/ollama_embedding/
         ./examples/embeddings/optimum_intel.html: https://docs.llamaindex.ai/en/stable/examples/embeddings/optimum_intel/
@@ -2600,6 +2613,7 @@ plugins:
         ./examples/llm/modelscope.html: https://docs.llamaindex.ai/en/stable/examples/llm/modelscope/
         ./examples/llm/monsterapi.html: https://docs.llamaindex.ai/en/stable/examples/llm/monsterapi/
         ./examples/llm/mymagic.html: https://docs.llamaindex.ai/en/stable/examples/llm/mymagic/
+        ./examples/llm/nebius.html: https://docs.llamaindex.ai/en/stable/examples/llm/nebius/
         ./examples/llm/neutrino.html: https://docs.llamaindex.ai/en/stable/examples/llm/neutrino/
         ./examples/llm/nvidia_tensorrt.html: https://docs.llamaindex.ai/en/stable/examples/llm/nvidia_tensorrt/
         ./examples/llm/nvidia_triton.html: https://docs.llamaindex.ai/en/stable/examples/llm/nvidia_triton/
@@ -2654,6 +2668,7 @@ plugins:
         ./examples/multi_modal/multi_modal_pydantic.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/multi_modal_pydantic/
         ./examples/multi_modal/multi_modal_retrieval.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/multi_modal_retrieval/
         ./examples/multi_modal/multi_modal_video_RAG.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/multi_modal_video_RAG/
+        ./examples/multi_modal/nebius_multi_modal.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/nebius_multi_modal/
         ./examples/multi_modal/ollama_cookbook.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/ollama_cookbook/
         ./examples/multi_modal/openai_multi_modal.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/openai_multi_modal/
         ./examples/multi_modal/replicate_multi_modal.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/replicate_multi_modal/
