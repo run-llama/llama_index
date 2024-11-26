@@ -38,9 +38,9 @@ jobs:
 
       - name: Install pants
         run: |
-          curl -L -O https://pantsbuild.github.io/setup/pants
-          chmod +x pants
-          echo "${PWD}" >> $GITHUB_PATH
+          curl --proto '=https' --tlsv1.2 -fsSL https://static.pantsbuild.org/setup/get-pants.sh
+          chmod +x get-pants.sh
+          ./get-pants.sh
 
       - name: Check BUILD files
         run: |
