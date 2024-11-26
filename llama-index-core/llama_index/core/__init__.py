@@ -160,3 +160,5 @@ SQLContextBuilder = SQLDocumentContextBuilder
 
 # global tokenizer
 global_tokenizer: Optional[Callable[[str], list]] = None
+
+print("REVERT THIS LINE")
