@@ -40,7 +40,7 @@ jobs:
         run: |
           curl -L -O https://pantsbuild.github.io/setup/pants
           chmod +x pants
-          echo "${HOME}" >> $GITHUB_PATH
+          echo "${PWD}" >> $GITHUB_PATH
 
       - name: Check BUILD files
         run: |
