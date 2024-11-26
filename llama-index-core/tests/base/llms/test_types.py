@@ -78,7 +78,7 @@ def test_serializer():
             "some_list": ["a", "b", "c"],
             "some_object": {"some_field": ""},
         },
-        "blocks": [{"text": "test content"}],
+        "blocks": [{"block_type": "text", "text": "test content"}],
     }
 
 
@@ -91,6 +91,6 @@ def test_legacy_roundtrip():
     m = ChatMessage(**legacy_message)
     assert m.model_dump() == {
         "additional_kwargs": {},
-        "blocks": [{"text": "foo"}],
+        "blocks": [{"block_type": "text", "text": "foo"}],
         "role": MessageRole.USER,
     }
