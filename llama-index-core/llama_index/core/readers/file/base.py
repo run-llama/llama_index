@@ -489,10 +489,12 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             **kwargs,
         )
 
-    def read_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
+    def read_file_content(self, resource_id: str, **kwargs: Any) -> bytes:
         """Read file content."""
         fs: fsspec.AbstractFileSystem = kwargs.get("fs", self.fs)
-        with fs.open(input_file, errors=self.errors, encoding=self.encoding) as f:
+        with fs.open(
+            Path(resource_id), errors=self.errors, encoding=self.encoding
+        ) as f:
             return f.read()
 
     @staticmethod
