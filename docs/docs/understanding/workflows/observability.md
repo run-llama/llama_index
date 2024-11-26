@@ -136,6 +136,29 @@ draw_most_recent_execution(w, filename="last_execution.html")
 
 Note that instead of passing the class name you are passing the instance of the workflow, `w`.
 
+## Checkpointing
+
+Full workflow executions may end up taking a lot of time, and its often the case that only a few steps at a time need to be debugged and observed. To help with speed up Workflow development cycles, the `WorkflowCheckpointer` object wraps a `Workflow` and creates and stores `Checkpoint`'s upon every step completion of a run. These checkpoints can be viewed, inspected and chosen as the starting point for future run's.
+
+```python
+from llama_index.core.workflow.checkpointer import WorkflowCheckpointer
+
+w = ConcurrentFlow()
+w_ckptr = WorkflowCheckpointer(workflow=w)
+
+# run the workflow via w_ckptr to get checkpoints
+handler = w_cptr.run()
+await handler
+
+# view checkpoints of the last run
+w_ckptr.checkpoints[handler.run_id]
+
+# run from a previous ckpt
+ckpt = w_ckptr.checkpoints[handler.run_id][0]
+handler = w_ckptr.run_from(checkpoint=ckpt)
+await handler
+```
+
 ## Third party tools
 
 You can also use any of the third-party tools for visualizing and debugging that we support, such as [Arize](https://docs.arize.com/arize/large-language-models/tracing/auto-instrumentation/llamaindex).

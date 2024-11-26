@@ -504,6 +504,29 @@ handler = w.run(ctx=handler.ctx)
 result = await handler
 ```
 
+## Checkpointing Workflows
+
+Workflow runs can also be made to create and store checkpoints upon every step completion via the `WorfklowCheckpointer` object. These checkpoints can be then be used as the starting points for future runs, which can be a helpful feature during the development (and debugging) of your Workflow.
+
+```python
+from llama_index.core.workflow import WorkflowCheckpointer
+
+w = JokeFlow(...)
+w_cptr = WorkflowCheckpointer(workflow=w)
+
+# to checkpoint a run, use the `run` method from w_cptr
+handler = w_cptr.run(topic="Pirates")
+await handler
+
+# to view the stored checkpoints of this run
+w_cptr.checkpoints[handler.run_id]
+
+# to run from one of the checkpoints, use `run_from` method
+ckpt = w_cptr.checkpoints[handler.run_id][0]
+handler = w_cptr.run_from(topic="Ships")
+await handler
+```
+
 ## Deploying a Workflow
 
 You can deploy a workflow as a multi-agent service with [llama_deploy](../../module_guides/workflow/llama_deploy) ([repo](https://github.com/run-llama/llama_deploy)). Each agent service is orchestrated via a control plane and communicates via a message queue. Deploy locally or on Kubernetes.
@@ -541,6 +564,7 @@ workflow, in this case to improve structured output through reflection.
 - [Query Planning with Workflows](../../examples/workflow/planning_workflow.ipynb) is an example of a workflow
 that plans a query by breaking it down into smaller items, and executing those smaller items. It highlights how
 to stream events from a workflow, execute steps in parallel, and looping until a condition is met.
+- [Checkpointing Workflows](../../examples/workflow/checkpointing_workflows.ipynb) is a more exhaustive demonstration of how to make full use of `WorkflowCheckpointer` to checkpoint Workflow runs.
 
 Last but not least, a few more advanced use cases that demonstrate how workflows can be extremely handy if you need
 to quickly implement prototypes, for example from literature:
