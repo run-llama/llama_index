@@ -15,6 +15,7 @@ from typing import (
     TYPE_CHECKING,
     Type,
     Awaitable,
+    Set,
 )
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.context_serializers import BaseSerializer, JsonSerializer
@@ -58,29 +59,29 @@ class WorkflowCheckpointer:
         self._lock: asyncio.Lock = asyncio.Lock()
 
         self.workflow = workflow
-        self.checkpoints_config: Dict[str, bool] = {
-            k: True for k in workflow._get_steps() if k != "_done"
+        self.enabled_checkpoints: Set[str] = {
+            k for k in workflow._get_steps() if k != "_done"
         }
         for step_name in disabled_steps:
             self.disable_checkpoint(step_name)
 
-    def enable_checkpoint(self, step: str) -> Dict[str, bool]:
+    def enable_checkpoint(self, step: str) -> None:
         """Enable checkpointing after the completion of the specified step."""
-        try:
-            self.checkpoints_config[step] = True
-        except KeyError:
+        if step not in self.workflow._get_steps():
             msg = f"This workflow does not contain a step with name {step}"
             raise WorkflowStepDoesNotExistError(msg)
-        return {k: self.checkpoints_config[k] for k in [step]}
 
-    def disable_checkpoint(self, step: str) -> Dict[str, bool]:
+        self.enabled_checkpoints.add(step)
+
+    def disable_checkpoint(self, step: str) -> None:
         """Disable checkpointing after the completion of the specified step."""
-        try:
-            self.checkpoints_config[step] = False
-        except KeyError:
+        if step not in self.workflow._get_steps():
             msg = f"This workflow does not contain a step with name {step}"
             raise WorkflowStepDoesNotExistError(msg)
-        return {k: self.checkpoints_config[k] for k in [step]}
+        try:
+            self.enabled_checkpoints.remove(step)
+        except KeyError:
+            pass
 
     def generate_run_id(self) -> str:
         return str(uuid.uuid4())
@@ -106,9 +107,6 @@ class WorkflowCheckpointer:
     def new_checkpoint_callback_for_run(self) -> CheckpointCallback:
         """Closure to generate a new `CheckpointCallback` with a unique run-id."""
         run_id = self.generate_run_id()
-        enabled_steps = [
-            step for step, enabled in self.checkpoints_config.items() if enabled
-        ]
 
         async def _create_checkpoint(
             last_completed_step: Optional[str],
@@ -117,7 +115,7 @@ class WorkflowCheckpointer:
             ctx: Context,
         ) -> None:
             """Build a checkpoint around the last completed step."""
-            if last_completed_step not in enabled_steps:
+            if last_completed_step not in self.enabled_checkpoints:
                 return
 
             checkpoint = Checkpoint(
