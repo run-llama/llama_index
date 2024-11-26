@@ -926,8 +926,10 @@ class OpenAI(FunctionCallingLLM):
     ) -> BaseModel:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
+        all_kwargs = {**llm_kwargs, **kwargs}
+
         llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
         )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
@@ -939,8 +941,10 @@ class OpenAI(FunctionCallingLLM):
     ) -> BaseModel:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
+        all_kwargs = {**llm_kwargs, **kwargs}
+
         llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
         )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
@@ -952,8 +956,10 @@ class OpenAI(FunctionCallingLLM):
     ) -> Generator[Union[Model, List[Model]], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
+        all_kwargs = {**llm_kwargs, **kwargs}
+
         llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
         )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
@@ -965,8 +971,10 @@ class OpenAI(FunctionCallingLLM):
     ) -> Generator[Union[Model, List[Model]], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
+        all_kwargs = {**llm_kwargs, **kwargs}
+
         llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
+            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
         )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
