@@ -38,7 +38,7 @@ jobs:
 
       - name: Install pants
         run: |
-          curl --proto '=https' --tlsv1.2 -fsSL https://static.pantsbuild.org/setup/get-pants.sh
+          curl --proto '=https' --tlsv1.2 -fsSLO https://static.pantsbuild.org/setup/get-pants.sh
           chmod +x get-pants.sh
           ./get-pants.sh
 
