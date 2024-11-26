@@ -81,7 +81,7 @@ try:
                 text: List[str],
                 metadata: Optional[List[dict]],
                 embedding_data: Iterable[str],
-                embedding_tensor: str,
+                embedding_tensor: Optional[str] = None,
                 embedding_function: Optional[Callable] = None,
                 return_ids: bool = False,
                 **tensors: Any,
@@ -170,7 +170,6 @@ try:
                 limit_clause = "" if k is None else f"LIMIT {k}"
 
                 query = f"SELECT {column_list} {where_clause} {order_by_clause} {limit_clause}"
-                print(">>>>>>>>>>>>>", query)
                 view = self.ds.query(query)
                 return self.__view_to_docs(view)
 
@@ -210,18 +209,14 @@ try:
                 return docs
 
             def __metric_to_function(self, metric: str) -> str:
-                if (
-                    metric is None
-                    or metric == "cosine"
-                    or metric == "cosine_similarity"
-                ):
+                if metric is None or metric == "cos" or metric == "cosine_similarity":
                     return "cosine_similarity"
                 elif metric == "l2" or metric == "l2_norm":
                     return "l2_norm"
                 else:
                     raise ValueError(
                         f"Unknown metric: {metric}, should be one of "
-                        "['cosine', 'cosine_similarity', 'l2', 'l2_norm']"
+                        "['cos', 'cosine_similarity', 'l2', 'l2_norm']"
                     )
 
             def __generate_where_clause(self, filter: Dict[str, Any]) -> str:
@@ -473,16 +468,28 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
             id_.append(node.node_id)
             text.append(node.get_content(metadata_mode=MetadataMode.NONE))
 
-        kwargs = {self._id_tensor_name: id_}
+        if DEEPLAKE_V4:
+            kwargs = {self._id_tensor_name: id_}
 
-        return self.vectorstore.add(
-            embedding_data=embedding,
-            metadata=metadata,
-            embedding_tensor="embedding",
-            text=text,
-            return_ids=True,
-            **kwargs,
-        )
+            return self.vectorstore.add(
+                embedding_data=embedding,
+                embedding_tensor="embedding",
+                metadata=metadata,
+                text=text,
+                return_ids=True,
+                **kwargs,
+            )
+        else:
+            kwargs = {
+                "embedding": embedding,
+                "metadata": metadata,
+                self._id_tensor_name: id_,
+                "text": text,
+            }
+            return self.vectorstore.add(
+                return_ids=True,
+                **kwargs,
+            )
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -514,7 +521,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
             embedding=query_embedding,
             exec_option=exec_option,
             k=query.similarity_top_k,
-            distance_metric="cosine_similarity",
+            distance_metric="cos",
             filter=query.filters,
             return_tensors=None,
             deep_memory=deep_memory,
