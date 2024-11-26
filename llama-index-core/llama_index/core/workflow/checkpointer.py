@@ -49,12 +49,29 @@ class Checkpoint(BaseModel):
 
 
 class WorkflowCheckpointer:
+    """An object that creates and maintain's checkpoints during a Workflow run.
+
+    This checkpoint manager object works with multiple run's of a Workflow instance
+    or from several different instances. Specified checkpoints can also be used
+    as the starting point for a new Workflow run. Note that checkpoints are stored
+    at the end of every step (with the exception of the _done step) for the attached
+    Workflow.
+    """
+
     def __init__(
         self,
         workflow: "Workflow",
         checkpoint_serializer: Optional[BaseSerializer] = None,
         disabled_steps: List[str] = [],
     ):
+        """Create a WorkflowCheckpointer object.
+
+        Args:
+            workflow (Workflow): The wrapped workflow.
+            checkpoint_serializer (Optional[BaseSerializer], optional): The serializer to use
+                for serializing associated `Context` of a Workflow run. Defaults to None.
+            disabled_steps (List[str], optional): Steps for which to disable checkpointing. Defaults to [].
+        """
         self._checkpoints: Dict[str, List[Checkpoint]] = {}
         self._checkpoint_serializer = checkpoint_serializer or JsonSerializer()
         self._lock: asyncio.Lock = asyncio.Lock()
