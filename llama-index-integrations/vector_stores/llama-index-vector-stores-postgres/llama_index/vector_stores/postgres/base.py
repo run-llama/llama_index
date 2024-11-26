@@ -341,7 +341,11 @@ class PGVectorStore(BasePydanticVectorStore):
         )
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
-    def _create_schema_if_not_exists(self) -> None:
+    def _create_schema_if_not_exists(self) -> bool:
+        """
+        Create the schema if it does not exist.
+        Returns True if the schema was created, False if it already existed.
+        """
         if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", self.schema_name):
             raise ValueError(f"Invalid schema_name: {self.schema_name}")
         with self._session() as session, session.begin():
@@ -352,7 +356,8 @@ class PGVectorStore(BasePydanticVectorStore):
             result = session.execute(check_schema_statement).fetchone()
 
             # If the schema does not exist, then create it
-            if not result:
+            schema_doesnt_exist = result is None
+            if schema_doesnt_exist:
                 create_schema_statement = sqlalchemy.text(
                     # DDL won't tolerate quoted string literal here for schema_name,
                     # so use a format string to embed the schema_name directly, instead of a param.
@@ -361,6 +366,7 @@ class PGVectorStore(BasePydanticVectorStore):
                 session.execute(create_schema_statement)
 
             session.commit()
+            return schema_doesnt_exist
 
     def _create_tables_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
@@ -402,8 +408,11 @@ class PGVectorStore(BasePydanticVectorStore):
         if not self._is_initialized:
             self._connect()
             if self.perform_setup:
+                schema_created = self._create_schema_if_not_exists()
+                if not schema_created:
+                    self._is_initialized = True
+                    return  # Skip table creation if schema already existed
                 self._create_extension()
-                self._create_schema_if_not_exists()
                 self._create_tables_if_not_exists()
                 if self.hnsw_kwargs is not None:
                     self._create_hnsw_index()

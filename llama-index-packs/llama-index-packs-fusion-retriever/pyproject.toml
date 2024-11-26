@@ -30,13 +30,13 @@ license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-packs-fusion-retriever"
 readme = "README.md"
-version = "0.3.0"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 rank-bm25 = "^0.2.2"
-llama-index-retrievers-bm25 = "^0.3.0"
-llama-index-core = "^0.11.0"
+llama-index-retrievers-bm25 = "^0.5.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

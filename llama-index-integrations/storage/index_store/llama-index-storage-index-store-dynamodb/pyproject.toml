@@ -27,12 +27,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-storage-index-store-dynamodb-store"
 readme = "README.md"
-version = "0.3.1"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-index-storage-kvstore-dynamodb = "^0.2.0"
-llama-index-core = "^0.11.0"
+python = ">=3.9,<4.0"
+llama-index-storage-kvstore-dynamodb = "^0.3.0"
+llama-index-core = "^0.12.0"
 boto3 = "^1.35.0"
 
 [tool.poetry.group.dev.dependencies]
