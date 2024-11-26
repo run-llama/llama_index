@@ -30,6 +30,7 @@ if TYPE_CHECKING:  # pragma: no cover
 class CheckpointCallback(Protocol):
     def __call__(
         self,
+        run_id: str,
         last_completed_step: Optional[str],
         input_ev: Optional[Event],
         output_ev: Event,
@@ -83,9 +84,6 @@ class WorkflowCheckpointer:
         except KeyError:
             pass
 
-    def generate_run_id(self) -> str:
-        return str(uuid.uuid4())
-
     def run(self, **kwargs: Any) -> WorkflowHandler:
         """Run the workflow with checkpointing."""
         return self.workflow.run(
@@ -108,9 +106,9 @@ class WorkflowCheckpointer:
 
     def new_checkpoint_callback_for_run(self) -> CheckpointCallback:
         """Closure to generate a new `CheckpointCallback` with a unique run-id."""
-        run_id = self.generate_run_id()
 
         async def _create_checkpoint(
+            run_id: str,
             last_completed_step: Optional[str],
             input_ev: Optional[Event],
             output_ev: Event,

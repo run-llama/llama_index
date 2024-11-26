@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import time
+import uuid
 import warnings
 from typing import (
     Any,
@@ -173,11 +174,12 @@ class Workflow(metaclass=WorkflowMeta):
         stepwise: bool = False,
         ctx: Optional[Context] = None,
         checkpoint_callback: Optional[CheckpointCallback] = None,
-    ) -> Context:
+    ) -> Tuple[Context, str]:
         """Sets up the queues and tasks for each declared step.
 
         This method also launches each step as an async task.
         """
+        run_id = str(uuid.uuid4())
         if ctx is None:
             ctx = Context(self, stepwise=stepwise)
             self._contexts.add(ctx)
@@ -313,6 +315,7 @@ class Workflow(metaclass=WorkflowMeta):
                                 # for stepwise Checkpoint after handler.run_step() call
                                 if checkpoint_callback:
                                     await checkpoint_callback(
+                                        run_id=run_id,
                                         ctx=ctx,
                                         last_completed_step=name,
                                         input_ev=ev,
@@ -323,6 +326,7 @@ class Workflow(metaclass=WorkflowMeta):
                             await ctx.remove_from_in_progress(name=name, ev=ev)
                             if checkpoint_callback:
                                 await checkpoint_callback(
+                                    run_id=run_id,
                                     ctx=ctx,
                                     last_completed_step=name,
                                     input_ev=ev,
@@ -349,7 +353,7 @@ class Workflow(metaclass=WorkflowMeta):
                 )
             )
 
-        return ctx
+        return ctx, run_id
 
     def send_event(self, message: Event, step: Optional[str] = None) -> None:
         msg = (
@@ -384,11 +388,11 @@ class Workflow(metaclass=WorkflowMeta):
             )
 
         # Start the machinery in a new Context or use the provided one
-        ctx = self._start(
+        ctx, run_id = self._start(
             ctx=ctx, stepwise=stepwise, checkpoint_callback=checkpoint_callback
         )
 
-        result = WorkflowHandler(ctx=ctx)
+        result = WorkflowHandler(ctx=ctx, run_id=run_id)
 
         async def _run_workflow() -> None:
             if self._sem:

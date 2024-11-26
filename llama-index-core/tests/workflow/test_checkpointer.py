@@ -29,8 +29,9 @@ async def test_create_checkpoint(workflow_checkpointer: WorkflowCheckpointer):
     ctx = Context(workflow=workflow_checkpointer.workflow)
     checkpointer = workflow_checkpointer.new_checkpoint_callback_for_run()
 
-    # execute checkpoint asynccallable
+    # execute checkpoint async callable
     await checkpointer(
+        run_id="42",
         last_completed_step="start_step",
         input_ev=incoming_ev,
         output_ev=output_ev,
@@ -161,7 +162,7 @@ async def test_run_from_checkpoint(workflow_checkpointer: WorkflowCheckpointer):
 
 
 @pytest.mark.asyncio()
-@patch("llama_index.core.workflow.checkpointer.uuid")
+@patch("llama_index.core.workflow.workflow.uuid")
 async def test_checkpointer_with_stepwise(
     mock_uuid: MagicMock,
     workflow_checkpointer: WorkflowCheckpointer,
@@ -212,30 +213,27 @@ async def test_checkpointer_with_stepwise(
 
 
 @pytest.mark.asyncio()
-@patch("llama_index.core.workflow.checkpointer.uuid")
+@patch("llama_index.core.workflow.workflow.uuid")
 async def test_disable_and_enable_checkpoints(
     mock_uuid: MagicMock,
     workflow_checkpointer: WorkflowCheckpointer,
 ):
-    # disable checkpoint at middle_step
-    first_run_id = "42"
-    mock_uuid.uuid4.return_value = first_run_id
-    workflow_checkpointer.disable_checkpoint("middle_step")
+    run_ids = ["42", "84"]
+    mock_uuid.uuid4.side_effect = run_ids
 
+    # disable checkpoint at middle_step
+    workflow_checkpointer.disable_checkpoint("middle_step")
     handler = workflow_checkpointer.run()
     await handler
 
     # enable checkpoint at middle_step
-    second_run_id = "84"
-    mock_uuid.uuid4.return_value = second_run_id
     workflow_checkpointer.enable_checkpoint("middle_step")
-
     handler = workflow_checkpointer.run()
     await handler
 
     assert [
-        c.last_completed_step for c in workflow_checkpointer.checkpoints[first_run_id]
+        c.last_completed_step for c in workflow_checkpointer.checkpoints[run_ids[0]]
     ] == ["start_step", "end_step"]
     assert [
-        c.last_completed_step for c in workflow_checkpointer.checkpoints[second_run_id]
+        c.last_completed_step for c in workflow_checkpointer.checkpoints[run_ids[1]]
     ] == ["start_step", "middle_step", "end_step"]
