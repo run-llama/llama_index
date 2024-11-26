@@ -46,6 +46,30 @@ class FileSystemReaderMixin(ABC):
         """
         return self.read_file_content(resource_id, **kwargs)
 
+    @abstractmethod
+    def get_file_name(self, resource_id: str) -> str:
+        """
+        Get the file name from the resource ID.
+        """
+
+    async def aget_file_name(self, resource_id: str) -> str:
+        """
+        Get the file name from the resource ID asynchronously.
+        """
+        return self.get_file_name(resource_id)
+
+    @abstractmethod
+    def get_file_path(self, resource_id: str) -> str:
+        """
+        Get the file path from the resource ID.
+        """
+
+    async def aget_file_path(self, resource_id: str) -> str:
+        """
+        Get the file path from the resource ID asynchronously.
+        """
+        return self.get_file_path(resource_id)
+
 
 def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
     try:
