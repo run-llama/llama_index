@@ -766,7 +766,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
                 recursive=recursive,
                 userprincipalname=userprincipalname,
             )
-            return [payload.resource_info["file_path"] for payload in payloads]
+            return [str(payload.resource_info["file_path"]) for payload in payloads]
         except Exception as e:
             logger.error(
                 f"An error occurred while listing resources: {e}", exc_info=True

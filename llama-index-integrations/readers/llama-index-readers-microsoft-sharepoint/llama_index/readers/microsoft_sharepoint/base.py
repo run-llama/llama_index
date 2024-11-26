@@ -688,7 +688,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         sharepoint_folder_id: Optional[str] = None,
         sharepoint_site_id: Optional[str] = None,
         recursive: bool = True,
-    ) -> List[Path]:
+    ) -> List[str]:
         """
         Lists the files in the specified folder in the SharePoint site.
 
@@ -738,11 +738,11 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                     recursive,
                     os.path.join(sharepoint_site_name, sharepoint_folder_path),
                 )
-                file_paths.extend(folder_contents)
+                file_paths.extend([str(path) for path in folder_contents])
             else:
                 # Fetch drive contents
                 drive_contents = self._list_drive_contents()
-                file_paths.extend(drive_contents)
+                file_paths.extend([str(path) for path in drive_contents])
         except Exception as exp:
             logger.error("An error occurred while listing files in SharePoint: %s", exp)
             raise
