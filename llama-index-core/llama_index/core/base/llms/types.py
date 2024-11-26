@@ -1,35 +1,30 @@
+from __future__ import annotations
+
 import base64
-import requests
 from enum import Enum
 from io import BytesIO
 from typing import (
+    Annotated,
     Any,
     AsyncGenerator,
-    Dict,
     Generator,
+    List,
     Literal,
     Optional,
     Union,
-    List,
-    Any,
 )
+
+import requests
+from typing_extensions import Self
 
 from llama_index.core.bridge.pydantic import (
     BaseModel,
-    Field,
     ConfigDict,
+    Field,
     field_serializer,
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.schema import ImageType
-
-try:
-    from pydantic import BaseModel as V2BaseModel
-    from pydantic.v1 import BaseModel as V1BaseModel
-except ImportError:
-    from pydantic import BaseModel as V2BaseModel
-
-    V1BaseModel = V2BaseModel  # type: ignore
 
 
 class MessageRole(str, Enum):
@@ -44,21 +39,13 @@ class MessageRole(str, Enum):
     MODEL = "model"
 
 
-# ===== Generic Model Input - Chat =====
-class ContentBlockTypes(str, Enum):
-    TEXT = "text"
-    IMAGE = "image"
-
-
 class TextBlock(BaseModel):
-    type: Literal[ContentBlockTypes.TEXT] = ContentBlockTypes.TEXT
-
+    block_type: Literal["text"] = "text"
     text: str
 
 
 class ImageBlock(BaseModel):
-    type: Literal[ContentBlockTypes.IMAGE] = ContentBlockTypes.IMAGE
-
+    block_type: Literal["image"] = "image"
     image: Optional[str] = None
     image_path: Optional[str] = None
     image_url: Optional[str] = None
@@ -78,12 +65,58 @@ class ImageBlock(BaseModel):
             raise ValueError("No image found in the chat message!")
 
 
+ContentBlock = Annotated[
+    Union[TextBlock, ImageBlock], Field(discriminator="block_type")
+]
+
+
 class ChatMessage(BaseModel):
     """Chat message."""
 
     role: MessageRole = MessageRole.USER
-    content: Optional[Any] = ""
-    additional_kwargs: dict = Field(default_factory=dict)
+    additional_kwargs: dict[str, Any] = Field(default_factory=dict)
+    blocks: list[ContentBlock] = Field(default_factory=list)
+
+    def __init__(self, /, content: Any | None = None, **data: Any) -> None:
+        """Keeps backward compatibility with the old `content` field.
+
+        If content was passed and contained text, store a single TextBlock.
+        If content was passed and it was a list, assume it's a list of content blocks and store it.
+        """
+        if content is not None:
+            if isinstance(content, str):
+                data["blocks"] = [TextBlock(text=content)]
+            elif isinstance(content, list):
+                data["blocks"] = content
+
+        super().__init__(**data)
+
+    @property
+    def content(self) -> str | None:
+        """Keeps backward compatibility with the old `content` field.
+
+        Returns:
+            The block content if there's a single TextBlock, an empty string otherwise.
+        """
+        if len(self.blocks) == 1 and isinstance(self.blocks[0], TextBlock):
+            return self.blocks[0].text
+        return None
+
+    @content.setter
+    def content(self, content: str) -> None:
+        """Keeps backward compatibility with the old `content` field.
+
+        Raises:
+            ValueError: if blocks contains more than a block, or a block that's not TextBlock.
+        """
+        if not self.blocks:
+            self.blocks = [TextBlock(text=content)]
+        elif len(self.blocks) == 1 and isinstance(self.blocks[0], TextBlock):
+            self.blocks = [TextBlock(text=content)]
+        else:
+            raise ValueError(
+                "ChatMessage contains multiple blocks, use 'ChatMessage.blocks' instead."
+            )
 
     def __str__(self) -> str:
         return f"{self.role.value}: {self.content}"
@@ -94,13 +127,13 @@ class ChatMessage(BaseModel):
         content: str,
         role: Union[MessageRole, str] = MessageRole.USER,
         **kwargs: Any,
-    ) -> "ChatMessage":
+    ) -> Self:
         if isinstance(role, str):
             role = MessageRole(role)
-        return cls(role=role, content=content, **kwargs)
+        return cls(role=role, blocks=[TextBlock(text=content)], **kwargs)
 
     def _recursive_serialization(self, value: Any) -> Any:
-        if isinstance(value, V2BaseModel):
+        if isinstance(value, BaseModel):
             value.model_rebuild()  # ensures all fields are initialized and serializable
             return value.model_dump()  # type: ignore
         if isinstance(value, dict):
@@ -115,9 +148,6 @@ class ChatMessage(BaseModel):
     @field_serializer("additional_kwargs", check_fields=False)
     def serialize_additional_kwargs(self, value: Any, _info: Any) -> Any:
         return self._recursive_serialization(value)
-
-    def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        return self.model_dump(**kwargs)
 
 
 class LogProb(BaseModel):

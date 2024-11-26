@@ -1,5 +1,56 @@
 # ChangeLog
 
+## [2024-11-26]
+
+### `llama-index-core` [0.12.2]
+
+- improve traceback logging for workflows (#17040)
+- Initial version of checkpointing for Workflows (#17006)
+- Fix base component tests (#17062)
+- mark code splitter tests as optional (#17060)
+- update contributing guide and dev deps (#17051)
+- fix Handling of WorkflowDone exception (#17047)
+
+### `llama-index-embeddings-vertex` [0.3.1]
+
+- remove pyarrow from vertex deps (#16997)
+
+### `llama-index-llms-ibm` [0.3.1]
+
+- IBM watsonx.ai acomplete & achat integration (#17034)
+
+### `llama-index-llms-openai` [0.3.2]
+
+- fixes tool_choice in certain scenarios for openai (#17058)
+
+### `llama-index-llms-perplexity` [0.3.1]
+
+- Fix: update perplexity models, add unit tests and minor fixes (#17045)
+
+### `llama-index-llms-vertex` [0.4.1]
+
+- remove pyarrow from vertex deps (#16997)
+
+### `llama-index-multi-modal-llms-huggingface` [0.2.1]
+
+- Add stream_chat and conditionally set AutoModelClass to MllamaForConditionalGeneration (#17031)
+
+### `llama-index-readers-box` [0.3.1]
+
+- Fix box api - mypy breakage (#17061)
+
+### `llama-index-vector-stores-deeplake` [0.3.2]
+
+- deeplake v3 backward compatibility (#17057)
+
+### `llama-index-vector-stores-mongodb` [0.6.0]
+
+- MongoDB Atlas: Adds search index commands and tests/examples of metadata filters (#15265)
+
+### `llama-index-vector-stores-postgres` [0.3.1]
+
+- check if schema exists before doing rest of init during pgvector table creation (#17063)
+
 ## [2024-11-20]
 
 ### `llama-index-core` [0.12.1]
