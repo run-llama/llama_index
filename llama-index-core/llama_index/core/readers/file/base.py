@@ -23,28 +23,28 @@ from tqdm import tqdm
 
 class FileSystemReaderMixin(ABC):
     @abstractmethod
-    def read_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
+    def read_file_content(self, resource_id: str, **kwargs: Any) -> bytes:
         """
         Read the bytes content of a file.
 
         Args:
-            input_file (Path): Path to the file.
+            resource_id (str): Resource ID.
 
         Returns:
             bytes: File content.
         """
 
-    async def aread_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
+    async def aread_file_content(self, resource_id: str, **kwargs: Any) -> bytes:
         """
         Read the bytes content of a file asynchronously.
 
         Args:
-            input_file (Path): Path to the file.
+            resource_id (str): Resource ID.
 
         Returns:
             bytes: File content.
         """
-        return self.read_file_content(input_file, **kwargs)
+        return self.read_file_content(resource_id, **kwargs)
 
 
 def _try_loading_included_file_formats() -> Dict[str, Type[BaseReader]]:
