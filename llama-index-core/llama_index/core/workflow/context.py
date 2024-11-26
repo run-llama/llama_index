@@ -126,7 +126,6 @@ class Context:
         workflow: "Workflow",
         data: Dict[str, Any],
         serializer: Optional[BaseSerializer] = None,
-        return_in_progress: bool = True,
     ) -> "Context":
         serializer = serializer or JsonSerializer()
 
@@ -144,21 +143,15 @@ class Context:
         context._accepted_events = data["accepted_events"]
         context._broker_log = [serializer.deserialize(ev) for ev in data["broker_log"]]
         context.is_running = data["is_running"]
-        if return_in_progress:
-            return_in_progress_events = data["in_progress"]
-            context._in_progress = defaultdict(list)
-        else:
-            return_in_progress_events = {}
-            context._in_progress = {
-                k: [serializer.deserialize(ev) for ev in v]
-                for k, v in data["in_progress"].items()
-            }
+        # load back up whatever was in the queue as well as the events whose steps
+        # were in progress when the serialization of the Context took place
         context._queues = {
             k: context._deserialize_queue(
-                v, serializer, prefix_queue_objs=return_in_progress_events.get(k, [])
+                v, serializer, prefix_queue_objs=data["in_progress"].get(k, [])
             )
             for k, v in data["queues"].items()
         }
+        context._in_progress = defaultdict(list)
         return context
 
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:
