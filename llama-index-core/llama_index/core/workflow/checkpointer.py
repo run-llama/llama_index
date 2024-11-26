@@ -87,12 +87,14 @@ class WorkflowCheckpointer:
         return str(uuid.uuid4())
 
     def run(self, **kwargs: Any) -> WorkflowHandler:
+        """Run the workflow with checkpointing."""
         return self.workflow.run(
             checkpoint_callback=self.new_checkpoint_callback_for_run(),
             **kwargs,
         )
 
     def run_from(self, checkpoint: Checkpoint, **kwargs: Any) -> WorkflowHandler:
+        """Run the attached workflow from the specified checkpoint."""
         return self.workflow.run_from(
             checkpoint=checkpoint,
             ctx_serializer=self._checkpoint_serializer,
