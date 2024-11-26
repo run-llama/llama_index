@@ -3,7 +3,16 @@ from __future__ import annotations
 import base64
 from enum import Enum
 from io import BytesIO
-from typing import Any, AsyncGenerator, Generator, List, Optional, Union
+from typing import (
+    Annotated,
+    Any,
+    AsyncGenerator,
+    Generator,
+    List,
+    Literal,
+    Optional,
+    Union,
+)
 
 import requests
 from typing_extensions import Self
@@ -30,15 +39,13 @@ class MessageRole(str, Enum):
     MODEL = "model"
 
 
-class ContentBlock(BaseModel):
-    """Base type for message blocks."""
-
-
-class TextBlock(ContentBlock):
+class TextBlock(BaseModel):
+    block_type: Literal["text"] = "text"
     text: str
 
 
-class ImageBlock(ContentBlock):
+class ImageBlock(BaseModel):
+    block_type: Literal["image"] = "image"
     image: Optional[str] = None
     image_path: Optional[str] = None
     image_url: Optional[str] = None
@@ -56,6 +63,11 @@ class ImageBlock(ContentBlock):
             return BytesIO(response.content)
         else:
             raise ValueError("No image found in the chat message!")
+
+
+ContentBlock = Annotated[
+    Union[TextBlock, ImageBlock], Field(discriminator="block_type")
+]
 
 
 class ChatMessage(BaseModel):
@@ -137,16 +149,16 @@ class ChatMessage(BaseModel):
     def serialize_additional_kwargs(self, value: Any, _info: Any) -> Any:
         return self._recursive_serialization(value)
 
-    @field_serializer("blocks", check_fields=False)
-    def serialize_blocks(self, value: Any, _info: Any) -> Any:
-        """Serializes the 'blocks' field.
+    # @field_serializer("blocks", check_fields=False)
+    # def serialize_blocks(self, value: Any, _info: Any) -> Any:
+    #     """Serializes the 'blocks' field.
 
-        'blocks' is defined as list[ContentBlock] and Pydantic won't serialize
-        it automatically since 'ContentBlock' is the base type. We can reuse
-        the custom serialization method from additional_kwargs to explicitly
-        serialize each block item in the 'blocks' field.
-        """
-        return self._recursive_serialization(value)
+    #     'blocks' is defined as list[ContentBlock] and Pydantic won't serialize
+    #     it automatically since 'ContentBlock' is the base type. We can reuse
+    #     the custom serialization method from additional_kwargs to explicitly
+    #     serialize each block item in the 'blocks' field.
+    #     """
+    #     return self._recursive_serialization(value)
 
 
 class LogProb(BaseModel):
