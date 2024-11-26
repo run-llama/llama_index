@@ -19,8 +19,8 @@ from typing import (
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.context_serializers import BaseSerializer, JsonSerializer
 from llama_index.core.workflow.handler import WorkflowHandler
-from .events import Event
-from .errors import *
+from llama_index.core.workflow.events import Event
+from llama_index.core.workflow.errors import WorkflowStepDoesNotExistError
 
 if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
