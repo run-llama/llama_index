@@ -199,7 +199,6 @@ nav:
           - ./examples/data_connectors/NotionDemo.ipynb
           - ./examples/data_connectors/ObsidianReaderDemo.ipynb
           - ./examples/data_connectors/PathwayReaderDemo.ipynb
-          - ./examples/data_connectors/PineconeDemo.ipynb
           - ./examples/data_connectors/PreprocessReaderDemo.ipynb
           - ./examples/data_connectors/PsychicDemo.ipynb
           - ./examples/data_connectors/QdrantDemo.ipynb
@@ -530,8 +529,8 @@ nav:
           - ./examples/property_graph/property_graph_advanced.ipynb
           - ./examples/property_graph/property_graph_basic.ipynb
           - ./examples/property_graph/property_graph_custom_retriever.ipynb
-          - ./examples/property_graph/property_graph_neo4j.ipynb
           - ./examples/property_graph/property_graph_memgraph.ipynb
+          - ./examples/property_graph/property_graph_neo4j.ipynb
       - Query Engines:
           - ./examples/query_engine/CustomRetrievers.ipynb
           - ./examples/query_engine/JSONalyze_query_engine.ipynb
@@ -706,6 +705,7 @@ nav:
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
           - ./examples/workflow/auto_retrieval.ipynb
+          - ./examples/workflow/checkpointing_workflows.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
           - ./examples/workflow/function_calling_agent.ipynb

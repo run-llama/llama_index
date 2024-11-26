@@ -22,11 +22,13 @@ If you're ready to dive in, here’s a quick setup guide to get you going:
    poetry install --only dev,docs --no-root
    ```
 5. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
+
    ```bash
    pip install -e llama-index-core
    ```
 
    From there, you can install specific integrations that you want to work on:
+
    ```bash
    pip install -e llama-index-integrations/llms/llama-index-llms-openai
    ```
