@@ -847,7 +847,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             )
             raise
 
-    def read_file_content(self, input_file: Path, **kwargs) -> bytes:
+    def read_file_content(self, resource_id: str, **kwargs) -> bytes:
         try:
             access_token = self._get_access_token()
             self._site_id_with_host_name = self._get_site_id_with_host_name(
@@ -855,7 +855,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             )
             self._drive_id = self._get_drive_id()
 
-            item = self._get_item_from_path(input_file)
+            item = self._get_item_from_path(Path(resource_id))
             return self._get_file_content_by_url(item)
 
         except Exception as exp:

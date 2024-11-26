@@ -5,7 +5,6 @@ import os
 import tempfile
 import time
 from typing import Any, Dict, List, Optional, Union
-from pathlib import Path
 
 import requests
 from llama_index.core.readers import SimpleDirectoryReader
@@ -819,20 +818,20 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
     ) -> List[Document]:
         return self.load_resource(resource_id, *args, **kwargs)
 
-    def read_file_content(self, input_file: Path, **kwargs) -> bytes:
+    def read_file_content(self, resource_id: str, **kwargs) -> bytes:
         with tempfile.TemporaryDirectory() as temp_dir:
             payloads = self._get_downloaded_files_metadata(
-                file_paths=[str(input_file)], temp_dir=temp_dir, **kwargs
+                file_paths=[resource_id], temp_dir=temp_dir, **kwargs
             )
             local_file_path = next(
                 payloads.downloaded_file_path
                 for payloads in payloads
-                if payloads.resource_info["file_path"] == str(input_file)
+                if payloads.resource_info["file_path"] == resource_id
             )
             if not local_file_path:
                 raise ValueError("File was not downloaded successfully.")
             with open(local_file_path, "rb") as f:
                 return f.read()
 
-    async def aread_file_content(self, input_file: Path, **kwargs) -> bytes:
-        return self.read_file_content(input_file, **kwargs)
+    async def aread_file_content(self, resource_id: str, **kwargs) -> bytes:
+        return self.read_file_content(resource_id, **kwargs)
