@@ -17,7 +17,7 @@ DOC_PARSING_MODELS = ["solar-pro"]
 ALL_AVAILABLE_MODELS = {**CHAT_MODELS}
 
 SOLAR_TOKENIZERS = {
-    "solar-pro": "upstage/solar-pro-preview-tokenizer",
+    "solar-pro": "upstage/solar-pro-tokenizer",
     "solar-1-mini-chat": "upstage/solar-1-mini-tokenizer",
     "solar-docvision": "upstage/solar-docvision-preview-tokenizer",
 }
