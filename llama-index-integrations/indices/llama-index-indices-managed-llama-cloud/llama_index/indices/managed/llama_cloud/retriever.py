@@ -162,7 +162,7 @@ class LlamaCloudRetriever(BaseRetriever):
                     client=self._client,
                     file_id=raw_image_node.node.file_id,
                     page_index=raw_image_node.node.page_index,
-                    project_id=self.project_id,
+                    project_id=self.project.id,
                 )
                 # Convert image bytes to base64 encoded string
                 image_base64 = base64.b64encode(image_bytes).decode("utf-8")
@@ -187,7 +187,7 @@ class LlamaCloudRetriever(BaseRetriever):
                     client=self._aclient,
                     file_id=raw_image_node.node.file_id,
                     page_index=raw_image_node.node.page_index,
-                    project_id=self.project_id,
+                    project_id=self.project.id,
                 )
                 for raw_image_node in raw_image_nodes
             ]
