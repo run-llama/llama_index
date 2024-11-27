@@ -72,7 +72,7 @@ async def test_checkpoints_after_successive_runs(
 async def test_filter_checkpoints(workflow_checkpointer: WorkflowCheckpointer):
     num_runs = 2
     for _ in range(num_runs):
-        handler: WorkflowHandler = workflow_checkpointer.run(store_checkpoints=True)
+        handler: WorkflowHandler = workflow_checkpointer.run()
         await handler
 
     # filter by last complete step
@@ -139,7 +139,7 @@ async def test_checkpoints_works_with_new_instances_concurrently(
 async def test_run_from_checkpoint(workflow_checkpointer: WorkflowCheckpointer):
     num_steps = len(workflow_checkpointer.workflow._get_steps())
     num_ckpts_in_single_run = num_steps - 1
-    handler: WorkflowHandler = workflow_checkpointer.run(store_checkpoints=True)
+    handler: WorkflowHandler = workflow_checkpointer.run()
     await handler
 
     assert len(workflow_checkpointer.checkpoints) == 1
