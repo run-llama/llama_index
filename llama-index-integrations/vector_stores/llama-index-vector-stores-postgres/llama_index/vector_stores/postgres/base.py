@@ -408,7 +408,7 @@ class PGVectorStore(BasePydanticVectorStore):
             session.execute(statement)
             session.commit()
 
-    @cache # only call this once
+    @cache  # only call this once
     def _initialize(self) -> None:
         fail_on_error = self.initialization_fail_on_error
         if not self._is_initialized:
@@ -419,26 +419,26 @@ class PGVectorStore(BasePydanticVectorStore):
                 except Exception as e:
                     _logger.warning(f"PG Setup: Error creating schema: {e}")
                     if fail_on_error:
-                       raise e 
+                        raise
                 try:
                     self._create_extension()
                 except Exception as e:
                     _logger.warning(f"PG Setup: Error creating extension: {e}")
                     if fail_on_error:
-                       raise e 
+                        raise
                 try:
                     self._create_tables_if_not_exists()
                 except Exception as e:
                     _logger.warning(f"PG Setup: Error creating tables: {e}")
                     if fail_on_error:
-                       raise e 
+                        raise
                 if self.hnsw_kwargs is not None:
                     try:
                         self._create_hnsw_index()
                     except Exception as e:
                         _logger.warning(f"PG Setup: Error creating HNSW index: {e}")
                         if fail_on_error:
-                            raise e 
+                            raise
             self._is_initialized = True
 
     def _node_to_table_row(self, node: BaseNode) -> Any:
