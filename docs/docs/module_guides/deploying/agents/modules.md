@@ -2,7 +2,7 @@
 
 These guide provide an overview of how to use our agent classes.
 
-For more detailed guides on how to use specific tools, check out our [tools module guides](tools/index.md).
+For more detailed guides on how to use specific tools, check out our [tools module guides](./tools.md).
 
 ## Agent with OpenAI Models
 
