@@ -28,7 +28,7 @@ def _get_page_screenshot(
 ) -> str:
     """Get the page screenshot."""
     # TODO: this currently uses requests, should be replaced with the client
-    _response = client._client_wrapper.tpx_client.request(
+    _response = client._client_wrapper.httpx_client.request(
         "GET",
         urllib.parse.urljoin(
             f"{client._client_wrapper.get_base_url()}/",
