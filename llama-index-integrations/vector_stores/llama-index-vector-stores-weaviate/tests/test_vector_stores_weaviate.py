@@ -186,9 +186,15 @@ def test_to_weaviate_filter_with_nested_filters():
     filter = _to_weaviate_filter(filters)
     assert filter.operator == "And"
     assert len(filter.filters) == 2
+    assert filter.filters[0].target == "a"
     assert filter.filters[0].operator == "Equal"
+    assert filter.filters[0].value == 1
     assert filter.filters[1].operator == "Or"
     or_filters = filter.filters[1].filters
     assert len(or_filters) == 2
+    assert or_filters[0].target == "b"
     assert or_filters[0].operator == "Equal"
+    assert or_filters[0].value == 2
+    assert or_filters[1].target == "c"
     assert or_filters[1].operator == "GreaterThan"
+    assert or_filters[1].value == 3
