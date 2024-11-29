@@ -184,7 +184,6 @@ def test_to_weaviate_filter_with_nested_filters():
         condition=FilterCondition.AND,
     )
     filter = _to_weaviate_filter(filters)
-    print(f"{filter=}")
     assert filter.operator == "And"
     assert len(filter.filters) == 2
     assert filter.filters[0].operator == "Equal"
