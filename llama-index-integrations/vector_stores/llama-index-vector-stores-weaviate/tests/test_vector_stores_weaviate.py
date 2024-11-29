@@ -1,7 +1,5 @@
 import weaviate
 import pytest
-
-
 from llama_index.core.schema import TextNode
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 from llama_index.core.vector_stores.types import (
