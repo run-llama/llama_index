@@ -1,4 +1,3 @@
-from functools import cache
 import logging
 import re
 from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, TYPE_CHECKING
@@ -408,7 +407,6 @@ class PGVectorStore(BasePydanticVectorStore):
             session.execute(statement)
             session.commit()
 
-    @cache  # only call this once
     def _initialize(self) -> None:
         fail_on_error = self.initialization_fail_on_error
         if not self._is_initialized:
