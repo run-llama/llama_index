@@ -14,7 +14,6 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
 )
 from llama_index.vector_stores.weaviate.base import _to_weaviate_filter
-from weaviate.collections.classes.filters import _FilterOr, _FilterAnd
 
 
 def test_class():
@@ -91,48 +90,48 @@ def test_query_kwargs(vector_store):
 def test_to_weaviate_filter_with_various_operators():
     filters = MetadataFilters(filters=[MetadataFilter(key="a", value=1)])
     filter = _to_weaviate_filter(filters)
-    assert filter.target == 'a'
-    assert filter.operator == 'Equal'
+    assert filter.target == "a"
+    assert filter.operator == "Equal"
     assert filter.value == 1
 
     filters = MetadataFilters(
         filters=[MetadataFilter(key="a", value=1, operator=FilterOperator.NE)]
     )
     filter = _to_weaviate_filter(filters)
-    assert filter.target == 'a'
-    assert filter.operator == 'NotEqual'
+    assert filter.target == "a"
+    assert filter.operator == "NotEqual"
     assert filter.value == 1
 
     filters = MetadataFilters(
         filters=[MetadataFilter(key="a", value=1, operator=FilterOperator.GT)]
     )
     filter = _to_weaviate_filter(filters)
-    assert filter.target == 'a'
-    assert filter.operator == 'GreaterThan'
+    assert filter.target == "a"
+    assert filter.operator == "GreaterThan"
     assert filter.value == 1
 
     filters = MetadataFilters(
         filters=[MetadataFilter(key="a", value=1, operator=FilterOperator.GTE)]
     )
     filter = _to_weaviate_filter(filters)
-    assert filter.target == 'a'
-    assert filter.operator == 'GreaterThanEqual'
+    assert filter.target == "a"
+    assert filter.operator == "GreaterThanEqual"
     assert filter.value == 1
 
     filters = MetadataFilters(
         filters=[MetadataFilter(key="a", value=1, operator=FilterOperator.LT)]
     )
     filter = _to_weaviate_filter(filters)
-    assert filter.target == 'a'
-    assert filter.operator == 'LessThan'
+    assert filter.target == "a"
+    assert filter.operator == "LessThan"
     assert filter.value == 1
 
     filters = MetadataFilters(
         filters=[MetadataFilter(key="a", value=1, operator=FilterOperator.LTE)]
     )
     filter = _to_weaviate_filter(filters)
-    assert filter.target == 'a'
-    assert filter.operator == 'LessThanEqual'
+    assert filter.target == "a"
+    assert filter.operator == "LessThanEqual"
     assert filter.value == 1
 
 
@@ -145,13 +144,13 @@ def test_to_weaviate_filter_with_multiple_filters():
         condition=FilterCondition.AND,
     )
     filter = _to_weaviate_filter(filters)
-    assert filter.operator == 'And'
+    assert filter.operator == "And"
     assert len(filter.filters) == 2
-    assert filter.filters[0].target == 'a'
-    assert filter.filters[0].operator == 'GreaterThanEqual'
+    assert filter.filters[0].target == "a"
+    assert filter.filters[0].operator == "GreaterThanEqual"
     assert filter.filters[0].value == 1
-    assert filter.filters[1].target == 'a'
-    assert filter.filters[1].operator == 'LessThanEqual'
+    assert filter.filters[1].target == "a"
+    assert filter.filters[1].operator == "LessThanEqual"
     assert filter.filters[1].value == 10
 
     filters = MetadataFilters(
@@ -162,13 +161,13 @@ def test_to_weaviate_filter_with_multiple_filters():
         condition=FilterCondition.OR,
     )
     filter = _to_weaviate_filter(filters)
-    assert filter.operator == 'Or'
+    assert filter.operator == "Or"
     assert len(filter.filters) == 2
-    assert filter.filters[0].target == 'a'
-    assert filter.filters[0].operator == 'LessThan'
+    assert filter.filters[0].target == "a"
+    assert filter.filters[0].operator == "LessThan"
     assert filter.filters[0].value == 1
-    assert filter.filters[1].target == 'a'
-    assert filter.filters[1].operator == 'GreaterThan'
+    assert filter.filters[1].target == "a"
+    assert filter.filters[1].operator == "GreaterThan"
     assert filter.filters[1].value == 10
 
 
@@ -187,12 +186,12 @@ def test_to_weaviate_filter_with_nested_filters():
         condition=FilterCondition.AND,
     )
     filter = _to_weaviate_filter(filters)
-    print(f'{filter=}')
-    assert filter.operator == 'And'
+    print(f"{filter=}")
+    assert filter.operator == "And"
     assert len(filter.filters) == 2
-    assert filter.filters[0].operator == 'Equal'
-    assert filter.filters[1].operator == 'Or'
+    assert filter.filters[0].operator == "Equal"
+    assert filter.filters[1].operator == "Or"
     or_filters = filter.filters[1].filters
     assert len(or_filters) == 2
-    assert or_filters[0].operator == 'Equal'
-    assert or_filters[1].operator == 'GreaterThan'
+    assert or_filters[0].operator == "Equal"
+    assert or_filters[1].operator == "GreaterThan"
