@@ -259,7 +259,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             await self._redis_client_async.delete(
                 "_".join([self._prefix, str(node_id)])
             )
-    
+
     async def async_delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using the ref_doc_id.
@@ -629,7 +629,8 @@ def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
             filter_strings.append(filter_string)
     for key, value_list in filter_in_strings.items():
         values = "|".join(value_list)
-        filter_string = f"@{filter.key}:{{{tokenizer.escape(str(values))}}}"
+        filter_string = f"@{key}:{{{tokenizer.escape(str(values))}}}"
         filter_strings.append(filter_string)
-    joined_filter_strings = " & ".join(filter_strings)
+    # A space can be used for the AND operator: https://redis.io/docs/latest/develop/interact/search-and-query/query/combined/
+    joined_filter_strings = " ".join(filter_strings)
     return f"({joined_filter_strings})"
