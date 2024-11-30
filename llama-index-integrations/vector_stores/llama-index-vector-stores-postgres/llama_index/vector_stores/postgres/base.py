@@ -149,6 +149,7 @@ class PGVectorStore(BasePydanticVectorStore):
     debug: bool
     use_jsonb: bool
     create_engine_kwargs: Dict
+    initialization_fail_on_error: bool = False
 
     hnsw_kwargs: Optional[Dict[str, Any]]
 
@@ -175,6 +176,7 @@ class PGVectorStore(BasePydanticVectorStore):
         use_jsonb: bool = False,
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
         create_engine_kwargs: Optional[Dict[str, Any]] = None,
+        initialization_fail_on_error: bool = False,
     ) -> None:
         """Constructor.
 
@@ -220,6 +222,7 @@ class PGVectorStore(BasePydanticVectorStore):
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
             create_engine_kwargs=create_engine_kwargs or {},
+            initialization_fail_on_error=initialization_fail_on_error,
         )
 
         # sqlalchemy model
@@ -405,17 +408,35 @@ class PGVectorStore(BasePydanticVectorStore):
             session.commit()
 
     def _initialize(self) -> None:
+        fail_on_error = self.initialization_fail_on_error
         if not self._is_initialized:
             self._connect()
             if self.perform_setup:
-                schema_created = self._create_schema_if_not_exists()
-                if not schema_created:
-                    self._is_initialized = True
-                    return  # Skip table creation if schema already existed
-                self._create_extension()
-                self._create_tables_if_not_exists()
+                try:
+                    self._create_schema_if_not_exists()
+                except Exception as e:
+                    _logger.warning(f"PG Setup: Error creating schema: {e}")
+                    if fail_on_error:
+                        raise
+                try:
+                    self._create_extension()
+                except Exception as e:
+                    _logger.warning(f"PG Setup: Error creating extension: {e}")
+                    if fail_on_error:
+                        raise
+                try:
+                    self._create_tables_if_not_exists()
+                except Exception as e:
+                    _logger.warning(f"PG Setup: Error creating tables: {e}")
+                    if fail_on_error:
+                        raise
                 if self.hnsw_kwargs is not None:
-                    self._create_hnsw_index()
+                    try:
+                        self._create_hnsw_index()
+                    except Exception as e:
+                        _logger.warning(f"PG Setup: Error creating HNSW index: {e}")
+                        if fail_on_error:
+                            raise
             self._is_initialized = True
 
     def _node_to_table_row(self, node: BaseNode) -> Any:
