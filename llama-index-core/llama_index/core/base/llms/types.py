@@ -60,8 +60,10 @@ class ImageBlock(BaseModel):
 
     @field_validator("url", mode="after")
     @classmethod
-    def urlstr_to_anyurl(cls, url: str) -> AnyUrl:
+    def urlstr_to_anyurl(cls, url: str | AnyUrl) -> AnyUrl:
         """Store the url as Anyurl."""
+        if isinstance(url, AnyUrl):
+            return url
         return AnyUrl(url=url)
 
     def resolve_image(self) -> ImageType:

@@ -9,6 +9,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import BaseModel
 from pathlib import Path
 from unittest import mock
+from pydantic import AnyUrl
 
 
 @pytest.fixture()
@@ -123,9 +124,15 @@ def test_image_block_resolve_image_path(tmp_path: Path, png_1px: bytes):
 
 def test_image_block_resolve_image_url(png_1px):
     with mock.patch("llama_index.core.base.llms.types.requests") as mocked_req:
+        url_str = "http://example.com"
         mocked_req.get.return_value = mock.MagicMock(content=png_1px)
-        b = ImageBlock(url="http://example.com")
-        img = b.resolve_image()
+        b1 = ImageBlock(url=url_str)
+        img = b1.resolve_image()
+        assert isinstance(img, BytesIO)
+        assert img.read() == png_1px
+
+        b2 = ImageBlock(url=AnyUrl(url=url_str))
+        img = b1.resolve_image()
         assert isinstance(img, BytesIO)
         assert img.read() == png_1px
 
