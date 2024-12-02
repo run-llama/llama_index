@@ -132,6 +132,14 @@ def test_to_weaviate_filter_with_various_operators():
     assert filter.operator == "LessThanEqual"
     assert filter.value == 1
 
+    filters = MetadataFilters(
+        filters=[MetadataFilter(key="a", value=None, operator=FilterOperator.IS_EMPTY)]
+    )
+    filter = _to_weaviate_filter(filters)
+    assert filter.target == "a"
+    assert filter.operator == "IsNull"
+    assert filter.value is True
+
 
 def test_to_weaviate_filter_with_multiple_filters():
     filters = MetadataFilters(
