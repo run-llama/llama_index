@@ -105,7 +105,6 @@ def test_can_query_collection_with_complex_property_types(client):
     client.collections.delete(collection_name)
     collection = client.collections.create(
         name=collection_name,
-        # vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_contextionary(),
         properties=[
             wvc.config.Property(
                 name="text",
@@ -114,7 +113,6 @@ def test_can_query_collection_with_complex_property_types(client):
             wvc.config.Property(
                 name="array_prop",
                 data_type=wvc.config.DataType.OBJECT_ARRAY,
-                # skip_vectorization=True,
                 nested_properties=[
                     wvc.config.Property(
                         name="nested_prop",
@@ -131,19 +129,15 @@ def test_can_query_collection_with_complex_property_types(client):
     )
     arr_obj = arr.model_dump()
 
-    # collection = client.collections.get("ComplexTypeInArrayTest")
     collection.data.insert(
         arr_obj,
         vector=[1.0, 0.0, 0.0],
     )
 
-    # print(f'{collection_with_complex_properties=}')
-    # assert False
     vector_store = WeaviateVectorStore(
         weaviate_client=client,
         index_name=collection_name,
     )
-    # VectorStoreIndex.from_vector_store(vector_store)
     query = VectorStoreQuery(
         query_embedding=[1.0, 0.0, 0.0],
         similarity_top_k=2,
