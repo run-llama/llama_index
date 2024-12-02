@@ -1,4 +1,7 @@
+import weaviate.classes as wvc
+import pydantic
 import weaviate
+from typing import List
 import pytest
 from llama_index.core.schema import TextNode
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
@@ -20,9 +23,16 @@ def test_class():
 
 
 @pytest.fixture(scope="module")
-def vector_store():
-    client = weaviate.connect_to_embedded()
+def client():
+    try:
+        client = weaviate.connect_to_embedded()
+        yield client
+    finally:
+        client.close()
 
+
+@pytest.fixture(scope="module")
+def vector_store(client):
     vector_store = WeaviateVectorStore(weaviate_client=client)
 
     nodes = [
@@ -32,9 +42,7 @@ def vector_store():
 
     vector_store.add(nodes)
 
-    yield vector_store
-
-    client.close()
+    return vector_store
 
 
 def test_basic_flow(vector_store):
@@ -83,6 +91,71 @@ def test_query_kwargs(vector_store):
         max_vector_distance=0.0,
     )
     assert len(results.nodes) == 0
+
+
+def test_can_query_collection_with_complex_property_types(client):
+    class ArrayPropElement(pydantic.BaseModel):
+        nested_prop: str
+
+    class ComplexTypeInArrayTest(pydantic.BaseModel):
+        text: str
+        array_prop: List[ArrayPropElement]
+
+    collection_name = "ComplexTypeInArrayTest"
+    client.collections.delete(collection_name)
+    collection = client.collections.create(
+        name=collection_name,
+        # vectorizer_config=wvc.config.Configure.Vectorizer.text2vec_contextionary(),
+        properties=[
+            wvc.config.Property(
+                name="text",
+                data_type=wvc.config.DataType.TEXT,
+            ),
+            wvc.config.Property(
+                name="array_prop",
+                data_type=wvc.config.DataType.OBJECT_ARRAY,
+                # skip_vectorization=True,
+                nested_properties=[
+                    wvc.config.Property(
+                        name="nested_prop",
+                        data_type=wvc.config.DataType.TEXT,
+                    ),
+                ],
+            ),
+        ],
+    )
+
+    arr = ComplexTypeInArrayTest(
+        text="Text of object containing complex properties",
+        array_prop=[ArrayPropElement(nested_prop="nested_prop content")],
+    )
+    arr_obj = arr.model_dump()
+
+    # collection = client.collections.get("ComplexTypeInArrayTest")
+    collection.data.insert(
+        arr_obj,
+        vector=[1.0, 0.0, 0.0],
+    )
+
+    # print(f'{collection_with_complex_properties=}')
+    # assert False
+    vector_store = WeaviateVectorStore(
+        weaviate_client=client,
+        index_name=collection_name,
+    )
+    # VectorStoreIndex.from_vector_store(vector_store)
+    query = VectorStoreQuery(
+        query_embedding=[1.0, 0.0, 0.0],
+        similarity_top_k=2,
+        query_str="world",
+        mode=VectorStoreQueryMode.DEFAULT,
+    )
+
+    results = vector_store.query(query)
+
+    assert len(results.nodes) == 1
+    assert results.nodes[0].text == "Text of object containing complex properties"
+    assert results.similarities[0] == 1.0
 
 
 def test_to_weaviate_filter_with_various_operators():
