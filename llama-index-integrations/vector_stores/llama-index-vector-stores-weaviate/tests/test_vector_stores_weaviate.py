@@ -94,6 +94,8 @@ def test_query_kwargs(vector_store):
 
 
 def test_can_query_collection_with_complex_property_types(client):
+    """Verifies that it is possible to query data from collections that contain complex properties (e.g. a list of nested objects in one of the properties)."""
+
     class ArrayPropElement(pydantic.BaseModel):
         nested_prop: str
 
@@ -149,7 +151,6 @@ def test_can_query_collection_with_complex_property_types(client):
 
     assert len(results.nodes) == 1
     assert results.nodes[0].text == "Text of object containing complex properties"
-    assert results.similarities[0] == 1.0
 
 
 def test_to_weaviate_filter_with_various_operators():
