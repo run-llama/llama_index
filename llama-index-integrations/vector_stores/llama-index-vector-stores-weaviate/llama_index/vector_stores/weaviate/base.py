@@ -22,7 +22,6 @@ from llama_index.vector_stores.weaviate.utils import (
     add_node,
     class_schema_exists,
     create_default_schema,
-    get_all_properties,
     get_node_similarity,
     to_node,
 )
@@ -314,7 +313,6 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
-        all_properties = get_all_properties(self._client, self.index_name)
         collection = self._client.collections.get(self.index_name)
         filters = None
 
@@ -355,7 +353,6 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 limit=limit,
                 filters=filters,
                 return_metadata=return_metatada,
-                return_properties=all_properties,
                 include_vector=True,
                 **kwargs,
             )
