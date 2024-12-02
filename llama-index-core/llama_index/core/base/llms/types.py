@@ -13,16 +13,18 @@ from typing import (
     Optional,
     Union,
 )
-from pydantic import FilePath, field_validator
+
 import requests
 from typing_extensions import Self
 
 from llama_index.core.bridge.pydantic import (
+    AnyUrl,
     BaseModel,
     ConfigDict,
     Field,
+    FilePath,
     field_serializer,
-    AnyUrl,
+    field_validator,
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.schema import ImageType
