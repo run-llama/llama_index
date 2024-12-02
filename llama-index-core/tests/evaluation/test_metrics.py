@@ -159,7 +159,7 @@ def test_ap(expected_ids, retrieved_ids, expected_result):
             ["id1", "id2", "id3"],
             ["id2", "id4", "id1"],
             "linear",
-            (1/log2(2) + 1/log2(4)) / (1/log2(2) + 1/log2(3) + 1/log2(4)),
+            (1 / log2(2) + 1 / log2(4)) / (1 / log2(2) + 1 / log2(3) + 1 / log2(4)),
         ),
         # Case 3: No relevant docs retrieved
         (
@@ -187,7 +187,8 @@ def test_ap(expected_ids, retrieved_ids, expected_result):
             ["id1", "id2"],
             ["id2", "id1", "id3"],
             "exponential",
-            ((2**1-1)/log2(2) + (2**1-1)/log2(3)) / ((2**1-1)/log2(2) + (2**1-1)/log2(3)),
+            ((2**1 - 1) / log2(2) + (2**1 - 1) / log2(3))
+            / ((2**1 - 1) / log2(2) + (2**1 - 1) / log2(3)),
         ),
         # Case 7: All irrelevant docs
         (
