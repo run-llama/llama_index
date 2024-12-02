@@ -75,6 +75,9 @@ def _to_weaviate_filter(
 
     if standard_filters.filters:
         for filter in standard_filters.filters:
+            if isinstance(filter, MetadataFilters):
+                filters_list.append(_to_weaviate_filter(filter))
+                continue
             filters_list.append(
                 getattr(
                     wvc.query.Filter.by_property(filter.key),
