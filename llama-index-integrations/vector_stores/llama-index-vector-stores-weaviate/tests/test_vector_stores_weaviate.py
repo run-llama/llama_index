@@ -22,11 +22,9 @@ def test_class():
 
 @pytest.fixture(scope="module")
 def client():
-    try:
-        client = weaviate.connect_to_embedded()
-        yield client
-    finally:
-        client.close()
+    client = weaviate.connect_to_embedded()
+    yield client
+    client.close()
 
 
 @pytest.fixture(scope="module")
