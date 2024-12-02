@@ -1,7 +1,5 @@
 import weaviate.classes as wvc
-import pydantic
 import weaviate
-from typing import List
 import pytest
 from llama_index.core.schema import TextNode
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
@@ -95,14 +93,6 @@ def test_query_kwargs(vector_store):
 
 def test_can_query_collection_with_complex_property_types(client):
     """Verifies that it is possible to query data from collections that contain complex properties (e.g. a list of nested objects in one of the properties)."""
-
-    class ArrayPropElement(pydantic.BaseModel):
-        nested_prop: str
-
-    class ComplexTypeInArrayTest(pydantic.BaseModel):
-        text: str
-        array_prop: List[ArrayPropElement]
-
     collection_name = "ComplexTypeInArrayTest"
     client.collections.delete(collection_name)
     collection = client.collections.create(
@@ -125,14 +115,11 @@ def test_can_query_collection_with_complex_property_types(client):
         ],
     )
 
-    arr = ComplexTypeInArrayTest(
-        text="Text of object containing complex properties",
-        array_prop=[ArrayPropElement(nested_prop="nested_prop content")],
-    )
-    arr_obj = arr.model_dump()
-
     collection.data.insert(
-        arr_obj,
+        {
+            "text": "Text of object containing complex properties",
+            "array_prop": [{"nested_prop": "nested_prop content"}],
+        },
         vector=[1.0, 0.0, 0.0],
     )
 
