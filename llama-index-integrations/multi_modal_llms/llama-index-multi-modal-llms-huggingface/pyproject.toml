@@ -30,7 +30,7 @@ license = "MIT"
 name = "llama-index-multi-modal-llms-huggingface"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.1"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

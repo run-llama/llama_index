@@ -21,7 +21,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         description="Whether to keep the retrieval score in metadata.",
     )
     trust_remote_code: bool = Field(
-        default=True,
+        default=False,
         description="Whether to trust remote code.",
     )
     _model: Any = PrivateAttr()
@@ -49,7 +49,10 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
             keep_retrieval_score=keep_retrieval_score,
         )
         self._model = CrossEncoder(
-            model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH, device=device, trust_remote_code=trust_remote_code
+            model,
+            max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH,
+            device=device,
+            trust_remote_code=trust_remote_code,
         )
 
     @classmethod
