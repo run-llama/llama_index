@@ -1,4 +1,5 @@
-from typing import Any, List, Optional
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
@@ -13,34 +14,149 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, MetadataMode
 dispatcher = get_dispatcher(__name__)
 
 
-class AWSBedrockRerank(BaseNodePostprocessor):
-    top_n: int = Field(description="Top N nodes to return.")
-    model_id: str = Field(description="AWS Bedrock model ID.")
-    region_name: str = Field(description="AWS region name for the Bedrock service.")
+class Models(str, Enum):
+    COHERE_RERANK_V3_5 = "cohere.rerank-v3-5:0"
 
+
+class AWSBedrockRerank(BaseNodePostprocessor):
+    top_n: int = Field(default=2, description="Top N nodes to return.")
+    model_name: str = Field(
+        default=Models.COHERE_RERANK_V3_5.value,
+        description="The modelId of the Bedrock model to use.",
+    )
+    model_arn: Optional[str] = Field(
+        default=None,
+        description="Optional custom model ARN to use.",
+    )
+    profile_name: Optional[str] = Field(
+        default=None,
+        description=(
+            "The name of AWS profile to use. "
+            "If not given, then the default profile is used."
+        ),
+    )
+    aws_access_key_id: Optional[str] = Field(
+        default=None, description="AWS Access Key ID to use."
+    )
+    aws_secret_access_key: Optional[str] = Field(
+        default=None, description="AWS Secret Access Key to use."
+    )
+    aws_session_token: Optional[str] = Field(
+        default=None, description="AWS Session Token to use."
+    )
+    region_name: Optional[str] = Field(
+        default=None,
+        description=(
+            "AWS region name to use. "
+            "Uses region configured in AWS CLI if not passed."
+        ),
+    )
+    botocore_session: Optional[Any] = Field(
+        default=None,
+        description="Use this Botocore session instead of creating a new default one.",
+        exclude=True,
+    )
+    botocore_config: Optional[Any] = Field(
+        default=None,
+        description=(
+            "Custom configuration object to use instead of the default generated one."
+        ),
+        exclude=True,
+    )
+    max_retries: int = Field(
+        default=10,
+        description="The maximum number of API retries.",
+        gt=0,
+    )
+    timeout: float = Field(
+        default=60.0,
+        description=(
+            "The timeout for the Bedrock API request in seconds. "
+            "It will be used for both connect and read timeouts."
+        ),
+    )
+    additional_kwargs: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional kwargs for the Bedrock client.",
+    )
     _client: Any = PrivateAttr()
     _model_package_arn: str = PrivateAttr()
 
     def __init__(
         self,
         top_n: int = 2,
-        model_id: str = "cohere.rerank-v3-5:0",
-        region_name: str = "us-west-2",
+        model_name: str = Models.COHERE_RERANK_V3_5.value,
+        model_arn: Optional[str] = None,
+        profile_name: Optional[str] = None,
+        aws_access_key_id: Optional[str] = None,
+        aws_secret_access_key: Optional[str] = None,
+        aws_session_token: Optional[str] = None,
+        region_name: Optional[str] = None,
+        client: Optional[Any] = None,
+        botocore_session: Optional[Any] = None,
+        botocore_config: Optional[Any] = None,
+        additional_kwargs: Optional[Dict[str, Any]] = None,
+        max_retries: int = 10,
+        timeout: float = 60.0,
         **kwargs: Any,
     ):
-        super().__init__(top_n=top_n, model_id=model_id, region_name=region_name)
+        super().__init__(**kwargs)
+        self.top_n = top_n
+        self.model_name = model_name
+        self.model_arn = model_arn
+        self.profile_name = profile_name
+        self.aws_access_key_id = aws_access_key_id
+        self.aws_secret_access_key = aws_secret_access_key
+        self.aws_session_token = aws_session_token
+        self.region_name = region_name
+        self.botocore_session = botocore_session
+        self.botocore_config = botocore_config
+        self.max_retries = max_retries
+        self.timeout = timeout
+        self.additional_kwargs = additional_kwargs or {}
+
+        session_kwargs = {
+            "profile_name": self.profile_name,
+            "region_name": self.region_name,
+            "aws_access_key_id": self.aws_access_key_id,
+            "aws_secret_access_key": self.aws_secret_access_key,
+            "aws_session_token": self.aws_session_token,
+            "botocore_session": self.botocore_session,
+        }
+
         try:
             import boto3
+            from botocore.config import Config
 
-            self.region_name = region_name or boto3.Session().region_name
-            self._client = boto3.client(
-                "bedrock-agent-runtime", region_name=self.region_name
+            config = (
+                Config(
+                    retries={"max_attempts": self.max_retries, "mode": "standard"},
+                    connect_timeout=self.timeout,
+                    read_timeout=self.timeout,
+                )
+                if self.botocore_config is None
+                else self.botocore_config
             )
-            self._model_package_arn = (
-                f"arn:aws:bedrock:{self.region_name}::foundation-model/{self.model_id}"
+            session = boto3.Session(**session_kwargs)
+        except ImportError:
+            raise ImportError(
+                "The 'boto3' package was not found. Install it with 'pip install boto3'"
             )
-        except Exception as e:
-            raise ValueError(f"Failed to initialize AWS Bedrock client: {e}")
+
+        self.region_name = self.region_name or session.region_name
+
+        if client is not None:
+            self._client = client
+        else:
+            try:
+                self._client = session.client("bedrock-agent-runtime", config=config)
+            except Exception as e:
+                raise ValueError(f"Failed to create Bedrock Agent Runtime client: {e}")
+
+        if self.model_arn:
+            self._model_package_arn = self.model_arn
+        else:
+            self._model_package_arn = f"arn:aws:bedrock:{self.region_name}::foundation-model/{self.model_name}"
 
     @classmethod
     def class_name(cls) -> str:
@@ -51,18 +167,18 @@ class AWSBedrockRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
-        dispatcher.event(
-            ReRankStartEvent(
-                query=query_bundle,
-                nodes=nodes,
-                top_n=self.top_n,
-                model_name=self.model_id,
+        if dispatcher:
+            dispatcher.event(
+                ReRankStartEvent(
+                    query=query_bundle,
+                    nodes=nodes,
+                    top_n=self.top_n,
+                    model_name=self.model_name,
+                )
             )
-        )
 
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
-
         if len(nodes) == 0:
             return []
 
@@ -70,7 +186,7 @@ class AWSBedrockRerank(BaseNodePostprocessor):
             CBEventType.RERANKING,
             payload={
                 EventPayload.NODES: nodes,
-                EventPayload.MODEL_NAME: self.model_id,
+                EventPayload.MODEL_NAME: self.model_name,
                 EventPayload.QUERY_STR: query_bundle.query_str,
                 EventPayload.TOP_K: self.top_n,
             },
