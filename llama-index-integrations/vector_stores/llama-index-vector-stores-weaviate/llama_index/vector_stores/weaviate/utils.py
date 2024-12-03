@@ -87,16 +87,6 @@ def create_default_schema(client: Any, class_name: str) -> None:
     client.collections.create_from_dict(class_schema)
 
 
-def get_all_properties(client: Any, class_name: str) -> List[str]:
-    """Get all properties of a class."""
-    validate_client(client)
-    if not client.collections.exists(class_name):
-        raise ValueError(f"{class_name} schema does not exist.")
-
-    properties = client.collections.get(class_name).config.get().properties
-    return [p.name for p in properties]
-
-
 def get_node_similarity(entry: Dict, similarity_key: str = "score") -> float:
     """Get converted node similarity from distance."""
     score = getattr(entry["metadata"], similarity_key)
