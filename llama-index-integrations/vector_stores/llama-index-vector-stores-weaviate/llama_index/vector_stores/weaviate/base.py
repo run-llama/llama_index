@@ -62,6 +62,8 @@ def _transform_weaviate_filter_operator(operator: str) -> str:
         return "contains_any"
     elif operator == "all":
         return "contains_all"
+    elif operator == "is_empty":
+        return "is_none"
     else:
         raise ValueError(f"Filter operator {operator} not supported")
 
@@ -78,12 +80,17 @@ def _to_weaviate_filter(
             if isinstance(filter, MetadataFilters):
                 filters_list.append(_to_weaviate_filter(filter))
                 continue
-            filters_list.append(
-                getattr(
-                    wvc.query.Filter.by_property(filter.key),
-                    _transform_weaviate_filter_operator(filter.operator),
-                )(filter.value)
+
+            property_filter = getattr(
+                wvc.query.Filter.by_property(filter.key),
+                _transform_weaviate_filter_operator(filter.operator),
             )
+            value = filter.value
+            # IS_EMPTY does not take a value (expected to be set to None), but when using IsNull with Weaviate, a
+            # boolean is expected (True meaning the value actually being null / not set / empty)
+            if filter.operator == "is_empty":
+                value = True
+            filters_list.append(property_filter(value))
     else:
         return {}
 
