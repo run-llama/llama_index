@@ -277,6 +277,9 @@ def to_openai_message_dict(
                         },
                     }
                 )
+        else:
+            msg = f"Unsupported content block type: {type(block).__name__}"
+            raise ValueError(msg)
 
     message_dict = {
         "role": message.role.value,
