@@ -1,4 +1,7 @@
 from io import BytesIO
+from pathlib import Path
+from unittest import mock
+
 import pytest
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -7,8 +10,6 @@ from llama_index.core.base.llms.types import (
     TextBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
-from pathlib import Path
-from unittest import mock
 from pydantic import AnyUrl
 
 
@@ -39,11 +40,12 @@ def test_chat_message_content_legacy_get():
     assert type(m.blocks[0]) is TextBlock
     assert m.blocks[0].text == "test content"
 
-    m = ChatMessage(content=[TextBlock(text="test content")])
-    assert m.content == "test content"
-    assert len(m.blocks) == 1
-    assert type(m.blocks[0]) is TextBlock
-    assert m.blocks[0].text == "test content"
+    m = ChatMessage(
+        content=[TextBlock(text="test content 1 "), TextBlock(text="test content 2")]
+    )
+    assert m.content == "test content 1 test content 2"
+    assert len(m.blocks) == 2
+    assert all(type(block) is TextBlock for block in m.blocks)
 
 
 def test_chat_message_content_legacy_set():

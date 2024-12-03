@@ -113,11 +113,15 @@ class ChatMessage(BaseModel):
         """Keeps backward compatibility with the old `content` field.
 
         Returns:
-            The block content if there's a single TextBlock, an empty string otherwise.
+            The cumulative content of the blocks if they're all of type TextBlock, None otherwise.
         """
-        if len(self.blocks) == 1 and isinstance(self.blocks[0], TextBlock):
-            return self.blocks[0].text
-        return None
+        content = ""
+        for block in self.blocks:
+            if not isinstance(block, TextBlock):
+                return None
+            content += block.text
+
+        return content
 
     @content.setter
     def content(self, content: str) -> None:
