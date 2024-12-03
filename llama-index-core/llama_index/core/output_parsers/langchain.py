@@ -23,23 +23,26 @@ class LangchainOutputParser(ChainableOutputParser):
 
     def parse(self, output: str) -> Any:
         """Parse, validate, and correct errors programmatically."""
-        # TODO: this object may be stringified by our upstream llmpredictor,
-        # figure out better
-        # ways to "convert" the object to a proper string format.
+        # Convert output to string if it isn't already, handling various input types
+        if not isinstance(output, str):
+            try:
+                output = str(output).strip()
+            except Exception as e:
+                raise ValueError(f"Unable to convert output to string: {e}")
+        
         return self._output_parser.parse(output)
 
     def format(self, query: str) -> str:
         """Format a query with structured output formatting instructions."""
         format_instructions = self._output_parser.get_format_instructions()
 
-        # TODO: this is a temporary hack. if there's curly brackets in the format
-        # instructions (and query is a string template), we need to
-        # escape the curly brackets in the format instructions to preserve the
-        # overall template.
         query_tmpl_vars = {
             v for _, v, _, _ in Formatter().parse(query) if v is not None
         }
+        
         if len(query_tmpl_vars) > 0:
+            format_instructions = format_instructions.replace("{{", "{{{{")
+            format_instructions = format_instructions.replace("}}", "}}}}")
             format_instructions = format_instructions.replace("{", "{{")
             format_instructions = format_instructions.replace("}", "}}")
 
