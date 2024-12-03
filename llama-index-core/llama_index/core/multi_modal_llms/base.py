@@ -86,7 +86,7 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
         default_factory=CallbackManager, exclude=True
     )
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         # Help static checkers understand this class hierarchy
         super().__init__(*args, **kwargs)
 

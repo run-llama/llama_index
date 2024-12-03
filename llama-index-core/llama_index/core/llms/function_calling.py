@@ -22,7 +22,7 @@ class FunctionCallingLLM(LLM):
 
     """
 
-    def __init__(*args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         # Help static checkers understand this class hierarchy
         super().__init__(*args, **kwargs)
 
