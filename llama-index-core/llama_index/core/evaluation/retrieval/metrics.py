@@ -371,17 +371,25 @@ class NDCG(BaseRetrievalMetric):
         mode = self.mode
         expected_set = set(expected_ids)
 
+        # Calculate DCG
         dcg = sum(
             discounted_gain(rel=docid in expected_set, i=i, mode=mode)
             for i, docid in enumerate(retrieved_ids, start=1)
         )
+
+        # Calculate IDCG using min(len(retrieved_ids), len(expected_ids))
+        # Since we can't achieve better than perfect ranking of all relevant docs
+        ideal_length = min(len(retrieved_ids), len(expected_ids))
         idcg = sum(
             discounted_gain(rel=True, i=i, mode=mode)
-            for i in range(1, len(retrieved_ids) + 1)
+            for i in range(1, ideal_length + 1)
         )
 
-        ndcg_score = dcg / idcg
+        # Handle edge case where there are no relevant documents
+        if idcg == 0:
+            return RetrievalMetricResult(score=0.0)
 
+        ndcg_score = dcg / idcg
         return RetrievalMetricResult(score=ndcg_score)
 
 
