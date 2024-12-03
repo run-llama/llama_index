@@ -1,3 +1,4 @@
+from io import BytesIO
 import pytest
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -6,6 +7,14 @@ from llama_index.core.base.llms.types import (
     TextBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
+from pathlib import Path
+from unittest import mock
+from pydantic import AnyUrl
+
+
+@pytest.fixture()
+def png_1px() -> bytes:
+    return b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
 
 
 def test_chat_message_from_str():
@@ -60,11 +69,11 @@ def test_chat_message_content_returns_empty_string():
     assert m.content is None
 
 
-def test__str__():
+def test_chat_message__str__():
     assert str(ChatMessage(content="test content")) == "user: test content"
 
 
-def test_serializer():
+def test_chat_message_serializer():
     class SimpleModel(BaseModel):
         some_field: str = ""
 
@@ -82,7 +91,7 @@ def test_serializer():
     }
 
 
-def test_legacy_roundtrip():
+def test_chat_message_legacy_roundtrip():
     legacy_message = {
         "role": MessageRole.USER,
         "content": "foo",
@@ -94,3 +103,41 @@ def test_legacy_roundtrip():
         "blocks": [{"block_type": "text", "text": "foo"}],
         "role": MessageRole.USER,
     }
+
+
+def test_image_block_resolve_image(png_1px: bytes):
+    b = ImageBlock(image=png_1px)
+    img = b.resolve_image()
+    assert isinstance(img, BytesIO)
+    assert img.read() == png_1px
+
+
+def test_image_block_resolve_image_path(tmp_path: Path, png_1px: bytes):
+    png_path = tmp_path / "test.png"
+    png_path.write_bytes(png_1px)
+
+    b = ImageBlock(path=png_path)
+    img = b.resolve_image()
+    assert isinstance(img, BytesIO)
+    assert img.read() == png_1px
+
+
+def test_image_block_resolve_image_url(png_1px):
+    with mock.patch("llama_index.core.base.llms.types.requests") as mocked_req:
+        url_str = "http://example.com"
+        mocked_req.get.return_value = mock.MagicMock(content=png_1px)
+        b1 = ImageBlock(url=url_str)
+        img = b1.resolve_image()
+        assert isinstance(img, BytesIO)
+        assert img.read() == png_1px
+
+        b2 = ImageBlock(url=AnyUrl(url=url_str))
+        img = b1.resolve_image()
+        assert isinstance(img, BytesIO)
+        assert img.read() == png_1px
+
+
+def test_image_block_resolve_error():
+    with pytest.raises(ValueError, match="No image found in the chat message!"):
+        b = ImageBlock()
+        b.resolve_image()

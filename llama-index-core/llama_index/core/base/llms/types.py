@@ -18,10 +18,13 @@ import requests
 from typing_extensions import Self
 
 from llama_index.core.bridge.pydantic import (
+    AnyUrl,
     BaseModel,
     ConfigDict,
     Field,
+    FilePath,
     field_serializer,
+    field_validator,
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.schema import ImageType
@@ -46,20 +49,34 @@ class TextBlock(BaseModel):
 
 class ImageBlock(BaseModel):
     block_type: Literal["image"] = "image"
-    image: Optional[str] = None
-    image_path: Optional[str] = None
-    image_url: Optional[str] = None
-    image_mimetype: Optional[str] = None
+    image: bytes | None = None
+    path: FilePath | None = None
+    url: AnyUrl | str | None = None
+    image_mimetype: str | None = None
+
+    @field_validator("image", mode="after")
+    @classmethod
+    def image_to_base64(cls, image: bytes) -> bytes:
+        """Store the image as base64."""
+        return base64.b64encode(image)
+
+    @field_validator("url", mode="after")
+    @classmethod
+    def urlstr_to_anyurl(cls, url: str | AnyUrl) -> AnyUrl:
+        """Store the url as Anyurl."""
+        if isinstance(url, AnyUrl):
+            return url
+        return AnyUrl(url=url)
 
     def resolve_image(self) -> ImageType:
         """Resolve an image such that PIL can read it."""
         if self.image is not None:
             return BytesIO(base64.b64decode(self.image))
-        elif self.image_path is not None:
-            return self.image_path
-        elif self.image_url is not None:
+        elif self.path is not None:
+            return BytesIO(self.path.read_bytes())
+        elif self.url is not None:
             # load image from URL
-            response = requests.get(self.image_url)
+            response = requests.get(str(self.url))
             return BytesIO(response.content)
         else:
             raise ValueError("No image found in the chat message!")
