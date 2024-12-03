@@ -1,53 +1,40 @@
 import json
-import pytest
 from typing import List
 
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-    ChatResponse,
-    MessageRole,
-    LogProb,
-)
-from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
-from openai.types.completion_choice import Logprobs
-from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai.utils import (
-    from_openai_message_dicts,
-    from_openai_messages,
-    to_openai_message_dicts,
-    to_openai_tool,
-)
-
-from llama_index.llms.openai.utils import (
-    from_openai_completion_logprobs,
-    from_openai_token_logprob,
-    from_openai_token_logprobs,
-)
-
-
+import pytest
 from openai.types.chat.chat_completion_assistant_message_param import (
     FunctionCall as FunctionCallParam,
 )
-
-
-from openai.types.chat.chat_completion_message import (
-    ChatCompletionMessage,
-    ChatCompletionMessageToolCall,
-)
-
-
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_param import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionFunctionMessageParam,
     ChatCompletionMessageParam,
     ChatCompletionUserMessageParam,
 )
-
-
 from openai.types.chat.chat_completion_message_tool_call import (
     ChatCompletionMessageToolCall,
     Function,
+)
+from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.completion_choice import Logprobs
+
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    LogProb,
+    MessageRole,
+)
+from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai.utils import (
+    from_openai_completion_logprobs,
+    from_openai_message_dicts,
+    from_openai_messages,
+    from_openai_token_logprob,
+    from_openai_token_logprobs,
+    to_openai_message_dicts,
+    to_openai_tool,
 )
 
 
@@ -152,8 +139,8 @@ def test_to_openai_message_dicts_basic_enum() -> None:
     ]
     openai_messages = to_openai_message_dicts(chat_messages)
     assert openai_messages == [
-        {"role": "user", "content": "test question"},
-        {"role": "assistant", "content": "test answer"},
+        {"role": "user", "content": [{"type": "text", "text": "test question"}]},
+        {"role": "assistant", "content": [{"type": "text", "text": "test answer"}]},
     ]
 
 
@@ -164,8 +151,8 @@ def test_to_openai_message_dicts_basic_string() -> None:
     ]
     openai_messages = to_openai_message_dicts(chat_messages)
     assert openai_messages == [
-        {"role": "user", "content": "test question"},
-        {"role": "assistant", "content": "test answer"},
+        {"role": "user", "content": [{"type": "text", "text": "test question"}]},
+        {"role": "assistant", "content": [{"type": "text", "text": "test answer"}]},
     ]
 
 
