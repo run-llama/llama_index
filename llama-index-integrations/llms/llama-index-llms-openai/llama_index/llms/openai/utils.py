@@ -3,9 +3,14 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from deprecated import deprecated
-from llama_index.core.base.llms.types import ChatMessage, LogProb, CompletionResponse
-from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ImageBlock,
+    LogProb,
+    TextBlock,
+)
+from llama_index.core.bridge.pydantic import BaseModel
 from tenacity import (
     before_sleep_log,
     retry,
@@ -23,7 +28,6 @@ from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
 from openai.types.completion_choice import Logprobs
-from openai.types.completion import Completion
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
@@ -190,7 +194,8 @@ def create_retry_decorator(
 
 
 def openai_modelname_to_contextsize(modelname: str) -> int:
-    """Calculate the maximum number of tokens possible to generate for a model.
+    """
+    Calculate the maximum number of tokens possible to generate for a model.
 
     Args:
         modelname: The modelname we want to know the context size for.
@@ -250,10 +255,32 @@ def is_function_calling_model(model: str) -> bool:
 def to_openai_message_dict(
     message: ChatMessage, drop_none: bool = False, model: Optional[str] = None
 ) -> ChatCompletionMessageParam:
-    """Convert generic message to OpenAI message dict."""
+    """Convert a ChatMessage to an OpenAI message dict."""
+    content = []
+    for block in message.blocks:
+        if isinstance(block, TextBlock):
+            content.append({"type": "text", "text": block.text})
+        elif isinstance(block, ImageBlock):
+            if block.url:
+                content.append(
+                    {"type": "image_url", "image_url": {"url": str(block.url)}}
+                )
+            else:
+                img_bytes = block.resolve_image(as_base64=True).read()
+                img_str = img_bytes.decode("utf-8")
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{block.image_mimetype};base64,{img_str}",
+                            "detail": block.detail or "low",
+                        },
+                    }
+                )
+
     message_dict = {
         "role": message.role.value,
-        "content": message.content,
+        "content": content,
     }
 
     # TODO: O1 models do not support system prompts
@@ -332,7 +359,7 @@ def from_openai_token_logprobs(
 
 
 def from_openai_completion_logprob(
-    openai_completion_logprob: Dict[str, float]
+    openai_completion_logprob: Dict[str, float],
 ) -> List[LogProb]:
     """Convert openai completion logprobs to generic list of LogProb."""
     return [
@@ -354,11 +381,6 @@ def from_openai_completion_logprobs(
     return result
 
 
-def from_openai_completion(openai_completion: Completion) -> CompletionResponse:
-    """Convert openai completion to CompletionResponse."""
-    text = openai_completion.choices[0].text
-
-
 def from_openai_messages(
     openai_messages: Sequence[ChatCompletionMessage],
 ) -> List[ChatMessage]:
@@ -370,7 +392,7 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = message_dict["role"]
     # NOTE: Azure OpenAI returns function calling messages without a content key
-    content = message_dict.get("content", None)
+    content = message_dict.get("content")
 
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")
@@ -386,7 +408,8 @@ def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage
 
 @deprecated("Deprecated in favor of `to_openai_tool`, which should be used instead.")
 def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
-    """Deprecated in favor of `to_openai_tool`.
+    """
+    Deprecated in favor of `to_openai_tool`.
 
     Convert pydantic class to OpenAI function.
     """
@@ -412,7 +435,8 @@ def resolve_openai_credentials(
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[Optional[str], str, str]:
-    """ "Resolve OpenAI credentials.
+    """
+    "Resolve OpenAI credentials.
 
     The order of precedence is:
     1. param
@@ -443,7 +467,8 @@ def validate_openai_api_key(api_key: Optional[str] = None) -> None:
 
 
 def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
-    """Resolve tool choice.
+    """
+    Resolve tool choice.
 
     If tool_choice is a function name string, return the appropriate dict.
     """
