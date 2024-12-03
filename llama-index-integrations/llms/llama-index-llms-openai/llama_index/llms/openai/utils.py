@@ -3,14 +3,6 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from deprecated import deprecated
-from llama_index.core.base.llms.generic_utils import get_from_param_or_env
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-    ImageBlock,
-    LogProb,
-    TextBlock,
-)
-from llama_index.core.bridge.pydantic import BaseModel
 from tenacity import (
     before_sleep_log,
     retry,
@@ -23,6 +15,14 @@ from tenacity import (
 from tenacity.stop import stop_base
 
 import openai
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ImageBlock,
+    LogProb,
+    TextBlock,
+)
+from llama_index.core.bridge.pydantic import BaseModel
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
@@ -344,7 +344,7 @@ def from_openai_token_logprob(
                 LogProb(token=el.token, logprob=el.logprob, bytes=el.bytes or [])
                 for el in openai_token_logprob.top_logprobs
             ]
-        except Exception as e:
+        except Exception:
             print(openai_token_logprob)
             raise
     return result
@@ -396,12 +396,31 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     role = message_dict["role"]
     # NOTE: Azure OpenAI returns function calling messages without a content key
     content = message_dict.get("content")
+    blocks = []
+    if isinstance(content, list):
+        for elem in content:
+            t = elem.get("type")
+            if t == "text":
+                blocks.append(TextBlock(text=elem.get("text")))
+            elif t == "image_url":
+                img = elem["image_url"]["url"]
+                detail = elem["image_url"]["detail"]
+                if img.startswith("data:"):
+                    blocks.append(ImageBlock(image=img, detail=detail))
+                else:
+                    blocks.append(ImageBlock(url=img, detail=detail))
+            else:
+                msg = f"Unsupported message type: {t}"
+                raise ValueError(msg)
+        content = None
 
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")
     additional_kwargs.pop("content", None)
 
-    return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
+    return ChatMessage(
+        role=role, content=content, additional_kwargs=additional_kwargs, blocks=blocks
+    )
 
 
 def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage]:

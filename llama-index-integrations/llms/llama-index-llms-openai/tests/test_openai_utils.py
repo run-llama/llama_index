@@ -2,15 +2,9 @@ import json
 from typing import List
 
 import pytest
-from openai.types.chat.chat_completion_assistant_message_param import (
-    FunctionCall as FunctionCallParam,
-)
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_param import (
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionFunctionMessageParam,
     ChatCompletionMessageParam,
-    ChatCompletionUserMessageParam,
 )
 from openai.types.chat.chat_completion_message_tool_call import (
     ChatCompletionMessageToolCall,
@@ -53,10 +47,10 @@ def chat_messages_with_function_calling() -> List[ChatMessage]:
             },
         ),
         ChatMessage(
-            role=MessageRole.FUNCTION,
+            role=MessageRole.TOOL,
             content='{"temperature": "22", "unit": "celsius", "description": "Sunny"}',
             additional_kwargs={
-                "name": "get_current_weather",
+                "tool_call_id": "get_current_weather",
             },
         ),
     ]
@@ -65,23 +59,28 @@ def chat_messages_with_function_calling() -> List[ChatMessage]:
 @pytest.fixture()
 def openi_message_dicts_with_function_calling() -> List[ChatCompletionMessageParam]:
     return [
-        ChatCompletionUserMessageParam(
-            role="user", content="test question with functions"
-        ),
-        ChatCompletionAssistantMessageParam(
-            role="assistant",
-            content=None,
-            function_call=FunctionCallParam(
-                name="get_current_weather",
-                arguments='{ "location": "Boston, MA"}',
-            ),
-        ),
-        ChatCompletionFunctionMessageParam(
-            role="function",
-            content='{"temperature": "22", "unit": "celsius", '
-            '"description": "Sunny"}',
-            name="get_current_weather",
-        ),
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": "test question with functions"}],
+        },
+        {
+            "role": "assistant",
+            "content": [],
+            "function_call": {
+                "name": "get_current_weather",
+                "arguments": '{ "location": "Boston, MA"}',
+            },
+        },
+        {
+            "role": "tool",
+            "content": [
+                {
+                    "type": "text",
+                    "text": '{"temperature": "22", "unit": "celsius", "description": "Sunny"}',
+                }
+            ],
+            "tool_call_id": "get_current_weather",
+        },
     ]
 
 
