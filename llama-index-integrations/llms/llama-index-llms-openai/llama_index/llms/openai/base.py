@@ -17,8 +17,9 @@ from typing import (
 )
 
 import httpx
-import llama_index.core.instrumentation as instrument
 import tiktoken
+
+import llama_index.core.instrumentation as instrument
 from llama_index.core.base.llms.generic_utils import (
     achat_to_completion_decorator,
     acompletion_to_chat_decorator,
@@ -72,7 +73,6 @@ from llama_index.llms.openai.utils import (
     to_openai_message_dicts,
     update_tool_calls,
 )
-
 from openai import AsyncOpenAI, AzureOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
@@ -963,3 +963,20 @@ class OpenAI(FunctionCallingLLM):
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+
+    @dispatcher.span
+    def astream_structured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> Generator[Union[Model, List[Model]], None, None]:
+        """Stream structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        all_kwargs = {**llm_kwargs, **kwargs}
+
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return super().astream_structured_predict(
+            *args, llm_kwargs=llm_kwargs, **kwargs
+        )
