@@ -27,7 +27,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-weaviate"
 readme = "README.md"
-version = "1.2.1"
+version = "1.2.3"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
