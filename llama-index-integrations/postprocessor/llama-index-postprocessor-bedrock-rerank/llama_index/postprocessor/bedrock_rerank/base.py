@@ -9,7 +9,7 @@ from llama_index.core.instrumentation.events.rerank import (
     ReRankStartEvent,
 )
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import NodeWithScore, QueryBundle, MetadataMode
+from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
 dispatcher = get_dispatcher(__name__)
 
@@ -20,11 +20,11 @@ class Models(str, Enum):
 
 class AWSBedrockRerank(BaseNodePostprocessor):
     top_n: int = Field(default=2, description="Top N nodes to return.")
-    model_name: str = Field(
+    rerank_model_name: str = Field(
         default=Models.COHERE_RERANK_V3_5.value,
         description="The modelId of the Bedrock model to use.",
     )
-    model_arn: Optional[str] = Field(
+    rerank_model_arn: Optional[str] = Field(
         default=None,
         description="Optional custom model ARN to use.",
     )
@@ -85,8 +85,8 @@ class AWSBedrockRerank(BaseNodePostprocessor):
     def __init__(
         self,
         top_n: int = 2,
-        model_name: str = Models.COHERE_RERANK_V3_5.value,
-        model_arn: Optional[str] = None,
+        rerank_model_name: str = Models.COHERE_RERANK_V3_5.value,
+        rerank_model_arn: Optional[str] = None,
         profile_name: Optional[str] = None,
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
@@ -102,8 +102,8 @@ class AWSBedrockRerank(BaseNodePostprocessor):
     ):
         super().__init__(**kwargs)
         self.top_n = top_n
-        self.model_name = model_name
-        self.model_arn = model_arn
+        self.rerank_model_name = rerank_model_name
+        self.rerank_model_arn = rerank_model_arn
         self.profile_name = profile_name
         self.aws_access_key_id = aws_access_key_id
         self.aws_secret_access_key = aws_secret_access_key
@@ -153,10 +153,10 @@ class AWSBedrockRerank(BaseNodePostprocessor):
             except Exception as e:
                 raise ValueError(f"Failed to create Bedrock Agent Runtime client: {e}")
 
-        if self.model_arn:
-            self._model_package_arn = self.model_arn
+        if self.rerank_model_arn:
+            self._model_package_arn = self.rerank_model_arn
         else:
-            self._model_package_arn = f"arn:aws:bedrock:{self.region_name}::foundation-model/{self.model_name}"
+            self._model_package_arn = f"arn:aws:bedrock:{self.region_name}::foundation-model/{self.rerank_model_name}"
 
     @classmethod
     def class_name(cls) -> str:
@@ -173,7 +173,7 @@ class AWSBedrockRerank(BaseNodePostprocessor):
                     query=query_bundle,
                     nodes=nodes,
                     top_n=self.top_n,
-                    model_name=self.model_name,
+                    model_name=self.rerank_model_name,
                 )
             )
 
@@ -186,7 +186,7 @@ class AWSBedrockRerank(BaseNodePostprocessor):
             CBEventType.RERANKING,
             payload={
                 EventPayload.NODES: nodes,
-                EventPayload.MODEL_NAME: self.model_name,
+                EventPayload.MODEL_NAME: self.rerank_model_name,
                 EventPayload.QUERY_STR: query_bundle.query_str,
                 EventPayload.TOP_K: self.top_n,
             },
