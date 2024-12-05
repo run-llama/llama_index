@@ -1,2 +1,0 @@
-scrapegraph-py==1.5.0
-pydantic==2.10.3
