@@ -920,7 +920,7 @@ class SambaStudio(LLM):
             base_url: string with url to do non streaming calls
             streaming_url: string with url to do streaming calls
         """
-        if "openai" in url:
+        if "chat/completions" in url:
             base_url = url
             stream_url = url
         else:
@@ -952,7 +952,7 @@ class SambaStudio(LLM):
             A request Response object
         """
         # create request payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             messages_dicts = _create_message_dicts(messages)
             data = {
                 "messages": messages_dicts,
@@ -1060,7 +1060,7 @@ class SambaStudio(LLM):
             A request Response object
         """
         # create request payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             messages_dicts = _create_message_dicts(messages)
             data = {
                 "messages": messages_dicts,
@@ -1178,7 +1178,7 @@ class SambaStudio(LLM):
             )
 
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             content = response_dict["choices"][0]["message"]["content"]
             response_metadata = {
                 "finish_reason": response_dict["choices"][0]["finish_reason"],
@@ -1228,7 +1228,7 @@ class SambaStudio(LLM):
             )
 
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             finish_reason = ""
             content = ""
             client = sseclient.SSEClient(response)
@@ -1427,7 +1427,7 @@ class SambaStudio(LLM):
             generation: a ChatMessage with model generation
         """
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             content = response_dict["choices"][0]["message"]["content"]
             response_metadata = {
                 "finish_reason": response_dict["choices"][0]["finish_reason"],
