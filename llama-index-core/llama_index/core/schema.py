@@ -48,7 +48,7 @@ from llama_index.core.utils import SAMPLE_TEXT, truncate_text
 
 if TYPE_CHECKING:  # pragma: no cover
     from haystack.schema import Document as HaystackDocument  # type: ignore
-    from llama_cloud.types.cloud_document import CloudDocument
+    from llama_cloud.types.cloud_document import CloudDocument  # type: ignore
     from semantic_kernel.memory.memory_record import MemoryRecord  # type: ignore
 
     from llama_index.core.bridge.langchain import Document as LCDocument  # type: ignore
@@ -540,16 +540,16 @@ class MediaResource(BaseModel):
 
 
 class Node(BaseNode):
-    text: MediaResource | None = Field(
+    text_resource: MediaResource | None = Field(
         default=None, description="Text content of the node."
     )
-    image: MediaResource | None = Field(
+    image_resource: MediaResource | None = Field(
         default=None, description="Image content of the node."
     )
-    audio: MediaResource | None = Field(
+    audio_resource: MediaResource | None = Field(
         default=None, description="Audio content of the node."
     )
-    video: MediaResource | None = Field(
+    video_resource: MediaResource | None = Field(
         default=None, description="Video content of the node."
     )
 
@@ -567,8 +567,8 @@ class Node(BaseNode):
 
         Provided for backward compatibility, use self.text directly instead.
         """
-        if self.text:
-            return self.text.text or ""
+        if self.text_resource:
+            return self.text_resource.text or ""
         return ""
 
     def set_content(self, value: str) -> None:
@@ -576,19 +576,23 @@ class Node(BaseNode):
 
         Provided for backward compatibility, set self.text instead.
         """
-        self.text = MediaResource(text=value)
+        self.text_resource = MediaResource(text=value)
+
+    # @property
+    # def text(self) -> str:
+    #     return ""
 
     @property
     def hash(self) -> str:
         doc_identities = []
-        if self.audio is not None:
-            doc_identities.append(self.audio.hash)
-        if self.image is not None:
-            doc_identities.append(self.image.hash)
-        if self.text is not None:
-            doc_identities.append(self.text.hash)
-        if self.video is not None:
-            doc_identities.append(self.video.hash)
+        if self.audio_resource is not None:
+            doc_identities.append(self.audio_resource.hash)
+        if self.image_resource is not None:
+            doc_identities.append(self.image_resource.hash)
+        if self.text_resource is not None:
+            doc_identities.append(self.text_resource.hash)
+        if self.video_resource is not None:
+            doc_identities.append(self.video_resource.hash)
 
         doc_identity = "-".join(doc_identities)
         return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
