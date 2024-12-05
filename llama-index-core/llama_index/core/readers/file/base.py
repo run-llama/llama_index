@@ -9,7 +9,7 @@ import multiprocessing
 import os
 import warnings
 from abc import ABC, abstractmethod
-from datetime import UTC, datetime
+from datetime import datetime
 from functools import reduce
 from itertools import repeat
 from pathlib import Path, PurePosixPath
@@ -127,7 +127,7 @@ def _format_file_timestamp(
         return None
 
     if include_time:
-        return datetime.fromtimestamp(timestamp, UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%dT%H:%M:%SZ")
     return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d")
 
 
