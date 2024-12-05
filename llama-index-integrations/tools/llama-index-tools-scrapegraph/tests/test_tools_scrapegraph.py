@@ -19,54 +19,16 @@ def tool_spec():
 
 
 @pytest.fixture
-def mock_sync_client():
-    """Create a mock SyncClient."""
-    with patch('llama_index.tools.scrapegraph.base.SyncClient') as mock:
+def mock_client():
+    """Create a mock Client."""
+    with patch('llama_index.tools.scrapegraph.base.Client') as mock:
         client_instance = Mock()
         mock.return_value = client_instance
         yield client_instance
 
 
-@pytest.fixture
-def mock_async_client():
-    """Create a mock AsyncClient."""
-    with patch('llama_index.tools.scrapegraph.base.AsyncClient') as mock:
-        client_instance = Mock()
-        mock.return_value = client_instance
-        yield client_instance
-
-
-def test_feedback_submission(tool_spec, mock_sync_client):
-    """Test feedback submission functionality."""
-    # Test data
-    request_id = "test_request_123"
-    api_key = "test_api_key"
-    rating = 5
-    feedback_text = "Great results!"
-
-    # Configure mock
-    mock_sync_client.submit_feedback.return_value = "Feedback submitted successfully"
-
-    # Execute test
-    response = tool_spec.scrapegraph_feedback(
-        request_id=request_id,
-        api_key=api_key,
-        rating=rating,
-        feedback_text=feedback_text
-    )
-
-    # Verify
-    mock_sync_client.submit_feedback.assert_called_once_with(
-        request_id=request_id,
-        rating=rating,
-        feedback_text=feedback_text
-    )
-    mock_sync_client.close.assert_called_once()
-    assert response == "Feedback submitted successfully"
-
-
-def test_sync_scraping(tool_spec, mock_sync_client):
-    """Test synchronous scraping functionality."""
+def test_smartscraper(tool_spec, mock_client):
+    """Test smartscraper functionality."""
     # Test data
     prompt = "Extract product information"
     url = "https://example.com"
@@ -75,10 +37,10 @@ def test_sync_scraping(tool_spec, mock_sync_client):
     expected_response = [{"title": "Test Product", "description": "Test Description"}]
 
     # Configure mock
-    mock_sync_client.smartscraper.return_value = expected_response
+    mock_client.smartscraper.return_value = expected_response
 
     # Execute test
-    response = tool_spec.scrapegraph_smartscraper_sync(
+    response = tool_spec.scrapegraph_smartscraper(
         prompt=prompt,
         url=url,
         api_key=api_key,
@@ -86,62 +48,57 @@ def test_sync_scraping(tool_spec, mock_sync_client):
     )
 
     # Verify
-    mock_sync_client.smartscraper.assert_called_once_with(
+    mock_client.smartscraper.assert_called_once_with(
         website_url=url,
-        user_prompt=prompt,
-        output_schema=schema
+        user_prompt=prompt
     )
-    mock_sync_client.close.assert_called_once()
     assert response == expected_response
 
 
-@pytest.mark.asyncio
-async def test_async_scraping(tool_spec, mock_async_client):
-    """Test asynchronous scraping functionality."""
+def test_markdownify(tool_spec, mock_client):
+    """Test markdownify functionality."""
     # Test data
-    prompt = "Extract product information"
     url = "https://example.com"
     api_key = "test_api_key"
-    schema = [TestSchema]
-    expected_response = {"title": "Test Product", "description": "Test Description"}
+    expected_response = "# Test Header\n\nTest content"
 
     # Configure mock
-    mock_async_client.smartscraper.return_value = expected_response
+    mock_client.markdownify.return_value = expected_response
 
     # Execute test
-    response = await tool_spec.scrapegraph_smartscraper_async(
-        prompt=prompt,
+    response = tool_spec.scrapegraph_markdownify(
         url=url,
-        api_key=api_key,
-        schema=schema
+        api_key=api_key
     )
 
     # Verify
-    mock_async_client.smartscraper.assert_called_once_with(
-        website_url=url,
-        user_prompt=prompt,
-        output_schema=schema
+    mock_client.markdownify.assert_called_once_with(
+        website_url=url
     )
-    mock_async_client.close.assert_called_once()
     assert response == expected_response
 
 
-def test_get_credits(tool_spec, mock_sync_client):
-    """Test credit retrieval functionality."""
+def test_local_scrape(tool_spec, mock_client):
+    """Test local_scrape functionality."""
     # Test data
+    text = "Sample text for scraping"
     api_key = "test_api_key"
-    expected_credits = "500 credits remaining"
+    expected_response = {"extracted_data": "test data"}
 
     # Configure mock
-    mock_sync_client.get_credits.return_value = expected_credits
+    mock_client.local_scrape.return_value = expected_response
 
     # Execute test
-    response = tool_spec.scrapegraph_get_credits(api_key=api_key)
+    response = tool_spec.scrapegraph_local_scrape(
+        text=text,
+        api_key=api_key
+    )
 
     # Verify
-    mock_sync_client.get_credits.assert_called_once()
-    mock_sync_client.close.assert_called_once()
-    assert response == expected_credits
+    mock_client.local_scrape.assert_called_once_with(
+        text=text
+    )
+    assert response == expected_response
 
 
 def test_missing_dependency():
@@ -150,3 +107,36 @@ def test_missing_dependency():
         with pytest.raises(ImportError) as exc_info:
             ScrapegraphToolSpec()
         assert "requires the scrapegraph-py package" in str(exc_info.value)
+
+
+def test_spec_functions_list(tool_spec):
+    """Test that all required functions are in spec_functions."""
+    expected_functions = [
+        "scrapegraph_smartscraper",
+        "scrapegraph_markdownify",
+        "scrapegraph_local_scrape"
+    ]
+    assert all(func in tool_spec.spec_functions for func in expected_functions)
+
+
+@pytest.mark.parametrize("method_name", [
+    "scrapegraph_smartscraper",
+    "scrapegraph_markdownify",
+    "scrapegraph_local_scrape"
+])
+def test_method_existence(tool_spec, method_name):
+    """Test that all specified methods exist in the tool spec."""
+    assert hasattr(tool_spec, method_name)
+    assert callable(getattr(tool_spec, method_name))
+
+
+def test_client_initialization(mock_client):
+    """Test that the Client is properly initialized with API key."""
+    api_key = "test_api_key"
+    tool_spec = ScrapegraphToolSpec()
+    
+    # Call any method that initializes the client
+    tool_spec.scrapegraph_markdownify(url="https://example.com", api_key=api_key)
+    
+    # Verify client initialization
+    mock_client.assert_called_once_with(api_key=api_key)
