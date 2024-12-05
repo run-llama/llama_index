@@ -32,14 +32,6 @@ class LangchainOutputParser(ChainableOutputParser):
         """Format a query with structured output formatting instructions."""
         format_instructions = self._output_parser.get_format_instructions()
 
-        # Get template variables using SafeFormatter
-        query_tmpl_vars = self._formatter.parse(query)
-        
-        # If query contains template variables, escape curly braces in format_instructions
-        if query_tmpl_vars:
-            format_instructions = format_instructions.replace("{", "{{")
-            format_instructions = format_instructions.replace("}", "}}")
-
         if self._format_key is not None:
             # Use SafeFormatter for query formatting
             self._formatter.format_dict = {self._format_key: format_instructions}
