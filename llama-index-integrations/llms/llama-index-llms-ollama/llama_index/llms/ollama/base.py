@@ -203,6 +203,8 @@ class Ollama(FunctionCallingLLM):
             total_tokens = prompt_tokens + completion_tokens
         except KeyError:
             return {}
+        except TypeError:
+            return {}
         return {
             "prompt_tokens": prompt_tokens,
             "completion_tokens": completion_tokens,
