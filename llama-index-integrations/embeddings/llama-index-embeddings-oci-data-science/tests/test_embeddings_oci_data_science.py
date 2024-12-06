@@ -3,12 +3,12 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.embeddings.oci_data_science import OCIDataScienceEmbeddings
+from llama_index.embeddings.oci_data_science import OCIDataScienceEmbedding
 from llama_index.embeddings.oci_data_science.client import AsyncClient, Client
 
 
 def test_oci_data_science_embedding_class():
-    names_of_base_classes = [b.__name__ for b in OCIDataScienceEmbeddings.__mro__]
+    names_of_base_classes = [b.__name__ for b in OCIDataScienceEmbedding.__mro__]
     assert BaseEmbedding.__name__ in names_of_base_classes
 
 
@@ -40,7 +40,7 @@ def embeddings():
     callback_manager = CallbackManager([])
 
     with patch("ads.common.auth.default_signer", return_value=auth):
-        embeddings_instance = OCIDataScienceEmbeddings(
+        embeddings_instance = OCIDataScienceEmbedding(
             endpoint=endpoint,
             model_name=model_name,
             auth=auth,

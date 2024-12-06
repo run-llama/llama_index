@@ -14,7 +14,7 @@ contains_example = false
 import_path = "llama_index.embeddings.oci_data_science"
 
 [tool.llamahub.class_authors]
-OCIDataScienceEmbeddings = "mrdzurb"
+OCIDataScienceEmbedding = "mrdzurb"
 
 [tool.mypy]
 disallow_untyped_defs = true

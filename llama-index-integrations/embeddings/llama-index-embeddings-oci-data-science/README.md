@@ -26,11 +26,11 @@ The authentication methods supported for LlamaIndex are equivalent to those used
 
 ```bash
 import ads
-from llama_index.embeddings.oci_data_science import OCIDataScienceEmbeddings
+from llama_index.embeddings.oci_data_science import OCIDataScienceEmbedding
 
 ads.set_auth(auth="security_token", profile="<replace-with-your-profile>")
 
-embedding = OCIDataScienceEmbeddings(
+embedding = OCIDataScienceEmbedding(
     endpoint="https://<MD_OCID>/predict",
 )
 
@@ -51,11 +51,11 @@ print(e3)
 
 ```bash
 import ads
-from llama_index.embeddings.oci_data_science import OCIDataScienceEmbeddings
+from llama_index.embeddings.oci_data_science import OCIDataScienceEmbedding
 
 ads.set_auth(auth="security_token", profile="<replace-with-your-profile>")
 
-embedding = OCIDataScienceEmbeddings(
+embedding = OCIDataScienceEmbedding(
     endpoint="https://<MD_OCID>/predict",
 )
 

@@ -14,7 +14,7 @@ DEFAULT_TIMEOUT = 120
 DEFAULT_MAX_RETRIES = 5
 
 
-class OCIDataScienceEmbeddings(BaseEmbedding):
+class OCIDataScienceEmbedding(BaseEmbedding):
     """
     Embedding class for OCI Data Science models.
 
@@ -55,11 +55,11 @@ class OCIDataScienceEmbeddings(BaseEmbedding):
 
     ```python
     import ads
-    from llama_index.embeddings.oci_data_science import OCIDataScienceEmbeddings
+    from llama_index.embeddings.oci_data_science import OCIDataScienceEmbedding
 
     ads.set_auth(auth="security_token", profile="OC1")
 
-    embeddings = OCIDataScienceEmbeddings(
+    embeddings = OCIDataScienceEmbedding(
         endpoint="https://<MD_OCID>/predict",
     )
 
@@ -81,11 +81,11 @@ class OCIDataScienceEmbeddings(BaseEmbedding):
     ```python
     import ads
     import asyncio
-    from llama_index.embeddings.oci_data_science import OCIDataScienceEmbeddings
+    from llama_index.embeddings.oci_data_science import OCIDataScienceEmbedding
 
     ads.set_auth(auth="security_token", profile="OC1")
 
-    embeddings = OCIDataScienceEmbeddings(
+    embeddings = OCIDataScienceEmbedding(
         endpoint="https://<MD_OCID>/predict",
     )
 
@@ -207,7 +207,7 @@ class OCIDataScienceEmbeddings(BaseEmbedding):
         **kwargs: Any
     ):
         """
-        Initialize the OCIDataScienceEmbeddings instance.
+        Initialize the OCIDataScienceEmbedding instance.
 
         Parameters
         ----------
@@ -311,7 +311,7 @@ class OCIDataScienceEmbeddings(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        return "OCIDataScienceEmbeddings"
+        return "OCIDataScienceEmbedding"
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """
