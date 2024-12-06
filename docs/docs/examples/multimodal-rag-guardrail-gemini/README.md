@@ -56,6 +56,7 @@ Key contributions include:
 Scanners are the core of the guardrail system, checking inputs and outputs for specific risks. 
 
 #### Example: Toxicity Scanner for Input
+Link: https://llm-guard.com/input_scanners/toxicity/
 ```python
 from llm_guard.input_scanners import Toxicity
 
