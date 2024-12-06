@@ -18,10 +18,18 @@ def test_identifiers():
 
 
 def test_schema():
-    assert (
-        BaseComponent.schema_json()
-        == '{"description": "Base component object to capture class names.", "properties": {"class_name": {"default": "base_component", "title": "Class Name", "type": "string"}}, "title": "BaseComponent", "type": "object"}'
-    )
+    assert BaseComponent.model_json_schema() == {
+        "description": "Base component object to capture class names.",
+        "properties": {
+            "class_name": {
+                "default": "base_component",
+                "title": "Class Name",
+                "type": "string",
+            }
+        },
+        "title": "BaseComponent",
+        "type": "object",
+    }
 
 
 def test_json():

@@ -41,6 +41,8 @@ llama-index-core = "^0.12.0"
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
+# Unpin when https://github.com/lundberg/respx/issues/277 is fixed
+httpx = "<0.28.0"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"

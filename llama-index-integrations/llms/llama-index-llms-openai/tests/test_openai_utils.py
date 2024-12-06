@@ -1,53 +1,34 @@
 import json
-import pytest
 from typing import List
+
+import pytest
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.chat.chat_completion_message_param import (
+    ChatCompletionMessageParam,
+)
+from openai.types.chat.chat_completion_message_tool_call import (
+    ChatCompletionMessageToolCall,
+    Function,
+)
+from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.completion_choice import Logprobs
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
-    MessageRole,
     LogProb,
+    MessageRole,
 )
-from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
-from openai.types.completion_choice import Logprobs
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import (
+    from_openai_completion_logprobs,
     from_openai_message_dicts,
     from_openai_messages,
-    to_openai_message_dicts,
-    to_openai_tool,
-)
-
-from llama_index.llms.openai.utils import (
-    from_openai_completion_logprobs,
     from_openai_token_logprob,
     from_openai_token_logprobs,
-)
-
-
-from openai.types.chat.chat_completion_assistant_message_param import (
-    FunctionCall as FunctionCallParam,
-)
-
-
-from openai.types.chat.chat_completion_message import (
-    ChatCompletionMessage,
-    ChatCompletionMessageToolCall,
-)
-
-
-from openai.types.chat.chat_completion_message_param import (
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionFunctionMessageParam,
-    ChatCompletionMessageParam,
-    ChatCompletionUserMessageParam,
-)
-
-
-from openai.types.chat.chat_completion_message_tool_call import (
-    ChatCompletionMessageToolCall,
-    Function,
+    to_openai_message_dicts,
+    to_openai_tool,
 )
 
 
@@ -66,10 +47,10 @@ def chat_messages_with_function_calling() -> List[ChatMessage]:
             },
         ),
         ChatMessage(
-            role=MessageRole.FUNCTION,
+            role=MessageRole.TOOL,
             content='{"temperature": "22", "unit": "celsius", "description": "Sunny"}',
             additional_kwargs={
-                "name": "get_current_weather",
+                "tool_call_id": "get_current_weather",
             },
         ),
     ]
@@ -78,23 +59,28 @@ def chat_messages_with_function_calling() -> List[ChatMessage]:
 @pytest.fixture()
 def openi_message_dicts_with_function_calling() -> List[ChatCompletionMessageParam]:
     return [
-        ChatCompletionUserMessageParam(
-            role="user", content="test question with functions"
-        ),
-        ChatCompletionAssistantMessageParam(
-            role="assistant",
-            content=None,
-            function_call=FunctionCallParam(
-                name="get_current_weather",
-                arguments='{ "location": "Boston, MA"}',
-            ),
-        ),
-        ChatCompletionFunctionMessageParam(
-            role="function",
-            content='{"temperature": "22", "unit": "celsius", '
-            '"description": "Sunny"}',
-            name="get_current_weather",
-        ),
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": "test question with functions"}],
+        },
+        {
+            "role": "assistant",
+            "content": [],
+            "function_call": {
+                "name": "get_current_weather",
+                "arguments": '{ "location": "Boston, MA"}',
+            },
+        },
+        {
+            "role": "tool",
+            "content": [
+                {
+                    "type": "text",
+                    "text": '{"temperature": "22", "unit": "celsius", "description": "Sunny"}',
+                }
+            ],
+            "tool_call_id": "get_current_weather",
+        },
     ]
 
 
@@ -152,8 +138,8 @@ def test_to_openai_message_dicts_basic_enum() -> None:
     ]
     openai_messages = to_openai_message_dicts(chat_messages)
     assert openai_messages == [
-        {"role": "user", "content": "test question"},
-        {"role": "assistant", "content": "test answer"},
+        {"role": "user", "content": [{"type": "text", "text": "test question"}]},
+        {"role": "assistant", "content": [{"type": "text", "text": "test answer"}]},
     ]
 
 
@@ -164,8 +150,8 @@ def test_to_openai_message_dicts_basic_string() -> None:
     ]
     openai_messages = to_openai_message_dicts(chat_messages)
     assert openai_messages == [
-        {"role": "user", "content": "test question"},
-        {"role": "assistant", "content": "test answer"},
+        {"role": "user", "content": [{"type": "text", "text": "test question"}]},
+        {"role": "assistant", "content": [{"type": "text", "text": "test answer"}]},
     ]
 
 
