@@ -399,5 +399,5 @@ if __name__ == "__main__":
         print(f"{package_name} at {package_path}")
         analyzer = IntegrationActivityAnalyzer(package_name, package_path)
         analyzer.calculate_metrics()
-        print(json.dumps(analyzer.metrics, indent=4))
-        print(analyzer.health_score)
+        print("metrics dict:\n", json.dumps(analyzer.metrics, indent=4))
+        print("health score:\n", analyzer.health_score)
