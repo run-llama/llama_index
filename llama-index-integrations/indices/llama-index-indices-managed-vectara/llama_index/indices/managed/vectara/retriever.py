@@ -332,7 +332,7 @@ class VectaraRetriever(BaseRetriever):
         """
         body = self._build_vectara_query_body(query_bundle.query_str)
         if verbose:
-            _logger.info(f"Vectara streaming query request body: {body}")
+            print(f"Vectara streaming query request body: {body}")
         response = self._index._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/stream-query",
@@ -448,7 +448,7 @@ class VectaraRetriever(BaseRetriever):
         data = self._build_vectara_query_body(query_bundle.query_str, chat, conv_id)
 
         if verbose:
-            _logger.info(f"Vectara query request body: {data}")
+            print(f"Vectara query request body: {data}")
         response = self._index._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
@@ -466,7 +466,7 @@ class VectaraRetriever(BaseRetriever):
 
         result = response.json()
         if verbose:
-            _logger.info(f"Vectara query response: {result}")
+            print(f"Vectara query response: {result}")
         status = result["responseSet"][0]["status"]
         if len(status) > 0 and status[0]["code"] != "OK":
             _logger.error(
