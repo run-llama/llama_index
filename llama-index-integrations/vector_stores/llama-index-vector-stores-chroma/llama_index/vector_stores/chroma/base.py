@@ -336,7 +336,6 @@ class ChromaVectorStore(BasePydanticVectorStore):
         else:
             self._collection.delete(ids=node_ids)
 
-
     def clear(self) -> None:
         """Clear the collection."""
         ids = self._collection.get()["ids"]
@@ -391,7 +390,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 query_embeddings=query_embeddings,
                 n_results=n_results,
                 **kwargs,
-            )  
+            )
 
         logger.debug(f"> Top {len(results['documents'][0])} nodes:")
         nodes = []
@@ -447,7 +446,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             results = self._collection.get(
                 limit=limit,
                 **kwargs,
-            )     
+            )
 
         logger.debug(f"> Top {len(results['documents'])} nodes:")
         nodes = []
