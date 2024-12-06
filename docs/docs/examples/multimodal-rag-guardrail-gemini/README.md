@@ -1,0 +1,127 @@
+
+# LlamaIndex Multimodal RAG with Guardrails
+
+## Overview
+
+This project enhances the Multimodal Retrieval-Augmented Generation (RAG) example in **LlamaIndex** by introducing **LLM Guard** guardrails. These guardrails ensure safer interactions by detecting and mitigating toxic, sensitive, or inappropriate content in both input queries and output responses.
+
+Key contributions include:
+- **Input Scanners**: Validate user queries before processing.
+- **Output Scanners**: Ensure generated responses comply with safety standards.
+- **Custom Query Engine**: Seamlessly integrates input and output guardrails into the query execution flow.
+
+---
+
+## Features
+
+### 1. Input Guardrails
+- Detects risks such as toxicity, sensitive content, or custom-defined threats in user queries.
+- Blocks or sanitizes unsafe queries before proceeding with retrieval or generation.
+
+### 2. Output Guardrails
+- Evaluates generated responses for compliance with predefined safety rules.
+- Sanitizes or blocks unsafe responses before returning them to the user.
+
+### 3. Custom Query Engine
+- Extends the `CustomQueryEngine` in LlamaIndex to support input and output guardrails.
+- Provides detailed metadata for triggered guardrails.
+
+---
+
+## Installation
+
+### Prerequisites
+- Python 3.8 or later
+- Dependencies: LlamaIndex, LLM Guard
+
+### Steps
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/your-repo/llamaindex-guardrails
+   cd llamaindex-guardrails
+   ```
+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Ensure you have access to an LLM (e.g., Gemini-1.5-flash) and configure API keys as required.
+
+---
+
+## Usage
+
+### Adding Scanners
+Scanners are the core of the guardrail system, checking inputs and outputs for specific risks. 
+
+#### Example: Toxicity Scanner for Input
+```python
+from llm_guard.input_scanners import Toxicity
+
+def guardrail_toxicLanguage(prompt):
+    threshold = 0.5
+    toxic_scanner = Toxicity(threshold=threshold)
+    sanitized_output, is_valid, risk_score = toxic_scanner.scan(prompt)
+    return {
+        "guardrail_type": "Toxicity",
+        "activated": not is_valid,
+        "guardrail_detail": {
+            "guard_output": sanitized_output,
+            "is_valid": is_valid,
+            "risk_score/threshold": f"{risk_score}/{threshold}",
+            "response_text": prompt
+        }
+    }
+```
+
+#### Adding to Input Scanner List
+Pass the custom scanner as part of the `input_scanners` list when initializing the query engine.
+
+### Custom Query Engine
+The `MultimodalQueryEngine` processes the query while applying guardrails:
+
+#### Initialization
+```python
+from llama_index.core.query_engine import MultimodalQueryEngine
+
+query_engine = MultimodalQueryEngine(
+    retriever=my_retriever,
+    multi_modal_llm=my_multi_modal_llm,
+    input_scanners=[guardrail_toxicLanguage],
+    output_scanners=[my_output_scanner]
+)
+```
+
+#### Querying the Engine
+```python
+response = query_engine.custom_query("Your query here")
+print(response)
+```
+
+---
+
+## Extensibility
+
+- **Custom Scanners**: Easily define and integrate new scanners for specific use cases.
+- **Guardrail Types**: Extend beyond toxicity to include other checks like bias, harmful content, or compliance.
+- **Metadata**: Utilize the detailed metadata for analytics or debugging.
+
+---
+
+## Contributing
+
+We welcome contributions to make this project more robust and versatile! Feel free to submit issues or pull requests.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE` for more details.
+
+---
+
+## Acknowledgments
+
+- **LlamaIndex**: For providing the foundational RAG framework.
+- **LLM Guard**: For the tools to ensure AI safety.
