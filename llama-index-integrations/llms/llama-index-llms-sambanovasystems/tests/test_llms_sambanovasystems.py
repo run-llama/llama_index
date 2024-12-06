@@ -209,6 +209,11 @@ def test_sambastudio():
     test_hiperparameters(SambaStudio, testing_model)
 
 
+def test_init():
+    _ = SambaNovaCloud(sambanova_api_key="fake")
+    _ = SambaStudio(sambastudio_url="fake/stream/url", sambastudio_api_key="fake")
+
+
 if __name__ == "__main__":
     test_sambanovacloud()
     test_sambastudio()

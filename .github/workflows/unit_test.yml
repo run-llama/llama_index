@@ -23,28 +23,29 @@ jobs:
           CI: true
         shell: bash
         run: rm -rf /opt/hostedtoolcache/*
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: update rustc
-        run: rustup update stable
+
       - name: Install Poetry
         run: pipx install poetry==${{ env.POETRY_VERSION }}
+
       - name: Set up python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: pantsbuild/actions/init-pants@v5-scie-pants
-        with:
-          # v0 makes it easy to bust the cache if needed
-          # just increase the integer to start with a fresh cache
-          gha-cache-key: v1-py${{ matrix.python_version }}
-          named-caches-hash: v1-py${{ matrix.python_version }}
-          pants-python-version: ${{ matrix.python-version }}
-          pants-ci-config: pants.toml
+
+      - name: Install pants
+        run: |
+          curl --proto '=https' --tlsv1.2 -fsSLO https://static.pantsbuild.org/setup/get-pants.sh
+          chmod +x get-pants.sh
+          ./get-pants.sh
+
       - name: Check BUILD files
         run: |
           pants tailor --check :: -docs/::
+
       - name: Run testing
         env:
           CI: true

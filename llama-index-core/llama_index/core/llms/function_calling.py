@@ -1,19 +1,14 @@
-from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
-from abc import abstractmethod
 import asyncio
-
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-)
-from llama_index.core.llms.llm import LLM
+from abc import abstractmethod
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
-    ChatResponseGen,
     ChatResponseAsyncGen,
+    ChatResponseGen,
 )
-from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.llms.llm import LLM, ToolSelection
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
@@ -26,6 +21,10 @@ class FunctionCallingLLM(LLM):
     They support an expanded range of capabilities.
 
     """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        # Help static checkers understand this class hierarchy
+        super().__init__(*args, **kwargs)
 
     def chat_with_tools(
         self,
@@ -222,10 +221,10 @@ class FunctionCallingLLM(LLM):
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
+        from llama_index.core.chat_engine.types import AgentChatResponse
         from llama_index.core.tools.calling import (
             acall_tool_with_selection,
         )
-        from llama_index.core.chat_engine.types import AgentChatResponse
 
         if not self.metadata.is_function_calling_model:
             return await super().apredict_and_call(
