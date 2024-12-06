@@ -3,6 +3,8 @@
 
 ## Overview
 
+<img src="https://github.com/vntuananhbui/llama_index/blob/vntuananhbui-multimodal-rag-guardrail/docs/docs/examples/multimodal-rag-guardrail-gemini/Guardrail_data_workflow-4.png">
+
 This project enhances the Multimodal Retrieval-Augmented Generation (RAG) example in **LlamaIndex** by introducing **LLM Guard** guardrails. These guardrails ensure safer interactions by detecting and mitigating toxic, sensitive, or inappropriate content in both input queries and output responses.
 
 Key contributions include:
