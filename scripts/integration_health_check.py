@@ -52,6 +52,8 @@ class IntegrationActivityAnalyzer:
         self.package_name = package_name
         self.repo_path = repo_path
         self.metrics = {}
+        if sum(v for v in metric_weights.values()) != 1:
+            raise ValueError("Metric weights do not sum up to 1.")
         self.metric_weights = metric_weights
         self._is_new_project = False
         self._new_project_score = new_project_score
