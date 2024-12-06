@@ -1,11 +1,12 @@
 """Base embeddings file."""
-
 import asyncio
+import uuid
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, Callable, Coroutine, List, Optional, Sequence, Tuple
 
 import numpy as np
+from llama_index.core.async_utils import run_jobs
 from llama_index.core.bridge.pydantic import (
     Field,
     ConfigDict,
@@ -19,11 +20,9 @@ from llama_index.core.constants import (
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseNode, MetadataMode, TransformComponent
 from llama_index.core.utils import get_tqdm_iterable
-from llama_index.core.async_utils import run_jobs
 
 # TODO: change to numpy array
 Embedding = List[float]
-
 
 from llama_index.core.instrumentation.events.embedding import (
     EmbeddingEndEvent,
@@ -85,6 +84,11 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     num_workers: Optional[int] = Field(
         default=None,
         description="The number of workers to use for async embedding calls.",
+    )
+
+    id_: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        description="Unique ID of the Embedding Instance.",
     )
 
     @field_validator("callback_manager")

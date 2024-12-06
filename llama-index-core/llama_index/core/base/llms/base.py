@@ -1,3 +1,4 @@
+import uuid
 from abc import abstractmethod
 from typing import (
     Any,
@@ -31,6 +32,11 @@ class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
+    )
+
+    id_: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        description="Unique ID of the LLM Instance.",
     )
 
     @model_validator(mode="after")

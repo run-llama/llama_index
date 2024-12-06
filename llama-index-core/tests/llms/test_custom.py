@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 from llama_index.core.base.llms.types import (
@@ -12,8 +13,8 @@ from llama_index.core.llms.custom import CustomLLM
 class TestLLM(CustomLLM):
     __test__ = False
 
-    def __init__(self) -> None:
-        super().__init__(callback_manager=None)
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(callback_manager=None, **kwargs)
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -66,3 +67,9 @@ def test_streaming() -> None:
 
     llm.stream_complete(prompt)
     llm.stream_chat([message])
+
+
+def test_llm_id():
+    llm_id = uuid.uuid4().hex
+    llm = TestLLM(id_=llm_id)
+    assert llm.id_ == llm_id

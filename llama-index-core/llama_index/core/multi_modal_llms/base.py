@@ -1,3 +1,4 @@
+import uuid
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, get_args
 
@@ -84,6 +85,11 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
+    )
+
+    id_: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        description="Unique ID of the LLM Instance.",
     )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
