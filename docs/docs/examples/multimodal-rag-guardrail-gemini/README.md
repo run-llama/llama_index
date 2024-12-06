@@ -43,12 +43,7 @@ Key contributions include:
    cd llamaindex-guardrails
    ```
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Ensure you have access to an LLM (e.g., Gemini-1.5-flash) and configure API keys as required.
+2. Ensure you have access to an LLM (e.g., Gemini-1.5-flash) and configure API keys as required.
 
 ---
 
@@ -98,7 +93,7 @@ query_engine = MultimodalQueryEngine(
 
 #### Querying the Engine
 ```python
-response = query_engine.custom_query("Your query here")
+response = query_engine.query("Your query here")
 print(response)
 ```
 
