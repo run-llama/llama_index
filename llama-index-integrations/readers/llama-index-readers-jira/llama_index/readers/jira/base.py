@@ -148,7 +148,7 @@ class JiraReader(BaseReader):
                 "reporter": reporter,
                 "project": safe_get(issue, "fields", "project", "name"),
                 "issue_type": issue_type,
-                "priority": priority,
+                "priority": safe_get(issue, "fields", "priority", "name"),
                 "epic_key": epic_key,
                 "epic_summary": epic_summary,
                 "epic_description": epic_descripton,
