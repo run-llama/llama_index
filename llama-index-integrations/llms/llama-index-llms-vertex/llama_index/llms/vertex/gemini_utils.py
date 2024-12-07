@@ -1,7 +1,6 @@
 import base64
 from typing import Any, Dict, Union, Optional
-from vertexai.generative_models._generative_models import SafetySettingsType
-from google.cloud.aiplatform_v1beta1.types import content as gapic_content_types
+from vertexai.generative_models import SafetySetting
 from llama_index.core.llms import ChatMessage, MessageRole
 
 
@@ -9,9 +8,7 @@ def is_gemini_model(model: str) -> bool:
     return model.startswith("gemini")
 
 
-def create_gemini_client(
-    model: str, safety_settings: Optional[SafetySettingsType]
-) -> Any:
+def create_gemini_client(model: str, safety_settings: Optional[SafetySetting]) -> Any:
     from vertexai.preview.generative_models import GenerativeModel
 
     return GenerativeModel(model_name=model, safety_settings=safety_settings)
@@ -46,19 +43,34 @@ def convert_chat_message_to_gemini_content(
             raise ValueError("Only text and image_url types are supported!")
         return Part.from_image(image)
 
-    if message.content == "" and "tool_calls" in message.additional_kwargs:
+    if (
+        message.role == MessageRole.ASSISTANT
+        and message.content == ""
+        and "tool_calls" in message.additional_kwargs
+    ) or (message.role == MessageRole.TOOL):
         tool_calls = message.additional_kwargs["tool_calls"]
-        parts = [
-            Part._from_gapic(raw_part=gapic_content_types.Part(function_call=tool_call))
-            for tool_call in tool_calls
-        ]
-    else:
-        raw_content = message.content
+        if message.role != MessageRole.TOOL:
+            parts = [
+                Part.from_function_response(tool_call.name, tool_call.args)
+                for tool_call in tool_calls
+            ]
+            parts.append(Part.from_text(handle_raw_content(message)))
+        else:
+            ## this handles the case where the Gemini api properly sets the message role to tool instead of assistant
+            if "name" in message.additional_kwargs:
+                parts = [
+                    Part.from_function_response(
+                        message.additional_kwargs["name"],
+                        message.additional_kwargs.get("args", {}),
+                    )
+                ]
+            else:
+                raise ValueError("Tool name must be provided!")
 
-        if raw_content is None:
-            raw_content = ""
-        if isinstance(raw_content, str):
-            raw_content = [raw_content]
+            raw_content = handle_raw_content(message)
+            parts.append(_convert_gemini_part_to_prompt(part) for part in raw_content)
+    else:
+        raw_content = handle_raw_content(message)
 
         parts = [_convert_gemini_part_to_prompt(part) for part in raw_content]
 
@@ -69,3 +81,12 @@ def convert_chat_message_to_gemini_content(
         )
     else:
         return parts
+
+
+def handle_raw_content(message):
+    raw_content = message.content
+    if raw_content is None:
+        raw_content = ""
+    if isinstance(raw_content, str):
+        raw_content = [raw_content]
+    return raw_content
