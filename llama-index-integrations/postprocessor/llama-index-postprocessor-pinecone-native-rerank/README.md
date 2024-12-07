@@ -1,0 +1,1 @@
+Native rerank models supported by the pinecone client
