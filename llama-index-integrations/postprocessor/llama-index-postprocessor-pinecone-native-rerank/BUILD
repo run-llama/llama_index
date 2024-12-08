@@ -1,3 +1,3 @@
 poetry_requirements(
-    name="poetry",
+    name = "poetry",
 )
