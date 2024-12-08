@@ -1,6 +1,5 @@
 import os
-from typing import Any, List, Optional
-
+from typing import List, Optional, Literal
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.instrumentation import get_dispatcher
@@ -14,13 +13,19 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, MetadataMode
 dispatcher = get_dispatcher(__name__)
 
 
-# pinecone itself supports some inference model for rerank out of box
+# as of today 2024/12/7
+# pinecone itself supports 3 rerank models out of its sdk
+# https://app.pinecone.io/organizations/-Nn577_974iRsvC6nVxg/projects/a4fe57a4-b1cc-4a99-bf1d-c35a595cae4a/models
 class PineconeNativeRerank(BaseNodePostprocessor):
-    model: str = Field(description="Pinecone inference rerank model name")
-
+    model: Literal[
+        "bge-reranker-v2-m3", "cohere-rerank-3.5", "pinecone-rerank-v0"
+    ] = Field(
+        description="supported Pinecone inference rerank model name",
+        default="bge-reranker-v2-m3",
+    )
     top_n: int = Field(description="Top N nodes to return")
 
-    _client: Any = PrivateAttr()
+    _pc: any = PrivateAttr()
 
     def __init__(
         self,
@@ -44,7 +49,7 @@ class PineconeNativeRerank(BaseNodePostprocessor):
                 "Cannot import pinecone package, please `pip install pinecone-client`."
             )
 
-        self._client = Pinecone(api_key=api_key)
+        self._pc = Pinecone(api_key=api_key)
 
     @classmethod
     def class_name(cls) -> str:
@@ -80,15 +85,15 @@ class PineconeNativeRerank(BaseNodePostprocessor):
                 for node in nodes
             ]
 
-            results = self._client.rerank(
+            reranked_result = self._pc.inference.rerank(
                 model=self.model,
-                top_k=self.top_n,
+                top_n=self.top_n,
                 query=query_bundle.query_str,
                 documents=texts,
+                return_documents=True,
             )
-
             new_nodes = []
-            for result in results.results:
+            for result in reranked_result.data:
                 new_nodes.append(
                     NodeWithScore(
                         node=nodes[result.index].node,

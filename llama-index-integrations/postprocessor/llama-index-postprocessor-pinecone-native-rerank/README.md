@@ -1,1 +1,2 @@
-Native rerank models supported by the pinecone client
+- use rerank models with the pinecone managed vector service to rerank the search results
+- available rerank models from [pinecone](https://app.pinecone.io/organizations/-Nn577_974iRsvC6nVxg/projects/a4fe57a4-b1cc-4a99-bf1d-c35a595cae4a/models)
