@@ -1,0 +1,31 @@
+description: Quickstart to serve LLM model with vLLM.
+env:
+  HF_TOKEN: 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
+  MODEL_NAME: mistralai/Mistral-7B-Instruct-v0.3
+image: quay.io/vessl-ai/torch:2.3.1-cuda12.1-r5
+name: vllm-server
+ports:
+- name: vllm
+  port: 8000
+  type: http
+resources:
+  cluster: vessl-gcp-oregon
+  preset: gpu-l4-small-spot
+run:
+- command: 'pip install autoawq==0.2.6
+
+    pip install vllm==0.6.0 fastapi==0.112.2
+
+    pip install flash-attn==2.6.3
+
+    vllm serve $MODEL_NAME --max-model-len 8192 --disable-frontend-multiprocessing'
+service:
+  autoscaling:
+    max: 2
+    metric: cpu
+    min: 1
+    target: 50
+  expose: 8000
+  monitoring:
+  - path: /metrics
+    port: 8000
