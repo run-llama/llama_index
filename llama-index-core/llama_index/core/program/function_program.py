@@ -302,19 +302,22 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             **(llm_kwargs or {}),
         )
 
-        cur_objects = None
-        async for partial_resp in chat_response_gen:
-            try:
-                objects = process_streaming_objects(
-                    partial_resp,
-                    self._output_cls,
-                    cur_objects=cur_objects,
-                    allow_parallel_tool_calls=self._allow_parallel_tool_calls,
-                    flexible_mode=True,
-                    llm=self._llm,
-                )
-                cur_objects = objects if isinstance(objects, list) else [objects]
-                yield objects  # type: ignore
-            except Exception as e:
-                _logger.warning(f"Failed to parse streaming response: {e}")
-                continue
+        async def gen() -> AsyncGenerator[Union[Model, List[Model]], None]:
+            cur_objects = None
+            async for partial_resp in chat_response_gen:
+                try:
+                    objects = process_streaming_objects(
+                        partial_resp,
+                        self._output_cls,
+                        cur_objects=cur_objects,
+                        allow_parallel_tool_calls=self._allow_parallel_tool_calls,
+                        flexible_mode=True,
+                        llm=self._llm,
+                    )
+                    cur_objects = objects if isinstance(objects, list) else [objects]
+                    yield objects  # type: ignore
+                except Exception as e:
+                    _logger.warning(f"Failed to parse streaming response: {e}")
+                    continue
+
+        return gen()
