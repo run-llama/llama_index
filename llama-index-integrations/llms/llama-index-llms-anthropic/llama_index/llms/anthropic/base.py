@@ -211,7 +211,7 @@ class Anthropic(FunctionCallingLLM):
     @property
     def tokenizer(self) -> Tokenizer:
         class AnthropicTokenizer:
-            def __init__(self, client, model):
+            def __init__(self, client, model) -> None:
                 self._client = client
                 self.model = model
 

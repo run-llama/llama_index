@@ -184,14 +184,12 @@ def test_anthropic_tokenizer():
     mock_client.beta = mock_beta
 
     # Create the Anthropic instance with our mock
-    anthropic_llm = Anthropic(
-        model="claude-3-5-sonnet-20241022"
-    )
+    anthropic_llm = Anthropic(model="claude-3-5-sonnet-20241022")
     anthropic_llm._client = mock_client
 
     # Test that tokenizer implements the protocol
     tokenizer = anthropic_llm.tokenizer
-    assert hasattr(tokenizer, 'encode')
+    assert hasattr(tokenizer, "encode")
 
     # Test that encode returns a list of integers
     test_text = "Hello, world!"
@@ -203,5 +201,5 @@ def test_anthropic_tokenizer():
     # Verify the mock was called correctly
     mock_messages.count_tokens.assert_called_once_with(
         messages=[{"role": "user", "content": test_text}],
-        model="claude-3-5-sonnet-20241022"
+        model="claude-3-5-sonnet-20241022",
     )
