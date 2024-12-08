@@ -31,7 +31,7 @@ version = "0.3.2"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-pgvector = "^0.3.6"
+pgvector = "^0.2.4"
 psycopg2-binary = "^2.9.9"
 asyncpg = "^0.29.0"
 llama-index-core = "^0.12.0"
