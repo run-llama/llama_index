@@ -30,8 +30,8 @@ import filetype
 from dataclasses_json import DataClassJsonMixin
 from typing_extensions import Self
 
+from pydantic import AnyUrl
 from llama_index.core.bridge.pydantic import (
-    AnyUrl,
     BaseModel,
     ConfigDict,
     Field,
