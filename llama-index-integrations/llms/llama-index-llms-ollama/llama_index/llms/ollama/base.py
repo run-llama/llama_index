@@ -546,28 +546,39 @@ class Ollama(FunctionCallingLLM):
             Generator yielding partial objects as they are generated
         """
         if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
-            llm_kwargs = llm_kwargs or {}
-            llm_kwargs["format"] = output_cls.model_json_schema()
 
-            messages = prompt.format_messages(**prompt_args)
-            response_gen = self.stream_chat(messages, **llm_kwargs)
+            def gen(
+                output_cls: Type[BaseModel],
+                prompt: PromptTemplate,
+                llm_kwargs: Dict[str, Any],
+                prompt_args: Dict[str, Any],
+            ) -> Generator[Union[BaseModel, List[BaseModel]], None, None]:
+                llm_kwargs = llm_kwargs or {}
+                llm_kwargs["format"] = output_cls.model_json_schema()
 
-            cur_objects = None
-            for response in response_gen:
-                try:
-                    objects = process_streaming_objects(
-                        response,
-                        output_cls,
-                        cur_objects=cur_objects,
-                        allow_parallel_tool_calls=False,
-                        flexible_mode=True,
-                    )
-                    cur_objects = objects if isinstance(objects, list) else [objects]
-                    yield objects
-                except Exception:
-                    continue
+                messages = prompt.format_messages(**prompt_args)
+                response_gen = self.stream_chat(messages, **llm_kwargs)
+
+                cur_objects = None
+                for response in response_gen:
+                    try:
+                        objects = process_streaming_objects(
+                            response,
+                            output_cls,
+                            cur_objects=cur_objects,
+                            allow_parallel_tool_calls=False,
+                            flexible_mode=True,
+                        )
+                        cur_objects = (
+                            objects if isinstance(objects, list) else [objects]
+                        )
+                        yield objects
+                    except Exception:
+                        continue
+
+            return gen(output_cls, prompt, llm_kwargs, prompt_args)
         else:
-            yield from super().stream_structured_predict(
+            return super().stream_structured_predict(
                 output_cls, prompt, llm_kwargs, **prompt_args
             )
 
@@ -581,30 +592,39 @@ class Ollama(FunctionCallingLLM):
     ) -> AsyncGenerator[Union[BaseModel, List[BaseModel]], None]:
         """Async version of stream_structured_predict."""
         if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
-            llm_kwargs = llm_kwargs or {}
-            llm_kwargs["format"] = output_cls.model_json_schema()
 
-            messages = prompt.format_messages(**prompt_args)
-            response_gen = await self.astream_chat(messages, **llm_kwargs)
+            async def gen(
+                output_cls: Type[BaseModel],
+                prompt: PromptTemplate,
+                llm_kwargs: Dict[str, Any],
+                prompt_args: Dict[str, Any],
+            ) -> AsyncGenerator[Union[BaseModel, List[BaseModel]], None]:
+                llm_kwargs = llm_kwargs or {}
+                llm_kwargs["format"] = output_cls.model_json_schema()
 
-            cur_objects = None
-            async for response in response_gen:
-                try:
-                    objects = process_streaming_objects(
-                        response,
-                        output_cls,
-                        cur_objects=cur_objects,
-                        allow_parallel_tool_calls=False,
-                        flexible_mode=True,
-                    )
-                    cur_objects = objects if isinstance(objects, list) else [objects]
-                    yield objects
-                except Exception:
-                    continue
+                messages = prompt.format_messages(**prompt_args)
+                response_gen = await self.astream_chat(messages, **llm_kwargs)
+
+                cur_objects = None
+                async for response in response_gen:
+                    try:
+                        objects = process_streaming_objects(
+                            response,
+                            output_cls,
+                            cur_objects=cur_objects,
+                            allow_parallel_tool_calls=False,
+                            flexible_mode=True,
+                        )
+                        cur_objects = (
+                            objects if isinstance(objects, list) else [objects]
+                        )
+                        yield objects
+                    except Exception:
+                        continue
+
+            return gen(output_cls, prompt, llm_kwargs, prompt_args)
         else:
             # Fall back to non-streaming structured predict
-            gen = await super().astream_structured_predict(
+            return await super().astream_structured_predict(
                 output_cls, prompt, llm_kwargs, **prompt_args
             )
-            async for obj in gen:
-                yield obj
