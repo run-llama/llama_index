@@ -1,6 +1,6 @@
 """Program utils."""
 import logging
-from typing import Any, List, Type, Union, Optional, Dict
+from typing import Any, List, Type, Sequence, Union, Optional, Dict
 
 from llama_index.core.bridge.pydantic import (
     BaseModel,
@@ -9,7 +9,7 @@ from llama_index.core.bridge.pydantic import (
     ValidationError,
     create_model,
 )
-from llama_index.core.llms.llm import LLM
+from llama_index.core.llms.llm import LLM, ToolSelection
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.prompts.base import BasePromptTemplate
@@ -162,7 +162,7 @@ def _repair_incomplete_json(json_str: str) -> str:
 def process_streaming_objects(
     chat_response: ChatResponse,
     output_cls: Type[BaseModel],
-    cur_objects: Optional[List[BaseModel]] = None,
+    cur_objects: Optional[Sequence[BaseModel]] = None,
     allow_parallel_tool_calls: bool = False,
     flexible_mode: bool = True,
     llm: Optional[FunctionCallingLLM] = None,
@@ -183,13 +183,16 @@ def process_streaming_objects(
         # Create flexible version of model that allows partial responses
         partial_output_cls = create_flexible_model(output_cls)
     else:
-        partial_output_cls = output_cls
+        partial_output_cls = output_cls  # type: ignore
 
     # Get tool calls from response, if there are any
     if not chat_response.message.additional_kwargs.get("tool_calls"):
         output_cls_args = [chat_response.message.content]
     else:
-        tool_calls = []
+        tool_calls: List[ToolSelection] = []
+        if not llm:
+            raise ValueError("LLM is required to get tool calls")
+
         if isinstance(chat_response.message.additional_kwargs.get("tool_calls"), list):
             tool_calls = llm.get_tool_calls_from_response(
                 chat_response, error_on_no_tool_call=False
@@ -200,7 +203,7 @@ def process_streaming_objects(
             return partial_output_cls()
 
         # Extract arguments from tool calls
-        output_cls_args = [call.tool_kwargs for call in tool_calls]
+        output_cls_args = [call.tool_kwargs for call in tool_calls]  # type: ignore
 
     # Try to parse objects, handling potential incomplete JSON
     objects = []
@@ -222,7 +225,7 @@ def process_streaming_objects(
                 _logger.debug(f"Validation error during streaming: {e2}")
                 # If we have previous objects, keep using those
                 if cur_objects:
-                    objects = cur_objects
+                    objects = cur_objects  # type: ignore
                 else:
                     # Return a blank object if we can't parse anything
                     return partial_output_cls()
@@ -231,15 +234,16 @@ def process_streaming_objects(
     if cur_objects is None or num_valid_fields(objects) >= num_valid_fields(
         cur_objects
     ):
-        cur_objects = objects
+        cur_objects = objects  # type: ignore
 
     # Try to convert flexible objects to target schema
     new_cur_objects = []
-    for obj in cur_objects:
+    cur_objects = cur_objects or []
+    for o in cur_objects:
         try:
-            new_obj = output_cls.model_validate(obj.model_dump())
+            new_obj = output_cls.model_validate(o.model_dump(exclude_unset=True))
         except ValidationError:
-            new_obj = obj
+            new_obj = o
         new_cur_objects.append(new_obj)
 
     if allow_parallel_tool_calls:
@@ -254,7 +258,7 @@ def process_streaming_objects(
 
 
 def num_valid_fields(
-    obj: Union[BaseModel, List[BaseModel], Dict[str, BaseModel]]
+    obj: Union[BaseModel, Sequence[BaseModel], Dict[str, BaseModel]]
 ) -> int:
     """
     Recursively count the number of fields in a Pydantic object (including nested objects) that aren't None.

@@ -235,7 +235,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
                 )
             return new_cur_objects[0]  # type: ignore
 
-    def stream_call(
+    def stream_call(  # type: ignore
         self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> Generator[Union[Model, List[Model]], None, None]:
         """Stream object.
@@ -273,12 +273,12 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
                     llm=self._llm,
                 )
                 cur_objects = objects if isinstance(objects, list) else [objects]
-                yield objects
+                yield objects  # type: ignore
             except Exception as e:
                 _logger.warning(f"Failed to parse streaming response: {e}")
                 continue
 
-    async def astream_call(
+    async def astream_call(  # type: ignore
         self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> AsyncGenerator[Union[Model, List[Model]], None]:
         """Stream objects.
@@ -314,7 +314,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
                     llm=self._llm,
                 )
                 cur_objects = objects if isinstance(objects, list) else [objects]
-                yield objects
+                yield objects  # type: ignore
             except Exception as e:
                 _logger.warning(f"Failed to parse streaming response: {e}")
                 continue
