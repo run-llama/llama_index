@@ -1,15 +1,13 @@
 import logging
 from typing import (
-    TYPE_CHECKING,
     Any,
-    AsyncGenerator,
     Callable,
     Dict,
-    Generator,
     List,
     Optional,
     Sequence,
     Union,
+    TYPE_CHECKING
 )
 
 import llama_index.core.instrumentation as instrument
@@ -26,7 +24,6 @@ from llama_index.core.base.llms.types import (
     MessageRole,
 )
 from llama_index.core.bridge.pydantic import (
-    BaseModel,
     Field,
     PrivateAttr,
     model_validator,
@@ -40,6 +37,7 @@ from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, Model, PydanticProgramMode
 from llama_index.llms.oci_data_science.client import AsyncClient, Client
 from llama_index.llms.oci_data_science.utils import (
+    DEFAULT_TOOL_CHOICE,
     _from_completion_logprobs_dict,
     _from_message_dict,
     _from_token_logprob_dicts,
@@ -50,9 +48,12 @@ from llama_index.llms.oci_data_science.utils import (
     _validate_dependency,
 )
 
-dispatcher = instrument.get_dispatcher(__name__)
+
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
+
+dispatcher = instrument.get_dispatcher(__name__)
+
 
 DEFAULT_MODEL = "odsc-llm"
 DEFAULT_MAX_TOKENS = 512
@@ -67,10 +68,10 @@ class OCIDataScience(FunctionCallingLLM):
     LLM deployed on OCI Data Science Model Deployment.
 
     **Setup:**
-        Install ``oracle-ads`` and ``llama-index-oci-data-science``.
+        Install ``oracle-ads`` and ``llama-index-llms-oci-data-science``.
 
         ```bash
-        pip install -U oracle-ads llama-index-oci-data-science
+        pip install -U oracle-ads llama-index-llms-oci-data-science
         ```
 
         Use `ads.set_auth()` to configure authentication.
@@ -256,6 +257,9 @@ class OCIDataScience(FunctionCallingLLM):
         default=False,
         description="Whether to use strict mode for invoking tools/using schemas.",
     )
+    default_headers: Optional[Dict[str, str]] = Field(
+        default=None, description="The default headers for API requests."
+    )
 
     _client: Client = PrivateAttr()
     _async_client: AsyncClient = PrivateAttr()
@@ -274,6 +278,7 @@ class OCIDataScience(FunctionCallingLLM):
         callback_manager: Optional[CallbackManager] = None,
         is_chat_model: Optional[bool] = True,
         is_function_calling_model: Optional[bool] = True,
+        default_headers: Optional[Dict[str, str]] = None,
         # base class
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
@@ -299,6 +304,7 @@ class OCIDataScience(FunctionCallingLLM):
             callback_manager (Optional[CallbackManager]): Callback manager for LLM.
             is_chat_model (Optional[bool]): If the model exposes a chat interface. Defaults to `True`.
             is_function_calling_model (Optional[bool]): If the model supports function calling messages. Defaults to `True`.
+            default_headers (Optional[Dict[str, str]]): The default headers for API requests.
             system_prompt (Optional[str]): System prompt to use.
             messages_to_prompt (Optional[Callable]): Function to convert messages to prompt.
             completion_to_prompt (Optional[Callable]): Function to convert completion to prompt.
@@ -320,6 +326,7 @@ class OCIDataScience(FunctionCallingLLM):
             callback_manager=callback_manager or CallbackManager([]),
             is_chat_model=is_chat_model,
             is_function_calling_model=is_function_calling_model,
+            default_headers=default_headers,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
@@ -419,6 +426,21 @@ class OCIDataScience(FunctionCallingLLM):
         }
         return {**base_kwargs, **self.additional_kwargs, **kwargs}
 
+    def _prepare_headers(
+        self,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, str]:
+        """
+        Construct and return the headers for a request.
+
+        Args:
+            headers (Optional[Dict[str, str]]): HTTP headers to include in the request.
+
+        Returns:
+            Dict[str, str]: The prepared headers.
+        """
+        return {**(self.default_headers or {}), **(headers or {})}
+
     @llm_completion_callback()
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -438,7 +460,7 @@ class OCIDataScience(FunctionCallingLLM):
         response = self.client.generate(
             prompt=prompt,
             payload=self._model_kwargs(**kwargs),
-            headers=kwargs.pop("headers", None),
+            headers=self._prepare_headers(kwargs.pop("headers", {})),
             stream=False,
         )
 
@@ -477,7 +499,7 @@ class OCIDataScience(FunctionCallingLLM):
         for response in self.client.generate(
             prompt=prompt,
             payload=self._model_kwargs(**kwargs),
-            headers=kwargs.pop("headers", None),
+            headers=self._prepare_headers(kwargs.pop("headers", {})),
             stream=True,
         ):
             logger.debug(f"Received chunk: {response}")
@@ -514,7 +536,7 @@ class OCIDataScience(FunctionCallingLLM):
                 messages=messages, drop_none=kwargs.pop("drop_none", False)
             ),
             payload=self._model_kwargs(**kwargs),
-            headers=kwargs.pop("headers", None),
+            headers=self._prepare_headers(kwargs.pop("headers", {})),
             stream=False,
         )
 
@@ -557,7 +579,7 @@ class OCIDataScience(FunctionCallingLLM):
                 messages=messages, drop_none=kwargs.pop("drop_none", False)
             ),
             payload=self._model_kwargs(**kwargs),
-            headers=kwargs.pop("headers", None),
+            headers=self._prepare_headers(kwargs.pop("headers", {})),
             stream=True,
         ):
             logger.debug(f"Received chat chunk: {response}")
@@ -611,7 +633,7 @@ class OCIDataScience(FunctionCallingLLM):
         response = await self.async_client.generate(
             prompt=prompt,
             payload=self._model_kwargs(**kwargs),
-            headers=kwargs.pop("headers", None),
+            headers=self._prepare_headers(kwargs.pop("headers", {})),
             stream=False,
         )
 
@@ -653,7 +675,7 @@ class OCIDataScience(FunctionCallingLLM):
             async for response in await self.async_client.generate(
                 prompt=prompt,
                 payload=self._model_kwargs(**kwargs),
-                headers=kwargs.pop("headers", None),
+                headers=self._prepare_headers(kwargs.pop("headers", {})),
                 stream=True,
             ):
                 logger.debug(f"Received async chunk: {response}")
@@ -694,7 +716,7 @@ class OCIDataScience(FunctionCallingLLM):
                 messages=messages, drop_none=kwargs.pop("drop_none", False)
             ),
             payload=self._model_kwargs(**kwargs),
-            headers=kwargs.pop("headers", None),
+            headers=self._prepare_headers(kwargs.pop("headers", {})),
             stream=False,
         )
 
@@ -733,14 +755,13 @@ class OCIDataScience(FunctionCallingLLM):
             logger.debug(f"Starting astream_chat with messages: {messages}")
             content = ""
             is_function = False
-            first_chat_chunk = True
             tool_calls = []
             async for response in await self.async_client.chat(
                 messages=_to_message_dicts(
                     messages=messages, drop_none=kwargs.pop("drop_none", False)
                 ),
                 payload=self._model_kwargs(**kwargs),
-                headers=kwargs.pop("headers", None),
+                headers=self._prepare_headers(kwargs.pop("headers", {})),
                 stream=True,
             ):
                 logger.debug(f"Received async chat chunk: {response}")
@@ -784,7 +805,7 @@ class OCIDataScience(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
+        tool_choice: Union[str, dict] = DEFAULT_TOOL_CHOICE,
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -804,17 +825,15 @@ class OCIDataScience(FunctionCallingLLM):
         Returns:
             Dict[str, Any]: The prepared parameters for the chat request.
         """
-        logger.debug(
-            f"Preparing chat with tools. Tools: {tools}, User message: {user_msg}, "
-            f"Chat history: {chat_history}"
-        )
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
+        logger.debug(
+            f"Preparing chat with tools. Tools: {tool_specs}, User message: {user_msg}, "
+            f"Chat history: {chat_history}"
+        )
+
         # Determine strict mode
-        if strict is not None:
-            strict = strict
-        else:
-            strict = self.strict
+        strict = strict or self.strict
 
         if self.metadata.is_function_calling_model:
             for tool_spec in tool_specs:
@@ -833,7 +852,7 @@ class OCIDataScience(FunctionCallingLLM):
         return {
             "messages": messages,
             "tools": tool_specs or None,
-            "tool_choice": _resolve_tool_choice(tool_choice) if tool_specs else None,
+            "tool_choice": (_resolve_tool_choice(tool_choice) if tool_specs else None),
             **kwargs,
         }
 
@@ -860,7 +879,7 @@ class OCIDataScience(FunctionCallingLLM):
             # Ensures that the 'tool_calls' in the response contain only a single tool call.
             tool_calls = response.message.additional_kwargs.get("tool_calls", [])
             if len(tool_calls) > 1:
-                logger.debug(
+                logger.warning(
                     "Multiple tool calls detected but parallel tool calls are not allowed. "
                     "Limiting to the first tool call."
                 )
@@ -888,7 +907,7 @@ class OCIDataScience(FunctionCallingLLM):
             ValueError: If no tool calls are found and error_on_no_tool_call is True.
         """
         tool_calls = response.message.additional_kwargs.get("tool_calls", [])
-        logger.debug(f"Extracted tool calls: {tool_calls}")
+        logger.debug(f"Getting tool calls from response: {tool_calls}")
 
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
@@ -901,8 +920,7 @@ class OCIDataScience(FunctionCallingLLM):
         tool_selections = []
         for tool_call in tool_calls:
             if tool_call.get("type") != "function":
-                logger.error(f"Invalid tool type detected: {tool_call.get('type')}")
-                raise ValueError("Invalid tool type.")
+                raise ValueError(f"Invalid tool type detected: {tool_call.get('type')}")
 
             # Handle both complete and partial JSON
             try:
@@ -921,50 +939,7 @@ class OCIDataScience(FunctionCallingLLM):
                 )
             )
 
+        logger.debug(
+            f"Extracted tool calls: { [tool_selection.model_dump() for tool_selection in tool_selections] }"
+        )
         return tool_selections
-
-    @dispatcher.span
-    def structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> BaseModel:
-        # force tool_choice to be required
-        llm_kwargs = llm_kwargs or {}
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
-        )
-        return super().structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
-
-    @dispatcher.span
-    async def astructured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> BaseModel:
-        # force tool_choice to be required
-        llm_kwargs = llm_kwargs or {}
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
-        )
-        return await super().astructured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
-
-    @dispatcher.span
-    def stream_structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> Generator[Union[Model, List[Model]], None, None]:
-        # force tool_choice to be required
-        llm_kwargs = llm_kwargs or {}
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
-        )
-        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
-
-    @dispatcher.span
-    async def astream_structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> AsyncGenerator[Union[Model, List[Model]], None]:
-        # force tool_choice to be required
-        llm_kwargs = llm_kwargs or {}
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
-        )
-        return await super().astream_structured_predict(
-            *args, llm_kwargs=llm_kwargs, **kwargs
-        )

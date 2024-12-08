@@ -505,6 +505,7 @@ class Client(BaseClient):
         """
         logger.debug(f"Generating text with prompt: {prompt}, stream: {stream}")
         payload = {**(payload or {}), "prompt": prompt}
+        headers = {"route": "/v1/completions", **(headers or {})}
         if stream:
             return self._stream(payload=payload, headers=headers)
         return self._request(payload=payload, headers=headers)
@@ -530,6 +531,7 @@ class Client(BaseClient):
         """
         logger.debug(f"Starting chat with messages: {messages}, stream: {stream}")
         payload = {**(payload or {}), "messages": messages}
+        headers = {"route": "/v1/chat/completions", **(headers or {})}
         if stream:
             return self._stream(payload=payload, headers=headers)
         return self._request(payload=payload, headers=headers)
@@ -712,6 +714,7 @@ class AsyncClient(BaseClient):
         """
         logger.debug(f"Generating text with prompt: {prompt}, stream: {stream}")
         payload = {**(payload or {}), "prompt": prompt}
+        headers = {"route": "/v1/completions", **(headers or {})}
         if stream:
             return self._stream(payload=payload, headers=headers)
         return await self._request(payload=payload, headers=headers)
@@ -737,6 +740,7 @@ class AsyncClient(BaseClient):
         """
         logger.debug(f"Starting chat with messages: {messages}, stream: {stream}")
         payload = {**(payload or {}), "messages": messages}
+        headers = {"route": "/v1/chat/completions", **(headers or {})}
         if stream:
             return self._stream(payload=payload, headers=headers)
         return await self._request(payload=payload, headers=headers)

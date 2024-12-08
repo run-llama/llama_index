@@ -6,6 +6,9 @@ from llama_index.core.base.llms.types import ChatMessage, LogProb
 from packaging import version
 
 MIN_ADS_VERSION = "2.12.6"
+SUPPORTED_TOOL_CHOICES = ["none", "auto", "required"]
+DEFAULT_TOOL_CHOICE = "auto"
+
 
 logger = logging.getLogger(__name__)
 
@@ -181,10 +184,11 @@ def _from_message_dict(message_dict: Dict[str, Any]) -> ChatMessage:
     ChatMessage
         The converted ChatMessage object.
     """
-    role = message_dict.get("role")
-    content = message_dict.get("content")
-    additional_kwargs = {"tool_calls": message_dict.get("tool_calls", [])}
-    return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
+    return ChatMessage(
+        role=message_dict.get("role"),
+        content=message_dict.get("content"),
+        additional_kwargs={"tool_calls": message_dict.get("tool_calls", [])},
+    )
 
 
 def _get_response_token_counts(raw_response: Dict[str, Any]) -> Dict[str, int]:
@@ -201,15 +205,13 @@ def _get_response_token_counts(raw_response: Dict[str, Any]) -> Dict[str, int]:
     Dict[str, int]
         The extracted token counts.
     """
-    usage = raw_response.get("usage", {})
-
-    if not usage:
+    if not raw_response.get("usage"):
         return {}
 
     return {
-        "prompt_tokens": usage.get("prompt_tokens", 0),
-        "completion_tokens": usage.get("completion_tokens", 0),
-        "total_tokens": usage.get("total_tokens", 0),
+        "prompt_tokens": raw_response["usage"].get("prompt_tokens", 0),
+        "completion_tokens": raw_response["usage"].get("completion_tokens", 0),
+        "total_tokens": raw_response["usage"].get("total_tokens", 0),
     }
 
 
@@ -253,12 +255,11 @@ def _update_tool_calls(
     return tool_calls
 
 
-def _resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
-    """Resolve tool choice.
-
-    If tool_choice is a function name string, return the appropriate dict.
-    """
-    if isinstance(tool_choice, str) and tool_choice not in ["none", "auto", "required"]:
+def _resolve_tool_choice(
+    tool_choice: Union[str, dict] = DEFAULT_TOOL_CHOICE
+) -> Union[str, dict]:
+    """If tool_choice is a function name string, return the appropriate dict."""
+    if isinstance(tool_choice, str) and tool_choice not in SUPPORTED_TOOL_CHOICES:
         return {"type": "function", "function": {"name": tool_choice}}
 
     return tool_choice
