@@ -2,6 +2,7 @@ import os
 import vessl.serving
 import yaml
 from typing import Any, Optional
+from pydantic import BaseModel
 
 import vessl
 from vessl.util.config import VesslConfigLoader
@@ -10,7 +11,7 @@ from llama_index.llms.vesslai.utils import wait_for_gateway_enabled, read_servic
 from llama_index.llms.openai_like import OpenAILike
 
 
-class VesslAILLM(OpenAILike):
+class VesslAILLM(OpenAILike,BaseModel):
     """VesslAI LLM.
 
     Examples:
@@ -27,14 +28,12 @@ class VesslAILLM(OpenAILike):
 
         #1 Serve with methods 
         llm.serve(
-            organization_name = "vessl-ai",
             service_name = "llama-index-vesslai-test",
             model_name = "mistralai/Mistral-7B-Instruct-v0.3",
         )
 
         #2 Serve with yaml
         llm.serve(
-            organization_name = "vessl-ai",
             service_name = "llama-index-vesslai-test",
             yaml_path="/root/vesslai/vesslai_vllm.yaml",
         )
@@ -49,13 +48,14 @@ class VesslAILLM(OpenAILike):
         print(resp)
         ```
     """
+    organization_name: str = None
+    default_service_yaml: str = "vesslai_vllm.yaml"
 
     def __init__(
         self,
         **kwargs: Any,
     ) -> None:
         super().__init__()
-        self.organization_name = None
         self._configure()
     
     def _configure(self):
@@ -86,10 +86,6 @@ class VesslAILLM(OpenAILike):
                 return
         
         self.organization_name = organization_name
-        print(f"""Username: {user.username} \n
-              Email: {user.email} \n
-              Default organization: {organization_name} \n
-              Default project: {project_name or 'N/A'}""")
     
     def serve(
         self,
@@ -101,6 +97,7 @@ class VesslAILLM(OpenAILike):
         api_key: str = None,
         **kwargs: Any,
     ) -> None:
+        self.organization_name = kwargs.get('organization_name', self.organization_name)
         if not model_name and not yaml_path:
             raise ValueError("You must provide either 'model_name' or 'yaml_path', but not both")
         if model_name and yaml_path:
@@ -197,10 +194,9 @@ class VesslAILLM(OpenAILike):
 
         return gateway_endpoint
     
-    @staticmethod
-    def _get_default_yaml_path():
+    def _get_default_yaml_path(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        default_yaml_path = os.path.join(current_dir, "vesslai_vllm.yaml")
+        default_yaml_path = os.path.join(current_dir, self.default_service_yaml)
         return default_yaml_path
     
     def connect(
