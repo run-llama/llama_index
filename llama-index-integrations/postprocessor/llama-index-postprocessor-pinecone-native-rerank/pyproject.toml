@@ -23,7 +23,6 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["Jingyi Zhao <zhao.elton@gmail.com>"]
 description = "llama-index postprocessor reranker models from pinecone cloud service"
-exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-postprocessor-pinecone-native-rerank"
 packages = [{include = "llama_index/"}]
