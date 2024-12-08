@@ -25,7 +25,7 @@ def test_levels_back0() -> None:
     with TemporaryDirectory() as tmp_dir:
         file_name = f"{tmp_dir}/test2.json"
         with open(file_name, "w") as f:
-            f.write('{ "a": { "b": "c" } }')
+            f.write('{ "a": { "b": ["c"] } }')
 
         reader1 = JSONReader(levels_back=0)
         data1 = reader1.load_data(file_name)

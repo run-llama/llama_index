@@ -1,5 +1,5 @@
-from typing import List, Dict, Any
 from types import MappingProxyType
+from typing import Any, Dict, List
 from unittest.mock import MagicMock, call, patch
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -133,7 +133,9 @@ def test_chat(MockSyncOpenAI: MagicMock) -> None:
     response = llm.chat([ChatMessage(role=MessageRole.USER, content="test message")])
     assert response.message.content == content
     mock_instance.chat.completions.create.assert_called_once_with(
-        messages=[{"role": MessageRole.USER, "content": "test message"}],
+        messages=[
+            {"role": "user", "content": [{"type": "text", "text": "test message"}]}
+        ],
         stream=False,
         model=STUB_MODEL_NAME,
         temperature=0.1,

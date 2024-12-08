@@ -50,7 +50,7 @@ LlamaIndex Workflows allow you to build very custom, agentic workflows through a
 - [Workflows Tutorial Sequence](../understanding/workflows/index.md)
 - [Workflows Component Guide](../module_guides/workflow/index.md)
 - [Building a ReAct agent workflow](../examples/workflow/react_agent.ipynb)
-- [Deploying Workflows](../module_guides/workflow/deployment.md)
+- [Deploying Workflows](../module_guides/workflow/index.md#deploying-a-workflow)
 
 **Building with Agentic Ingredients**
 
