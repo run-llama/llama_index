@@ -142,14 +142,46 @@ class BaseComponent(BaseModel):
         return state
 
     def __setstate__(self, state: Dict[str, Any]) -> None:
-        # Use the __dict__ and __init__ method to set state
-        # so that all variables initialize
+        """Reconstruct the object from a pickled state.
+
+        This implementation ensures proper handling of unpickleable attributes
+        and validates object state after reconstruction.
+        """
+        # Track which attributes were removed during getstate
+        removed_attrs = set()
+        if "__dict__" in state:
+            for key, val in list(state["__dict__"].items()):
+                try:
+                    pickle.dumps(val)
+                except Exception:
+                    removed_attrs.add(key)
+                    del state["__dict__"][key]
+
+        # Track removed private attributes
+        if "__pydantic_private__" in state:
+            for key, val in list(state["__pydantic_private__"].items()):
+                try:
+                    pickle.dumps(val)
+                except Exception:
+                    removed_attrs.add(key)
+                    del state["__pydantic_private__"][key]
+
         try:
+            # Try to initialize with the filtered state
             self.__init__(**state["__dict__"])  # type: ignore
-        except Exception:
-            # Fall back to the default __setstate__ method
-            # This may not work if the class had unpickleable attributes
+        except Exception as e:
+            # If initialization fails, log warning and try superclass method
+            logging.warning(
+                f"Failed to initialize object with filtered state: {e!s}. "
+                f"The following attributes were removed: {removed_attrs}"
+            )
             super().__setstate__(state)
+
+        # Validate object state
+        try:
+            self.model_validate(self.model_dump())
+        except Exception as e:
+            logging.warning(f"Object validation failed after state restoration: {e!s}")
 
     def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         data = self.dict(**kwargs)
