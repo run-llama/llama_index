@@ -185,7 +185,7 @@ def test_anthropic_tokenizer():
 
     # Create the Anthropic instance with our mock
     anthropic_llm = Anthropic(
-        model="claude-2.1"
+        model="claude-3-5-sonnet-20241022"
     )
     anthropic_llm._client = mock_client
 
@@ -203,5 +203,5 @@ def test_anthropic_tokenizer():
     # Verify the mock was called correctly
     mock_messages.count_tokens.assert_called_once_with(
         messages=[{"role": "user", "content": test_text}],
-        model="claude-2.1"
+        model="claude-3-5-sonnet-20241022"
     )
