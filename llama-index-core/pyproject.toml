@@ -58,7 +58,7 @@ nest-asyncio = "^1.5.8"
 nltk = ">3.8.1"
 numpy = "*"
 python = ">=3.9,<4.0"
-tenacity = ">=8.2.0,!=8.4.0,<9.0.0"  # Avoid 8.4.0 which lacks tenacity.asyncio
+tenacity = ">=8.2.0,!=8.4.0,<10.0.0"  # Avoid 8.4.0 which lacks tenacity.asyncio
 tiktoken = ">=0.3.3"
 typing-extensions = ">=4.5.0"
 typing-inspect = ">=0.8.0"
@@ -70,7 +70,7 @@ tqdm = "^4.66.1"
 pillow = ">=9.0.0"
 PyYAML = ">=6.0.1"
 wrapt = "*"
-pydantic = ">=2.7.0,<2.10.0"  # TODO: 2.10 was breaking many things, unpin when it settles down
+pydantic = ">=2.8.0"
 filetype = "^1.2.0"  # Used for multi-modal MIME utils
 eval-type-backport = {python = "<3.10", version = "^0.2.0"}
 
