@@ -210,13 +210,19 @@ class Anthropic(FunctionCallingLLM):
 
     @property
     def tokenizer(self) -> Tokenizer:
-        def _count_tokens(text: str) -> int:
-            return self._client.beta.messages.count_tokens(
-                messages=[{"role": "user", "content": text}],
-                model=self.model,
-            ).input_tokens
+        class AnthropicTokenizer:
+            def __init__(self, client, model):
+                self._client = client
+                self.model = model
 
-        return _count_tokens
+            def encode(self, text: str, *args: Any, **kwargs: Any) -> List[int]:
+                count = self._client.beta.messages.count_tokens(
+                    messages=[{"role": "user", "content": text}],
+                    model=self.model,
+                ).input_tokens
+                return [1] * count
+
+        return AnthropicTokenizer(self._client, self.model)
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:

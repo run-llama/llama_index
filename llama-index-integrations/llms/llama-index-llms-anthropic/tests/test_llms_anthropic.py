@@ -166,3 +166,20 @@ async def test_anthropic_through_bedrock_async():
         print(f"Assertion failed: full_response is not a string")
         print(f"Content of full_response: {full_response}")
         raise
+
+
+def test_anthropic_tokenizer():
+    anthropic_llm = Anthropic(
+        model="claude-2.1"
+    )
+
+    # Test that tokenizer implements the protocol
+    tokenizer = anthropic_llm.tokenizer
+    assert hasattr(tokenizer, 'encode')
+
+    # Test that encode returns a list of integers
+    test_text = "Hello, world!"
+    tokens = tokenizer.encode(test_text)
+    assert isinstance(tokens, list)
+    assert all(isinstance(t, int) for t in tokens)
+    assert len(tokens) > 0  # Should have at least one token
