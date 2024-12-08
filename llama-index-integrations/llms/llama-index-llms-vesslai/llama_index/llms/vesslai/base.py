@@ -4,6 +4,8 @@ import yaml
 from typing import Any, Optional
 
 import vessl
+from vessl.util.config import VesslConfigLoader
+from vessl.util.exception import VesslApiException
 from llama_index.llms.vesslai.utils import wait_for_gateway_enabled, read_service
 from llama_index.llms.openai_like import OpenAILike
 
@@ -53,11 +55,44 @@ class VesslAILLM(OpenAILike):
         **kwargs: Any,
     ) -> None:
         super().__init__()
+        self.organization_name = None
+        self._configure()
+    
+    def _configure(self):
         vessl.configure()
+        if vessl.vessl_api.is_in_run_exec_context():
+            vessl.vessl_api.set_access_token(no_prompt=True)
+            user = vessl.vessl_api.user
+            organization_name = vessl.vessl_api.set_organization()
+            project_name = vessl.vessl_api.set_project()
+        else:
+            config = VesslConfigLoader()
+            user = None
+            if config.access_token:
+                vessl.vessl_api.api_client.set_default_header(
+                    "Authorization", f"Token {config.access_token}"
+                )
+
+                try:
+                    user = vessl.vessl_api.get_my_user_info_api()
+                except VesslApiException:
+                    pass
+
+            organization_name = config.default_organization
+            project_name = config.default_project
+
+            if user is None or organization_name is None:
+                print("Please run `vessl configure` first.")
+                return
+        
+        self.organization_name = organization_name
+        print(f"""Username: {user.username} \n
+              Email: {user.email} \n
+              Default organization: {organization_name} \n
+              Default project: {project_name or 'N/A'}""")
     
     def serve(
         self,
-        organization_name: str,
         service_name: str,
         model_name: Optional[str] = None,
         yaml_path: Optional[str] = None,
@@ -97,7 +132,7 @@ class VesslAILLM(OpenAILike):
             self.model = model_name
             self.is_chat_model = is_chat_model
             self.api_base = self._launch_service_revision_from_yaml(
-                organization_name = organization_name,
+                organization_name = self.organization_name,
                 yaml_path = default_yaml_path,
                 service_name = service_name,
                 serverless = serverless,
@@ -116,7 +151,7 @@ class VesslAILLM(OpenAILike):
             self.model = model_name
             self.is_chat_model = is_chat_model
             self.api_base = self._launch_service_revision_from_yaml(
-                organization_name = organization_name,
+                organization_name = self.organization_name,
                 yaml_path = yaml_path,
                 service_name = service_name,
                 serverless = serverless,
