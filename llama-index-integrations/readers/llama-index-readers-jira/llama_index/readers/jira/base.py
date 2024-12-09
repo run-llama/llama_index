@@ -25,7 +25,7 @@ def safe_get(obj, *attrs):
     try:
         for attr in attrs:
             if callable(attr):
-                obj = attr(obj)
+                obj = attr()
             else:
                 obj = getattr(obj, attr)
         return obj
