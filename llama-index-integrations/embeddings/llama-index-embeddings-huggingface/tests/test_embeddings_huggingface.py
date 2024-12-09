@@ -29,13 +29,6 @@ def test_input_validation():
     with pytest.raises(ValueError, match="Input text cannot be empty or whitespace"):
         embed_model._validate_input("   ")
 
-    # Test input exceeding max length
-    long_text = "a" * (embed_model.max_length + 1)
-    with pytest.raises(
-        ValueError, match=f"Input text length {len(long_text)} exceeds maximum"
-    ):
-        embed_model._validate_input(long_text)
-
     # Test valid input
     embed_model._validate_input("This is a valid input")  # Should not raise
 

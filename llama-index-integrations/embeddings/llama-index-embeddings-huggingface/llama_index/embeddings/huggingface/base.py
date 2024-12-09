@@ -33,7 +33,8 @@ logger = logging.getLogger(__name__)
 
 
 class HuggingFaceEmbedding(BaseEmbedding):
-    """HuggingFace class for text embeddings.
+    """
+    HuggingFace class for text embeddings.
 
     Args:
         model_name (str, optional): If it is a filepath on disc, it loads the model from that path.
@@ -185,20 +186,17 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return "HuggingFaceEmbedding"
 
     def _validate_input(self, text: str) -> None:
-        """Validate input text.
+        """
+        Validate input text.
 
         Args:
             text: Input text to validate
 
         Raises:
-            ValueError: If text is empty or exceeds max length
+            ValueError: If text is empty
         """
-        if not text or not text.strip():
+        if not text.strip():
             raise ValueError("Input text cannot be empty or whitespace")
-        if len(text) > self.max_length:
-            raise ValueError(
-                f"Input text length {len(text)} exceeds maximum {self.max_length}"
-            )
 
     @retry(
         stop=stop_after_attempt(3),
@@ -210,7 +208,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
         sentences: List[str],
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
-        """Generates embeddings with retry mechanism.
+        """
+        Generates embeddings with retry mechanism.
 
         Args:
             sentences: List of texts to embed
@@ -252,7 +251,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
         sentences: List[str],
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
-        """Generates Embeddings with input validation and retry mechanism.
+        """
+        Generates Embeddings with input validation and retry mechanism.
 
         Args:
             sentences: Texts or Sentences to embed
@@ -272,7 +272,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._embed_with_retry(sentences, prompt_name)
 
     def _get_query_embedding(self, query: str) -> List[float]:
-        """Generates Embeddings for Query.
+        """
+        Generates Embeddings for Query.
 
         Args:
             query (str): Query text/sentence
@@ -283,7 +284,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._embed(query, prompt_name="query")
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
-        """Generates Embeddings for Query Asynchronously.
+        """
+        Generates Embeddings for Query Asynchronously.
 
         Args:
             query (str): Query text/sentence
@@ -294,7 +296,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._get_query_embedding(query)
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
-        """Generates Embeddings for text Asynchronously.
+        """
+        Generates Embeddings for text Asynchronously.
 
         Args:
             text (str): Text/Sentence
@@ -305,7 +308,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._get_text_embedding(text)
 
     def _get_text_embedding(self, text: str) -> List[float]:
-        """Generates Embeddings for text.
+        """
+        Generates Embeddings for text.
 
         Args:
             text (str): Text/sentences
@@ -316,7 +320,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._embed(text, prompt_name="text")
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Generates Embeddings for text.
+        """
+        Generates Embeddings for text.
 
         Args:
             texts (List[str]): Texts / Sentences
@@ -403,7 +408,8 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
         }
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize.
+        """
+        Initialize.
 
         Args:
             kwargs: See the class-level Fields.
