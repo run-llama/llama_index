@@ -1,7 +1,7 @@
 description: Quickstart to serve LLM model with vLLM.
 env:
-  HF_TOKEN: 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
-  MODEL_NAME: mistralai/Mistral-7B-Instruct-v0.3
+  HF_TOKEN: !!str
+  MODEL_NAME: !!str
 image: quay.io/vessl-ai/torch:2.3.1-cuda12.1-r5
 name: vllm-server
 ports:

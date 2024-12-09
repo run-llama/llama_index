@@ -95,6 +95,7 @@ class VesslAILLM(OpenAILike,BaseModel):
         is_chat_model: bool = True,
         serverless: bool = False,
         api_key: str = None,
+        service_auth_key: str = None,
         **kwargs: Any,
     ) -> None:
         self.organization_name = kwargs.get('organization_name', self.organization_name)
@@ -115,13 +116,17 @@ class VesslAILLM(OpenAILike,BaseModel):
             self.api_key = api_key
         
         default_yaml_path = self._get_default_yaml_path()
+
+        with open(default_yaml_path, 'r') as file:
+            service_config = yaml.safe_load(file)
+
+        service_config['env']['HF_TOKEN'] = hf_token
+        if service_auth_key:
+            service_config['env']['SERVICE_AUTH_KEY'] = service_auth_key
         
         # serve with model name
         if model_name != None:
-            with open(default_yaml_path, 'r') as file:
-                service_config = yaml.safe_load(file)
             service_config['env']['MODEL_NAME'] = model_name
-            service_config['env']['HF_TOKEN'] = hf_token
 
             with open(default_yaml_path, 'w') as file:
                 yaml.dump(service_config, file)
@@ -137,10 +142,7 @@ class VesslAILLM(OpenAILike,BaseModel):
 
         # serve with custom service yaml file
         if yaml_path != None:
-            with open(yaml_path, 'r') as file:
-                service_config = yaml.safe_load(file)
             model_name = service_config['env']['MODEL_NAME']
-            service_config['env']['HF_TOKEN'] = hf_token
 
             with open(yaml_path, 'w') as file:
                 yaml.dump(service_config, file)
