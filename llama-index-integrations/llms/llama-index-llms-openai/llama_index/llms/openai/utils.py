@@ -257,9 +257,15 @@ def to_openai_message_dict(
 ) -> ChatCompletionMessageParam:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
+    content_txt = ""
     for block in message.blocks:
         if isinstance(block, TextBlock):
-            content.append({"type": "text", "text": block.text})
+            if message.role.value in ("assistant", "tool"):
+                # Despite the docs say otherwise, when role is ASSISTANT or TOOL,
+                # 'content' cannot be a list and must be string instead.
+                content_txt += block.text
+            else:
+                content.append({"type": "text", "text": block.text})
         elif isinstance(block, ImageBlock):
             if block.url:
                 content.append(
@@ -283,7 +289,7 @@ def to_openai_message_dict(
 
     message_dict = {
         "role": message.role.value,
-        "content": content,
+        "content": content or "",
     }
 
     # TODO: O1 models do not support system prompts
