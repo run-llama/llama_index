@@ -6,7 +6,10 @@ from llama_index.core.schema import (
     NodeRelationship,
     RelatedNodeInfo,
 )
-from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.vector_stores.weaviate import (
+    WeaviateVectorStore,
+    AsyncClientNotProvidedError,
+)
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
@@ -184,3 +187,26 @@ def test_sync_delete(vector_store):
     results = vector_store.query(query)
     assert len(results.nodes) == 1
     results.nodes[0].node_id == node_to_keep.node_id
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_async_methods_called_without_async_client(vector_store):
+    """Makes sure that we present an easy to understand error message to the user if he forgets to provide an async client when trying to call async methods."""
+    with pytest.raises(AsyncClientNotProvidedError):
+        await vector_store.async_add(
+            [TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3])]
+        )
+    with pytest.raises(AsyncClientNotProvidedError):
+        await vector_store.adelete(ref_doc_id="no_match_in_db")
+    with pytest.raises(AsyncClientNotProvidedError):
+        await vector_store.adelete_nodes(node_ids=["sample_node_id"])
+    with pytest.raises(AsyncClientNotProvidedError):
+        await vector_store.aclear()
+    with pytest.raises(AsyncClientNotProvidedError):
+        query = VectorStoreQuery(
+            query_embedding=[0.3, 0.0, 0.0],
+            similarity_top_k=10,
+            query_str="test",
+            mode=VectorStoreQueryMode.DEFAULT,
+        )
+        results = await vector_store.aquery(query)
