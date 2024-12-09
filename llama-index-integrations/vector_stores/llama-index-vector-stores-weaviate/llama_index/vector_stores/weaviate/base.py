@@ -455,7 +455,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             "return_metadata": return_metatada,
             "include_vector": True,
         }
-        query_parameters.update(kwargs)  # TODO is this being tested?
+        query_parameters.update(kwargs)
         return query_parameters
 
     def parse_query_result(
