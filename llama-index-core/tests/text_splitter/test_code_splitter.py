@@ -1,12 +1,21 @@
 """Test text splitter."""
 import os
+import pytest
 from typing import List
 
-import tree_sitter  # noqa
+try:
+    import tree_sitter  # noqa
+    from llama_index.core.text_splitter import CodeSplitter
+
+    SHOULD_SKIP = False
+except ImportError:
+    SHOULD_SKIP = True
+
+
 from llama_index.core.schema import Document, MetadataMode, TextNode
-from llama_index.core.text_splitter import CodeSplitter
 
 
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
 def test_python_code_splitter() -> None:
     """Test case for code splitting using python."""
     if "CI" in os.environ:
@@ -28,6 +37,7 @@ def baz():
     assert chunks[1].startswith("def baz():")
 
 
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
 def test_start_end_char_idx() -> None:
     text = """\
 def foo():
@@ -48,6 +58,7 @@ def baz():
         )
 
 
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
 def test_typescript_code_splitter() -> None:
     """Test case for code splitting using typescript."""
     if "CI" in os.environ:
@@ -71,6 +82,7 @@ function baz() {
     assert chunks[1].startswith("function baz()")
 
 
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
 def test_html_code_splitter() -> None:
     """Test case for code splitting using typescript."""
     if "CI" in os.environ:
@@ -104,6 +116,7 @@ def test_html_code_splitter() -> None:
     assert chunks[2].startswith("<head>")
 
 
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
 def test_tsx_code_splitter() -> None:
     """Test case for code splitting using typescript."""
     if "CI" in os.environ:
@@ -142,6 +155,7 @@ export default ExampleComponent;"""
     assert chunks[1].startswith("interface Person")
 
 
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
 def test_cpp_code_splitter() -> None:
     """Test case for code splitting using typescript."""
     if "CI" in os.environ:
@@ -165,6 +179,7 @@ int main() {
     assert chunks[2].startswith("{\n    std::cout")
 
 
+@pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
 def test__py_custom_parser_code_splitter() -> None:
     """Test case for code splitting using custom parser generated from tree_sitter_languages."""
     if "CI" in os.environ:

@@ -31,13 +31,13 @@ license = "MIT"
 name = "llama-index-postprocessor-colpali-rerank"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 torch = "*"
 transformers = ">=4.37.2"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 colpali-engine = ">=0.3.0,<0.4.0"
 setuptools = "*"
 

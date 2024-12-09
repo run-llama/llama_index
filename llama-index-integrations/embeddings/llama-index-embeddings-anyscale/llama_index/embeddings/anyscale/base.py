@@ -16,16 +16,7 @@ from openai import AsyncOpenAI, OpenAI
 DEFAULT_API_BASE = "https://api.endpoints.anyscale.com/v1"
 DEFAULT_MODEL = "thenlper/gte-large"
 
-embedding_retry_decorator = create_retry_decorator(
-    max_retries=6,
-    random_exponential=True,
-    stop_after_delay_seconds=60,
-    min_seconds=1,
-    max_seconds=20,
-)
 
-
-@embedding_retry_decorator
 def get_embedding(client: OpenAI, text: str, engine: str, **kwargs: Any) -> List[float]:
     """
     Get embedding.
@@ -44,7 +35,6 @@ def get_embedding(client: OpenAI, text: str, engine: str, **kwargs: Any) -> List
     )
 
 
-@embedding_retry_decorator
 async def aget_embedding(
     aclient: AsyncOpenAI, text: str, engine: str, **kwargs: Any
 ) -> List[float]:
@@ -67,7 +57,6 @@ async def aget_embedding(
     )
 
 
-@embedding_retry_decorator
 def get_embeddings(
     client: OpenAI, list_of_text: List[str], engine: str, **kwargs: Any
 ) -> List[List[float]]:
@@ -89,7 +78,6 @@ def get_embeddings(
     return [d.embedding for d in data]
 
 
-@embedding_retry_decorator
 async def aget_embeddings(
     aclient: AsyncOpenAI,
     list_of_text: List[str],
@@ -218,6 +206,16 @@ class AnyscaleEmbedding(BaseEmbedding):
             self._aclient = AsyncOpenAI(**self._get_credential_kwargs())
         return self._aclient
 
+    def _create_retry_decorator(self):
+        """Create a retry decorator using the instance's max_retries."""
+        return create_retry_decorator(
+            max_retries=self.max_retries,
+            random_exponential=True,
+            stop_after_delay_seconds=60,
+            min_seconds=1,
+            max_seconds=20,
+        )
+
     @classmethod
     def class_name(cls) -> str:
         return "AnyscaleEmbedding"
@@ -235,42 +233,66 @@ class AnyscaleEmbedding(BaseEmbedding):
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
         client = self._get_client()
-        return get_embedding(
-            client,
-            query,
-            engine=self._query_engine,
-            **self.additional_kwargs,
-        )
+        retry_decorator = self._create_retry_decorator()
+
+        @retry_decorator
+        def _retryable_get_embedding():
+            return get_embedding(
+                client,
+                query,
+                engine=self._query_engine,
+                **self.additional_kwargs,
+            )
+
+        return _retryable_get_embedding()
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
         aclient = self._get_aclient()
-        return await aget_embedding(
-            aclient,
-            query,
-            engine=self._query_engine,
-            **self.additional_kwargs,
-        )
+        retry_decorator = self._create_retry_decorator()
+
+        @retry_decorator
+        async def _retryable_aget_embedding():
+            return await aget_embedding(
+                aclient,
+                query,
+                engine=self._query_engine,
+                **self.additional_kwargs,
+            )
+
+        return await _retryable_aget_embedding()
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
         client = self._get_client()
-        return get_embedding(
-            client,
-            text,
-            engine=self._text_engine,
-            **self.additional_kwargs,
-        )
+        retry_decorator = self._create_retry_decorator()
+
+        @retry_decorator
+        def _retryable_get_embedding():
+            return get_embedding(
+                client,
+                text,
+                engine=self._text_engine,
+                **self.additional_kwargs,
+            )
+
+        return _retryable_get_embedding()
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
         aclient = self._get_aclient()
-        return await aget_embedding(
-            aclient,
-            text,
-            engine=self._text_engine,
-            **self.additional_kwargs,
-        )
+        retry_decorator = self._create_retry_decorator()
+
+        @retry_decorator
+        async def _retryable_aget_embedding():
+            return await aget_embedding(
+                aclient,
+                text,
+                engine=self._text_engine,
+                **self.additional_kwargs,
+            )
+
+        return await _retryable_aget_embedding()
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """
@@ -281,19 +303,31 @@ class AnyscaleEmbedding(BaseEmbedding):
 
         """
         client = self._get_client()
-        return get_embeddings(
-            client,
-            texts,
-            engine=self._text_engine,
-            **self.additional_kwargs,
-        )
+        retry_decorator = self._create_retry_decorator()
+
+        @retry_decorator
+        def _retryable_get_embeddings():
+            return get_embeddings(
+                client,
+                texts,
+                engine=self._text_engine,
+                **self.additional_kwargs,
+            )
+
+        return _retryable_get_embeddings()
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
         aclient = self._get_aclient()
-        return await aget_embeddings(
-            aclient,
-            texts,
-            engine=self._text_engine,
-            **self.additional_kwargs,
-        )
+        retry_decorator = self._create_retry_decorator()
+
+        @retry_decorator
+        async def _retryable_aget_embeddings():
+            return await aget_embeddings(
+                aclient,
+                texts,
+                engine=self._text_engine,
+                **self.additional_kwargs,
+            )
+
+        return await _retryable_aget_embeddings()

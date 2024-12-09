@@ -21,7 +21,7 @@ Settings.llm = OpenAI(model="gpt-3.5-turbo", temperature=0.1)
 
 ## Embed Model
 
-The embedding model is used to convert text to numerical representationss, used for calculating similarity and top-k retrieval.
+The embedding model is used to convert text to numerical representations, used for calculating similarity and top-k retrieval.
 
 ```python
 from llama_index.embeddings.openai import OpenAIEmbedding
