@@ -29,7 +29,6 @@ from llama_index.vector_stores.weaviate.utils import (
 )
 
 import weaviate
-from weaviate import Client
 import weaviate.classes as wvc
 
 _logger = logging.getLogger(__name__)
@@ -208,31 +207,6 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         else:
             #  need to do lazy init for async clients
             self._collection_initialized = False
-
-    @classmethod
-    def from_params(
-        cls,
-        url: str,
-        auth_config: Any,
-        index_name: Optional[str] = None,
-        text_key: str = DEFAULT_TEXT_KEY,
-        client_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> "WeaviateVectorStore":
-        """Create WeaviateVectorStore from config."""
-        client_kwargs = client_kwargs or {}
-        weaviate_client = Client(
-            url=url, auth_client_secret=auth_config, **client_kwargs
-        )
-        return cls(
-            weaviate_client=weaviate_client,
-            url=url,
-            auth_config=auth_config.__dict__,
-            client_kwargs=client_kwargs,
-            index_name=index_name,
-            text_key=text_key,
-            **kwargs,
-        )
 
     @classmethod
     def class_name(cls) -> str:
