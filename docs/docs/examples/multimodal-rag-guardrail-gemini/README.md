@@ -50,12 +50,13 @@ Key contributions include:
 ## Usage
 
 ### Adding Scanners
-Scanners are the core of the guardrail system, checking inputs and outputs for specific risks. 
+Scanners are the core of the guardrail system, checking inputs and outputs for specific risks.
 
 #### Example: Toxicity Scanner for Input
 Link: https://llm-guard.com/input_scanners/toxicity/
 ```python
 from llm_guard.input_scanners import Toxicity
+
 
 def guardrail_toxicLanguage(prompt):
     threshold = 0.5
@@ -68,8 +69,8 @@ def guardrail_toxicLanguage(prompt):
             "guard_output": sanitized_output,
             "is_valid": is_valid,
             "risk_score/threshold": f"{risk_score}/{threshold}",
-            "response_text": prompt
-        }
+            "response_text": prompt,
+        },
     }
 ```
 
@@ -87,7 +88,7 @@ query_engine = MultimodalQueryEngine(
     retriever=my_retriever,
     multi_modal_llm=my_multi_modal_llm,
     input_scanners=[guardrail_toxicLanguage],
-    output_scanners=[my_output_scanner]
+    output_scanners=[my_output_scanner],
 )
 ```
 
