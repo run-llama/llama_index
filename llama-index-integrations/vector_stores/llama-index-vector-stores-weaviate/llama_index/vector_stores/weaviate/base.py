@@ -419,136 +419,94 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             _logger.error(f"Failed to delete index '{self.index_name}': {e}")
             raise Exception(f"Failed to delete index '{self.index_name}': {e}")
 
+    def get_query_parameters(self, query: VectorStoreQuery, **kwargs: Any):
+        filters = None
+
+        # list of documents to constrain search
+        if query.doc_ids:
+            filters = wvc.query.Filter.by_property("doc_id").contains_any(query.doc_ids)
+
+        if query.node_ids:
+            filters = wvc.query.Filter.by_property("id").contains_any(query.node_ids)
+
+        return_metatada = wvc.query.MetadataQuery(distance=True, score=True)
+
+        vector = query.query_embedding
+        alpha = 1
+        if query.mode == VectorStoreQueryMode.HYBRID:
+            _logger.debug(f"Using hybrid search with alpha {query.alpha}")
+            if vector is not None and query.query_str:
+                alpha = query.alpha or 0.5
+
+        if query.filters is not None:
+            filters = _to_weaviate_filter(query.filters)
+        elif "filter" in kwargs and kwargs["filter"] is not None:
+            filters = kwargs["filter"]
+
+        limit = query.similarity_top_k
+        _logger.debug(f"Using limit of {query.similarity_top_k}")
+
+        query_parameters = {
+            "query": query.query_str,
+            "vector": vector,
+            "alpha": alpha,
+            "limit": limit,
+            "filters": filters,
+            "return_metadata": return_metatada,
+            "include_vector": True,
+        }
+        query_parameters.update(kwargs)  # TODO is this being tested?
+        return query_parameters
+
+    def parse_query_result(
+        self, query_result: Any, query: VectorStoreQuery
+    ) -> VectorStoreQueryResult:
+        entries = query_result.objects
+
+        similarity_key = "score"
+        similarities = []
+        nodes: List[BaseNode] = []
+        node_ids = []
+
+        for i, entry in enumerate(entries):
+            if i < query.similarity_top_k:
+                entry_as_dict = entry.__dict__
+                similarities.append(get_node_similarity(entry_as_dict, similarity_key))
+                nodes.append(to_node(entry_as_dict, text_key=self.text_key))
+                node_ids.append(nodes[-1].node_id)
+            else:
+                break
+
+        return VectorStoreQueryResult(
+            nodes=nodes, ids=node_ids, similarities=similarities
+        )
+
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
         collection = self._client.collections.get(self.index_name)
-        filters = None
-
-        # list of documents to constrain search
-        if query.doc_ids:
-            filters = wvc.query.Filter.by_property("doc_id").contains_any(query.doc_ids)
-
-        if query.node_ids:
-            filters = wvc.query.Filter.by_property("id").contains_any(query.node_ids)
-
-        return_metatada = wvc.query.MetadataQuery(distance=True, score=True)
-
-        vector = query.query_embedding
-        similarity_key = "score"
-        alpha = 1
-        if query.mode == VectorStoreQueryMode.HYBRID:
-            _logger.debug(f"Using hybrid search with alpha {query.alpha}")
-            if vector is not None and query.query_str:
-                alpha = query.alpha or 0.5
-
-        if query.filters is not None:
-            filters = _to_weaviate_filter(query.filters)
-        elif "filter" in kwargs and kwargs["filter"] is not None:
-            filters = kwargs["filter"]
-
-        limit = query.similarity_top_k
-        _logger.debug(f"Using limit of {query.similarity_top_k}")
+        query_parameters = self.get_query_parameters(query, **kwargs)
 
         # execute query
         try:
-            query_result = collection.query.hybrid(
-                query=query.query_str,
-                vector=vector,
-                alpha=alpha,
-                limit=limit,
-                filters=filters,
-                return_metadata=return_metatada,
-                include_vector=True,
-                **kwargs,
-            )
+            query_result = collection.query.hybrid(**query_parameters)
         except weaviate.exceptions.WeaviateQueryError as e:
             raise ValueError(f"Invalid query, got errors: {e.message}")
 
         # parse results
-
-        entries = query_result.objects
-
-        similarities = []
-        nodes: List[BaseNode] = []
-        node_ids = []
-
-        for i, entry in enumerate(entries):
-            if i < query.similarity_top_k:
-                entry_as_dict = entry.__dict__
-                similarities.append(get_node_similarity(entry_as_dict, similarity_key))
-                nodes.append(to_node(entry_as_dict, text_key=self.text_key))
-                node_ids.append(nodes[-1].node_id)
-            else:
-                break
-
-        return VectorStoreQueryResult(
-            nodes=nodes, ids=node_ids, similarities=similarities
-        )
+        return self.parse_query_result(query_result, query)
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
-    ) -> VectorStoreQueryResult:  # TODO DRY (copied from query())
+    ) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
         collection = self._aclient.collections.get(self.index_name)
-        filters = None
-
-        # list of documents to constrain search
-        if query.doc_ids:
-            filters = wvc.query.Filter.by_property("doc_id").contains_any(query.doc_ids)
-
-        if query.node_ids:
-            filters = wvc.query.Filter.by_property("id").contains_any(query.node_ids)
-
-        return_metatada = wvc.query.MetadataQuery(distance=True, score=True)
-
-        vector = query.query_embedding
-        similarity_key = "score"
-        alpha = 1
-        if query.mode == VectorStoreQueryMode.HYBRID:
-            _logger.debug(f"Using hybrid search with alpha {query.alpha}")
-            if vector is not None and query.query_str:
-                alpha = query.alpha or 0.5
-
-        if query.filters is not None:
-            filters = _to_weaviate_filter(query.filters)
-        elif "filter" in kwargs and kwargs["filter"] is not None:
-            filters = kwargs["filter"]
-
-        limit = query.similarity_top_k
-        _logger.debug(f"Using limit of {query.similarity_top_k}")
+        query_parameters = self.get_query_parameters(query, **kwargs)
 
         # execute query
         try:
-            query_result = await collection.query.hybrid(
-                query=query.query_str,
-                vector=vector,
-                alpha=alpha,
-                limit=limit,
-                filters=filters,
-                return_metadata=return_metatada,
-                include_vector=True,
-                **kwargs,
-            )
+            query_result = await collection.query.hybrid(**query_parameters)
         except weaviate.exceptions.WeaviateQueryError as e:
             raise ValueError(f"Invalid query, got errors: {e.message}")
 
         # parse results
-
-        entries = query_result.objects
-
-        similarities = []
-        nodes: List[BaseNode] = []
-        node_ids = []
-
-        for i, entry in enumerate(entries):
-            if i < query.similarity_top_k:
-                entry_as_dict = entry.__dict__
-                similarities.append(get_node_similarity(entry_as_dict, similarity_key))
-                nodes.append(to_node(entry_as_dict, text_key=self.text_key))
-                node_ids.append(nodes[-1].node_id)
-            else:
-                break
-
-        return VectorStoreQueryResult(
-            nodes=nodes, ids=node_ids, similarities=similarities
-        )
+        return self.parse_query_result(query_result, query)
