@@ -72,6 +72,8 @@ class KeywordsAI(OpenAI):
         model: name of the KeywordsAI model to use.
         temperature: a float from 0 to 1 controlling randomness in generation; higher will lead to more creative, less deterministic responses.
         max_tokens: the maximum number of tokens to generate.
+        customer_identifier: the unique ID of the customer for keywords observability.
+        thread_identifier: the unique ID of the thread for keywords observability.
         additional_kwargs: Add additional parameters to OpenAI SDK request body.
         max_retries: How many times to retry the API call if it fails.
         timeout: How long to wait, in seconds, for an API call before failing.
@@ -128,6 +130,14 @@ class KeywordsAI(OpenAI):
         ge=0,
         le=20,
     )
+    customer_identifier: Optional[str] = Field(
+        default=None,
+        description="The unique ID of the customer for keywords observability.",
+    )
+    thread_identifier: Optional[str] = Field(
+        default=None,
+        description="The unique ID of the thread for kewywords observability.",
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the KeywordsAI API."
     )
@@ -170,6 +180,8 @@ class KeywordsAI(OpenAI):
         model: str = DEFAULT_KEYWORDSAI_MODEL,
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
+        customer_identifier: Optional[str] = None,
+        thread_identifier: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         max_retries: int = 3,
         timeout: float = 60.0,
@@ -193,6 +205,10 @@ class KeywordsAI(OpenAI):
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
+        if customer_identifier:
+            additional_kwargs["customer_identifier"] = customer_identifier
+        if thread_identifier:
+            additional_kwargs["thread_identifier"] = thread_identifier
 
         api_key, api_base, api_version = resolve_keywordsai_credentials(
             api_key=api_key,
