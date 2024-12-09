@@ -424,9 +424,20 @@ class BaseNode(BaseComponent):
         return source_node.node_id
 
     @property
-    def extra_info(self) -> Dict[str, Any]:  # pragma: no cover
-        """TODO: DEPRECATED: Extra info."""
+    @deprecated(
+        version="0.12.2",
+        reason="'extra_info' is deprecated, use 'metadata' instead.",
+    )
+    def extra_info(self) -> dict[str, Any]:  # pragma: no coverde
         return self.metadata
+
+    @extra_info.setter
+    @deprecated(
+        version="0.12.2",
+        reason="'extra_info' is deprecated, use 'metadata' instead.",
+    )
+    def extra_info(self, extra_info: dict[str, Any]) -> None:  # pragma: no coverde
+        self.metadata = extra_info
 
     def __str__(self) -> str:
         source_text_truncated = truncate_text(
@@ -701,6 +712,10 @@ class TextNode(BaseNode):
         return self.get_content(metadata_mode=MetadataMode.NONE)
 
     @property
+    @deprecated(
+        version="0.12.2",
+        reason="'node_info' is deprecated, use 'get_node_info' instead.",
+    )
     def node_info(self) -> Dict[str, Any]:
         """Deprecated: Get node info."""
         return self.get_node_info()
@@ -948,22 +963,6 @@ class Document(Node):
     def doc_id(self, id_: str) -> None:
         self.id_ = id_
 
-    @property
-    @deprecated(
-        version="0.12.2",
-        reason="'extra_info' is deprecated, use 'metadata' instead.",
-    )
-    def extra_info(self) -> dict[str, Any]:
-        return self.metadata
-
-    @extra_info.setter
-    @deprecated(
-        version="0.12.2",
-        reason="'extra_info' is deprecated, use 'metadata' instead.",
-    )
-    def extra_info(self, extra_info: dict[str, Any]) -> None:
-        self.metadata = extra_info
-
     def __str__(self) -> str:
         source_text_truncated = truncate_text(
             self.get_content().strip(), TRUNCATE_LENGTH
@@ -1097,10 +1096,6 @@ class Document(Node):
         )
 
 
-@deprecated(
-    version="0.12.2",
-    reason="'ImageDocument' is deprecated, use 'Document' instead.",
-)
 class ImageDocument(Document, ImageNode):
     """Data document containing an image."""
 
