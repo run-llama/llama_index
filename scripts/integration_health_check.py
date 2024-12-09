@@ -19,6 +19,7 @@ import concurrent.futures
 from functools import lru_cache
 import pathlib
 import ast
+import json
 from typing import Dict, List
 
 from datetime import datetime, timedelta
@@ -27,11 +28,35 @@ from math import exp
 # cache of commits to avoid re-reading from disk
 commit_cache = []
 
+DEFAULT_METRIC_WEIGHTS = {
+    "download_ratio": 0.40,
+    "download_stability_ratio": 0.0,
+    "download_growth_ratio": 0.0,
+    "commit_ratio": 0.10,
+    "commit_consistency_ratio": 0.0,
+    "commit_frequency_ratio": 0.0,
+    "test_score": 0.50,
+}
+
+DEFAULT_SCORE_NEW_PROJECT = 1.0
+
 
 class IntegrationActivityAnalyzer:
-    def __init__(self, package_name: str, repo_path: str):
+    def __init__(
+        self,
+        package_name: str,
+        repo_path: str,
+        metric_weights: Dict = DEFAULT_METRIC_WEIGHTS,
+        new_project_score: float = DEFAULT_SCORE_NEW_PROJECT,
+    ):
         self.package_name = package_name
         self.repo_path = repo_path
+        self.metrics = {}
+        if sum(v for v in metric_weights.values()) != 1:
+            raise ValueError("Metric weights do not sum up to 1.")
+        self.metric_weights = metric_weights
+        self._is_new_project = False
+        self._new_project_score = new_project_score
 
     def get_time_weight(self, date_str: str, decay_factor: float = 0.5) -> float:
         """Calculate time-based weight using exponential decay.
@@ -224,7 +249,7 @@ class IntegrationActivityAnalyzer:
         else:
             return 0.0
 
-    def calculate_relative_health(self) -> float:
+    def calculate_metrics(self) -> None:
         """
         Calculate relative health score compared to llama-index-core.
         """
@@ -238,10 +263,10 @@ class IntegrationActivityAnalyzer:
             print("No cached existing core package metrics found, calculating...")
             core_package_metrics = {
                 "downloads": IntegrationActivityAnalyzer(
-                    "./llama-index-core", "llama-index-core"
+                    repo_path="./llama-index-core", package_name="llama-index-core"
                 ).get_download_trends(),
                 "commits": IntegrationActivityAnalyzer(
-                    "./llama-index-core", "llama-index-core"
+                    repo_path="./llama-index-core", package_name="llama-index-core"
                 ).get_commit_activity(),
             }
             with open("./core_package_metrics.json", "w") as f:
@@ -252,57 +277,61 @@ class IntegrationActivityAnalyzer:
             "commits": self.get_commit_activity(),
         }
 
-        # if the package is too new to have any data, return an arbitrary high score
+        # if the package is too new to have any data, set new project flag
         if current_metrics["downloads"] is None or current_metrics["commits"] is None:
-            return 1000
+            self._is_new_project = True
 
         # Calculate ratios relative to core package (current/core)
-        download_ratio = (
+        self.metrics["download_ratio"] = (
             current_metrics["downloads"]["avg_monthly_downloads"]
             / core_package_metrics["downloads"]["avg_monthly_downloads"]
         )
 
-        download_stability_ratio = (
+        self.metrics["download_stability_ratio"] = (
             current_metrics["downloads"]["stability"]
             / core_package_metrics["downloads"]["stability"]
         )
 
-        download_growth_ratio = (
+        self.metrics["download_growth_ratio"] = (
             current_metrics["downloads"]["growth_rate"]
             / core_package_metrics["downloads"]["growth_rate"]
         )
 
-        commit_ratio = (
+        self.metrics["commit_ratio"] = (
             current_metrics["commits"]["total_commits"]
             / core_package_metrics["commits"]["total_commits"]
         )
 
-        commit_consistency_ratio = (
+        self.metrics["commit_consistency_ratio"] = (
             current_metrics["commits"]["commit_consistency"]
             / core_package_metrics["commits"]["commit_consistency"]
         )
 
-        commit_frequency_ratio = (
+        self.metrics["commit_frequency_ratio"] = (
             current_metrics["commits"]["commit_frequency"]
             / core_package_metrics["commits"]["commit_frequency"]
         )
 
         # Weight the different factors
         # Max score is 1.0
-        test_score = self.check_test_coverage()
-        ratios = [
-            download_ratio * 4.0,  # 40% weight for downloads
-            commit_ratio * 1.0,  # 10% weight for commits
-            test_score * 5.0,  # 50% weight for test coverage
-        ]
-        return sum(ratios) / len(ratios)
+        self.metrics["test_score"] = self.check_test_coverage()
+
+    @property
+    def health_score(self) -> float:
+        if self._is_new_project:
+            return self._new_project_score
+        score = 0
+        for k, v in self.metrics.items():
+            score += v * self.metric_weights[k]
+        return score
 
 
 def analyze_package(package_path: str) -> tuple[str, float]:
     """Analyze a single package. Helper function for parallel processing."""
     package_name = package_path.strip().lstrip("./").rstrip("/").split("/")[-1]
     analyzer = IntegrationActivityAnalyzer(package_name, package_path)
-    health_score = analyzer.calculate_relative_health()
+    analyzer.calculate_metrics()
+    health_score = analyzer.health_score
     return (package_name, health_score)
 
 
@@ -369,5 +398,8 @@ if __name__ == "__main__":
     except ValueError:
         package_path = sys.argv[1].strip().lstrip("./").rstrip("/")
         package_name = package_path.split("/")[-1]
+        print(f"{package_name} at {package_path}")
         analyzer = IntegrationActivityAnalyzer(package_name, package_path)
-        print(analyzer.calculate_relative_health())
+        analyzer.calculate_metrics()
+        print("metrics dict:\n", json.dumps(analyzer.metrics, indent=4))
+        print("health score:\n", analyzer.health_score)
