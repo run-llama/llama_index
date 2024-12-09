@@ -28,6 +28,7 @@ from typing import (
 
 import filetype
 from dataclasses_json import DataClassJsonMixin
+from deprecated import deprecated
 from typing_extensions import Self
 
 from llama_index.core.bridge.pydantic import (
@@ -578,10 +579,6 @@ class Node(BaseNode):
         """
         self.text_resource = MediaResource(text=value)
 
-    # @property
-    # def text(self) -> str:
-    #     return ""
-
     @property
     def hash(self) -> str:
         doc_identities = []
@@ -885,21 +882,43 @@ class NodeWithScore(BaseComponent):
 # Document Classes for Readers
 
 
-class Document(TextNode):
+class Document(Node):
     """Generic interface for a data document.
 
     This document connects to data sources.
-
     """
 
-    # TODO: A lot of backwards compatibility logic here, clean up
-    id_: str = Field(
-        default_factory=lambda: str(uuid.uuid4()),
-        description="Unique ID of the node.",
-        alias="doc_id",
-    )
+    def __init__(self, **data: Any) -> None:
+        """Keeps backward compatibility with old 'Document' versions.
 
-    _compat_fields = {"doc_id": "id_", "extra_info": "metadata"}
+        If 'text' was passed, store it in 'text_resource'.
+        If 'doc_id' was passed, store it in 'id_'.
+        If 'extra_info' was passed, store it in 'metadata'.
+        """
+        if "doc_id" in data:
+            if "id_" in data:
+                msg = "Cannot pass both 'doc_id' and 'id_' to create a Document, use 'id_'"
+                raise ValueError(msg)
+            data["id_"] = data.pop("doc_id")
+
+        if "extra_info" in data:
+            if "metadata" in data:
+                msg = "Cannot pass both 'extra_info' and 'metadata' to create a Document, use 'metadata'"
+                raise ValueError(msg)
+            data["metadata"] = data.pop("extra_info")
+
+        if "text" in data:
+            if "text_resource" in data:
+                msg = "Cannot pass both 'text' and 'text_resource' to create a Document, use 'text_resource'"
+                raise ValueError(msg)
+            data["text_resource"] = MediaResource(text=data.pop("text"))
+
+        super().__init__(**data)
+
+    @property
+    def text(self) -> str:
+        """Provided for backward compatibility, it returns the content of text_resource."""
+        return self.get_content()
 
     @classmethod
     def get_type(cls) -> str:
@@ -907,9 +926,37 @@ class Document(TextNode):
         return ObjectType.DOCUMENT
 
     @property
+    @deprecated(
+        version="0.12.2",
+        reason="'doc_id' is deprecated, use 'id_' instead.",
+    )
     def doc_id(self) -> str:
         """Get document ID."""
         return self.id_
+
+    @doc_id.setter
+    @deprecated(
+        version="0.12.2",
+        reason="'doc_id' is deprecated, use 'id_' instead.",
+    )
+    def doc_id(self, id_: str):
+        self.id_ = id_
+
+    @property
+    @deprecated(
+        version="0.12.2",
+        reason="'extra_info' is deprecated, use 'metadata' instead.",
+    )
+    def extra_info(self) -> dict[str, Any]:
+        return self.metadata
+
+    @extra_info.setter
+    @deprecated(
+        version="0.12.2",
+        reason="'extra_info' is deprecated, use 'metadata' instead.",
+    )
+    def extra_info(self, extra_info: dict[str, Any]) -> None:
+        self.metadata = extra_info
 
     def __str__(self) -> str:
         source_text_truncated = truncate_text(
@@ -920,18 +967,18 @@ class Document(TextNode):
         )
         return f"Doc ID: {self.doc_id}\n{source_text_wrapped}"
 
+    @deprecated(
+        version="0.12.2",
+        reason="'get_doc_id' is deprecated, access the 'id_' property instead.",
+    )
     def get_doc_id(self) -> str:
-        """TODO: Deprecated: Get document ID."""
         return self.id_
-
-    def __setattr__(self, name: str, value: object) -> None:
-        if name in self._compat_fields:
-            name = self._compat_fields[name]
-        super().__setattr__(name, value)
 
     def to_langchain_format(self) -> LCDocument:
         """Convert struct to LangChain document format."""
-        from llama_index.core.bridge.langchain import Document as LCDocument
+        from llama_index.core.bridge.langchain import (
+            Document as LCDocument,  # type: ignore
+        )
 
         metadata = self.metadata or {}
         return LCDocument(page_content=self.text, metadata=metadata, id=self.id_)
@@ -945,7 +992,7 @@ class Document(TextNode):
 
     def to_haystack_format(self) -> HaystackDocument:
         """Convert struct to Haystack document format."""
-        from haystack.schema import Document as HaystackDocument
+        from haystack import Document as HaystackDocument  # type: ignore
 
         return HaystackDocument(
             content=self.text, meta=self.metadata, embedding=self.embedding, id=self.id_
@@ -977,7 +1024,7 @@ class Document(TextNode):
     def to_semantic_kernel_format(self) -> MemoryRecord:
         """Convert struct to Semantic Kernel document format."""
         import numpy as np
-        from semantic_kernel.memory.memory_record import MemoryRecord
+        from semantic_kernel.memory.memory_record import MemoryRecord  # type: ignore
 
         return MemoryRecord(
             id=self.id_,
@@ -1019,7 +1066,7 @@ class Document(TextNode):
 
     def to_cloud_document(self) -> CloudDocument:
         """Convert to LlamaCloud document type."""
-        from llama_cloud.types.cloud_document import CloudDocument
+        from llama_cloud.types.cloud_document import CloudDocument  # type: ignore
 
         return CloudDocument(
             text=self.text,
@@ -1044,7 +1091,11 @@ class Document(TextNode):
         )
 
 
-class ImageDocument(Document, ImageNode):
+@deprecated(
+    version="0.12.2",
+    reason="'ImageDocument' is deprecated, use 'Document' instead.",
+)
+class ImageDocument(Document):
     """Data document containing an image."""
 
     @classmethod
