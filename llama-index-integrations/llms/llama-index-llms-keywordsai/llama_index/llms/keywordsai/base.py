@@ -205,10 +205,12 @@ class KeywordsAI(OpenAI):
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
+        if not additional_kwargs.get("extra_body"):
+            additional_kwargs["extra_body"] = {}
         if customer_identifier:
-            additional_kwargs["customer_identifier"] = customer_identifier
+            additional_kwargs["extra_body"]["customer_identifier"] = customer_identifier
         if thread_identifier:
-            additional_kwargs["thread_identifier"] = thread_identifier
+            additional_kwargs["extra_body"]["thread_identifier"] = thread_identifier
 
         api_key, api_base, api_version = resolve_keywordsai_credentials(
             api_key=api_key,
