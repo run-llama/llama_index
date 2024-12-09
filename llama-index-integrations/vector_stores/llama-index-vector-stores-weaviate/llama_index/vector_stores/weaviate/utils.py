@@ -57,6 +57,20 @@ def validate_client(client: Any) -> None:
     cast(weaviate.WeaviateClient, client)
 
 
+def validate_async_client(client: Any) -> None:
+    """Validate client and import weaviate library."""
+    try:
+        import weaviate
+
+        client = cast(weaviate.WeaviateAsyncClient, client)
+    except ImportError:
+        raise ImportError(
+            "Weaviate is not installed. "
+            "Please install it with `pip install weaviate-client`."
+        )
+    cast(weaviate.WeaviateAsyncClient, client)
+
+
 def parse_get_response(response: Dict) -> Dict:
     """Parse get response from Weaviate."""
     if "errors" in response:
@@ -76,11 +90,10 @@ def class_schema_exists(client: Any, class_name: str) -> bool:
 
 async def aclass_schema_exists(client: Any, class_name: str) -> bool:
     """Check if class schema exists."""
-    # validate_client(client) TODO
+    validate_async_client(client)
     print(type(client))
-    return await client.collections.exists(class_name)
-    # collection = client.collections.get(class_name)
-    # return await collection.exists()  # TODO are these two calls required? is there no direct exists method?
+    collection = client.collections.get(class_name)
+    return await collection.exists()
 
 
 def create_default_schema(client: Any, class_name: str) -> None:
@@ -96,7 +109,7 @@ def create_default_schema(client: Any, class_name: str) -> None:
 
 async def acreate_default_schema(client: Any, class_name: str) -> None:
     """Create default schema."""
-    validate_client(client)
+    validate_async_client(client)
     class_schema = {
         "class": class_name,
         "description": f"Class for {class_name}",

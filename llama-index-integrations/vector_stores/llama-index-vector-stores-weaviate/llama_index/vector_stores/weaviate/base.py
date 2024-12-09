@@ -306,6 +306,23 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
         collection.data.delete_many(where=where_filter)
 
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """
+        Delete nodes using with ref_doc_id.
+
+        Args:
+            ref_doc_id (str): The doc_id of the document to delete.
+
+        """
+        collection = self._aclient.collections.get(self.index_name)
+
+        where_filter = wvc.query.Filter.by_property("ref_doc_id").equal(ref_doc_id)
+
+        if "filter" in delete_kwargs and delete_kwargs["filter"] is not None:
+            where_filter = where_filter & _to_weaviate_filter(delete_kwargs["filter"])
+
+        result = await collection.data.delete_many(where=where_filter)
+
     def delete_index(self) -> None:
         """Delete the index associated with the client.
 
@@ -352,9 +369,55 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
         collection.data.delete_many(where=filter, **delete_kwargs)
 
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Deletes nodes.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+        """
+        if not node_ids and not filters:
+            return
+
+        collection = self._aclient.collections.get(self.index_name)
+
+        if node_ids:
+            filter = wvc.query.Filter.by_id().contains_any(node_ids or [])
+
+        if filters:
+            if node_ids:
+                filter = filter & _to_weaviate_filter(filters)
+            else:
+                filter = _to_weaviate_filter(filters)
+
+        await collection.data.delete_many(where=filter, **delete_kwargs)
+
     def clear(self) -> None:
         """Clears index."""
         self.delete_index()
+
+    async def aclear(self) -> None:
+        """Delete the index associated with the client.
+
+        Raises:
+        - Exception: If the deletion fails, for some reason.
+        """
+        if not await aclass_schema_exists(self._aclient, self.index_name):
+            _logger.warning(
+                f"Index '{self.index_name}' does not exist. No action taken."
+            )
+            return
+        try:
+            await self._aclient.collections.delete(self.index_name)
+            _logger.info(f"Successfully deleted index '{self.index_name}'.")
+        except Exception as e:
+            _logger.error(f"Failed to delete index '{self.index_name}': {e}")
+            raise Exception(f"Failed to delete index '{self.index_name}': {e}")
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
