@@ -1216,6 +1216,7 @@ nav:
           - ./api_reference/postprocessor/mixedbreadai_rerank.md
           - ./api_reference/postprocessor/nvidia_rerank.md
           - ./api_reference/postprocessor/openvino_rerank.md
+          - ./api_reference/postprocessor/pinecone_native_rerank.md
           - ./api_reference/postprocessor/presidio.md
           - ./api_reference/postprocessor/prev_next.md
           - ./api_reference/postprocessor/rankgpt_rerank.md
@@ -2339,6 +2340,7 @@ plugins:
             - ../llama-index-integrations/tools/llama-index-tools-elevenlabs
             - ../llama-index-integrations/llms/llama-index-llms-nebius
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-bedrock-rerank
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-pinecone-native-rerank
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
