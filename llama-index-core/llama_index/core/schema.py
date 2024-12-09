@@ -304,6 +304,7 @@ class BaseNode(BaseComponent):
     metadata_separator: str = Field(
         default="\n",
         description="Separator between metadata fields when converting to string.",
+        alias="metadata_seperator",
     )
 
     @classmethod
@@ -553,6 +554,13 @@ class Node(BaseNode):
     video_resource: MediaResource | None = Field(
         default=None, description="Video content of the node."
     )
+    text_template: str = Field(
+        default=DEFAULT_TEXT_NODE_TMPL,
+        description=(
+            "Template for how text_resource is formatted, with {content} and "
+            "{metadata_str} placeholders."
+        ),
+    )
 
     @classmethod
     def class_name(cls) -> str:
@@ -566,10 +574,13 @@ class Node(BaseNode):
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.ALL) -> str:
         """Get the text content for the node if available.
 
-        Provided for backward compatibility, use self.text directly instead.
+        Provided for backward compatibility, use self.text_resource directly instead.
         """
         if self.text_resource:
-            return self.text_resource.text or ""
+            return self.text_template.format(
+                content=self.text_resource.text or "",
+                metadata_str=self.get_metadata_str(metadata_mode),
+            ).strip()
         return ""
 
     def set_content(self, value: str) -> None:
@@ -926,20 +937,12 @@ class Document(Node):
         return ObjectType.DOCUMENT
 
     @property
-    @deprecated(
-        version="0.12.2",
-        reason="'doc_id' is deprecated, use 'id_' instead.",
-    )
     def doc_id(self) -> str:
         """Get document ID."""
         return self.id_
 
     @doc_id.setter
-    @deprecated(
-        version="0.12.2",
-        reason="'doc_id' is deprecated, use 'id_' instead.",
-    )
-    def doc_id(self, id_: str):
+    def doc_id(self, id_: str) -> None:
         self.id_ = id_
 
     @property
@@ -1095,7 +1098,7 @@ class Document(Node):
     version="0.12.2",
     reason="'ImageDocument' is deprecated, use 'Document' instead.",
 )
-class ImageDocument(Document):
+class ImageDocument(Document, ImageNode):
     """Data document containing an image."""
 
     @classmethod
