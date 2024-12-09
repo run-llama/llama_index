@@ -26,6 +26,7 @@ from llama_index.embeddings.huggingface.utils import (
     get_text_instruct_for_model_name,
 )
 from sentence_transformers import SentenceTransformer
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 DEFAULT_HUGGINGFACE_LENGTH = 512
 logger = logging.getLogger(__name__)
@@ -183,43 +184,92 @@ class HuggingFaceEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "HuggingFaceEmbedding"
 
+    def _validate_input(self, text: str) -> None:
+        """Validate input text.
+
+        Args:
+            text: Input text to validate
+
+        Raises:
+            ValueError: If text is empty or exceeds max length
+        """
+        if not text or not text.strip():
+            raise ValueError("Input text cannot be empty or whitespace")
+        if len(text) > self.max_length:
+            raise ValueError(
+                f"Input text length {len(text)} exceeds maximum {self.max_length}"
+            )
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        reraise=True,
+    )
+    def _embed_with_retry(
+        self,
+        sentences: List[str],
+        prompt_name: Optional[str] = None,
+    ) -> List[List[float]]:
+        """Generates embeddings with retry mechanism.
+
+        Args:
+            sentences: List of texts to embed
+            prompt_name: Optional prompt type
+
+        Returns:
+            List of embedding vectors
+
+        Raises:
+            Exception: If embedding fails after retries
+        """
+        try:
+            if self._parallel_process:
+                pool = self._model.start_multi_process_pool(
+                    target_devices=self._target_devices
+                )
+                emb = self._model.encode_multi_process(
+                    sentences=sentences,
+                    pool=pool,
+                    batch_size=self.embed_batch_size,
+                    prompt_name=prompt_name,
+                    normalize_embeddings=self.normalize,
+                )
+                self._model.stop_multi_process_pool(pool=pool)
+            else:
+                emb = self._model.encode(
+                    sentences,
+                    batch_size=self.embed_batch_size,
+                    prompt_name=prompt_name,
+                    normalize_embeddings=self.normalize,
+                )
+            return emb.tolist()
+        except Exception as e:
+            logger.warning(f"Embedding attempt failed: {e!s}")
+            raise
+
     def _embed(
         self,
         sentences: List[str],
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
-        """Generates Embeddings either multiprocess or single process.
+        """Generates Embeddings with input validation and retry mechanism.
 
         Args:
-            sentences (List[str]): Texts or Sentences to embed
-            prompt_name (Optional[str], optional): The name of the prompt to use for encoding. Must be a key in the `prompts` dictionary i.e. "query" or "text" If ``prompt`` is also set, this argument is ignored. Defaults to None.
+            sentences: Texts or Sentences to embed
+            prompt_name: The name of the prompt to use for encoding
 
         Returns:
-            List[List[float]]: a 2d numpy array with shape [num_inputs, output_dimension] is returned.
-            If only one string input is provided, then the output is a 1d array with shape [output_dimension]
+            List of embedding vectors
+
+        Raises:
+            ValueError: If any input text is invalid
+            Exception: If embedding fails after retries
         """
-        if self._parallel_process:
-            pool = self._model.start_multi_process_pool(
-                target_devices=self._target_devices
-            )
-            emb = self._model.encode_multi_process(
-                sentences=sentences,
-                pool=pool,
-                batch_size=self.embed_batch_size,
-                prompt_name=prompt_name,
-                normalize_embeddings=self.normalize,
-            )
-            self._model.stop_multi_process_pool(pool=pool)
+        # Validate all inputs
+        for text in sentences:
+            self._validate_input(text)
 
-        else:
-            emb = self._model.encode(
-                sentences,
-                batch_size=self.embed_batch_size,
-                prompt_name=prompt_name,
-                normalize_embeddings=self.normalize,
-            )
-
-        return emb.tolist()
+        return self._embed_with_retry(sentences, prompt_name)
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Generates Embeddings for Query.
