@@ -34,7 +34,7 @@ python = ">=3.9,<3.13"
 llama-index-llms-llama-cpp = "^0.3.0"
 llama-index-llms-openai-like = "^0.3.0"
 llama-index-core = "^0.12.0"
-vessl = { version="0.1.186a3", source="testpypi" }
+vessl = ">=0.1.185"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
