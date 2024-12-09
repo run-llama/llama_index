@@ -289,7 +289,9 @@ def to_openai_message_dict(
 
     message_dict = {
         "role": message.role.value,
-        "content": content_txt or content,
+        "content": content_txt
+        if message.role.value in ("assistant", "tool")
+        else content,
     }
 
     # TODO: O1 models do not support system prompts
