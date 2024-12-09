@@ -379,7 +379,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         logger.debug(f"Successfully created a new collection: {self.collection_name}")
 
     @property
-    def client(self) -> Any:
+    def client(self) -> MilvusClient:
         """Get client."""
         return self._milvusclient
 
