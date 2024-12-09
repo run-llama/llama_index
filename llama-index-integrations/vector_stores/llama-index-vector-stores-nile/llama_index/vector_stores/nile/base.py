@@ -244,6 +244,10 @@ class NileVectorStore(BasePydanticVectorStore):
             return "NOT IN"
         elif operator == FilterOperator.CONTAINS:
             return "@>"
+        elif operator == FilterOperator.TEXT_MATCH:
+            return "LIKE"
+        elif operator == FilterOperator.ILIKE:
+            return "ILIKE"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
