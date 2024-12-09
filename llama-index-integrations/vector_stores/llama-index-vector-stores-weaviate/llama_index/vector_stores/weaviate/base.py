@@ -112,7 +112,9 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     k most similar nodes.
 
     Args:
-        weaviate_client (weaviate.Client): WeaviateClient
+        weaviate_client (Optional[Any]): WeaviateClient
+            instance from `weaviate-client` package
+        weaviate_aclient (Optional[Any]): WeaviateAsyncClient
             instance from `weaviate-client` package
         index_name (Optional[str]): name for Weaviate classes
 
