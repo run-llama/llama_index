@@ -63,17 +63,14 @@ class OCIDataScienceEmbedding(BaseEmbedding):
         endpoint="https://<MD_OCID>/predict",
     )
 
-    e1 = embeddings.get_query_embedding("This is a test document")
+    e1 = embeddings.get_text_embedding("This is a test document")
     print(e1)
 
-    e2 = embeddings.get_text_embedding("This is a test document")
-    print(e2)
-
-    e3 = embeddings.get_text_embedding_batch([
+    e2 = embeddings.get_text_embedding_batch([
         "This is a test document",
         "This is another test document"
     ])
-    print(e3)
+    print(e2)
     ```
 
     **Asynchronous Usage:**
