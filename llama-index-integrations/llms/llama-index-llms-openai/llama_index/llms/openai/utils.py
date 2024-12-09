@@ -260,9 +260,9 @@ def to_openai_message_dict(
     content_txt = ""
     for block in message.blocks:
         if isinstance(block, TextBlock):
-            if message.role.value in ("assistant", "tool"):
-                # Despite the docs say otherwise, when role is ASSISTANT or TOOL,
-                # 'content' cannot be a list and must be string instead.
+            if message.role.value in ("assistant", "tool", "system"):
+                # Despite the docs say otherwise, when role is ASSISTANT, SYSTEM
+                # or TOOL, 'content' cannot be a list and must be string instead.
                 content_txt += block.text
             else:
                 content.append({"type": "text", "text": block.text})
@@ -290,7 +290,7 @@ def to_openai_message_dict(
     message_dict = {
         "role": message.role.value,
         "content": content_txt
-        if message.role.value in ("assistant", "tool")
+        if message.role.value in ("assistant", "tool", "system")
         else content,
     }
 
