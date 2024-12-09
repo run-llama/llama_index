@@ -24,13 +24,12 @@ def safe_get(obj, *attrs):
     """Safely get nested attributes from an object."""
     try:
         for attr in attrs:
-            if callable(attr):
-                obj = attr()
-            else:
-                obj = getattr(obj, attr)
-        return obj
+            obj = getattr(obj, attr)
+            if callable(obj):
+                obj = obj()
     except (AttributeError, TypeError):
         return None
+    return obj
 
 
 class JiraReader(BaseReader):
