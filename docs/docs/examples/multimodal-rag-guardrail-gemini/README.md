@@ -58,20 +58,59 @@ Link: https://llm-guard.com/input_scanners/toxicity/
 from llm_guard.input_scanners import Toxicity
 
 
-def guardrail_toxicLanguage(prompt):
-    threshold = 0.5
-    toxic_scanner = Toxicity(threshold=threshold)
-    sanitized_output, is_valid, risk_score = toxic_scanner.scan(prompt)
+##Here is the rail output for all scanner
+def result_response(
+    guardrail_type,
+    activated,
+    guard_output,
+    is_valid,
+    risk_score,
+    threshold,
+    response_text,
+):
+    """
+    Standardizes the result format for all guardrail checks.
+    """
     return {
-        "guardrail_type": "Toxicity",
-        "activated": not is_valid,
+        "guardrail_type": guardrail_type,
+        "activated": activated,
         "guardrail_detail": {
-            "guard_output": sanitized_output,
+            "guard_output": guard_output,
             "is_valid": is_valid,
             "risk_score/threshold": f"{risk_score}/{threshold}",
-            "response_text": prompt,
+            "response_text": response_text,
         },
     }
+
+
+def guardrail_toxicLanguage(prompt):
+    # Interact with the LLM to generate a response
+    print(f"Prompt: {prompt}")
+
+    # Generate the response using the LLM (Gemini-1.5-flash)
+    response = completion(
+        model="gemini/gemini-1.5-flash",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt},
+        ],
+    )
+    response_text = response.choices[0].message.content
+
+    # Define the threshold and scan for toxicity
+    threshold = 0.5
+    toxic_scanner = Toxicity(threshold=threshold, match_type=MatchType.FULL)
+    sanitized_output, is_valid, risk_score = toxic_scanner.scan(prompt)
+
+    return result_response(
+        guardrail_type="Toxicity",
+        activated=not is_valid,
+        guard_output=sanitized_output,
+        is_valid=is_valid,
+        risk_score=risk_score,
+        threshold=threshold,
+        response_text=response_text,
+    )
 ```
 
 #### Adding to Input Scanner List
