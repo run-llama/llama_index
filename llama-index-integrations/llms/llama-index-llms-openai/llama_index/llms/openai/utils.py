@@ -289,7 +289,7 @@ def to_openai_message_dict(
 
     message_dict = {
         "role": message.role.value,
-        "content": content or "",
+        "content": content_txt or content,
     }
 
     # TODO: O1 models do not support system prompts
