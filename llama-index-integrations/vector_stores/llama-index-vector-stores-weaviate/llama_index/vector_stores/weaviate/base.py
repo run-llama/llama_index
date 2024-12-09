@@ -19,9 +19,11 @@ from llama_index.core.vector_stores.types import (
 )
 from llama_index.core.vector_stores.utils import DEFAULT_TEXT_KEY
 from llama_index.vector_stores.weaviate.utils import (
-    add_node,
+    get_data_object,
+    aclass_schema_exists,
     class_schema_exists,
     create_default_schema,
+    acreate_default_schema,
     get_node_similarity,
     to_node,
 )
@@ -143,11 +145,13 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     auth_config: Dict[str, Any] = Field(default_factory=dict)
     client_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    _client = PrivateAttr()
+    _client: weaviate.WeaviateClient = PrivateAttr()
+    _aclient: weaviate.WeaviateAsyncClient = PrivateAttr()
 
     def __init__(
         self,
         weaviate_client: Optional[Any] = None,
+        weaviate_aclient: Optional[Any] = None,
         class_prefix: Optional[str] = None,
         index_name: Optional[str] = None,
         text_key: str = DEFAULT_TEXT_KEY,
@@ -157,17 +161,6 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        if weaviate_client is None:
-            if isinstance(auth_config, dict):
-                auth_config = weaviate.auth.AuthApiKey(auth_config)
-
-            client_kwargs = client_kwargs or {}
-            client = weaviate.WeaviateClient(
-                auth_client_secret=auth_config, **client_kwargs
-            )
-        else:
-            client = cast(weaviate.WeaviateClient, weaviate_client)
-
         # validate class prefix starts with a capital letter
         if class_prefix is not None:
             _logger.warning("class_prefix is deprecated, please use index_name")
@@ -180,10 +173,6 @@ class WeaviateVectorStore(BasePydanticVectorStore):
                 "Index name must start with a capital letter, e.g. 'LlamaIndex'"
             )
 
-        # create default schema if does not exist
-        if not class_schema_exists(client, index_name):
-            create_default_schema(client, index_name)
-
         super().__init__(
             url=url,
             index_name=index_name,
@@ -191,7 +180,32 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             auth_config=auth_config.__dict__ if auth_config else {},
             client_kwargs=client_kwargs or {},
         )
-        self._client = client
+
+        if weaviate_client is None and weaviate_aclient is None:
+            if isinstance(auth_config, dict):
+                auth_config = weaviate.auth.AuthApiKey(auth_config)
+
+            client_kwargs = client_kwargs or {}
+            self._client = weaviate.WeaviateClient(
+                auth_client_secret=auth_config, **client_kwargs
+            )
+        if weaviate_client:
+            self._client = cast(weaviate.WeaviateClient, weaviate_client)
+        else:
+            self._client = None
+        if weaviate_aclient:
+            self._aclient = cast(weaviate.WeaviateAsyncClient, weaviate_aclient)
+        else:
+            self._aclient = None
+
+        # create default schema if does not exist
+        if self._client is not None:
+            if not class_schema_exists(self._client, index_name):
+                create_default_schema(self._client, index_name)
+            self._collection_initialized = True
+        else:
+            #  need to do lazy init for async clients
+            self._collection_initialized = False
 
     @classmethod
     def from_params(
@@ -242,13 +256,37 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
         with self._client.batch.dynamic() as batch:
             for node in nodes:
-                add_node(
-                    self._client,
-                    node,
-                    self.index_name,
-                    batch=batch,
-                    text_key=self.text_key,
+                data_object = get_data_object(node=node, text_key=self.text_key)
+                batch.add_object(
+                    collection=self.index_name,
+                    properties=data_object.properties,
+                    uuid=data_object.uuid,
+                    vector=data_object.vector,
                 )
+        return ids
+
+    async def async_add(
+        self,
+        nodes: List[BaseNode],
+        **add_kwargs: Any,
+    ) -> List[str]:
+        """Add nodes to index.
+
+        Args:
+            nodes: List[BaseNode]: list of nodes with embeddings
+
+        """
+        if len(nodes) > 0 and not self._collection_initialized:
+            if not await aclass_schema_exists(self._aclient, self.index_name):
+                await acreate_default_schema(self._aclient, self.index_name)
+
+        ids = [r.node_id for r in nodes]
+
+        collection = self._aclient.collections.get(self.index_name)
+
+        response = await collection.data.insert_many(
+            [get_data_object(node=node, text_key=self.text_key) for node in nodes]
+        )
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -351,6 +389,74 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         # execute query
         try:
             query_result = collection.query.hybrid(
+                query=query.query_str,
+                vector=vector,
+                alpha=alpha,
+                limit=limit,
+                filters=filters,
+                return_metadata=return_metatada,
+                include_vector=True,
+                **kwargs,
+            )
+        except weaviate.exceptions.WeaviateQueryError as e:
+            raise ValueError(f"Invalid query, got errors: {e.message}")
+
+        # parse results
+
+        entries = query_result.objects
+
+        similarities = []
+        nodes: List[BaseNode] = []
+        node_ids = []
+
+        for i, entry in enumerate(entries):
+            if i < query.similarity_top_k:
+                entry_as_dict = entry.__dict__
+                similarities.append(get_node_similarity(entry_as_dict, similarity_key))
+                nodes.append(to_node(entry_as_dict, text_key=self.text_key))
+                node_ids.append(nodes[-1].node_id)
+            else:
+                break
+
+        return VectorStoreQueryResult(
+            nodes=nodes, ids=node_ids, similarities=similarities
+        )
+
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:  # TODO DRY (copied from query())
+        """Query index for top k most similar nodes."""
+        collection = self._aclient.collections.get(self.index_name)
+        filters = None
+
+        # list of documents to constrain search
+        if query.doc_ids:
+            filters = wvc.query.Filter.by_property("doc_id").contains_any(query.doc_ids)
+
+        if query.node_ids:
+            filters = wvc.query.Filter.by_property("id").contains_any(query.node_ids)
+
+        return_metatada = wvc.query.MetadataQuery(distance=True, score=True)
+
+        vector = query.query_embedding
+        similarity_key = "score"
+        alpha = 1
+        if query.mode == VectorStoreQueryMode.HYBRID:
+            _logger.debug(f"Using hybrid search with alpha {query.alpha}")
+            if vector is not None and query.query_str:
+                alpha = query.alpha or 0.5
+
+        if query.filters is not None:
+            filters = _to_weaviate_filter(query.filters)
+        elif "filter" in kwargs and kwargs["filter"] is not None:
+            filters = kwargs["filter"]
+
+        limit = query.similarity_top_k
+        _logger.debug(f"Using limit of {query.similarity_top_k}")
+
+        # execute query
+        try:
+            query_result = await collection.query.hybrid(
                 query=query.query_str,
                 vector=vector,
                 alpha=alpha,

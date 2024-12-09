@@ -5,10 +5,7 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
-
-if TYPE_CHECKING:
-    from weaviate import WeaviateClient
+from typing import Any, Dict, List, cast
 
 
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -18,6 +15,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+import weaviate.classes as wvc
 
 _logger = logging.getLogger(__name__)
 
@@ -76,6 +74,15 @@ def class_schema_exists(client: Any, class_name: str) -> bool:
     return client.collections.exists(class_name)
 
 
+async def aclass_schema_exists(client: Any, class_name: str) -> bool:
+    """Check if class schema exists."""
+    # validate_client(client) TODO
+    print(type(client))
+    return await client.collections.exists(class_name)
+    # collection = client.collections.get(class_name)
+    # return await collection.exists()  # TODO are these two calls required? is there no direct exists method?
+
+
 def create_default_schema(client: Any, class_name: str) -> None:
     """Create default schema."""
     validate_client(client)
@@ -85,6 +92,17 @@ def create_default_schema(client: Any, class_name: str) -> None:
         "properties": NODE_SCHEMA,
     }
     client.collections.create_from_dict(class_schema)
+
+
+async def acreate_default_schema(client: Any, class_name: str) -> None:
+    """Create default schema."""
+    validate_client(client)
+    class_schema = {
+        "class": class_name,
+        "description": f"Class for {class_name}",
+        "properties": NODE_SCHEMA,
+    }
+    await client.collections.create_from_dict(class_schema)
 
 
 def get_node_similarity(entry: Dict, similarity_key: str = "score") -> float:
@@ -125,13 +143,10 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
     return node
 
 
-def add_node(
-    client: "WeaviateClient",
+def get_data_object(
     node: BaseNode,
-    class_name: str,
-    batch: Optional[Any] = None,
     text_key: str = DEFAULT_TEXT_KEY,
-) -> None:
+) -> dict:
     """Add node."""
     metadata = {}
     metadata[text_key] = node.get_content(metadata_mode=MetadataMode.NONE) or ""
@@ -144,12 +159,4 @@ def add_node(
     vector = node.get_embedding()
     id = node.node_id
 
-    # if batch object is provided (via a context manager), use that instead
-    if batch is not None:
-        batch.add_object(
-            properties=metadata, collection=class_name, uuid=id, vector=vector
-        )
-    else:
-        client.collections.get(class_name).data.insert(
-            properties=metadata, uuid=id, vector=vector
-        )
+    return wvc.data.DataObject(properties=metadata, uuid=id, vector=vector)
