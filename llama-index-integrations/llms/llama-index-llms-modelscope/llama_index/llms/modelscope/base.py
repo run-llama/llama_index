@@ -1,5 +1,6 @@
 import logging
 from typing import Any, Optional, Sequence
+
 import torch
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -24,13 +25,13 @@ from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.types import PydanticProgramMode
 from llama_index.llms.modelscope.utils import (
     chat_message_to_modelscope_messages,
-    text_to_completion_response,
     modelscope_message_to_chat_response,
+    text_to_completion_response,
 )
 
 from modelscope.pipelines import pipeline as pipeline_builder
 
-DEFAULT_MODELSCOPE_MODEL = "Qwen/Qwen2-0.5B-Instruct"
+DEFAULT_MODELSCOPE_MODEL = "qwen/Qwen2-0.5B-Instruct"
 DEFAULT_MODELSCOPE_MODEL_REVISION = "master"
 DEFAULT_MODELSCOPE_TASK = "chat"
 DEFAULT_MODELSCOPE_DTYPE = "float16"
