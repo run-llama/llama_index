@@ -331,10 +331,10 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
         if filters:
             where = _to_chroma_filter(filters)
-        else:
-            where = None
+            self._collection.delete(ids=node_ids, where=where)
 
-        self._collection.delete(ids=node_ids, where=where)
+        else:
+            self._collection.delete(ids=node_ids)
 
     def clear(self) -> None:
         """Clear the collection."""
@@ -378,12 +378,19 @@ class ChromaVectorStore(BasePydanticVectorStore):
     def _query(
         self, query_embeddings: List["float"], n_results: int, where: dict, **kwargs
     ) -> VectorStoreQueryResult:
-        results = self._collection.query(
-            query_embeddings=query_embeddings,
-            n_results=n_results,
-            where=where,
-            **kwargs,
-        )
+        if where:
+            results = self._collection.query(
+                query_embeddings=query_embeddings,
+                n_results=n_results,
+                where=where,
+                **kwargs,
+            )
+        else:
+            results = self._collection.query(
+                query_embeddings=query_embeddings,
+                n_results=n_results,
+                **kwargs,
+            )
 
         logger.debug(f"> Top {len(results['documents'][0])} nodes:")
         nodes = []
@@ -429,11 +436,17 @@ class ChromaVectorStore(BasePydanticVectorStore):
     def _get(
         self, limit: Optional[int], where: dict, **kwargs
     ) -> VectorStoreQueryResult:
-        results = self._collection.get(
-            limit=limit,
-            where=where,
-            **kwargs,
-        )
+        if where:
+            results = self._collection.get(
+                limit=limit,
+                where=where,
+                **kwargs,
+            )
+        else:
+            results = self._collection.get(
+                limit=limit,
+                **kwargs,
+            )
 
         logger.debug(f"> Top {len(results['documents'])} nodes:")
         nodes = []

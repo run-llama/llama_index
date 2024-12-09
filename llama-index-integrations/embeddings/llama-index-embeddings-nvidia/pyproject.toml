@@ -34,6 +34,8 @@ python = ">=3.9,<4.0"
 llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
+# Unpin when https://github.com/lundberg/respx/issues/277 is fixed
+httpx = "<0.28.0"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"

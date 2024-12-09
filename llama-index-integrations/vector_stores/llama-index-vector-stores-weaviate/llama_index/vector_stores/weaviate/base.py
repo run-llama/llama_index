@@ -334,11 +334,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
         vector = query.query_embedding
         similarity_key = "score"
-        if query.mode == VectorStoreQueryMode.DEFAULT:
-            _logger.debug("Using vector search")
-            if vector is not None:
-                alpha = 1
-        elif query.mode == VectorStoreQueryMode.HYBRID:
+        alpha = 1
+        if query.mode == VectorStoreQueryMode.HYBRID:
             _logger.debug(f"Using hybrid search with alpha {query.alpha}")
             if vector is not None and query.query_str:
                 alpha = query.alpha or 0.5
