@@ -54,7 +54,8 @@ class HuggingFaceMultiModal(MultiModalLLM):
         description="The torch dtype to use.",
     )
     trust_remote_code: bool = Field(
-        default=True, description="Whether to trust remote code when loading the model."
+        default=False,
+        description="Whether to trust remote code when loading the model.",
     )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,

@@ -5,6 +5,7 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
+    FilePath,
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
     PlainSerializer,
@@ -49,8 +50,6 @@ __all__ = [
     "TypeAdapter",
     "ValidationError",
     "WithJsonSchema",
-    "BaseConfig",
-    "parse_obj_as",
     "BeforeValidator",
     "JsonSchemaValue",
     "SerializeAsAny",
@@ -60,4 +59,5 @@ __all__ = [
     "SecretStr",
     "model_serializer",
     "AnyUrl",
+    "FilePath",
 ]

@@ -276,12 +276,14 @@ def test_file_upload(vectara2) -> None:
     assert "paul graham" in summary.lower() and "software" in summary.lower()
 
     # test query with VectorStoreQuery (using OpenAI for summarization)
-    query_engine = vectara2.as_query_engine(similarity_top_k=3, summary_enabled=False)
+    query_engine = vectara2.as_query_engine(
+        similarity_top_k=3, summary_enabled=False, verbose=True
+    )
     res = query_engine.query("What software did Paul Graham write?")
     assert "paul graham" in str(res).lower() and "software" in str(res).lower()
 
     # test query with Vectara summarization (default)
-    query_engine = vectara2.as_query_engine(similarity_top_k=3)
+    query_engine = vectara2.as_query_engine(similarity_top_k=3, verbose=True)
     res = query_engine.query("How is Paul related to Reddit?")
     summary = res.response
     assert "paul graham" in summary.lower() and "reddit" in summary.lower()
