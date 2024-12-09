@@ -282,6 +282,13 @@ class NileVectorStore(BasePydanticVectorStore):
                             sql.Literal(filter.key), sql.Literal(filter.value)
                         )
                     )
+                elif filter.operator == FilterOperator.TEXT_MATCH or filter.operator == FilterOperator.ILIKE:
+                    # Where the operator is text_match or ilike, we need to wrap the filter in '%' characters
+                    where_clauses.append(
+                        f"metadata_->>'{filter.key}' "
+                        f"{self._to_postgres_operator(filter.operator)} "
+                        f"'%{filter.value}%'"
+                    )
                 else:
                     where_clauses.append(
                         sql.SQL(
