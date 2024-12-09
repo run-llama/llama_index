@@ -571,7 +571,7 @@ class Node(BaseNode):
         """Get Object type."""
         return ObjectType.MULTIMODAL
 
-    def get_content(self, metadata_mode: MetadataMode = MetadataMode.ALL) -> str:
+    def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
         """Get the text content for the node if available.
 
         Provided for backward compatibility, use self.text_resource directly instead.
@@ -614,7 +614,10 @@ class TextNode(BaseNode):
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """This is needed to help static checkers with inherited fields."""
+        """Make TextNode forward-compatible with Node by supporting 'text_resource' in the constructor."""
+        if "text_resource" in kwargs:
+            tr = kwargs.pop("text_resource")
+            kwargs["text"] = tr["text"]
         super().__init__(*args, **kwargs)
 
     text: str = Field(default="", description="Text content of the node.")
