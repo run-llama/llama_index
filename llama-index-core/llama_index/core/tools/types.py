@@ -48,7 +48,7 @@ class ToolMetadata:
         if self.fn_schema is None:
             raise ValueError("fn_schema is None.")
         parameters = self.get_parameters_dict()
-        return json.dumps(parameters)
+        return json.dumps(parameters, ensure_ascii=False)
 
     def get_name(self) -> str:
         """Get name."""
