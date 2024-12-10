@@ -10,17 +10,20 @@ logger = logging.getLogger(__name__)
 
 
 class UnsupportedOracleAdsVersionError(Exception):
-    """
-    Custom exception for unsupported `oracle-ads` versions.
-    Attributes
-    ----------
-    current_version : str
-        The installed version of `oracle-ads`.
-    required_version : str
-        The minimum required version of `oracle-ads`.
+    """Custom exception for unsupported `oracle-ads` versions.
+
+    Attributes:
+        current_version (str): The installed version of `oracle-ads`.
+        required_version (str): The minimum required version of `oracle-ads`.
     """
 
     def __init__(self, current_version: str, required_version: str):
+        """Initialize the UnsupportedOracleAdsVersionError.
+
+        Args:
+            current_version (str): The currently installed version of `oracle-ads`.
+            required_version (str): The minimum required version of `oracle-ads`.
+        """
         super().__init__(
             f"The `oracle-ads` version {current_version} currently installed is incompatible with "
             "the `llama-index-llms-oci-data-science` version in use. To resolve this issue, "
@@ -30,24 +33,20 @@ class UnsupportedOracleAdsVersionError(Exception):
 
 
 def _validate_dependency(func: Callable[..., Any]) -> Callable[..., Any]:
-    """
-    Decorator to validate the presence and version of the `oracle-ads` package.
+    """Decorator to validate the presence and version of the `oracle-ads` package.
+
     This decorator checks whether `oracle-ads` is installed and ensures its version meets
-    the minimum requirement. Raises an error if the conditions are not met.
-    Parameters
-    ----------
-    func : Callable[..., Any]
-        The function to wrap with the dependency validation.
-    Returns
-    -------
-    Callable[..., Any]
-        The wrapped function.
-    Raises
-    ------
-    ImportError
-        If `oracle-ads` is not installed.
-    UnsupportedOracleAdsVersionError
-        If the installed version is below the required version.
+    the minimum requirement. If not, it raises an appropriate error.
+
+    Args:
+        func (Callable[..., Any]): The function to wrap with the dependency validation.
+
+    Returns:
+        Callable[..., Any]: The wrapped function.
+
+    Raises:
+        ImportError: If `oracle-ads` is not installed.
+        UnsupportedOracleAdsVersionError: If the installed version is below the required version.
     """
 
     @wraps(func)
@@ -57,12 +56,12 @@ def _validate_dependency(func: Callable[..., Any]) -> Callable[..., Any]:
 
             if version.parse(ads_version) < version.parse(MIN_ADS_VERSION):
                 raise UnsupportedOracleAdsVersionError(ads_version, MIN_ADS_VERSION)
-
         except ImportError as ex:
             raise ImportError(
                 "Could not import `oracle-ads` Python package. "
                 "Please install it with `pip install oracle-ads`."
             ) from ex
+
         return func(*args, **kwargs)
 
     return wrapper
