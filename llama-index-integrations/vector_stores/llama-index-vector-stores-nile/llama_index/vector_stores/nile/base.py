@@ -246,7 +246,7 @@ class NileVectorStore(BasePydanticVectorStore):
             return "@>"
         elif operator == FilterOperator.TEXT_MATCH:
             return "LIKE"
-        elif operator == FilterOperator.ILIKE:
+        elif operator == FilterOperator.TEXT_MATCH_INSENSITIVE:
             return "ILIKE"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
@@ -284,7 +284,7 @@ class NileVectorStore(BasePydanticVectorStore):
                     )
                 elif (
                     filter.operator == FilterOperator.TEXT_MATCH
-                    or filter.operator == FilterOperator.ILIKE
+                    or filter.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
                 ):
                     # Where the operator is text_match or ilike, we need to wrap the filter in '%' characters
                     where_clauses.append(

@@ -494,7 +494,7 @@ class PGVectorStore(BasePydanticVectorStore):
             return "@>"
         elif operator == FilterOperator.TEXT_MATCH:
             return "LIKE"
-        elif operator == FilterOperator.ILIKE:
+        elif operator == FilterOperator.TEXT_MATCH_INSENSITIVE:
             return "ILIKE"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
@@ -524,7 +524,7 @@ class PGVectorStore(BasePydanticVectorStore):
             )
         elif (
             filter_.operator == FilterOperator.TEXT_MATCH
-            or filter_.operator == FilterOperator.ILIKE
+            or filter_.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
         ):
             # Where the operator is text_match or ilike, we need to wrap the filter in '%' characters
             return text(
