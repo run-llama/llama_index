@@ -1,6 +1,7 @@
 import pytest
 import weaviate.classes as wvc
 import weaviate
+import weaviate.embedded
 from llama_index.core.schema import (
     TextNode,
     NodeRelationship,

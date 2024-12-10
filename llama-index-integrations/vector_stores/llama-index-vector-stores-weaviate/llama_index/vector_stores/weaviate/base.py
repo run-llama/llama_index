@@ -5,7 +5,7 @@ An index that is built on top of an existing vector store.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -115,9 +115,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     k most similar nodes.
 
     Args:
-        weaviate_client (Optional[Any]): WeaviateClient
-            instance from `weaviate-client` package
-        weaviate_aclient (Optional[Any]): WeaviateAsyncClient
+        weaviate_client (Optional[Any]): Either a WeaviateClient (synchronous) or WeaviateAsyncClient (asynchronous)
             instance from `weaviate-client` package
         index_name (Optional[str]): name for Weaviate classes
 
@@ -153,10 +151,14 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     _client: weaviate.WeaviateClient = PrivateAttr()
     _aclient: weaviate.WeaviateAsyncClient = PrivateAttr()
 
+    _collection_initialized: bool = PrivateAttr()
+    _is_self_created_weaviate_client: bool = (
+        PrivateAttr()
+    )  # States if the Weaviate client was created within this class and therefore closing it lies in our responsibility
+
     def __init__(
         self,
         weaviate_client: Optional[Any] = None,
-        weaviate_aclient: Optional[Any] = None,
         class_prefix: Optional[str] = None,
         index_name: Optional[str] = None,
         text_key: str = DEFAULT_TEXT_KEY,
@@ -185,8 +187,15 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             auth_config=auth_config.__dict__ if auth_config else {},
             client_kwargs=client_kwargs or {},
         )
-
-        if weaviate_client is None and weaviate_aclient is None:
+        if isinstance(weaviate_client, weaviate.WeaviateClient):
+            self._client = weaviate_client
+            self._aclient = None
+            self._is_self_created_weaviate_client = False
+        elif isinstance(weaviate_client, weaviate.WeaviateAsyncClient):
+            self._client = None
+            self._aclient = weaviate_client
+            self._is_self_created_weaviate_client = False
+        elif weaviate_client is None:
             if isinstance(auth_config, dict):
                 auth_config = weaviate.auth.AuthApiKey(auth_config)
 
@@ -194,14 +203,12 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             self._client = weaviate.WeaviateClient(
                 auth_client_secret=auth_config, **client_kwargs
             )
-        if weaviate_client:
-            self._client = cast(weaviate.WeaviateClient, weaviate_client)
-        else:
-            self._client = None
-        if weaviate_aclient:
-            self._aclient = cast(weaviate.WeaviateAsyncClient, weaviate_aclient)
-        else:
-            self._aclient = None
+            self._client.connect()
+            self._is_self_created_weaviate_client = True
+        else:  # weaviate_client neither one of the expected types nor None
+            raise ValueError(
+                f"Unsupported weaviate_client of type {type(weaviate_client)}. Either provide an instance of `WeaviateClient` or `WeaviateAsyncClient` or set `weaviate_client` to None to have a sync client automatically created using the setting provided in `auth_config` and `client_kwargs`."
+            )
 
         # create default schema if does not exist
         if self._client is not None:
@@ -211,6 +218,10 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         else:
             #  need to do lazy init for async clients
             self._collection_initialized = False
+
+    def __del__(self) -> None:
+        if self._is_self_created_weaviate_client:
+            self.client.close()
 
     @classmethod
     def class_name(cls) -> str:

@@ -31,7 +31,7 @@ async def async_client():
 @pytest_asyncio.fixture(loop_scope="module")
 async def async_vector_store(async_client):
     vector_store = WeaviateVectorStore(
-        weaviate_aclient=async_client, index_name=TEST_COLLECTION_NAME
+        weaviate_client=async_client, index_name=TEST_COLLECTION_NAME
     )
     await vector_store.aclear()  # Make sure that no leftover test collection exists from a previous test session (embedded Weaviate data gets persisted)
     yield vector_store
