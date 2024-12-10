@@ -39,3 +39,15 @@ See the following links for more details.
 
 - [Configuring settings in the Settings](../module_guides/supporting_modules/settings.md)
 - [Parsing Documents into Nodes](../module_guides/loading/node_parsers/index.md)
+
+## ServiceContext
+
+The `ServiceContext` object has been deprecated in favour of the `Settings` object.
+
+- [Configuring settings in the Settings](../module_guides/supporting_modules/settings.md)
+
+## llama-index-legacy
+
+The `llama-index-legacy` package has been deprecated and removed from the repository. Please see the latest getting started guide for the latest information and usage.
+
+- [Getting Started](../getting_started/installation.md)
