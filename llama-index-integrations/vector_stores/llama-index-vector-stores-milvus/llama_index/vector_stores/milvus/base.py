@@ -619,7 +619,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 filter=string_expr,
                 limit=query.similarity_top_k,
                 output_fields=output_fields,
-                search_params=self.search_config,
+                search_params=kwargs["milvus_search_config"] if "milvus_search_config" in kwargs else self.search_config,
                 anns_field=self.embedding_field,
             )
             logger.debug(
