@@ -1,7 +1,11 @@
 import re
 from typing import Any, Dict, List, Optional, Tuple, NamedTuple
 
-Schema = NamedTuple("Schema", ["left_node", "relation", "right_node"])
+
+class Schema(NamedTuple):
+    left_node: str
+    relation: str
+    right_node: str
 
 
 class CypherQueryCorrector:
