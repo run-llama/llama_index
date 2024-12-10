@@ -12,6 +12,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
 )
+import asyncio
 import pytest
 import pytest_asyncio
 import weaviate
@@ -28,8 +29,18 @@ async def async_client():
     await client.close()
 
 
-@pytest_asyncio.fixture(loop_scope="module")
-async def async_vector_store(async_client):
+# This replaces the event loop which is deprecated (discussion: https://github.com/pytest-dev/pytest-asyncio/discussions/587)
+# It was necessary to implement it this way due to pytest 7 currently always being used in the pants test performed during CI.
+# TODO Revert the commit where it was implemented like this as soon as pytest >= 8 is used in the pants tests (discussion: https://github.com/run-llama/llama_index/pull/17220#issuecomment-2532175072)
+@pytest.fixture(scope="session")
+def event_loop():
+    loop = asyncio.get_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest_asyncio.fixture
+async def async_vector_store(async_client, event_loop):
     vector_store = WeaviateVectorStore(
         weaviate_client=async_client, index_name=TEST_COLLECTION_NAME
     )
@@ -38,7 +49,7 @@ async def async_vector_store(async_client):
     await vector_store.aclear()
 
 
-@pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.asyncio()
 async def test_async_basic_flow(async_vector_store):
     nodes = [
         TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3]),
@@ -63,7 +74,7 @@ async def test_async_basic_flow(async_vector_store):
     assert results.similarities[0] > results.similarities[1]
 
 
-@pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.asyncio()
 async def test_async_old_data_gone(async_vector_store):
     """Makes sure that no data stays in the database in between tests (otherwise more than one node would be found in the assertion)."""
     nodes = [
@@ -84,7 +95,7 @@ async def test_async_old_data_gone(async_vector_store):
     assert len(results.nodes) == 1
 
 
-@pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.asyncio()
 async def test_async_delete_nodes(async_vector_store):
     node_to_be_deleted = TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3])
     node_to_keep = TextNode(text="This is a test.", embedding=[0.3, 0.0, 0.0])
@@ -103,7 +114,7 @@ async def test_async_delete_nodes(async_vector_store):
     assert results.nodes[0].node_id == node_to_keep.node_id
 
 
-@pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.asyncio()
 async def test_async_delete(async_vector_store):
     node_to_be_deleted = TextNode(
         text="Hello world.",
@@ -144,7 +155,7 @@ async def test_async_delete(async_vector_store):
     assert results.nodes[0].node_id == node_to_keep.node_id
 
 
-@pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.asyncio()
 def test_async_client_properties(async_vector_store):
     assert isinstance(async_vector_store.async_client, weaviate.WeaviateAsyncClient)
     with pytest.raises(SyncClientNotProvidedError):
