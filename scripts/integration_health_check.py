@@ -21,7 +21,9 @@ import pathlib
 import ast
 import json
 from typing import Dict, List
+import pandas as pd
 
+from typing import Literal
 from datetime import datetime, timedelta
 from math import exp
 
@@ -48,10 +50,12 @@ class IntegrationActivityAnalyzer:
         repo_path: str,
         metric_weights: Dict = DEFAULT_METRIC_WEIGHTS,
         new_project_score: float = DEFAULT_SCORE_NEW_PROJECT,
+        verbose: bool = False,
     ):
         self.package_name = package_name
         self.repo_path = repo_path
         self.metrics = {}
+        self.verbose = verbose
         if sum(v for v in metric_weights.values()) != 1:
             raise ValueError("Metric weights do not sum up to 1.")
         self.metric_weights = metric_weights
@@ -107,7 +111,12 @@ class IntegrationActivityAnalyzer:
 
         # We need at least 5 months of data, if not, its too new to be considered
         if len(downloads_per_month) < 5:
-            return None
+            self._is_new_project = True
+            return {
+                "growth_rate": 0,
+                "stability": 0,
+                "avg_monthly_downloads": 0,
+            }
 
         # Apply time weights to downloads
         weighted_downloads = []
@@ -254,13 +263,15 @@ class IntegrationActivityAnalyzer:
         Calculate relative health score compared to llama-index-core.
         """
         if os.path.exists("./core_package_metrics.json"):
-            print(
-                "Loading cached existing core package metrics from ./core_package_metrics.json"
-            )
+            if self.verbose:
+                print(
+                    "Loading cached existing core package metrics from ./core_package_metrics.json"
+                )
             with open("./core_package_metrics.json") as f:
                 core_package_metrics = json.load(f)
         else:
-            print("No cached existing core package metrics found, calculating...")
+            if self.verbose:
+                print("No cached existing core package metrics found, calculating...")
             core_package_metrics = {
                 "downloads": IntegrationActivityAnalyzer(
                     repo_path="./llama-index-core", package_name="llama-index-core"
@@ -319,25 +330,31 @@ class IntegrationActivityAnalyzer:
     @property
     def health_score(self) -> float:
         if self._is_new_project:
-            return self._new_project_score
-        score = 0
-        for k, v in self.metrics.items():
-            score += v * self.metric_weights[k]
+            score = self._new_project_score
+        else:
+            score = 0
+            for k, v in self.metrics.items():
+                score += v * self.metric_weights[k]
         return score
 
 
 def analyze_package(package_path: str) -> tuple[str, float]:
     """Analyze a single package. Helper function for parallel processing."""
     package_name = package_path.strip().lstrip("./").rstrip("/").split("/")[-1]
+    logger.info(f"starting to analyze {package_name}")
     analyzer = IntegrationActivityAnalyzer(package_name, package_path)
     analyzer.calculate_metrics()
     health_score = analyzer.health_score
+    if health_score == 42:
+        print(f"new package: {package_name}")
+    logger.info(f"health score for {package_name}: {health_score}")
     return (package_name, health_score)
 
 
 def analyze_multiple_packages(
     package_paths: list[str],
     bottom_percent: float | None = None,
+    bottom_n: int | None = None,
     threshold: float | None = None,
 ) -> list[tuple[str, float]]:
     """Analyze multiple packages in parallel."""
@@ -348,7 +365,7 @@ def analyze_multiple_packages(
     else:
         print("No cached existing package metrics found, calculating...")
         # Use ThreadPoolExecutor for parallel processing
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             results = list(executor.map(analyze_package, package_paths))
 
         with open("./all_package_metrics.json", "w") as f:
@@ -357,9 +374,15 @@ def analyze_multiple_packages(
     # Sort by health score ascending
     results.sort(key=lambda x: x[1])
 
+    # Print summary stats
+    scores = pd.Series([el[1] for el in results])
+    print(scores.describe())
+
     # Calculate how many packages to return
     if bottom_percent is not None:
         num_packages = max(1, int(len(results) * bottom_percent))
+    elif bottom_n is not None:
+        num_packages = min(bottom_n, len(results))
     elif threshold is not None:
         num_packages = next(
             (i for i, (_, score) in enumerate(results) if score >= threshold),
@@ -373,14 +396,36 @@ def analyze_multiple_packages(
     return results[:num_packages]
 
 
+def package_tuple_to_str(
+    package_tuple: tuple[str, float], mode: Literal["default", "csv"] = "default"
+):
+    if mode == "default":
+        return str(package_tuple)
+    elif mode == "csv":
+        name, score = package_tuple
+        return f"{name},{score}"
+    else:
+        raise ValueError(
+            "Unsupported str mode. Please enter `default` or `csv` as mode."
+        )
+
+
 if __name__ == "__main__":
     arg = sys.argv[1]
     try:
         val = float(arg)
         is_threshold = sys.argv[2] == "threshold"
         is_percent = sys.argv[2] == "percent"
+        is_bottom_n = sys.argv[2] = "bottom_n"
+        try:
+            output_mode = sys.argv[3]
+        except IndexError:
+            output_mode = "default"
         all_packages = []
         for root, dirs, files in os.walk("./llama-index-integrations"):
+            if "pyproject.toml" in files:
+                all_packages.append(root)
+        for root, dirs, files in os.walk("./llama-index-packs"):
             if "pyproject.toml" in files:
                 all_packages.append(root)
 
@@ -388,13 +433,22 @@ if __name__ == "__main__":
             packages_to_remove = analyze_multiple_packages(
                 all_packages, bottom_percent=val
             )
+        elif is_bottom_n:
+            packages_to_remove = analyze_multiple_packages(
+                all_packages, bottom_n=int(val)
+            )
         elif is_threshold:
             packages_to_remove = analyze_multiple_packages(all_packages, threshold=val)
         else:
             raise ValueError("Invalid argument for bottom_percent or threshold")
 
         print(f"Found {len(packages_to_remove)} packages to remove.")
-        print("\n".join([str(x) for x in packages_to_remove]))
+        print(
+            "\n".join(
+                [package_tuple_to_str(x, mode=output_mode) for x in packages_to_remove]
+            )
+        )
+
     except ValueError:
         package_path = sys.argv[1].strip().lstrip("./").rstrip("/")
         package_name = package_path.split("/")[-1]
