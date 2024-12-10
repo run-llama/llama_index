@@ -684,7 +684,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 filter=string_expr,
                 limit=prefetch_k0,
                 output_fields=output_fields,
-                search_params=kwargs["milvus_search_config"] if "milvus_search_config" in kwargs else self.search_config,
+                search_params=kwargs.get("milvus_search_config", self.search_config),
                 anns_field=self.embedding_field,
             )
 
