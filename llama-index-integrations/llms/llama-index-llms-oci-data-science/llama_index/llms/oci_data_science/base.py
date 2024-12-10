@@ -34,7 +34,7 @@ from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_ca
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.llms.utils import parse_partial_json
-from llama_index.core.types import BaseOutputParser, Model, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.oci_data_science.client import AsyncClient, Client
 from llama_index.llms.oci_data_science.utils import (
     DEFAULT_TOOL_CHOICE,
@@ -477,7 +477,7 @@ class OCIDataScience(FunctionCallingLLM):
                 additional_kwargs=_get_response_token_counts(response),
             )
         except (IndexError, KeyError, TypeError) as e:
-            raise ValueError(f"Failed to parse response: {str(e)}") from e
+            raise ValueError(f"Failed to parse response: {e!s}") from e
 
     @llm_completion_callback()
     def stream_complete(
@@ -554,7 +554,7 @@ class OCIDataScience(FunctionCallingLLM):
                 additional_kwargs=_get_response_token_counts(response),
             )
         except (IndexError, KeyError, TypeError) as e:
-            raise ValueError(f"Failed to parse response: {str(e)}") from e
+            raise ValueError(f"Failed to parse response: {e!s}") from e
 
     @llm_chat_callback()
     def stream_chat(
@@ -650,7 +650,7 @@ class OCIDataScience(FunctionCallingLLM):
                 additional_kwargs=_get_response_token_counts(response),
             )
         except (IndexError, KeyError, TypeError) as e:
-            raise ValueError(f"Failed to parse response: {str(e)}") from e
+            raise ValueError(f"Failed to parse response: {e!s}") from e
 
     @llm_completion_callback()
     async def astream_complete(
@@ -734,7 +734,7 @@ class OCIDataScience(FunctionCallingLLM):
                 additional_kwargs=_get_response_token_counts(response),
             )
         except (IndexError, KeyError, TypeError) as e:
-            raise ValueError(f"Failed to parse response: {str(e)}") from e
+            raise ValueError(f"Failed to parse response: {e!s}") from e
 
     @llm_chat_callback()
     async def astream_chat(
@@ -928,7 +928,7 @@ class OCIDataScience(FunctionCallingLLM):
                     tool_call.get("function", {}).get("arguments", {})
                 )
             except ValueError as e:
-                logger.debug(f"Failed to parse tool call arguments: {str(e)}")
+                logger.debug(f"Failed to parse tool call arguments: {e!s}")
                 argument_dict = {}
 
             tool_selections.append(

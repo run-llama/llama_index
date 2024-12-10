@@ -15,7 +15,6 @@ from llama_index.llms.oci_data_science.client import (
     _retry_decorator,
     _should_retry_exception,
 )
-from tenacity import RetryError
 
 
 class TestOCIAuth:
@@ -479,7 +478,7 @@ class TestClient:
         client.close.assert_called_once()
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 class TestAsyncClient:
     """Unit tests for AsyncClient class."""
 

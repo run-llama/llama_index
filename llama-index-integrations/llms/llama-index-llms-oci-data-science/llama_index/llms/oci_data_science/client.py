@@ -39,6 +39,8 @@ TIMEOUT = 600  # Timeout in seconds
 STATUS_FORCE_LIST = [429, 500, 502, 503, 504]
 DEFAULT_ENCODING = "utf-8"
 
+from typing import Self
+
 _T = TypeVar("_T", bound="BaseClient")
 
 logger = logging.getLogger(__name__)
@@ -292,7 +294,7 @@ class BaseClient(ABC):
         except json.JSONDecodeError as e:
             logger.debug(f"Error decoding JSON from line: {line}")
             raise json.JSONDecodeError(
-                f"Error decoding JSON from line: {str(e)}", e.doc, e.pos
+                f"Error decoding JSON from line: {e!s}", e.doc, e.pos
             ) from e
 
         if json_line.get("object") == "error":
@@ -336,7 +338,7 @@ class Client(BaseClient):
     Synchronous HTTP client for invoking models with support for request and streaming APIs.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         """
         Initialize the Client.
 
@@ -354,7 +356,7 @@ class Client(BaseClient):
         """Close the underlying HTTPX client."""
         self._client.close()
 
-    def __enter__(self: _T) -> _T:
+    def __enter__(self: _T) -> Self:
         return self
 
     def __exit__(
@@ -406,10 +408,10 @@ class Client(BaseClient):
                 e.response.text if hasattr(e, "response") and e.response else str(e)
             )
             logger.error(
-                f"Request failed. Error: {str(e)}. Details: {last_exception_text}"
+                f"Request failed. Error: {e!s}. Details: {last_exception_text}"
             )
             raise ExtendedRequestException(
-                f"Request failed: {str(e)}. Details: {last_exception_text}",
+                f"Request failed: {e!s}. Details: {last_exception_text}",
                 e,
                 last_exception_text,
             ) from e
@@ -476,10 +478,10 @@ class Client(BaseClient):
                     time.sleep(delay)
                 else:
                     logger.error(
-                        f"Streaming request failed. Error: {str(e)}. Details: {last_exception_text}"
+                        f"Streaming request failed. Error: {e!s}. Details: {last_exception_text}"
                     )
                     raise ExtendedRequestException(
-                        f"Streaming request failed: {str(e)}. Details: {last_exception_text}",
+                        f"Streaming request failed: {e!s}. Details: {last_exception_text}",
                         e,
                         last_exception_text,
                     ) from e
@@ -542,7 +544,7 @@ class AsyncClient(BaseClient):
     Asynchronous HTTP client for invoking models with support for request and streaming APIs, including retry logic.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         """
         Initialize the AsyncClient.
 
@@ -563,7 +565,7 @@ class AsyncClient(BaseClient):
         """
         await self._client.aclose()
 
-    async def __aenter__(self: _T) -> _T:
+    async def __aenter__(self: _T) -> Self:
         return self
 
     async def __aexit__(
@@ -620,10 +622,10 @@ class AsyncClient(BaseClient):
                 e.response.text if hasattr(e, "response") and e.response else str(e)
             )
             logger.error(
-                f"Request failed. Error: {str(e)}. Details: {last_exception_text}"
+                f"Request failed. Error: {e!s}. Details: {last_exception_text}"
             )
             raise ExtendedRequestException(
-                f"Request failed: {str(e)}. Details: {last_exception_text}",
+                f"Request failed: {e!s}. Details: {last_exception_text}",
                 e,
                 last_exception_text,
             ) from e
@@ -685,10 +687,10 @@ class AsyncClient(BaseClient):
                     await asyncio.sleep(delay)
                 else:
                     logger.error(
-                        f"Streaming request failed. Error: {str(e)}. Details: {last_exception_text}"
+                        f"Streaming request failed. Error: {e!s}. Details: {last_exception_text}"
                     )
                     raise ExtendedRequestException(
-                        f"Streaming request failed: {str(e)}. Details: {last_exception_text}",
+                        f"Streaming request failed: {e!s}. Details: {last_exception_text}",
                         e,
                         last_exception_text,
                     ) from e

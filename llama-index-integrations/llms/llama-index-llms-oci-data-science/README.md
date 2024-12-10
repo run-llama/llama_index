@@ -18,12 +18,12 @@ pip install oracle-ads llama-index llama-index-llms-oci-data-science
 The [oracle-ads](https://accelerated-data-science.readthedocs.io/en/latest/index.html) is required to simplify the authentication within OCI Data Science.
 
 ## Authentication
-The authentication methods supported for LlamaIndex are equivalent to those used with other OCI services and follow the standard SDK authentication methods, specifically API Key, session token, instance principal, and resource principal. More details can be found [here](https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html). Make sure to have the required [policies](https://docs.oracle.com/en-us/iaas/data-science/using/model-dep-policies-auth.htm) to access the OCI Data Science Model Deployment endpoint.
 
+The authentication methods supported for LlamaIndex are equivalent to those used with other OCI services and follow the standard SDK authentication methods, specifically API Key, session token, instance principal, and resource principal. More details can be found [here](https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html). Make sure to have the required [policies](https://docs.oracle.com/en-us/iaas/data-science/using/model-dep-policies-auth.htm) to access the OCI Data Science Model Deployment endpoint.
 
 ## Basic Usage
 
-Using LLMs offered by OCI Data Science AI with LlamaIndex only requires you to initialize the OCIDataScience interface with your Data Science Model Deployment endpoint and model ID. By default the all deployed models in AI Quick Actions get `odsc-model` ID. However this ID cna be changed during the deployment.
+Using LLMs offered by OCI Data Science AI with LlamaIndex only requires you to initialize the OCIDataScience interface with your Data Science Model Deployment endpoint and model ID. By default the all deployed models in AI Quick Actions get `odsc-model` ID. However this ID can be changed during the deployment.
 
 ### Call `complete` with a prompt
 
@@ -43,6 +43,7 @@ print(response)
 ```
 
 ### Call `chat` with a list of messages
+
 ```python
 import ads
 from llama_index.llms.oci_data_science import OCIDataScience
@@ -54,11 +55,15 @@ llm = OCIDataScience(
     model="odsc-llm",
     endpoint="https://<MD_OCID>/predict",
 )
-response = llm.chat([
-  ChatMessage(role="user", content="Tell me a joke"),
-  ChatMessage(role="assistant", content="Why did the chicken cross the road?"),
-  ChatMessage(role="user", content="I don't know, why?"),
-  ])
+response = llm.chat(
+    [
+        ChatMessage(role="user", content="Tell me a joke"),
+        ChatMessage(
+            role="assistant", content="Why did the chicken cross the road?"
+        ),
+        ChatMessage(role="user", content="I don't know, why?"),
+    ]
+)
 
 print(response)
 ```
@@ -83,6 +88,7 @@ for chunk in llm.stream_complete("Tell me a joke"):
 ```
 
 ### Using `stream_chat` endpoint
+
 ```python
 import ads
 from llama_index.llms.oci_data_science import OCIDataScience
@@ -94,11 +100,15 @@ llm = OCIDataScience(
     model="odsc-llm",
     endpoint="https://<MD_OCID>/predict",
 )
-response = llm.stream_chat([
-  ChatMessage(role="user", content="Tell me a joke"),
-  ChatMessage(role="assistant", content="Why did the chicken cross the road?"),
-  ChatMessage(role="user", content="I don't know, why?"),
-  ])
+response = llm.stream_chat(
+    [
+        ChatMessage(role="user", content="Tell me a joke"),
+        ChatMessage(
+            role="assistant", content="Why did the chicken cross the road?"
+        ),
+        ChatMessage(role="user", content="I don't know, why?"),
+    ]
+)
 
 for chunk in response:
     print(chunk.delta, end="")
@@ -124,6 +134,7 @@ print(response)
 ```
 
 ### Call `achat` with a list of messages
+
 ```python
 import ads
 from llama_index.llms.oci_data_science import OCIDataScience
@@ -135,11 +146,15 @@ llm = OCIDataScience(
     model="odsc-llm",
     endpoint="https://<MD_OCID>/predict",
 )
-response = await llm.achat([
-  ChatMessage(role="user", content="Tell me a joke"),
-  ChatMessage(role="assistant", content="Why did the chicken cross the road?"),
-  ChatMessage(role="user", content="I don't know, why?"),
-  ])
+response = await llm.achat(
+    [
+        ChatMessage(role="user", content="Tell me a joke"),
+        ChatMessage(
+            role="assistant", content="Why did the chicken cross the road?"
+        ),
+        ChatMessage(role="user", content="I don't know, why?"),
+    ]
+)
 
 print(response)
 ```
@@ -176,11 +191,15 @@ llm = OCIDataScience(
     model="odsc-llm",
     endpoint="https://<MD_OCID>/predict",
 )
-response = await llm.stream_chat([
-  ChatMessage(role="user", content="Tell me a joke"),
-  ChatMessage(role="assistant", content="Why did the chicken cross the road?"),
-  ChatMessage(role="user", content="I don't know, why?"),
-  ])
+response = await llm.stream_chat(
+    [
+        ChatMessage(role="user", content="Tell me a joke"),
+        ChatMessage(
+            role="assistant", content="Why did the chicken cross the road?"
+        ),
+        ChatMessage(role="user", content="I don't know, why?"),
+    ]
+)
 
 async for chunk in response:
     print(chunk.delta, end="")
@@ -202,18 +221,21 @@ llm = OCIDataScience(
     timeout=120,
     context_window=2500,
     additional_kwargs={
-      "top_p": 0.75,
-      "logprobs": True,
-      "top_logprobs": 3,
-    }
+        "top_p": 0.75,
+        "logprobs": True,
+        "top_logprobs": 3,
+    },
 )
-response = llm.chat([
-  ChatMessage(role="user", content="Tell me a joke"),
-  ])
+response = llm.chat(
+    [
+        ChatMessage(role="user", content="Tell me a joke"),
+    ]
+)
 print(response)
 ```
 
 ## Function Calling
+
 The [AI Quick Actions](https://docs.oracle.com/en-us/iaas/data-science/using/ai-quick-actions.htm) offers prebuilt service containers that make deploying and serving a large language model very easy. Either one of vLLM (a high-throughput and memory-efficient inference and serving engine for LLMs) or TGI (a high-performance text generation server for the popular open-source LLMs) is used in the service container to host the model, the end point created supports the OpenAI API protocol. This allows the model deployment to be used as a drop-in replacement for applications using OpenAI API. If the deployed model supports function calling, then integration with LlamaIndex tools, through the predict_and_call function on the llm allows to attach any tools and let the LLM decide which tools to call (if any).
 
 ```python
@@ -231,11 +253,12 @@ llm = OCIDataScience(
     timeout=120,
     context_window=2500,
     additional_kwargs={
-      "top_p": 0.75,
-      "logprobs": True,
-      "top_logprobs": 3,
-    }
+        "top_p": 0.75,
+        "logprobs": True,
+        "top_logprobs": 3,
+    },
 )
+
 
 def multiply(a: float, b: float) -> float:
     print(f"---> {a} * {b}")
@@ -264,8 +287,8 @@ divide_tool = FunctionTool.from_defaults(fn=divide)
 
 response = llm.predict_and_call(
     [multiply_tool, add_tool, sub_tool, divide_tool],
-    user_msg= "Calculate the result of `8 + 2 - 6`.",
-    verbose=True
+    user_msg="Calculate the result of `8 + 2 - 6`.",
+    verbose=True,
 )
 
 print(response)
@@ -289,11 +312,12 @@ llm = OCIDataScience(
     timeout=120,
     context_window=2500,
     additional_kwargs={
-      "top_p": 0.75,
-      "logprobs": True,
-      "top_logprobs": 3,
-    }
+        "top_p": 0.75,
+        "logprobs": True,
+        "top_logprobs": 3,
+    },
 )
+
 
 def multiply(a: float, b: float) -> float:
     print(f"---> {a} * {b}")
@@ -321,7 +345,9 @@ sub_tool = FunctionTool.from_defaults(fn=subtract)
 divide_tool = FunctionTool.from_defaults(fn=divide)
 
 agent = FunctionCallingAgent.from_tools(
-    tools=[multiply_tool, add_tool, sub_tool, divide_tool], llm=llm, verbose=True
+    tools=[multiply_tool, add_tool, sub_tool, divide_tool],
+    llm=llm,
+    verbose=True,
 )
 response = agent.chat(
     "Calculate the result of `8 + 2 - 6`. Use tools. Return the calculated result."

@@ -1,7 +1,5 @@
-import os
 from unittest.mock import patch
 
-import ads
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, LogProb, MessageRole
 from llama_index.llms.oci_data_science.utils import (
@@ -319,7 +317,7 @@ class TestResolveToolChoice:
     """Unit tests for _resolve_tool_choice function."""
 
     @pytest.mark.parametrize(
-        "input_choice, expected_output",
+        ("input_choice", "expected_output"),
         [
             ("auto", "auto"),
             ("none", "none"),
