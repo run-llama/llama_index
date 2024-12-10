@@ -1216,6 +1216,7 @@ nav:
           - ./api_reference/postprocessor/mixedbreadai_rerank.md
           - ./api_reference/postprocessor/nvidia_rerank.md
           - ./api_reference/postprocessor/openvino_rerank.md
+          - ./api_reference/postprocessor/pinecone_native_rerank.md
           - ./api_reference/postprocessor/presidio.md
           - ./api_reference/postprocessor/prev_next.md
           - ./api_reference/postprocessor/rankgpt_rerank.md
@@ -1689,7 +1690,6 @@ nav:
           - Docs: ./DOCS_README.md
       - Changelog: ./CHANGELOG.md
       - Presentations: ./presentations/past_presentations.md
-      - Upgrading to v0.10.x: ./getting_started/v0_10_0_migration.md
       - Deprecated Terms: ./changes/deprecated_terms.md
   - LlamaCloud:
       - LlamaCloud: ./llama_cloud/index.md
@@ -2339,6 +2339,7 @@ plugins:
             - ../llama-index-integrations/tools/llama-index-tools-elevenlabs
             - ../llama-index-integrations/llms/llama-index-llms-nebius
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-bedrock-rerank
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-pinecone-native-rerank
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2849,7 +2850,6 @@ plugins:
         ./getting_started/starter_example.html: https://docs.llamaindex.ai/en/stable/getting_started/starter_example/
         ./getting_started/starter_example_local.html: https://docs.llamaindex.ai/en/stable/getting_started/starter_example_local/
         ./getting_started/starter_projects.html: https://docs.llamaindex.ai/en/stable/getting_started/starter_projects/
-        ./getting_started/v0_10_0_migration.html: https://docs.llamaindex.ai/en/stable/getting_started/v0_10_0_migration/
         ./module_guides/deploying/agents/agent_runner.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/agent_runner/
         ./module_guides/deploying/agents/modules.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/modules/
         ./module_guides/deploying/agents/root.html: module_guides/deploying/agents/index.md

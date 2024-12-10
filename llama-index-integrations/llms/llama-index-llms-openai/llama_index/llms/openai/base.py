@@ -965,7 +965,7 @@ class OpenAI(FunctionCallingLLM):
         return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
 
     @dispatcher.span
-    def astream_structured_predict(
+    async def astream_structured_predict(
         self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> Generator[Union[Model, List[Model]], None, None]:
         """Stream structured predict."""
@@ -977,6 +977,6 @@ class OpenAI(FunctionCallingLLM):
         )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return super().astream_structured_predict(
+        return await super().astream_structured_predict(
             *args, llm_kwargs=llm_kwargs, **kwargs
         )
