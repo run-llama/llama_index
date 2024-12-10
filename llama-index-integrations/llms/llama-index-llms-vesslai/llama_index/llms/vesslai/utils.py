@@ -36,3 +36,36 @@ def read_service(service_name: str) -> Any:
     return vessl_api.model_service_read_api(
         organization_name=vessl_api.organization.name, model_service_name=service_name
         )
+
+def _request_abort_rollout(service_name: str):
+    resp = vessl_api.model_service_rollout_abort_api(
+        organization_name=vessl_api.organization.name,
+        model_service_name=service_name,
+    )
+    if resp.rollback_requested:
+        print("Current update aborted. Rollback is requested.\n")
+        return True
+    else:
+        print("Current update aborted.")
+        print("Could not determine the original status. Rollback is not requested.\n")
+        print(f"Please check the status of the service and the gateway at: https://app.vessl.ai/{vessl_api.organization.name}/services/{service.name}\n")
+        return False
+    
+def _get_recent_rollout(service_name: str) -> Any:
+    resp = vessl_api.model_service_rollout_list_api(
+            organization_name=vessl_api.organization.name,
+            model_service_name=service_name,
+        )
+    recent_rollout = resp.rollouts[0] if resp.rollouts else None
+    return recent_rollout
+
+def abort_in_progress_rollout_by_name(service_name):
+    recent_rollout = _get_recent_rollout(service_name)
+    if recent_rollout and recent_rollout.status == "rolling_out":
+        print(f"The service {service_name} is currently rolling out.")
+        ## Abort the existing rollout if ignore_rollout
+        if _request_abort_rollout(service_name):
+            print("Waiting for the existing rollout to be aborted...")
+            time.sleep(30)
+    else:
+        print("No existing rollout found.")

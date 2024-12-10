@@ -1,6 +1,5 @@
 description: Quickstart to serve LLM model with vLLM.
 env:
-  HF_TOKEN: !!str
   MODEL_NAME: !!str
 image: quay.io/vessl-ai/torch:2.3.1-cuda12.1-r5
 name: vllm-server
