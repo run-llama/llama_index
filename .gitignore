@@ -1,0 +1,27 @@
+# Build
+.pants.d/
+dist/
+migration_scripts/
+
+# IDEs
+.idea
+.vscode
+.zed
+
+# Local development
+venv/
+.venv/
+.ipynb_checkpoints
+.__pycache__
+__pycache__
+dev_notebooks/
+
+# Other
+llamaindex_registry.txt
+packages_to_bump_deduped.txt
+.env
+credentials.json
+token.json
+.python-version
+.DS_Store
+/storage/
