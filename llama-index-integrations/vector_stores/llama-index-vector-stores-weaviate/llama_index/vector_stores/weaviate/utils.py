@@ -91,7 +91,6 @@ def class_schema_exists(client: Any, class_name: str) -> bool:
 async def aclass_schema_exists(client: Any, class_name: str) -> bool:
     """Check if class schema exists."""
     validate_async_client(client)
-    print(type(client))
     collection = client.collections.get(class_name)
     return await collection.exists()
 
