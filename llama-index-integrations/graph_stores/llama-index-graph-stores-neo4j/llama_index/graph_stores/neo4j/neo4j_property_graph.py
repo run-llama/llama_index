@@ -151,38 +151,45 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         refresh_schema: bool = True,
         sanitize_query_output: bool = True,
         enhanced_schema: bool = False,
+        create_indexes: bool = True,
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
         self.enhanced_schema = enhanced_schema
         self._driver = neo4j.GraphDatabase.driver(
-            url, auth=(username, password), **neo4j_kwargs
+            url,
+            auth=(username, password),
+            notifications_min_severity="OFF",
+            **neo4j_kwargs,
         )
         self._async_driver = neo4j.AsyncGraphDatabase.driver(
             url,
             auth=(username, password),
+            notifications_min_severity="OFF",
             **neo4j_kwargs,
         )
         self._database = database
         self.structured_schema = {}
         if refresh_schema:
             self.refresh_schema()
-        # Create index for faster imports and retrieval
-        self.structured_query(
-            f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_NODE_LABEL}`)
-            REQUIRE n.id IS UNIQUE;"""
-        )
-        self.structured_query(
-            f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_ENTITY_LABEL}`)
-            REQUIRE n.id IS UNIQUE;"""
-        )
         # Verify version to check if we can use vector index
         self.verify_version()
-        if self._supports_vector_index:
+        # Create index for faster imports and retrieval
+        if create_indexes:
             self.structured_query(
-                f"CREATE VECTOR INDEX {VECTOR_INDEX_NAME} IF NOT EXISTS "
-                "FOR (m:__Entity__) ON m.embedding"
+                f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_NODE_LABEL}`)
+                REQUIRE n.id IS UNIQUE;"""
             )
+            self.structured_query(
+                f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_ENTITY_LABEL}`)
+                REQUIRE n.id IS UNIQUE;"""
+            )
+
+            if self._supports_vector_index:
+                self.structured_query(
+                    f"CREATE VECTOR INDEX {VECTOR_INDEX_NAME} IF NOT EXISTS "
+                    "FOR (m:__Entity__) ON m.embedding"
+                )
 
     @property
     def client(self):
@@ -868,15 +875,37 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
         return self.structured_schema
 
-    def get_schema_str(self, refresh: bool = False) -> str:
+    def get_schema_str(
+        self,
+        refresh: bool = False,
+        exclude_types: List[str] = [],
+        include_types: List[str] = [],
+    ) -> str:
         schema = self.get_schema(refresh=refresh)
+
+        def filter_func(x: str) -> bool:
+            return x in include_types if include_types else x not in exclude_types
+
+        filtered_schema: Dict[str, Any] = {
+            "node_props": {
+                k: v for k, v in schema.get("node_props", {}).items() if filter_func(k)
+            },
+            "rel_props": {
+                k: v for k, v in schema.get("rel_props", {}).items() if filter_func(k)
+            },
+            "relationships": [
+                r
+                for r in schema.get("relationships", [])
+                if all(filter_func(r[t]) for t in ["start", "end", "type"])
+            ],
+        }
 
         formatted_node_props = []
         formatted_rel_props = []
 
         if self.enhanced_schema:
             # Enhanced formatting for nodes
-            for node_type, properties in schema["node_props"].items():
+            for node_type, properties in filtered_schema["node_props"].items():
                 formatted_node_props.append(f"- **{node_type}**")
                 for prop in properties:
                     example = ""
@@ -922,7 +951,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     )
 
             # Enhanced formatting for relationships
-            for rel_type, properties in schema["rel_props"].items():
+            for rel_type, properties in filtered_schema["rel_props"].items():
                 formatted_rel_props.append(f"- **{rel_type}**")
                 for prop in properties:
                     example = ""
@@ -967,14 +996,14 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     )
         else:
             # Format node properties
-            for label, props in schema["node_props"].items():
+            for label, props in filtered_schema["node_props"].items():
                 props_str = ", ".join(
                     [f"{prop['property']}: {prop['type']}" for prop in props]
                 )
                 formatted_node_props.append(f"{label} {{{props_str}}}")
 
             # Format relationship properties using structured_schema
-            for type, props in schema["rel_props"].items():
+            for type, props in filtered_schema["rel_props"].items():
                 props_str = ", ".join(
                     [f"{prop['property']}: {prop['type']}" for prop in props]
                 )
@@ -983,7 +1012,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         # Format relationships
         formatted_rels = [
             f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
-            for el in schema["relationships"]
+            for el in filtered_schema["relationships"]
         ]
 
         return "\n".join(

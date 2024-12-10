@@ -65,7 +65,7 @@ def openi_message_dicts_with_function_calling() -> List[ChatCompletionMessagePar
         },
         {
             "role": "assistant",
-            "content": [],
+            "content": "",
             "function_call": {
                 "name": "get_current_weather",
                 "arguments": '{ "location": "Boston, MA"}',
@@ -73,12 +73,7 @@ def openi_message_dicts_with_function_calling() -> List[ChatCompletionMessagePar
         },
         {
             "role": "tool",
-            "content": [
-                {
-                    "type": "text",
-                    "text": '{"temperature": "22", "unit": "celsius", "description": "Sunny"}',
-                }
-            ],
+            "content": '{"temperature": "22", "unit": "celsius", "description": "Sunny"}',
             "tool_call_id": "get_current_weather",
         },
     ]
@@ -139,7 +134,7 @@ def test_to_openai_message_dicts_basic_enum() -> None:
     openai_messages = to_openai_message_dicts(chat_messages)
     assert openai_messages == [
         {"role": "user", "content": [{"type": "text", "text": "test question"}]},
-        {"role": "assistant", "content": [{"type": "text", "text": "test answer"}]},
+        {"role": "assistant", "content": "test answer"},
     ]
 
 
@@ -151,7 +146,7 @@ def test_to_openai_message_dicts_basic_string() -> None:
     openai_messages = to_openai_message_dicts(chat_messages)
     assert openai_messages == [
         {"role": "user", "content": [{"type": "text", "text": "test question"}]},
-        {"role": "assistant", "content": [{"type": "text", "text": "test answer"}]},
+        {"role": "assistant", "content": "test answer"},
     ]
 
 
