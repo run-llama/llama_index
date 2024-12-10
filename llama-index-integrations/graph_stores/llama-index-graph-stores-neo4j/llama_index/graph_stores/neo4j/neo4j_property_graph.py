@@ -151,6 +151,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         refresh_schema: bool = True,
         sanitize_query_output: bool = True,
         enhanced_schema: bool = False,
+        create_indexes: bool = True,
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
@@ -167,22 +168,24 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         self.structured_schema = {}
         if refresh_schema:
             self.refresh_schema()
-        # Create index for faster imports and retrieval
-        self.structured_query(
-            f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_NODE_LABEL}`)
-            REQUIRE n.id IS UNIQUE;"""
-        )
-        self.structured_query(
-            f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_ENTITY_LABEL}`)
-            REQUIRE n.id IS UNIQUE;"""
-        )
         # Verify version to check if we can use vector index
         self.verify_version()
-        if self._supports_vector_index:
+        # Create index for faster imports and retrieval
+        if create_indexes:
             self.structured_query(
-                f"CREATE VECTOR INDEX {VECTOR_INDEX_NAME} IF NOT EXISTS "
-                "FOR (m:__Entity__) ON m.embedding"
+                f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_NODE_LABEL}`)
+                REQUIRE n.id IS UNIQUE;"""
             )
+            self.structured_query(
+                f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_ENTITY_LABEL}`)
+                REQUIRE n.id IS UNIQUE;"""
+            )
+
+            if self._supports_vector_index:
+                self.structured_query(
+                    f"CREATE VECTOR INDEX {VECTOR_INDEX_NAME} IF NOT EXISTS "
+                    "FOR (m:__Entity__) ON m.embedding"
+                )
 
     @property
     def client(self):
