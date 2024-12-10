@@ -8,7 +8,7 @@ from typing import (
     Union,
     Tuple,
 )
-from llama_index.legacy.llms.generic_utils import get_from_param_or_env
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
