@@ -4,7 +4,10 @@ from llama_index.core.schema import (
     RelatedNodeInfo,
 )
 from llama_index.core.schema import TextNode
-from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from llama_index.vector_stores.weaviate import (
+    WeaviateVectorStore,
+    SyncClientNotProvidedError,
+)
 from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -139,3 +142,10 @@ async def test_async_delete(async_vector_store):
     results = await async_vector_store.aquery(query)
     assert len(results.nodes) == 1
     assert results.nodes[0].node_id == node_to_keep.node_id
+
+
+@pytest.mark.asyncio(loop_scope="module")
+def test_async_client_properties(async_vector_store):
+    assert isinstance(async_vector_store.async_client, weaviate.WeaviateAsyncClient)
+    with pytest.raises(SyncClientNotProvidedError):
+        async_vector_store.client

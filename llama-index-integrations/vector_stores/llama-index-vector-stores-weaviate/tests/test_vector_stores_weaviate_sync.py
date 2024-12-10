@@ -191,7 +191,7 @@ def test_sync_delete(vector_store):
 
 @pytest.mark.asyncio(loop_scope="module")
 async def test_async_methods_called_without_async_client(vector_store):
-    """Makes sure that we present an easy to understand error message to the user if he forgets to provide an async client when trying to call async methods."""
+    """Makes sure that we present an easy to understand error message to the user if he did not not provide an async client, but tried to call async methods."""
     with pytest.raises(AsyncClientNotProvidedError):
         await vector_store.async_add(
             [TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3])]
@@ -210,3 +210,9 @@ async def test_async_methods_called_without_async_client(vector_store):
             mode=VectorStoreQueryMode.DEFAULT,
         )
         results = await vector_store.aquery(query)
+
+
+def test_sync_client_properties(vector_store):
+    assert isinstance(vector_store.client, weaviate.WeaviateClient)
+    with pytest.raises(AsyncClientNotProvidedError):
+        vector_store.async_client

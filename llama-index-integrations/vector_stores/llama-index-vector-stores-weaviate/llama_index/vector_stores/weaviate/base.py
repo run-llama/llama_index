@@ -27,7 +27,10 @@ from llama_index.vector_stores.weaviate.utils import (
     get_node_similarity,
     to_node,
 )
-from llama_index.vector_stores.weaviate._exceptions import AsyncClientNotProvidedError
+from llama_index.vector_stores.weaviate._exceptions import (
+    AsyncClientNotProvidedError,
+    SyncClientNotProvidedError,
+)
 
 import weaviate
 import weaviate.classes as wvc
@@ -214,9 +217,18 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         return "WeaviateVectorStore"
 
     @property
-    def client(self) -> Any:
-        """Get client."""
+    def client(self) -> weaviate.WeaviateClient:
+        """Get the synchronous Weaviate client, if available."""
+        if self._client is None:
+            raise SyncClientNotProvidedError
         return self._client
+
+    @property
+    def async_client(self) -> weaviate.WeaviateAsyncClient:
+        """Get the asynchronous Weaviate client, if available."""
+        if self._aclient is None:
+            raise AsyncClientNotProvidedError
+        return self._aclient
 
     def add(
         self,
@@ -231,7 +243,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         """
         ids = [r.node_id for r in nodes]
 
-        with self._client.batch.dynamic() as batch:
+        with self.client.batch.dynamic() as batch:
             for node in nodes:
                 data_object = get_data_object(node=node, text_key=self.text_key)
                 batch.add_object(
@@ -255,16 +267,13 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         Raises:
             AsyncClientNotProvidedError: If trying to use async methods without aclient
         """
-        if not self._aclient:
-            raise AsyncClientNotProvidedError
-
         if len(nodes) > 0 and not self._collection_initialized:
-            if not await aclass_schema_exists(self._aclient, self.index_name):
-                await acreate_default_schema(self._aclient, self.index_name)
+            if not await aclass_schema_exists(self.async_client, self.index_name):
+                await acreate_default_schema(self.async_client, self.index_name)
 
         ids = [r.node_id for r in nodes]
 
-        collection = self._aclient.collections.get(self.index_name)
+        collection = self.async_client.collections.get(self.index_name)
 
         response = await collection.data.insert_many(
             [get_data_object(node=node, text_key=self.text_key) for node in nodes]
@@ -279,7 +288,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        collection = self._client.collections.get(self.index_name)
+        collection = self.client.collections.get(self.index_name)
 
         where_filter = wvc.query.Filter.by_property("ref_doc_id").equal(ref_doc_id)
 
@@ -298,10 +307,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         Raises:
             AsyncClientNotProvidedError: If trying to use async methods without aclient
         """
-        if not self._aclient:
-            raise AsyncClientNotProvidedError
-
-        collection = self._aclient.collections.get(self.index_name)
+        collection = self.async_client.collections.get(self.index_name)
 
         where_filter = wvc.query.Filter.by_property("ref_doc_id").equal(ref_doc_id)
 
@@ -316,13 +322,13 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         Raises:
         - Exception: If the deletion fails, for some reason.
         """
-        if not class_schema_exists(self._client, self.index_name):
+        if not class_schema_exists(self.client, self.index_name):
             _logger.warning(
                 f"Index '{self.index_name}' does not exist. No action taken."
             )
             return
         try:
-            self._client.collections.delete(self.index_name)
+            self.client.collections.delete(self.index_name)
             _logger.info(f"Successfully deleted index '{self.index_name}'.")
         except Exception as e:
             _logger.error(f"Failed to delete index '{self.index_name}': {e}")
@@ -343,7 +349,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         if not node_ids and not filters:
             return
 
-        collection = self._client.collections.get(self.index_name)
+        collection = self.client.collections.get(self.index_name)
 
         if node_ids:
             filter = wvc.query.Filter.by_id().contains_any(node_ids or [])
@@ -371,13 +377,10 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         Raises:
             AsyncClientNotProvidedError: If trying to use async methods without aclient
         """
-        if not self._aclient:
-            raise AsyncClientNotProvidedError
-
         if not node_ids and not filters:
             return
 
-        collection = self._aclient.collections.get(self.index_name)
+        collection = self.async_client.collections.get(self.index_name)
 
         if node_ids:
             filter = wvc.query.Filter.by_id().contains_any(node_ids or [])
@@ -401,16 +404,13 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         - Exception: If the deletion fails, for some reason.
         - AsyncClientNotProvidedError: If trying to use async methods without aclient
         """
-        if not self._aclient:
-            raise AsyncClientNotProvidedError
-
-        if not await aclass_schema_exists(self._aclient, self.index_name):
+        if not await aclass_schema_exists(self.async_client, self.index_name):
             _logger.warning(
                 f"Index '{self.index_name}' does not exist. No action taken."
             )
             return
         try:
-            await self._aclient.collections.delete(self.index_name)
+            await self.async_client.collections.delete(self.index_name)
             _logger.info(f"Successfully deleted index '{self.index_name}'.")
         except Exception as e:
             _logger.error(f"Failed to delete index '{self.index_name}': {e}")
@@ -480,7 +480,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes."""
-        collection = self._client.collections.get(self.index_name)
+        collection = self.client.collections.get(self.index_name)
         query_parameters = self.get_query_parameters(query, **kwargs)
 
         # execute query
@@ -500,10 +500,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         Raises:
             AsyncClientNotProvidedError: If trying to use async methods without aclient
         """
-        if not self._aclient:
-            raise AsyncClientNotProvidedError
-
-        collection = self._aclient.collections.get(self.index_name)
+        collection = self.async_client.collections.get(self.index_name)
         query_parameters = self.get_query_parameters(query, **kwargs)
 
         # execute query
