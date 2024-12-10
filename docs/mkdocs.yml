@@ -1198,6 +1198,7 @@ nav:
           - ./api_reference/postprocessor/PII.md
           - ./api_reference/postprocessor/alibabacloud_aisearch_rerank.md
           - ./api_reference/postprocessor/auto_prev_next.md
+          - ./api_reference/postprocessor/bedrock_rerank.md
           - ./api_reference/postprocessor/cohere_rerank.md
           - ./api_reference/postprocessor/colbert_rerank.md
           - ./api_reference/postprocessor/colpali_rerank.md
@@ -2337,6 +2338,7 @@ plugins:
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-nvidia
             - ../llama-index-integrations/tools/llama-index-tools-elevenlabs
             - ../llama-index-integrations/llms/llama-index-llms-nebius
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-bedrock-rerank
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

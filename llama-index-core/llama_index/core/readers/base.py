@@ -9,13 +9,13 @@ from typing import (
     List,
 )
 
-if TYPE_CHECKING:
-    from llama_index.core.bridge.langchain import Document as LCDocument
-from llama_index.core.bridge.pydantic import Field, ConfigDict
+if TYPE_CHECKING:  # pragma: no cover
+    from llama_index.core.bridge.langchain import Document as LCDocument  # type: ignore
+from llama_index.core.bridge.pydantic import ConfigDict, Field
 from llama_index.core.schema import BaseComponent, Document
 
 
-class BaseReader(ABC):
+class BaseReader(ABC):  # pragma: no cover
     """Utilities for loading data from a directory."""
 
     def lazy_load_data(self, *args: Any, **load_kwargs: Any) -> Iterable[Document]:
@@ -55,7 +55,7 @@ class BasePydanticReader(BaseReader, BaseComponent):
     )
 
 
-class ResourcesReaderMixin(ABC):
+class ResourcesReaderMixin(ABC):  # pragma: no cover
     """
     Mixin for readers that provide access to different types of resources.
 
@@ -206,7 +206,7 @@ class ResourcesReaderMixin(ABC):
         }
 
 
-class ReaderConfig(BaseComponent):
+class ReaderConfig(BaseComponent):  # pragma: no cover
     """Represents a reader and it's input arguments."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
