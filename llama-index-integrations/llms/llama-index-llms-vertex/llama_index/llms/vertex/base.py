@@ -27,6 +27,8 @@ from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_ca
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.utilities.gemini_utils import merge_neighboring_same_role_messages
+
+from llama_index.llms.vertex.gemini_tool import GeminiToolWrapper
 from llama_index.llms.vertex.gemini_utils import create_gemini_client, is_gemini_model
 from llama_index.llms.vertex.utils import (
     CHAT_MODELS,
@@ -113,6 +115,10 @@ class Vertex(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        is_model_garden: bool = False,
+        is_chat: bool = False,
+        is_text: bool = False,
+        is_code: bool = False,
     ) -> None:
         init_vertexai(project=project, location=location, credentials=credentials)
 
@@ -139,23 +145,35 @@ class Vertex(FunctionCallingLLM):
         self._safety_settings = safety_settings
         self._is_gemini = False
         self._is_chat_model = False
-        if model in CHAT_MODELS:
+        self._is_model_garden = is_model_garden
+        self._is_chat = is_chat
+        self._is_text = is_text
+        self._is_code = iscode
+        if model in CHAT_MODELS or (
+            self._is_model_garden and self._is_chat and not self._is_code
+        ):
             from vertexai.language_models import ChatModel
 
             self._chat_client = ChatModel.from_pretrained(model)
             self._is_chat_model = True
-        elif model in CODE_CHAT_MODELS:
+        elif model in CODE_CHAT_MODELS or (
+            self._is_model_garden and self._is_chat and self._is_code
+        ):
             from vertexai.language_models import CodeChatModel
 
             self._chat_client = CodeChatModel.from_pretrained(model)
             iscode = True
             self._is_chat_model = True
-        elif model in CODE_MODELS:
+        elif model in CODE_MODELS or (
+            self._is_model_garden and not self._is_text and self._is_code
+        ):
             from vertexai.language_models import CodeGenerationModel
 
             self._client = CodeGenerationModel.from_pretrained(model)
             iscode = True
-        elif model in TEXT_MODELS:
+        elif model in TEXT_MODELS or (
+            self._is_model_garden and self._is_text and not self._is_code
+        ):
             from vertexai.language_models import TextGenerationModel
 
             self._client = TextGenerationModel.from_pretrained(model)
@@ -450,11 +468,17 @@ class Vertex(FunctionCallingLLM):
 
         tool_dicts = []
         for tool in tools:
+            if self._is_gemini:
+                tool = GeminiToolWrapper(tool)
+                metadata = tool.metadata()
+            else:
+                metadata = tool.metadata
+
             tool_dicts.append(
                 {
-                    "name": tool.metadata.name,
-                    "description": tool.metadata.description,
-                    "parameters": tool.metadata.get_parameters_dict(),
+                    "name": metadata.name,
+                    "description": metadata.description,
+                    "parameters": metadata.get_parameters_dict(),
                 }
             )
 
@@ -495,7 +519,7 @@ class Vertex(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            response_dict = MessageToDict(tool_call._pb)
+            response_dict = MessageToDict(tool_call._raw_message._pb)
             if "args" not in response_dict or "name" not in response_dict:
                 raise ValueError("Invalid tool call.")
             argument_dict = response_dict["args"]
