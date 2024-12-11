@@ -1,6 +1,5 @@
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from llama_index.core.bridge.pydantic import Field
 from llama_index.core.base.llms.types import ChatMessage, LLMMetadata
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
@@ -27,8 +26,6 @@ class EverlyAI(OpenAI):
         print(response)
         ```
     """
-
-    supports_content_blocks: bool = Field(default=False)
 
     def __init__(
         self,
