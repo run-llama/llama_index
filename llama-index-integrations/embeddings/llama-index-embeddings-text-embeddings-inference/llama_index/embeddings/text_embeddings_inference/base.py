@@ -70,9 +70,11 @@ class TextEmbeddingsInference(BaseEmbedding):
         headers = {"Content-Type": "application/json"}
         if self.auth_token is not None:
             if callable(self.auth_token):
-                headers["Authorization"] = self.auth_token(self.base_url)
+                auth_token = self.auth_token(self.base_url)
             else:
-                headers["Authorization"] = self.auth_token
+                auth_token = self.auth_token
+            headers["Authorization"] = f"Bearer {auth_token}"
+
         json_data = {"inputs": texts, "truncate": self.truncate_text}
 
         with httpx.Client() as client:

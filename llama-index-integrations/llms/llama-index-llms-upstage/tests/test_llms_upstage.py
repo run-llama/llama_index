@@ -1,7 +1,7 @@
+import pytest
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.llms.upstage import Upstage
-import pytest
 
 
 def test_text_inference_llm_class():

@@ -6,8 +6,10 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
+    ImageBlock,
     LLMMetadata,
     MessageRole,
+    TextBlock,
 )
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.llms.llm import LLM
@@ -26,4 +28,6 @@ __all__ = [
     "LLMMetadata",
     "MessageRole",
     "MockLLM",
+    "ImageBlock",
+    "TextBlock",
 ]

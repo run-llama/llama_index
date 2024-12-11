@@ -1,5 +1,123 @@
 # ChangeLog
 
+## [2024-12-09]
+
+### `llama-index-core` [0.12.5]
+
+- Refined the default description generation for function tools (#17208)
+
+### `llama-index-multi-modal-llms-azure-openai` [0.3.2]
+
+- fix: relax pin on openai llm dependency (#17210)
+
+### `llama-index-postprocessor-pinecone-native-rerank` [0.1.0]
+
+- feat: integration on pinecone hosted rerankers (#17192)
+
+### `llama-index-vector-stores-postgres` [0.3.3]
+
+- Update pgvector dependency to version 0.3.6 (#17195)
+
+## [2024-12-08]
+
+### `llama-index-core` [0.12.4]
+
+- Fix sync and async structured streaming (#17194)
+- unpin pydantic to allow 2.8 or greater (#17193)
+- Update core structured predict streaming, add ollama structured predict (#17188)
+- bump tenacity dependency in llama-index-core (#17178)
+
+### `llama-index-indices-managed-vectara` [0.3.1]
+
+- Add Verbose to Vectara `as_query_engine` (#17176)
+
+### `llama-index-llms-ollama` [0.5.0]
+
+- Update core structured predict streaming, add ollama structured predict (#17188)
+
+### `llama-index-llms-perplexity` [0.3.2]
+
+- Fix message format for perplexity (#17182)
+
+### `llama-index-readers-web` [0.3.1]
+
+- Add possibility to use URI as doc id in WholeSiteReader (#17187)
+
+### `llama-index-vector-stores-chroma` [0.4.1]
+
+- BUG FIX: llama-index-vectorstore-chromadb to work with chromadb v0.5.17 (#17184)
+
+## [2024-12-06]
+
+### `llama-index-core` [0.12.3]
+
+- cover SimpleDirectoryReader with unit tests (#17156)
+- docs: rewrite openai image reasoning example without multimodal LLM (#17148)
+- fix(metrics): fixed NDCG calculation and added comprehensive test cases (#17126)
+- feat: improve ImageBlock (#17111)
+- Remove forgotten print in ChatMemoryBuffer (#17114)
+- [FIX] Move JSONalyzeQueryEngine to experimental (#17110)
+
+### `llama-index-embeddings-clip` [0.3.1]
+
+- Unrestrict clip models to use (#17162)
+
+### `llama-index-embeddings-openai` [0.3.1]
+
+- fix/openai-embbeding-retry (#17072)
+
+### `llama-index-embeddings-text-embeddings-inference` [0.3.1]
+
+- proper auth token in TEI (#17158)
+
+### `llama-index-indices-managed-llama-cloud` [0.6.3]
+
+- chore: fix httpx_client typo in LlamaCloudRetriever (#17101)
+- fix: wrong project id variable in LlamaCloudRetriever (#17086)
+
+### `llama-index-llms-bedrock-converse` [0.4.1]
+
+- Adding AWS Nova models to Bedrock Converse (#17139)
+
+### `llama-index-llms-ollama` [0.4.2]
+
+- Ollama LLM: Added TypeError exception to `_get_response_token_counts` (#17150)
+
+### `llama-index-llms-sambanovasystems` [0.4.3]
+
+- changes in openai identification in url (#17161)
+
+### `llama-index-memory-mem0` [0.2.1]
+
+- Fix mem0 version check (#17159)
+
+### `llama-index-multi-modal-llms-openai` [0.4.0]
+
+- fix: make OpenAIMultiModal work with new ChatMessage (#17138)
+
+### `llama-index-postprocessor-bedrock-rerank` [0.3.0]
+
+- Add AWS Bedrock Reranker (#17134)
+
+### `llama-index-readers-file` [0.4.1]
+
+- update doc id for unstructured reader (#17160)
+
+### `llama-index-retrievers-duckdb-retriever` [0.4.0]
+
+- fix: use prepared statement in DuckDBRetriever (#17092)
+
+### `llama-index-vector-stores-postgres` [0.3.2]
+
+- Create tables for pgvector regardless of schema status (#17100)
+
+### `llama-index-vector-stores-weaviate` [1.2.4]
+
+- make alpha not none in weaviate (#17163)
+- Make Weaviate Vector Store integration work with complex properties (#17129)
+- Add support for `IS_EMPTY` metadata filters to Weaviate Vector Store integration (#17128)
+- Make Weaviate Vector Store integration support nested metadata filtering (#17107)
+
 ## [2024-11-26]
 
 ### `llama-index-core` [0.12.2]
