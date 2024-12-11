@@ -11,7 +11,6 @@ from typing import (
     Iterator,
     Mapping,
     Optional,
-    Self,
     Sequence,
     Tuple,
     TypeVar,
@@ -322,7 +321,7 @@ class Client(BaseClient):
         """
         self._client.close()
 
-    def __enter__(self: _T) -> Self:
+    def __enter__(self: _T) -> _T:  # noqa: PYI019
         return self
 
     def __exit__(
@@ -442,7 +441,7 @@ class AsyncClient(BaseClient):
         """
         await self._client.aclose()
 
-    async def __aenter__(self: _T) -> Self:
+    async def __aenter__(self: _T) -> _T:  # noqa: PYI019
         return self
 
     async def __aexit__(
