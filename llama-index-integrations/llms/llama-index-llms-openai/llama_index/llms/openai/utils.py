@@ -253,7 +253,10 @@ def is_function_calling_model(model: str) -> bool:
 
 
 def to_openai_message_dict(
-    message: ChatMessage, drop_none: bool = False, model: Optional[str] = None
+    message: ChatMessage,
+    drop_none: bool = False,
+    model: Optional[str] = None,
+    supports_content_blocks: bool = False,
 ) -> ChatCompletionMessageParam:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
@@ -291,6 +294,7 @@ def to_openai_message_dict(
         "role": message.role.value,
         "content": content_txt
         if message.role.value in ("assistant", "tool", "system")
+        or not supports_content_blocks
         else content,
     }
 
@@ -317,10 +321,16 @@ def to_openai_message_dicts(
     messages: Sequence[ChatMessage],
     drop_none: bool = False,
     model: Optional[str] = None,
+    supports_content_blocks: bool = False,
 ) -> List[ChatCompletionMessageParam]:
     """Convert generic messages to OpenAI message dicts."""
     return [
-        to_openai_message_dict(message, drop_none=drop_none, model=model)
+        to_openai_message_dict(
+            message,
+            drop_none=drop_none,
+            model=model,
+            supports_content_blocks=supports_content_blocks,
+        )
         for message in messages
     ]
 

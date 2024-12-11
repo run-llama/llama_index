@@ -217,6 +217,10 @@ class OpenAI(FunctionCallingLLM):
         default=False,
         description="Whether to use strict mode for invoking tools/using schemas.",
     )
+    supports_content_blocks: bool = Field(
+        default=True,
+        description="Whether the model supports content blocks in chat messages.",
+    )
 
     _client: Optional[SyncOpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
@@ -423,7 +427,11 @@ class OpenAI(FunctionCallingLLM):
     @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages, model=self.model)
+        message_dicts = to_openai_message_dicts(
+            messages,
+            model=self.model,
+            supports_content_blocks=self.supports_content_blocks,
+        )
 
         if self.reuse_client:
             response = client.chat.completions.create(
@@ -458,7 +466,11 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         client = self._get_client()
-        message_dicts = to_openai_message_dicts(messages, model=self.model)
+        message_dicts = to_openai_message_dicts(
+            messages,
+            model=self.model,
+            supports_content_blocks=self.supports_content_blocks,
+        )
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -668,7 +680,11 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         aclient = self._get_aclient()
-        message_dicts = to_openai_message_dicts(messages, model=self.model)
+        message_dicts = to_openai_message_dicts(
+            messages,
+            model=self.model,
+            supports_content_blocks=self.supports_content_blocks,
+        )
 
         if self.reuse_client:
             response = await aclient.chat.completions.create(
@@ -701,7 +717,11 @@ class OpenAI(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         aclient = self._get_aclient()
-        message_dicts = to_openai_message_dicts(messages, model=self.model)
+        message_dicts = to_openai_message_dicts(
+            messages,
+            model=self.model,
+            supports_content_blocks=self.supports_content_blocks,
+        )
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
