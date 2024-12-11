@@ -165,3 +165,10 @@ def test_image_block_store_as_anyurl():
     url_str = "http://example.com"
     b = ImageBlock(url=url_str)
     assert b.url == AnyUrl(url=url_str)
+
+
+def test_image_block_store_as_base64(png_1px_b64: bytes, png_1px: bytes):
+    # Store regular bytes
+    assert ImageBlock(image=png_1px).image == png_1px_b64
+    # Store already encoded data
+    assert ImageBlock(image=png_1px_b64).image == png_1px_b64
