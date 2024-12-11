@@ -62,10 +62,7 @@ class TextGenerationInference(FunctionCallingLLM):
     )
     max_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
-        description=(
-            LLMMetadata.model_fields["context_window"].description
-            + " Maximum total tokens returned from TGI endpoint."
-        ),
+        description=("The maximum number of tokens to generate."),
         gt=0,
     )
     token: Union[str, bool, None] = Field(
@@ -104,7 +101,10 @@ class TextGenerationInference(FunctionCallingLLM):
 
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
-        description=("Maximum input length in tokens returned from TGI endpoint"),
+        description=(
+            LLMMetadata.model_fields["context_window"].description
+            + " Maximum total tokens returned from TGI endpoint."
+        ),
     )
     is_chat_model: bool = Field(
         default=True,
