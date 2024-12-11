@@ -244,6 +244,10 @@ class NileVectorStore(BasePydanticVectorStore):
             return "NOT IN"
         elif operator == FilterOperator.CONTAINS:
             return "@>"
+        elif operator == FilterOperator.TEXT_MATCH:
+            return "LIKE"
+        elif operator == FilterOperator.TEXT_MATCH_INSENSITIVE:
+            return "ILIKE"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
@@ -277,6 +281,16 @@ class NileVectorStore(BasePydanticVectorStore):
                         sql.SQL(""" metadata->{} @> [{}]""").format(
                             sql.Literal(filter.key), sql.Literal(filter.value)
                         )
+                    )
+                elif (
+                    filter.operator == FilterOperator.TEXT_MATCH
+                    or filter.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
+                ):
+                    # Where the operator is text_match or ilike, we need to wrap the filter in '%' characters
+                    where_clauses.append(
+                        f"metadata_->>'{filter.key}' "
+                        f"{self._to_postgres_operator(filter.operator)} "
+                        f"'%{filter.value}%'"
                     )
                 else:
                     where_clauses.append(
