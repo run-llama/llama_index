@@ -59,6 +59,7 @@ from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, Model, PydanticProgramMode
 from llama_index.llms.openai.utils import (
+    ALL_AVAILABLE_MODELS,
     O1_MODELS,
     OpenAIToolCall,
     create_retry_decorator,
@@ -218,7 +219,7 @@ class OpenAI(FunctionCallingLLM):
         description="Whether to use strict mode for invoking tools/using schemas.",
     )
     supports_content_blocks: bool = Field(
-        default=True,
+        default=False,
         description="Whether the model supports content blocks in chat messages.",
     )
 
@@ -285,6 +286,7 @@ class OpenAI(FunctionCallingLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
             strict=strict,
+            supports_content_blocks=model in ALL_AVAILABLE_MODELS,
             **kwargs,
         )
 

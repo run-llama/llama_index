@@ -263,7 +263,10 @@ def to_openai_message_dict(
     content_txt = ""
     for block in message.blocks:
         if isinstance(block, TextBlock):
-            if message.role.value in ("assistant", "tool", "system"):
+            if (
+                message.role.value in ("assistant", "tool", "system")
+                or not supports_content_blocks
+            ):
                 # Despite the docs say otherwise, when role is ASSISTANT, SYSTEM
                 # or TOOL, 'content' cannot be a list and must be string instead.
                 content_txt += block.text
