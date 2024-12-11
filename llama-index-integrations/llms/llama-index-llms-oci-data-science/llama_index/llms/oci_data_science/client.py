@@ -39,8 +39,6 @@ TIMEOUT = 600  # Timeout in seconds
 STATUS_FORCE_LIST = [429, 500, 502, 503, 504]
 DEFAULT_ENCODING = "utf-8"
 
-from typing import Self
-
 _T = TypeVar("_T", bound="BaseClient")
 
 logger = logging.getLogger(__name__)
@@ -356,7 +354,7 @@ class Client(BaseClient):
         """Close the underlying HTTPX client."""
         self._client.close()
 
-    def __enter__(self: _T) -> Self:
+    def __enter__(self: _T) -> _T:  # noqa: PYI019
         return self
 
     def __exit__(
@@ -565,7 +563,7 @@ class AsyncClient(BaseClient):
         """
         await self._client.aclose()
 
-    async def __aenter__(self: _T) -> Self:
+    async def __aenter__(self: _T) -> _T:  # noqa: PYI019
         return self
 
     async def __aexit__(
