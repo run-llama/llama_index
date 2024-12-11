@@ -568,7 +568,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         # Perform the search
         if query.mode == VectorStoreQueryMode.DEFAULT:
             nodes, similarities, ids = self._default_search(
-                query, string_expr, output_fields
+                query, string_expr, output_fields, **kwargs
             )
 
         elif query.mode == VectorStoreQueryMode.MMR:
@@ -629,7 +629,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
         return string_expr, output_fields
 
     def _default_search(
-        self, query: VectorStoreQuery, string_expr: str, output_fields: List[str]
+        self,
+        query: VectorStoreQuery,
+        string_expr: str,
+        output_fields: List[str],
+        **kwargs,
     ) -> Tuple[List[BaseNode], List[float], List[str]]:
         """
         Perform default search.
@@ -640,7 +644,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             filter=string_expr,
             limit=query.similarity_top_k,
             output_fields=output_fields,
-            search_params=self.search_config,
+            search_params=kwargs.get("milvus_search_config", self.search_config),
             anns_field=self.embedding_field,
         )
         logger.debug(
@@ -683,7 +687,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             filter=string_expr,
             limit=prefetch_k0,
             output_fields=output_fields,
-            search_params=self.search_config,
+            search_params=kwargs.get("milvus_search_config", self.search_config),
             anns_field=self.embedding_field,
         )
         nodes = res[0]
