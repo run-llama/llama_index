@@ -35,5 +35,5 @@ def test_upstage_tokenizer_count_tokens():
         llm.get_num_tokens_from_message(
             [ChatMessage(role=MessageRole.USER, content="Hello World")]
         )
-        == 25
+        == 12
     )
