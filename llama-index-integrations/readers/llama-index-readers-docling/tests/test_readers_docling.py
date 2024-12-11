@@ -1,8 +1,9 @@
 import json
 from pathlib import Path
 from unittest.mock import MagicMock
-from llama_index.readers.docling.base import DoclingReader
+
 from docling_core.types import DoclingDocument as DLDocument
+from llama_index.readers.docling.base import DoclingReader
 
 in_json_str = json.dumps(
     {
@@ -71,6 +72,7 @@ out_json_obj = {
             "text_template": "{metadata_str}\n\n{content}",
             "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "metadata_separator": "\n",
             "class_name": "Document",
         }
     ]
@@ -92,6 +94,7 @@ out_md_obj = {
             "text_template": "{metadata_str}\n\n{content}",
             "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "metadata_separator": "\n",
             "class_name": "Document",
         }
     ]

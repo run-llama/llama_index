@@ -19,8 +19,8 @@ from llama_index.core.base.query_pipeline.query import (
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
-    Field,
     ConfigDict,
+    Field,
 )
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
@@ -29,7 +29,7 @@ from llama_index.core.constants import (
     DEFAULT_NUM_OUTPUTS,
 )
 from llama_index.core.instrumentation import DispatcherSpanMixin
-from llama_index.core.llms.callbacks import llm_completion_callback, llm_chat_callback
+from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.schema import BaseComponent, ImageNode
 
 
@@ -85,6 +85,10 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        # Help static checkers understand this class hierarchy
+        super().__init__(*args, **kwargs)
 
     @property
     @abstractmethod

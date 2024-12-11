@@ -26,7 +26,7 @@ description = "llama-index retrievers vertex ai search integration"
 license = "MIT"
 name = "llama-index-retrievers-vertexai-search"
 readme = "README.md"
-version = "0.1.0"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
@@ -34,7 +34,7 @@ google-cloud-aiplatform = "^1.53.0"
 google-cloud-discoveryengine = "^0.11.13"
 google-auth-httplib2 = "^0.2.0"
 google-auth-oauthlib = "^1.2.0"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

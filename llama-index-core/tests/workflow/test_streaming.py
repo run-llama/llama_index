@@ -66,7 +66,9 @@ async def test_task_raised():
             assert ev.test_param == "foo"
 
     # Make sure the await actually caught the exception
-    with pytest.raises(ValueError, match="The step raised an error!"):
+    with pytest.raises(
+        WorkflowRuntimeError, match="Error in step 'step': The step raised an error!"
+    ):
         await r
 
 

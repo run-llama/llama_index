@@ -16,3 +16,7 @@ class WorkflowDone(Exception):
 
 class WorkflowCancelledByUser(Exception):
     pass
+
+
+class WorkflowStepDoesNotExistError(Exception):
+    pass

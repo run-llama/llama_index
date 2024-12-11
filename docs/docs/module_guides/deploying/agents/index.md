@@ -26,7 +26,7 @@ The reasoning loop depends on the type of agent. We have support for the followi
 
 ### Tool Abstractions
 
-You can learn more about our Tool abstractions in our [Tools section](tools/index.md).
+You can learn more about our Tool abstractions in our [Tools section](./tools.md).
 
 ### Blog Post
 
@@ -66,4 +66,4 @@ Learn more about our different agent types and use cases in our [module guides](
 
 We also have a [lower-level api guide](./agent_runner.md) for agent runenrs and workers.
 
-Also take a look at our [tools section](tools/index.md)!
+Also take a look at our [tools section](./tools.md)!

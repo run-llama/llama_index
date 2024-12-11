@@ -178,7 +178,7 @@ async def test_async_postgres_add_message(postgres_chat_store: PostgresChatStore
     message = ChatMessage(content="async_add_message_test", role="user")
     await postgres_chat_store.async_add_message(key, message=message)
 
-    result = await postgres_chat_store.async_get_messages(key)
+    result = await postgres_chat_store.aget_messages(key)
 
     assert result[0].content == "async_add_message_test" and result[0].role == "user"
 
@@ -190,9 +190,9 @@ async def test_async_set_and_retrieve_messages(postgres_chat_store: PostgresChat
         ChatMessage(content="Second async message", role="user"),
     ]
     key = "test_async_set_key"
-    await postgres_chat_store.async_set_messages(key, messages)
+    await postgres_chat_store.aset_messages(key, messages)
 
-    retrieved_messages = await postgres_chat_store.async_get_messages(key)
+    retrieved_messages = await postgres_chat_store.aget_messages(key)
     assert len(retrieved_messages) == 2
     assert retrieved_messages[0].content == "First async message"
     assert retrieved_messages[1].content == "Second async message"
@@ -200,13 +200,13 @@ async def test_async_set_and_retrieve_messages(postgres_chat_store: PostgresChat
 
 @pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
 @pytest.mark.asyncio()
-async def test_async_delete_messages(postgres_chat_store: PostgresChatStore):
+async def test_adelete_messages(postgres_chat_store: PostgresChatStore):
     messages = [ChatMessage(content="Async message to delete", role="user")]
     key = "test_async_delete_key"
-    await postgres_chat_store.async_set_messages(key, messages)
+    await postgres_chat_store.aset_messages(key, messages)
 
-    await postgres_chat_store.async_delete_messages(key)
-    retrieved_messages = await postgres_chat_store.async_get_messages(key)
+    await postgres_chat_store.adelete_messages(key)
+    retrieved_messages = await postgres_chat_store.aget_messages(key)
     assert retrieved_messages == []
 
 
@@ -217,11 +217,11 @@ async def test_async_delete_specific_message(postgres_chat_store: PostgresChatSt
         ChatMessage(content="Async keep me", role="user"),
         ChatMessage(content="Async delete me", role="user"),
     ]
-    key = "test_async_delete_message_key"
-    await postgres_chat_store.async_set_messages(key, messages)
+    key = "test_adelete_message_key"
+    await postgres_chat_store.aset_messages(key, messages)
 
-    await postgres_chat_store.async_delete_message(key, 1)
-    retrieved_messages = await postgres_chat_store.async_get_messages(key)
+    await postgres_chat_store.adelete_message(key, 1)
+    retrieved_messages = await postgres_chat_store.aget_messages(key)
     assert len(retrieved_messages) == 1
     assert retrieved_messages[0].content == "Async keep me"
 
@@ -230,10 +230,10 @@ async def test_async_delete_specific_message(postgres_chat_store: PostgresChatSt
 @pytest.mark.asyncio()
 async def test_async_get_keys(postgres_chat_store: PostgresChatStore):
     # Add some test data
-    await postgres_chat_store.async_set_messages(
+    await postgres_chat_store.aset_messages(
         "async_key1", [ChatMessage(content="Test1", role="user")]
     )
-    await postgres_chat_store.async_set_messages(
+    await postgres_chat_store.aset_messages(
         "async_key2", [ChatMessage(content="Test2", role="user")]
     )
 
@@ -250,13 +250,13 @@ async def test_async_delete_last_message(postgres_chat_store: PostgresChatStore)
         ChatMessage(content="First async message", role="user"),
         ChatMessage(content="Last async message", role="user"),
     ]
-    await postgres_chat_store.async_set_messages(key, messages)
+    await postgres_chat_store.aset_messages(key, messages)
 
-    deleted_message = await postgres_chat_store.async_delete_last_message(key)
+    deleted_message = await postgres_chat_store.adelete_last_message(key)
 
     assert deleted_message.content == "Last async message"
 
-    remaining_messages = await postgres_chat_store.async_get_messages(key)
+    remaining_messages = await postgres_chat_store.aget_messages(key)
 
     assert len(remaining_messages) == 1
     assert remaining_messages[0].content == "First async message"

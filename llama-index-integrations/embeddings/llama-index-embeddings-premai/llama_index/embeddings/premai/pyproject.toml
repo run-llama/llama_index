@@ -27,10 +27,10 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-premai"
 readme = "README.md"
-version = "0.2.1"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 llama-index-core = "^0.10.1"
 premai = "^0.3.20"
 

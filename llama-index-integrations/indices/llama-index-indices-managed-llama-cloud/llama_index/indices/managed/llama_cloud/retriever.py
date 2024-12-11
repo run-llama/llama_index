@@ -28,7 +28,7 @@ def _get_page_screenshot(
 ) -> str:
     """Get the page screenshot."""
     # TODO: this currently uses requests, should be replaced with the client
-    _response = client._client_wrapper.tpx_client.request(
+    _response = client._client_wrapper.httpx_client.request(
         "GET",
         urllib.parse.urljoin(
             f"{client._client_wrapper.get_base_url()}/",
@@ -162,7 +162,7 @@ class LlamaCloudRetriever(BaseRetriever):
                     client=self._client,
                     file_id=raw_image_node.node.file_id,
                     page_index=raw_image_node.node.page_index,
-                    project_id=self.project_id,
+                    project_id=self.project.id,
                 )
                 # Convert image bytes to base64 encoded string
                 image_base64 = base64.b64encode(image_bytes).decode("utf-8")
@@ -187,7 +187,7 @@ class LlamaCloudRetriever(BaseRetriever):
                     client=self._aclient,
                     file_id=raw_image_node.node.file_id,
                     page_index=raw_image_node.node.page_index,
-                    project_id=self.project_id,
+                    project_id=self.project.id,
                 )
                 for raw_image_node in raw_image_nodes
             ]
