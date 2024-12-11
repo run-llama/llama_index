@@ -130,7 +130,6 @@ def test_chat(MockSyncOpenAI: MagicMock) -> None:
         model=STUB_MODEL_NAME,
         is_chat_model=True,
         tokenizer=StubTokenizer(),
-        supports_content_blocks=False,
     )
 
     response = llm.chat([ChatMessage(role=MessageRole.USER, content="test message")])
@@ -146,15 +145,12 @@ def test_chat(MockSyncOpenAI: MagicMock) -> None:
         model=STUB_MODEL_NAME,
         is_chat_model=True,
         tokenizer=StubTokenizer(),
-        supports_content_blocks=True,
     )
 
     response = llm.chat([ChatMessage(role=MessageRole.USER, content="test message")])
     assert response.message.content == content
     mock_instance.chat.completions.create.assert_called_with(
-        messages=[
-            {"role": "user", "content": [{"type": "text", "text": "test message"}]}
-        ],
+        messages=[{"role": "user", "content": "test message"}],
         stream=False,
         model=STUB_MODEL_NAME,
         temperature=0.1,
