@@ -629,7 +629,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
         return string_expr, output_fields
 
     def _default_search(
-        self, query: VectorStoreQuery, string_expr: str, output_fields: List[str], **kwargs
+        self, 
+        query: VectorStoreQuery, 
+        string_expr: str, 
+        output_fields: List[str], 
+        **kwargs,
     ) -> Tuple[List[BaseNode], List[float], List[str]]:
         """
         Perform default search.
