@@ -256,22 +256,14 @@ def to_openai_message_dict(
     message: ChatMessage,
     drop_none: bool = False,
     model: Optional[str] = None,
-    supports_content_blocks: bool = False,
 ) -> ChatCompletionMessageParam:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
     content_txt = ""
     for block in message.blocks:
         if isinstance(block, TextBlock):
-            if (
-                message.role.value in ("assistant", "tool", "system")
-                or not supports_content_blocks
-            ):
-                # Despite the docs say otherwise, when role is ASSISTANT, SYSTEM
-                # or TOOL, 'content' cannot be a list and must be string instead.
-                content_txt += block.text
-            else:
-                content.append({"type": "text", "text": block.text})
+            content.append({"type": "text", "text": block.text})
+            content_txt += block.text
         elif isinstance(block, ImageBlock):
             if block.url:
                 content.append(
@@ -293,11 +285,15 @@ def to_openai_message_dict(
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
 
+    # NOTE: Despite what the openai docs say, if the role is ASSISTANT, SYSTEM
+    # or TOOL, 'content' cannot be a list and must be string instead.
+    # Furthermore, if all blocks are text blocks, we can use the content_txt
+    # as the content. This will avoid breaking openai-like APIs.
     message_dict = {
         "role": message.role.value,
         "content": content_txt
         if message.role.value in ("assistant", "tool", "system")
-        or not supports_content_blocks
+        or all(isinstance(block, TextBlock) for block in message.blocks)
         else content,
     }
 
@@ -324,7 +320,6 @@ def to_openai_message_dicts(
     messages: Sequence[ChatMessage],
     drop_none: bool = False,
     model: Optional[str] = None,
-    supports_content_blocks: bool = False,
 ) -> List[ChatCompletionMessageParam]:
     """Convert generic messages to OpenAI message dicts."""
     return [
@@ -332,7 +327,6 @@ def to_openai_message_dicts(
             message,
             drop_none=drop_none,
             model=model,
-            supports_content_blocks=supports_content_blocks,
         )
         for message in messages
     ]
