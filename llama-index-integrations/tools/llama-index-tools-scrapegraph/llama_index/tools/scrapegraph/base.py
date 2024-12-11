@@ -14,7 +14,7 @@ class ScrapegraphToolSpec(BaseToolSpec):
     spec_functions = [
         "scrapegraph_smartscraper",
         "scrapegraph_markdownify",
-        "scrapegraph_local_scrape"
+        "scrapegraph_local_scrape",
     ]
 
     def __init__(self) -> None:
@@ -26,11 +26,7 @@ class ScrapegraphToolSpec(BaseToolSpec):
         super().__init__()
 
     def scrapegraph_smartscraper(
-        self,
-        prompt: str,
-        url: str,
-        api_key: str,
-        schema: List[BaseModel]
+        self, prompt: str, url: str, api_key: str, schema: List[BaseModel]
     ) -> List[Dict]:
         """Perform synchronous web scraping using scrapegraph.
 
@@ -46,18 +42,9 @@ class ScrapegraphToolSpec(BaseToolSpec):
         client = Client(api_key=api_key)
 
         # Basic usage
-        response = client.smartscraper(
-            website_url=url,
-            user_prompt=prompt
-        )
+        return client.smartscraper(website_url=url, user_prompt=prompt)
 
-        return response
-
-    def scrapegraph_markdownify(
-        self,
-        url: str,
-        api_key: str
-    ) -> str:
+    def scrapegraph_markdownify(self, url: str, api_key: str) -> str:
         """Convert webpage content to markdown format using scrapegraph.
 
         Args:
@@ -69,17 +56,9 @@ class ScrapegraphToolSpec(BaseToolSpec):
         """
         client = Client(api_key=api_key)
 
-        response = client.markdownify(
-            website_url=url
-        )
+        return client.markdownify(website_url=url)
 
-        return response
-   
-    def scrapegraph_local_scrape(
-        self,
-        text: str,
-        api_key: str
-    ) -> str:
+    def scrapegraph_local_scrape(self, text: str, api_key: str) -> str:
         """Extract structured data from raw text using scrapegraph.
 
         Args:
@@ -91,8 +70,4 @@ class ScrapegraphToolSpec(BaseToolSpec):
         """
         client = Client(api_key=api_key)
 
-        response = client.local_scrape(
-            text=text
-        )
-
-        return response
+        return client.local_scrape(text=text)
