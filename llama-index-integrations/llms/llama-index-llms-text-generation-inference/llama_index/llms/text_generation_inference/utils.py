@@ -28,7 +28,7 @@ def get_max_input_tokens(url: str) -> Union[int, None]:
     url = f"{url}/info"
     model_info = dict(requests.get(url).json())
     tgi_version = model_info.get("version", None)
-    if version.parse(tgi_version) < version.parse("2.1.0"):
+    if version.parse(tgi_version) >= version.parse("2.1.0"):
         return model_info.get("max_input_tokens", None)
     else:
         return model_info.get("max_input_length", None)

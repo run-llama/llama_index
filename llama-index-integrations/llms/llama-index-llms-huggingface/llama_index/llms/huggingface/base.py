@@ -137,9 +137,7 @@ class HuggingFaceLLM(CustomLLM):
     )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
-        description=(
-            LLMMetadata.model_fields["context_window"].description
-        ),
+        description=(LLMMetadata.model_fields["context_window"].description),
         gt=0,
     )
     max_new_tokens: int = Field(
