@@ -37,7 +37,6 @@ class TestValidateDependency:
     """Unit tests for _validate_dependency decorator."""
 
     def setup_method(self):
-
         @_validate_dependency
         def sample_function():
             return "function executed"

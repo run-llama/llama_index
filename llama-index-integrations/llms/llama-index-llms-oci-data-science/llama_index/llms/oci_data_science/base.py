@@ -1,14 +1,5 @@
 import logging
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Union,
-    TYPE_CHECKING
-)
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
 
 import llama_index.core.instrumentation as instrument
 from ads.common import auth as authutil

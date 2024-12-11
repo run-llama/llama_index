@@ -201,11 +201,11 @@ def _update_tool_calls(
         latest_function = latest_call.setdefault("function", {})
         delta_function = delta_call.get("function", {})
 
-        latest_function["arguments"] = (
-            latest_function.get("arguments", "") + delta_function.get("arguments", "")
-        )
-        latest_function["name"] = (
-            latest_function.get("name", "") + delta_function.get("name", "")
+        latest_function["arguments"] = latest_function.get(
+            "arguments", ""
+        ) + delta_function.get("arguments", "")
+        latest_function["name"] = latest_function.get("name", "") + delta_function.get(
+            "name", ""
         )
         latest_call["id"] = latest_call.get("id", "") + delta_call.get("id", "")
 
