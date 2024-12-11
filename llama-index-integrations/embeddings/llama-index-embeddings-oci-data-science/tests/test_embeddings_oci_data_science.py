@@ -58,7 +58,6 @@ def embeddings():
 
 
 def test_get_query_embedding(embeddings):
-
     embeddings.client.embeddings.return_value = response_data["data"]
 
     query = "This is a test query"
@@ -74,7 +73,6 @@ def test_get_query_embedding(embeddings):
 
 
 def test_get_text_embedding(embeddings):
-
     embeddings.client.embeddings.return_value = response_data["data"]
 
     text = "This is a test text"
@@ -90,7 +88,6 @@ def test_get_text_embedding(embeddings):
 
 
 def test_get_text_embedding_batch(embeddings):
-
     embeddings.client.embeddings.return_value = response_data["data"]
 
     texts = ["Text one", "Text two"]
@@ -139,7 +136,6 @@ async def test_aget_text_embedding(embeddings):
 
 @pytest.mark.asyncio()
 async def test_aget_text_embedding_batch(embeddings):
-
     embeddings.async_client.embeddings.return_value = response_data["data"]
 
     texts = ["Async text one", "Async text two"]
