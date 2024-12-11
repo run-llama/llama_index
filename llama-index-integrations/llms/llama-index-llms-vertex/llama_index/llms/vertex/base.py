@@ -67,6 +67,7 @@ class Vertex(FunctionCallingLLM):
             model="text-bison",
             project=credentials["project_id"],
             credentials=credentials,
+            context_window=4096,
         )
 
         # Access the complete method from the instance
@@ -77,6 +78,9 @@ class Vertex(FunctionCallingLLM):
 
     model: str = Field(description="The vertex model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
+    context_window: int = Field(
+        default=4096, description="The context window to use for sampling."
+    )
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
     examples: Optional[Sequence[ChatMessage]] = Field(
         description="Example messages for the chat model."
@@ -103,6 +107,7 @@ class Vertex(FunctionCallingLLM):
         examples: Optional[Sequence[ChatMessage]] = None,
         temperature: float = 0.1,
         max_tokens: int = 512,
+        context_window: int = 4096,
         max_retries: int = 10,
         iscode: bool = False,
         safety_settings: Optional[SafetySettingsType] = None,
@@ -122,6 +127,7 @@ class Vertex(FunctionCallingLLM):
 
         super().__init__(
             temperature=temperature,
+            context_window=context_window,
             max_tokens=max_tokens,
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
@@ -174,6 +180,8 @@ class Vertex(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
+            num_output=self.max_tokens,
+            context_window=self.context_window,
             is_chat_model=self._is_chat_model,
             is_function_calling_model=self._is_gemini,
             model_name=self.model,
