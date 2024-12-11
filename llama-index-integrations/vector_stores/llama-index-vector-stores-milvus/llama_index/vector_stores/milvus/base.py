@@ -568,7 +568,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         # Perform the search
         if query.mode == VectorStoreQueryMode.DEFAULT:
             nodes, similarities, ids = self._default_search(
-                query, string_expr, output_fields
+                query, string_expr, output_fields, **kwargs
             )
 
         elif query.mode == VectorStoreQueryMode.MMR:
