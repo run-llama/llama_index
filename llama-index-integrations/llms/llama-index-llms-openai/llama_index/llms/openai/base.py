@@ -267,6 +267,10 @@ class OpenAI(FunctionCallingLLM):
         if model in O1_MODELS:
             temperature = 1.0
 
+        supports_content_blocks = kwargs.pop(
+            "supports_content_blocks", model in ALL_AVAILABLE_MODELS
+        )
+
         super().__init__(
             model=model,
             temperature=temperature,
@@ -286,7 +290,7 @@ class OpenAI(FunctionCallingLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
             strict=strict,
-            supports_content_blocks=model in ALL_AVAILABLE_MODELS,
+            supports_content_blocks=supports_content_blocks,
             **kwargs,
         )
 
