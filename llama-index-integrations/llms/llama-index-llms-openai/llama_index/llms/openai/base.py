@@ -422,6 +422,7 @@ class OpenAI(FunctionCallingLLM):
 
     @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        breakpoint()
         client = self._get_client()
         message_dicts = to_openai_message_dicts(
             messages,
