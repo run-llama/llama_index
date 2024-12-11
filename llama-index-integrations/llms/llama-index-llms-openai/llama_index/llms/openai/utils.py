@@ -253,13 +253,25 @@ def is_function_calling_model(model: str) -> bool:
 
 
 def to_openai_message_dict(
-    message: ChatMessage, drop_none: bool = False, model: Optional[str] = None
+    message: ChatMessage,
+    drop_none: bool = False,
+    model: Optional[str] = None,
+    supports_content_blocks: bool = False,
 ) -> ChatCompletionMessageParam:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
+    content_txt = ""
     for block in message.blocks:
         if isinstance(block, TextBlock):
-            content.append({"type": "text", "text": block.text})
+            if (
+                message.role.value in ("assistant", "tool", "system")
+                or not supports_content_blocks
+            ):
+                # Despite the docs say otherwise, when role is ASSISTANT, SYSTEM
+                # or TOOL, 'content' cannot be a list and must be string instead.
+                content_txt += block.text
+            else:
+                content.append({"type": "text", "text": block.text})
         elif isinstance(block, ImageBlock):
             if block.url:
                 content.append(
@@ -283,7 +295,10 @@ def to_openai_message_dict(
 
     message_dict = {
         "role": message.role.value,
-        "content": content,
+        "content": content_txt
+        if message.role.value in ("assistant", "tool", "system")
+        or not supports_content_blocks
+        else content,
     }
 
     # TODO: O1 models do not support system prompts
@@ -309,10 +324,16 @@ def to_openai_message_dicts(
     messages: Sequence[ChatMessage],
     drop_none: bool = False,
     model: Optional[str] = None,
+    supports_content_blocks: bool = False,
 ) -> List[ChatCompletionMessageParam]:
     """Convert generic messages to OpenAI message dicts."""
     return [
-        to_openai_message_dict(message, drop_none=drop_none, model=model)
+        to_openai_message_dict(
+            message,
+            drop_none=drop_none,
+            model=model,
+            supports_content_blocks=supports_content_blocks,
+        )
         for message in messages
     ]
 

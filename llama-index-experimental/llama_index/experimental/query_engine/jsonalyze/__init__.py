@@ -1,6 +1,6 @@
 """Init file."""
 
-from llama_index.core.query_engine.jsonalyze.jsonalyze_query_engine import (
+from llama_index.experimental.query_engine.jsonalyze.jsonalyze_query_engine import (
     JSONalyzeQueryEngine,
 )
 

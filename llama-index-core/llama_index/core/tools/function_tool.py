@@ -1,12 +1,12 @@
 import asyncio
-from inspect import signature
+import inspect
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
 
 from llama_index.core.async_utils import asyncio_run
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, FieldInfo
 from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 from llama_index.core.tools.utils import create_schema_from_function
 
@@ -79,7 +79,20 @@ class FunctionTool(AsyncBaseTool):
             assert fn_to_parse is not None, "fn or async_fn must be provided."
             name = name or fn_to_parse.__name__
             docstring = fn_to_parse.__doc__
-            description = description or f"{name}{signature(fn_to_parse)}\n{docstring}"
+
+            # Make a new function signature with FieldInfo defaults removed.
+            # The information in FieldInfo is covered by fn_schema.
+            fn_sig = inspect.signature(fn_to_parse)
+            fn_sig = fn_sig.replace(
+                parameters=[
+                    param.replace(default=inspect.Parameter.empty)
+                    if isinstance(param.default, FieldInfo)
+                    else param
+                    for param in fn_sig.parameters.values()
+                ]
+            )
+
+            description = description or f"{name}{fn_sig}\n{docstring}"
             if fn_schema is None:
                 fn_schema = create_schema_from_function(
                     f"{name}", fn_to_parse, additional_fields=None

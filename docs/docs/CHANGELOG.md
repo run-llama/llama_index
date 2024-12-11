@@ -1,5 +1,23 @@
 # ChangeLog
 
+## [2024-12-09]
+
+### `llama-index-core` [0.12.5]
+
+- Refined the default description generation for function tools (#17208)
+
+### `llama-index-multi-modal-llms-azure-openai` [0.3.2]
+
+- fix: relax pin on openai llm dependency (#17210)
+
+### `llama-index-postprocessor-pinecone-native-rerank` [0.1.0]
+
+- feat: integration on pinecone hosted rerankers (#17192)
+
+### `llama-index-vector-stores-postgres` [0.3.3]
+
+- Update pgvector dependency to version 0.3.6 (#17195)
+
 ## [2024-12-08]
 
 ### `llama-index-core` [0.12.4]
