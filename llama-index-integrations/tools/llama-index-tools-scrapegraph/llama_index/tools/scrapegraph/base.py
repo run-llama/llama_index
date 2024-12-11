@@ -1,7 +1,6 @@
-"""scrapegraph tool specification module for web scraping and feedback operations."""
+"""scrapegraph tool specification module for web scraping operations."""
 
-import importlib.util
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from pydantic import BaseModel
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
@@ -9,7 +8,7 @@ from scrapegraph_py import Client
 
 
 class ScrapegraphToolSpec(BaseToolSpec):
-    """scrapegraph tool specification for web scraping and feedback operations."""
+    """scrapegraph tool specification for web scraping operations."""
 
     spec_functions = [
         "scrapegraph_smartscraper",
@@ -17,16 +16,12 @@ class ScrapegraphToolSpec(BaseToolSpec):
         "scrapegraph_local_scrape",
     ]
 
-    def __init__(self) -> None:
-        """Initialize scrapegraph tool spec and verify dependencies."""
-        if not importlib.util.find_spec("scrapegraph-py"):
-            raise ImportError(
-                "scrapegraphToolSpec requires the scrapegraph-py package to be installed."
-            )
-        super().__init__()
-
     def scrapegraph_smartscraper(
-        self, prompt: str, url: str, api_key: str, schema: List[BaseModel]
+        self,
+        prompt: str,
+        url: str,
+        api_key: str,
+        schema: Optional[List[BaseModel]] = None,
     ) -> List[Dict]:
         """Perform synchronous web scraping using scrapegraph.
 
@@ -34,7 +29,7 @@ class ScrapegraphToolSpec(BaseToolSpec):
             prompt (str): User prompt describing the scraping task
             url (str): Target website URL to scrape
             api_key (str): scrapegraph API key
-            schema (List[BaseModel]): Pydantic models defining the output structure
+            schema (Optional[List[BaseModel]]): Pydantic models defining the output structure
 
         Returns:
             List[Dict]: Scraped data matching the provided schema
@@ -42,7 +37,9 @@ class ScrapegraphToolSpec(BaseToolSpec):
         client = Client(api_key=api_key)
 
         # Basic usage
-        return client.smartscraper(website_url=url, user_prompt=prompt)
+        return client.smartscraper(
+            website_url=url, user_prompt=prompt, output_schema=schema
+        )
 
     def scrapegraph_markdownify(self, url: str, api_key: str) -> str:
         """Convert webpage content to markdown format using scrapegraph.
