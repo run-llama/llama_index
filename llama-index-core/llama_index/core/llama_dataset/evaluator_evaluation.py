@@ -75,7 +75,7 @@ class LabelledEvaluatorDataExample(BaseLlamaDataExample):
         default=None, description="What generated the query."
     )
     contexts: Optional[List[str]] = Field(
-        default_factory=None,
+        default=None,
         description="The contexts used to generate the answer.",
     )
     answer: str = Field(
