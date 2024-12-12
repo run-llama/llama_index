@@ -285,6 +285,10 @@ def to_openai_message_dict(
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
 
+    # NOTE: Sending a blank string to openai will cause an error.
+    # This will commonly happen with tool calls.
+    content_txt = None if content_txt == "" else content_txt
+
     # NOTE: Despite what the openai docs say, if the role is ASSISTANT, SYSTEM
     # or TOOL, 'content' cannot be a list and must be string instead.
     # Furthermore, if all blocks are text blocks, we can use the content_txt
