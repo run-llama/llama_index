@@ -1,4 +1,8 @@
+import base64
 from io import BytesIO
+from pathlib import Path
+from unittest import mock
+
 import pytest
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -7,14 +11,17 @@ from llama_index.core.base.llms.types import (
     TextBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
-from pathlib import Path
-from unittest import mock
 from pydantic import AnyUrl
 
 
 @pytest.fixture()
-def png_1px() -> bytes:
+def png_1px_b64() -> bytes:
     return b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+
+
+@pytest.fixture()
+def png_1px(png_1px_b64) -> bytes:
+    return base64.b64decode(png_1px_b64)
 
 
 def test_chat_message_from_str():
@@ -39,11 +46,12 @@ def test_chat_message_content_legacy_get():
     assert type(m.blocks[0]) is TextBlock
     assert m.blocks[0].text == "test content"
 
-    m = ChatMessage(content=[TextBlock(text="test content")])
-    assert m.content == "test content"
-    assert len(m.blocks) == 1
-    assert type(m.blocks[0]) is TextBlock
-    assert m.blocks[0].text == "test content"
+    m = ChatMessage(
+        content=[TextBlock(text="test content 1 "), TextBlock(text="test content 2")]
+    )
+    assert m.content == "test content 1 test content 2"
+    assert len(m.blocks) == 2
+    assert all(type(block) is TextBlock for block in m.blocks)
 
 
 def test_chat_message_content_legacy_set():
@@ -105,14 +113,21 @@ def test_chat_message_legacy_roundtrip():
     }
 
 
-def test_image_block_resolve_image(png_1px: bytes):
+def test_image_block_resolve_image(png_1px: bytes, png_1px_b64: bytes):
     b = ImageBlock(image=png_1px)
+
     img = b.resolve_image()
     assert isinstance(img, BytesIO)
     assert img.read() == png_1px
 
+    img = b.resolve_image(as_base64=True)
+    assert isinstance(img, BytesIO)
+    assert img.read() == png_1px_b64
 
-def test_image_block_resolve_image_path(tmp_path: Path, png_1px: bytes):
+
+def test_image_block_resolve_image_path(
+    tmp_path: Path, png_1px_b64: bytes, png_1px: bytes
+):
     png_path = tmp_path / "test.png"
     png_path.write_bytes(png_1px)
 
@@ -121,23 +136,32 @@ def test_image_block_resolve_image_path(tmp_path: Path, png_1px: bytes):
     assert isinstance(img, BytesIO)
     assert img.read() == png_1px
 
+    img = b.resolve_image(as_base64=True)
+    assert isinstance(img, BytesIO)
+    assert img.read() == png_1px_b64
 
-def test_image_block_resolve_image_url(png_1px):
+
+def test_image_block_resolve_image_url(png_1px_b64: bytes, png_1px: bytes):
     with mock.patch("llama_index.core.base.llms.types.requests") as mocked_req:
         url_str = "http://example.com"
         mocked_req.get.return_value = mock.MagicMock(content=png_1px)
-        b1 = ImageBlock(url=url_str)
-        img = b1.resolve_image()
+        b = ImageBlock(url=AnyUrl(url=url_str))
+        img = b.resolve_image()
         assert isinstance(img, BytesIO)
         assert img.read() == png_1px
 
-        b2 = ImageBlock(url=AnyUrl(url=url_str))
-        img = b1.resolve_image()
+        img = b.resolve_image(as_base64=True)
         assert isinstance(img, BytesIO)
-        assert img.read() == png_1px
+        assert img.read() == png_1px_b64
 
 
 def test_image_block_resolve_error():
     with pytest.raises(ValueError, match="No image found in the chat message!"):
         b = ImageBlock()
         b.resolve_image()
+
+
+def test_image_block_store_as_anyurl():
+    url_str = "http://example.com"
+    b = ImageBlock(url=url_str)
+    assert b.url == AnyUrl(url=url_str)

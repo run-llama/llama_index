@@ -19,19 +19,48 @@ import concurrent.futures
 from functools import lru_cache
 import pathlib
 import ast
+import json
 from typing import Dict, List
+import pandas as pd
 
+from typing import Literal
 from datetime import datetime, timedelta
 from math import exp
 
 # cache of commits to avoid re-reading from disk
 commit_cache = []
 
+DEFAULT_METRIC_WEIGHTS = {
+    "download_ratio": 0.40,
+    "download_stability_ratio": 0.0,
+    "download_growth_ratio": 0.0,
+    "commit_ratio": 0.10,
+    "commit_consistency_ratio": 0.0,
+    "commit_frequency_ratio": 0.0,
+    "test_score": 0.50,
+}
+
+DEFAULT_SCORE_NEW_PROJECT = 1.0
+
 
 class IntegrationActivityAnalyzer:
-    def __init__(self, package_name: str, repo_path: str):
+    def __init__(
+        self,
+        package_name: str,
+        repo_path: str,
+        metric_weights: Dict = DEFAULT_METRIC_WEIGHTS,
+        new_project_score: float = DEFAULT_SCORE_NEW_PROJECT,
+        verbose: bool = False,
+    ):
         self.package_name = package_name
         self.repo_path = repo_path
+        self.metrics = {}
+        self.verbose = verbose
+        if sum(v for v in metric_weights.values()) != 1:
+            raise ValueError("Metric weights do not sum up to 1.")
+        self.metric_weights = metric_weights
+        self._is_new_project = False
+        self._new_project_score = new_project_score
 
     def get_time_weight(self, date_str: str, decay_factor: float = 0.5) -> float:
         """Calculate time-based weight using exponential decay.
@@ -82,7 +111,12 @@ class IntegrationActivityAnalyzer:
 
         # We need at least 5 months of data, if not, its too new to be considered
         if len(downloads_per_month) < 5:
-            return None
+            self._is_new_project = True
+            return {
+                "growth_rate": 0,
+                "stability": 0,
+                "avg_monthly_downloads": 0,
+            }
 
         # Apply time weights to downloads
         weighted_downloads = []
@@ -224,24 +258,26 @@ class IntegrationActivityAnalyzer:
         else:
             return 0.0
 
-    def calculate_relative_health(self) -> float:
+    def calculate_metrics(self) -> None:
         """
         Calculate relative health score compared to llama-index-core.
         """
         if os.path.exists("./core_package_metrics.json"):
-            print(
-                "Loading cached existing core package metrics from ./core_package_metrics.json"
-            )
+            if self.verbose:
+                print(
+                    "Loading cached existing core package metrics from ./core_package_metrics.json"
+                )
             with open("./core_package_metrics.json") as f:
                 core_package_metrics = json.load(f)
         else:
-            print("No cached existing core package metrics found, calculating...")
+            if self.verbose:
+                print("No cached existing core package metrics found, calculating...")
             core_package_metrics = {
                 "downloads": IntegrationActivityAnalyzer(
-                    "./llama-index-core", "llama-index-core"
+                    repo_path="./llama-index-core", package_name="llama-index-core"
                 ).get_download_trends(),
                 "commits": IntegrationActivityAnalyzer(
-                    "./llama-index-core", "llama-index-core"
+                    repo_path="./llama-index-core", package_name="llama-index-core"
                 ).get_commit_activity(),
             }
             with open("./core_package_metrics.json", "w") as f:
@@ -252,63 +288,73 @@ class IntegrationActivityAnalyzer:
             "commits": self.get_commit_activity(),
         }
 
-        # if the package is too new to have any data, return an arbitrary high score
+        # if the package is too new to have any data, set new project flag
         if current_metrics["downloads"] is None or current_metrics["commits"] is None:
-            return 1000
+            self._is_new_project = True
 
         # Calculate ratios relative to core package (current/core)
-        download_ratio = (
+        self.metrics["download_ratio"] = (
             current_metrics["downloads"]["avg_monthly_downloads"]
             / core_package_metrics["downloads"]["avg_monthly_downloads"]
         )
 
-        download_stability_ratio = (
+        self.metrics["download_stability_ratio"] = (
             current_metrics["downloads"]["stability"]
             / core_package_metrics["downloads"]["stability"]
         )
 
-        download_growth_ratio = (
+        self.metrics["download_growth_ratio"] = (
             current_metrics["downloads"]["growth_rate"]
             / core_package_metrics["downloads"]["growth_rate"]
         )
 
-        commit_ratio = (
+        self.metrics["commit_ratio"] = (
             current_metrics["commits"]["total_commits"]
             / core_package_metrics["commits"]["total_commits"]
         )
 
-        commit_consistency_ratio = (
+        self.metrics["commit_consistency_ratio"] = (
             current_metrics["commits"]["commit_consistency"]
             / core_package_metrics["commits"]["commit_consistency"]
         )
 
-        commit_frequency_ratio = (
+        self.metrics["commit_frequency_ratio"] = (
             current_metrics["commits"]["commit_frequency"]
             / core_package_metrics["commits"]["commit_frequency"]
         )
 
         # Weight the different factors
         # Max score is 1.0
-        test_score = self.check_test_coverage()
-        ratios = [
-            download_ratio * 4.0,  # 40% weight for downloads
-            commit_ratio * 1.0,  # 10% weight for commits
-            test_score * 5.0,  # 50% weight for test coverage
-        ]
-        return sum(ratios) / len(ratios)
+        self.metrics["test_score"] = self.check_test_coverage()
+
+    @property
+    def health_score(self) -> float:
+        if self._is_new_project:
+            score = self._new_project_score
+        else:
+            score = 0
+            for k, v in self.metrics.items():
+                score += v * self.metric_weights[k]
+        return score
 
 
 def analyze_package(package_path: str) -> tuple[str, float]:
     """Analyze a single package. Helper function for parallel processing."""
     package_name = package_path.strip().lstrip("./").rstrip("/").split("/")[-1]
+    logger.info(f"starting to analyze {package_name}")
     analyzer = IntegrationActivityAnalyzer(package_name, package_path)
-    health_score = analyzer.calculate_relative_health()
+    analyzer.calculate_metrics()
+    health_score = analyzer.health_score
+    if health_score == 42:
+        print(f"new package: {package_name}")
+    logger.info(f"health score for {package_name}: {health_score}")
     return (package_name, health_score)
 
 
 def analyze_multiple_packages(
     package_paths: list[str],
     bottom_percent: float | None = None,
+    bottom_n: int | None = None,
     threshold: float | None = None,
 ) -> list[tuple[str, float]]:
     """Analyze multiple packages in parallel."""
@@ -319,7 +365,7 @@ def analyze_multiple_packages(
     else:
         print("No cached existing package metrics found, calculating...")
         # Use ThreadPoolExecutor for parallel processing
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             results = list(executor.map(analyze_package, package_paths))
 
         with open("./all_package_metrics.json", "w") as f:
@@ -328,9 +374,15 @@ def analyze_multiple_packages(
     # Sort by health score ascending
     results.sort(key=lambda x: x[1])
 
+    # Print summary stats
+    scores = pd.Series([el[1] for el in results])
+    print(scores.describe())
+
     # Calculate how many packages to return
     if bottom_percent is not None:
         num_packages = max(1, int(len(results) * bottom_percent))
+    elif bottom_n is not None:
+        num_packages = min(bottom_n, len(results))
     elif threshold is not None:
         num_packages = next(
             (i for i, (_, score) in enumerate(results) if score >= threshold),
@@ -344,14 +396,36 @@ def analyze_multiple_packages(
     return results[:num_packages]
 
 
+def package_tuple_to_str(
+    package_tuple: tuple[str, float], mode: Literal["default", "csv"] = "default"
+):
+    if mode == "default":
+        return str(package_tuple)
+    elif mode == "csv":
+        name, score = package_tuple
+        return f"{name},{score}"
+    else:
+        raise ValueError(
+            "Unsupported str mode. Please enter `default` or `csv` as mode."
+        )
+
+
 if __name__ == "__main__":
     arg = sys.argv[1]
     try:
         val = float(arg)
         is_threshold = sys.argv[2] == "threshold"
         is_percent = sys.argv[2] == "percent"
+        is_bottom_n = sys.argv[2] = "bottom_n"
+        try:
+            output_mode = sys.argv[3]
+        except IndexError:
+            output_mode = "default"
         all_packages = []
         for root, dirs, files in os.walk("./llama-index-integrations"):
+            if "pyproject.toml" in files:
+                all_packages.append(root)
+        for root, dirs, files in os.walk("./llama-index-packs"):
             if "pyproject.toml" in files:
                 all_packages.append(root)
 
@@ -359,15 +433,27 @@ if __name__ == "__main__":
             packages_to_remove = analyze_multiple_packages(
                 all_packages, bottom_percent=val
             )
+        elif is_bottom_n:
+            packages_to_remove = analyze_multiple_packages(
+                all_packages, bottom_n=int(val)
+            )
         elif is_threshold:
             packages_to_remove = analyze_multiple_packages(all_packages, threshold=val)
         else:
             raise ValueError("Invalid argument for bottom_percent or threshold")
 
         print(f"Found {len(packages_to_remove)} packages to remove.")
-        print("\n".join([str(x) for x in packages_to_remove]))
+        print(
+            "\n".join(
+                [package_tuple_to_str(x, mode=output_mode) for x in packages_to_remove]
+            )
+        )
+
     except ValueError:
         package_path = sys.argv[1].strip().lstrip("./").rstrip("/")
         package_name = package_path.split("/")[-1]
+        print(f"{package_name} at {package_path}")
         analyzer = IntegrationActivityAnalyzer(package_name, package_path)
-        print(analyzer.calculate_relative_health())
+        analyzer.calculate_metrics()
+        print("metrics dict:\n", json.dumps(analyzer.metrics, indent=4))
+        print("health score:\n", analyzer.health_score)

@@ -35,7 +35,8 @@ class OpenVINOMultiModal(MultiModalLLM):
         description="The device to run the model on.",
     )
     trust_remote_code: bool = Field(
-        default=True, description="Whether to trust remote code when loading the model."
+        default=False,
+        description="Whether to trust remote code when loading the model.",
     )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,

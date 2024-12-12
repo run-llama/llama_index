@@ -14,6 +14,7 @@ from typing import (
     Union,
 )
 
+import filetype
 import requests
 from typing_extensions import Self
 
@@ -25,9 +26,9 @@ from llama_index.core.bridge.pydantic import (
     FilePath,
     field_serializer,
     field_validator,
+    model_validator,
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.core.schema import ImageType
 
 
 class MessageRole(str, Enum):
@@ -53,12 +54,7 @@ class ImageBlock(BaseModel):
     path: FilePath | None = None
     url: AnyUrl | str | None = None
     image_mimetype: str | None = None
-
-    @field_validator("image", mode="after")
-    @classmethod
-    def image_to_base64(cls, image: bytes) -> bytes:
-        """Store the image as base64."""
-        return base64.b64encode(image)
+    detail: str | None = None
 
     @field_validator("url", mode="after")
     @classmethod
@@ -68,16 +64,47 @@ class ImageBlock(BaseModel):
             return url
         return AnyUrl(url=url)
 
-    def resolve_image(self) -> ImageType:
-        """Resolve an image such that PIL can read it."""
+    @model_validator(mode="after")
+    def image_to_base64(self) -> Self:
+        """Store the image as base64 and guess the mimetype when possible.
+
+        In case the model was built passing image data but without a mimetype,
+        we try to guess it using the filetype library. To avoid resource-intense
+        operations, we won't load the path or the URL to guess the mimetype.
+        """
+        if not self.image:
+            return self
+
+        if not self.image_mimetype:
+            guess = filetype.guess(self.image)
+            self.image_mimetype = guess.mime if guess else None
+
+        self.image = base64.b64encode(self.image)
+
+        return self
+
+    def resolve_image(self, as_base64: bool = False) -> BytesIO:
+        """Resolve an image such that PIL can read it.
+
+        Args:
+            as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
+        """
         if self.image is not None:
+            if as_base64:
+                return BytesIO(self.image)
             return BytesIO(base64.b64decode(self.image))
         elif self.path is not None:
-            return BytesIO(self.path.read_bytes())
+            img_bytes = self.path.read_bytes()
+            if as_base64:
+                return BytesIO(base64.b64encode(img_bytes))
+            return BytesIO(img_bytes)
         elif self.url is not None:
             # load image from URL
             response = requests.get(str(self.url))
-            return BytesIO(response.content)
+            img_bytes = response.content
+            if as_base64:
+                return BytesIO(base64.b64encode(img_bytes))
+            return BytesIO(img_bytes)
         else:
             raise ValueError("No image found in the chat message!")
 
@@ -113,11 +140,15 @@ class ChatMessage(BaseModel):
         """Keeps backward compatibility with the old `content` field.
 
         Returns:
-            The block content if there's a single TextBlock, an empty string otherwise.
+            The cumulative content of the blocks if they're all of type TextBlock, None otherwise.
         """
-        if len(self.blocks) == 1 and isinstance(self.blocks[0], TextBlock):
-            return self.blocks[0].text
-        return None
+        content = ""
+        for block in self.blocks:
+            if not isinstance(block, TextBlock):
+                return None
+            content += block.text
+
+        return content
 
     @content.setter
     def content(self, content: str) -> None:
