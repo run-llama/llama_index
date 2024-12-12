@@ -1105,7 +1105,7 @@ class Document(Node):
 class ImageDocument(Document):
     """Backward compatible wrapper around Document containing an image."""
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         image = kwargs.pop("image", None)
         image_path = kwargs.pop("image_path", None)
         image_url = kwargs.pop("image_url", None)
@@ -1132,7 +1132,7 @@ class ImageDocument(Document):
         return None
 
     @image.setter
-    def set_image(self, image: bytes):
+    def image(self, image: bytes) -> None:
         self.image_resource = MediaResource(data=image)
 
     @property
@@ -1143,7 +1143,7 @@ class ImageDocument(Document):
         return None
 
     @image_path.setter
-    def set_image_path(self, image_path: str):
+    def image_path(self, image_path: str) -> None:
         self.image_resource = MediaResource(path=Path(image_path))
 
     @property
@@ -1154,7 +1154,7 @@ class ImageDocument(Document):
         return None
 
     @image_url.setter
-    def set_image_url(self, image_url: str):
+    def image_url(self, image_url: str) -> None:
         self.image_resource = MediaResource(url=AnyUrl(url=image_url))
 
     @property
@@ -1163,7 +1163,7 @@ class ImageDocument(Document):
         return self.image_resource.mimetype
 
     @image_mimetype.setter
-    def set_image_mimetype(self, image_mimetype: str):
+    def image_mimetype(self, image_mimetype: str) -> None:
         assert self.image_resource
         self.image_resource.mimetype = image_mimetype
 
@@ -1174,7 +1174,7 @@ class ImageDocument(Document):
         return None
 
     @text_embedding.setter
-    def set_text_embedding(self, embeddings: list[float]):
+    def text_embedding(self, embeddings: list[float]) -> None:
         if self.text_resource:
             emb_dict = self.text_resource.embeddings or {}
             emb_dict["dense"] = embeddings

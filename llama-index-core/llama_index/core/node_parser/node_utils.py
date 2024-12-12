@@ -54,7 +54,7 @@ def build_nodes_from_splits(
                 image_url=document.image_url,
                 excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
                 excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
-                metadata_seperator=document.metadata_seperator,
+                metadata_seperator=document.metadata_separator,
                 metadata_template=document.metadata_template,
                 text_template=document.text_template,
                 relationships=relationships,
