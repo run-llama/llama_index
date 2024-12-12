@@ -1,5 +1,18 @@
+import base64
+from io import BytesIO
+from pathlib import Path
+from unittest import mock
+
 import pytest
-from llama_index.core.schema import ImageNode, Node, NodeWithScore, TextNode
+from llama_index.core.schema import (
+    Document,
+    ImageDocument,
+    ImageNode,
+    MediaResource,
+    NodeWithScore,
+    ObjectType,
+    TextNode,
+)
 
 
 @pytest.fixture()
@@ -17,6 +30,16 @@ def node_with_score(text_node: TextNode) -> NodeWithScore:
         node=text_node,
         score=0.5,
     )
+
+
+@pytest.fixture()
+def png_1px_b64() -> bytes:
+    return b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+
+
+@pytest.fixture()
+def png_1px(png_1px_b64) -> bytes:
+    return base64.b64decode(png_1px_b64)
 
 
 def test_node_with_score_passthrough(node_with_score: NodeWithScore) -> None:
@@ -50,6 +73,16 @@ def test_text_node_hash() -> None:
     assert node3.hash != node.hash
 
 
+def test_text_node_with_text_resource():
+    tr = MediaResource(text="This is a test")
+    text_node = TextNode(text_resource=tr)
+    assert text_node.text == "This is a test"
+
+    tr_dict = tr.model_dump()
+    text_node = TextNode(text_resource=tr_dict)
+    assert text_node.text == "This is a test"
+
+
 def test_image_node_hash() -> None:
     """Test hash for ImageNode."""
     node = ImageNode(image="base64", image_path="path")
@@ -62,5 +95,114 @@ def test_image_node_hash() -> None:
     assert node3.hash == node4.hash
 
 
-def test_node() -> None:
-    node = Node(id_="test_node")
+def test_build_text_node_text_resource() -> None:
+    node = TextNode(id_="test_node", text_resource=MediaResource(text="test data"))
+    assert node.text == "test data"
+
+
+def test_document_init() -> None:
+    doc = Document(doc_id="test")
+    assert doc.doc_id == "test"
+    assert doc.id_ == "test"
+    with pytest.raises(
+        ValueError,
+        match="Cannot pass both 'doc_id' and 'id_' to create a Document, use 'id_'",
+    ):
+        doc = Document(id_="test", doc_id="test")
+
+    doc = Document(extra_info={"key": "value"})
+    assert doc.metadata == {"key": "value"}
+    with pytest.raises(
+        ValueError,
+        match="Cannot pass both 'extra_info' and 'metadata' to create a Document, use 'metadata'",
+    ):
+        doc = Document(extra_info={}, metadata={})
+
+    doc = Document(text="test")
+    assert doc.text == "test"
+    assert doc.text_resource
+    assert doc.text_resource.text == "test"
+    with pytest.raises(
+        ValueError,
+        match="Cannot pass both 'text' and 'text_resource' to create a Document, use 'text_resource'",
+    ):
+        doc = Document(text="test", text_resource="test")
+
+
+def test_document_properties():
+    doc = Document()
+    assert doc.get_type() == ObjectType.DOCUMENT
+    doc.doc_id = "test"
+    assert doc.id_ == "test"
+
+
+def test_document_str():
+    with mock.patch("llama_index.core.schema.TRUNCATE_LENGTH", 5):
+        doc = Document(
+            id_="test_id",
+            text="Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+        )
+        assert str(doc) == "Doc ID: test_id\nText: Lo..."
+
+
+def test_image_document_empty():
+    doc = ImageDocument(id_="test")
+    assert doc.id_ == "test"
+    assert doc.image is None
+    assert doc.image_path is None
+    assert doc.image_url is None
+    assert doc.image_mimetype is None
+    assert doc.class_name() == "ImageDocument"
+
+
+def test_image_document_image():
+    doc = ImageDocument(id_="test", image=b"123456")
+    assert doc.image == "MTIzNDU2"
+    doc.image = "123456789"
+    assert doc.image == "MTIzNDU2Nzg5"
+
+
+def test_image_document_path():
+    mock_path = Path(__file__)
+    doc = ImageDocument(id_="test", image_path=mock_path)
+    assert doc.image_path == str(mock_path)
+    doc.image_path = str(mock_path.parent)
+    assert doc.image_path == str(mock_path.parent)
+
+
+def test_image_document_url():
+    doc = ImageDocument(id_="test", image_url="https://example.com/")
+    assert doc.image_url == "https://example.com/"
+    doc.image_url = "https://foo.org"
+    assert doc.image_url == "https://foo.org/"
+
+
+def test_image_document_mimetype():
+    doc = ImageDocument(image=b"123456")
+    assert doc.image_mimetype is None
+    doc.image_mimetype = "foo"
+    assert doc.image_mimetype == "foo"
+
+
+def test_image_document_embeddings():
+    doc = ImageDocument(text="foo")
+    assert doc.text_resource is not None
+    assert doc.text_embedding is None
+    doc.text_embedding = [1.0, 2.0, 3.0]
+    assert doc.text_embedding == [1.0, 2.0, 3.0]
+    assert doc.text_resource.embeddings == {"dense": [1.0, 2.0, 3.0]}
+
+
+def test_image_block_resolve_image(png_1px: bytes, png_1px_b64: bytes):
+    doc = ImageDocument()
+    assert doc.resolve_image().read() == b""
+
+    doc = ImageDocument(image=png_1px)
+
+    img = doc.resolve_image()
+    assert isinstance(img, BytesIO)
+    assert img.read() == png_1px
+
+    img = doc.resolve_image(as_base64=True)
+    assert isinstance(img, BytesIO)
+    assert img.read() == png_1px_b64
