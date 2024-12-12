@@ -9,31 +9,32 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.text_generation_inference"
+import_path = "llama_index.tools.scrapegraph"
 
 [tool.llamahub.class_authors]
-TextGenerationInference = "llama-index"
+ScrapegraphToolSpec = "Vincigit00"
 
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.10"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index llms huggingface text generation inference integration"
+authors = ["Marco Vinciguerra <mvincig11@gmail.com>"]
+description = "llama-index tools integrating ScrapegraphAI"
 exclude = ["**/BUILD"]
+keywords = ["scraping"]
 license = "MIT"
-name = "llama-index-llms-text-generation-inference"
+maintainers = ["Vincigit00"]
+name = "llama-index-tools-scrapegraphai"
 readme = "README.md"
-version = "0.3.1"
+version = "0.0.1"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-text-generation = "^0.7.0"
-llama-index-utils-huggingface = "^0.3.0"
+python = ">=3.10,<4.0"
 llama-index-core = "^0.12.0"
+scrapegraph-py = "^1.6.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -42,6 +43,7 @@ mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
+pytest-asyncio = "^0.23.0"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
