@@ -31,7 +31,7 @@ class VesslAILLM(OpenAILike, BaseModel):
         # vessl configure
         llm = VesslAILLM()
 
-        #1 Serve with methods 
+        #1 Serve hf model name
         llm.serve(
             service_name="llama-index-vesslai-test",
             model_name="mistralai/Mistral-7B-Instruct-v0.3",
@@ -43,7 +43,7 @@ class VesslAILLM(OpenAILike, BaseModel):
             yaml_path="/root/vesslai/vesslai_vllm.yaml",
         )
 
-        #3 Pre-served endpoint
+        #3 Connect with pre-served endpoint
         llm.connect(
             served_model_name="mistralai/Mistral-7B-Instruct-v0.3",
             endpoint="https://serve-api.vessl.ai/api/v1/services/endpoint/v1",
@@ -60,7 +60,7 @@ class VesslAILLM(OpenAILike, BaseModel):
         super().__init__()
         self._configure()
     
-    def _configure(self):
+    def _configure(self) -> None:
         vessl.configure()
         if vessl.vessl_api.is_in_run_exec_context():
             vessl.vessl_api.set_access_token(no_prompt=True)
@@ -163,7 +163,7 @@ class VesslAILLM(OpenAILike, BaseModel):
     
     def _build_model_serve_config(
         self, model_name: str, service_config: dict, service_auth_key: str, hf_token: str
-    ):
+    ) -> str:
         if hf_token.startswith("hf_"):
             service_config['env']['HF_TOKEN'] = hf_token
         else:
@@ -218,7 +218,7 @@ class VesslAILLM(OpenAILike, BaseModel):
 
         return gateway_endpoint
     
-    def _get_default_yaml_path(self):
+    def _get_default_yaml_path(self) -> str:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         default_yaml_path = os.path.join(current_dir, self.default_service_yaml)
         return default_yaml_path
