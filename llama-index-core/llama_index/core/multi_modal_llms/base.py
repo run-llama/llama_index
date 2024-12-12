@@ -217,7 +217,7 @@ class MultiModalCompleteComponent(BaseMultiModalComponent):
             if not isinstance(input["image_documents"], list):
                 raise ValueError("image_documents must be a list.")
             for doc in input["image_documents"]:
-                if not isinstance(doc, ImageDocument):
+                if not isinstance(doc, (ImageDocument, ImageNode)):
                     raise ValueError(
                         "image_documents must be a list of ImageNode objects."
                     )
