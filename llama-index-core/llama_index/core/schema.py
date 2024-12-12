@@ -982,7 +982,7 @@ class Document(Node):
         version="0.12.2",
         reason="'get_doc_id' is deprecated, access the 'id_' property instead.",
     )
-    def get_doc_id(self) -> str:
+    def get_doc_id(self) -> str:  # pragma: nocover
         return self.id_
 
     def to_langchain_format(self) -> LCDocument:
@@ -1122,10 +1122,9 @@ class ImageDocument(Document):
         super().__init__(**kwargs)
 
     @property
-    def image(self) -> str | None:
-        assert self.image_resource
-        if self.image_resource.data:
-            return self.image_resource.data.decode("utf-8")
+    def image(self) -> bytes | None:
+        if self.image_resource and self.image_resource.data:
+            return self.image_resource.data
         return None
 
     @image.setter
@@ -1172,8 +1171,9 @@ class ImageDocument(Document):
     @text_embedding.setter
     def text_embedding(self, embeddings: list[float]) -> None:
         if self.text_resource:
-            emb_dict = self.text_resource.embeddings or {}
-            emb_dict["dense"] = embeddings
+            if self.text_resource.embeddings is None:
+                self.text_resource.embeddings = {}
+            self.text_resource.embeddings["dense"] = embeddings
 
     @classmethod
     def class_name(cls) -> str:
