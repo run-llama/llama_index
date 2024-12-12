@@ -14,6 +14,7 @@ API_CATALOG_MODELS: Dict[str, int] = {
     "meta/codellama-70b": 1024,
     "meta/llama3-70b-instruct": 8192,
     "meta/llama3-8b-instruct": 8192,
+    "meta/llama-3.3-70b-instruct": 128000,
     "microsoft/phi-3-medium-4k-instruct": 1024,
     "microsoft/phi-3-mini-128k-instruct": 2048,
     "microsoft/phi-3-mini-4k-instruct": 2048,
@@ -37,6 +38,7 @@ NVIDIA_FUNTION_CALLING_MODELS = (
     "meta/llama-3.1-8b-instruct",
     "meta/llama-3.1-70b-instruct",
     "meta/llama-3.1-405b-instruct",
+    "meta/llama-3.3-70b-instruct",
     "mistralai/mistral-large-2-instruct",
 )
 
