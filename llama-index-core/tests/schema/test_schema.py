@@ -1,5 +1,5 @@
 import pytest
-from llama_index.core.schema import ImageNode, Node, NodeWithScore, TextNode
+from llama_index.core.schema import ImageNode, MediaResource, NodeWithScore, TextNode
 
 
 @pytest.fixture()
@@ -62,5 +62,6 @@ def test_image_node_hash() -> None:
     assert node3.hash == node4.hash
 
 
-def test_node() -> None:
-    node = Node(id_="test_node")
+def test_build_text_node_text_resource() -> None:
+    node = TextNode(id_="test_node", text_resource=MediaResource(text="test data"))
+    assert node.text == "test data"

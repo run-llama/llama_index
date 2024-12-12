@@ -634,7 +634,7 @@ class TextNode(BaseNode):
         """Make TextNode forward-compatible with Node by supporting 'text_resource' in the constructor."""
         if "text_resource" in kwargs:
             tr = kwargs.pop("text_resource")
-            kwargs["text"] = tr["text"]
+            kwargs["text"] = tr.text
         super().__init__(*args, **kwargs)
 
     text: str = Field(default="", description="Text content of the node.")
@@ -1118,9 +1118,6 @@ class ImageDocument(Document):
             kwargs["image_resource"] = MediaResource(path=image_path)
         elif image_url:
             kwargs["image_resource"] = MediaResource(url=image_url)
-        else:
-            msg = "ImageDocument constructor requires either image, image_path or image_url."
-            raise ValueError(msg)
 
         super().__init__(**kwargs)
 
@@ -1137,8 +1134,7 @@ class ImageDocument(Document):
 
     @property
     def image_path(self) -> str | None:
-        assert self.image_resource
-        if self.image_resource.path:
+        if self.image_resource and self.image_resource.path:
             return str(self.image_resource.path)
         return None
 
@@ -1148,8 +1144,7 @@ class ImageDocument(Document):
 
     @property
     def image_url(self) -> str | None:
-        assert self.image_resource
-        if self.image_resource.url:
+        if self.image_resource and self.image_resource.url:
             return str(self.image_resource.url)
         return None
 
@@ -1159,13 +1154,14 @@ class ImageDocument(Document):
 
     @property
     def image_mimetype(self) -> str | None:
-        assert self.image_resource
-        return self.image_resource.mimetype
+        if self.image_resource:
+            return self.image_resource.mimetype
+        return None
 
     @image_mimetype.setter
     def image_mimetype(self, image_mimetype: str) -> None:
-        assert self.image_resource
-        self.image_resource.mimetype = image_mimetype
+        if self.image_resource:
+            self.image_resource.mimetype = image_mimetype
 
     @property
     def text_embedding(self) -> list[float] | None:
@@ -1189,7 +1185,9 @@ class ImageDocument(Document):
         Args:
             as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
         """
-        assert self.image_resource
+        if self.image_resource is None:
+            return BytesIO()
+
         if self.image_resource.data is not None:
             if as_base64:
                 return BytesIO(self.image_resource.data)
