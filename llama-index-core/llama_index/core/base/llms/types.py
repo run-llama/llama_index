@@ -14,17 +14,21 @@ from typing import (
     Union,
 )
 
+import filetype
 import requests
 from typing_extensions import Self
 
 from llama_index.core.bridge.pydantic import (
+    AnyUrl,
     BaseModel,
     ConfigDict,
     Field,
+    FilePath,
     field_serializer,
+    field_validator,
+    model_validator,
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.core.schema import ImageType
 
 
 class MessageRole(str, Enum):
@@ -46,21 +50,67 @@ class TextBlock(BaseModel):
 
 class ImageBlock(BaseModel):
     block_type: Literal["image"] = "image"
-    image: Optional[str] = None
-    image_path: Optional[str] = None
-    image_url: Optional[str] = None
-    image_mimetype: Optional[str] = None
+    image: bytes | None = None
+    path: FilePath | None = None
+    url: AnyUrl | str | None = None
+    image_mimetype: str | None = None
+    detail: str | None = None
 
-    def resolve_image(self) -> ImageType:
-        """Resolve an image such that PIL can read it."""
+    @field_validator("url", mode="after")
+    @classmethod
+    def urlstr_to_anyurl(cls, url: str | AnyUrl) -> AnyUrl:
+        """Store the url as Anyurl."""
+        if isinstance(url, AnyUrl):
+            return url
+        return AnyUrl(url=url)
+
+    @model_validator(mode="after")
+    def image_to_base64(self) -> Self:
+        """Store the image as base64 and guess the mimetype when possible.
+
+        In case the model was built passing image data but without a mimetype,
+        we try to guess it using the filetype library. To avoid resource-intense
+        operations, we won't load the path or the URL to guess the mimetype.
+        """
+        if not self.image:
+            return self
+
+        try:
+            # Check if image is already base64 encoded
+            decoded_img = base64.b64decode(self.image)
+        except Exception:
+            decoded_img = self.image
+            # Not base64 - encode it
+            self.image = base64.b64encode(self.image)
+
+        if not self.image_mimetype:
+            guess = filetype.guess(decoded_img)
+            self.image_mimetype = guess.mime if guess else None
+
+        return self
+
+    def resolve_image(self, as_base64: bool = False) -> BytesIO:
+        """Resolve an image such that PIL can read it.
+
+        Args:
+            as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
+        """
         if self.image is not None:
+            if as_base64:
+                return BytesIO(self.image)
             return BytesIO(base64.b64decode(self.image))
-        elif self.image_path is not None:
-            return self.image_path
-        elif self.image_url is not None:
+        elif self.path is not None:
+            img_bytes = self.path.read_bytes()
+            if as_base64:
+                return BytesIO(base64.b64encode(img_bytes))
+            return BytesIO(img_bytes)
+        elif self.url is not None:
             # load image from URL
-            response = requests.get(self.image_url)
-            return BytesIO(response.content)
+            response = requests.get(str(self.url))
+            img_bytes = response.content
+            if as_base64:
+                return BytesIO(base64.b64encode(img_bytes))
+            return BytesIO(img_bytes)
         else:
             raise ValueError("No image found in the chat message!")
 
@@ -96,11 +146,15 @@ class ChatMessage(BaseModel):
         """Keeps backward compatibility with the old `content` field.
 
         Returns:
-            The block content if there's a single TextBlock, an empty string otherwise.
+            The cumulative content of the blocks if they're all of type TextBlock, None otherwise.
         """
-        if len(self.blocks) == 1 and isinstance(self.blocks[0], TextBlock):
-            return self.blocks[0].text
-        return None
+        content = ""
+        for block in self.blocks:
+            if not isinstance(block, TextBlock):
+                return None
+            content += block.text
+
+        return content
 
     @content.setter
     def content(self, content: str) -> None:

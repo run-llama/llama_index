@@ -78,7 +78,7 @@ class Dispatcher(BaseModel):
         description="Whether to propagate the event to parent dispatchers and their handlers",
     )
     current_span_ids: Optional[Dict[Any, str]] = Field(
-        default_factory=dict,
+        default_factory=dict,  # type: ignore
         description="Id of current enclosing span. Used for creating `dispatch_event` partials.",
     )
 

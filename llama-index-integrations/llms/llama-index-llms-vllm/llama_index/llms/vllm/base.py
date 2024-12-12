@@ -150,7 +150,7 @@ class Vllm(LLM):
         model: str = "facebook/opt-125m",
         temperature: float = 1.0,
         tensor_parallel_size: int = 1,
-        trust_remote_code: bool = True,
+        trust_remote_code: bool = False,
         n: int = 1,
         best_of: Optional[int] = None,
         presence_penalty: float = 0.0,
