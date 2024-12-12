@@ -1125,14 +1125,14 @@ class ImageDocument(Document):
         super().__init__(**kwargs)
 
     @property
-    def image(self) -> bytes | None:
+    def image(self) -> str | None:
         if self.image_resource and self.image_resource.data:
-            return self.image_resource.data
+            return self.image_resource.data.decode("utf-8")
         return None
 
     @image.setter
-    def image(self, image: bytes) -> None:
-        self.image_resource = MediaResource(data=image)
+    def image(self, image: str) -> None:
+        self.image_resource = MediaResource(data=image.encode("utf-8"))
 
     @property
     def image_path(self) -> str | None:

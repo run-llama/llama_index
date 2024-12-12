@@ -157,9 +157,9 @@ def test_image_document_empty():
 
 def test_image_document_image():
     doc = ImageDocument(id_="test", image=b"123456")
-    assert doc.image == b"MTIzNDU2"
-    doc.image = b"123456789"
-    assert doc.image == b"MTIzNDU2Nzg5"
+    assert doc.image == "MTIzNDU2"
+    doc.image = "123456789"
+    assert doc.image == "MTIzNDU2Nzg5"
 
 
 def test_image_document_path():
