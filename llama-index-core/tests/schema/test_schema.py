@@ -73,6 +73,16 @@ def test_text_node_hash() -> None:
     assert node3.hash != node.hash
 
 
+def test_text_node_with_text_resource():
+    tr = MediaResource(text="This is a test")
+    text_node = TextNode(text_resource=tr)
+    assert text_node.text == "This is a test"
+
+    tr_dict = tr.model_dump()
+    text_node = TextNode(text_resource=tr_dict)
+    assert text_node.text == "This is a test"
+
+
 def test_image_node_hash() -> None:
     """Test hash for ImageNode."""
     node = ImageNode(image="base64", image_path="path")

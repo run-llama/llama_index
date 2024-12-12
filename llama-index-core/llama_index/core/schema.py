@@ -634,7 +634,10 @@ class TextNode(BaseNode):
         """Make TextNode forward-compatible with Node by supporting 'text_resource' in the constructor."""
         if "text_resource" in kwargs:
             tr = kwargs.pop("text_resource")
-            kwargs["text"] = tr.text
+            if isinstance(tr, MediaResource):
+                kwargs["text"] = tr.text
+            else:
+                kwargs["text"] = tr["text"]
         super().__init__(*args, **kwargs)
 
     text: str = Field(default="", description="Text content of the node.")
