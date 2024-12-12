@@ -114,6 +114,15 @@ class BedrockConverse(FunctionCallingLLM):
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )
+    guardrail_identifier: Optional[str] = Field(
+        description="The unique identifier of the guardrail that you want to use. If you don’t provide a value, no guardrail is applied to the invocation."
+    ),
+    guardrail_version: Optional[str] = Field(
+        description="The version number for the guardrail. The value can also be DRAFT"
+    ),
+    trace: Optional[str] = Field(
+        description="Specifies whether to enable or disable the Bedrock trace. If enabled, you can see the full Bedrock trace."
+    ),
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional kwargs for the bedrock invokeModel request.",
@@ -145,6 +154,9 @@ class BedrockConverse(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        guardrail_identifier: Optional[str] = None,
+        guardrail_version: Optional[str] = None,
+        trace: Optional[str] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -178,6 +190,9 @@ class BedrockConverse(FunctionCallingLLM):
             region_name=region_name,
             botocore_session=botocore_session,
             botocore_config=botocore_config,
+            guardrail_identifier=guardrail_identifier,
+            guardrail_version=guardrail_version,
+            trace=trace
         )
 
         self._config = None
@@ -292,6 +307,9 @@ class BedrockConverse(FunctionCallingLLM):
             system_prompt=self.system_prompt,
             max_retries=self.max_retries,
             stream=False,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
         )
 
@@ -336,6 +354,9 @@ class BedrockConverse(FunctionCallingLLM):
             system_prompt=self.system_prompt,
             max_retries=self.max_retries,
             stream=True,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
         )
 
@@ -416,6 +437,9 @@ class BedrockConverse(FunctionCallingLLM):
             system_prompt=self.system_prompt,
             max_retries=self.max_retries,
             stream=False,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
         )
 
@@ -461,6 +485,9 @@ class BedrockConverse(FunctionCallingLLM):
             system_prompt=self.system_prompt,
             max_retries=self.max_retries,
             stream=True,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
         )
 
