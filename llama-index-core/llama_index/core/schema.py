@@ -27,6 +27,7 @@ from typing import (
 )
 
 import filetype
+import requests
 from dataclasses_json import DataClassJsonMixin
 from deprecated import deprecated
 from typing_extensions import Self
@@ -507,24 +508,29 @@ class MediaResource(BaseModel):
     url: AnyUrl | None = Field(default=None, description="URL to reach this resource.")
 
     @model_validator(mode="after")
-    def guess_mimetype(self) -> Self:
-        """Guess the mimetype when possible.
+    def data_to_base64(self) -> Self:
+        """If binary data was passed, store the resource as base64 and guess the mimetype when possible.
 
-        In case the model was built passing its content but without a mimetype,
+        In case the model was built passing binary data but without a mimetype,
         we try to guess it using the filetype library. To avoid resource-intense
         operations, we won't load the path or the URL to guess the mimetype.
         """
-        if not self.data or self.mimetype:
+        if not self.data:
             return self
 
         try:
+            # Check if data is already base64 encoded
             decoded_data = base64.b64decode(self.data)
+        except Exception:
+            decoded_data = self.data
+            # Not base64 - encode it
+            self.data = base64.b64encode(self.data)
+
+        if not self.mimetype:
             guess = filetype.guess(decoded_data)
             self.mimetype = guess.mime if guess else None
-        except Exception as e:
-            logging.debug("Data is not base64 encoded, cannot guess mimetype")
-        finally:
-            return self
+
+        return self
 
     @property
     def hash(self) -> str:
@@ -597,7 +603,7 @@ class Node(BaseNode):
     def set_content(self, value: str) -> None:
         """Set the text content of the node.
 
-        Provided for backward compatibility, set self.text instead.
+        Provided for backward compatibility, set self.text_resource instead.
         """
         self.text_resource = MediaResource(text=value)
 
@@ -1096,12 +1102,112 @@ class Document(Node):
         )
 
 
-class ImageDocument(Document, ImageNode):
-    """Data document containing an image."""
+class ImageDocument(Document):
+    """Backward compatible wrapper around Document containing an image."""
+
+    def __init__(self, **kwargs) -> None:
+        image = kwargs.pop("image", None)
+        image_path = kwargs.pop("image_path", None)
+        image_url = kwargs.pop("image_url", None)
+        image_mimetype = kwargs.pop("image_mimetype", None)
+        text_embedding = kwargs.pop("text_embedding", None)
+
+        if image:
+            kwargs["image_resource"] = MediaResource(data=image)
+        elif image_path:
+            kwargs["image_resource"] = MediaResource(path=image_path)
+        elif image_url:
+            kwargs["image_resource"] = MediaResource(url=image_url)
+        else:
+            msg = "ImageDocument constructor requires either image, image_path or image_url."
+            raise ValueError(msg)
+
+        super().__init__(**kwargs)
+
+    @property
+    def image(self) -> str | None:
+        assert self.image_resource
+        if self.image_resource.data:
+            return self.image_resource.data.decode("utf-8")
+        return None
+
+    @image.setter
+    def set_image(self, image: bytes):
+        self.image_resource = MediaResource(data=image)
+
+    @property
+    def image_path(self) -> str | None:
+        assert self.image_resource
+        if self.image_resource.path:
+            return str(self.image_resource.path)
+        return None
+
+    @image_path.setter
+    def set_image_path(self, image_path: str):
+        self.image_resource = MediaResource(path=Path(image_path))
+
+    @property
+    def image_url(self) -> str | None:
+        assert self.image_resource
+        if self.image_resource.url:
+            return str(self.image_resource.url)
+        return None
+
+    @image_url.setter
+    def set_image_url(self, image_url: str):
+        self.image_resource = MediaResource(url=AnyUrl(url=image_url))
+
+    @property
+    def image_mimetype(self) -> str | None:
+        assert self.image_resource
+        return self.image_resource.mimetype
+
+    @image_mimetype.setter
+    def set_image_mimetype(self, image_mimetype: str):
+        assert self.image_resource
+        self.image_resource.mimetype = image_mimetype
+
+    @property
+    def text_embedding(self) -> list[float] | None:
+        if self.text_resource and self.text_resource.embeddings:
+            return self.text_resource.embeddings.get("dense")
+        return None
+
+    @text_embedding.setter
+    def set_text_embedding(self, embeddings: list[float]):
+        if self.text_resource:
+            emb_dict = self.text_resource.embeddings or {}
+            emb_dict["dense"] = embeddings
 
     @classmethod
     def class_name(cls) -> str:
         return "ImageDocument"
+
+    def resolve_image(self, as_base64: bool = False) -> BytesIO:
+        """Resolve an image such that PIL can read it.
+
+        Args:
+            as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
+        """
+        assert self.image_resource
+        if self.image_resource.data is not None:
+            if as_base64:
+                return BytesIO(self.image_resource.data)
+            return BytesIO(base64.b64decode(self.image_resource.data))
+        elif self.image_resource.path is not None:
+            img_bytes = self.image_resource.path.read_bytes()
+            if as_base64:
+                return BytesIO(base64.b64encode(img_bytes))
+            return BytesIO(img_bytes)
+        elif self.image_resource.url is not None:
+            # load image from URL
+            response = requests.get(str(self.image_resource.url))
+            img_bytes = response.content
+            if as_base64:
+                return BytesIO(base64.b64encode(img_bytes))
+            return BytesIO(img_bytes)
+        else:
+            raise ValueError("No image found in the chat message!")
 
 
 @dataclass
