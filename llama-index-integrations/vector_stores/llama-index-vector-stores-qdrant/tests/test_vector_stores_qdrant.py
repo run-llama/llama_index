@@ -7,8 +7,6 @@ from qdrant_client.http.models import (
     PointsList,
     PointStruct,
     Filter,
-    FieldCondition,
-    MatchText,
 )
 
 
@@ -162,32 +160,42 @@ def test_filter_conditions():
     assert filter_or.should[1].key == "category"
     assert filter_or.should[1].match.value == "electronics"
 
-    # Test NOT condition by creating a Filter directly
-    not_filter = Filter(
-        must_not=[
-            FieldCondition(
-                key="content",
-                match=MatchText(text="unwanted text"),
-            )
-        ]
-    )
-    assert not_filter.must_not is not None
-    assert len(not_filter.must_not) == 1
-    assert not_filter.must_not[0].key == "content"
-    assert not_filter.must_not[0].match.text == "unwanted text"
-
-    # Test complex nested condition (AND with NOT)
-    complex_filter = MetadataFilters(
+    # Test NOT condition
+    not_filter = MetadataFilters(
         filters=[
             MetadataFilter(key="category", value="books", operator=FilterOperator.EQ),
-            MetadataFilter(key="price", value=10, operator=FilterOperator.GT),
+        ],
+        condition="not",
+    )
+    filter_not = vector_store._build_subfilter(not_filter)
+    assert filter_not.must_not is not None
+    assert len(filter_not.must_not) == 1
+    assert filter_not.must_not[0].key == "category"
+    assert filter_not.must_not[0].match.value == "books"
+
+    # Test AND with NOT condition
+    and_not_filter = MetadataFilters(
+        filters=[
+            MetadataFilter(key="category", value="books", operator=FilterOperator.EQ),
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(key="price", value=50, operator=FilterOperator.EQ),
+                ],
+                condition="not",
+            ),
         ],
         condition=FilterCondition.AND,
     )
-    filter_complex = vector_store._build_subfilter(complex_filter)
-    assert filter_complex.must is not None
-    assert len(filter_complex.must) == 2
-    assert filter_complex.must[0].key == "category"
-    assert filter_complex.must[0].match.value == "books"
-    assert filter_complex.must[1].key == "price"
-    assert filter_complex.must[1].range.gt == 10
+    filter_and_not = vector_store._build_subfilter(and_not_filter)
+    assert filter_and_not.must is not None
+    assert (
+        len(filter_and_not.must) == 2
+    )  # One for category and one for the nested filter
+    assert filter_and_not.must[0].key == "category"
+    assert filter_and_not.must[0].match.value == "books"
+    # The second must element is a Filter object with must_not condition
+    assert isinstance(filter_and_not.must[1], Filter)
+    assert filter_and_not.must[1].must_not is not None
+    assert len(filter_and_not.must[1].must_not) == 1
+    assert filter_and_not.must[1].must_not[0].key == "price"
+    assert filter_and_not.must[1].must_not[0].match.value == 50
