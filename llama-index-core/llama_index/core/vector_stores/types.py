@@ -334,7 +334,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
         """Get client."""
 
     def move_nodes(self, from_index_id: str, to_index_id: str):
-        raise NotImplementedError("Not implemented yet")
+        pass
 
     def get_nodes(
         self,

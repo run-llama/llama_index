@@ -241,11 +241,10 @@ class ChromaVectorStore(BasePydanticVectorStore):
         return "ChromaVectorStore"
 
     def move_nodes(self, from_index_id: str, to_index_id: str):
-        all_nodes = self._collection.get(where={"__index_id__": from_index_id})
-        ids = all_nodes["ids"]
-        metadatas = [{**m, "__index_id__": to_index_id} for m in all_nodes["metadatas"]]
-        self._collection.update(ids, metadatas=metadatas)
-        print("")
+        all_metadatas = self._collection.get(where={"__index_id__": from_index_id}, include=[IncludeEnum.metadatas])
+        ids = all_metadatas["ids"]
+        updated_metadatas = [{**m, "__index_id__": to_index_id} for m in all_metadatas["metadatas"]]
+        self._collection.update(ids, metadatas=updated_metadatas)
 
     def get_nodes(
         self,
