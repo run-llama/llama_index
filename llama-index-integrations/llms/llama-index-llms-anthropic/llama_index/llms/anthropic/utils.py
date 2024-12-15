@@ -166,7 +166,10 @@ def messages_to_anthropic_messages(
                         if "cache_control" in message.additional_kwargs
                         else TextBlockParam(text=block.text, type="text")
                     )
-                    content.append(content_)
+
+                    # avoid empty text blocks
+                    if content_["text"]:
+                        content.append(content_)
                 elif isinstance(block, ImageBlock):
                     # FUTURE: Claude does not support URLs, so we need to always convert to base64
                     img_bytes = block.resolve_image(as_base64=True).read()
