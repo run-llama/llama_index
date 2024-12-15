@@ -40,7 +40,7 @@ Please ALWAYS start with a Thought.
 
 Please use a valid JSON format for the Action Input. Do NOT do this {{'input': 'hello world', 'num_beams': 5}}.
 
-If this format is used, the user will respond in the following format:
+If this format is used, the tool will respond in the following format:
 
 ```
 Observation: tool response

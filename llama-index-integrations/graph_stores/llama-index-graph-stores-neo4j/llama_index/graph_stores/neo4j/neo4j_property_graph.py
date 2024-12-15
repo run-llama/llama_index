@@ -111,6 +111,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         password (str): The password for the Neo4j database.
         url (str): The URL for the Neo4j database.
         database (Optional[str]): The name of the database to connect to. Defaults to "neo4j".
+        timeout (Optional[float]): The timeout for transactions in seconds.
+        Useful for terminating long-running queries.
+        By default, there is no timeout set.
 
     Examples:
         `pip install llama-index-graph-stores-neo4j`
@@ -152,6 +155,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         sanitize_query_output: bool = True,
         enhanced_schema: bool = False,
         create_indexes: bool = True,
+        timeout: Optional[float] = None,
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
@@ -169,6 +173,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             **neo4j_kwargs,
         )
         self._database = database
+        self._timeout = timeout
         self.structured_schema = {}
         if refresh_schema:
             self.refresh_schema()
@@ -592,7 +597,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         param_map = param_map or {}
         try:
             data, _, _ = self._driver.execute_query(
-                query, database_=self._database, parameters_=param_map
+                neo4j.Query(text=query, timeout=self._timeout),
+                database_=self._database,
+                parameters_=param_map,
             )
             full_result = [d.data() for d in data]
 
@@ -620,7 +627,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 raise
         # Fallback to allow implicit transactions
         with self._driver.session(database=self._database) as session:
-            data = session.run(neo4j.Query(text=query), param_map)
+            data = session.run(
+                neo4j.Query(text=query, timeout=self._timeout), param_map
+            )
             full_result = [d.data() for d in data]
 
             if self.sanitize_query_output:
