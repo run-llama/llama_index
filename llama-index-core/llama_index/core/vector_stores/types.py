@@ -88,6 +88,7 @@ class FilterCondition(str, Enum):
     # TODO add more conditions
     AND = "and"
     OR = "or"
+    NOT = "not"  # negates the filter condition
 
 
 class MetadataFilter(BaseModel):
