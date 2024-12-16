@@ -17,10 +17,8 @@ class CogneeGraphRAG(GraphRAG):
         llm_api_key,
         graph_db_provider,
         vector_db_provider,
-        db_provider,
-        db_name,
-        graphistry_username = None,
-        graphistry_password = None,
+        relational_db_provider,
+        db_name
     ):
 
         cognee.config.set_llm_config({"llm_api_key": llm_api_key})
@@ -29,13 +27,8 @@ class CogneeGraphRAG(GraphRAG):
             {"vector_db_provider": vector_db_provider}
         )
         cognee.config.set_relational_db_config(
-            {"db_provider": db_provider, "db_name": db_name}
+            {"db_provider": relational_db_provider, "db_name": db_name}
         )
-
-        if graphistry_password and graphistry_username:
-            cognee.config.set_graphistry_config(
-                {"username": graphistry_username, "password": graphistry_password}
-            )
 
         cognee.config.set_graph_database_provider(graph_db_provider)
 
@@ -78,19 +71,24 @@ class CogneeGraphRAG(GraphRAG):
         datasets = await cognee.modules.data.methods.get_datasets_by_name(dataset_names, user.id)
         await cognee.cognify(datasets, user)
 
-    async def get_graph_url(self) -> str:
+    async def get_graph_url(self, graphistry_password, graphistry_username) -> str:
         """Retrieve the URL or endpoint for visualizing or interacting with the graph.
 
         Returns:
             str: The URL endpoint of the graph.
         """
+        if graphistry_password and graphistry_username:
+            cognee.config.set_graphistry_config(
+                {"username": graphistry_username, "password": graphistry_password}
+            )
+
         from cognee.shared.utils import render_graph
         from cognee.infrastructure.databases.graph import get_graph_engine
         import graphistry
 
         graphistry.login(
-            username=os.getenv("GRAPHISTRY_USERNAME"),
-            password=os.getenv("GRAPHISTRY_PASSWORD"),
+            username=graphistry_username,
+            password=graphistry_password,
         )
         graph_engine = await get_graph_engine()
 

@@ -1,7 +1,22 @@
 from abc import abstractmethod
 from typing import Protocol
 
+# NOTE: This is a bare-bone suggestion for an abstract protocol to define GraphRAG for llama-index
+# This should be expanded upon and integrated to llama-index-core to support multiple different GraphRAG
+# libraries in the future
 class GraphRAG(Protocol):
+    """Abstract graph RAG protocol.
+
+        This protocol defines the interface for a graphRAG, which is responsible
+        for adding, storing, processing and retrieving information from knowledge graphs.
+
+        Attributes:
+            llm_api_key: str: Api key for desired llm.
+            graph_db_provider: str: The graph database provider.
+            vector_db_provider: str: The vector database provider.
+            relational_db_provider: str: The relational database provider.
+            db_name: str: The name of the databases.
+        """
     @abstractmethod
     async def add(self, data, dataset_name):
         """Add data to the specified dataset.
@@ -19,15 +34,6 @@ class GraphRAG(Protocol):
 
         Args:
             dataset_name (str): The dataset name to process.
-        """
-        pass
-
-    @abstractmethod
-    async def get_graph_url(self):
-        """Retrieve the URL or endpoint for visualizing or interacting with the graph.
-
-        Returns:
-            str: The URL endpoint of the graph.
         """
         pass
 
