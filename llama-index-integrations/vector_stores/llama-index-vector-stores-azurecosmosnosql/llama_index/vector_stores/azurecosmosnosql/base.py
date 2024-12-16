@@ -288,7 +288,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                 self._id_key: node.node_id,
                 self._embedding_key: node.get_embedding(),
                 self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
-                self._metadata_key: metadata
+                self._metadata_key: metadata,
             }
             data_to_insert.append(entry)
             ids.append(node.node_id)
