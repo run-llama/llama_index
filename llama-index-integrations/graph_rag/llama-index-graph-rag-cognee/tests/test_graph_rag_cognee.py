@@ -8,10 +8,6 @@ from llama_index.graph_rag.cognee import CogneeGraphRAG
 
 
 async def test_graph_rag_cognee():
-    # Clean all data from previous runs
-    await cognee.prune.prune_data()
-    await cognee.prune.prune_system(metadata=True)
-
     # Gather documents to add to GraphRAG
     news = pd.read_csv(
         "https://raw.githubusercontent.com/tomasonjo/blog-datasets/main/news_articles.csv"
@@ -46,6 +42,10 @@ async def test_graph_rag_cognee():
     print("\n\nRelated nodes are:\n")
     for result in search_results:
         print(f"{result}\n")
+
+    # Clean all data from previous runs
+    await cognee.prune.prune_data()
+    await cognee.prune.prune_system(metadata=True)
 
 
 if __name__ == "__main__":

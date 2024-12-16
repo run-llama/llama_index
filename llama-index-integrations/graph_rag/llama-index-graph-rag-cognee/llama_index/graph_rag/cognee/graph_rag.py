@@ -23,8 +23,7 @@ class CogneeGraphRAG(GraphRAG):
         graphistry_password = None,
     ):
 
-        cognee.config.set_llm_api_key(llm_api_key)
-        os.environ["OPENAI_API_KEY"]=llm_api_key
+        cognee.config.set_llm_config({"llm_api_key": llm_api_key})
 
         cognee.config.set_vector_db_config(
             {"vector_db_provider": vector_db_provider}
