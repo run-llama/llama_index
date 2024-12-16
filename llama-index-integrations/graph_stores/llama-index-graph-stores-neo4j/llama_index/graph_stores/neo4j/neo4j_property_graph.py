@@ -874,11 +874,14 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 elif prop_type == "LIST":
                     with_clauses.append(
                         f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "
-                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`"
+                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`, "
+                        # Get first 3 sub-elements of the first element as sample values
+                        f"collect(n.`{prop_name}`)[0][..3] AS `{prop_name}_values`"
                     )
                     return_clauses.append(
                         f"min_size: `{prop_name}_size_min`, "
-                        f"max_size: `{prop_name}_size_max`"
+                        f"max_size: `{prop_name}_size_max`, "
+                        f"values:`{prop_name}_values`"
                     )
                 elif prop_type in ["BOOLEAN", "POINT", "DURATION"]:
                     continue
@@ -951,7 +954,12 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                                 if prop["values"]
                                 else ""
                             )
-
+                    elif prop["type"] == "TEXT":
+                        example = (
+                            f'Example: "{clean_string_values(prop["values"][0])}"'
+                            if prop["values"]
+                            else ""
+                        )
                     elif prop["type"] in [
                         "INTEGER",
                         "FLOAT",
