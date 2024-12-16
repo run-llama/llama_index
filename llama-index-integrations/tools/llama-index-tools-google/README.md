@@ -5,6 +5,14 @@
 - you need to enable each of the below services in your google cloud console, under a same API key for a service, in
   order to use them.
 
+### Quick Start:
+
+```python
+from llama_index.tools.google import GmailToolSpec
+from llama_index.tools.google import GoogleCalendarToolSpec
+from llama_index.tools.google import GoogleSearchToolSpec
+```
+
 #### [custom search service](https://developers.google.com/custom-search/v1/overview)
 
 ```python
