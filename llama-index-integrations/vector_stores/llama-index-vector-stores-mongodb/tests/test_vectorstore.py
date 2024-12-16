@@ -1,15 +1,15 @@
 import os
 from time import sleep
-import pytest
 from typing import List
 
+import pytest
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.vector_stores.types import (
-    VectorStoreQuery,
+    FilterCondition,
+    FilterOperator,
     MetadataFilter,
     MetadataFilters,
-    FilterOperator,
-    FilterCondition,
+    VectorStoreQuery,
     VectorStoreQueryMode,
 )
 from llama_index.embeddings.openai import OpenAIEmbedding
@@ -20,7 +20,7 @@ from .conftest import lock
 
 def test_documents(documents: List[Document]) -> None:
     """Sanity check essay was found and documents loaded."""
-    assert len(documents) == 25
+    assert len(documents) == 23
     assert isinstance(documents[0], Document)
 
 

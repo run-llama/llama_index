@@ -111,6 +111,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         password (str): The password for the Neo4j database.
         url (str): The URL for the Neo4j database.
         database (Optional[str]): The name of the database to connect to. Defaults to "neo4j".
+        timeout (Optional[float]): The timeout for transactions in seconds.
+        Useful for terminating long-running queries.
+        By default, there is no timeout set.
 
     Examples:
         `pip install llama-index-graph-stores-neo4j`
@@ -152,19 +155,25 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         sanitize_query_output: bool = True,
         enhanced_schema: bool = False,
         create_indexes: bool = True,
+        timeout: Optional[float] = None,
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
         self.enhanced_schema = enhanced_schema
         self._driver = neo4j.GraphDatabase.driver(
-            url, auth=(username, password), **neo4j_kwargs
+            url,
+            auth=(username, password),
+            notifications_min_severity="OFF",
+            **neo4j_kwargs,
         )
         self._async_driver = neo4j.AsyncGraphDatabase.driver(
             url,
             auth=(username, password),
+            notifications_min_severity="OFF",
             **neo4j_kwargs,
         )
         self._database = database
+        self._timeout = timeout
         self.structured_schema = {}
         if refresh_schema:
             self.refresh_schema()
@@ -588,7 +597,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         param_map = param_map or {}
         try:
             data, _, _ = self._driver.execute_query(
-                query, database_=self._database, parameters_=param_map
+                neo4j.Query(text=query, timeout=self._timeout),
+                database_=self._database,
+                parameters_=param_map,
             )
             full_result = [d.data() for d in data]
 
@@ -616,7 +627,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 raise
         # Fallback to allow implicit transactions
         with self._driver.session(database=self._database) as session:
-            data = session.run(neo4j.Query(text=query), param_map)
+            data = session.run(
+                neo4j.Query(text=query, timeout=self._timeout), param_map
+            )
             full_result = [d.data() for d in data]
 
             if self.sanitize_query_output:
@@ -871,15 +884,37 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
         return self.structured_schema
 
-    def get_schema_str(self, refresh: bool = False) -> str:
+    def get_schema_str(
+        self,
+        refresh: bool = False,
+        exclude_types: List[str] = [],
+        include_types: List[str] = [],
+    ) -> str:
         schema = self.get_schema(refresh=refresh)
+
+        def filter_func(x: str) -> bool:
+            return x in include_types if include_types else x not in exclude_types
+
+        filtered_schema: Dict[str, Any] = {
+            "node_props": {
+                k: v for k, v in schema.get("node_props", {}).items() if filter_func(k)
+            },
+            "rel_props": {
+                k: v for k, v in schema.get("rel_props", {}).items() if filter_func(k)
+            },
+            "relationships": [
+                r
+                for r in schema.get("relationships", [])
+                if all(filter_func(r[t]) for t in ["start", "end", "type"])
+            ],
+        }
 
         formatted_node_props = []
         formatted_rel_props = []
 
         if self.enhanced_schema:
             # Enhanced formatting for nodes
-            for node_type, properties in schema["node_props"].items():
+            for node_type, properties in filtered_schema["node_props"].items():
                 formatted_node_props.append(f"- **{node_type}**")
                 for prop in properties:
                     example = ""
@@ -925,7 +960,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     )
 
             # Enhanced formatting for relationships
-            for rel_type, properties in schema["rel_props"].items():
+            for rel_type, properties in filtered_schema["rel_props"].items():
                 formatted_rel_props.append(f"- **{rel_type}**")
                 for prop in properties:
                     example = ""
@@ -970,14 +1005,14 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     )
         else:
             # Format node properties
-            for label, props in schema["node_props"].items():
+            for label, props in filtered_schema["node_props"].items():
                 props_str = ", ".join(
                     [f"{prop['property']}: {prop['type']}" for prop in props]
                 )
                 formatted_node_props.append(f"{label} {{{props_str}}}")
 
             # Format relationship properties using structured_schema
-            for type, props in schema["rel_props"].items():
+            for type, props in filtered_schema["rel_props"].items():
                 props_str = ", ".join(
                     [f"{prop['property']}: {prop['type']}" for prop in props]
                 )
@@ -986,7 +1021,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         # Format relationships
         formatted_rels = [
             f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
-            for el in schema["relationships"]
+            for el in filtered_schema["relationships"]
         ]
 
         return "\n".join(
