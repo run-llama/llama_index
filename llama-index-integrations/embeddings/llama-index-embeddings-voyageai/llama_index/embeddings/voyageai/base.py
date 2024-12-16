@@ -87,9 +87,7 @@ class VoyageEmbedding(MultiModalEmbedding):
     def _texts_to_content(cls, input_strs: List[str]) -> List[dict]:
         return [{"content": [{"type": "text", "text": x}]} for x in input_strs]
 
-    def _image_to_content(
-        self, image_input: Union[str, Path, BytesIO]
-    ) -> Union[str, Image]:
+    def _image_to_content(self, image_input: Union[str, Path, BytesIO]) -> Image:
         """Convert an image to a base64 Data URL."""
         if isinstance(image_input, (str, Path)):
             image = Image.open(str(image_input))
