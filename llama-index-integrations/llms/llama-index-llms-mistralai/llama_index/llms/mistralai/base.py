@@ -68,7 +68,13 @@ def to_mistral_chatmessage(
         elif m.role == MessageRole.SYSTEM:
             new_messages.append(SystemMessage(content=m.content))
         elif m.role == MessageRole.TOOL or m.role == MessageRole.FUNCTION:
-            new_messages.append(ToolMessage(content=m.content))
+            new_messages.append(
+                ToolMessage(
+                    content=m.content,
+                    tool_call_id=m.additional_kwargs.get("tool_call_id"),
+                    name=m.additional_kwargs.get("name"),
+                )
+            )
         else:
             raise ValueError(f"Unsupported message role {m.role}")
 
