@@ -8,6 +8,7 @@
 ### Quick Start:
 
 ```python
+# pip install llama-index-tools-google
 from llama_index.tools.google import GmailToolSpec
 from llama_index.tools.google import GoogleCalendarToolSpec
 from llama_index.tools.google import GoogleSearchToolSpec
