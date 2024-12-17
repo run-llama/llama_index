@@ -196,7 +196,7 @@ class UnstructuredReader(BaseReader):
 
         text_chunks = [" ".join(str(el).split()) for el in elements]
         metadata = _merge_metadata(elements[0])
-        filename = metadata["filename"]
+        filename = metadata.get("file_path", None) or metadata["filename"]
         source = Document(
             text="\n\n".join(text_chunks),
             extra_info=metadata,

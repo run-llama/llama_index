@@ -18,11 +18,6 @@ from box_sdk_gen import (
     SearchResults,
 )
 
-# from llama_index.readers.box.BoxAPI.box_ai_extract_beta import (
-#     AiExtractManager,
-#     CreateAiExtractItems,
-# )
-
 logger = logging.getLogger(__name__)
 
 
@@ -387,18 +382,8 @@ def search_files(
     recent_updater_user_ids: Optional[List[str]] = None,
     ancestor_folder_ids: Optional[List[str]] = None,
     content_types: Optional[List[SearchForContentContentTypes]] = None,
-    # type: Optional[SearchForContentType] = None,
-    # trash_content: Optional[SearchForContentTrashContent] = None,
-    # mdfilters: Optional[List[MetadataFilter]] = None,
-    # sort: Optional[SearchForContentSort] = None,
-    # direction: Optional[SearchForContentDirection] = None,
     limit: Optional[int] = None,
-    # include_recent_shared_links: Optional[bool] = None,
-    # fields: Optional[List[str]] = None,
     offset: Optional[int] = None,
-    # deleted_user_ids: Optional[List[str]] = None,
-    # deleted_at_range: Optional[List[str]] = None,
-    # extra_headers: Optional[Dict[str, Optional[str]]] = None,
 ) -> List[File]:
     """
     Searches for files in Box based on a query string.
@@ -444,11 +429,8 @@ def search_files_by_metadata(
     ancestor_folder_id: str,
     query: Optional[str] = None,
     query_params: Optional[Dict[str, str]] = None,
-    # order_by: Optional[List[SearchByMetadataQueryOrderBy]] = None,
     limit: Optional[int] = None,
     marker: Optional[str] = None,
-    # fields: Optional[List[str]] = None,
-    # extra_headers: Optional[Dict[str, Optional[str]]] = None,
 ) -> List[File]:
     """
     Searches for files in Box based on metadata filters.
@@ -477,9 +459,6 @@ def search_files_by_metadata(
     except BoxAPIError as e:
         logger.error(f"An error occurred while searching for files: {e}", exc_info=True)
         return []
-
-    # return only files from the entries
-    return [file for file in search_results.entries if file.type == "file"]
 
     # return only files from the entries
     return [file for file in search_results.entries if file.type == "file"]

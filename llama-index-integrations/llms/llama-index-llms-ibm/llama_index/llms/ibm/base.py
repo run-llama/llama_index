@@ -35,6 +35,7 @@ from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_ca
 from llama_index.core.base.llms.generic_utils import (
     completion_to_chat_decorator,
     stream_completion_to_chat_decorator,
+    acompletion_to_chat_decorator,
 )
 
 from llama_index.core.llms.utils import parse_partial_json
@@ -354,6 +355,8 @@ class WatsonxLLM(FunctionCallingLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         params, generation_kwargs = self._split_generation_params(kwargs)
+        if "use_completions" in generation_kwargs:
+            del generation_kwargs["use_completions"]
         response = self._model.generate(
             prompt=prompt,
             params=self._text_generation_params or params,
@@ -369,7 +372,20 @@ class WatsonxLLM(FunctionCallingLLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        return self.complete(prompt, formatted=formatted, **kwargs)
+        params, generation_kwargs = self._split_generation_params(kwargs)
+        if "use_completions" in generation_kwargs:
+            del generation_kwargs["use_completions"]
+
+        response = await self._model.agenerate(
+            prompt=prompt,
+            params=self._text_generation_params or params,
+            **generation_kwargs,
+        )
+
+        return CompletionResponse(
+            text=self._model._return_guardrails_stats(response).get("generated_text"),
+            raw=response,
+        )
 
     @llm_completion_callback()
     def stream_complete(
@@ -441,13 +457,40 @@ class WatsonxLLM(FunctionCallingLLM):
 
         return chat_fn(messages, **kwargs)
 
+    async def _achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        message_dicts = [to_watsonx_message_dict(message) for message in messages]
+
+        params, generation_kwargs = self._split_chat_generation_params(kwargs)
+        response = await self._model.achat(
+            messages=message_dicts,
+            params=params,
+            tools=generation_kwargs.get("tools"),
+            tool_choice=generation_kwargs.get("tool_choice"),
+            tool_choice_option=generation_kwargs.get("tool_choice_option"),
+        )
+
+        wx_message = response["choices"][0]["message"]
+        message = from_watsonx_message(wx_message)
+
+        return ChatResponse(
+            message=message,
+            raw=response,
+        )
+
     @llm_chat_callback()
     async def achat(
         self,
         messages: Sequence[ChatMessage],
         **kwargs: Any,
     ) -> ChatResponse:
-        return self.chat(messages, **kwargs)
+        if kwargs.get("use_completions"):
+            achat_fn = acompletion_to_chat_decorator(self.acomplete)
+        else:
+            achat_fn = self._achat
+
+        return await achat_fn(messages, **kwargs)
 
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any

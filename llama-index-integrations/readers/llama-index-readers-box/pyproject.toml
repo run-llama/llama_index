@@ -37,7 +37,7 @@ maintainers = [
 name = "llama-index-readers-box"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

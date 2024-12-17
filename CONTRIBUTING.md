@@ -19,18 +19,21 @@ If you're ready to dive in, here’s a quick setup guide to get you going:
    ```
 4. Install development (and/or docs) dependencies:
    ```bash
-   poetry install --only dev,docs
+   poetry install --only dev,docs --no-root
    ```
-5. Install the package(s) you want to work on:
+5. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
+
    ```bash
    pip install -e llama-index-core
    ```
-   or for specific integrations:
+
+   From there, you can install specific integrations that you want to work on:
+
    ```bash
    pip install -e llama-index-integrations/llms/llama-index-llms-openai
    ```
 
-**That’s it!** If anything seems unclear, scroll down to the [Development Guidelines](#development-guidelines) for more details.
+**That’s it!** If anything seems unclear, scroll down to the [Development Guidelines](#-Development-Guidelines) for more details.
 
 ---
 
@@ -173,7 +176,18 @@ LlamaIndex is organized as a **monorepo**, meaning different packages live withi
    ```
 3. Install dependencies:
    ```bash
-   poetry install --only dev,docs
+   poetry install --only dev,docs --no-root
+   ```
+4. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
+
+   ```bash
+   pip install -e llama-index-core
+   ```
+
+   From there, you can install specific integrations that you want to work on:
+
+   ```bash
+   pip install -e llama-index-integrations/llms/llama-index-llms-openai
    ```
 
 ### Running Tests

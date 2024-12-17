@@ -26,7 +26,7 @@ authors = ["Rodrigo Maldonado <rodrigo.maldonado@pucp.edu.pe>"]
 description = "llama-index llms sambanova cloud and sambastudio integration"
 name = "llama-index-llms-sambanovasystems"
 readme = "README.md"
-version = "0.4.0"
+version = "0.4.3"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

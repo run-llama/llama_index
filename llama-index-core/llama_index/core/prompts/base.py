@@ -67,10 +67,11 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):  # type: ignore[no-red
     kwargs: Dict[str, str]
     output_parser: Optional[BaseOutputParser]
     template_var_mappings: Optional[Dict[str, Any]] = Field(
-        default_factory=dict, description="Template variable mappings (Optional)."
+        default_factory=dict,  # type: ignore
+        description="Template variable mappings (Optional).",
     )
     function_mappings: Optional[Dict[str, AnnotatedCallable]] = Field(
-        default_factory=dict,
+        default_factory=dict,  # type: ignore
         description=(
             "Function mappings (Optional). This is a mapping from template "
             "variable names to functions that take in the current kwargs and "

@@ -420,9 +420,10 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 prefix=ref_doc_id, namespace=self.namespace
             )
             ids_to_delete = list(id_gen)
-            self._pinecone_index.delete(
-                ids=ids_to_delete, namespace=self.namespace, **delete_kwargs
-            )
+            if ids_to_delete:
+                self._pinecone_index.delete(
+                    ids=ids_to_delete, namespace=self.namespace, **delete_kwargs
+                )
 
     def delete_nodes(
         self,

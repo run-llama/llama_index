@@ -27,11 +27,11 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-openrouter"
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-index-llms-openai-like = "^0.3.0"
+llama-index-llms-openai-like = "^0.3.1"
 llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]

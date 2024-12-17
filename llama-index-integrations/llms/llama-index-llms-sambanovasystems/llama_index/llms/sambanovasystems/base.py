@@ -25,7 +25,7 @@ from llama_index.core.base.llms.generic_utils import (
     stream_chat_to_completion_decorator,
     achat_to_completion_decorator,
 )
-from llama_index.core.bridge.pydantic import Field, SecretStr
+from llama_index.core.bridge.pydantic import ConfigDict, Field, SecretStr
 import json
 from requests import Response
 
@@ -121,6 +121,7 @@ class SambaNovaCloud(LLM):
                 top_p = model top p,
                 top_k = model top k,
                 stream_options = include usage to get generation metrics
+                context_window = model context window
             )
     Complete:
         .. code-block:: python
@@ -169,11 +170,13 @@ class SambaNovaCloud(LLM):
         print(metadata_and_usage)
     """
 
-    sambanova_url: str = Field(default_factory=str, description="SambaNova Cloud Url")
-
-    sambanova_api_key: SecretStr = Field(
-        default_factory=str, description="SambaNova Cloud api key"
+    model_config = ConfigDict(
+        protected_namespaces=("pydantic_model_",), arbitrary_types_allowed=True
     )
+
+    sambanova_url: str = Field(description="SambaNova Cloud Url")
+
+    sambanova_api_key: SecretStr = Field(description="SambaNova Cloud api key")
 
     model: str = Field(
         default="Meta-Llama-3.1-8B-Instruct",
@@ -185,6 +188,8 @@ class SambaNovaCloud(LLM):
         description="Whether to use streaming handler when using non streaming methods",
     )
 
+    context_window: int = Field(default=4096, description="context window")
+
     max_tokens: int = Field(default=1024, description="max tokens to generate")
 
     temperature: float = Field(default=0.7, description="model temperature")
@@ -194,7 +199,7 @@ class SambaNovaCloud(LLM):
     top_k: Optional[int] = Field(default=None, description="model top k")
 
     stream_options: dict = Field(
-        default={"include_usage": True},
+        default_factory=lambda: {"include_usage": True},
         description="stream options, include usage to get generation metrics",
     )
 
@@ -205,7 +210,7 @@ class SambaNovaCloud(LLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=None,
+            context_window=self.context_window,
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
@@ -214,13 +219,13 @@ class SambaNovaCloud(LLM):
     def __init__(self, **kwargs: Any) -> None:
         """Init and validate environment variables."""
         kwargs["sambanova_url"] = get_from_param_or_env(
-            "url",
-            kwargs.get("sambanova_url"),
+            "sambanova_api_key",
+            kwargs.get("sambanova_api_key"),
             "SAMBANOVA_URL",
             default="https://api.sambanova.ai/v1/chat/completions",
         )
         kwargs["sambanova_api_key"] = get_from_param_or_env(
-            "api_key", kwargs.get("sambanova_api_key"), "SAMBANOVA_API_KEY"
+            "sambanova_api_key", kwargs.get("sambanova_api_key"), "SAMBANOVA_API_KEY"
         )
         super().__init__(**kwargs)
 
@@ -659,6 +664,7 @@ class SambaStudio(LLM):
                 model = model or expert name (set for CoE endpoints),
                 max_tokens = max number of tokens to generate,
                 temperature = model temperature,
+                context_window = model context window,
                 top_p = model top p,
                 top_k = model top k,
                 do_sample = whether to do sample
@@ -679,6 +685,8 @@ class SambaStudio(LLM):
             Whether to use streaming
         max_tokens: inthandler when using non streaming methods
             max tokens to generate
+        context_window: int
+            model context window
         temperature: float
             model temperature
         top_p: float
@@ -715,6 +723,7 @@ class SambaStudio(LLM):
                 model = model or expert name (set for CoE endpoints),
                 max_tokens = max number of tokens to generate,
                 temperature = model temperature,
+                context_window = model context window,
                 top_p = model top p,
                 top_k = model top k,
                 do_sample = whether to do sample
@@ -773,22 +782,24 @@ class SambaStudio(LLM):
         print(metadata_and_usage)
     """
 
-    sambastudio_url: str = Field(default_factory=str, description="SambaStudio Url")
-
-    sambastudio_api_key: SecretStr = Field(
-        default_factory=str, description="SambaStudio api key"
+    model_config = ConfigDict(
+        protected_namespaces=("pydantic_model_",), arbitrary_types_allowed=True
     )
 
+    sambastudio_url: str = Field(description="SambaStudio Url")
+
+    sambastudio_api_key: SecretStr = Field(description="SambaStudio api key")
+
     base_url: str = Field(
-        default_factory=str, exclude=True, description="SambaStudio non streaming Url"
+        default="", exclude=True, description="SambaStudio non streaming Url"
     )
 
     streaming_url: str = Field(
-        default_factory=str, exclude=True, description="SambaStudio streaming Url"
+        default="", exclude=True, description="SambaStudio streaming Url"
     )
 
     model: Optional[str] = Field(
-        default_factory=Optional[str],
+        default=None,
         description="The name of the model or expert to use (for CoE endpoints)",
     )
 
@@ -796,6 +807,8 @@ class SambaStudio(LLM):
         default=False,
         description="Whether to use streaming handler when using non streaming methods",
     )
+
+    context_window: int = Field(default=4096, description="context window")
 
     max_tokens: int = Field(default=1024, description="max tokens to generate")
 
@@ -815,7 +828,7 @@ class SambaStudio(LLM):
     )
 
     stream_options: dict = Field(
-        default={"include_usage": True},
+        default_factory=lambda: {"include_usage": True},
         description="stream options, include usage to get generation metrics",
     )
 
@@ -840,7 +853,7 @@ class SambaStudio(LLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=None,
+            context_window=self.context_window,
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
@@ -849,12 +862,14 @@ class SambaStudio(LLM):
     def __init__(self, **kwargs: Any) -> None:
         """Init and validate environment variables."""
         kwargs["sambastudio_url"] = get_from_param_or_env(
-            "url", kwargs.get("sambastudio_url"), "SAMBASTUDIO_URL"
+            "sambastudio_url", kwargs.get("sambastudio_url"), "SAMBASTUDIO_URL"
         )
         kwargs["sambastudio_api_key"] = get_from_param_or_env(
-            "api_key", kwargs.get("sambastudio_api_key"), "SAMBASTUDIO_API_KEY"
+            "sambastudio_api_key",
+            kwargs.get("sambastudio_api_key"),
+            "SAMBASTUDIO_API_KEY",
         )
-        kwargs["base_url"], kwargs["streaming_url"] = self._get_sambastudio_urls(
+        kwargs["sambastudio_url"], kwargs["streaming_url"] = self._get_sambastudio_urls(
             kwargs["sambastudio_url"]
         )
         super().__init__(**kwargs)
@@ -905,7 +920,7 @@ class SambaStudio(LLM):
             base_url: string with url to do non streaming calls
             streaming_url: string with url to do streaming calls
         """
-        if "openai" in url:
+        if "chat/completions" in url:
             base_url = url
             stream_url = url
         else:
@@ -937,7 +952,7 @@ class SambaStudio(LLM):
             A request Response object
         """
         # create request payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             messages_dicts = _create_message_dicts(messages)
             data = {
                 "messages": messages_dicts,
@@ -1045,7 +1060,7 @@ class SambaStudio(LLM):
             A request Response object
         """
         # create request payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             messages_dicts = _create_message_dicts(messages)
             data = {
                 "messages": messages_dicts,
@@ -1163,7 +1178,7 @@ class SambaStudio(LLM):
             )
 
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             content = response_dict["choices"][0]["message"]["content"]
             response_metadata = {
                 "finish_reason": response_dict["choices"][0]["finish_reason"],
@@ -1213,7 +1228,7 @@ class SambaStudio(LLM):
             )
 
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             finish_reason = ""
             content = ""
             client = sseclient.SSEClient(response)
@@ -1412,7 +1427,7 @@ class SambaStudio(LLM):
             generation: a ChatMessage with model generation
         """
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             content = response_dict["choices"][0]["message"]["content"]
             response_metadata = {
                 "finish_reason": response_dict["choices"][0]["finish_reason"],
