@@ -247,6 +247,7 @@ class Workflow(metaclass=WorkflowMeta):
                                 new_ev = await instrumented_step(**kwargs)
                                 break  # exit the retrying loop
                             except WorkflowDone:
+                                await ctx.remove_from_in_progress(name=name, ev=ev)
                                 raise
                             except Exception as e:
                                 if config.retry_policy is None:
@@ -277,6 +278,7 @@ class Workflow(metaclass=WorkflowMeta):
                                 None, run_task
                             )
                         except WorkflowDone:
+                            await ctx.remove_from_in_progress(name=name, ev=ev)
                             raise
                         except Exception as e:
                             raise WorkflowRuntimeError(
