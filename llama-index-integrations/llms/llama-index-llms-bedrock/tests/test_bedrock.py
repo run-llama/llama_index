@@ -158,13 +158,25 @@ def test_model_basic(
     bedrock_stubber.add_response(
         "invoke_model",
         get_invoke_model_response(response_body),
-        {"body": complete_request, "modelId": model, "guardrailIdentifier": "test", "guardrailVersion": "test", "trace": "ENABLED"},
+        {
+            "body": complete_request,
+            "modelId": model,
+            "guardrailIdentifier": "test",
+            "guardrailVersion": "test",
+            "trace": "ENABLED",
+        },
     )
     # response for llm.chat()
     bedrock_stubber.add_response(
         "invoke_model",
         get_invoke_model_response(response_body),
-        {"body": chat_request, "modelId": model, "guardrailIdentifier": "test", "guardrailVersion": "test", "trace": "ENABLED"},
+        {
+            "body": chat_request,
+            "modelId": model,
+            "guardrailIdentifier": "test",
+            "guardrailVersion": "test",
+            "trace": "ENABLED",
+        },
     )
 
     bedrock_stubber.activate()

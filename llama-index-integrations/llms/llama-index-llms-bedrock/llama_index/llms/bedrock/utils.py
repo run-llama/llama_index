@@ -310,7 +310,7 @@ def completion_with_retry(
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
         if stream:
-            if (guardrail_identifier == None or guardrail_version == None):
+            if guardrail_identifier is None or guardrail_version is None:
                 return client.invoke_model_with_response_stream(
                     modelId=model,
                     body=request_body,
@@ -321,21 +321,18 @@ def completion_with_retry(
                     body=request_body,
                     guardrailIdentifier=guardrail_identifier,
                     guardrailVersion=guardrail_version,
-                    trace=trace
+                    trace=trace,
                 )
         else:
-            if (guardrail_identifier == None or guardrail_version == None):
-                return client.invoke_model(
-                    modelId=model,
-                    body=request_body
-                )
+            if guardrail_identifier is None or guardrail_version is None:
+                return client.invoke_model(modelId=model, body=request_body)
             else:
                 return client.invoke_model(
                     modelId=model,
                     body=request_body,
                     guardrailIdentifier=guardrail_identifier,
                     guardrailVersion=guardrail_version,
-                    trace=trace
+                    trace=trace,
                 )
 
     return _completion_with_retry(**kwargs)

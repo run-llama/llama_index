@@ -327,13 +327,23 @@ def converse_with_retry(
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
     if guardrail_identifier and guardrail_version:
-        converse_kwargs['guardrailConfig'] = {}
+        converse_kwargs["guardrailConfig"] = {}
         converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
         converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
         if trace:
             converse_kwargs["guardrailConfig"]["trace"] = trace
     converse_kwargs = join_two_dicts(
-        converse_kwargs, {k: v for k, v in kwargs.items() if (k != "tools" or k != "guardrail_identifier" or k != "guardrail_version" or k != "trace")}
+        converse_kwargs,
+        {
+            k: v
+            for k, v in kwargs.items()
+            if (
+                k != "tools"
+                or k != "guardrail_identifier"
+                or k != "guardrail_version"
+                or k != "trace"
+            )
+        },
     )
 
     @retry_decorator
@@ -375,13 +385,23 @@ async def converse_with_retry_async(
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
     if guardrail_identifier and guardrail_version:
-        converse_kwargs['guardrailConfig'] = {}
+        converse_kwargs["guardrailConfig"] = {}
         converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
         converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
         if trace:
             converse_kwargs["guardrailConfig"]["trace"] = trace
     converse_kwargs = join_two_dicts(
-        converse_kwargs, {k: v for k, v in kwargs.items() if (k != "tools" or k != "guardrail_identifier" or k != "guardrail_version" or k != "trace")}
+        converse_kwargs,
+        {
+            k: v
+            for k, v in kwargs.items()
+            if (
+                k != "tools"
+                or k != "guardrail_identifier"
+                or k != "guardrail_version"
+                or k != "trace"
+            )
+        },
     )
 
     ## NOTE: Returning the generator directly from converse_stream doesn't work
