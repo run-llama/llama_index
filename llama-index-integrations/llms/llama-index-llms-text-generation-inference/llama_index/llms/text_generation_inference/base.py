@@ -38,7 +38,7 @@ from llama_index.llms.text_generation_inference.utils import (
     to_tgi_messages,
     force_single_tool_call,
     resolve_tgi_function_call,
-    get_max_input_length,
+    get_max_total_tokens,
     resolve_tool_choice,
 )
 from text_generation import (
@@ -101,7 +101,10 @@ class TextGenerationInference(FunctionCallingLLM):
 
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
-        description=("Maximum input length in tokens returned from TGI endpoint"),
+        description=(
+            LLMMetadata.model_fields["context_window"].description
+            + " Maximum total tokens returned from TGI endpoint."
+        ),
     )
     is_chat_model: bool = Field(
         default=True,
@@ -155,7 +158,7 @@ class TextGenerationInference(FunctionCallingLLM):
             logger.warning(f"TGI client has no function call support: {e}")
             is_function_calling_model = False
 
-        context_window = get_max_input_length(model_url) or DEFAULT_CONTEXT_WINDOW
+        context_window = get_max_total_tokens(model_url) or DEFAULT_CONTEXT_WINDOW
 
         super().__init__(
             context_window=context_window,

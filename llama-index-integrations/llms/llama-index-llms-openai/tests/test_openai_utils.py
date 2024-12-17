@@ -16,8 +16,10 @@ from openai.types.completion_choice import Logprobs
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
+    ImageBlock,
     LogProb,
     MessageRole,
+    TextBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.llms.openai import OpenAI
@@ -61,11 +63,11 @@ def openi_message_dicts_with_function_calling() -> List[ChatCompletionMessagePar
     return [
         {
             "role": "user",
-            "content": [{"type": "text", "text": "test question with functions"}],
+            "content": "test question with functions",
         },
         {
             "role": "assistant",
-            "content": "",
+            "content": None,
             "function_call": {
                 "name": "get_current_weather",
                 "arguments": '{ "location": "Boston, MA"}',
@@ -132,10 +134,10 @@ def test_to_openai_message_dicts_basic_enum() -> None:
         ChatMessage(role=MessageRole.ASSISTANT, content="test answer"),
     ]
     openai_messages = to_openai_message_dicts(
-        chat_messages, supports_content_blocks=True
+        chat_messages,
     )
     assert openai_messages == [
-        {"role": "user", "content": [{"type": "text", "text": "test question"}]},
+        {"role": "user", "content": "test question"},
         {"role": "assistant", "content": "test answer"},
     ]
 
@@ -146,10 +148,10 @@ def test_to_openai_message_dicts_basic_string() -> None:
         ChatMessage(role="assistant", content="test answer"),
     ]
     openai_messages = to_openai_message_dicts(
-        chat_messages, supports_content_blocks=True
+        chat_messages,
     )
     assert openai_messages == [
-        {"role": "user", "content": [{"type": "text", "text": "test question"}]},
+        {"role": "user", "content": "test question"},
         {"role": "assistant", "content": "test answer"},
     ]
 
@@ -159,7 +161,7 @@ def test_to_openai_message_dicts_function_calling(
     openi_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
 ) -> None:
     message_dicts = to_openai_message_dicts(
-        chat_messages_with_function_calling, supports_content_blocks=True
+        chat_messages_with_function_calling,
     )
     assert message_dicts == openi_message_dicts_with_function_calling
 
@@ -224,6 +226,52 @@ def test_to_openai_message_with_pydantic_description() -> None:
             "description": "Pydantic description.",
             "parameters": TestOutput.schema(),
         },
+    }
+
+
+def test_to_openai_message_dicts_with_content_blocks() -> None:
+    chat_message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            TextBlock(text="test question"),
+            ImageBlock(url="https://example.com/image.jpg"),
+        ],
+    )
+
+    # user messages are converted to blocks
+    openai_message = to_openai_message_dicts([chat_message])[0]
+    assert openai_message == {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "test question"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/image.jpg"},
+            },
+        ],
+    }
+
+    chat_message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            TextBlock(text="test question"),
+            ImageBlock(url="https://example.com/image.jpg"),
+        ],
+    )
+
+    # other messages do not support blocks
+    chat_message = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            TextBlock(text="test question"),
+            ImageBlock(url="https://example.com/image.jpg"),
+        ],
+    )
+
+    openai_message = to_openai_message_dicts([chat_message])[0]
+    assert openai_message == {
+        "role": "assistant",
+        "content": "test question",
     }
 
 
