@@ -1,6 +1,6 @@
 # LlamaIndex Tool - Scrapegraph
 
-This tool integrates [Scrapegraph](https://scrapegraph.ai) with LlamaIndex, providing intelligent web scraping capabilities with structured data extraction.
+This tool integrates [Scrapegraph](https://scrapegraphai.com) with LlamaIndex, providing intelligent web scraping capabilities with structured data extraction.
 
 ## Installation
 
