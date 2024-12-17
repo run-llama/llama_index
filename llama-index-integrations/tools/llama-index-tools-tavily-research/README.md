@@ -20,12 +20,16 @@ Here's an example usage of the TavilyToolSpec.
 
 ```python
 from llama_index.tools.tavily_research import TavilyToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent import FunctionCallingAgent
+from llama_index.llms.openai import OpenAI
 
 tavily_tool = TavilyToolSpec(
     api_key="your-key",
 )
-agent = OpenAIAgent.from_tools(tavily_tool.to_tool_list())
+agent = FunctionCallingAgent.from_tools(
+    tavily_tool.to_tool_list(),
+    llm=OpenAI(model="gpt-4o"),
+)
 
 agent.chat("What happened in the latest Burning Man festival?")
 ```
