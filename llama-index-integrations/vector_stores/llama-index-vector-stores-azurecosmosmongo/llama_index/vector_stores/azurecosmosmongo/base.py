@@ -7,7 +7,6 @@ An index that is built on top of an existing vector store.
 import logging
 import os
 from typing import Any, Dict, List, Optional, cast
-from datetime import date
 
 import pymongo
 from llama_index.core.bridge.pydantic import PrivateAttr

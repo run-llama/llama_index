@@ -5,7 +5,6 @@ An index that is built on top of an existing vector store.
 """
 import logging
 from typing import Any, Optional, Dict, cast, List
-from datetime import date
 
 from azure.identity import ClientSecretCredential
 from azure.cosmos import CosmosClient
