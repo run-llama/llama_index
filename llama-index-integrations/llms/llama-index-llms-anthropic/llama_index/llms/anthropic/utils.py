@@ -12,7 +12,12 @@ from llama_index.core.base.llms.types import (
     TextBlock,
 )
 
-from anthropic.types import MessageParam, TextBlockParam, ImageBlockParam, CacheControlEphemeralParam
+from anthropic.types import (
+    MessageParam,
+    TextBlockParam,
+    ImageBlockParam,
+    CacheControlEphemeralParam,
+)
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
 
@@ -155,9 +160,7 @@ def messages_to_anthropic_messages(
                         TextBlockParam(
                             text=block.text,
                             type="text",
-                            cache_control=CacheControlEphemeralParam(
-                                type="ephemeral"
-                            ),
+                            cache_control=CacheControlEphemeralParam(type="ephemeral"),
                         )
                         if "cache_control" in message.additional_kwargs
                         else TextBlockParam(text=block.text, type="text")
