@@ -34,6 +34,8 @@ DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
 DEFAULT_OPENAI_API_VERSION = ""
 
 O1_MODELS: Dict[str, int] = {
+    "o1": 200000,
+    "o1-2024-12-17": 200000,
     "o1-preview": 128000,
     "o1-preview-2024-09-12": 128000,
     "o1-mini": 128000,
@@ -304,7 +306,7 @@ def to_openai_message_dict(
     # TODO: O1 models do not support system prompts
     if model is not None and model in O1_MODELS:
         if message_dict["role"] == "system":
-            message_dict["role"] = "user"
+            message_dict["role"] = "developer"
 
     # NOTE: openai messages have additional arguments:
     # - function messages have `name`

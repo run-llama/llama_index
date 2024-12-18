@@ -1,5 +1,95 @@
 # ChangeLog
 
+## [2024-12-17]
+
+### `llama-index-core` [0.12.6]
+
+- [bug fix] Ensure that StopEvent gets cleared from Context.\_in_progress["_done"] after a Workflow run (#17300)
+- fix: add a timeout to langchain callback handler (#17296)
+- tweak User vs tool in react prompts (#17273)
+- refact: Refactor Document to be natively multimodal (#17204)
+- fix: make ImageDocument derive from Document, backward compatible (#17259)
+- fix: accept already base64-encoded data in ImageBlock (#17244)
+- fix(metrics): fixed NDCG calculation and updated previous tests (#17236)
+- fix: remove llama-index-legacy dependency in llama-index-core (#17231)
+- Refined the default documentation generation for function tools (#17208)
+
+### `llama-index-embeddings-voyageai` [0.3.3]
+
+- add support for voyageai >=0.3.0 (#17120)
+- Introducting VoyageAI's new multimodal embeddings model (#17261)
+- VoyageAI multimodal embedding, correction (#17284)
+
+### `llama-index-experimental` [0.5.2]
+
+- Fixed import errors for experimental JSONalyzeQueryEngine (#17228)
+
+### `llama-index-grapg-stores-neo4j` [0.4.4]
+
+- Add cypher corrector and allow graph schema filtering (#17223)
+- Add timeout config to neo4j graph (#17267)
+- Add text and embedding type to neo4j enhanced schema (#17289)
+
+### `llama-index-llms-anthropic` [0.6.3]
+
+- add content blocks to anthropic (#17274)
+- Do not send blank content to anthropic (#17278)
+- Update anthropic type imports for v0.41.0 release (#17299)
+- Fix Anthropic tokenizer protocol (fix by Devin) (#17201)
+
+### `llama-index-llms-bedrock` [0.3.3]
+
+- Add Amazon bedrock guardrails (#17281)
+
+### `llama-index-llms-bedrock-converse` [0.4.2]
+
+- Add Amazon bedrock guardrails (#17281)
+
+### `llama-index-llms-gemini` [0.4.1]
+
+- Gemini 2.0 support (#17249)
+
+### `llama-index-llms-mistralai` [0.3.1]
+
+- add tool call id/name to mistral chat messages (#17280)
+
+### `llama-index-llms-nvidia` [0.3.1]
+
+- Adding llama 3.3-70b as function-calling-capable (#17253)
+
+### `llama-index-llms-openai` [0.3.10]
+
+- fix openai message dicts for tool calls (#17254)
+
+### `llama-index-llms-text-generation-inference` [0.3.1]
+
+- Fix: TGI context window (#17252)
+
+### `llama-index-multi-modal-llms-anthropic` [0.3.1]
+
+- handle more response types in anthropic multi modal llms (#17302)
+
+### `llama-index-readers-confluence` [0.3.1]
+
+- Support Confluence cookies (#17276)
+
+### `llama-index-vector-stores-milvus` [0.4.0]
+
+- Parse "milvus_search_config" out of "vector_store_kwargs" (#17221)
+- refactor and optimize milvus code (#17229)
+
+### `llama-index-vector-stores-pinecone` [0.4.2]
+
+- Handle empty retrieved Pinecone index values (#17242)
+
+### `llama-index-vector-stores-qdrant` [0.4.1]
+
+- feat: Add NOT filter condition to MetadataFilter and QdrantVectorStore (#17270)
+
+### `llama-index-vector-stores-weaviate` [1.3.0]
+
+- Add async support to weaviate vector store integration (#17220)
+
 ## [2024-12-09]
 
 ### `llama-index-core` [0.12.5]
@@ -13,6 +103,10 @@
 ### `llama-index-postprocessor-pinecone-native-rerank` [0.1.0]
 
 - feat: integration on pinecone hosted rerankers (#17192)
+
+### `llama-index-tools-scrapegraph` [0.1.0]
+
+- Add Scrapegraph tool integration (#17238)
 
 ### `llama-index-vector-stores-postgres` [0.3.3]
 
