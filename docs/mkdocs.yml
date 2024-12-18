@@ -151,6 +151,7 @@ nav:
           - ./examples/cookbooks/contextual_retrieval.ipynb
           - ./examples/cookbooks/crewai_llamaindex.ipynb
           - ./examples/cookbooks/llama3_cookbook.ipynb
+          - ./examples/cookbooks/llama3_cookbook_gaudi.ipynb
           - ./examples/cookbooks/llama3_cookbook_groq.ipynb
           - ./examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
           - ./examples/cookbooks/mistralai.ipynb
@@ -256,7 +257,6 @@ nav:
           - ./examples/embeddings/nomic.ipynb
           - ./examples/embeddings/nvidia.ipynb
           - ./examples/embeddings/oci_genai.ipynb
-          - ./examples/embeddings/octoai.ipynb
           - ./examples/embeddings/ollama_embedding.ipynb
           - ./examples/embeddings/openvino.ipynb
           - ./examples/embeddings/optimum_intel.ipynb
@@ -312,6 +312,7 @@ nav:
           - ./examples/ingestion/document_management_pipeline.ipynb
           - ./examples/ingestion/ingestion_gdrive.ipynb
           - ./examples/ingestion/parallel_execution_ingestion_pipeline.ipynb
+          - ./examples/ingestion/redis_ingestion_pipeline.ipynb
       - LLMs:
           - ./examples/llm/ai21.ipynb
           - ./examples/llm/alephalpha.ipynb
@@ -384,9 +385,7 @@ nav:
           - ./examples/llm/rungpt.ipynb
           - ./examples/llm/sagemaker_endpoint_llm.ipynb
           - ./examples/llm/sambanovasystems.ipynb
-          - ./examples/llm/solar.ipynb
           - ./examples/llm/together.ipynb
-          - ./examples/llm/unify.ipynb
           - ./examples/llm/upstage.ipynb
           - ./examples/llm/vertex.ipynb
           - ./examples/llm/vicuna.ipynb
@@ -642,7 +641,6 @@ nav:
           - ./examples/vector_stores/LanternAutoRetriever.ipynb
           - ./examples/vector_stores/LanternIndexDemo.ipynb
           - ./examples/vector_stores/LindormDemo.ipynb
-          - ./examples/vector_stores/MetalIndexDemo.ipynb
           - ./examples/vector_stores/MilvusHybridIndexDemo.ipynb
           - ./examples/vector_stores/MilvusIndexDemo.ipynb
           - ./examples/vector_stores/MilvusOperatorFunctionDemo.ipynb
@@ -1647,6 +1645,7 @@ nav:
           - ./api_reference/tools/requests.md
           - ./api_reference/tools/retriever.md
           - ./api_reference/tools/salesforce.md
+          - ./api_reference/tools/scrapegraph.md
           - ./api_reference/tools/shopify.md
           - ./api_reference/tools/slack.md
           - ./api_reference/tools/tavily_research.md
@@ -2308,6 +2307,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-nebius
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-bedrock-rerank
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-pinecone-native-rerank
+            - ../llama-index-integrations/tools/llama-index-tools-scrapegraph
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
