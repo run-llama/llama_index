@@ -36,10 +36,8 @@ load_dotenv()
 
 def _convert_message_to_dict(message: ChatMessage) -> Dict[str, Any]:
     """Converts a ChatMessage to a dictionary with Role / content.
-
     Args:
         message: ChatMessage
-
     Returns:
         messages_dict:  role / content dict
     """
@@ -52,10 +50,8 @@ def _convert_message_to_dict(message: ChatMessage) -> Dict[str, Any]:
 
 def _create_message_dicts(messages: Sequence[ChatMessage]) -> List[Dict[str, Any]]:
     """Converts a list of ChatMessages to a list of dictionaries with Role / content.
-
     Args:
         messages: list of ChatMessages
-
     Returns:
         messages_dicts:  list of role / content dicts
     """
@@ -64,27 +60,28 @@ def _create_message_dicts(messages: Sequence[ChatMessage]) -> List[Dict[str, Any
 
 class SambaNovaCloud(LLM):
     """
-    SambaNova Cloud model.
-
+    SambaNova Cloud models.
     Setup:
         To use, you should have the environment variables:
-        ``SAMBANOVA_URL`` set with your SambaNova Cloud URL.
-        ``SAMBANOVA_API_KEY`` set with your SambaNova Cloud API Key.
-        http://cloud.sambanova.ai/
-
-    Example:
-        .. code-block:: python
-            SambaNovaCloud(
-                sambanova_url = SambaNova cloud endpoint URL,
-                sambanova_api_key = set with your SambaNova cloud API key,
-                model = model name,
-                max_tokens = max number of tokens to generate,
-                temperature = model temperature,
-                top_p = model top p,
-                top_k = model top k,
-                stream_options = include usage to get generation metrics
-            )
-
+        `SAMBANOVA_URL` set with your SambaNova Cloud URL.
+        `SAMBANOVA_API_KEY` set with your SambaNova Cloud API Key.
+        http://cloud.sambanova.ai/.
+        Additionally, download the following packages:
+        `pip install llama-index-llms-sambanovasystems`
+        `pip install sseclient-py`
+    Examples:
+    ```python
+    SambaNovaCloud(
+        sambanova_url = SambaNova cloud endpoint URL,
+        sambanova_api_key = set with your SambaNova cloud API key,
+        model = model name,
+        max_tokens = max number of tokens to generate,
+        temperature = model temperature,
+        top_p = model top p,
+        top_k = model top k,
+        stream_options = include usage to get generation metrics
+    )
+    ```
     Key init args — completion params:
         model: str
             The name of the model to use, e.g., Meta-Llama-3-70B-Instruct.
@@ -100,18 +97,14 @@ class SambaNovaCloud(LLM):
             model top k
         stream_options: dict
             stream options, include usage to get generation metrics
-
     Key init args — client params:
         sambanova_url: str
             SambaNova Cloud Url
         sambanova_api_key: str
             SambaNova Cloud api key
-
     Instantiate:
-        .. code-block:: python
-
+            ```python
             from llama_index.llms.sambanovacloud import SambaNovaCloud
-
             llm = SambaNovaCloud(
                 sambanova_url = SambaNova cloud endpoint URL,
                 sambanova_api_key = set with your SambaNova cloud API key,
@@ -123,21 +116,22 @@ class SambaNovaCloud(LLM):
                 stream_options = include usage to get generation metrics
                 context_window = model context window
             )
+            ```
     Complete:
-        .. code-block:: python
+            ```python
             prompt = "Tell me about Naruto Uzumaki in one sentence"
             response = llm.complete(prompt)
-
+            ```
     Chat:
-        .. code-block:: python
+            ```python
             messages = [
                 ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
                 ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
             ]
             response = llm.chat(messages)
-
+            ```
     Stream:
-        .. code-block:: python
+        ```python
         prompt = "Tell me about Naruto Uzumaki in one sentence"
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
@@ -147,27 +141,26 @@ class SambaNovaCloud(LLM):
             print(chunk.text)
         for chunk in llm.stream_chat(messages):
             print(chunk.message.content)
-
+        ```
     Async:
-        .. code-block:: python
+        ```python
         prompt = "Tell me about Naruto Uzumaki in one sentence"
         asyncio.run(llm.acomplete(prompt))
-
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
             ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
         ]
         asyncio.run(llm.achat(chat_text_msgs))
-
+        ```
     Response metadata and usage
-        .. code-block:: python
-
+        ```python
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
             ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
         ]
         metadata_and_usage = llm.chat(messages).message.additional_kwargs
         print(metadata_and_usage)
+        ```
     """
 
     model_config = ConfigDict(
@@ -234,11 +227,9 @@ class SambaNovaCloud(LLM):
     ) -> Dict[str, Any]:
         """
         Performs a post request to the LLM API.
-
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
-
         Returns:
             A response dict.
         """
@@ -280,11 +271,9 @@ class SambaNovaCloud(LLM):
     ) -> Dict[str, Any]:
         """
         Performs a async post request to the LLM API.
-
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
-
         Returns:
             A response dict.
         """
@@ -325,11 +314,9 @@ class SambaNovaCloud(LLM):
     ) -> Iterator[Dict]:
         """
         Performs an streaming post request to the LLM API.
-
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
-
         Yields:
             An iterator of response dicts.
         """
@@ -409,11 +396,9 @@ class SambaNovaCloud(LLM):
     ) -> AsyncIterator[Dict]:
         """
         Performs an async streaming post request to the LLM API.
-
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
-
         Yields:
             An iterator of response dicts.
         """
@@ -480,7 +465,6 @@ class SambaNovaCloud(LLM):
     ) -> ChatResponse:
         """
         Calls the chat implementation of the SambaNovaCloud model.
-
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
@@ -489,7 +473,6 @@ class SambaNovaCloud(LLM):
                   across models right now, but it's a good practice to follow since
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
-
         Returns:
             ChatResponse with model generation
         """
@@ -519,7 +502,6 @@ class SambaNovaCloud(LLM):
     ) -> ChatResponseGen:
         """
         Streams the chat output of the SambaNovaCloud model.
-
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
@@ -528,7 +510,6 @@ class SambaNovaCloud(LLM):
                   across models right now, but it's a good practice to follow since
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
-
         Yields:
             ChatResponseGen with model partial generation
         """
@@ -591,7 +572,6 @@ class SambaNovaCloud(LLM):
     ) -> ChatResponse:
         """
         Calls the async chat implementation of the SambaNovaCloud model.
-
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
@@ -600,7 +580,6 @@ class SambaNovaCloud(LLM):
                   across models right now, but it's a good practice to follow since
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
-
         Returns:
             ChatResponse with async model generation
         """
@@ -650,14 +629,13 @@ class SambaNovaCloud(LLM):
 class SambaStudio(LLM):
     """
     SambaStudio model.
-
     Setup:
         To use, you should have the environment variables:
         ``SAMBASTUDIO_URL`` set with your SambaStudio deployed endpoint URL.
         ``SAMBASTUDIO_API_KEY`` set with your SambaStudio deployed endpoint Key.
         https://docs.sambanova.ai/sambastudio/latest/index.html
-        Example:
-        python
+        Examples:
+            ```python
             SambaStudio(
                 sambastudio_url = set with your SambaStudio deployed endpoint URL,
                 sambastudio_api_key = set with your SambaStudio deployed endpoint Key.
@@ -676,7 +654,7 @@ class SambaStudio(LLM):
                      set to false or for StandAlone v1 and v2 endpoints)
                 model_kwargs: Optional = Extra Key word arguments to pass to the model.
             )
-
+            ```
     Key init args — completion params:
         model: str
             The name of the model to use, e.g., Meta-Llama-3-70B-Instruct-4096
@@ -705,51 +683,48 @@ class SambaStudio(LLM):
              or for StandAlone v1 and v2 endpoints) default to llama3 special tokens
         model_kwargs: dict
             Extra Key word arguments to pass to the model.
-
     Key init args — client params:
         sambastudio_url: str
-            SambaStudio endpoint Url
+            SambaStudio endpoint URL
         sambastudio_api_key: str
             SambaStudio endpoint api key
-
     Instantiate:
-        .. code-block:: python
-
-            from llama_index.llms.sambanova import SambaStudio
-
-            llm = SambaStudio=(
-                sambastudio_url = set with your SambaStudio deployed endpoint URL,
-                sambastudio_api_key = set with your SambaStudio deployed endpoint Key.
-                model = model or expert name (set for CoE endpoints),
-                max_tokens = max number of tokens to generate,
-                temperature = model temperature,
-                context_window = model context window,
-                top_p = model top p,
-                top_k = model top k,
-                do_sample = whether to do sample
-                process_prompt = whether to process prompt
-                    (set for CoE generic v1 and v2 endpoints)
-                stream_options = include usage to get generation metrics
-                special_tokens = start, start_role, end_role, and special tokens
-                    (set for CoE generic v1 and v2 endpoints when process prompt
-                     set to false or for StandAlone v1 and v2 endpoints)
-                model_kwargs: Optional = Extra Key word arguments to pass to the model.
-            )
+        ```python
+        from llama_index.llms.sambanova import SambaStudio
+        llm = SambaStudio=(
+            sambastudio_url = set with your SambaStudio deployed endpoint URL,
+            sambastudio_api_key = set with your SambaStudio deployed endpoint Key.
+            model = model or expert name (set for CoE endpoints),
+            max_tokens = max number of tokens to generate,
+            temperature = model temperature,
+            context_window = model context window,
+            top_p = model top p,
+            top_k = model top k,
+            do_sample = whether to do sample
+            process_prompt = whether to process prompt
+                (set for CoE generic v1 and v2 endpoints)
+            stream_options = include usage to get generation metrics
+            special_tokens = start, start_role, end_role, and special tokens
+                (set for CoE generic v1 and v2 endpoints when process prompt
+                 set to false or for StandAlone v1 and v2 endpoints)
+            model_kwargs: Optional = Extra Key word arguments to pass to the model.
+        )
+        ```
     Complete:
-        .. code-block:: python
-            prompt = "Tell me about Naruto Uzumaki in one sentence"
-            response = llm.complete(prompt)
-
+        ```python
+        prompt = "Tell me about Naruto Uzumaki in one sentence"
+        response = llm.complete(prompt)
+        ```
     Chat:
-        .. code-block:: python
-            messages = [
-                ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
-                ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
-            ]
-            response = llm.chat(messages)
-
+        ```python
+        messages = [
+            ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
+            ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
+        ]
+        response = llm.chat(messages)
+        ```
     Stream:
-        .. code-block:: python
+        ```python
         prompt = "Tell me about Naruto Uzumaki in one sentence"
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
@@ -759,27 +734,26 @@ class SambaStudio(LLM):
             print(chunk.text)
         for chunk in llm.stream_chat(messages):
             print(chunk.message.content)
-
+        ```
     Async:
-        .. code-block:: python
+        ```python
         prompt = "Tell me about Naruto Uzumaki in one sentence"
         asyncio.run(llm.acomplete(prompt))
-
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
             ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
         ]
         asyncio.run(llm.achat(chat_text_msgs))
-
+        ```
     Response metadata and usage
-        .. code-block:: python
-
+        ```python
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
             ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
         ]
         metadata_and_usage = llm.chat(messages).message.additional_kwargs
         print(metadata_and_usage)
+        ```
     """
 
     model_config = ConfigDict(
@@ -878,10 +852,8 @@ class SambaStudio(LLM):
         """Convert a sequence of ChatMessages to:
         - dumped json string with Role / content dict structure when process_prompt is true,
         - string with special tokens if process_prompt is false for generic V1 and V2 endpoints.
-
         Args:
             messages: sequence of ChatMessages
-
         Returns:
             str: string to send as model input depending on process_prompt param
         """
@@ -912,10 +884,8 @@ class SambaStudio(LLM):
 
     def _get_sambastudio_urls(self, url: str) -> Tuple[str, str]:
         """Get streaming and non streaming URLs from the given URL.
-
         Args:
             url: string with sambastudio base or streaming endpoint url
-
         Returns:
             base_url: string with url to do non streaming calls
             streaming_url: string with url to do streaming calls
@@ -942,12 +912,10 @@ class SambaStudio(LLM):
         streaming: Optional[bool] = False,
     ) -> Response:
         """Performs a post request to the LLM API.
-
         Args:
         messages_dicts: List of role / content dicts to use as input.
         stop: list of stop tokens
         streaming: whether to do a streaming call
-
         Returns:
             A request Response object
         """
@@ -1050,12 +1018,10 @@ class SambaStudio(LLM):
         streaming: Optional[bool] = False,
     ) -> Response:
         """Performs an async post request to the LLM API.
-
         Args:
         messages_dicts: List of role / content dicts to use as input.
         stop: list of stop tokens
         streaming: whether to do a streaming call
-
         Returns:
             A request Response object
         """
@@ -1161,10 +1127,8 @@ class SambaStudio(LLM):
 
     def _process_response(self, response: Response) -> ChatMessage:
         """Process a non streaming response from the api.
-
         Args:
             response: A request Response object
-
         Returns:
             generation: a ChatMessage with model generation
         """
@@ -1212,10 +1176,8 @@ class SambaStudio(LLM):
 
     def _process_stream_response(self, response: Response) -> Iterator[ChatMessage]:
         """Process a streaming response from the api.
-
         Args:
             response: An iterable request Response object
-
         Yields:
             generation: an Iterator[ChatMessage] with model partial generation
         """
@@ -1419,10 +1381,8 @@ class SambaStudio(LLM):
         self, response_dict: Dict[str, Any]
     ) -> ChatMessage:
         """Process a non streaming response from the api.
-
         Args:
             response: A request Response object
-
         Returns:
             generation: a ChatMessage with model generation
         """
@@ -1467,7 +1427,6 @@ class SambaStudio(LLM):
         **kwargs: Any,
     ) -> ChatResponse:
         """Calls the chat implementation of the SambaStudio model.
-
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
@@ -1476,7 +1435,6 @@ class SambaStudio(LLM):
                   across models right now, but it's a good practice to follow since
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
-
         Returns:
             ChatResponse with model generation
         """
@@ -1499,7 +1457,6 @@ class SambaStudio(LLM):
         **kwargs: Any,
     ) -> ChatResponseGen:
         """Stream the output of the SambaStudio model.
-
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
@@ -1508,7 +1465,6 @@ class SambaStudio(LLM):
                   across models right now, but it's a good practice to follow since
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
-
         Yields:
             chunk: ChatResponseGen with model partial generation
         """
@@ -1539,7 +1495,6 @@ class SambaStudio(LLM):
         **kwargs: Any,
     ) -> ChatResponse:
         """Calls the chat implementation of the SambaStudio model.
-
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
@@ -1548,7 +1503,6 @@ class SambaStudio(LLM):
                   across models right now, but it's a good practice to follow since
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
-
         Returns:
             ChatResponse with model generation
         """
