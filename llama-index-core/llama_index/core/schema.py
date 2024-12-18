@@ -934,24 +934,37 @@ class Document(Node):
         If 'extra_info' was passed, store it in 'metadata'.
         """
         if "doc_id" in data:
+            value = data.pop("doc_id")
             if "id_" in data:
-                msg = "Cannot pass both 'doc_id' and 'id_' to create a Document, use 'id_'"
-                raise ValueError(msg)
-            data["id_"] = data.pop("doc_id")
+                msg = "'doc_id' is deprecated and 'id_' will be used instead"
+                logging.warning(msg)
+            else:
+                data["id_"] = value
 
         if "extra_info" in data:
+            value = data.pop("extra_info")
             if "metadata" in data:
-                msg = "Cannot pass both 'extra_info' and 'metadata' to create a Document, use 'metadata'"
-                raise ValueError(msg)
-            data["metadata"] = data.pop("extra_info")
+                msg = "'extra_info' is deprecated and 'metadata' will be used instead"
+                logging.warning(msg)
+            else:
+                data["metadata"] = value
 
         if "text" in data:
+            text = data.pop("text")
             if "text_resource" in data:
-                msg = "Cannot pass both 'text' and 'text_resource' to create a Document, use 'text_resource'"
-                raise ValueError(msg)
-            data["text_resource"] = MediaResource(text=data.pop("text"))
+                msg = "'text' is deprecated and 'text_resource' will be used instead"
+                logging.warning(msg)
+            else:
+                data["text_resource"] = MediaResource(text=text)
 
         super().__init__(**data)
+
+    @model_serializer(mode="wrap")
+    def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
+        """For full backward compatibility with the text field, we customize the model serializer."""
+        data = super().custom_model_dump(handler)
+        data["text"] = self.text
+        return data
 
     @property
     def text(self) -> str:
