@@ -76,6 +76,9 @@ async def test_workflow_run_step(workflow):
     result = await handler
     assert handler.is_done()
     assert result == "Workflow completed"
+    # there shouldn't be any in progress events
+    for inprogress_list in handler.ctx._in_progress.values():
+        assert len(inprogress_list) == 0
 
 
 @pytest.mark.asyncio()
