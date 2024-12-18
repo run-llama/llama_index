@@ -4,7 +4,6 @@ Cognee assists developers in introducing greater predictability and management i
 
 For more information, visit [Cognee documentation](https://docs.cognee.ai/)
 
-
 ## Installation
 
 ```shell
@@ -21,6 +20,7 @@ import asyncio
 from llama_index.core import Document
 from llama_index.graph_rag.cognee import CogneeGraphRAG
 
+
 async def example_graph_rag_cognee():
     # Gather documents to add to GraphRAG
     news = pd.read_csv(
@@ -28,7 +28,8 @@ async def example_graph_rag_cognee():
     )[:5]
     news.head()
     documents = [
-        Document(text=f"{row['title']}: {row['text']}") for i, row in news.iterrows()
+        Document(text=f"{row['title']}: {row['text']}")
+        for i, row in news.iterrows()
     ]
 
     # Instantiate cognee GraphRAG
@@ -42,7 +43,7 @@ async def example_graph_rag_cognee():
 
     # Add data to cognee
     await cogneeRAG.add(documents, "test")
-    
+
     # Process data into a knowledge graph
     await cogneeRAG.process_data("test")
 

@@ -2,14 +2,12 @@ import os
 import pathlib
 from typing import List
 
-from cognee.modules.users.methods import get_default_user
-from cognee.modules.data.methods import get_datasets_by_name
-from cognee.api.v1.search import SearchType
 import cognee
 
 from llama_index.core import Document
 
 from .base import GraphRAG
+
 
 class CogneeGraphRAG(GraphRAG):
     def __init__(
@@ -18,14 +16,11 @@ class CogneeGraphRAG(GraphRAG):
         graph_db_provider,
         vector_db_provider,
         relational_db_provider,
-        db_name
-    ):
-
+        db_name,
+    ) -> None:
         cognee.config.set_llm_config({"llm_api_key": llm_api_key})
 
-        cognee.config.set_vector_db_config(
-            {"vector_db_provider": vector_db_provider}
-        )
+        cognee.config.set_vector_db_config({"vector_db_provider": vector_db_provider})
         cognee.config.set_relational_db_config(
             {"db_provider": relational_db_provider, "db_name": db_name}
         )
@@ -49,7 +44,7 @@ class CogneeGraphRAG(GraphRAG):
         """Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
 
-         Args:
+        Args:
              data (Any): The data to be added to the graph.
              dataset_name (str): Name of the dataset or node set where the data will be added.
         """
@@ -68,7 +63,9 @@ class CogneeGraphRAG(GraphRAG):
             dataset_name (str): The dataset name to process.
         """
         user = await cognee.modules.users.methods.get_default_user()
-        datasets = await cognee.modules.data.methods.get_datasets_by_name(dataset_names, user.id)
+        datasets = await cognee.modules.data.methods.get_datasets_by_name(
+            dataset_names, user.id
+        )
         await cognee.cognify(datasets, user)
 
     async def get_graph_url(self, graphistry_password, graphistry_username) -> str:
@@ -103,7 +100,9 @@ class CogneeGraphRAG(GraphRAG):
             query (str): The query string to match against data from the graph.
         """
         user = await cognee.modules.users.methods.get_default_user()
-        return await cognee.search(cognee.api.v1.search.SearchType.SUMMARIES, query, user)
+        return await cognee.search(
+            cognee.api.v1.search.SearchType.SUMMARIES, query, user
+        )
 
     async def get_related_nodes(self, node_id: str):
         """Search the graph for relevant nodes or relationships based on node id.
@@ -112,4 +111,6 @@ class CogneeGraphRAG(GraphRAG):
             node_id (str): The name of the node to match against nodes in the graph.
         """
         user = await cognee.modules.users.methods.get_default_user()
-        return await cognee.search(cognee.api.v1.search.SearchType.INSIGHTS, node_id, user)
+        return await cognee.search(
+            cognee.api.v1.search.SearchType.INSIGHTS, node_id, user
+        )
