@@ -657,7 +657,7 @@ class SambaStudio(LLM):
         ``SAMBASTUDIO_API_KEY`` set with your SambaStudio deployed endpoint Key.
         https://docs.sambanova.ai/sambastudio/latest/index.html
         Example:
-        .. code-block:: python
+        python
             SambaStudio(
                 sambastudio_url = set with your SambaStudio deployed endpoint URL,
                 sambastudio_api_key = set with your SambaStudio deployed endpoint Key.
