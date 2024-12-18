@@ -24,7 +24,6 @@ from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.tools import (
     BaseTool,
     AsyncBaseTool,
-    FunctionTool,
     ToolOutput,
     adapt_to_async_tool,
 )
@@ -40,15 +39,22 @@ from llama_index.core.settings import Settings
 
 
 DEFAULT_HANDOFF_PROMPT = """Useful for handing off to another agent.
-If you are currently not equipped to handle the user's request, please hand off to the appropriate agent.
+If you are currently not equipped to handle the user's request, or another agent is better suited to handle the request, please hand off to the appropriate agent.
 
 Currently available agents:
 {agent_info}
 """
 
 
-async def handoff(to_agent: str, reason: str) -> HandoffEvent:
-    """Handoff to the given agent."""
+async def handoff(ctx: Context, to_agent: str, reason: str) -> HandoffEvent:
+    """Handoff control of that chat to the given agent."""
+    agent_configs = await ctx.get("agent_configs")
+    current_agent = await ctx.get("current_agent")
+    if to_agent not in agent_configs:
+        valid_agents = ", ".join([x for x in agent_configs if x != current_agent])
+        return f"Agent {to_agent} not found. Please select a valid agent to hand off to. Valid agents: {valid_agents}"
+
+    await ctx.set("current_agent", to_agent)
     return f"Handed off to {to_agent} because: {reason}"
 
 
@@ -119,7 +125,9 @@ class MultiAgentWorkflow(Workflow):
             agent_info.pop(name)
 
         fn_tool_prompt = self.handoff_prompt.format(agent_info=str(agent_info))
-        return FunctionTool.from_defaults(async_fn=handoff, description=fn_tool_prompt)
+        return FunctionToolWithContext.from_defaults(
+            async_fn=handoff, description=fn_tool_prompt, return_direct=True
+        )
 
     async def _init_context(self, ctx: Context) -> None:
         """Initialize the context once, if needed."""
@@ -198,7 +206,7 @@ class MultiAgentWorkflow(Workflow):
             jobs = []
             should_return_direct = False
             for tool_call in tool_calls:
-                tool_ids.append(tool_call.tool_call_id)
+                tool_ids.append(tool_call.tool_id)
                 if tool_call.tool_name not in tools_by_name:
                     tool_results.append(
                         ToolOutput(
@@ -480,7 +488,7 @@ class MultiAgentWorkflow(Workflow):
                 return await self._call_react_agent(ctx, llm, llm_input, tools)
         elif mode == AgentMode.REACT:
             return await self._call_react_agent(ctx, llm, llm_input, tools)
-        elif mode == AgentMode.FUNCTION_CALLING:
+        elif mode == AgentMode.FUNCTION:
             return await self._call_function_calling_agent(ctx, llm, llm_input, tools)
         else:
             raise ValueError(f"Invalid agent mode: {mode}")
