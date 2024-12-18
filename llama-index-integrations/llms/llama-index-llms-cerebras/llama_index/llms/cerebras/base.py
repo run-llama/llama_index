@@ -15,7 +15,7 @@ class Cerebras(OpenAILike):
         from llama_index.llms.cerebras import Cerebras
 
         # Set up the Cerebras class with the required model and API key
-        llm = Cerebras(model="llama3.1-70b", api_key="your_api_key")
+        llm = Cerebras(model="llama-3.3-70b", api_key="your_api_key")
 
         # Call the complete method with a query
         response = llm.complete("Why is fast inference important?")
