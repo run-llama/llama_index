@@ -959,6 +959,7 @@ class Document(Node):
 
         super().__init__(**data)
 
+    @model_serializer(mode="wrap")
     def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
         """For full backward compatibility with the text field, we customize the model serializer."""
         data = super().custom_model_dump(handler)
