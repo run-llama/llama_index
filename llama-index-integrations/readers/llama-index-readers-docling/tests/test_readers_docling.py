@@ -79,6 +79,7 @@ out_json_obj = {
             "video_resource": None,
             "text_template": "{metadata_str}\n\n{content}",
             "class_name": "Document",
+            "text": '{"schema_name": "DoclingDocument", "version": "1.0.0", "name": "sample", "origin": {"mimetype": "text/html", "binary_hash": 42, "filename": "sample.html"}, "furniture": {"self_ref": "#/furniture", "children": [], "name": "_root_", "label": "unspecified"}, "body": {"self_ref": "#/body", "children": [{"$ref": "#/texts/0"}, {"$ref": "#/texts/1"}], "name": "_root_", "label": "unspecified"}, "groups": [], "texts": [{"self_ref": "#/texts/0", "parent": {"$ref": "#/body"}, "children": [], "label": "paragraph", "prov": [], "orig": "Some text", "text": "Some text"}, {"self_ref": "#/texts/1", "parent": {"$ref": "#/body"}, "children": [], "label": "paragraph", "prov": [], "orig": "Another paragraph", "text": "Another paragraph"}], "pictures": [], "tables": [], "key_value_items": [], "pages": {}}',
         }
     ]
 }
@@ -106,6 +107,7 @@ out_md_obj = {
             "video_resource": None,
             "text_template": "{metadata_str}\n\n{content}",
             "class_name": "Document",
+            "text": "Some text\n\nAnother paragraph",
         }
     ]
 }
