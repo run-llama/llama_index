@@ -26,8 +26,8 @@ class VoyageAIRerank(BaseNodePostprocessor):
 
     def __init__(
         self,
-        api_key: str,
         model: str,
+        api_key: Optional[str] = None,
         top_n: Optional[int] = None,
         truncation: Optional[bool] = None,
         # deprecated

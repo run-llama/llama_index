@@ -1,5 +1,44 @@
 # ChangeLog
 
+## [2024-12-18]
+
+### `llama-index-core` [0.12.7]
+
+- fix: add a timeout to langchain callback handler (#17296)
+- fix: make Document serialization event more backward compatible (#17312)
+
+### `llama-index-embeddings-voyageai` [0.3.4]
+
+- Exposing additional keyword arguments for VoyageAI's embedding model (#17315)
+
+### `llama-index-llms-keywordsai` [0.1.0]
+
+- Added KeywordsAI LLM (#16860)
+
+### `llama-index-llms-oci-genai` [0.4.0]
+
+- Add OCI Generative AI tool calling support (#16888)
+
+### `llama-index-llms-openai` [0.3.11]
+
+- support new o1 models (#17307)
+
+### `llama-index-postprocessor-voyageai-rerank` [0.3.1]
+
+- VoyageAI Reranker optional API Key (#17310)
+
+### `llama-index-vector-stores-azureaisearch` [0.3.1]
+
+- improve async search client handling (#17319)
+
+### `llama-index-vector-stores-azurecosmosmongo` [0.4.0]
+
+- CosmosDB insertion timestamp bugfix (#17290)
+
+### `llama-index-vector-stores-azurecosmosnosql` [1.3.0]
+
+- CosmosDB insertion timestamp bugfix (#17290)
+
 ## [2024-12-17]
 
 ### `llama-index-core` [0.12.6]

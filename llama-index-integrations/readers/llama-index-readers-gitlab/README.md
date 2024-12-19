@@ -15,7 +15,7 @@ This reader will read through files in a repo based on branch or commit.
 
 ```python
 import gitlab
-from llama_index.readers.github import GitLabRepositoryReader
+from llama_index.readers.gitlab import GitLabRepositoryReader
 
 gitlab_client = gitlab.Gitlab("https://gitlab.com")
 
@@ -32,7 +32,7 @@ docs = project_repo_reader.load_data(file_path="README.rst", ref="develop")
 
 ```python
 import gitlab
-from llama_index.readers.github import GitLabIssuesReader
+from llama_index.readers.gitlab import GitLabIssuesReader
 
 gitlab_client = gitlab.Gitlab("https://gitlab.com")
 

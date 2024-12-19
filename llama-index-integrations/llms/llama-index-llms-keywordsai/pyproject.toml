@@ -9,12 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.openai"
+import_path = "llama_index.llms.keywordsai"
 
 [tool.llamahub.class_authors]
-AsyncOpenAI = "llama-index"
-OpenAI = "llama-index"
-SyncOpenAI = "llama-index"
+KeywordsAI = "keywordsai"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -24,17 +22,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["llama-index"]
-description = "llama-index llms openai integration"
+description = "llama-index llms keywordsai integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-llms-openai"
+name = "llama-index-llms-keywordsai"
 readme = "README.md"
-version = "0.3.12"
+version = "1.0.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-openai = "^1.58.1"
-llama-index-core = "^0.12.4"
+python = ">=3.8.1,<4.0"
+llama-index-core = "^0.11.7"
+llama-index-llms-openai = "^0.2.16"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -63,6 +61,3 @@ version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
-
-[tool.ruff.lint.flake8-pytest-style]
-fixture-parentheses = true
