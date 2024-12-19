@@ -4,7 +4,7 @@ import enum
 import json
 import logging
 from enum import auto
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from azure.search.documents import SearchClient
 from azure.search.documents.aio import SearchClient as AsyncSearchClient
@@ -523,12 +523,17 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        search_or_index_client: Any,
+        search_or_index_client: Union[
+            SearchClient, SearchIndexClient, AsyncSearchClient, AsyncSearchIndexClient
+        ],
         id_field_key: str,
         chunk_field_key: str,
         embedding_field_key: str,
         metadata_string_field_key: str,
         doc_id_field_key: str,
+        async_search_or_index_client: Optional[
+            Union[AsyncSearchClient, AsyncSearchIndexClient]
+        ] = None,
         filterable_metadata_field_keys: Optional[
             Union[
                 List[str],
@@ -617,13 +622,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         self._user_agent = (
             f"{base_user_agent} {user_agent}" if user_agent else base_user_agent
         )
-
-        self._index_client: SearchIndexClient = cast(SearchIndexClient, None)
-        self._async_index_client: AsyncSearchIndexClient = cast(
-            AsyncSearchIndexClient, None
-        )
-        self._search_client: SearchClient = cast(SearchClient, None)
-        self._async_search_client: AsyncSearchClient = cast(AsyncSearchClient, None)
         self._embedding_dimensionality = embedding_dimensionality
         self._index_name = index_name
 
@@ -639,11 +637,16 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         self._language_analyzer = language_analyzer
         self._compression_type = compression_type.lower()
 
-        # Validate search_or_index_client
+        # Initialize clients to None
+        self._index_client = None
+        self._async_index_client = None
+        self._search_client = None
+        self._async_search_client = None
+
+        # Validate sync search_or_index_client
         if search_or_index_client is not None:
             if isinstance(search_or_index_client, SearchIndexClient):
-                # If SearchIndexClient is supplied so must index_name
-                self._index_client = cast(SearchIndexClient, search_or_index_client)
+                self._index_client = search_or_index_client
                 self._index_client._client._config.user_agent_policy.add_user_agent(
                     self._user_agent
                 )
@@ -660,30 +663,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     self._user_agent
                 )
 
-            elif isinstance(search_or_index_client, AsyncSearchIndexClient):
-                # If SearchIndexClient is supplied so must index_name
-                self._async_index_client = cast(
-                    AsyncSearchIndexClient, search_or_index_client
-                )
-                self._async_index_client._client._config.user_agent_policy.add_user_agent(
-                    self._user_agent
-                )
-
-                if not index_name:
-                    raise ValueError(
-                        "index_name must be supplied if search_or_index_client is of "
-                        "type azure.search.documents.aio.SearchIndexClient"
-                    )
-
-                self._async_search_client = self._async_index_client.get_search_client(
-                    index_name=index_name
-                )
-                self._async_search_client._client._config.user_agent_policy.add_user_agent(
-                    self._user_agent
-                )
-
             elif isinstance(search_or_index_client, SearchClient):
-                self._search_client = cast(SearchClient, search_or_index_client)
+                self._search_client = search_or_index_client
                 self._search_client._client._config.user_agent_policy.add_user_agent(
                     self._user_agent
                 )
@@ -694,10 +675,32 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                         "is of type azure.search.documents.SearchClient"
                     )
 
-            elif isinstance(search_or_index_client, AsyncSearchClient):
-                self._async_search_client = cast(
-                    AsyncSearchClient, search_or_index_client
+        # Validate async search_or_index_client -- if not provided, assume the search_or_index_client could be async
+        async_search_or_index_client = (
+            async_search_or_index_client or search_or_index_client
+        )
+        if async_search_or_index_client is not None:
+            if isinstance(async_search_or_index_client, AsyncSearchIndexClient):
+                self._async_index_client = async_search_or_index_client
+                self._async_index_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
                 )
+
+                if not index_name:
+                    raise ValueError(
+                        "index_name must be supplied if async_search_or_index_client is of "
+                        "type azure.search.documents.aio.SearchIndexClient"
+                    )
+
+                self._async_search_client = self._async_index_client.get_search_client(
+                    index_name=index_name
+                )
+                self._async_search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
+
+            elif isinstance(async_search_or_index_client, AsyncSearchClient):
+                self._async_search_client = async_search_or_index_client
                 self._async_search_client._client._config.user_agent_policy.add_user_agent(
                     self._user_agent
                 )
@@ -705,35 +708,31 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 # Validate index_name
                 if index_name:
                     raise ValueError(
-                        "index_name cannot be supplied if search_or_index_client "
-                        "is of type azure.search.documents.SearchClient"
+                        "index_name cannot be supplied if async_search_or_index_client "
+                        "is of type azure.search.documents.aio.SearchClient"
                     )
 
-            if isinstance(search_or_index_client, AsyncSearchIndexClient):
-                if not self._async_index_client and not self._async_search_client:
-                    raise ValueError(
-                        "search_or_index_client must be of type "
-                        "azure.search.documents.SearchIndexClient or "
-                        "azure.search.documents.SearchClient"
-                    )
+        # Validate that at least one client was provided
+        if not any(
+            [
+                self._search_client,
+                self._async_search_client,
+                self._index_client,
+                self._async_index_client,
+            ]
+        ):
+            raise ValueError(
+                "Either search_or_index_client or async_search_or_index_client must be provided"
+            )
 
-            if isinstance(search_or_index_client, SearchIndexClient):
-                if not self._index_client and not self._search_client:
-                    raise ValueError(
-                        "search_or_index_client must be of type "
-                        "azure.search.documents.SearchIndexClient or "
-                        "azure.search.documents.SearchClient"
-                    )
-        else:
-            raise ValueError("search_or_index_client not specified")
-
+        # Validate index management requirements
         if index_management == IndexManagement.CREATE_IF_NOT_EXISTS and not (
             self._index_client or self._async_index_client
         ):
             raise ValueError(
                 "index_management has value of IndexManagement.CREATE_IF_NOT_EXISTS "
-                "but search_or_index_client is not of type "
-                "azure.search.documents.SearchIndexClient or azure.search.documents.aio.SearchIndexClient "
+                "but neither search_or_index_client nor async_search_or_index_client is of type "
+                "azure.search.documents.SearchIndexClient or azure.search.documents.aio.SearchIndexClient"
             )
 
         self._index_management = index_management
@@ -1161,20 +1160,36 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             odata_filter = self._create_odata_filter(query.filters)
         azure_query_result_search: AzureQueryResultSearchBase = (
             AzureQueryResultSearchDefault(
-                query, self._field_mapping, odata_filter, self._search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         )
         if query.mode == VectorStoreQueryMode.SPARSE:
             azure_query_result_search = AzureQueryResultSearchSparse(
-                query, self._field_mapping, odata_filter, self._search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
-                query, self._field_mapping, odata_filter, self._search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
-                query, self._field_mapping, odata_filter, self._search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         return azure_query_result_search.search()
 
@@ -1193,20 +1208,36 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         azure_query_result_search: AzureQueryResultSearchBase = (
             AzureQueryResultSearchDefault(
-                query, self._field_mapping, odata_filter, self._async_search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         )
         if query.mode == VectorStoreQueryMode.SPARSE:
             azure_query_result_search = AzureQueryResultSearchSparse(
-                query, self._field_mapping, odata_filter, self._async_search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
-                query, self._field_mapping, odata_filter, self._async_search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
-                query, self._field_mapping, odata_filter, self._async_search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         return await azure_query_result_search.asearch()
 
@@ -1339,12 +1370,14 @@ class AzureQueryResultSearchBase:
         query: VectorStoreQuery,
         field_mapping: Dict[str, str],
         odata_filter: Optional[str],
-        search_client: Any,
+        search_client: SearchClient,
+        async_search_client: AsyncSearchClient,
     ) -> None:
         self._query = query
         self._field_mapping = field_mapping
         self._odata_filter = odata_filter
         self._search_client = search_client
+        self._async_search_client = async_search_client
 
     @property
     def _select_fields(self) -> List[str]:
@@ -1417,7 +1450,7 @@ class AzureQueryResultSearchBase:
     async def _acreate_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-        results = await self._search_client.search(
+        results = await self._async_search_client.search(
             search_text=search_query,
             vector_queries=vectors,
             top=self._query.similarity_top_k,
