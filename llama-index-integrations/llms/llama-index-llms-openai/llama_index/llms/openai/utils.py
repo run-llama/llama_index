@@ -42,6 +42,13 @@ O1_MODELS: Dict[str, int] = {
     "o1-mini-2024-09-12": 128000,
 }
 
+O1_MODELS_WITHOUT_FUNCTION_CALLING = {
+    "o1-preview",
+    "o1-preview-2024-09-12",
+    "o1-mini",
+    "o1-mini-2024-09-12",
+}
+
 GPT4_MODELS: Dict[str, int] = {
     # stable model names:
     #   resolves to gpt-4-0314 before 2023-06-27,
@@ -247,9 +254,7 @@ def is_function_calling_model(model: str) -> bool:
 
     is_chat_model_ = is_chat_model(model)
     is_old = "0314" in model or "0301" in model
-
-    # TODO: This is temporary for openai's beta
-    is_o1_beta = "o1" in model
+    is_o1_beta = model in O1_MODELS_WITHOUT_FUNCTION_CALLING
 
     return is_chat_model_ and not is_old and not is_o1_beta
 
