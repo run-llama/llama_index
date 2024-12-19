@@ -35,6 +35,8 @@ async def example_graph_rag_cognee():
     # Instantiate cognee GraphRAG
     cogneeRAG = CogneeGraphRAG(
         llm_api_key=os.environ["OPENAI_API_KEY"],
+        llm_provider="openai",
+        llm_model="gpt-4o-mini",
         graph_db_provider="networkx",
         vector_db_provider="lancedb",
         relational_db_provider="sqlite",

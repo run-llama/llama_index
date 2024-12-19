@@ -3,10 +3,16 @@ import pandas as pd
 import asyncio
 
 import cognee
+import pytest
 from llama_index.core import Document
 from llama_index.graph_rag.cognee import CogneeGraphRAG
 
 
+@pytest.mark.skipif(
+    os.getenv("OPENAI_API_KEY") is None,
+    reason="OPENAI_API_KEY not available to test Cognee integration",
+)
+@pytest.mark.asyncio()
 async def test_graph_rag_cognee():
     # Gather documents to add to GraphRAG
     news = pd.read_csv(
@@ -20,6 +26,8 @@ async def test_graph_rag_cognee():
     # Instantiate cognee GraphRAG
     cogneeRAG = CogneeGraphRAG(
         llm_api_key=os.environ["OPENAI_API_KEY"],
+        llm_provider="openai",
+        llm_model="gpt-4o-mini",
         graph_db_provider="networkx",
         vector_db_provider="lancedb",
         relational_db_provider="sqlite",

@@ -10,21 +10,44 @@ from .base import GraphRAG
 
 
 class CogneeGraphRAG(GraphRAG):
+    """Cognee GraphRAG, handles adding, storing, processing and retrieving information from knowledge graphs.
+
+    Unlike traditional RAG models that retrieve unstructured text snippets, graphRAG utilizes knowledge graphs.
+    A knowledge graph represents entities as nodes and their relationships as edges, often in a structured semantic format.
+    This enables the system to retrieve more precise and structured information about an entity, its relationships, and its properties.
+
+    Attributes:
+    llm_api_key: str: Api key for desired llm.
+    llm_provider: str: Provider for desired llm.
+    llm_model: str: Model for desired llm.
+    graph_db_provider: str: The graph database provider.
+    vector_db_provider: str: The vector database provider.
+    relational_db_provider: str: The relational database provider.
+    db_name: str: The name of the databases.
+    """
+
     def __init__(
         self,
-        llm_api_key,
-        graph_db_provider,
-        vector_db_provider,
-        relational_db_provider,
-        db_name,
+        llm_api_key: str,
+        llm_provider: str = "openai",
+        llm_model: str = "gpt-4o-mini",
+        graph_db_provider: str = "networkx",
+        vector_db_provider: str = "lancedb",
+        relational_db_provider: str = "sqlite",
+        db_name: str = "cognee_db",
     ) -> None:
-        cognee.config.set_llm_config({"llm_api_key": llm_api_key})
+        cognee.config.set_llm_config(
+            {
+                "llm_api_key": llm_api_key,
+                "llm_provider": llm_provider,
+                "llm_model": llm_model,
+            }
+        )
 
         cognee.config.set_vector_db_config({"vector_db_provider": vector_db_provider})
         cognee.config.set_relational_db_config(
             {"db_provider": relational_db_provider, "db_name": db_name}
         )
-
         cognee.config.set_graph_database_provider(graph_db_provider)
 
         data_directory_path = str(
@@ -32,6 +55,7 @@ class CogneeGraphRAG(GraphRAG):
                 os.path.join(pathlib.Path(__file__).parent, ".data_storage/")
             ).resolve()
         )
+
         cognee.config.data_root_directory(data_directory_path)
         cognee_directory_path = str(
             pathlib.Path(
@@ -40,7 +64,7 @@ class CogneeGraphRAG(GraphRAG):
         )
         cognee.config.system_root_directory(cognee_directory_path)
 
-    async def add(self, data, dataset_name: str):
+    async def add(self, data, dataset_name: str) -> None:
         """Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
 
@@ -56,7 +80,7 @@ class CogneeGraphRAG(GraphRAG):
 
         await cognee.add(data, dataset_name)
 
-    async def process_data(self, dataset_names: str):
+    async def process_data(self, dataset_names: str) -> None:
         """Process and structure data in the dataset and make a knowledge graph out of it.
 
         Args:
@@ -93,7 +117,7 @@ class CogneeGraphRAG(GraphRAG):
         print(graph_url)
         return graph_url
 
-    async def search(self, query: str):
+    async def search(self, query: str) -> list:
         """Search the graph for relevant information based on a query.
 
         Args:
@@ -104,7 +128,7 @@ class CogneeGraphRAG(GraphRAG):
             cognee.api.v1.search.SearchType.SUMMARIES, query, user
         )
 
-    async def get_related_nodes(self, node_id: str):
+    async def get_related_nodes(self, node_id: str) -> list:
         """Search the graph for relevant nodes or relationships based on node id.
 
         Args:
