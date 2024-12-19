@@ -169,10 +169,10 @@ def test_tablestore() -> None:
 
 def test_tablestore_add_dim() -> None:
     store = TablestoreVectorStore(
-        endpoint=os.getenv("end_point"),
-        instance_name=os.getenv("instance_name"),
-        access_key_id=os.getenv("access_key_id"),
-        access_key_secret=os.getenv("access_key_secret"),
+        endpoint="http://test.a.com",
+        instance_name="test",
+        access_key_id="test",
+        access_key_secret="test",
         vector_dimension=512,
         vector_metric_type=tablestore.VectorMetricType.VM_COSINE,
     )
