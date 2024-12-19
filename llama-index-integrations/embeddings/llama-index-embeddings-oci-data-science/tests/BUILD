@@ -1,3 +1,3 @@
 python_tests(
-  dependencies=["==3.9.*"]
+  interpreter_constraints=["==3.9.*"]
 )
