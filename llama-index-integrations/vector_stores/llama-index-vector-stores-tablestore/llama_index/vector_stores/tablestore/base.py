@@ -54,6 +54,7 @@ class TablestoreVectorStore(BasePydanticVectorStore):
 
     is_embedding_query: bool = True
     stores_text: bool = True
+    _vector_dimension: int = PrivateAttr(default=512)
     _logger: Any = PrivateAttr(default=None)
     _tablestore_client: tablestore.OTSClient = PrivateAttr(default=None)
     _table_name: str = PrivateAttr(default="llama_index_vector_store_ots_v1")
@@ -91,6 +92,7 @@ class TablestoreVectorStore(BasePydanticVectorStore):
             )
         else:
             self._tablestore_client = tablestore_client
+        self._vector_dimension = vector_dimension
         self._table_name = table_name
         self._index_name = index_name
         self._text_field = text_field
@@ -632,6 +634,11 @@ class TablestoreVectorStore(BasePydanticVectorStore):
             return []
         ids = []
         for node in nodes:
+            if len(node.get_embedding()) != self._vector_dimension:
+                raise RuntimeError(
+                    "node embedding size:%d is not the same as vector store dim:%d"
+                    % (len(node.get_embedding()), self._vector_dimension)
+                )
             self._write_row(
                 row_id=node.node_id,
                 content=node.text,
