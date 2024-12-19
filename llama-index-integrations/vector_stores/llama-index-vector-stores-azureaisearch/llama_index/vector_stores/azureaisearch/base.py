@@ -643,6 +643,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         self._search_client = None
         self._async_search_client = None
 
+        if search_or_index_client and async_search_or_index_client is None:
+            logger.warning(
+                "async_search_or_index_client is None. Depending on the client type passed "
+                "in, sync or async functions may not work."
+            )
+
         # Validate sync search_or_index_client
         if search_or_index_client is not None:
             if isinstance(search_or_index_client, SearchIndexClient):
