@@ -1,1 +1,3 @@
-python_tests()
+python_tests(
+  dependencies=["==3.9.*"]
+)
