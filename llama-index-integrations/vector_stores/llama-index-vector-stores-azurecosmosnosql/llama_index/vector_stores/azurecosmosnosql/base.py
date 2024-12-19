@@ -5,7 +5,6 @@ An index that is built on top of an existing vector store.
 """
 import logging
 from typing import Any, Optional, Dict, cast, List
-from datetime import date
 
 from azure.identity import ClientSecretCredential
 from azure.cosmos import CosmosClient
@@ -289,7 +288,6 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                 self._embedding_key: node.get_embedding(),
                 self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
-                "timeStamp": date.today(),
             }
             data_to_insert.append(entry)
             ids.append(node.node_id)
