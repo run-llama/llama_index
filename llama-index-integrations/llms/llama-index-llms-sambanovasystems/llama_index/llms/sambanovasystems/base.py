@@ -36,6 +36,7 @@ load_dotenv()
 
 def _convert_message_to_dict(message: ChatMessage) -> Dict[str, Any]:
     """Converts a ChatMessage to a dictionary with Role / content.
+
     Args:
         message: ChatMessage
     Returns:
@@ -50,6 +51,7 @@ def _convert_message_to_dict(message: ChatMessage) -> Dict[str, Any]:
 
 def _create_message_dicts(messages: Sequence[ChatMessage]) -> List[Dict[str, Any]]:
     """Converts a list of ChatMessages to a list of dictionaries with Role / content.
+
     Args:
         messages: list of ChatMessages
     Returns:
@@ -59,8 +61,8 @@ def _create_message_dicts(messages: Sequence[ChatMessage]) -> List[Dict[str, Any
 
 
 class SambaNovaCloud(LLM):
-    """
-    SambaNova Cloud models.
+    """SambaNova Cloud models.
+
     Setup:
         To use, you should have the environment variables:
         `SAMBANOVA_URL` set with your SambaNova Cloud URL.
@@ -227,6 +229,7 @@ class SambaNovaCloud(LLM):
     ) -> Dict[str, Any]:
         """
         Performs a post request to the LLM API.
+
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
@@ -271,6 +274,7 @@ class SambaNovaCloud(LLM):
     ) -> Dict[str, Any]:
         """
         Performs a async post request to the LLM API.
+
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
@@ -314,6 +318,7 @@ class SambaNovaCloud(LLM):
     ) -> Iterator[Dict]:
         """
         Performs an streaming post request to the LLM API.
+
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
@@ -396,6 +401,7 @@ class SambaNovaCloud(LLM):
     ) -> AsyncIterator[Dict]:
         """
         Performs an async streaming post request to the LLM API.
+
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
@@ -465,6 +471,7 @@ class SambaNovaCloud(LLM):
     ) -> ChatResponse:
         """
         Calls the chat implementation of the SambaNovaCloud model.
+
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
@@ -473,6 +480,7 @@ class SambaNovaCloud(LLM):
                   across models right now, but it's a good practice to follow since
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
+
         Returns:
             ChatResponse with model generation
         """
@@ -502,6 +510,7 @@ class SambaNovaCloud(LLM):
     ) -> ChatResponseGen:
         """
         Streams the chat output of the SambaNovaCloud model.
+
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
@@ -510,6 +519,7 @@ class SambaNovaCloud(LLM):
                   across models right now, but it's a good practice to follow since
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
+
         Yields:
             ChatResponseGen with model partial generation
         """
@@ -572,6 +582,7 @@ class SambaNovaCloud(LLM):
     ) -> ChatResponse:
         """
         Calls the async chat implementation of the SambaNovaCloud model.
+
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
@@ -580,6 +591,7 @@ class SambaNovaCloud(LLM):
                   across models right now, but it's a good practice to follow since
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
+
         Returns:
             ChatResponse with async model generation
         """
@@ -627,8 +639,8 @@ class SambaNovaCloud(LLM):
 
 
 class SambaStudio(LLM):
-    """
-    SambaStudio model.
+    """SambaStudio model.
+
     Setup:
         To use, you should have the environment variables:
         ``SAMBASTUDIO_URL`` set with your SambaStudio deployed endpoint URL.
@@ -852,6 +864,7 @@ class SambaStudio(LLM):
         """Convert a sequence of ChatMessages to:
         - dumped json string with Role / content dict structure when process_prompt is true,
         - string with special tokens if process_prompt is false for generic V1 and V2 endpoints.
+
         Args:
             messages: sequence of ChatMessages
         Returns:
@@ -884,6 +897,7 @@ class SambaStudio(LLM):
 
     def _get_sambastudio_urls(self, url: str) -> Tuple[str, str]:
         """Get streaming and non streaming URLs from the given URL.
+
         Args:
             url: string with sambastudio base or streaming endpoint url
         Returns:
@@ -912,6 +926,7 @@ class SambaStudio(LLM):
         streaming: Optional[bool] = False,
     ) -> Response:
         """Performs a post request to the LLM API.
+
         Args:
         messages_dicts: List of role / content dicts to use as input.
         stop: list of stop tokens
@@ -1018,6 +1033,7 @@ class SambaStudio(LLM):
         streaming: Optional[bool] = False,
     ) -> Response:
         """Performs an async post request to the LLM API.
+
         Args:
         messages_dicts: List of role / content dicts to use as input.
         stop: list of stop tokens
@@ -1127,6 +1143,7 @@ class SambaStudio(LLM):
 
     def _process_response(self, response: Response) -> ChatMessage:
         """Process a non streaming response from the api.
+
         Args:
             response: A request Response object
         Returns:
@@ -1176,6 +1193,7 @@ class SambaStudio(LLM):
 
     def _process_stream_response(self, response: Response) -> Iterator[ChatMessage]:
         """Process a streaming response from the api.
+
         Args:
             response: An iterable request Response object
         Yields:
@@ -1381,6 +1399,7 @@ class SambaStudio(LLM):
         self, response_dict: Dict[str, Any]
     ) -> ChatMessage:
         """Process a non streaming response from the api.
+
         Args:
             response: A request Response object
         Returns:
@@ -1427,6 +1446,7 @@ class SambaStudio(LLM):
         **kwargs: Any,
     ) -> ChatResponse:
         """Calls the chat implementation of the SambaStudio model.
+
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
@@ -1435,6 +1455,7 @@ class SambaStudio(LLM):
                   across models right now, but it's a good practice to follow since
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
+
         Returns:
             ChatResponse with model generation
         """
@@ -1457,6 +1478,7 @@ class SambaStudio(LLM):
         **kwargs: Any,
     ) -> ChatResponseGen:
         """Stream the output of the SambaStudio model.
+
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
@@ -1465,6 +1487,7 @@ class SambaStudio(LLM):
                   across models right now, but it's a good practice to follow since
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
+
         Yields:
             chunk: ChatResponseGen with model partial generation
         """
@@ -1495,6 +1518,7 @@ class SambaStudio(LLM):
         **kwargs: Any,
     ) -> ChatResponse:
         """Calls the chat implementation of the SambaStudio model.
+
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
@@ -1503,6 +1527,7 @@ class SambaStudio(LLM):
                   across models right now, but it's a good practice to follow since
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
+
         Returns:
             ChatResponse with model generation
         """
