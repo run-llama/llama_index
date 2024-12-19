@@ -1,19 +1,19 @@
 """Voyage embeddings file."""
+
 import logging
 import os
+from io import BytesIO
+from pathlib import Path
 from typing import Any, List, Optional, Union
+
+import voyageai
+from PIL import Image
 
 from llama_index.core.base.embeddings.base import Embedding
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
-
-import voyageai
 from llama_index.core.embeddings import MultiModalEmbedding
-from io import BytesIO
-from pathlib import Path
 from llama_index.core.schema import ImageType
-from PIL import Image
-
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,8 @@ class VoyageEmbedding(MultiModalEmbedding):
     _client: voyageai.Client = PrivateAttr(None)
     _aclient: voyageai.client_async.AsyncClient = PrivateAttr()
     truncation: Optional[bool] = None
+    output_dtype: Optional[str] = None
+    output_dimension: Optional[int] = None
 
     def __init__(
         self,
@@ -43,6 +45,8 @@ class VoyageEmbedding(MultiModalEmbedding):
         voyage_api_key: Optional[str] = None,
         embed_batch_size: Optional[int] = None,
         truncation: Optional[bool] = None,
+        output_dtype: Optional[str] = None,
+        output_dimension: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
@@ -73,6 +77,8 @@ class VoyageEmbedding(MultiModalEmbedding):
         self._client = voyageai.Client(api_key=voyage_api_key)
         self._aclient = voyageai.AsyncClient(api_key=voyage_api_key)
         self.truncation = truncation
+        self.output_dtype = output_dtype
+        self.output_dimension = output_dimension
 
     @classmethod
     def class_name(cls) -> str:
@@ -161,6 +167,8 @@ class VoyageEmbedding(MultiModalEmbedding):
                 model=self.model_name,
                 input_type=input_type,
                 truncation=self.truncation,
+                output_dtype=self.output_dtype,
+                output_dimension=self.output_dimension,
             ).embeddings
 
     async def _aembed(self, texts: List[str], input_type: str) -> List[List[float]]:
@@ -177,6 +185,8 @@ class VoyageEmbedding(MultiModalEmbedding):
                 model=self.model_name,
                 input_type=input_type,
                 truncation=self.truncation,
+                output_dtype=self.output_dtype,
+                output_dimension=self.output_dimension,
             )
         return r.embeddings
 
