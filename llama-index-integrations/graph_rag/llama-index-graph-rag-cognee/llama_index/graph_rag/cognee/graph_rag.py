@@ -1,6 +1,6 @@
 import os
 import pathlib
-from typing import List
+from typing import List, Union
 
 import cognee
 
@@ -64,7 +64,9 @@ class CogneeGraphRAG(GraphRAG):
         )
         cognee.config.system_root_directory(cognee_directory_path)
 
-    async def add(self, data, dataset_name: str) -> None:
+    async def add(
+        self, data: Union[Document, List[Document]], dataset_name: str
+    ) -> None:
         """Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
 
