@@ -1,4 +1,3 @@
-import pandas as pd
 from llama_index.core import Document
 import asyncio
 import pytest
@@ -27,12 +26,13 @@ async def test_add_data(monkeypatch):
     monkeypatch.setattr(cognee, "add", mock_add_return)
 
     # Gather documents to add to GraphRAG
-    news = pd.read_csv(
-        "https://raw.githubusercontent.com/tomasonjo/blog-datasets/main/news_articles.csv"
-    )[:5]
-    news.head()
     documents = [
-        Document(text=f"{row['title']}: {row['text']}") for i, row in news.iterrows()
+        Document(
+            text="Jessica Miller, Experienced Sales Manager with a strong track record in driving sales growth and building high-performing teams."
+        ),
+        Document(
+            text="David Thompson, Creative Graphic Designer with over 8 years of experience in visual design and branding."
+        ),
     ]
 
     await cogneeGraphRAG.add(documents, "test")

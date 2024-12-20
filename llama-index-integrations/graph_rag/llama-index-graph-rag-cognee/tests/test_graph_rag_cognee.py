@@ -1,5 +1,4 @@
 import os
-import pandas as pd
 import asyncio
 
 import cognee
@@ -14,13 +13,13 @@ from llama_index.graph_rag.cognee import CogneeGraphRAG
 )
 @pytest.mark.asyncio()
 async def test_graph_rag_cognee():
-    # Gather documents to add to GraphRAG
-    news = pd.read_csv(
-        "https://raw.githubusercontent.com/tomasonjo/blog-datasets/main/news_articles.csv"
-    )[:5]
-    news.head()
     documents = [
-        Document(text=f"{row['title']}: {row['text']}") for i, row in news.iterrows()
+        Document(
+            text="Jessica Miller, Experienced Sales Manager with a strong track record in driving sales growth and building high-performing teams."
+        ),
+        Document(
+            text="David Thompson, Creative Graphic Designer with over 8 years of experience in visual design and branding."
+        ),
     ]
 
     # Instantiate cognee GraphRAG

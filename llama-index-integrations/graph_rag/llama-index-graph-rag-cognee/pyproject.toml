@@ -34,6 +34,7 @@ python = ">=3.10,<3.12"
 cognee = "^0.1.20"
 httpx = "~=0.27.0"
 llama-index-core = "^0.12.5"
+pytest-cov = "^6.0.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -63,3 +64,6 @@ version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
