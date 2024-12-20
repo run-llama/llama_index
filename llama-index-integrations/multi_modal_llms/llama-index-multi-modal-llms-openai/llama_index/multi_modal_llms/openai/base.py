@@ -469,7 +469,6 @@ class OpenAIMultiModal(MultiModalLLM):
                     delta = response.choices[0].delta
                 else:
                     delta = ChoiceDelta()
-                first_chat_chunk = False
 
                 if delta is None:
                     continue
