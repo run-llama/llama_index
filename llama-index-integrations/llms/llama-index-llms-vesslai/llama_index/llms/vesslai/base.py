@@ -12,6 +12,7 @@ from llama_index.llms.vesslai.utils import (
     wait_for_gateway_enabled,
     read_service,
     abort_in_progress_rollout_by_name,
+    check_service_with_model_name,
 )
 from llama_index.llms.openai_like import OpenAILike
 
@@ -98,6 +99,7 @@ class VesslAILLM(OpenAILike, BaseModel):
         serverless: bool = False,
         api_key: str = None,
         service_auth_key: str = None,
+        force: bool = False,
         **kwargs: Any,
     ) -> None:
         self.organization_name = kwargs.get('organization_name', self.organization_name)
@@ -132,6 +134,18 @@ class VesslAILLM(OpenAILike, BaseModel):
 
         self.model = serve_model_name
         self.is_chat_model = is_chat_model
+        if not force:
+            gateway_endpoint = check_service_with_model_name(service_name=service_name, model_name=self.model)
+            if gateway_endpoint is not None:
+                print(f"Model Name \"{self.model}\" is already being served. Connecting with Endpoint: {gateway_endpoint} \nIf you want to abort running model_service, please provide force = True")
+                self.connect(
+                    served_model_name=self.model,
+                    endpoint=gateway_endpoint,
+                    is_chat_model=self.is_chat_model,
+                    api_key=api_key,
+                )
+                return
+        
         self.api_base = self._launch_service_revision_from_yaml(
             organization_name=self.organization_name,
             yaml_path=serve_yaml_path,
@@ -208,11 +222,10 @@ class VesslAILLM(OpenAILike, BaseModel):
         print(f"Check your Service at: {service_url}")
 
         gateway = read_service(service_name=service_name).gateway_config
-        wait_for_gateway_enabled(gateway=gateway, service_name=revision.model_service_name, print_output=True)
+        wait_for_gateway_enabled(gateway=gateway, service_name=revision.model_service_name)
 
         print("Endpoint is enabled.")
         gateway = read_service(service_name=service_name).gateway_config
-        print(gateway)
         gateway_endpoint = f"https://{gateway.endpoint}/v1"
         print(f"You can test your service via {gateway_endpoint}")
 

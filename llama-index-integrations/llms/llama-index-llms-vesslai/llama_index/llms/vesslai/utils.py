@@ -1,4 +1,5 @@
 import time
+import yaml
 from typing import Any
 from vessl import vessl_api
 
@@ -53,6 +54,36 @@ def read_service(service_name: str) -> Any:
         organization_name=vessl_api.organization.name,
         model_service_name=service_name
     )
+    
+def check_service_with_model_name(service_name: str, model_name: str) -> Any:
+    """Fetches the service configuration using the model name.
+
+    Args:
+        service_name (str): The name of the service.
+        model_name (str): The name of the model.
+
+    Returns:
+        Any: The service configuration object.
+    """
+    resp = vessl_api.model_service_revision_list_api(
+        organization_name=vessl_api.organization.name,
+        model_service_name=service_name,
+    )
+    running_revision = None
+    for r in resp.results:
+        if r.status == "running":
+            running_revision = r
+            break
+    if running_revision is None:
+        return None
+    
+    if running_revision.status == "running":
+        yaml_dict = yaml.safe_load(running_revision.yaml_spec)
+        if yaml_dict.get("env", {}).get("MODEL_NAME", "") == model_name:
+            gateway = read_service(service_name=service_name).gateway_config
+            gateway_endpoint = f"https://{gateway.endpoint}/v1"
+            return gateway_endpoint
+    return None
 
 def _request_abort_rollout(service_name: str) -> bool:
     """Requests to abort the ongoing rollout of a service.
