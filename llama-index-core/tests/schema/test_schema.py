@@ -188,6 +188,34 @@ def test_document_legacy_roundtrip():
     assert dest.text == "this is a test"
 
 
+def test_document_exclude_text():
+    doc = Document(id_="test_id", text="this is a test")
+    model_dump = doc.model_dump(exclude={"text"})
+    assert "text" not in model_dump
+    assert doc.model_dump(exclude={"text"}) == {
+        "id_": "test_id",
+        "embedding": None,
+        "metadata": {},
+        "excluded_embed_metadata_keys": [],
+        "excluded_llm_metadata_keys": [],
+        "relationships": {},
+        "metadata_template": "{key}: {value}",
+        "metadata_separator": "\n",
+        "text_resource": {
+            "embeddings": None,
+            "text": "this is a test",
+            "mimetype": None,
+            "path": None,
+            "url": None,
+        },
+        "image_resource": None,
+        "audio_resource": None,
+        "video_resource": None,
+        "text_template": "{metadata_str}\n\n{content}",
+        "class_name": "Document",
+    }
+
+
 def test_image_document_empty():
     doc = ImageDocument(id_="test")
     assert doc.id_ == "test"
