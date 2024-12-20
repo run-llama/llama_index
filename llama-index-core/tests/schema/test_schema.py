@@ -188,17 +188,17 @@ def test_document_legacy_roundtrip():
     assert dest.text == "this is a test"
 
 
-def test_document_exclude_text():
+def test_document_model_dump_exclude():
     doc = Document(id_="test_id", text="this is a test")
-    model_dump = doc.model_dump(exclude={"text"})
+    model_dump = doc.model_dump(exclude={"text", "metadata", "relationships"})
     assert "text" not in model_dump
-    assert doc.model_dump(exclude={"text"}) == {
+    assert "metadata" not in model_dump
+    assert "relationships" not in model_dump
+    assert model_dump == {
         "id_": "test_id",
         "embedding": None,
-        "metadata": {},
         "excluded_embed_metadata_keys": [],
         "excluded_llm_metadata_keys": [],
-        "relationships": {},
         "metadata_template": "{key}: {value}",
         "metadata_separator": "\n",
         "text_resource": {
