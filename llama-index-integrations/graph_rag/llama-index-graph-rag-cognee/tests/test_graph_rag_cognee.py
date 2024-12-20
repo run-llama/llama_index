@@ -41,6 +41,9 @@ async def test_graph_rag_cognee():
 
     # Answer prompt based on knowledge graph
     search_results = await cogneeRAG.search("person")
+
+    assert len(search_results) > 0, "No search results found"
+
     print("\n\nExtracted sentences are:\n")
     for result in search_results:
         print(f"{result}\n")
@@ -50,6 +53,8 @@ async def test_graph_rag_cognee():
     print("\n\nRelated nodes are:\n")
     for result in search_results:
         print(f"{result}\n")
+
+    assert len(search_results) > 0, "No search results found"
 
     # Clean all data from previous runs
     await cognee.prune.prune_data()
