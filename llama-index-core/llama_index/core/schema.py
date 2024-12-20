@@ -25,7 +25,7 @@ from typing import (
     Sequence,
     Union,
 )
-from pydantic import SerializationInfo, SerializerFunctionWrapHandler
+
 import filetype
 import requests
 from dataclasses_json import DataClassJsonMixin
@@ -40,7 +40,9 @@ from llama_index.core.bridge.pydantic import (
     GetJsonSchemaHandler,
     JsonSchemaValue,
     PlainSerializer,
+    SerializationInfo,
     SerializeAsAny,
+    SerializerFunctionWrapHandler,
     model_serializer,
     model_validator,
 )
