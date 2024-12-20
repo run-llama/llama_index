@@ -25,7 +25,7 @@ from typing import (
     Sequence,
     Union,
 )
-
+from pydantic import SerializationInfo, SerializerFunctionWrapHandler
 import filetype
 import requests
 from dataclasses_json import DataClassJsonMixin
@@ -960,10 +960,13 @@ class Document(Node):
         super().__init__(**data)
 
     @model_serializer(mode="wrap")
-    def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
+    def custom_model_dump(
+        self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
+    ) -> Dict[str, Any]:
         """For full backward compatibility with the text field, we customize the model serializer."""
         data = super().custom_model_dump(handler)
-        data["text"] = self.text
+        if "text" not in info.exclude:
+            data["text"] = self.text
         return data
 
     @property
