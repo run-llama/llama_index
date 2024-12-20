@@ -133,7 +133,11 @@ class OpensearchVectorClient:
             try:
                 asyncio.run(self._os_async_client.indices.get(index=self._index))
             except not_found_error:
-                asyncio.run(self._os_async_client.indices.create(index=self._index, body=idx_conf))
+                asyncio.run(
+                    self._os_async_client.indices.create(
+                        index=self._index, body=idx_conf
+                    )
+                )
                 asyncio.run(self._os_async_client.indices.refresh(index=self._index))
         except not_found_error:
             self._os_client.indices.create(index=self._index, body=idx_conf)
@@ -623,12 +627,12 @@ class OpensearchVectorClient:
 
     def _is_efficient_filtering_enabled(self) -> bool:
         """Check if kNN with efficient filtering is enabled."""
-        # Technically, AOSS supports efficient filtering, 
+        # Technically, AOSS supports efficient filtering,
         # but we can't check the version number using .info(); AOSS doesn't support 'GET /'
         #  so we must skip and disable by default.
-        if self.is_aoss: 
+        if self.is_aoss:
             ef_enabled = False
-        else :
+        else:
             self._os_version = self._get_opensearch_version()
             major, minor, patch = self.os_version.split(".")
             ef_enabled = int(major) >= 2 and int(minor) >= 9
