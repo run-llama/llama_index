@@ -969,7 +969,8 @@ class Document(Node):
     ) -> Dict[str, Any]:
         """For full backward compatibility with the text field, we customize the model serializer."""
         data = super().custom_model_dump(handler, info)
-        if "text" not in info.exclude:
+        exclude_set = set(info.exclude or [])
+        if "text" not in exclude_set:
             data["text"] = self.text
         return data
 
