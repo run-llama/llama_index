@@ -1,11 +1,10 @@
 from abc import abstractmethod
-from typing import Protocol
 
 
 # NOTE: This is a bare-bone suggestion for an abstract protocol to define GraphRAG for llama-index
 # This should be expanded upon and integrated to llama-index-core to support multiple different GraphRAG
 # libraries in the future
-class GraphRAG(Protocol):
+class GraphRAG:
     """Abstract graph RAG protocol.
 
     This protocol defines the interface for a graphRAG, which is responsible
