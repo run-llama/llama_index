@@ -459,7 +459,6 @@ class OpenAIMultiModal(MultiModalLLM):
             tool_calls: List[ChoiceDeltaToolCall] = []
 
             is_function = False
-            first_chat_chunk = True
             async for response in await self._aclient.chat.completions.create(
                 messages=message_dicts,
                 stream=True,
@@ -467,15 +466,6 @@ class OpenAIMultiModal(MultiModalLLM):
             ):
                 response = cast(ChatCompletionChunk, response)
                 if len(response.choices) > 0:
-                    # check if the first chunk has neither content nor tool_calls
-                    # this happens when 1106 models end up calling multiple tools
-                    if (
-                        first_chat_chunk
-                        and response.choices[0].delta.content is None
-                        and response.choices[0].delta.tool_calls is None
-                    ):
-                        first_chat_chunk = False
-                        continue
                     delta = response.choices[0].delta
                 else:
                     delta = ChoiceDelta()
