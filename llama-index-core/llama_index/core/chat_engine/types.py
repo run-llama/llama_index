@@ -246,7 +246,7 @@ class StreamingAgentChatResponse:
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
                 chat.message.content = final_text.strip()  # final message
-                memory.put(chat.message)
+                await memory.aput(chat.message)
         except Exception as e:
             dispatcher.event(StreamChatErrorEvent(exception=e))
             self.exception = e
