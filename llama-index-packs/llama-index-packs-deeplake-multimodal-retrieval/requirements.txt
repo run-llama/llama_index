@@ -1,0 +1,5 @@
+deeplake
+Pillow
+torch
+torchvision
+clip @ git+https://github.com/openai/CLIP.git

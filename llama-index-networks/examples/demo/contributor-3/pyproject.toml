@@ -1,0 +1,16 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.poetry]
+authors = ["Your Name <you@example.com>"]
+description = ""
+name = "contributor-3"
+version = "0.2.0"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"
+llama-index = "^0.14.0"
+llama-index-networks = {allow-prereleases = true, version = "^0.2.0a0"}
+llama-index-readers-wikipedia = "^0.3.0"
+wikipedia = "^1.4.0"

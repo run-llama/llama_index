@@ -1,0 +1,29 @@
+{
+  "name": "Covid QA Dataset",
+  "className": "LabelledRagDataset",
+  "description": "A human-annotated RAG dataset consisting of over 300 question-answer pairs. This dataset represents a subset of the Covid-QA dataset available on Kaggle and authored by Xhlulu. It is a collection of frequently asked questions on COVID from various websites. This subset only considers the top 10 webpages containing the most question-answer pairs.",
+  "numberObservations": 316,
+  "containsExamplesByHumans": true,
+  "containsExamplesByAi": false,
+  "sourceUrls": [
+    "https://www.kaggle.com/datasets/xhlulu/covidqa/?select=news.csv"
+  ],
+  "baselines": [
+    {
+      "name": "llamaindex",
+      "config": {
+        "chunkSize": 1024,
+        "llm": "gpt-3.5-turbo",
+        "similarityTopK": 2,
+        "embedModel": "text-embedding-ada-002"
+      },
+      "metrics": {
+        "contextSimilarity": null,
+        "correctness": 3.96,
+        "faithfulness": 0.889,
+        "relevancy": 0.848
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/covidqa/llamaindex_baseline.py"
+    }
+  ]
+}

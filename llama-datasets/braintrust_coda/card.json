@@ -1,0 +1,29 @@
+{
+  "name": "Braintrust Coda Help Desk",
+  "className": "LabelledRagDataset",
+  "description": "A list of automatically generated question/answer pairs from the Coda (https://coda.io/) help docs. This dataset is interesting because most models include Coda’s documentation as part of their training set, so you can baseline performance without RAG.",
+  "numberObservations": 100,
+  "containsExamplesByHumans": false,
+  "containsExamplesByAi": true,
+  "sourceUrls": [
+    "https://gist.githubusercontent.com/wong-codaio/b8ea0e087f800971ca5ec9eef617273e/raw/39f8bd2ebdecee485021e20f2c1d40fd649a4c77/articles.json"
+  ],
+  "baselines": [
+    {
+      "name": "llamaindex",
+      "config": {
+        "chunkSize": 1024,
+        "llm": "gpt-3.5-turbo",
+        "similarityTopK": 2,
+        "embedModel": "text-embedding-ada-002"
+      },
+      "metrics": {
+        "contextSimilarity": 0.955,
+        "correctness": 4.32,
+        "faithfulness": 0.9,
+        "relevancy": 0.93
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/braintrust_coda/llamaindex_baseline.py"
+    }
+  ]
+}

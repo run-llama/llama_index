@@ -1,0 +1,1329 @@
+Delivered-To: llamaindex.test1@gmail.com
+Received: by 2002:a05:6000:c4:b0:337:3b67:6205 with SMTP id q4csp527938wrx;
+        Fri, 12 Jan 2024 17:01:48 -0800 (PST)
+X-Google-Smtp-Source: AGHT+IFDoupsKxhW35Ww3tz2FnAoUY/Jv5jU2qoLLBmO1IUFI00SYWIoFwFDiFTDSzXPS5BXYGev
+X-Received: by 2002:a05:620a:1009:b0:783:13c8:d5da with SMTP id z9-20020a05620a100900b0078313c8d5damr4426636qkj.61.1705107708424;
+        Fri, 12 Jan 2024 17:01:48 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1705107708; cv=none;
+        d=google.com; s=arc-20160816;
+        b=n/HpeGpdJU8hKall8F16r+pG/pl2B/nFllfCn8v+DDqREIcusgIFKfReY6jaY/66IE
+         4rO8iglXA70GnpuDl9gkH4Z904gZHLj0SyZr7HpyY7W0WC7SusgLvG7h0DnPY5J2c0Fz
+         NpMby73ppT/swktLVp4rCc7QWdq5zYKpi54e4TeeKms4fLoBITUJupZ95t3psBdjD3RX
+         7yEA0UCU/UrVZgKdqPW5DhuHNfbLXQRl9DXGr++JZ/h3L7yjRSbe7/9qd7tU6wKyYGRe
+         aA0awHhuiZtxYvW0DKFOojyt8X1RaH2ufXBZ7krvOpeiFJPEXU0gfKsCmRuKJGPGCzRV
+         WMsw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20160816;
+        h=feedback-id:precedence:form-sub:mime-version:subject:message-id:to
+         :reply-to:from:date:list-unsubscribe:dkim-signature:dkim-signature;
+        bh=eNG7/QDXLxW6juxKxwO1kSAk3suUhjzH9+oEXZLVMA0=;
+        fh=13NtI/lWBp4o9NT3Mm08ANHDg1FzLnDg0V5wjfHGH0Y=;
+        b=TXEe25UqXVEwlMVoPHZVK18vPRVAq9Aan2D0doUpHM4C/lmgtPiGkeT45+BXYfTJct
+         m37toxiiFzuyCWqqWqaeRBMBIyrnyB7RAs+/NmcoUnepG6Ih83bnUtmfa3Dd71pqQlsf
+         JYmHmr/yQZQNHe/sJ1tT6iMDAsQYSvStPNtvSrbrtRkQ9y6/XLxB4LGYN7D83ocz848w
+         USlqPvFX/8kYCS38hVyfDE8sk2LmPXNkwVM52eqdksRaYujYbc7YRM/t8xKmlDw7jtgk
+         zTiQUH3Nja8NK+xhjZWfUz+h08UftWAE3c8myBjd9EHyV8nQWvmdTJwVEVSmrVY42qGQ
+         RPYA==
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@mail.arkinvest.com header.s=hs1 header.b=oNIyxWxW;
+       dkim=pass header.i=@arkfunds.com header.s=hs1-533155 header.b=jsx6kPbq;
+       spf=pass (google.com: domain of 1axbt7xi5zlqk3ldkxx0x4h4mnszek8jos8iwx-llamaindex+2etest1=gmail.com@mail.arkinvest.com designates 158.247.25.159 as permitted sender) smtp.mailfrom="1axbt7xi5zlqk3ldkxx0x4h4mnszek8jos8iwx-llamaindex+2Etest1=gmail.com@mail.arkinvest.com";
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=arkfunds.com
+Return-Path: <1axbt7xi5zlqk3ldkxx0x4h4mnszek8jos8iwx-llamaindex+2Etest1=gmail.com@mail.arkinvest.com>
+Received: from bid4725.mail.arkinvest.com (bid4725.mail.arkinvest.com. [158.247.25.159])
+        by mx.google.com with ESMTPS id x12-20020a05620a258c00b007815767172esi4285119qko.36.2024.01.12.17.01.48
+        for <llamaindex.test1@gmail.com>
+        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 12 Jan 2024 17:01:48 -0800 (PST)
+Received-SPF: pass (google.com: domain of 1axbt7xi5zlqk3ldkxx0x4h4mnszek8jos8iwx-llamaindex+2etest1=gmail.com@mail.arkinvest.com designates 158.247.25.159 as permitted sender) client-ip=158.247.25.159;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@mail.arkinvest.com header.s=hs1 header.b=oNIyxWxW;
+       dkim=pass header.i=@arkfunds.com header.s=hs1-533155 header.b=jsx6kPbq;
+       spf=pass (google.com: domain of 1axbt7xi5zlqk3ldkxx0x4h4mnszek8jos8iwx-llamaindex+2etest1=gmail.com@mail.arkinvest.com designates 158.247.25.159 as permitted sender) smtp.mailfrom="1axbt7xi5zlqk3ldkxx0x4h4mnszek8jos8iwx-llamaindex+2Etest1=gmail.com@mail.arkinvest.com";
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=arkfunds.com
+Received: by 172.16.124.15 with SMTP id aybkfun4xszmp2e0iw0actih0n3sjebunz4f47l0;
+        Sat, 13 Jan 2024 01:01:40 GMT
+DKIM-Signature: v=1; s=hs1; d=mail.arkinvest.com;
+        i=@mail.arkinvest.com;
+        h=sender:from:from:reply-to:to:to:cc:cc:subject:subject:list-unsubscribe:form-sub:feedback-id;
+        a=rsa-sha256; c=relaxed/relaxed;
+        bh=eNG7/QDXLxW6juxKxwO1kSAk3suUhjzH9+oEXZLVMA0=;
+        b=oNIyxWxWu643/0jpluWxychV//DGyn/jJNMFcu65Q08zFNBT5m9ozgz6aTAKKP
+         S7eFaTuhnobrIA2e5bIb1xH081GHguePF6mpvzEvw6oMxvAignxeVLkSNsFuvAO
+         CAum1vuwDACEJPKqmr1a2Hahkcrwcq0uiix/yBSKzFRbU4cvgsfzwqBXP+LNgV1
+         +iOO2PMdGLi3R2ZZ7QcGHa2GDmBVnk4g3i4bB6dV0cszE7I+X2zNQCtWCIRf937
+         XuVuPzyz/5anWU7abqksWETJgzwWdGBglf7qg/hFddFYveVUY2GlPRvv8UdWYM+
+         47lUC+mVE8PY+NpiCBkZLlAl/ssA==; q=dns/txt; t=1705107700;
+        x=1705370500;
+DKIM-Signature: v=1; s=hs1-533155; d=arkfunds.com;
+        i=@arkfunds.com;
+        h=sender:from:from:reply-to:to:to:cc:cc:subject:subject:list-unsubscribe:form-sub:feedback-id;
+        a=rsa-sha256; c=relaxed/relaxed;
+        bh=eNG7/QDXLxW6juxKxwO1kSAk3suUhjzH9+oEXZLVMA0=;
+        b=jsx6kPbqfPY0KP4uhq03s1YIbDjSbEI1hKZhvFHoYydcBQjTE6za1P7UkqCFs4
+         CTPv4QsNKZLMDGTg+EDhRJNR4qssGYxzANolex0R/WFhgzk2cclcBOrIYcs/Hkc
+         G8f4dBOg+a0jKiUyMxh8bPVGvG+Lv1MBjiIoPTRgVZQuCv3eTg/ExTGhwwqVomv
+         wNyxYfk2YDwvd4mJLMOEuWGUjnqBuefGKIgeCaKzy+V38lnpFl1clMLjUq3sJEF
+         ujKbda6x2vV4MzGOW3Ly8RL6j4kxswaqvNFvwaf7RMQMyswZe0BDt5BoV0YYpsv
+         WQUne5GGQLNgrv+XWg2JzEm7rKDg==; q=dns/txt; t=1705107700;
+        x=1705370500;
+Return-Path: <1axbt7xi5zlqk3ldkxx0x4h4mnszek8jos8iwx-llamaindex+2Etest1=gmail.com@mail.arkinvest.com>
+X-HS-Cid: 1axe07aw94n2xm5p2ff4nuhp5cwbok0dn4foox
+List-Unsubscribe: <mailto:1axc3dost9lgek7mrjk1cckymjeivfo5y6n1b1-llamaindex+2Etest1=gmail.com@mail.arkinvest.com?subject=unsubscribe>
+Date: Fri, 12 Jan 2024 20:01:40 -0500
+From: ARK Trading Desk <tradingdesk@arkfunds.com>
+Reply-To: info@ark-funds.com
+To: llamaindex.test1@gmail.com
+Message-ID: <1705107700566.b6ec745e-8f8d-4596-ae9b-8622e34b2626@mail.arkinvest.com>
+Subject: =?utf-8?Q?ARK_Investment_Management_LLC_=E2=80=93_Actively?=
+ =?utf-8?Q?_Managed_ETFs_-_Daily_Trade_Information*?=
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+	boundary="----=_Part_1130209_1756618583.1705107700667"
+Form-Sub: v=1; ip=none
+Precedence: bulk
+X-Report-Abuse-To: abuse@hubspot.com (see
+ https://policy.hubspot.com/abuse-complaints)
+Feedback-ID: aelpn5:aie2t8yu:aib1s:HubSpot
+
+------=_Part_1130209_1756618583.1705107700667
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Ark Invest Logo
+
+Trade Notification for 1/12/2024  Note: This email is updated for demonstration.
+
+
+
+ARK Details.
+
+ARKK view fund page (https://research.ark-invest.com/e3t/Ctc/I1+113/c3nSf04=
+/VWNfd03sB5C9W5wjDMF1gS9svW1n-N7358c9ChN37Jq5j3prCCW6N1vHY6lZ3lcN4rlbLdVV2-=
+KVXns395P_dlYW7jcvvM6-hXsPW1bHhHS93-rqgW95zTwW7h8t95W2-x6Ry7d7C8QW61p_sC4QH=
+_Z3W4g2gk15RYJxrW6Qngfk89_KR4VcCmd-7qx-8lW8l0psJ1Jc47jW5gL9cL8G0ZFVW6MLt_k1=
+TDC51W42LHSj69_rD7N2Y3-3bzcQ3GW1djSbc7WdxMLW48C3FR46nFMcW3nvv5W4F5TvzW5W9wj=
+Y3PD2qdW19kKDF11kcjzW1V3DKx5896sGW6Btws21RPPx6f1Xm2PH04 )
+1/12/2024
+
+Direction
+Ticker
+Company Name
+Shares Traded | % of Total ETF
+
+Buy
+TSLA
+TESLA INC
+93,654 |
+
+0.2453
+
+Buy
+TXG
+10X GENOMICS INC
+159,506 |
+
+0.0907
+
+Buy
+CRSP
+CRISPR THERAPEUTICS AG
+86,268 |
+
+0.0669
+
+Buy
+RXRX
+RECURSION PHARMACEUTICALS
+289,619 |
+
+0.0391
+
+Sell
+HOOD
+ROBINHOOD MARKETS INC
+927 |
+
+1.0E-4
+
+Sell
+EXAS
+EXACT SCIENCES CORP
+100,766 |
+
+0.0829
+
+Sell
+TWLO
+TWILIO INC
+108,523 |
+
+0.0957
+
+Sell
+PD
+PAGERDUTY INC
+302,096 |
+
+0.0958
+
+Sell
+PATH
+UIPATH INC
+553,172 |
+
+0.1476
+
+ARKW view fund page (https://research.ark-invest.com/e3t/Ctc/I1+113/c3nSf04=
+/VWNfd03sB5C9W5wjDMF1gS9svW1n-N7358c9ChN37Jq5j3prCCW6N1vHY6lZ3ljW5TjKVK5j0k=
+3cW6wyqls5LyhygN3GNZQvzpTX2VM1CGp1zD87HW4NlkH-7Tn4_6W9l3h8H10gKgLN4-GjT1GSW=
+FnW4JngL91VJ9C5W1nx7R_99QQ-SN3fKz6WTsDzDW1G39vF6lHMMLW3vVY5c5C1zXTN9cvL4wfC=
+4lvW393cCC5l9s9jW4l9Thy7JXLGQW6jdj5v3ThxrBW8FCwCK86cc3hW56wpKs4Y56YLW6Pgr2h=
+7FG395W7rywMS4BnCBTW6fQTW07zZ8tMVW1yjB9f9Lqvf6Y4Bsn04 )
+1/12/2024
+
+Direction
+Ticker
+Company Name
+Shares Traded | % of Total ETF
+
+Buy
+TSLA
+TESLA INC
+18,148 |
+
+0.2454
+
+Sell
+HOOD
+ROBINHOOD MARKETS INC
+49 |
+
+0.0000
+
+Sell
+PD
+PAGERDUTY INC
+9,756 |
+
+0.0160
+
+Sell
+TWLO
+TWILIO INC
+21,849 |
+
+0.0994
+
+Sell
+PATH
+UIPATH INC
+105,944 |
+
+0.1459
+
+ARKG view fund page (https://research.ark-invest.com/e3t/Ctc/I1+113/c3nSf04=
+/VWNfd03sB5C9W5wjDMF1gS9svW1n-N7358c9ChN37Jq5j3prCCW6N1vHY6lZ3mtW4SBzX26t4P=
+ZCW7kbW188PQs_dW22q5c72T9130W6J7Bcz6lVjcXW8CdH1K38LJLGW7qRdv43LlWzYW4J_XZC1=
+ggksVW4dBMzj8M4XRpVjHty32H91KLW8Y-zm81FHll6W4bD_-T51r3msW53pY907WKKS7W7VDQX=
+986ZFzLW85ld1W5mGWsPW1y92ts6J3PRtW1xlTW195YkQ-W5tB5Df8ndhPfW537N5L3PGvfNW14=
+BGtj74D6V3W37BQ2J1Rzdn_W7khcdP1NZY-xN6bZPr_R3ZxYf5K4G8404 )
+1/12/2024
+
+Direction
+Ticker
+Company Name
+Shares Traded | % of Total ETF
+
+Buy
+TXG
+10X GENOMICS INC
+38,042 |
+
+0.0864
+
+Buy
+CRSP
+CRISPR THERAPEUTICS AG
+21,197 |
+
+0.0656
+
+Buy
+RXRX
+RECURSION PHARMACEUTICALS
+67,422 |
+
+0.0363
+
+Buy
+RPTX
+REPARE THERAPEUTICS INC
+15,410 |
+
+0.0049
+
+Sell
+EXAS
+EXACT SCIENCES CORP
+32,057 |
+
+0.1052
+
+Download today's trades in Excel format
+
+*DISCLOSURES: This email is updated for demonstration.
+
+Unsubscribe
+------=_Part_1130209_1756618583.1705107700667
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www=
+.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns=3D"http://www.w3=
+.org/1999/xhtml" xmlns:o=3D"urn:schemas-microsoft-com:office:office" xmlns:=
+v=3D"urn:schemas-microsoft-com:vml" lang=3D"en"><head>
+    <title>ARK Investment Management LLC =E2=80=93 Actively Managed ETFs - =
+Daily Trade Information*</title>
+    <meta property=3D"og:title" content=3D"ARK Investment Management LLC =
+=E2=80=93 Actively Managed ETFs - Daily Trade Information*">
+    <meta name=3D"twitter:title" content=3D"ARK Investment Management LLC =
+=E2=80=93 Actively Managed ETFs - Daily Trade Information*">
+   =20
+   =20
+   =20
+<meta name=3D"x-apple-disable-message-reformatting">
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8">
+<meta http-equiv=3D"X-UA-Compatible" content=3D"IE=3Dedge">
+<meta name=3D"viewport" content=3D"width=3Ddevice-width, initial-scale=3D1.=
+0">
+    <!--[if gte mso 9]>
+  <xml>
+      <o:OfficeDocumentSettings>
+      <o:AllowPNG/>
+      <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+  </xml>
+ =20
+  <style>
+    ul > li {
+      text-indent: -1em;
+    }
+  </style>
+<![endif]-->
+<!--[if mso]>
+<style type=3D"text/css">
+ body, td {font-family: Arial, Helvetica, sans-serif;}
+ .hse-body-wrapper-table {background-color: #1a1b3f;padding: 20px 0 !import=
+ant}
+</style>
+<![endif]-->
+   =20
+     =20
+   =20
+  <meta name=3D"generator" content=3D"HubSpot"><meta property=3D"og:url" co=
+ntent=3D"https://research.ark-invest.com/-temporary-slug-dcc9c1d4-eca9-4f91=
+-9b47-744bcbb9b334"><meta name=3D"robots" content=3D"noindex,follow"><!--[i=
+f !((mso)|(IE))]><!-- --><style type=3D"text/css">.moz-text-html .hse-colum=
+n-container{max-width:600px !important;width:600px !important}
+.moz-text-html .hse-column{display:table-cell;vertical-align:top}.moz-text-=
+html .hse-section .hse-size-12{max-width:600px !important;width:600px !impo=
+rtant}
+@media only screen and (min-width:640px){.hse-column-container{max-width:60=
+0px !important;width:600px !important}
+.hse-column{display:table-cell;vertical-align:top}.hse-section .hse-size-12=
+{max-width:600px !important;width:600px !important}
+}@media only screen and (max-width:639px){img.stretch-on-mobile,.hs_rss_ema=
+il_entries_table img,.hs-stretch-cta .hs-cta-img{height:auto !important;wid=
+th:100% !important}
+.display_block_on_small_screens{display:block}.hs_padded{padding-left:20px =
+!important;padding-right:20px !important}
+}</style><!--<![endif]--><style type=3D"text/css">#hs_body #hs_cos_wrapper_=
+main a[x-apple-data-detectors]{color:inherit !important;text-decoration:non=
+e !important;font-size:inherit !important;font-family:inherit !important;
+font-weight:inherit !important;line-height:inherit !important}
+a{text-decoration:underline}p{margin:0}body{-ms-text-size-adjust:100%;
+-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;
+moz-osx-font-sm=
+oothing:grayscale}</style></head>
+  <body id=3D"hs_body" bgcolor=3D"#1a1b3f" style=3D"margin:0 !important;
+  pa=
+dding:0 !important; font-family:Arial, sans-serif; font-size:12px;
+color:#f=
+fffff; word-break:break-word">
+   =20
+   =20
+<!--[if gte mso 9]>
+<v:background xmlns:v=3D"urn:schemas-microsoft-com:vml" fill=3D"t">
+    <v:fill type=3D"tile" size=3D"100%,100%" color=3D"#ffffff"/>
+</v:background>
+<![endif]-->
+    <div class=3D"hse-body-background" lang=3D"en" style=3D"
+    background-colo=
+r:#1a1b3f" bgcolor=3D"#1a1b3f">
+      <table role=3D"presentation" class=3D"hse-body-wrapper-table
+      hse-full=
+-width-template" cellpadding=3D"0" cellspacing=3D"0" style=3D"
+border-spacin=
+g:0 !important; border-collapse:collapse; mso-table-lspace:0pt;
+mso-table-r=
+space:0pt; margin:0; padding:0; width:100% !important; min-width:320px
+!imp=
+ortant; height:100% !important" width=3D"100%" height=3D"100%">
+        <tbody><tr>
+          <td class=3D"hse-body-wrapper-td" valign=3D"top" style=3D"
+          border-=
+collapse:collapse; mso-line-height-rule:exactly; font-family:Arial,
+sans-se=
+rif; font-size:12px; color:#ffffff; word-break:break-word; padding-top:0px"=
+>
+            <div id=3D"hs_cos_wrapper_main" class=3D"hs_cos_wrapper hs_cos_=
+wrapper_widget hs_cos_wrapper_type_email_flex_area" style=3D"color: inherit=
+; font-size: inherit; line-height: inherit;" data-hs-cos-general-type=3D"wi=
+dget" data-hs-cos-type=3D"email_flex_area">  <div id=3D"section_16518506638=
+53" class=3D"hse-section hse-section-first hse-section-last" style=3D"paddi=
+ng-left:10px; padding-right:10px; padding-top:20px; padding-bottom:20px">
+   =20
+   =20
+    <!--[if !((mso)|(IE))]><!-- -->
+      <div class=3D"hse-column-container" style=3D"min-width:280px; max-wid=
+th:600px; Margin-left:auto; Margin-right:auto; border-collapse:collapse; bo=
+rder-spacing:0; background-color:#1a1b3f" bgcolor=3D"#1a1b3f">
+    <!--<![endif]-->
+   =20
+    <!--[if (mso)|(IE)]>
+      <div class=3D"hse-column-container" style=3D"min-width:280px;max-widt=
+h:600px;width:100%;Margin-left:auto;Margin-right:auto;border-collapse:colla=
+pse;border-spacing:0;">
+      <table align=3D"center" style=3D"border-collapse:collapse;mso-table-l=
+space:0pt;mso-table-rspace:0pt;width:600px;" cellpadding=3D"0" cellspacing=
+=3D"0" role=3D"presentation" width=3D"600" bgcolor=3D"#1a1b3f">
+      <tr style=3D"background-color:#1a1b3f;">
+    <![endif]-->
+    <!--[if (mso)|(IE)]>
+  <td valign=3D"top" style=3D"width:600px;">
+<![endif]-->
+<!--[if gte mso 9]>
+  <table role=3D"presentation" width=3D"600" cellpadding=3D"0" cellspacing=
+=3D"0" style=3D"border-collapse:collapse;mso-table-lspace:0pt;mso-table-rsp=
+ace:0pt;width:600px">
+<![endif]-->
+<div id=3D"column_1651850663854_0" class=3D"hse-column hse-size-12">
+  <div id=3D"hs_cos_wrapper_module_16518506722862" class=3D"hs_cos_wrapper =
+hs_cos_wrapper_widget hs_cos_wrapper_type_module" style=3D"color: inherit; =
+font-size: inherit; line-height: inherit;" data-hs-cos-general-type=3D"widg=
+et" data-hs-cos-type=3D"module">
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+=20
+=20
+<table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" styl=
+e=3D"border-spacing:0 !important; border-collapse:collapse; mso-table-lspac=
+e:0pt; mso-table-rspace:0pt; width:100%">
+<tbody><tr>
+<td style=3D"border-collapse:collapse; mso-line-height-rule:exactly; font-f=
+amily:Arial, sans-serif; font-size:12px; color:#ffffff; word-break:break-wo=
+rd">
+        <br>
+<table class=3D"wrapper" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" w=
+idth=3D"100%" style=3D"border-spacing:0 !important;
+border-collapse:collapse;
+mso-table-lspace:0pt; mso-table-rspace:0pt; table-layout:fixed"> =20
+  <tbody><tr>
+    <td style=3D"border-collapse:collapse; mso-line-height-rule:exactly;
+    sans-serif; color:#ffffff; word-break:break-word; font-siz=
+e:6px; padding:30px 0px 10px 0px" height=3D"auto" align=3D"center">
+      <a href=3D"https://research.ark-invest.com/e3t/Ctc/I1+113/c3nSf04/VWN=
+fd03sB5C9W5wjDMF1gS9svW1n-N7358c9ChN37Jq5j3qgyTW6N1vHY6lZ3pbW8yRlqT7MfnGHVs=
+y-Kz5LLlnxW2y_QkY5tDbkHW7j2VGQ7DYrslW5pjxRq3cLN7ZW40dmvW2FH8QNW2LFgJ92pHG0W=
+W5dxhxg20g3R9W1fdWlV3t1zsQW45R9y82HXjJ4W2YYKrK8wF7MBW6zl7ky45skvGW8cVSF75k7=
+m3NMYXPLHrM20HW98flL65W8xFzVq-lK_2kJ0wKW36-9Rp46wZy6W789gn92rrcQNW3P8drp6Qn=
+5ttN1xQrlmJcJNBW8C8XY08b5rPkW322Vgw7RBmzXf9fnjBK04" style=3D"color:#00a4bd;=
+ mso-line-height-rule:exactly" data-hs-link-id=3D"0" target=3D"_blank">
+        <img border=3D"0" style=3D"outline:none; -ms-interpolation-mode:bic=
+ubic; border:none; display:block; vertical-align:top; color:#000000; text-d=
+ecoration:none; font-family:arial; font-size:12px" width=3D"200" hspace=3D"=
+0" vspace=3D"0" alt=3D"Ark Invest Logo" src=3D"https://research.ark-invest.=
+com/hs-fs/hubfs/idt/img/ark_invest_logo_200x76.png?noresize&amp;width=3D400=
+&amp;upscale=3Dtrue&amp;name=3Dark_invest_logo_200x76.png">
+      </a>
+    </td>
+  </tr>
+</tbody></table>
+<p style=3D"mso-line-height-rule:exactly; line-height:200%">&nbsp;</p>
+<p style=3D"mso-line-height-rule:exactly; line-height:150%; text-align:cent=
+er" align=3D"center"><span style=3D"font-size: 16px;">
+Trade Notification for <b>1/12/2024</b></span></p>
+
+<p style=3D"mso-line-height-rule:exactly; line-height:200%">&nbsp;</p>
+<p style=3D"mso-line-height-rule:exactly; line-height:200%">
+<b>Note: This email is updated for demonstration purpose</b></p>
+<p style=3D"mso-line-height-rule:exactly; line-height:200%">&nbsp;</p>
+
+<p style=3D"mso-line-height-rule:exactly; line-height:154%; text-align:just=
+ify; margin-bottom:5px" align=3D"justify"><span style=3D"font-size: 12px;">=
+ARK offers fully transparent Exchange Traded Funds ("ETFs") and provides in=
+vestors with trade information for all actively managed ETFs. This email on=
+ly reflects portfolio adjustments made by the ARK investment team. Files of=
+ trades are not comprehensive lists of a day's trades for the ARK ETFs and =
+exclude ETF Creation/Redemption Unit activity. Complete holding files are p=
+osted daily on <a href=3D"https://research.ark-invest.com/e3t/Ctc/I1+113/c3=
+nSf04/VWNfd03sB5C9W5wjDMF1gS9svW1n-N7358c9ChN37Jq5j3qgyTW6N1vHY6lZ3nHW4fL4Y=
+G7LmcJCW2V0c0g2JRQCnW8l9Ynk6qZTHqW6gLMJ38ZsBbfW73Qr3P5zJRfZW94bdTx47g98nW3J=
+Xtqr4LWLGMW8qjgW51TzFFPW4yl-Ch2mlsMLVc7-2T3K976VW3spGtf5KsCR8W6G5jK73DHb_VW=
+6xhH3_9217VNW3qr3z-6P9cyYW5qlZ2T4BYd98W16cDwt2kTMQrW2rp6d045v-_DW2nHbg4795t=
+gJW84l1n73ZcRj2W7-3JvM2Q8KzNW7dVyz76_C8ZSN96SfDrxnMx1f1v90DY04" style=3D"co=
+lor:#00a4bd; mso-line-height-rule:exactly" data-hs-link-id=3D"1" target=3D"=
+_blank"><span style=3D"font-family: arial, helvetica, sans-serif; color:#82=
+64FF;"><u>ark-funds.com</u></span></a>.</span></p>
+<p style=3D"mso-line-height-rule:exactly; line-height:150%">&nbsp;</p>
+  <table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" st=
+yle=3D"border-spacing:0 !important; border-collapse:collapse; mso-table-lsp=
+ace:0pt; mso-table-rspace:0pt; font-family:Arial; width:100%">
+     <tbody><tr style=3D"background-color:#1A1B3F;">
+      <td colspan=3D"2" width=3D"50%" height=3D"100%" valign=3D"bottom" sty=
+le=3D"mso-line-height-rule:exactly; word-break:break-word; font-family:Aria=
+l; font-size:20px; line-height:24px; padding:6px 6px 6px 6px; width:50%; co=
+lor:#ffffff; text-align:left; border-collapse:collapse; border-bottom:1px s=
+olid #FFFFFF" align=3D"left">ARKK <a style=3D"mso-line-height-rule:exactly;=
+ font-family:Arial; font-size:12px; line-height:14px; color:#8264FF" href=
+=3D"https://research.ark-invest.com/e3t/Ctc/I1+113/c3nSf04/VWNfd03sB5C9W5wj=
+DMF1gS9svW1n-N7358c9ChN37Jq5j3qgyTW6N1vHY6lZ3ngW92pTR723VXyBW1Rxlr73SdN6fW5=
+4ZWgb5p7kYFVRsB1n9bbLKTW6KlKkj5td1-qN8c63bt-zTdpW6J547B60tFCFW693sMF5YQn53W=
+11Pr2F3gTGsJW32GxJx4SHvt1W4YPk_88dgRBWW1FTVwV66S2ZHW3yPBkf6_Rf1bW5JnYwg1Yqc=
+6hW28Tw1110bHcwW8RCk0C64LCYFW3J3WMM69x8hCW42xY-63-Cw8XN96HF6DkQYP5W92dCxV8c=
+K-rRW1JtF5D1kMjfHW1y38Jk32rJMHf8-4JfT04" data-hs-link-id=3D"0" target=3D"_b=
+lank">view fund page</a></td>
+      <td colspan=3D"2" width=3D"50%" height=3D"100%" valign=3D"bottom" sty=
+le=3D"mso-line-height-rule:exactly; word-break:break-word; font-family:Aria=
+l; font-size:14px; line-height:16px; padding:6px 6px 6px 6px; width:50%; co=
+lor:#ffffff; text-align:right; vertical-align:bottom; border-collapse:colla=
+pse; border-bottom:1px solid #FFFFFF" align=3D"right">1/12/2024
+      </td>
+    </tr>
+  </tbody></table>
+  <table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" st=
+yle=3D"border-spacing:0 !important; border-collapse:collapse; mso-table-lsp=
+ace:0pt; mso-table-rspace:0pt; font-family:Arial; line-height:18px; width:1=
+00%">
+    <tbody>
+      <tr bgcolor=3D"#1A1B3F" style=3D"color:#ffffff; background-color:#1A1=
+B3F;">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; width:68px; color:#747887; pa=
+dding:6px 0px 6px 6px; border-bottom:1px solid #5A4F9D; border-collapse:col=
+lapse; line-height:18px" height=3D"18" valign=3D"top" width=3D"68">Directio=
+n</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; width:50px; color:#747887; pa=
+dding:6px 0px 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:col=
+lapse; line-height:18px" height=3D"18" valign=3D"top" width=3D"50">Ticker</=
+td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#747887; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">Company Name</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#747887; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" align=3D"right" valign=3D"top">Shares Traded | %=
+ of Total ETF</td>
+      </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#38D996; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">            Buy</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">TSLA</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">TESLA INC</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">93,654 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.2453
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#38D996; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">
+Buy</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">TXG</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">10X GENOMICS INC</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">159,506 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.0907
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#38D996; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">            Buy</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">CRSP</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">CRISPR THERAPEUTICS AG</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">86,268 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.0669
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#38D996; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">            Buy</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">RXRX</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">RECURSION PHARMACEUTICALS</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">289,619 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.0391
+</td>
+    </tr>
+  =20
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#F74870; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">Se=
+ll</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">HOOD</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">ROBINHOOD MARKETS INC </td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">927 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+1.0E-4
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#F74870; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">Se=
+ll</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">EXAS</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">EXACT SCIENCES CORP</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">100,766 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.0829
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#F74870; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">Se=
+ll</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">TWLO</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">TWILIO INC </td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">108,523 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.0957
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#F74870; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">Se=
+ll</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">PD</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">PAGERDUTY INC</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">302,096 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.0958
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#F74870; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">Se=
+ll</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">PATH</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">UIPATH INC </td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">553,172 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.1476
+</td>
+    </tr>
+  =20
+  </tbody></table>
+<br><br>
+ =20
+ =20
+  <table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" st=
+yle=3D"border-spacing:0 !important; border-collapse:collapse; mso-table-lsp=
+ace:0pt; mso-table-rspace:0pt; font-family:Arial; width:100%">
+     <tbody><tr style=3D"background-color:#1A1B3F;">
+      <td colspan=3D"2" width=3D"50%" height=3D"100%" valign=3D"bottom" sty=
+le=3D"mso-line-height-rule:exactly; word-break:break-word; font-family:Aria=
+l; font-size:20px; line-height:24px; padding:6px 6px 6px 6px; width:50%; co=
+lor:#ffffff; text-align:left; border-collapse:collapse; border-bottom:1px s=
+olid #FFFFFF" align=3D"left">ARKW <a style=3D"mso-line-height-rule:exactly;=
+ font-family:Arial; font-size:12px; line-height:14px; color:#8264FF" href=
+=3D"https://research.ark-invest.com/e3t/Ctc/I1+113/c3nSf04/VWNfd03sB5C9W5wj=
+DMF1gS9svW1n-N7358c9ChN37Jq5j3qgyTW6N1vHY6lZ3nrW2rFDc_1LClzQW8ddGZs1q_hhFVR=
+WrRh6xG8F-W5fNMK36jMld6W3LPbBF8_RDbcW39nwFs4FZC8FW5nknD14Tg2qTW87v8c62R9XQW=
+N2CwwVyhgqLBW45JQ5667r3jSW2_x0S91SrClZW4WPr8y52hTKTW7BzW--1kS9ddW7rN4T3714f=
+pyW7NlHSK82zhq_W6z7nKK7RGYw3VbycWJ3dWlx2W4TtwtW6dmmykW2FWBTr4pS4bFW69n0F953=
+f_y-W5CSwsS2xsX1lN6yd4XxR6-vHf25jbz-04" data-hs-link-id=3D"0" target=3D"_bl=
+ank">view fund page</a></td>
+      <td colspan=3D"2" width=3D"50%" height=3D"100%" valign=3D"bottom" sty=
+le=3D"mso-line-height-rule:exactly; word-break:break-word; font-family:Aria=
+l; font-size:14px; line-height:16px; padding:6px 6px 6px 6px; width:50%; co=
+lor:#ffffff; text-align:right; vertical-align:bottom; border-collapse:colla=
+pse; border-bottom:1px solid #FFFFFF" align=3D"right">1/12/2024
+      </td>
+    </tr>
+  </tbody></table>
+  <table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" st=
+yle=3D"border-spacing:0 !important; border-collapse:collapse; mso-table-lsp=
+ace:0pt; mso-table-rspace:0pt; font-family:Arial; line-height:18px; width:1=
+00%">
+    <tbody>
+      <tr bgcolor=3D"#1A1B3F" style=3D"color:#ffffff; background-color:#1A1=
+B3F;">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; width:68px; color:#747887; pa=
+dding:6px 0px 6px 6px; border-bottom:1px solid #5A4F9D; border-collapse:col=
+lapse; line-height:18px" height=3D"18" valign=3D"top" width=3D"68">Directio=
+n</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; width:50px; color:#747887; pa=
+dding:6px 0px 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:col=
+lapse; line-height:18px" height=3D"18" valign=3D"top" width=3D"50">Ticker</=
+td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#747887; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">Company Name</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#747887; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" align=3D"right" valign=3D"top">Shares Traded | %=
+ of Total ETF</td>
+      </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#38D996; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">            Buy</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">TSLA</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">TESLA INC</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">18,148 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.2454
+</td>
+    </tr>
+  =20
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#F74870; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">Se=
+ll</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">HOOD</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">ROBINHOOD MARKETS INC </td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">49 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+   =20
+ =20
+0.0000
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#F74870; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">Se=
+ll</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">PD</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">PAGERDUTY INC</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">9,756 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+   =20
+ =20
+ =20
+ =20
+ =20
+0.0160
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#F74870; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">Se=
+ll</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">TWLO</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">TWILIO INC </td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">21,849 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.0994
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#F74870; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">Se=
+ll</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">PATH</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">UIPATH INC </td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">105,944 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.1459
+</td>
+    </tr>
+  =20
+  </tbody></table>
+<br><br>
+  <table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" st=
+yle=3D"border-spacing:0 !important; border-collapse:collapse; mso-table-lsp=
+ace:0pt; mso-table-rspace:0pt; font-family:Arial; width:100%">
+     <tbody><tr style=3D"background-color:#1A1B3F;">
+      <td colspan=3D"2" width=3D"50%" height=3D"100%" valign=3D"bottom" sty=
+le=3D"mso-line-height-rule:exactly; word-break:break-word; font-family:Aria=
+l; font-size:20px; line-height:24px; padding:6px 6px 6px 6px; width:50%; co=
+lor:#ffffff; text-align:left; border-collapse:collapse; border-bottom:1px s=
+olid #FFFFFF" align=3D"left">ARKG <a style=3D"mso-line-height-rule:exactly;=
+ font-family:Arial; font-size:12px; line-height:14px; color:#8264FF" href=
+=3D"https://research.ark-invest.com/e3t/Ctc/I1+113/c3nSf04/VWNfd03sB5C9W5wj=
+DMF1gS9svW1n-N7358c9ChN37Jq5j3qgyTW6N1vHY6lZ3l2W7MDG0c5cjDZxW2NsL4S94YxYdW7=
+f3yMT9dw-k6W6X3zsr4xcsHzVFjjBl6RbvDjW880CSg3ThLpvVdTJSN2SVZrXW5GG2R1997RbkW=
+7B2Z6x95HqbbN1Sn2dLmPscCN1TT8wTJp56TW50xKLk9j5wTqW5rTj6y7lKS2YW3xx4ML6bC0JG=
+W5m5Yvh6rwD8pW8Dc5YG3kNRtJN3syrjs8brszW2x5mmZ3GhCVVW3bcTRG3zCtT8W7znbx95SNK=
+xCW7D_R0p8nMgfqW4PhySj2MpTtvddgrlM04" data-hs-link-id=3D"0" target=3D"_blan=
+k">view fund page</a></td>
+      <td colspan=3D"2" width=3D"50%" height=3D"100%" valign=3D"bottom" sty=
+le=3D"mso-line-height-rule:exactly; word-break:break-word; font-family:Aria=
+l; font-size:14px; line-height:16px; padding:6px 6px 6px 6px; width:50%; co=
+lor:#ffffff; text-align:right; vertical-align:bottom; border-collapse:colla=
+pse; border-bottom:1px solid #FFFFFF" align=3D"right">1/12/2024
+      </td>
+    </tr>
+  </tbody></table>
+  <table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" st=
+yle=3D"border-spacing:0 !important; border-collapse:collapse; mso-table-lsp=
+ace:0pt; mso-table-rspace:0pt; font-family:Arial; line-height:18px; width:1=
+00%">
+    <tbody>
+      <tr bgcolor=3D"#1A1B3F" style=3D"color:#ffffff; background-color:#1A1=
+B3F;">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; width:68px; color:#747887; pa=
+dding:6px 0px 6px 6px; border-bottom:1px solid #5A4F9D; border-collapse:col=
+lapse; line-height:18px" height=3D"18" valign=3D"top" width=3D"68">Directio=
+n</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; width:50px; color:#747887; pa=
+dding:6px 0px 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:col=
+lapse; line-height:18px" height=3D"18" valign=3D"top" width=3D"50">Ticker</=
+td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#747887; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">Company Name</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#747887; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" align=3D"right" valign=3D"top">Shares Traded | %=
+ of Total ETF</td>
+      </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#38D996; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">            Buy</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">TXG</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">10X GENOMICS INC</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">38,042 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.0864
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#38D996; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">            Buy</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">CRSP</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">CRISPR THERAPEUTICS AG</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">21,197 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.0656
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#38D996; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">            Buy</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">RXRX</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">RECURSION PHARMACEUTICALS</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">67,422 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.0363
+</td>
+    </tr>
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#38D996; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">            Buy</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">RPTX</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">REPARE THERAPEUTICS INC</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">15,410 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.0049
+</td>
+    </tr>
+  =20
+  =20
+    <tr style=3D"background-color:#0B0A23">
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#F74870; padding:6px 6p=
+x 6px 6px; border-bottom:1px solid #5A4F9D; border-left:1px solid #5A4F9D; =
+border-collapse:collapse; line-height:18px" height=3D"18" valign=3D"top">Se=
+ll</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 0p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">EXAS</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px" height=3D"18" valign=3D"top">EXACT SCIENCES CORP</td>
+        <td style=3D"mso-line-height-rule:exactly; font-family:Arial, sans-=
+serif; font-size:12px; word-break:break-word; color:#FFFFFF; padding:6px 6p=
+x 6px 0px; border-bottom:1px solid #5A4F9D; border-collapse:collapse; line-=
+height:18px; border-right:1px solid #5A4F9D" align=3D"right" height=3D"18" =
+valign=3D"top">32,057 |=20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+ =20
+0.1052
+</td>
+    </tr>
+  =20
+  </tbody></table>
+<br><br>
+<a style=3D"mso-line-height-rule:exactly; font-family:Arial; font-size:12px=
+; line-height:14px; color:#8264FF" href=3D"https://research.ark-invest.com/=
+e3t/Ctc/I1+113/c3nSf04/VWNfd03sB5C9W5wjDMF1gS9svW1n-N7358c9ChN37Jq4q5nR32W5=
+0kH_H6lZ3m1N93DGgJWtKJbW4DSHkQ3BqY82W7T92Gz4Qjq7tW5jT6kg7GsTMZVD5gLM39c2-HM=
+Yg4kpnR_-FMD2J0LYFz3YVTXSGK93G3FKW99yM9T2rr8hCW8r9Hrs8WQ6P9W2yWchx6Kt-7RW8_=
+-vHF2YKBC_W2Nl-LX5849DFW2W0jyQ5C_-ltW4XLt9b4q1j1xW45G4vv6xxv4RW8pB-yj1B-DwN=
+V_1sYP3NfgLvN7jwjtbY2yfvVMYX-L8rcMm0VCGGdT3L_GVFW1N66qb5zkjDJW9cj2q8736gFqW=
+4F1wjy2dlQ7bW7C-RBN3RQ8wpW2k4Znt4QsxMGN2J65zGLPW1gW6z3VlX76R2XSW1-r0D18KfGH=
+-VYgb6m11DhrQVNrp3r7j5nGGW6bPdz37zm6Z-f2r_vdM04" data-hs-link-id=3D"0" targ=
+et=3D"_blank">Download today's trades in Excel format</a>
+<br><br>
+<p style=3D"mso-line-height-rule:exactly; line-height:154%; text-align:left=
+; color:#8264FF" align=3D"left"><a href=3D"https://research.ark-invest.com/=
+hs/manage-preferences/unsubscribe-all?languagePreference=3Den&amp;d=3DVndxF=
+L7bY-ZmW3C64QG3ZskFpW3_R5YW3P3Q7wW3ZsjYm3_fR8YN7jF8F3mWFdKW7tShXn7bt3x2V25s=
+jZ6G487DN5NHsNQX0BksN4P5HtHXk_7QVbw8j52MpkDjW2BssCm4c0tpWw19fqxfpgq2&amp;v=
+=3D3&amp;utm_campaign=3DIDT%20-%20Nightly%20Trade%20Notifications&amp;utm_s=
+ource=3Dhs_automation&amp;utm_medium=3Demail&amp;utm_content=3D289825364&am=
+p;_hsenc=3Dp2ANqtz-8yDIl8XKeqBfQxjxGh4kpkCbwP2bL-z7QJrce79F8VixRxeMjjgfz2t0=
+YkpsdnxCAAUMHWkzUKkRXC6RqKSYPR3ZTnKA&amp;_hsmi=3D289825364" data-unsubscrib=
+e=3D"true" style=3D"color:#00a4bd; mso-line-height-rule:exactly" data-hs-li=
+nk-id=3D"0" target=3D"_blank"><span style=3D"font-family: arial, helvetica,=
+ sans-serif; color:#8264FF;"><u>Unsubscribe</u></span></a>&nbsp;&nbsp;<a hr=
+ef=3D"https://research.ark-invest.com/hs/manage-preferences/unsubscribe?lan=
+guagePreference=3Den&amp;d=3DVndxFL7bY-ZmW3C64QG3ZskFpW3_R5YW3P3Q7wW3ZsjYm3=
+_fR8YN7jF8F3mWFdKW7tShXn7bt3x2V25sjZ6G487DN5NHsNQX0BksN4P5HtHXk_7QVbw8j52Mp=
+kDjW2BssCm4c0tpWw19fqxfpgq2&amp;v=3D3&amp;utm_campaign=3DIDT%20-%20Nightly%=
+20Trade%20Notifications&amp;utm_source=3Dhs_automation&amp;utm_medium=3Dema=
+il&amp;utm_content=3D289825364&amp;_hsenc=3Dp2ANqtz-8yDIl8XKeqBfQxjxGh4kpkC=
+bwP2bL-z7QJrce79F8VixRxeMjjgfz2t0YkpsdnxCAAUMHWkzUKkRXC6RqKSYPR3ZTnKA&amp;_=
+hsmi=3D289825364" data-unsubscribe=3D"true" style=3D"color:#00a4bd; mso-lin=
+e-height-rule:exactly" data-hs-link-id=3D"0" target=3D"_blank"><span style=
+=3D"font-family: arial, helvetica, sans-serif; color:#8264FF;"><u>Manage
+Preferences</u></span></a></p>=20
+ =20
+<p style=3D"mso-line-height-rule:exactly; line-height:150%">&nbsp;</p>
+ =20
+</td>
+</tr>
+</tbody></table></div>
+</div>
+<!--[if gte mso 9]></table><![endif]-->
+<!--[if (mso)|(IE)]></td><![endif]-->
+    <!--[if (mso)|(IE)]></tr></table><![endif]-->
+    </div>
+  =20
+  </div></div>
+          </td>
+        </tr>
+      </tbody></table>
+    </div>
+ =20
+<img src=3D"https://research.ark-invest.com/e3t/Cto/I1+113/c3nSf04/VWNfd03s=
+B5C9W5wjDMF1gS9svW1n-N7358c9ChW37JpTn3CDK0j103" alt=3D"" width=3D"1" height=
+=3D"1" border=3D"0" style=3D"display:none!important;min-height:1px!importan=
+t;width:1px!important;border-width:0!important;margin-top:0!important;margi=
+n-bottom:0!important;margin-right:0!important;margin-left:0!important;paddi=
+ng-top:0!important;padding-bottom:0!important;padding-right:0!important;pad=
+ding-left:0!important"></body></html>
+------=_Part_1130209_1756618583.1705107700667--

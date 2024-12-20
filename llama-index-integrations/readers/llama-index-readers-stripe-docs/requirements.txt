@@ -1,0 +1,2 @@
+html2text
+urllib3

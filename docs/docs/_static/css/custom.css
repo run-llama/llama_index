@@ -1,0 +1,14 @@
+#my-component-root *,
+#headlessui-portal-root * {
+  z-index: 1000000000000;
+  font-size: 100%;
+}
+
+textarea {
+  border: 0;
+  padding: 0;
+}
+
+article p {
+  margin-bottom: 10px !important;
+}

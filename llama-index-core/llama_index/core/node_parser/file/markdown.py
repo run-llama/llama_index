@@ -1,0 +1,124 @@
+"""Markdown node parser."""
+import re
+from typing import Any, List, Optional, Sequence
+
+from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.node_parser.interface import NodeParser
+from llama_index.core.node_parser.node_utils import build_nodes_from_splits
+from llama_index.core.schema import BaseNode, MetadataMode, TextNode
+from llama_index.core.utils import get_tqdm_iterable
+
+
+class MarkdownNodeParser(NodeParser):
+    """Markdown node parser.
+
+    Splits a document into Nodes using Markdown header-based splitting logic.
+    Each node contains its text content and the path of headers leading to it.
+
+    Args:
+        include_metadata (bool): whether to include metadata in nodes
+        include_prev_next_rel (bool): whether to include prev/next relationships
+    """
+
+    @classmethod
+    def from_defaults(
+        cls,
+        include_metadata: bool = True,
+        include_prev_next_rel: bool = True,
+        callback_manager: Optional[CallbackManager] = None,
+    ) -> "MarkdownNodeParser":
+        callback_manager = callback_manager or CallbackManager([])
+        return cls(
+            include_metadata=include_metadata,
+            include_prev_next_rel=include_prev_next_rel,
+            callback_manager=callback_manager,
+        )
+
+    def get_nodes_from_node(self, node: BaseNode) -> List[TextNode]:
+        """Get nodes from document by splitting on headers."""
+        text = node.get_content(metadata_mode=MetadataMode.NONE)
+        markdown_nodes = []
+        lines = text.split("\n")
+        current_section = ""
+        # Keep track of headers at each level
+        header_stack: List[str] = []
+        code_block = False
+
+        for line in lines:
+            # Track if we're inside a code block to avoid parsing headers in code
+            if line.lstrip().startswith("```"):
+                code_block = not code_block
+                current_section += line + "\n"
+                continue
+
+            # Only parse headers if we're not in a code block
+            if not code_block:
+                header_match = re.match(r"^(#+)\s(.*)", line)
+                if header_match:
+                    # Save the previous section before starting a new one
+                    if current_section.strip():
+                        markdown_nodes.append(
+                            self._build_node_from_split(
+                                current_section.strip(),
+                                node,
+                                "/".join(header_stack[:-1]) if header_stack else "",
+                            )
+                        )
+
+                    level = len(header_match.group(1))
+                    header_text = header_match.group(2)
+
+                    # Pop headers of equal or higher level
+                    while header_stack and len(header_stack) >= level:
+                        header_stack.pop()
+
+                    # Add the new header
+                    header_stack.append(header_text)
+                    current_section = "#" * level + f" {header_text}\n"
+                    continue
+
+            current_section += line + "\n"
+
+        # Add the final section
+        if current_section.strip():
+            markdown_nodes.append(
+                self._build_node_from_split(
+                    current_section.strip(),
+                    node,
+                    "/".join(header_stack[:-1]) if header_stack else "",
+                )
+            )
+
+        return markdown_nodes
+
+    def _build_node_from_split(
+        self,
+        text_split: str,
+        node: BaseNode,
+        header_path: str,
+    ) -> TextNode:
+        """Build node from single text split."""
+        node = build_nodes_from_splits([text_split], node, id_func=self.id_func)[0]
+
+        if self.include_metadata:
+            node.metadata["header_path"] = (
+                "/" + header_path + "/" if header_path else "/"
+            )
+
+        return node
+
+    def _parse_nodes(
+        self,
+        nodes: Sequence[BaseNode],
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> List[BaseNode]:
+        """Parse nodes."""
+        all_nodes: List[BaseNode] = []
+        nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
+
+        for node in nodes_with_progress:
+            nodes = self.get_nodes_from_node(node)
+            all_nodes.extend(nodes)
+
+        return all_nodes

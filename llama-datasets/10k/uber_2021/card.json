@@ -1,0 +1,27 @@
+{
+  "name": "Uber 10K Dataset 2021",
+  "className": "LabelledRagDataset",
+  "description": "A labelled RAG dataset based on the Uber 2021 10K document, consisting of queries, reference answers, and reference contexts.",
+  "numberObservations": 822,
+  "containsExamplesByHumans": false,
+  "containsExamplesByAi": true,
+  "sourceUrls": [],
+  "baselines": [
+    {
+      "name": "llamaindex",
+      "config": {
+        "chunkSize": 1024,
+        "llm": "gpt-3.5-turbo",
+        "similarityTopK": 2,
+        "embedModel": "text-embedding-ada-002"
+      },
+      "metrics": {
+        "contextSimilarity": 0.943,
+        "correctness": 3.874,
+        "faithfulness": 0.667,
+        "relevancy": 0.844
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/10k/uber_2021/llamaindex_baseline.py"
+    }
+  ]
+}

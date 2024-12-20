@@ -1,0 +1,5 @@
+streamlit
+wikipedia
+openai
+nltk
+streamlit-pills

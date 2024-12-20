@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.1
+    user: "101:101"
+    container_name: clickhouse-server
+    hostname: clickhouse-server
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144

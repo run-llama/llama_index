@@ -1,0 +1,71 @@
+interactions:
+  - request:
+      body:
+        '{"temperature": 1.0, "max_tokens": 512, "n": 1, "frequency_penalty": 0.0,
+        "presence_penalty": 0.0, "use_beam_search": false, "best_of": null, "ignore_eos":
+        false, "stop": null, "logprobs": null, "top_k": -1, "top_p": 1.0, "prompt":
+        "When AI hype is over?", "stream": false}'
+      headers:
+        Accept:
+          - "*/*"
+        Accept-Encoding:
+          - gzip, deflate
+        Connection:
+          - keep-alive
+        Content-Length:
+          - "273"
+        Content-Type:
+          - application/json
+        User-Agent:
+          - Test Client
+      method: POST
+      uri: http://localhost:8000/generate
+    response:
+      body:
+        string:
+          '{"text":["When AI hype is over? Scanners out sale at Amazon, last minute
+          rush on Supercars\nProducts featured here are selected by our partners at
+          Cars.com. If you buy something through links on our site, Mashable may earn
+          an affiliate commission.\nTL;DR: If rivals and owners back off from marketing
+          of the next decade and 40,000 new cars in a decade, there''s just one Microsoft
+          AI machine ahead of you.\nVisualizing the future in machine learning requires
+          smart marketers. And the Azure AI Machine division on Friday announced maritime
+          search service Amazon Fantasy, its first foray into AI targeting vehicles.
+          On July 1, the company also announced its bigger go-to AI Web service, Virtual
+          Cartwheel, as part of its Strategic Accelerator Initiative.\nWhile autonomous
+          vehicles are still in the nascent stage, Google''s Plan B, on acquiring, Sustain
+          Britain, for $6 billion, builds upon this. As we head into 2025, automakers
+          likely are looking to position themselves as the premier new technology target
+          as trade advances and both technology and synthetic manufacturing have come
+          to dominate the general economy.\nAI is certainly a part of the brew, but
+          corporations look up to companies that can cast shadows on the competition
+          and go on to claim crypto-currency unveiling as a future phenomenon. Microsoft''s
+          Codex will look especially toe-behind Amazon Fantasy, so watch out.\nImplementing
+          AI in your organization isn''t rocket science. In fact, there are areas where
+          firms can flourish. Land emissions in a country can range from 10 to 39 cents
+          per gallon, but computers can analyze the global data and transmit results
+          for engineering clients. Federal data today can be exchanged for up to 86
+          cents to a decade, which is even better than government data. And in 2010,
+          Reuters reported wearable devices that migrated the automatic answer of the
+          King ended up making projects that pay awards at almost 70 cents per act of
+          commerce, up to the same degree as a cashier.\nBut software-as-a-service is
+          no rubber stamp for the machine, and the companies behind them can be first
+          to hit the game. With strategic assets such as AI, Viber, Instapaper, and
+          Discourse, explorers will have open sturdiness and superstructure to express
+          their views. Fruits will appear, and target bots can make funds out of indexing
+          data faster than humans. And datacenters, now in their 20s, can assemble human
+          hires right down to the seat of theivery.\nGiven just how robust AI is, AI
+          certainly isn''t lost, and it''s good"]}'
+      headers:
+        content-length:
+          - "2499"
+        content-type:
+          - application/json
+        date:
+          - Thu, 21 Mar 2024 11:07:58 GMT
+        server:
+          - uvicorn
+      status:
+        code: 200
+        message: OK
+version: 1

@@ -1,0 +1,80 @@
+interactions:
+  - request:
+      body:
+        '{"temperature": 1.0, "max_tokens": 512, "n": 1, "frequency_penalty": 0.0,
+        "presence_penalty": 0.0, "use_beam_search": false, "best_of": null, "ignore_eos":
+        false, "stop": null, "logprobs": null, "top_k": -1, "top_p": 1.0, "prompt":
+        "user: When AI hype is over?\nassistant: ", "stream": true}'
+      headers:
+        Accept:
+          - "*/*"
+        Accept-Encoding:
+          - gzip, deflate
+        Connection:
+          - keep-alive
+        Content-Length:
+          - "291"
+        Content-Type:
+          - application/json
+        User-Agent:
+          - Test Client
+      method: POST
+      uri: http://localhost:8000/generate
+    response:
+      body:
+        string:
+          "{\"text\": [\"user: When AI hype is over?\\nassistant:  What\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  What movement\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  What movement was\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  What movement was part\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  What movement was part of\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  What movement was part of the\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  What movement was part of the
+          hype\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:  What movement
+          was part of the hype?\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ What movement was part of the hype? \"]}\0{\"text\": [\"user: When AI hype
+          is over?\\nassistant:  What movement was part of the hype?  Chief\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  What movement was part of the
+          hype?  Chief Engineer\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ What movement was part of the hype?  Chief Engineer:\"]}\0{\"text\": [\"user:
+          When AI hype is over?\\nassistant:  What movement was part of the hype?  Chief
+          Engineer: All\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ What movement was part of the hype?  Chief Engineer: All I\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  What movement was part of the
+          hype?  Chief Engineer: All I can\"]}\0{\"text\": [\"user: When AI hype is
+          over?\\nassistant:  What movement was part of the hype?  Chief Engineer: All
+          I can think\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:  What
+          movement was part of the hype?  Chief Engineer: All I can think of\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  What movement was part of the
+          hype?  Chief Engineer: All I can think of is\"]}\0{\"text\": [\"user: When
+          AI hype is over?\\nassistant:  What movement was part of the hype?  Chief
+          Engineer: All I can think of is \\\"\"]}\0{\"text\": [\"user: When AI hype
+          is over?\\nassistant:  What movement was part of the hype?  Chief Engineer:
+          All I can think of is \\\"Allah\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ What movement was part of the hype?  Chief Engineer: All I can think of
+          is \\\"Allah Love\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ What movement was part of the hype?  Chief Engineer: All I can think of
+          is \\\"Allah Love thee\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ What movement was part of the hype?  Chief Engineer: All I can think of
+          is \\\"Allah Love thee a\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ What movement was part of the hype?  Chief Engineer: All I can think of
+          is \\\"Allah Love thee apton\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ What movement was part of the hype?  Chief Engineer: All I can think of
+          is \\\"Allah Love thee aptoneth\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ What movement was part of the hype?  Chief Engineer: All I can think of
+          is \\\"Allah Love thee aptonethane\"]}\0{\"text\": [\"user: When AI hype is
+          over?\\nassistant:  What movement was part of the hype?  Chief Engineer: All
+          I can think of is \\\"Allah Love thee aptonethane\\\"\"]}\0{\"text\": [\"user:
+          When AI hype is over?\\nassistant:  What movement was part of the hype?  Chief
+          Engineer: All I can think of is \\\"Allah Love thee aptonethane\\\"\"]}\0"
+      headers:
+        date:
+          - Thu, 21 Mar 2024 11:08:05 GMT
+        server:
+          - uvicorn
+        transfer-encoding:
+          - chunked
+      status:
+        code: 200
+        message: OK
+version: 1

@@ -1,0 +1,87 @@
+{
+  "PaulGrahamEssayDataset": {
+    "id": "paul_graham_essay",
+    "author": "nerdai",
+    "keywords": ["rag"]
+  },
+  "BraintrustCodaHelpDeskDataset": {
+    "id": "braintrust_coda",
+    "author": "dashk",
+    "keywords": ["rag", "help desk"]
+  },
+  "PatronusAIFinanceBenchDataset": {
+    "id": "patronus_financebench",
+    "author": "anandnk24",
+    "keywords": ["rag", "finance"]
+  },
+  "BlockchainSolanaDataset": {
+    "id": "blockchain_solana",
+    "author": "CalculusC",
+    "keywords": ["rag", "cryptocurrency"]
+  },
+  "MiniTruthfulQADataset": {
+    "id": "mini_truthfulqa",
+    "author": "nerdai",
+    "keywords": ["rag", "truthfulqa"]
+  },
+  "Llama2PaperDataset": {
+    "id": "llama2_paper",
+    "author": "jerryjliu",
+    "keywords": ["rag", "llama2"]
+  },
+  "Uber10KDataset2021": {
+    "id": "10k/uber_2021",
+    "author": "jerryjliu",
+    "keywords": ["sec", "uber", "10k"]
+  },
+  "MiniSquadV2Dataset": {
+    "id": "mini_squadv2",
+    "author": "axiomofjoy",
+    "keywords": ["rag", "squadv2"]
+  },
+  "OriginOfCovid19Dataset": {
+    "id": "origin_of_covid19",
+    "author": "CalculusC",
+    "keywords": ["rag", "covid-19"]
+  },
+  "EvaluatingLlmSurveyPaperDataset": {
+    "id": "eval_llm_survey_paper",
+    "author": "nerdai",
+    "keywords": ["rag", "evaluation", "paper"]
+  },
+  "CovidQaDataset": {
+    "id": "covidqa",
+    "author": "nerdai",
+    "keywords": ["rag", "covid"]
+  },
+  "MiniCovidQaDataset": {
+    "id": "mini_covidqa",
+    "author": "nerdai",
+    "keywords": ["rag", "covid", "mini"]
+  },
+  "HistoryOfAlexnetDataset": {
+    "id": "history_of_alexnet",
+    "author": "CalculusC",
+    "keywords": ["rag", "alexnet"]
+  },
+  "DocugamiKgRagSec10Q": {
+    "id": "docugami_kg_rag/sec_10_q",
+    "author": "Docugami",
+    "keywords": ["rag", "kg-rag", "10q", "docugami"]
+  },
+  "MtBenchHumanJudgementDataset": {
+    "id": "mt_bench_humanjudgement",
+    "author": "nerdai",
+    "keywords": ["evaluator", "llm as judge", "human agreement"]
+  },
+  "MiniMtBenchSingleGradingDataset": {
+    "id": "mini_mt_bench_singlegrading",
+    "author": "nerdai",
+    "keywords": ["evaluator", "llm as judge"]
+  },
+  "MiniEsgBenchDataset": {
+    "id": "mini_esg_bench",
+    "author": "nerdai",
+    "keywords": ["rag", "pdf", "esg"]
+  }
+}

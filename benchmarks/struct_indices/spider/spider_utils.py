@@ -4,11 +4,10 @@ import json
 import os
 from typing import Dict, Tuple
 
-from sqlalchemy import create_engine, text
-
 from llama_index import LLMPredictor, SQLDatabase
 from llama_index.indices import SQLStructStoreIndex
 from llama_index.llms.openai import OpenAI
+from sqlalchemy import create_engine, text
 
 
 def load_examples(spider_dir: str) -> Tuple[list, list]:
