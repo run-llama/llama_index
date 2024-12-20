@@ -6,10 +6,8 @@ import cognee
 
 from llama_index.core import Document
 
-from .base import GraphRAG
 
-
-class CogneeGraphRAG(GraphRAG):
+class CogneeGraphRAG:
     """Cognee GraphRAG, handles adding, storing, processing and retrieving information from knowledge graphs.
 
     Unlike traditional RAG models that retrieve unstructured text snippets, graphRAG utilizes knowledge graphs.
