@@ -125,7 +125,7 @@ Several response synthesizers are implemented already in LlamaIndex:
 
 ## Custom Response Synthesizers
 
-Each response synthesizer inherits from `llama_index.response_synthesizers.base.BaseSynthesizer`. The base API is extremely simple, which makes it easy to create your own response synthesizer.
+Each response synthesizer inherits from `llama_index.core.response_synthesizers.base.BaseSynthesizer`. The base API is extremely simple, which makes it easy to create your own response synthesizer.
 
 Maybe you want to customize which template is used at each step in `tree_summarize`, or maybe a new research paper came out detailing a new way to generate a response to a query, you can create your own response synthesizer and plug it into any query engine or use it on it's own.
 
