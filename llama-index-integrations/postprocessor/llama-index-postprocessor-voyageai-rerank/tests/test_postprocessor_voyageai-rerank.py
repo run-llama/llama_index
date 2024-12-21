@@ -54,9 +54,15 @@ def test_rerank(mocker: MockerFixture) -> None:
     assert result[1].text == "text1"
 
 
-def test_object_construction_with_no_optional_kwarg():
+def test_rerank_construction_with_no_optional_kwargs():
     os.environ["VOYAGE_API_KEY"] = "mock_api_key"
     reranker = VoyageAIRerank(model="rerank-2")
     assert reranker.truncation
     assert reranker.top_n is None
+    assert reranker.model == "rerank-2"
+
+def test_rerank_construction_with_optional_kwargs():
+    reranker = VoyageAIRerank(model="rerank-2", api_key="mock_api_key", top_n=10, truncation=False)
+    assert not reranker.truncation
+    assert reranker.top_n == 10
     assert reranker.model == "rerank-2"
