@@ -61,8 +61,11 @@ def test_rerank_construction_with_no_optional_kwargs():
     assert reranker.top_n is None
     assert reranker.model == "rerank-2"
 
+
 def test_rerank_construction_with_optional_kwargs():
-    reranker = VoyageAIRerank(model="rerank-2", api_key="mock_api_key", top_n=10, truncation=False)
+    reranker = VoyageAIRerank(
+        model="rerank-2", api_key="mock_api_key", top_n=10, truncation=False
+    )
     assert not reranker.truncation
     assert reranker.top_n == 10
     assert reranker.model == "rerank-2"
