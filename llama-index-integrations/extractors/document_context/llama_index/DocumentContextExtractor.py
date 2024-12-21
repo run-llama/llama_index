@@ -5,7 +5,6 @@ from llama_index.core.schema import Document, Node
 from llama_index.core import Settings
 from llama_index.core.storage.docstore.simple_docstore import DocumentStore
 from typing import Optional, Dict, List, Tuple, Set, Union, Literal, Any
-import importlib
 import logging
 import asyncio
 import random
