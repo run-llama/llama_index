@@ -213,8 +213,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             self._is_self_created_weaviate_client = True
         else:  # weaviate_client neither one of the expected types nor None
             raise ValueError(
-                f"Unsupported weaviate_client of type {type(
-                    weaviate_client)}. Either provide an instance of `WeaviateClient` or `WeaviateAsyncClient` or set `weaviate_client` to None to have a sync client automatically created using the setting provided in `auth_config` and `client_kwargs`."
+                f"Unsupported weaviate_client of type {type(weaviate_client)}. Either provide an instance of `WeaviateClient` or `WeaviateAsyncClient` or set `weaviate_client` to None to have a sync client automatically created using the setting provided in `auth_config` and `client_kwargs`."
             )
         # validate custom batch
         self._custom_batch = (
