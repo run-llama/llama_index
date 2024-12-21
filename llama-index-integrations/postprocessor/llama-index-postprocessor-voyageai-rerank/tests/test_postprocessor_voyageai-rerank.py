@@ -1,10 +1,11 @@
+import os
+
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
-from voyageai.api_resources import VoyageResponse
-
 from llama_index.postprocessor.voyageai_rerank import VoyageAIRerank
-from voyageai.object.reranking import RerankingObject
 from pytest_mock import MockerFixture
+from voyageai.api_resources import VoyageResponse
+from voyageai.object.reranking import RerankingObject
 
 rerank_sample_response = {
     "object": "list",
@@ -51,3 +52,11 @@ def test_rerank(mocker: MockerFixture) -> None:
     assert len(result) == 2
     assert result[0].text == "text2"
     assert result[1].text == "text1"
+
+
+def test_object_construction_with_no_optional_kwarg():
+    os.environ["VOYAGE_API_KEY"] = "mock_api_key"
+    reranker = VoyageAIRerank(model="rerank-2")
+    assert reranker.truncation
+    assert reranker.top_n is None
+    assert reranker.model == "rerank-2"
