@@ -12,7 +12,6 @@ from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.aio import (
     SearchIndexClient as AsyncSearchIndexClient,
 )
-
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -1635,7 +1634,7 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
     async def _acreate_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-        results = await self._search_client.search(
+        results = await self._async_search_client.search(
             search_text=search_query,
             vector_queries=vectors,
             top=self._query.similarity_top_k,
