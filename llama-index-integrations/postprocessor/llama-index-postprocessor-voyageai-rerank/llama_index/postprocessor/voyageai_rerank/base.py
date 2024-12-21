@@ -15,11 +15,13 @@ dispatcher = get_dispatcher(__name__)
 
 class VoyageAIRerank(BaseNodePostprocessor):
     model: str = Field(description="Name of the model to use.")
-    top_n: int = Field(
-        description="The number of most relevant documents to return. If not specified, the reranking results of all documents will be returned."
+    top_n: Optional[int] = Field(
+        description="The number of most relevant documents to return. If not specified, the reranking results of all documents will be returned.",
+        default=None,
     )
     truncation: bool = Field(
-        description="Whether to truncate the input to satisfy the 'context length limit' on the query and the documents."
+        description="Whether to truncate the input to satisfy the 'context length limit' on the query and the documents.",
+        default=True,
     )
 
     _client: Any = PrivateAttr()
@@ -29,7 +31,7 @@ class VoyageAIRerank(BaseNodePostprocessor):
         model: str,
         api_key: Optional[str] = None,
         top_n: Optional[int] = None,
-        truncation: Optional[bool] = None,
+        truncation: bool = True,
         # deprecated
         top_k: Optional[int] = None,
     ):
