@@ -30,9 +30,9 @@ from llama_index.core.vector_stores.utils import (
 )
 from llama_index.vector_stores.azureaisearch.azureaisearch_utils import (
     create_node_from_result,
-    process_batch_results,
     create_search_request,
     handle_search_error,
+    process_batch_results,
 )
 
 logger = logging.getLogger(__name__)
@@ -398,10 +398,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             ExhaustiveKnnParameters,
             HnswAlgorithmConfiguration,
             HnswParameters,
+            SearchableField,
             SearchField,
             SearchFieldDataType,
             SearchIndex,
-            SearchableField,
             SemanticConfiguration,
             SemanticField,
             SemanticPrioritizedFields,
@@ -1576,11 +1576,11 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
         return vector_queries
 
     def _create_query_result(
-        self, search_query: str, vector_queries: Optional[List[Any]]
+        self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
         results = self._search_client.search(
             search_text=search_query,
-            vector_queries=vector_queries,
+            vector_queries=vectors,
             top=self._query.similarity_top_k,
             select=self._select_fields,
             filter=self._odata_filter,
@@ -1592,6 +1592,62 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
         node_result = []
         score_result = []
         for result in results:
+            node_id = result[self._field_mapping["id"]]
+            metadata_str = result[self._field_mapping["metadata"]]
+            metadata = json.loads(metadata_str) if metadata_str else {}
+            # use reranker_score instead of score
+            score = result["@search.reranker_score"]
+            chunk = result[self._field_mapping["chunk"]]
+
+            try:
+                node = metadata_dict_to_node(metadata)
+                node.set_content(chunk)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    metadata
+                )
+
+                node = TextNode(
+                    text=chunk,
+                    id_=node_id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
+            logger.debug(f"Retrieved node id {node_id} with node data of {node}")
+
+            id_result.append(node_id)
+            node_result.append(node)
+            score_result.append(score)
+
+        logger.debug(
+            f"Search query '{search_query}' returned {len(id_result)} results."
+        )
+
+        return VectorStoreQueryResult(
+            nodes=node_result, similarities=score_result, ids=id_result
+        )
+
+    async def _acreate_query_result(
+        self, search_query: str, vectors: Optional[List[Any]]
+    ) -> VectorStoreQueryResult:
+        results = await self._async_search_client.search(
+            search_text=search_query,
+            vector_queries=vectors,
+            top=self._query.similarity_top_k,
+            select=self._select_fields,
+            filter=self._odata_filter,
+            query_type="semantic",
+            semantic_configuration_name="mySemanticConfig",
+        )
+
+        id_result = []
+        node_result = []
+        score_result = []
+        async for result in results:
             node_id = result[self._field_mapping["id"]]
             metadata_str = result[self._field_mapping["metadata"]]
             metadata = json.loads(metadata_str) if metadata_str else {}
