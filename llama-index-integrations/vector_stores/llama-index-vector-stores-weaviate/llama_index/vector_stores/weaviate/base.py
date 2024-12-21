@@ -35,6 +35,10 @@ from llama_index.vector_stores.weaviate._exceptions import (
 import weaviate
 import weaviate.classes as wvc
 
+from weaviate.collections.batch.batch_wrapper import (
+    _ContextManagerWrapper as BatchWrapper,
+)
+
 _logger = logging.getLogger(__name__)
 
 
@@ -155,6 +159,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     _is_self_created_weaviate_client: bool = (
         PrivateAttr()
     )  # States if the Weaviate client was created within this class and therefore closing it lies in our responsibility
+    _custom_batch: Optional[BatchWrapper] = PrivateAttr()
 
     def __init__(
         self,
@@ -187,6 +192,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
             auth_config=auth_config.__dict__ if auth_config else {},
             client_kwargs=client_kwargs or {},
         )
+
         if isinstance(weaviate_client, weaviate.WeaviateClient):
             self._client = weaviate_client
             self._aclient = None
@@ -208,6 +214,14 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         else:  # weaviate_client neither one of the expected types nor None
             raise ValueError(
                 f"Unsupported weaviate_client of type {type(weaviate_client)}. Either provide an instance of `WeaviateClient` or `WeaviateAsyncClient` or set `weaviate_client` to None to have a sync client automatically created using the setting provided in `auth_config` and `client_kwargs`."
+            )
+        # validate custom batch
+        self._custom_batch = (
+            client_kwargs.get("custom_batch") if client_kwargs else None
+        )
+        if self._custom_batch and not isinstance(self._custom_batch, BatchWrapper):
+            raise ValueError(
+                "client_kwargs['custom_batch'] must be an instance of client.batch.dynamic() or client.batch.fixed_size()"
             )
 
         # create default schema if does not exist
@@ -253,8 +267,10 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
         """
         ids = [r.node_id for r in nodes]
-
-        with self.client.batch.dynamic() as batch:
+        provided_batch = self._custom_batch
+        if not provided_batch:
+            provided_batch = self.client.batch.dynamic()
+        with provided_batch as batch:
             for node in nodes:
                 data_object = get_data_object(node=node, text_key=self.text_key)
                 batch.add_object(

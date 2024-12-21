@@ -22,6 +22,10 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
 )
 
+from weaviate.collections.batch.base import (
+    _DynamicBatching,
+    _FixedSizeBatching,
+)
 
 TEST_COLLECTION_NAME = "TestCollection"
 
@@ -72,7 +76,8 @@ class TestWeaviateAsync:
         vector_store = WeaviateVectorStore(
             weaviate_client=async_client, index_name=TEST_COLLECTION_NAME
         )
-        await vector_store.aclear()  # Make sure that no leftover test collection exists from a previous test session (embedded Weaviate data gets persisted)
+        # Make sure that no leftover test collection exists from a previous test session (embedded Weaviate data gets persisted)
+        await vector_store.aclear()
         yield vector_store
         await vector_store.aclear()
 
@@ -210,6 +215,49 @@ class TestWeaviateSync:
         ]
         vector_store.add(nodes)
         return vector_store
+
+    def test_vector_store_with_custom_batch(self, client):
+        nodes = [
+            TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3]),
+            TextNode(text="This is a test.", embedding=[0.3, 0.0, 0.0]),
+        ]
+        # default, dynamic batch
+        vector_store_default_dynamic = WeaviateVectorStore(
+            weaviate_client=client, index_name=TEST_COLLECTION_NAME
+        )
+        assert isinstance(client.batch._batch_mode, _DynamicBatching)
+        # custom, with fixed size
+        custom_batch = client.batch.fixed_size(
+            batch_size=123,
+            concurrent_requests=3,
+            consistency_level=weaviate.classes.config.ConsistencyLevel.ONE,
+        )
+        vector_store_fixed = WeaviateVectorStore(
+            weaviate_client=client,
+            index_name=TEST_COLLECTION_NAME,
+            client_kwargs={"custom_batch": custom_batch},
+        )
+        assert isinstance(client.batch._batch_mode, _FixedSizeBatching)
+        assert client.batch._batch_mode.batch_size == 123
+        assert client.batch._batch_mode.concurrent_requests == 3
+        assert (
+            client.batch._consistency_level
+            == weaviate.classes.config.ConsistencyLevel.ONE
+        )
+
+        vector_store_default_dynamic.clear()
+        vector_store_fixed.clear()
+
+        # test wrong value
+        try:
+            WeaviateVectorStore(
+                weaviate_client=client,
+                index_name=TEST_COLLECTION_NAME,
+                client_kwargs={"custom_batch": "wrong_value"},
+            )
+            AssertionError()
+        except ValueError:
+            assert True
 
     def test_sync_basic_flow(self, vector_store_with_sample_nodes):
         query = VectorStoreQuery(
