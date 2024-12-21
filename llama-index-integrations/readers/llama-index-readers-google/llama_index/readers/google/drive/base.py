@@ -491,9 +491,10 @@ class GoogleDriveReader(
                 metadata = {}
 
                 for fileid_meta in fileids_meta:
-                    # Download files and name them with their fileid
+                    # Download files and name them with their fileid and filesuffix
                     fileid = fileid_meta[0]
-                    filepath = os.path.join(temp_dir, fileid)
+                    filesuffix = Path(fileid_meta[2]).suffix or ""
+                    filepath = os.path.join(temp_dir, fileid + filesuffix)
                     final_filepath = self._download_file(fileid, filepath)
 
                     # Add metadata of the file to metadata dictionary
