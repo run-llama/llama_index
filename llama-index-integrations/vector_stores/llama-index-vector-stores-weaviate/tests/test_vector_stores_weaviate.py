@@ -216,9 +216,6 @@ class TestWeaviateSync:
         vector_store.add(nodes)
         return vector_store
 
-    # because of the last test, we need to ignore this warning
-    # AttributeError: 'WeaviateVectorStore' object has no attribute
-    # @pytest.mark.filterwarnings("ignore:'WeaviateVectorStore' object has no attribute '.*'")
     def test_vector_store_with_custom_batch(self, client):
         nodes = [
             TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3]),
