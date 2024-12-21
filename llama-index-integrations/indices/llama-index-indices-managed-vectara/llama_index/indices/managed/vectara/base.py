@@ -64,8 +64,7 @@ class VectaraIndex(BaseManagedIndex):
         self,
         show_progress: bool = False,
         nodes: Optional[Sequence[BaseNode]] = None,
-        vectara_customer_id: Optional[str] = None,
-        vectara_corpus_id: Optional[str] = None,
+        vectara_corpus_key: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
         use_core_api: bool = False,
         parallelize_ingest: bool = False,
@@ -75,7 +74,7 @@ class VectaraIndex(BaseManagedIndex):
         """Initialize the Vectara API."""
         self.parallelize_ingest = parallelize_ingest
         index_struct = VectaraIndexStruct(
-            index_id=str(vectara_corpus_id),
+            index_id=str(vectara_corpus_key),
             summary="Vectara Index",
         )
 
@@ -84,25 +83,17 @@ class VectaraIndex(BaseManagedIndex):
             index_struct=index_struct,
             **kwargs,
         )
-        self._vectara_customer_id = vectara_customer_id or os.environ.get(
-            "VECTARA_CUSTOMER_ID"
-        )
-        self._vectara_corpus_id = vectara_corpus_id or str(
-            os.environ.get("VECTARA_CORPUS_ID")
+        self._vectara_corpus_key = vectara_corpus_key or str(
+            os.environ.get("VECTARA_CORPUS_KEY")
         )
         self._vectara_api_key = vectara_api_key or os.environ.get("VECTARA_API_KEY")
-        if (
-            self._vectara_customer_id is None
-            or self._vectara_corpus_id is None
-            or self._vectara_api_key is None
-        ):
+        if self._vectara_corpus_key is None or self._vectara_api_key is None:
             _logger.warning(
-                "Can't find Vectara credentials, customer_id or corpus_id in "
-                "environment."
+                "Can't find Vectara credentials or corpus_key in environment."
             )
             raise ValueError("Missing Vectara credentials")
         else:
-            _logger.debug(f"Using corpus id {self._vectara_corpus_id}")
+            _logger.debug(f"Using corpus key {self._vectara_corpus_key}")
 
         # identifies usage source for internal measurement
         self._x_source_str = x_source_str
@@ -119,7 +110,7 @@ class VectaraIndex(BaseManagedIndex):
         # if nodes is specified, consider each node as a single document
         # and use _build_index_from_nodes() to add them to the index
         if nodes is not None:
-            self._build_index_from_nodes(nodes, use_core_api)
+            self._build_index_from_nodes(nodes, self.use_core_api)
 
     def _build_index_from_nodes(
         self, nodes: Sequence[BaseNode], use_core_api: bool = False
@@ -135,22 +126,21 @@ class VectaraIndex(BaseManagedIndex):
         self.add_documents(docs, use_core_api)
         return self.index_struct
 
-    def _get_corpus_id(self, corpus_id: str) -> str:
+    def _get_corpus_key(self, corpus_key: str) -> str:
         """
-        Get the corpus id to use for the index.
-        If corpus_id is provided, check if it is one of the valid corpus ids.
-        If not, use the first corpus id in the list.
+        Get the corpus key to use for the index.
+        If corpus_key is provided, check if it is one of the valid corpus keys.
+        If not, use the first corpus key in the list.
         """
-        if corpus_id is not None:
-            if corpus_id in self._vectara_corpus_id.split(","):
-                return corpus_id
-        return self._vectara_corpus_id.split(",")[0]
+        if corpus_key is not None:
+            if corpus_key in self._vectara_corpus_key.split(","):
+                return corpus_key
+        return self._vectara_corpus_key.split(",")[0]
 
     def _get_post_headers(self) -> dict:
         """Returns headers that should be attached to each post request."""
         return {
             "x-api-key": self._vectara_api_key,
-            "customer-id": self._vectara_customer_id,
             "Content-Type": "application/json",
             "X-Source": self._x_source_str,
         }
@@ -160,21 +150,16 @@ class VectaraIndex(BaseManagedIndex):
         Delete a document from the Vectara corpus.
 
         Args:
-            url (str): URL of the page to delete.
             doc_id (str): ID of the document to delete.
-            corpus_id (str): corpus ID to delete the document from.
+            corpus_key (str): corpus key to delete the document from.
 
         Returns:
             bool: True if deletion was successful, False otherwise.
         """
-        valid_corpus_id = self._get_corpus_id(corpus_id)
-        body = {
-            "customerId": self._vectara_customer_id,
-            "corpusId": valid_corpus_id,
-            "documentId": doc_id,
-        }
-        response = self._session.post(
-            "https://api.vectara.io/v1/delete-doc",
+        valid_corpus_key = self._get_corpus_key(corpus_key)
+        body = {}
+        response = self._session.delete(
+            f"https://api.vectara.io/v2/corpora/{valid_corpus_key}/documents/{doc_id}",
             data=json.dumps(body),
             verify=True,
             headers=self._get_post_headers(),
@@ -184,13 +169,14 @@ class VectaraIndex(BaseManagedIndex):
         if response.status_code != 200:
             _logger.error(
                 f"Delete request failed for doc_id = {doc_id} with status code "
-                f"{response.status_code}, reason {response.reason}, text "
-                f"{response.text}"
+                f"{response.status_code}, text {response.json()['messages'][0]}"
             )
             return False
         return True
 
-    def _index_doc(self, doc: dict, corpus_id) -> str:
+    # THE WAY THAT DOCUMENTS ARE INDEXED NOW IS VERY DIFFERENT THAN BEFORE, SO WE WILL NEED TO RESTRUCTURE HOW THIS IS DONE (SEE API PLAYGROUND)
+    # DIFFERENCE IN TWO IMPLEMENTATION STYLES IS SPECIFIED BY PARAMETER `use_core_api` (check where it is used in process of creating documents).
+    def _index_doc(self, doc: dict, corpus_key) -> str:
         request: Dict[str, Any] = {}
         request["customerId"] = self._vectara_customer_id
         request["corpusId"] = corpus_id
@@ -225,7 +211,7 @@ class VectaraIndex(BaseManagedIndex):
     def _insert(
         self,
         nodes: Sequence[BaseNode],
-        corpus_id: Optional[str] = None,
+        corpus_key: Optional[str] = None,
         use_core_api: bool = False,
         **insert_kwargs: Any,
     ) -> None:
@@ -250,11 +236,11 @@ class VectaraIndex(BaseManagedIndex):
             }
             docs.append(doc)
 
-        valid_corpus_id = self._get_corpus_id(corpus_id)
+        valid_corpus_key = self._get_corpus_key(corpus_key)
         if self.parallelize_ingest:
             with ThreadPoolExecutor() as executor:
                 futures = [
-                    executor.submit(self._index_doc, doc, valid_corpus_id)
+                    executor.submit(self._index_doc, doc, valid_corpus_key)
                     for doc in docs
                 ]
                 for future in futures:
@@ -266,7 +252,7 @@ class VectaraIndex(BaseManagedIndex):
             self.doc_ids.extend([doc["documentId"] for doc in docs])
         else:
             for doc in docs:
-                ecode = self._index_doc(doc, valid_corpus_id)
+                ecode = self._index_doc(doc, valid_corpus_key)
                 if ecode != "E_SUCCEEDED":
                     _logger.error(
                         f"Error indexing document in Vectara with error code {ecode}"
@@ -276,14 +262,14 @@ class VectaraIndex(BaseManagedIndex):
     def add_documents(
         self,
         docs: Sequence[Document],
-        corpus_id: Optional[str],
+        corpus_key: Optional[str],
         use_core_api: bool = False,
         allow_update: bool = True,
     ) -> None:
         nodes = [
             TextNode(text=doc.get_content(), metadata=doc.metadata) for doc in docs  # type: ignore
         ]
-        self._insert(nodes, corpus_id, use_core_api)
+        self._insert(nodes, corpus_key, use_core_api)
 
     def insert_file(
         self,
