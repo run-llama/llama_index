@@ -40,7 +40,9 @@ from llama_index.core.bridge.pydantic import (
     GetJsonSchemaHandler,
     JsonSchemaValue,
     PlainSerializer,
+    SerializationInfo,
     SerializeAsAny,
+    SerializerFunctionWrapHandler,
     model_serializer,
     model_validator,
 )
@@ -104,7 +106,9 @@ class BaseComponent(BaseModel):
         return self.to_json(**kwargs)
 
     @model_serializer(mode="wrap")
-    def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
+    def custom_model_dump(
+        self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
+    ) -> Dict[str, Any]:
         data = handler(self)
         data["class_name"] = self.class_name()
         return data
@@ -960,10 +964,14 @@ class Document(Node):
         super().__init__(**data)
 
     @model_serializer(mode="wrap")
-    def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
+    def custom_model_dump(
+        self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
+    ) -> Dict[str, Any]:
         """For full backward compatibility with the text field, we customize the model serializer."""
-        data = super().custom_model_dump(handler)
-        data["text"] = self.text
+        data = super().custom_model_dump(handler, info)
+        exclude_set = set(info.exclude or [])
+        if "text" not in exclude_set:
+            data["text"] = self.text
         return data
 
     @property
