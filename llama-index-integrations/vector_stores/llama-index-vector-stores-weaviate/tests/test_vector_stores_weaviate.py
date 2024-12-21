@@ -22,6 +22,10 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
 )
 
+from weaviate.collections.batch.base import (
+    _DynamicBatching,
+    _FixedSizeBatching,
+)
 
 TEST_COLLECTION_NAME = "TestCollection"
 
@@ -33,7 +37,8 @@ def test_no_weaviate_client_instance_provided():
     )
 
     # Make sure that the vector store is functional by calling some basic methods
-    vector_store.add([TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3])])
+    vector_store.add(
+        [TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3])])
     query = VectorStoreQuery(
         query_embedding=[0.3, 0.0, 0.0],
         similarity_top_k=10,
@@ -72,7 +77,8 @@ class TestWeaviateAsync:
         vector_store = WeaviateVectorStore(
             weaviate_client=async_client, index_name=TEST_COLLECTION_NAME
         )
-        await vector_store.aclear()  # Make sure that no leftover test collection exists from a previous test session (embedded Weaviate data gets persisted)
+        # Make sure that no leftover test collection exists from a previous test session (embedded Weaviate data gets persisted)
+        await vector_store.aclear()
         yield vector_store
         await vector_store.aclear()
 
@@ -119,8 +125,10 @@ class TestWeaviateAsync:
         assert len(results.nodes) == 1
 
     async def test_async_delete_nodes(self, async_vector_store):
-        node_to_be_deleted = TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3])
-        node_to_keep = TextNode(text="This is a test.", embedding=[0.3, 0.0, 0.0])
+        node_to_be_deleted = TextNode(
+            text="Hello world.", embedding=[0.0, 0.0, 0.3])
+        node_to_keep = TextNode(text="This is a test.",
+                                embedding=[0.3, 0.0, 0.0])
         nodes = [node_to_be_deleted, node_to_keep]
 
         await async_vector_store.async_add(nodes)
@@ -139,7 +147,8 @@ class TestWeaviateAsync:
         node_to_be_deleted = TextNode(
             text="Hello world.",
             relationships={
-                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="to_be_deleted")
+                NodeRelationship.SOURCE: RelatedNodeInfo(
+                    node_id="to_be_deleted")
             },
             embedding=[0.0, 0.0, 0.3],
         )
@@ -177,14 +186,16 @@ class TestWeaviateAsync:
         assert results.nodes[0].node_id == node_to_keep.node_id
 
     def test_async_client_properties(self, async_vector_store):
-        assert isinstance(async_vector_store.async_client, weaviate.WeaviateAsyncClient)
+        assert isinstance(async_vector_store.async_client,
+                          weaviate.WeaviateAsyncClient)
         with pytest.raises(SyncClientNotProvidedError):
             async_vector_store.client
 
 
 class TestWeaviateSync:
     def test_class(self):
-        names_of_base_classes = [b.__name__ for b in WeaviateVectorStore.__mro__]
+        names_of_base_classes = [
+            b.__name__ for b in WeaviateVectorStore.__mro__]
         assert BasePydanticVectorStore.__name__ in names_of_base_classes
 
     @pytest.fixture(scope="class")
@@ -210,6 +221,47 @@ class TestWeaviateSync:
         ]
         vector_store.add(nodes)
         return vector_store
+
+    # because of the last test, we need to ignore this warning
+    # AttributeError: 'WeaviateVectorStore' object has no attribute
+    # @pytest.mark.filterwarnings("ignore:'WeaviateVectorStore' object has no attribute '.*'")
+    def test_vector_store_with_custom_batch(self, client):
+        nodes = [
+            TextNode(text="Hello world.", embedding=[0.0, 0.0, 0.3]),
+            TextNode(text="This is a test.", embedding=[0.3, 0.0, 0.0]),
+        ]
+        # default, dynamic batch
+        vector_store_default_dynamic = WeaviateVectorStore(
+            weaviate_client=client, index_name=TEST_COLLECTION_NAME
+        )
+        assert isinstance(client.batch._batch_mode, _DynamicBatching)
+        # custom, with fixed size
+        custom_batch = client.batch.fixed_size(
+            batch_size=123,
+            concurrent_requests=3,
+            consistency_level=weaviate.classes.config.ConsistencyLevel.ONE
+        )
+        vector_store_fixed = WeaviateVectorStore(
+            weaviate_client=client, index_name=TEST_COLLECTION_NAME, client_kwargs={
+                "custom_batch": custom_batch}
+        )
+        assert isinstance(client.batch._batch_mode, _FixedSizeBatching)
+        assert client.batch._batch_mode.batch_size == 123
+        assert client.batch._batch_mode.concurrent_requests == 3
+        assert client.batch._consistency_level == weaviate.classes.config.ConsistencyLevel.ONE
+
+        vector_store_default_dynamic.clear()
+        vector_store_fixed.clear()
+
+        # test wrong value
+        try:
+            WeaviateVectorStore(
+                weaviate_client=client, index_name=TEST_COLLECTION_NAME,
+                client_kwargs={"custom_batch": "wrong_value"}
+            )
+            assert False
+        except ValueError:
+            assert True
 
     def test_sync_basic_flow(self, vector_store_with_sample_nodes):
         query = VectorStoreQuery(
@@ -308,7 +360,8 @@ class TestWeaviateSync:
         node_to_be_deleted = TextNode(
             text="Hello world.",
             relationships={
-                NodeRelationship.SOURCE: RelatedNodeInfo(node_id="to_be_deleted")
+                NodeRelationship.SOURCE: RelatedNodeInfo(
+                    node_id="to_be_deleted")
             },
             embedding=[0.0, 0.0, 0.3],
         )
