@@ -40,18 +40,14 @@ class RssReader(BasePydanticReader):
         for url in urls:
             parsed = feedparser.parse(url)
             for entry in parsed.entries:
-                doc_id = entry.id or entry.link
-                if "content" in entry:
-                    data = entry.content[0].value
-                else:
-                    data = entry.description or entry.summary
+                doc_id = getattr(entry, 'id', None) or getattr(entry, 'link', None)
+                data = entry.get('content', [{}])[0].get('value', entry.get('description', entry.get('summary', '')))
 
                 if self.html_to_text:
                     import html2text
-
                     data = html2text.html2text(data)
 
-                extra_info = {"title": entry.title, "link": entry.link}
+                extra_info = {"title": getattr(entry, 'title', None), "link": getattr(entry, 'link', None), "date": getattr(entry, 'published', None)}
                 documents.append(Document(text=data, id_=doc_id, extra_info=extra_info))
 
         return documents
