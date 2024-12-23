@@ -117,7 +117,9 @@ def default_parse_choice_select_answer_fn(
         answer_nums.append(answer_num)
         # extract just the first digits after the colon.
         try:
-            _answer_relevance = re.findall(r"\d+", line_tokens[1].split(":")[1].strip())[0]
+            _answer_relevance = re.findall(
+                r"\d+", line_tokens[1].split(":")[1].strip()
+            )[0]
             answer_relevances.append(float(_answer_relevance))
         except (IndexError, ValueError) as e:
             if not raise_error:
