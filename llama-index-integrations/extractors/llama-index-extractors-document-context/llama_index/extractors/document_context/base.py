@@ -20,12 +20,12 @@ Please give a short succinct context to situate this chunk within the overall do
 Answer only with the succinct context and nothing else.
 """
 
-# miniaturized context prompt, generates better keywords, produces more keyword-laden results for better matches
-MINIATURIZED_CONTEXT_PROMPT: str = """
+# miniaturized context prompt, generates better results, produces more keyword-laden results for better matches
+SUCCINCT_CONTEXT_PROMPT: str = """
 Generate keywords and brief phrases describing the main topics, entities, and actions in this text. Replace pronouns with their specific referents. Disambiguate pronouns and ambiguous terms in the chunk. Format as comma-separated phrases. Exclude meta-commentary about the text itself.
 """
 
-DEFAULT_CONTEXT_PROMPT:str = MINIATURIZED_CONTEXT_PROMPT
+DEFAULT_CONTEXT_PROMPT:str = SUCCINCT_CONTEXT_PROMPT
 
 DEFAULT_KEY: str = "context"
 
@@ -227,7 +227,7 @@ class DocumentContextExtractor(BaseExtractor):
             token_count = self._count_tokens(doc.text, self.tiktoken_encoder)
             if token_count > self.max_context_length:
                 message = (
-                    f"Document {doc.id} is too large ({token_count} tokens) "
+                    f"Document {doc.node_id} is too large ({token_count} tokens) "
                     f"to be processed. Doc metadata: {doc.metadata}"
                 )
                 
@@ -235,16 +235,18 @@ class DocumentContextExtractor(BaseExtractor):
                     logging.warning(message)
 
                 if strategy == "truncate_first":
-                    doc.text = self._truncate_text(doc.text, self.max_context_length, 'first', self.tiktoken_encoder)
+                    text = self._truncate_text(doc.text, self.max_context_length, 'first', self.tiktoken_encoder)
+                    doc.set_content(text)
                 elif strategy == "truncate_last":
-                    doc.text = self._truncate_text(doc.text, self.max_context_length, 'last', self.tiktoken_encoder)                    
+                    text = self._truncate_text(doc.text, self.max_context_length, 'last', self.tiktoken_encoder)    
+                    doc.set_content(text)                
                 elif strategy == "error":
                     raise ValueError(message)
                 elif strategy == "ignore":
                     return
                 else:
                     raise ValueError(f"Unknown oversized document strategy: {strategy}")
-            
+                
         return doc
         
     async def aextract(self, nodes: List[Node]) -> List[MetadataDict]:
@@ -266,7 +268,7 @@ class DocumentContextExtractor(BaseExtractor):
         node_tasks = []
         for node in nodes:
             if not node.source_node:
-                return
+                continue
 
             doc = await self._get_document(node.source_node.node_id)
 

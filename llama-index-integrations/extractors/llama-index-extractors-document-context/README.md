@@ -33,7 +33,9 @@ index = VectorStoreIndex.from_vector_store(
 reader = SimpleDirectoryReader(directory)
 documents = reader.load_data()
 
-# have to keep this updated for the DocumentContextExtractor to function.
+# have to keep this updated for the DocumentContextExtractor to function. 
+# For convenience, you could also create a Transform component that stashes results of the previous stage into a docstore and then passes on the nodes unmodified
+# for now we'll just do this everytime we need to add documents to the index:
 storagecontext.docstore.add_documents(documents)
 for doc in documents:
     self.index.insert(doc)
@@ -41,10 +43,16 @@ for doc in documents:
 
 ### custom keys and prompts
 
-by default, the extractor adds a key called "context" to each node, using a reasonable default prompt taken from the blog post cookbook, but you can pass in a list of keys and prompts like so:
+by default, the extractor adds a key called "context" to each node, using a well-tested default prompt known to work well, but you can pass in a custom key and prompt like so:
 
 ```python
-extractor = DocumentContextExtractor(document_store, llm, keys=["context", "title"], prompts=["Give the document context", "Provide a chunk title"])
+from llama_index.integrations.extractors.document_context import DocumentContextExtractor, ORIGINAL_CONTEXT_PROMPT, SUCCINT_CONTEXT_PROMPT
+# this is the default, a tweaked version of the anthropic prompt
+extractor = DocumentContextExtractor(document_store, llm, key="context", prompt=SUCCINCT_CONTEXT_PROMPT)
+# this is the original prompt from the anthropic blogpost word-for-word
+extractor = DocumentContextExtractor(document_store, llm, key="context", prompt=ORIGINAL_CONTEXT_PROMPT)
+# or pass in whatever you need
+extractor = DocumentContextExtractor(document_store, llm, key="event_context", prompt="Disambiguate passage of time words, today tomorrow, when, etc, by anchoring them to specific dates or events found in the document.")
 ```
 
 ## model selection
