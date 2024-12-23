@@ -10,7 +10,7 @@ import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import blake2b
-from typing import Any, Dict, List, Optional, Sequence, Type
+from typing import Any, List, Optional, Sequence, Type
 
 import requests
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -23,8 +23,8 @@ from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.schema import (
     BaseNode,
     Document,
-    MetadataMode,
-    TextNode,
+    Node,
+    MediaResource,
     TransformComponent,
 )
 from llama_index.core.settings import Settings
@@ -83,9 +83,11 @@ class VectaraIndex(BaseManagedIndex):
             index_struct=index_struct,
             **kwargs,
         )
+
         self._vectara_corpus_key = vectara_corpus_key or str(
             os.environ.get("VECTARA_CORPUS_KEY")
         )
+
         self._vectara_api_key = vectara_api_key or os.environ.get("VECTARA_API_KEY")
         if self._vectara_corpus_key is None or self._vectara_api_key is None:
             _logger.warning(
@@ -117,7 +119,9 @@ class VectaraIndex(BaseManagedIndex):
     ) -> IndexDict:
         docs = [
             Document(
-                text=node.get_content(metadata_mode=MetadataMode.NONE),
+                text_resource=MediaResource(
+                    text=node.get_content()
+                ),  # may need to add get_content().
                 metadata=node.metadata,  # type: ignore
                 id_=node.id_,  # type: ignore
             )
@@ -145,7 +149,7 @@ class VectaraIndex(BaseManagedIndex):
             "X-Source": self._x_source_str,
         }
 
-    def _delete_doc(self, doc_id: str, corpus_id: Optional[str] = None) -> bool:
+    def _delete_doc(self, doc_id: str, corpus_key: Optional[str] = None) -> bool:
         """
         Delete a document from the Vectara corpus.
 
@@ -166,7 +170,7 @@ class VectaraIndex(BaseManagedIndex):
             timeout=self.vectara_api_timeout,
         )
 
-        if response.status_code != 200:
+        if response.status_code != 204:
             _logger.error(
                 f"Delete request failed for doc_id = {doc_id} with status code "
                 f"{response.status_code}, text {response.json()['messages'][0]}"
@@ -177,36 +181,20 @@ class VectaraIndex(BaseManagedIndex):
     # THE WAY THAT DOCUMENTS ARE INDEXED NOW IS VERY DIFFERENT THAN BEFORE, SO WE WILL NEED TO RESTRUCTURE HOW THIS IS DONE (SEE API PLAYGROUND)
     # DIFFERENCE IN TWO IMPLEMENTATION STYLES IS SPECIFIED BY PARAMETER `use_core_api` (check where it is used in process of creating documents).
     def _index_doc(self, doc: dict, corpus_key) -> str:
-        request: Dict[str, Any] = {}
-        request["customerId"] = self._vectara_customer_id
-        request["corpusId"] = corpus_id
-        request["document"] = doc
-
-        if "parts" in doc:
-            api_url = "https://api.vectara.io/v1/core/index"
-        else:
-            api_url = "https://api.vectara.io/v1/index"
-
         response = self._session.post(
             headers=self._get_post_headers(),
-            url=api_url,
-            data=json.dumps(request),
+            url=f"https://api.vectara.io/v2/corpora/{corpus_key}/documents",
+            data=json.dumps(doc),
             timeout=self.vectara_api_timeout,
             verify=True,
         )
 
         status_code = response.status_code
-        result = response.json()
-
-        status_str = result["status"]["code"] if "status" in result else None
-        if status_code == 409 and status_str and (status_str == "ALREADY_EXISTS"):
-            return "E_ALREADY_EXISTS"
-        elif status_code == 200 and status_str and (status_str == "INVALID_ARGUMENT"):
-            return "E_INVALID_ARGUMENT"
-        elif status_str and (status_str == "FORBIDDEN"):
-            return "E_NO_PERMISSIONS"
-        else:
+        if status_code == 201:
             return "E_SUCCEEDED"
+
+        result = response.json()
+        return result["messages"][0]
 
     def _insert(
         self,
@@ -225,13 +213,18 @@ class VectaraIndex(BaseManagedIndex):
         docs = []
         for node in nodes:
             metadata = node.metadata.copy()
-            metadata["framework"] = "llama_index"
-            section_key = "parts" if use_core_api else "section"
-            text = node.get_content(metadata_mode=MetadataMode.NONE)
-            doc_id = gen_hash(text)
+            metadata["framework"] = "llama_index"  # NOT SURE WHAT THIS IS FOR
+            section_key = "document_parts" if use_core_api else "sections"
+            text = node.get_content()
+
+            # NEED TO FIGURE OUT A WAY TO LET PEOPLE CHOOSE THEIR OWN DOC ID
+            # IF THEY DON'T SPECIFY ONE, THEN A RANDOM ONE IS CREATED AUTOMATICALLY.
+            # THIS IS PROBLEMATIC BECAUSE THEN THE SAME DOCUMENT CAN BE INGESTED TWICE.
+            doc_id = gen_hash(text) if len(node.node_id) == 36 else node.node_id
             doc = {
-                "documentId": doc_id,
-                "metadataJson": json.dumps(node.metadata),
+                "id": doc_id,
+                "type": "core" if use_core_api else "structured",
+                "metadata": node.metadata,
                 section_key: [{"text": text}],
             }
             docs.append(doc)
@@ -249,7 +242,7 @@ class VectaraIndex(BaseManagedIndex):
                         _logger.error(
                             f"Error indexing document in Vectara with error code {ecode}"
                         )
-            self.doc_ids.extend([doc["documentId"] for doc in docs])
+            self.doc_ids.extend([doc["id"] for doc in docs])
         else:
             for doc in docs:
                 ecode = self._index_doc(doc, valid_corpus_key)
@@ -257,7 +250,7 @@ class VectaraIndex(BaseManagedIndex):
                     _logger.error(
                         f"Error indexing document in Vectara with error code {ecode}"
                     )
-                self.doc_ids.append(doc["documentId"])
+                self.doc_ids.append(doc["id"])
 
     def add_documents(
         self,
@@ -267,15 +260,25 @@ class VectaraIndex(BaseManagedIndex):
         allow_update: bool = True,
     ) -> None:
         nodes = [
-            TextNode(text=doc.get_content(), metadata=doc.metadata) for doc in docs  # type: ignore
+            Node(
+                text_resource=MediaResource(text=doc.text),
+                metadata=doc.metadata,
+                id_=doc.doc_id,
+            )
+            for doc in docs
         ]
         self._insert(nodes, corpus_key, use_core_api)
 
+    # THIS DOES NOT CURRENTLY WORK, NEED TO FIGURE OUT HOW TO STRUCTURE PROPERLY WITH NEW API VERSION
+    # NEED TO ADD NEW ARGS FOR APIV2 AND PROPERLY CONFIGURE REQUEST
     def insert_file(
         self,
         file_path: str,
         metadata: Optional[dict] = None,
-        corpus_id: Optional[str] = None,
+        chunking_strategy: Optional[dict] = None,
+        table_extraction_config: Optional[dict] = None,
+        filename: Optional[str] = None,
+        corpus_key: Optional[str] = None,
         **insert_kwargs: Any,
     ) -> Optional[str]:
         """
@@ -284,33 +287,70 @@ class VectaraIndex(BaseManagedIndex):
         This method provides a way to use that API in Llama_index.
 
         # ruff: noqa: E501
-        Full API Docs: https://docs.vectara.com/docs/api-reference/indexing-apis/
-        file-upload/file-upload-filetypes
+        Full API Docs: https://docs.vectara.com/docs/rest-api/upload-file
 
         Args:
             file_path: local file path
                 Files could be text, HTML, PDF, markdown, doc/docx, ppt/pptx, etc.
                 see API docs for full list
-            metadata: Optional list of metadata associated with the file
+            metadata: Optional dict of metadata associated with the file
+            chunking_strategy: Optional dict specifying max number of characters per chunk
+            table_extraction_config: Optional dict specifying whether or not to extract tables from document
+            filename: Optional string specifying the filename
+
 
         Returns:
             List of ids associated with each of the files indexed
         """
+        # if not os.path.exists(file_path):
+        #     _logger.error(f"File {file_path} does not exist")
+        #     return None
+
+        # metadata = metadata or {}
+        # metadata["framework"] = "llama_index"
+        # files: dict = {
+        #     "file": (file_path, open(file_path, "rb")),
+        #     "doc_metadata": json.dumps(metadata),
+        # }
+        # headers = self._get_post_headers()
+        # headers.pop("Content-Type")
+        # valid_corpus_key = self._get_corpus_key(corpus_key)
+        # response = self._session.post(
+        #     f"https://api.vectara.io/v2/corpora/{valid_corpus_key}/upload_file",
+        #     files=files,
+        #     verify=True,
+        #     headers=headers,
+        #     timeout=self.vectara_api_timeout,
+        # )
+
         if not os.path.exists(file_path):
             _logger.error(f"File {file_path} does not exist")
             return None
 
         metadata = metadata or {}
         metadata["framework"] = "llama_index"
+        chunking_strategy = chunking_strategy or {}
+        table_extraction_config = table_extraction_config or {}
+
         files: dict = {
-            "file": (file_path, open(file_path, "rb")),
-            "doc_metadata": json.dumps(metadata),
+            "file": (filename, open(file_path, "rb")),
+            "metadata": (None, json.dumps(metadata), "application/json"),
+            "chunking_strategy": (
+                None,
+                json.dumps(chunking_strategy),
+                "application/json",
+            ),
+            "table_extraction_config": (
+                None,
+                json.dumps(table_extraction_config),
+                "application/json",
+            ),
         }
         headers = self._get_post_headers()
         headers.pop("Content-Type")
-        valid_corpus_id = self._get_corpus_id(corpus_id)
+        valid_corpus_key = self._get_corpus_key(corpus_key)
         response = self._session.post(
-            f"https://api.vectara.io/upload?c={self._vectara_customer_id}&o={valid_corpus_id}&d=True",
+            f"https://api.vectara.io/v2/corpora/{valid_corpus_key}/upload_file",
             files=files,
             verify=True,
             headers=headers,
@@ -318,22 +358,12 @@ class VectaraIndex(BaseManagedIndex):
         )
 
         res = response.json()
-        if response.status_code == 409:
-            _logger.info(
-                f"File {file_path} already exists on Vectara, skipping indexing"
-            )
-            return None
-        elif response.status_code == 200:
-            quota = res["response"]["quotaConsumed"]["numChars"]
-            if quota == 0:
-                _logger.warning(
-                    f"File Upload for {file_path} returned 0 quota consumed, please check your Vectara account quota"
-                )
-            doc_id = res["document"]["documentId"]
+        if response.status_code == 201:
+            doc_id = res["id"]
             self.doc_ids.append(doc_id)
             return doc_id
         else:
-            _logger.info(f"Error indexing file {file_path}: {res}")
+            _logger.info(f"File upload failed with error message {res['messages'][0]}")
             return None
 
     def delete_ref_doc(
@@ -409,9 +439,14 @@ class VectaraIndex(BaseManagedIndex):
     ) -> IndexType:
         """Build a Vectara index from a sequence of documents."""
         nodes = [
-            TextNode(text=document.get_content(), metadata=document.metadata)  # type: ignore
+            Node(
+                text_resource=MediaResource(text=document.text),
+                metadata=document.metadata,
+                id_=document.doc_id,
+            )
             for document in documents
         ]
+
         return cls(
             nodes=nodes,
             show_progress=show_progress,

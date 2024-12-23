@@ -1,5 +1,5 @@
 from typing import List
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, MediaResource
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.indices.managed.vectara import VectaraIndex
 import pytest
@@ -15,15 +15,49 @@ import re
 #   d. doc.url (text)
 # 3. Create an API_KEY for this corpus with permissions for query and indexing
 # 4. Setup environment variables:
-#    VECTARA_API_KEY, VECTARA_CORPUS_ID, VECTARA_CUSTOMER_ID, and OPENAI_API_KEY
+#    VECTARA_API_KEY, VECTARA_CORPUS_KEY, and OPENAI_API_KEY
 #
-# Note: In order to run test_citations, you will need a Scale account.
+# Note: In order to run test_citations(), you will need a Scale account.
 #
 
 
 def test_class():
     names_of_base_classes = [b.__name__ for b in VectaraIndex.__mro__]
     assert BaseManagedIndex.__name__ in names_of_base_classes
+
+
+# def get_docs() -> List[Document]:
+#     inputs = [
+#         {
+#             "id": 1,
+#             "text": "This is test text for Vectara integration with LlamaIndex",
+#             "metadata": {"test_num": "1", "test_score": 10, "date": "2020-02-25"},
+#         },
+#         {
+#             "id": 2,
+#             "text": "And now for something completely different",
+#             "metadata": {"test_num": "2", "test_score": 2, "date": "2015-10-13"},
+#         },
+#         {
+#             "id": 3,
+#             "text": "when 900 years you will be, look as good you will not",
+#             "metadata": {"test_num": "3", "test_score": 20, "date": "2023-09-12"},
+#         },
+#         {
+#             "id": 4,
+#             "text": "when 850 years you will be, look as good you will not",
+#             "metadata": {"test_num": "4", "test_score": 50, "date": "2022-01-01"},
+#         },
+#     ]
+#     docs: List[Document] = []
+#     for inp in inputs:
+#         doc = Document(
+#             text_resource=MediaResource(text=str(inp["text"])),
+#             metadata=inp["metadata"],  # type: ignore
+#             id_=str(inp["id"])
+#         )
+#         docs.append(doc)
+#     return docs
 
 
 def get_docs() -> List[Document]:
@@ -48,7 +82,7 @@ def get_docs() -> List[Document]:
     docs: List[Document] = []
     for inp in inputs:
         doc = Document(
-            text=str(inp["text"]),
+            text_resource=MediaResource(text=str(inp["text"])),
             metadata=inp["metadata"],  # type: ignore
         )
         docs.append(doc)
