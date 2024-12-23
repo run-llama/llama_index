@@ -165,3 +165,27 @@ def test_tablestore() -> None:
     assert query_result.ids is not None
     assert query_result.similarities is not None
     assert query_result.similarities is not None
+
+
+def test_tablestore_add_dim() -> None:
+    store = TablestoreVectorStore(
+        endpoint="http://test.a.com",
+        instance_name="test",
+        access_key_id="test",
+        access_key_secret="test",
+        vector_dimension=512,
+        vector_metric_type=tablestore.VectorMetricType.VM_COSINE,
+    )
+    embedder = MockEmbedding(128)
+    node = TextNode(
+        id_="1",
+        text="hello world",
+        metadata={"type": "a", "time": 1995},
+    )
+    node.embedding = embedder.get_text_embedding(node.get_text())
+
+    try:
+        store.add([node])
+        raise RuntimeError("should failed")
+    except Exception as e:
+        assert "not the same as" in e.args[0]
