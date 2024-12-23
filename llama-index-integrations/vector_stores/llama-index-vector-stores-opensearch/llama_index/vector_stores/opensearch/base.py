@@ -3,9 +3,9 @@
 import uuid
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
-import asyncio
-from llama_index.core.bridge.pydantic import PrivateAttr
 
+from llama_index.core.async_utils import asyncio_run
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     FilterCondition,
@@ -131,14 +131,14 @@ class OpensearchVectorClient:
         except TypeError:
             # Probably using async so switch to async client
             try:
-                asyncio.run(self._os_async_client.indices.get(index=self._index))
+                asyncio_run(self._os_async_client.indices.get(index=self._index))
             except not_found_error:
-                asyncio.run(
+                asyncio_run(
                     self._os_async_client.indices.create(
                         index=self._index, body=idx_conf
                     )
                 )
-                asyncio.run(self._os_async_client.indices.refresh(index=self._index))
+                asyncio_run(self._os_async_client.indices.refresh(index=self._index))
         except not_found_error:
             self._os_client.indices.create(index=self._index, body=idx_conf)
             self._os_client.indices.refresh(index=self._index)
