@@ -1,15 +1,36 @@
 from llama_index.core.llms import ChatMessage, LLM
 from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.core.extractors import BaseExtractor
-from llama_index.core.schema import Document, Node
+from llama_index.core.schema import BaseNode
 from llama_index.core import Settings
 from llama_index.core.storage.docstore.simple_docstore import DocumentStore
-from typing import Optional, Dict, List, Tuple, Set, Union, Literal, Any
+from typing import Optional, Dict, List, Tuple, Set, Literal, Any, Sequence, Coroutine, Union
+from llama_index.core.llms import TextBlock, ImageBlock, ChatResponse
 import logging
 import asyncio
 import random
 from functools import lru_cache
 import tiktoken
+from typing import Protocol, TypeVar, runtime_checkable
+
+@runtime_checkable
+class NodeWithText(Protocol):
+    """Protocol for nodes that have text content"""
+    def get_content(self) -> str: ...
+    @property
+    def node_id(self) -> str: ...
+    metadata: Dict[str, str]
+
+@runtime_checkable
+class DocWithText(Protocol):
+    """Protocol for Documents and document-like things"""
+
+    def get_content(self) -> str: ...
+    @property
+    def node_id(self) -> str: ...
+    def set_content(self, text:str) -> None: ...
+
+T = TypeVar('T', bound=NodeWithText)
 
 OversizeStrategy = Literal["truncate_first", "truncate_last", "warn", "error", "ignore"]
 MetadataDict = Dict[str, str]
@@ -77,8 +98,8 @@ class DocumentContextExtractor(BaseExtractor):
         self,
         docstore: DocumentStore,
         llm: LLM,
-        key: Optional[str] = DEFAULT_KEY,
-        prompt: Optional[str] = DEFAULT_CONTEXT_PROMPT,
+        key: str = DEFAULT_KEY,
+        prompt: str = DEFAULT_CONTEXT_PROMPT,
         num_workers: int = DEFAULT_NUM_WORKERS,
         max_context_length: int = 128000,
         max_contextual_tokens: int = 512,
@@ -87,24 +108,20 @@ class DocumentContextExtractor(BaseExtractor):
         tiktoken_encoder: str = "cl100k_base",
         **kwargs
     ) -> None:
-        
-        llm = llm or Settings.llm
-        doc_ids: Set[str] = set()
+         # Call parent's __init__ with only the arguments it expects
+        super().__init__(num_workers=num_workers, **kwargs)
 
-        super().__init__(
-            key=key,
-            prompt=prompt,
-            llm=llm,
-            docstore=docstore,
-            num_workers=num_workers,
-            doc_ids=doc_ids,
-            max_context_length=max_context_length,
-            oversized_document_strategy=oversized_document_strategy,
-            max_contextual_tokens=max_contextual_tokens,
-            warn_on_oversize=warn_on_oversize,
-            tiktoken_encoder=tiktoken_encoder,
-            **kwargs
-        )
+        # Store class-specific attributes
+        self.llm = llm or Settings.llm
+        self.docstore = docstore
+        self.key = key
+        self.prompt = prompt
+        self.doc_ids = set()
+        self.max_context_length = max_context_length
+        self.max_contextual_tokens = max_contextual_tokens
+        self.oversized_document_strategy = oversized_document_strategy
+        self.warn_on_oversize = warn_on_oversize
+        self.tiktoken_encoder = tiktoken_encoder
 
     # this can take a surprisingly long time on longer docs so we cache it. For oversized docs, we end up counting twice, the 2nd time withotu the cache.
     # but if you're repeateddly running way oversize docs, the time that takes wont be what matters anyways.
@@ -136,9 +153,9 @@ class DocumentContextExtractor(BaseExtractor):
 
     async def _agenerate_node_context(
     self,
-    node: Node,
+    node: NodeWithText,
     metadata: MetadataDict,
-    document: Document,
+    document: DocWithText,
     prompt: str,
     key: str
     ) -> MetadataDict:
@@ -162,7 +179,7 @@ class DocumentContextExtractor(BaseExtractor):
             Uses exponential backoff starting at 60 seconds with up to 5 retries
             for rate limit handling.
         """
-        cached_text = f"<document>{document.text}</document>"
+        cached_text = f"<document>{document.get_content()}</document>"
         messages = [
             ChatMessage(
                 role="user",
@@ -173,7 +190,7 @@ class DocumentContextExtractor(BaseExtractor):
                         "cache_control": {"type": "ephemeral"},
                     },
                     {
-                        "text": f"Here is the chunk we want to situate within the whole document:\n<chunk>{node.text}</chunk>\n{prompt}",
+                        "text": f"Here is the chunk we want to situate within the whole document:\n<chunk>{node.get_content()}</chunk>\n{prompt}",
                         "block_type": "text",
                     },
                 ],
@@ -185,12 +202,16 @@ class DocumentContextExtractor(BaseExtractor):
 
         for attempt in range(max_retries):
             try:
-                response = await self.llm.achat(
+                response:ChatResponse = await self.llm.achat(
                     messages,
                     max_tokens=self.max_contextual_tokens,
                     extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
                 )
-                metadata[key] = response.message.blocks[0].text
+                first_block:Union[TextBlock,ImageBlock] = response.message.blocks[0]
+                if isinstance(first_block, TextBlock):
+                    metadata[key] = first_block.text
+                else:
+                    logging.warning(f"Received non-text block type: {type(first_block)}")
                 return metadata
 
             except Exception as e:
@@ -215,16 +236,24 @@ class DocumentContextExtractor(BaseExtractor):
                 
                 return metadata
     
-    async def _get_document(self, doc_id: str) -> Document:
+        return metadata
+    
+    async def _get_document(self, doc_id: str) -> Optional[DocWithText]:
         """counting tokens can be slow, as can awaiting the docstore (potentially), so we keep a small lru_cache"""
 
         # first we need to get the document
         doc = await self.docstore.aget_document(doc_id)
-
+        if not doc:
+            logging.warning(f"Document {doc_id} not found in docstore")
+            return None
+        if not isinstance(doc, NodeWithText):
+            logging.warning(f"Document {doc_id} is an instance of BaseeNode 'text' attribute (TextNode, Document)")
+            return None
+        
         # then truncate if necessary. 
         if self.max_context_length is not None:
             strategy = self.oversized_document_strategy
-            token_count = self._count_tokens(doc.text, self.tiktoken_encoder)
+            token_count = self._count_tokens(doc.get_content(), self.tiktoken_encoder)
             if token_count > self.max_context_length:
                 message = (
                     f"Document {doc.node_id} is too large ({token_count} tokens) "
@@ -235,21 +264,21 @@ class DocumentContextExtractor(BaseExtractor):
                     logging.warning(message)
 
                 if strategy == "truncate_first":
-                    text = self._truncate_text(doc.text, self.max_context_length, 'first', self.tiktoken_encoder)
+                    text = self._truncate_text(doc.get_content(), self.max_context_length, 'first', self.tiktoken_encoder)
                     doc.set_content(text)
                 elif strategy == "truncate_last":
-                    text = self._truncate_text(doc.text, self.max_context_length, 'last', self.tiktoken_encoder)    
+                    text = self._truncate_text(doc.get_content(), self.max_context_length, 'last', self.tiktoken_encoder)    
                     doc.set_content(text)                
                 elif strategy == "error":
                     raise ValueError(message)
                 elif strategy == "ignore":
-                    return
+                    pass
                 else:
                     raise ValueError(f"Unknown oversized document strategy: {strategy}")
                 
         return doc
         
-    async def aextract(self, nodes: List[Node]) -> List[MetadataDict]:
+    async def aextract(self, nodes: Sequence[BaseNode]) -> List[MetadataDict]:
         """
         Extract context for multiple nodes asynchronously, optimized for loosely ordered nodes.
         Processes each node independently without guaranteeing sequential document handling.
@@ -261,17 +290,20 @@ class DocumentContextExtractor(BaseExtractor):
         Returns:
             List of metadata dictionaries with generated context
         """
-        metadata_list = [{} for _ in nodes]
+        metadata_list:List[MetadataDict] = []
+        for _ in nodes:
+            metadata_list.append({})
         metadata_map = {node.node_id: metadata_dict for metadata_dict, node in zip(metadata_list, nodes)}        
 
         # iterate over all the nodes and generate the jobs
-        node_tasks = []
+        node_tasks:List[Coroutine[Any, Any, Any]] = []
         for node in nodes:
             if not node.source_node:
                 continue
+            if not isinstance(node, NodeWithText):
+                continue
 
             doc = await self._get_document(node.source_node.node_id)
-
             if not doc:
                 continue
 
@@ -286,4 +318,4 @@ class DocumentContextExtractor(BaseExtractor):
             workers=self.num_workers,
         )
         
-        return metadata_list
+        return metadata_list # type: ignore[return-value]
