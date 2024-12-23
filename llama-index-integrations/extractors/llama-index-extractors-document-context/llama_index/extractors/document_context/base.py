@@ -1,7 +1,7 @@
 from llama_index.core.llms import ChatMessage, LLM
 from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.core.extractors import BaseExtractor
-from llama_index.core.schema import BaseNode
+from llama_index.core.schema import BaseNode, TextNode, Node
 from llama_index.core import Settings
 from llama_index.core.storage.docstore.simple_docstore import DocumentStore
 from typing import Optional, Dict, List, Tuple, Set, Literal, Any, Sequence, Coroutine, Union
@@ -11,26 +11,11 @@ import asyncio
 import random
 from functools import lru_cache
 import tiktoken
-from typing import Protocol, TypeVar, runtime_checkable
+from typing import Protocol, TypeVar, runtime_checkable, TypeGuard
 
-@runtime_checkable
-class NodeWithText(Protocol):
-    """Protocol for nodes that have text content"""
-    def get_content(self) -> str: ...
-    @property
-    def node_id(self) -> str: ...
-    metadata: Dict[str, str]
-
-@runtime_checkable
-class DocWithText(Protocol):
-    """Protocol for Documents and document-like things"""
-
-    def get_content(self) -> str: ...
-    @property
-    def node_id(self) -> str: ...
-    def set_content(self, text:str) -> None: ...
-
-T = TypeVar('T', bound=NodeWithText)
+# this covers both TextNode and Node
+def is_text_node(node: BaseNode) -> TypeGuard[Union[Node, TextNode]]:
+    return isinstance(node, (Node, TextNode))
 
 OversizeStrategy = Literal["truncate_first", "truncate_last", "warn", "error", "ignore"]
 MetadataDict = Dict[str, str]
@@ -98,10 +83,10 @@ class DocumentContextExtractor(BaseExtractor):
         self,
         docstore: DocumentStore,
         llm: LLM,
+        max_context_length: int,
         key: str = DEFAULT_KEY,
         prompt: str = DEFAULT_CONTEXT_PROMPT,
         num_workers: int = DEFAULT_NUM_WORKERS,
-        max_context_length: int = 128000,
         max_contextual_tokens: int = 512,
         oversized_document_strategy: OversizeStrategy = "truncate_first",
         warn_on_oversize: bool = True,
@@ -153,9 +138,9 @@ class DocumentContextExtractor(BaseExtractor):
 
     async def _agenerate_node_context(
     self,
-    node: NodeWithText,
+    node: Union[Node, TextNode],
     metadata: MetadataDict,
-    document: DocWithText,
+    document: Union[Node, TextNode],
     prompt: str,
     key: str
     ) -> MetadataDict:
@@ -238,7 +223,7 @@ class DocumentContextExtractor(BaseExtractor):
     
         return metadata
     
-    async def _get_document(self, doc_id: str) -> Optional[DocWithText]:
+    async def _get_document(self, doc_id: str) -> Optional[Union[Node, TextNode]]:
         """counting tokens can be slow, as can awaiting the docstore (potentially), so we keep a small lru_cache"""
 
         # first we need to get the document
@@ -246,8 +231,8 @@ class DocumentContextExtractor(BaseExtractor):
         if not doc:
             logging.warning(f"Document {doc_id} not found in docstore")
             return None
-        if not isinstance(doc, NodeWithText):
-            logging.warning(f"Document {doc_id} is an instance of BaseeNode 'text' attribute (TextNode, Document)")
+        if not is_text_node(doc):
+            logging.warning(f"Document {doc_id} is an instance of BaseNode 'text' attribute (TextNode, Document)")
             return None
         
         # then truncate if necessary. 
@@ -300,10 +285,10 @@ class DocumentContextExtractor(BaseExtractor):
         for node in nodes:
             if not node.source_node:
                 continue
-            if not isinstance(node, NodeWithText):
+            if not is_text_node(node):
                 continue
 
-            doc = await self._get_document(node.source_node.node_id)
+            doc:Optional[Union[Node,TextNode]] = await self._get_document(node.source_node.node_id)
             if not doc:
                 continue
 
