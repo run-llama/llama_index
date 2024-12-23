@@ -138,6 +138,8 @@ class NotionPageReader(BasePydanticReader):
         """Get all the pages from a Notion database."""
         pages = []
 
+        # TODO a while True break / do while would work better here
+
         res = self._request_with_retry(
             "POST",
             DATABASE_URL_TMPL.format(database_id=database_id),
@@ -146,11 +148,11 @@ class NotionPageReader(BasePydanticReader):
         )
         res.raise_for_status()
         data = res.json()
-
         pages.extend(data.get("results"))
 
         while data.get("has_more"):
             query_dict["start_cursor"] = data.get("next_cursor")
+            
             res = self._request_with_retry(
                 "POST",
                 DATABASE_URL_TMPL.format(database_id=database_id),
