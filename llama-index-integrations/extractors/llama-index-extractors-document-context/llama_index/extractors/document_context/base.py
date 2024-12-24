@@ -276,9 +276,14 @@ class DocumentContextExtractor(BaseExtractor):
             metadata_list.append({})
         metadata_map = {node.node_id: metadata_dict for metadata_dict, node in zip(metadata_list, nodes)}        
 
+        # sorting takes a tiny amount of time - 0.4s for 1_000_000 nodes. but 1_000_000 nodes takes potentially hours to process
+        # considering sorting CAN save the users hundreds of dollars in API costs, we just sort and leave no option to do otherwise. 
+        # The math always works out in the user's favor and we can't guarantee things are sorted in the first place.
+        sorted_nodes = sorted(nodes, key=lambda n: n.source_node.node_id if n.source_node else '')
+
         # iterate over all the nodes and generate the jobs
         node_tasks:List[Coroutine[Any, Any, Any]] = []
-        for node in nodes:
+        for node in sorted_nodes:
             if not node.source_node:
                 continue
             if not is_text_node(node):
@@ -289,10 +294,11 @@ class DocumentContextExtractor(BaseExtractor):
                 continue
 
             metadata = metadata_map[node.node_id]
+            # this modifies metadata in-place, adding a new key to the dictionary - we needed do anytyhing with the return value
             task = self._agenerate_node_context(node, metadata, doc, self.prompt, self.key)
             node_tasks.append(task)
         
-        # then run the jobs
+        # then run the jobs - this does return the metadata list, but we already have it
         await run_jobs(
             node_tasks,
             show_progress=self.show_progress,
