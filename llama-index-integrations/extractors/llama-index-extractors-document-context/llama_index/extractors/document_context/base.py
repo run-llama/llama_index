@@ -18,7 +18,6 @@ def is_text_node(node: BaseNode) -> TypeGuard[Union[Node, TextNode]]:
     return isinstance(node, (Node, TextNode))
 
 OversizeStrategy = Literal["truncate_first", "truncate_last", "warn", "error", "ignore"]
-MetadataDict = Dict[str, str]
 
 # original context prompt from the Anthropic cookbook/blogpost, works well
 ORIGINAL_CONTEXT_PROMPT: str = """
@@ -139,11 +138,11 @@ class DocumentContextExtractor(BaseExtractor):
     async def _agenerate_node_context(
     self,
     node: Union[Node, TextNode],
-    metadata: MetadataDict,
+    metadata: Dict,
     document: Union[Node, TextNode],
     prompt: str,
     key: str
-    ) -> MetadataDict:
+    ) -> Dict:
         """
         Generate context for a node using LLM with retry logic.
         
@@ -263,7 +262,7 @@ class DocumentContextExtractor(BaseExtractor):
                 
         return doc
         
-    async def aextract(self, nodes: Sequence[BaseNode]) -> List[MetadataDict]:
+    async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """
         Extract context for multiple nodes asynchronously, optimized for loosely ordered nodes.
         Processes each node independently without guaranteeing sequential document handling.
@@ -275,7 +274,7 @@ class DocumentContextExtractor(BaseExtractor):
         Returns:
             List of metadata dictionaries with generated context
         """
-        metadata_list:List[MetadataDict] = []
+        metadata_list:List[Dict] = []
         for _ in nodes:
             metadata_list.append({})
         metadata_map = {node.node_id: metadata_dict for metadata_dict, node in zip(metadata_list, nodes)}        
