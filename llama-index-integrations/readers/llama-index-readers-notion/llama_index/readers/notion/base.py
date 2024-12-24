@@ -245,6 +245,8 @@ class NotionPageReader(BasePydanticReader):
 
     @staticmethod
     def default_format_db_json(json_database: dict) -> str:
+        
+        # TODO get title of the database
     
         database_text = "\n Notion Database Start  -----------------\n"
         for row in json_database.get("results", []):
