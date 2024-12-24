@@ -57,7 +57,10 @@ class VoyageAIRerank(BaseNodePostprocessor):
     ) -> List[NodeWithScore]:
         dispatcher.event(
             ReRankStartEvent(
-                query=query_bundle, nodes=nodes, top_n=self.top_n, model_name=self.model
+                query=query_bundle,
+                nodes=nodes,
+                top_n=self.top_n or len(nodes),
+                model_name=self.model,
             )
         )
 
@@ -72,7 +75,7 @@ class VoyageAIRerank(BaseNodePostprocessor):
                 EventPayload.NODES: nodes,
                 EventPayload.MODEL_NAME: self.model,
                 EventPayload.QUERY_STR: query_bundle.query_str,
-                EventPayload.TOP_K: self.top_n,
+                EventPayload.TOP_K: self.top_n or len(nodes),
             },
         ) as event:
             texts = [
