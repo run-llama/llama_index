@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from typing import Any, Dict, List, Optional, Union, cast
 
 from llama_index.core.agent.multi_agent.agent_config import AgentConfig, AgentMode
@@ -141,9 +142,13 @@ class MultiAgentWorkflow(Workflow):
             await ctx.set("current_agent", self.root_agent)
 
     async def _call_tool(
-        self, ctx: Context, tool: AsyncBaseTool, tool_input: dict
+        self, ctx: Context, tool: AsyncBaseTool, tool_input: dict, tool_id: str
     ) -> ToolOutput:
         """Call the given tool with the given input."""
+        current_agent = await ctx.get("current_agent")
+        agent_config = self.agent_configs[current_agent]
+
+        # Call the tool once approved
         try:
             if isinstance(tool, FunctionToolWithContext):
                 tool_output = await tool.acall(ctx=ctx, **tool_input)
@@ -222,7 +227,9 @@ class MultiAgentWorkflow(Workflow):
                     if tool.metadata.return_direct:
                         should_return_direct = True
 
-                    job = self._call_tool(ctx, tool, tool_call.tool_kwargs)
+                    job = await self._call_tool(
+                        ctx, tool, tool_call.tool_kwargs, tool_call.tool_id
+                    )
                     jobs.append(job)
 
             tool_results.extend(await asyncio.gather(*jobs))
@@ -377,7 +384,7 @@ class MultiAgentWorkflow(Workflow):
             else:
                 tool = tools_by_name[reasoning_step.action]
                 tool_output = await self._call_tool(
-                    ctx, tool, reasoning_step.action_input
+                    ctx, tool, reasoning_step.action_input, tool_id=uuid.uuid4().hex[:8]
                 )
                 all_tool_outputs.append(tool_output)
 

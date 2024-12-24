@@ -1,8 +1,9 @@
 import asyncio
 import json
 import warnings
+import uuid
 from collections import defaultdict
-from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING, Set, Tuple
+from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING, Set, Tuple, TypeVar
 
 from .context_serializers import BaseSerializer, JsonSerializer
 from .decorators import StepConfig
@@ -11,6 +12,8 @@ from .errors import WorkflowRuntimeError
 
 if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
+
+T = TypeVar("T", bound=Event)
 
 
 class Context:
@@ -280,6 +283,32 @@ class Context:
                 )
 
         self._broker_log.append(message)
+
+    async def wait_for_event(
+        self, event_type: Type[T], requirements: Optional[Dict[str, Any]] = None
+    ) -> T:
+        """Asynchronously wait for a specific event type to be received.
+
+        Returns:
+            The event type that was requested.
+        """
+        requirements = requirements or {}
+        waiter_id = uuid.uuid4()
+        self._queues[waiter_id] = asyncio.Queue()
+
+        try:
+            while True:
+                event = await self._queues[waiter_id].get()
+                if isinstance(event, event_type):
+                    if all(
+                        event.get(k, default=None) == v for k, v in requirements.items()
+                    ):
+                        return event
+                    else:
+                        continue
+        finally:
+            # Ensure queue cleanup happens even if cancelled
+            del self._queues[waiter_id]
 
     def write_event_to_stream(self, ev: Optional[Event]) -> None:
         self._streaming_queue.put_nowait(ev)
