@@ -269,8 +269,6 @@ class VectaraIndex(BaseManagedIndex):
         ]
         self._insert(nodes, corpus_key, use_core_api)
 
-    # THIS DOES NOT CURRENTLY WORK, NEED TO FIGURE OUT HOW TO STRUCTURE PROPERLY WITH NEW API VERSION
-    # NEED TO ADD NEW ARGS FOR APIV2 AND PROPERLY CONFIGURE REQUEST
     def insert_file(
         self,
         file_path: str,

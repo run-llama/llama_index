@@ -14,7 +14,7 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.vector_store.retrievers.auto_retriever.auto_retriever import (
     VectorIndexAutoRetriever,
 )
-from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
+from llama_index.core.schema import NodeWithScore, QueryBundle, Node, MediaResource
 from llama_index.core.types import TokenGen
 from llama_index.core.llms import (
     CompletionResponse,
@@ -59,19 +59,23 @@ class VectaraRetriever(BaseRetriever):
         index (VectaraIndex): the Vectara Index
         similarity_top_k (int): number of top k results to return, defaults to 5.
         offset (int): number of results to skip, defaults to 0.
-        lambda_val (float): for hybrid search.
+        lambda_val (List[float] | float): for hybrid search.
             0 = neural search only.
             1 = keyword match only.
-            In between values are a linear interpolation
-        semantics (str): Indicates whether the query is intended as a query or response.
+            In between values are a linear interpolation.
+            Provide single value for one corpus or a list of values for each corpus.
+        semantics (List[str] | str): Indicates whether the query is intended as a query or response.
+            Provide single value for one corpus or a list of values for each corpus.
         custom_dimensions (Dict): Custom dimensions for the query.
             See (https://docs.vectara.com/docs/learn/semantic-search/add-custom-dimensions)
             for more details about usage.
+            Provide single dict for one corpus or a list of dicts for each corpus.
         n_sentences_before (int):
             number of sentences before the matched sentence to return in the node
         n_sentences_after (int):
             number of sentences after the matched sentence to return in the node
-        filter (str): metadata filter (if specified)
+        filter (List[str] | str): metadata filter (if specified). Provide single string for one corpus
+            or a list of strings to specify the filter for each corpus (if multiple corpora).
         reranker (str): reranker to use: none, mmr, slingshot/multilingual_reranker_v1, userfn, or chain.
             Note that "multilingual_reranker_v1" is a Vectara Scale feature only.
         rerank_k (int): number of results to fetch for Reranking, defaults to 50.
@@ -117,12 +121,12 @@ class VectaraRetriever(BaseRetriever):
         index: VectaraIndex,
         similarity_top_k: int = 10,
         offset: int = 0,
-        lambda_val: float = 0.005,
-        semantics: str = "default",
-        custom_dimensions: Dict = {},
+        lambda_val: List[float] | float = 0.005,
+        semantics: List[str] | str = "default",
+        custom_dimensions: List[Dict] | Dict = {},
         n_sentences_before: int = 2,
         n_sentences_after: int = 2,
-        filter: str = "",
+        filter: List[str] | str = "",
         reranker: VectaraReranker = VectaraReranker.NONE,
         rerank_k: int = 50,
         rerank_limit: int = 50,
@@ -248,23 +252,15 @@ class VectaraRetriever(BaseRetriever):
         """
         return self._vectara_query(query_bundle, **kwargs)[0]  # return top_nodes only
 
-    # For now we are just doing a single corpus query, but we may want to be able to support more.
-    # This becomes a little more complicated because for each corpus, we would need to have the user pass in parameters for each corpus,
-    # such as metadata_filter, lexical_interpolation, semantics, etc.
     def _build_vectara_query_body(
         self,
         query_str: str,
-        chat: bool = False,
-        chat_conv_id: Optional[str] = None,
+        save_query: bool = False,
         **kwargs: Any,
     ) -> Dict:
         data = {
             "query": query_str,
             "search": {
-                "custom_dimensions": self._custom_dimensions,
-                "metadata_filter": self._filter,
-                "lexical_interpolation": self._lambda_val,
-                "semantics": self._semantics,
                 "offset": self._offset,
                 "limit": self._similarity_top_k,
                 "context_configuration": {
@@ -273,6 +269,33 @@ class VectaraRetriever(BaseRetriever):
                 },
             },
         }
+
+        corpora_config = [
+            {"corpus_key": corpus_key}
+            for corpus_key in self._index._vectara_corpus_key.split(",")
+        ]
+
+        for i in range(len(corpora_config)):
+            corpora_config[i]["custom_dimensions"] = (
+                self._custom_dimensions[i]
+                if isinstance(self._custom_dimensions, list)
+                else self._custom_dimensions
+            )
+            corpora_config[i]["metadata_filter"] = (
+                self._filter[i] if isinstance(self._filter, list) else self._filter
+            )
+            corpora_config[i]["lexical_interpolation"] = (
+                self._lambda_val[i]
+                if isinstance(self._lambda_val, list)
+                else self._lambda_val
+            )
+            corpora_config[i]["semantics"] = (
+                self._semantics[i]
+                if isinstance(self._semantics, list)
+                else self._semantics
+            )
+
+        data["search"]["corpora"] = corpora_config
 
         if self._rerank:
             rerank_config = {}
@@ -345,20 +368,15 @@ class VectaraRetriever(BaseRetriever):
 
             data["generation"] = summary_config
 
-            ## NEED TO FIGURE OUT HOW CHAT WORKS IN APIV2
-            if chat:
-                data["query"][0]["summary"][0]["chat"] = {
-                    "store": True,
-                    "conversationId": chat_conv_id,
-                }
+            if save_query:
+                data["save_history"] = True
 
         return data
 
     def _vectara_stream(
         self,
         query_bundle: QueryBundle,
-        chat: bool = False,
-        conv_id: Optional[str] = None,
+        save_query: bool = False,
         verbose: bool = False,
         **kwargs: Any,
     ) -> TokenGen:
@@ -367,203 +385,152 @@ class VectaraRetriever(BaseRetriever):
 
         Args:
             query_bundle: Query Bundle
-            chat: whether to enable chat
-            conv_id: conversation ID, if chat enabled
+            save_query: whether to save the query in query history
         """
-        body = self._build_vectara_query_body(query_bundle.query_str)
+        body = self._build_vectara_query_body(query_bundle.query_str, save_query)
         if verbose:
             print(f"Vectara streaming query request body: {body}")
+
+        # THIS MAY OR MAY NOT BE NECESSARY (NEED TO TEST)
+        # header = self._get_post_headers()
+        # header["Accept"] = "text/event-stream"
+
         response = self._index._session.post(
             headers=self._get_post_headers(),
-            url="https://api.vectara.io/v1/stream-query",
+            url="https://api.vectara.io/v2/query",
             data=json.dumps(body),
             timeout=self._index.vectara_api_timeout,
             stream=True,
         )
 
+        ## WHY ARE THESE PRINT STATEMENTS WHEN THE OTHER ERRORS USE _logger.error()?
         if response.status_code != 200:
-            print(
-                "Query failed %s",
-                f"(code {response.status_code}, reason {response.reason}, details "
-                f"{response.text})",
-            )
+            result = response.json()
+            if response.status_code == 400:
+                print(
+                    f"Query failed (code {response.status_code}), reason {result['field_errors']}"
+                )
+            else:
+                print(
+                    f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
+                )
             return
 
-        responses = []
-        documents = []
         stream_response = CompletionResponse(
             text="", additional_kwargs={"fcs": None}, raw=None, delta=None
         )
 
         for line in response.iter_lines():
-            if line:  # filter out keep-alive new lines
-                data = json.loads(line.decode("utf-8"))
-                result = data["result"]
-                response_set = result["responseSet"]
-                if response_set is None:
-                    summary = result.get("summary", None)
-                    if summary is None:
-                        continue
-                    if len(summary.get("status")) > 0:
-                        print(
-                            f"Summary generation failed with status {summary.get('status')[0].get('statusDetail')}"
-                        )
-                        continue
+            line = line.decode("utf-8")
+            if line:
+                key, value = line.split(":", 1)
+                if key == "data":
+                    line = json.loads(value)
+                    if line["type"] == "generation_chunk":
+                        chunk = urllib.parse.unquote(line["generation_chunk"])
+                        stream_response.text += chunk
+                        stream_response.delta = chunk
+                        yield stream_response
+                    elif line["type"] == "factual_consistency_score":
+                        stream_response.additional_kwargs["fcs"] = line[
+                            "factual_consistency_score"
+                        ]
 
-                    # Store conversation ID for chat, if applicable
-                    chat = summary.get("chat", None)
-                    if chat and chat.get("status", None):
-                        st_code = chat["status"]
-                        print(f"Chat query failed with code {st_code}")
-                        if st_code == "RESOURCE_EXHAUSTED":
-                            self.conv_id = None
-                            print("Sorry, Vectara chat turns exceeds plan limit.")
-                            continue
+                    elif line["type"] == "search_results":
+                        search_results = line["search_results"]
+                        top_nodes = [
+                            NodeWithScore(
+                                node=Node(
+                                    text_resource=MediaResource(
+                                        text=search_result["text"]
+                                    ),
+                                    id_=search_result["document_id"],
+                                    metadata=search_results["document_metadata"],
+                                ),
+                                score=search_result["score"],
+                            )
+                            for search_result in search_results[
+                                : self._similarity_top_k
+                            ]
+                        ]
+                        stream_response.additional_kwargs["top_nodes"] = top_nodes
+                        stream_response.delta = None
+                        yield stream_response
 
-                    conv_id = chat.get("conversationId", None) if chat else None
-                    if conv_id:
-                        self.conv_id = conv_id
-
-                    # if factual consistency score is provided, pull that from the JSON response
-                    if summary.get("factualConsistency", None):
-                        fcs = summary.get("factualConsistency", {}).get("score", None)
-                        stream_response.additional_kwargs["fcs"] = fcs
-                        continue
-
-                    # Yield the summary chunk
-                    chunk = urllib.parse.unquote(summary["text"])
-                    stream_response.text += chunk
-                    stream_response.delta = chunk
-                    yield stream_response
-                else:
-                    metadatas = []
-                    for x in responses:
-                        md = {m["name"]: m["value"] for m in x["metadata"]}
-                        doc_num = x["documentIndex"]
-                        doc_md = {
-                            m["name"]: m["value"]
-                            for m in documents[doc_num]["metadata"]
-                        }
-                        md.update(doc_md)
-                        metadatas.append(md)
-
-                    top_nodes = []
-                    for x, md in zip(responses, metadatas):
-                        doc_inx = x["documentIndex"]
-                        doc_id = documents[doc_inx]["id"]
-                        node = NodeWithScore(
-                            node=TextNode(text=x["text"], id_=doc_id, metadata=md), score=x["score"]  # type: ignore
-                        )
-                        top_nodes.append(node)
-                    stream_response.additional_kwargs["top_nodes"] = top_nodes[
-                        : self._similarity_top_k
-                    ]
-                    stream_response.delta = None
-                    yield stream_response
         return
 
     def _vectara_query(
         self,
         query_bundle: QueryBundle,
-        chat: bool = False,
-        conv_id: Optional[str] = None,
+        save_query: bool = False,
         verbose: bool = False,
         **kwargs: Any,
-    ) -> Tuple[List[NodeWithScore], Dict, str]:
+    ) -> Tuple[List[NodeWithScore], Dict]:
         """
         Query Vectara index to get for top k most similar nodes.
 
         Args:
             query: Query Bundle
-            chat: whether to enable chat in Vectara
-            conv_id: conversation ID, if chat enabled
+            save_query: whether to save the query in query history
             verbose: whether to print verbose output (e.g. for debugging)
             Additional keyword arguments
 
         Returns:
             List[NodeWithScore]: list of nodes with scores
             Dict: summary
-            str: conversation ID, if applicable
         """
-        data = self._build_vectara_query_body(query_bundle.query_str, chat, conv_id)
+        data = self._build_vectara_query_body(query_bundle.query_str, save_query)
 
         if verbose:
             print(f"Vectara query request body: {data}")
         response = self._index._session.post(
             headers=self._get_post_headers(),
-            url="https://api.vectara.io/v1/query",
+            url="https://api.vectara.io/v2/query",
             data=json.dumps(data),
             timeout=self._index.vectara_api_timeout,
         )
 
-        if response.status_code != 200:
-            _logger.error(
-                "Query failed %s",
-                f"(code {response.status_code}, reason {response.reason}, details "
-                f"{response.text})",
-            )
-            return [], {"text": ""}, ""
-
         result = response.json()
+        if response.status_code != 200:
+            if response.status_code == 400:
+                _logger.error(
+                    f"Query failed (code {response.status_code}), reason {res['field_errors']}"
+                )
+            else:
+                _logger.error(
+                    f"Query failed (code {response.status_code}), reason {res['messages'][0]}"
+                )
+            return [], {"text": ""}
+
         if verbose:
             print(f"Vectara query response: {result}")
-        status = result["responseSet"][0]["status"]
-        if len(status) > 0 and status[0]["code"] != "OK":
-            _logger.error(
-                f"Query failed (code {status[0]['code']}, msg={status[0]['statusDetail']}"
-            )
-            return [], {"text": ""}, ""
-
-        responses = result["responseSet"][0]["response"]
-        documents = result["responseSet"][0]["document"]
 
         if self._summary_enabled:
-            summaryJson = result["responseSet"][0]["summary"][0]
-            if len(summaryJson["status"]) > 0:
-                print(
-                    f"Summary generation failed with error: '{summaryJson['status'][0]['statusDetail']}'"
-                )
-                return [], {"text": ""}, ""
-
             summary = {
-                "text": (
-                    urllib.parse.unquote(summaryJson["text"])
-                    if self._summary_enabled
-                    else None
-                ),
-                "fcs": summaryJson["factualConsistency"]["score"],
+                "text": urllib.parse.unquote(result["summary"]),
+                "fcs": result["factual_consistency_score"],
             }
-            if summaryJson.get("chat", None):
-                conv_id = summaryJson["chat"]["conversationId"]
-            else:
-                conv_id = None
         else:
             summary = None
 
-        metadatas = []
-        for x in responses:
-            md = {m["name"]: m["value"] for m in x["metadata"]}
-            doc_num = x["documentIndex"]
-            doc_md = {m["name"]: m["value"] for m in documents[doc_num]["metadata"]}
-            md.update(doc_md)
-            metadatas.append(md)
-
-        top_nodes = []
-        for x, md in zip(responses, metadatas):
-            doc_inx = x["documentIndex"]
-            doc_id = documents[doc_inx]["id"]
-            node = NodeWithScore(
-                node=TextNode(text=x["text"], id_=doc_id, metadata=md), score=x["score"]  # type: ignore
+        top_nodes = [
+            NodeWithScore(
+                node=Node(
+                    text_resource=MediaResource(text=search_result["text"]),
+                    id_=search_result["document_id"],
+                    metadata=search_results["document_metadata"],
+                ),
+                score=search_result["score"],
             )
-            top_nodes.append(node)
+            for search_result in search_results[: self._similarity_top_k]
+        ]
 
-        return top_nodes[: self._similarity_top_k], summary, conv_id
+        return top_nodes, summary
 
     async def _avectara_query(
         self,
         query_bundle: QueryBundle,
-        chat: bool = False,
-        conv_id: Optional[str] = None,
+        save_query: bool = False,
         verbose: bool = False,
         **kwargs: Any,
     ) -> Tuple[List[NodeWithScore], Dict]:
@@ -572,17 +539,15 @@ class VectaraRetriever(BaseRetriever):
 
         Args:
             query: Query Bundle
-            chat: whether to enable chat in Vectara
-            conv_id: conversation ID, if chat enabled
+            save_query: whether to save the query in query history
             verbose: whether to print verbose output (e.g. for debugging)
             Additional keyword arguments
 
         Returns:
             List[NodeWithScore]: list of nodes with scores
             Dict: summary
-            str: conversation ID, if applicable
         """
-        return await self._vectara_query(query_bundle, chat, conv_id, verbose, **kwargs)
+        return await self._vectara_query(query_bundle, save_query, verbose, **kwargs)
 
 
 class VectaraAutoRetriever(VectorIndexAutoRetriever):
