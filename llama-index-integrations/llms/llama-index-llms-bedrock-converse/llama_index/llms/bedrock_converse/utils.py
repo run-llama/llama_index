@@ -337,12 +337,7 @@ def converse_with_retry(
         {
             k: v
             for k, v in kwargs.items()
-            if (
-                k != "tools"
-                or k != "guardrail_identifier"
-                or k != "guardrail_version"
-                or k != "trace"
-            )
+            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
         },
     )
 
@@ -395,12 +390,7 @@ async def converse_with_retry_async(
         {
             k: v
             for k, v in kwargs.items()
-            if (
-                k != "tools"
-                or k != "guardrail_identifier"
-                or k != "guardrail_version"
-                or k != "trace"
-            )
+            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
         },
     )
 
