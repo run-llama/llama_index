@@ -13,7 +13,6 @@ from functools import lru_cache
 import tiktoken
 from typing import TypeGuard
 
-# this covers both TextNode and Node
 def is_text_node(node: BaseNode) -> TypeGuard[Union[Node, TextNode]]:
     return isinstance(node, (Node, TextNode))
 
@@ -92,10 +91,8 @@ class DocumentContextExtractor(BaseExtractor):
         tiktoken_encoder: str = "cl100k_base",
         **kwargs
     ) -> None:
-         # Call parent's __init__ with only the arguments it expects
         super().__init__(num_workers=num_workers, **kwargs)
 
-        # Store class-specific attributes
         self.llm = llm or Settings.llm
         self.docstore = docstore
         self.key = key
