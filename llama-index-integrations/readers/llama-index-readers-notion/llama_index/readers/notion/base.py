@@ -21,7 +21,8 @@ format_json_f = Callable[[dict], str]
 # TODO compare get_all_pages with query_database vs load_data
 # TODO get titles from databases
 # TODO check you get all content from notion with manual tests
-
+# TODO next_cursor need a unifying function to combine logic
+# TODO maybe use a notion api wrapper
 
 
 # This code has two types of databases
@@ -179,6 +180,7 @@ class NotionPageReader(BasePydanticReader):
             pages.extend(data.get("results"))
 
 
+    # TODO this function name can be misleading, it does not say it will return page ids in the signature 
     # TODO this function name is not very descriptive
     def query_database(
         self, database_id: str, query_dict: Dict[str, Any] = {"page_size": 100}
