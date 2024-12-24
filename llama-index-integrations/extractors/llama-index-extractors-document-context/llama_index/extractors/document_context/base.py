@@ -4,14 +4,14 @@ from llama_index.core.extractors import BaseExtractor
 from llama_index.core.schema import BaseNode, TextNode, Node
 from llama_index.core import Settings
 from llama_index.core.storage.docstore.simple_docstore import DocumentStore
-from typing import Optional, Dict, List, Tuple, Set, Literal, Any, Sequence, Coroutine, Union
+from typing import Optional, Dict, List, Set, Literal, Any, Sequence, Coroutine, Union
 from llama_index.core.llms import TextBlock, ImageBlock, ChatResponse
 import logging
 import asyncio
 import random
 from functools import lru_cache
 import tiktoken
-from typing import Protocol, TypeVar, runtime_checkable, TypeGuard
+from typing import TypeGuard
 
 # this covers both TextNode and Node
 def is_text_node(node: BaseNode) -> TypeGuard[Union[Node, TextNode]]:
@@ -302,4 +302,4 @@ class DocumentContextExtractor(BaseExtractor):
             workers=self.num_workers,
         )
         
-        return metadata_list # type: ignore[return-value]
+        return metadata_list
