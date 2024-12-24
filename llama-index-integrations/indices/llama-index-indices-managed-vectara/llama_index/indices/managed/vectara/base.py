@@ -302,27 +302,6 @@ class VectaraIndex(BaseManagedIndex):
         Returns:
             List of ids associated with each of the files indexed
         """
-        # if not os.path.exists(file_path):
-        #     _logger.error(f"File {file_path} does not exist")
-        #     return None
-
-        # metadata = metadata or {}
-        # metadata["framework"] = "llama_index"
-        # files: dict = {
-        #     "file": (file_path, open(file_path, "rb")),
-        #     "doc_metadata": json.dumps(metadata),
-        # }
-        # headers = self._get_post_headers()
-        # headers.pop("Content-Type")
-        # valid_corpus_key = self._get_corpus_key(corpus_key)
-        # response = self._session.post(
-        #     f"https://api.vectara.io/v2/corpora/{valid_corpus_key}/upload_file",
-        #     files=files,
-        #     verify=True,
-        #     headers=headers,
-        #     timeout=self.vectara_api_timeout,
-        # )
-
         if not os.path.exists(file_path):
             _logger.error(f"File {file_path} does not exist")
             return None

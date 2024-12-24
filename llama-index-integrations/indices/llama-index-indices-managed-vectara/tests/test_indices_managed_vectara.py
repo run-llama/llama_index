@@ -162,7 +162,7 @@ def test_udf_retrieval(vectara1) -> None:
         similarity_top_k=2,
         n_sentences_before=0,
         n_sentences_after=0,
-        reranker="udf",
+        reranker="userfn",
         udf_expression="get('$.score') + get('$.document_metadata.test_score')",
     )
 
@@ -176,7 +176,7 @@ def test_udf_retrieval(vectara1) -> None:
         similarity_top_k=2,
         n_sentences_before=0,
         n_sentences_after=0,
-        reranker="udf",
+        reranker="userfn",
         udf_expression="max(0, 5 * get('$.score') - (to_unix_timestamp(now()) - to_unix_timestamp(datetime_parse(get('$.document_metadata.date'), 'yyyy-MM-dd'))) / 31536000)",
     )
 
@@ -213,7 +213,7 @@ def test_chain_rerank_retrieval(vectara1) -> None:
             {"type": "slingshot"},
             {"type": "mmr"},
             {
-                "type": "udf",
+                "type": "userfn",
                 "user_function": "5 * get('$.score') + get('$.document_metadata.test_score') / 2",
                 "limit": 2,
             },
