@@ -1,11 +1,13 @@
 import os
 
-from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
-from llama_index.postprocessor.voyageai_rerank import VoyageAIRerank
+import pytest
 from pytest_mock import MockerFixture
 from voyageai.api_resources import VoyageResponse
 from voyageai.object.reranking import RerankingObject
+
+from llama_index.core.postprocessor.types import BaseNodePostprocessor
+from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
+from llama_index.postprocessor.voyageai_rerank import VoyageAIRerank
 
 rerank_sample_response = {
     "object": "list",
@@ -23,7 +25,11 @@ def test_class():
     assert BaseNodePostprocessor.__name__ in names_of_base_classes
 
 
-def test_rerank(mocker: MockerFixture) -> None:
+@pytest.mark.parametrize(
+    "constructor_kwargs",
+    [{"top_n": 2, "truncation": True}, {"top_n": None}],
+)
+def test_rerank(mocker: MockerFixture, constructor_kwargs: dict) -> None:
     # Mocked client with the desired behavior for embed_documents
     result_object = RerankingObject(
         documents=["0", "1"],
@@ -40,7 +46,7 @@ def test_rerank(mocker: MockerFixture) -> None:
     )
 
     voyageai_rerank = VoyageAIRerank(
-        api_key="api_key", top_n=2, model="rerank-lite-1", truncation=True
+        api_key="api_key", model="rerank-lite-1", **constructor_kwargs
     )
     result = voyageai_rerank.postprocess_nodes(
         nodes=[
