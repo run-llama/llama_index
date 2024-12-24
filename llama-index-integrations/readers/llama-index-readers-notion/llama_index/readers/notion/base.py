@@ -17,6 +17,13 @@ format_json_f = Callable[[dict], str]
 
 
 
+
+# TODO compare get_all_pages with query_database vs load_data
+# TODO get titles from databases
+# TODO check you get all content from notion with manual tests
+
+
+
 # This code has two types of databases
 # 1. Notion as a Database
 # 2. Notion databases https://www.notion.com/help/intro-to-databases
@@ -140,10 +147,10 @@ class NotionPageReader(BasePydanticReader):
         """Read a page."""
         return self._read_block(page_id)
 
-    def query_database(
-        self, database_id: str, query_dict: Dict[str, Any] = {"page_size": 100}
-    ) -> List[str]:
-        """Get all the pages from a Notion database."""
+
+
+    def get_all_pages_from_database(self, database_id: str, query_dict: Dict[str, Any]) -> str:
+
         pages = []
 
         # TODO a while True break / do while would work better here
@@ -171,7 +178,16 @@ class NotionPageReader(BasePydanticReader):
             data = res.json()
             pages.extend(data.get("results"))
 
+
+    # TODO this function name is not very descriptive
+    def query_database(
+        self, database_id: str, query_dict: Dict[str, Any] = {"page_size": 100}
+    ) -> List[str]:
+        """Get all the pages from a Notion database."""
+
+        pages = self.get_all_pages_from_database(database_id, query_dict)
         return [page["id"] for page in pages]
+
 
     def search(self, query: str) -> List[str]:
         """Search Notion page given a text query."""
@@ -365,7 +381,9 @@ class NotionPageReader(BasePydanticReader):
 
     def get_all_pages_and_databases(self, format_db_json : format_json_f = default_format_db_json, print_feedback : bool = False) -> List[Document]:
         """Get all pages and databases in the Notion workspace."""
-        return self.get_all_databases(format_db_json=format_db_json, print_feedback=print_feedback) + self.get_all_pages(format_db_json=format_db_json, print_feedback=print_feedback)
+
+        return self.get_all_databases(format_db_json=format_db_json, print_feedback=print_feedback) + \
+               self.get_all_pages(format_db_json=format_db_json, print_feedback=print_feedback)
 
 
 if __name__ == "__main__":
