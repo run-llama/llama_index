@@ -2,7 +2,7 @@
 
 import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
 
 import requests  # type: ignore
 from llama_index.core.readers.base import BasePydanticReader
@@ -13,8 +13,16 @@ BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
 DATABASE_URL_TMPL = "https://api.notion.com/v1/databases/{database_id}/query"
 SEARCH_URL = "https://api.notion.com/v1/search"
 
+format_json_f = Callable[[dict], str] 
 
-# TODO: Notion DB reader coming soon!
+
+
+# This code has two types of databases
+# 1. Notion as a Database
+# 2. Notion databases https://www.notion.com/help/intro-to-databases
+# make sure not to mix them up
+
+
 class NotionPageReader(BasePydanticReader):
     """Notion Page reader.
 
@@ -152,7 +160,7 @@ class NotionPageReader(BasePydanticReader):
 
         while data.get("has_more"):
             query_dict["start_cursor"] = data.get("next_cursor")
-            
+
             res = self._request_with_retry(
                 "POST",
                 DATABASE_URL_TMPL.format(database_id=database_id),
@@ -234,6 +242,72 @@ class NotionPageReader(BasePydanticReader):
             )
 
         return docs
+
+    @staticmethod
+    def default_format_db_json(json_database: dict) -> str:
+    
+        database_text = "\n NOTION DATABASE\n"
+        for row in json_database.get("results", []):
+            properties = row.get("properties", {})
+
+            database_text += "\nROW\n"
+            for prop_name, prop_value in properties.items():
+                prop_value : dict = prop_value
+                
+                # this logic remove useless metadata and makes the table human readable compared to json
+                from_type : any = prop_value.get(prop_value["type"], [])
+                database_text += prop_name + ",type:" + prop_value["type"] + ",data:"
+                
+
+                # allow most customization in future, although error checking can be difficult
+                if prop_value["type"] == "relation":
+                    database_text += str(from_type)
+                elif prop_value["type"] == "multi_select":
+                    database_text += str(from_type)
+                elif prop_value["type"] == "rich_text":
+                    database_text += str(from_type)
+                elif prop_value["type"] == "title":
+                    database_text += str(from_type)
+                elif prop_value["type"] == "checkbox":
+                    database_text += str(from_type)
+                elif prop_value["type"] == "url":
+                    database_text += str(from_type)
+                elif prop_value["type"] == "text":
+                    database_text += str(from_type)
+                elif prop_value["type"] == "email":
+                    database_text += str(from_type)
+                else:
+                    #print("Unknown type: ", prop_value["type"])
+                    database_text += str(prop_value)
+
+
+                # database_text += "  ORIGINAL "+ str(prop_value) # use this line to see what data is being filtered
+                database_text += "\n"
+
+        return database_text + "\nNOTION DATABASE END\n"
+    
+
+    def read_notion_database(self, database_id: str, format_db_json : format_json_f = default_format_db_json) -> str:
+
+        """Read a database."""
+        
+        # https://developers.notion.com/reference/post-database-query
+        database_data : dict = self._request_with_retry(
+          "POST",  DATABASE_URL_TMPL.format(database_id=database_id), headers=self.headers, json={}
+        ).json()
+
+        return format_db_json(database_data)
+    
+
+    def get_all_databases(self, format_db_json : format_json_f = default_format_db_json) -> List[Document]:
+        """Get all databases in the Notion workspace."""
+
+        def read_notion_database_and_to_doc(database_id : str) -> Document:
+          database_text = self.read_notion_database(database_id, format_db_json=format_db_json)
+          return Document(text=database_text, id_=database_id, extra_info={"database_id": database_id})
+
+        return list(map(read_notion_database_and_to_doc, self.list_databases()))
+
 
     def list_databases(self) -> List[str]:
         """List all databases in the Notion workspace."""
