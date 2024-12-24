@@ -51,6 +51,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Simple                   | in-memory               | ✓                  |               | ✓      |                 |       |
 | SingleStore              | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Supabase                 | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
+| Tablestore               | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Tair                     | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | TiDB                     | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | TencentVectorDB          | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
@@ -105,6 +106,7 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Rockset](../../examples/vector_stores/RocksetIndexDemo.ipynb)
 - [Simple](../../examples/vector_stores/SimpleIndexDemo.ipynb)
 - [Supabase](../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb)
+- [Tablestore](../../examples/vector_stores/TablestoreDemo.ipynb)
 - [Tair](../../examples/vector_stores/TairIndexDemo.ipynb)
 - [TiDB](../../examples/vector_stores/TiDBVector.ipynb)
 - [Tencent](../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb)
