@@ -202,7 +202,7 @@ class NotionPageReader(BasePydanticReader):
     def load_data(
         self,
         page_ids: List[str] = [],
-        database_ids: Optional[List[str]] = None,
+        database_ids: Optional[List[str]] = None, # please note : this does not extract any useful table data, only children pages
         load_all_if_empty: bool = False,
     ) -> List[Document]:
         """Load data from the input directory.
@@ -246,11 +246,11 @@ class NotionPageReader(BasePydanticReader):
     @staticmethod
     def default_format_db_json(json_database: dict) -> str:
     
-        database_text = "\n NOTION DATABASE\n"
+        database_text = "\n Notion Database Start  -----------------\n"
         for row in json_database.get("results", []):
             properties = row.get("properties", {})
 
-            database_text += "\nROW\n"
+            database_text += "\nNew row\n"
             for prop_name, prop_value in properties.items():
                 prop_value : dict = prop_value
                 
@@ -284,7 +284,7 @@ class NotionPageReader(BasePydanticReader):
                 # database_text += "  ORIGINAL "+ str(prop_value) # use this line to see what data is being filtered
                 database_text += "\n"
 
-        return database_text + "\nNOTION DATABASE END\n"
+        return database_text + "\nNotion Database End  -----------------\n"
     
 
     def read_notion_database(self, database_id: str, format_db_json : format_json_f = default_format_db_json) -> str:
@@ -299,14 +299,24 @@ class NotionPageReader(BasePydanticReader):
         return format_db_json(database_data)
     
 
-    def get_all_databases(self, format_db_json : format_json_f = default_format_db_json) -> List[Document]:
+    def get_all_databases(self, format_db_json : format_json_f = default_format_db_json, print_feedback : bool = False) -> List[Document]:
         """Get all databases in the Notion workspace."""
 
-        def read_notion_database_and_to_doc(database_id : str) -> Document:
-          database_text = self.read_notion_database(database_id, format_db_json=format_db_json)
-          return Document(text=database_text, id_=database_id, extra_info={"database_id": database_id})
+        databases = self.list_databases()
+        if print_feedback:
+            print("Found ", len(databases), " databases")
 
-        return list(map(read_notion_database_and_to_doc, self.list_databases()))
+        docs : list[Document] = []
+        for database_id in databases:
+            
+            if print_feedback:
+                print("Reading database: ", database_id)
+
+            database_text = self.read_notion_database(database_id, format_db_json=format_db_json)
+            doc = Document(text=database_text, id_=database_id, extra_info={"database_id": database_id})
+            docs.append(doc)
+
+        return docs
 
 
     def list_databases(self) -> List[str]:
@@ -328,6 +338,32 @@ class NotionPageReader(BasePydanticReader):
         res.raise_for_status()
         data = res.json()
         return [page["id"] for page in data["results"]]
+    
+
+    def get_all_pages(self, format_db_json : format_json_f = default_format_db_json, print_feedback : bool = False) -> List[Document]:
+        """Get all pages in the Notion workspace."""
+
+        
+        pages = self.list_pages()
+        if print_feedback:
+            # it's important for the user to know how long the operation will take
+            print("Found ", len(pages), " pages")
+
+        docs : list[Document] = []
+        for page_id in pages:
+            
+            if print_feedback:
+                print("Reading page: ", page_id)
+            page_text = self.read_page(page_id)
+            doc = Document(text=page_text, id_=page_id, extra_info={"page_id": page_id})
+            docs.append(doc)
+
+        return docs
+
+
+    def get_all_pages_and_databases(self, format_db_json : format_json_f = default_format_db_json, print_feedback : bool = False) -> List[Document]:
+        """Get all pages and databases in the Notion workspace."""
+        return self.get_all_databases(format_db_json=format_db_json, print_feedback=print_feedback) + self.get_all_pages(format_db_json=format_db_json, print_feedback=print_feedback)
 
 
 if __name__ == "__main__":
