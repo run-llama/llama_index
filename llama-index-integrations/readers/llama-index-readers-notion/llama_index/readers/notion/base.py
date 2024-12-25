@@ -130,14 +130,15 @@ class NotionPageReader(BasePydanticReader):
         max_retries = 5
         backoff_factor = 1
 
+        RATE_LIMIT_ERROR_CODE : int = 429
+
         for attempt in range(max_retries):
             try:
                 response : requests.Response = requests.request(method, url, headers=headers, json=json)
                 response.raise_for_status()
                 return response
             except requests.exceptions.HTTPError:
-                if response.status_code == 429:
-                    # Rate limit exceeded
+                if response.status_code == RATE_LIMIT_ERROR_CODE:
                     retry_after = int(response.headers.get("Retry-After", 1))
                     time.sleep(backoff_factor * (2**attempt) + retry_after)
                 else:
