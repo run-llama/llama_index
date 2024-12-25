@@ -670,6 +670,7 @@ vector_store = SingleStoreVectorStore(
 import tablestore
 from llama_index.vector_stores.tablestore import TablestoreVectorStore
 
+# create a vector store that does not support filtering non-vector fields
 simple_vector_store = TablestoreVectorStore(
     endpoint="<end_point>",
     instance_name="<instance_name>",
@@ -678,22 +679,23 @@ simple_vector_store = TablestoreVectorStore(
     vector_dimension=512,
 )
 
+# create a vector store that support filtering non-vector fields
 vector_store_with_meta_data = TablestoreVectorStore(
     endpoint="<end_point>",
     instance_name="<instance_name>",
     access_key_id="<access_key_id>",
     access_key_secret="<access_key_secret>",
     vector_dimension=512,
-    # Optional: metadata mapping is used to filter non-vector fields.
+    # optional: custom metadata mapping is used to filter non-vector fields.
     metadata_mappings=[
         tablestore.FieldSchema(
-            "type",
+            "type",  # non-vector fields
             tablestore.FieldType.KEYWORD,
             index=True,
             enable_sort_and_agg=True,
         ),
         tablestore.FieldSchema(
-            "time",
+            "time",  # non-vector fields
             tablestore.FieldType.LONG,
             index=True,
             enable_sort_and_agg=True,

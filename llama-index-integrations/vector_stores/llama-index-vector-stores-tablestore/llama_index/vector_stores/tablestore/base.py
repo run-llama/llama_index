@@ -21,29 +21,40 @@ from llama_index.core.vector_stores.types import (
 
 
 class TablestoreVectorStore(BasePydanticVectorStore):
-    """`Tablestore` vector store.
+    """Tablestore vector store.
+
+    In this vector store we store the text, its embedding and
+    its metadata in Tablestore.
 
     Args:
-        tablestore_client: Optional.External tablestore client. If this parameter is set, the following endpoint/instance_name/access_key_id/access_key_secret will be ignored.
-        endpoint: Optional. Tablestore instance endpoint.
-        instance_name: Optional. Tablestore instance name.
-        access_key_id: Optional. Aliyun access key id.
-        access_key_secret: Optional. Aliyun access key secret.
-        table_name: Optional. Tablestore table name.
-        index_name: Optional. Tablestore SearchIndex index name.
-        text_field: Optional. Name of the Tablestore field that stores the text.
-        vector_field: Optional. Name of the Tablestore field that stores the embedding.
-        ref_doc_id_field: Optional. Name of the Tablestore field that stores the ref doc id.
-        vector_dimension: The dimension of the embedding vectors.
-        vector_metric_type: Optional. The similarity metric to use.
-        metadata_mappings: Metadata mapping is used to filter non-vector fields.
+        tablestore_client (OTSClient, optional): External tablestore(ots) client.
+                If this parameter is set, the following endpoint/instance_name/access_key_id/access_key_secret will be ignored.
+        endpoint (str, optional): Tablestore instance endpoint.
+        instance_name (str, optional): Tablestore instance name.
+        access_key_id (str, optional): Aliyun access key id.
+        access_key_secret (str, optional): Aliyun access key secret.
+        table_name (str, optional): Tablestore table name.
+        index_name (str, optional): Tablestore SearchIndex index name.
+        text_field (str, optional): Name of the Tablestore field that stores the text.
+        vector_field (str, optional): Name of the Tablestore field that stores the embedding.
+        ref_doc_id_field (str, optional): Name of the Tablestore field that stores the ref doc id.
+        vector_dimension (int): The dimension of the embedding vectors.
+        vector_metric_type (VectorMetricType, optional): The similarity metric type to use.
+        metadata_mappings (list[FieldSchema], optional): Custom metadata mapping is used to filter non-vector fields.
+                See the following documentation for details:
+                https://help.aliyun.com/zh/tablestore/developer-reference/create-search-indexes-by-using-python-sdk
+        kwargs (Any): Additional arguments to pass to the tablestore(ots) client.
+
+    Returns:
+        TablestoreVectorStore: Vectorstore that supports add, delete, and query.
 
     Examples:
         `pip install llama-index-vector-stores-tablestore`
         ```python
         import tablestore
 
-        simple_store = TablestoreVectorStore(
+        # create a vector store that does not support filtering non-vector fields
+        vector_store = TablestoreVectorStore(
             endpoint="<end_point>",
             instance_name="<instance_name>",
             access_key_id="<access_key_id>",
@@ -51,22 +62,23 @@ class TablestoreVectorStore(BasePydanticVectorStore):
             vector_dimension=512,
         )
 
-        store_with_meta_data = TablestoreVectorStore(
+        # create a vector store that support filtering non-vector fields
+        vector_store_with_meta_data = TablestoreVectorStore(
             endpoint="<end_point>",
             instance_name="<instance_name>",
             access_key_id="<access_key_id>",
             access_key_secret="<access_key_secret>",
             vector_dimension=512,
-            # Optional: metadata mapping is used to filter non-vector fields.
+            # optional: custom metadata mapping is used to filter non-vector fields.
             metadata_mappings=[
                 tablestore.FieldSchema(
-                    "type",
+                    "type",  # non-vector fields
                     tablestore.FieldType.KEYWORD,
                     index=True,
                     enable_sort_and_agg=True,
                 ),
                 tablestore.FieldSchema(
-                    "time",
+                    "time", # non-vector fields
                     tablestore.FieldType.LONG,
                     index=True,
                     enable_sort_and_agg=True,
@@ -76,8 +88,8 @@ class TablestoreVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    is_embedding_query: bool = True
     stores_text: bool = True
+
     _vector_dimension: int = PrivateAttr(default=512)
     _logger: Any = PrivateAttr(default=None)
     _tablestore_client: tablestore.OTSClient = PrivateAttr(default=None)
@@ -103,7 +115,9 @@ class TablestoreVectorStore(BasePydanticVectorStore):
         vector_dimension: int = 512,
         vector_metric_type: tablestore.VectorMetricType = tablestore.VectorMetricType.VM_COSINE,
         metadata_mappings: Optional[List[tablestore.FieldSchema]] = None,
+        **kwargs: Any,
     ) -> None:
+        """Init params."""
         super().__init__()
         self._logger = getLogger(__name__)
         if not tablestore_client:
@@ -113,6 +127,7 @@ class TablestoreVectorStore(BasePydanticVectorStore):
                 access_key_secret,
                 instance_name,
                 retry_policy=tablestore.WriteRetryPolicy(),
+                **kwargs,  # pass additional arguments
             )
         else:
             self._tablestore_client = tablestore_client

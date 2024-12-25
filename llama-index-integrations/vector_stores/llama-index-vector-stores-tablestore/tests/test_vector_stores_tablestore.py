@@ -50,7 +50,7 @@ def test_tablestore() -> None:
         vector_dimension=test_dimension_size,
         vector_metric_type=tablestore.VectorMetricType.VM_COSINE,
         ref_doc_id_field=ref_doc_id_field,
-        # metadata mapping is used to filter non-vector fields.
+        # custom metadata mapping is used to filter non-vector fields.
         metadata_mappings=[
             tablestore.FieldSchema(
                 "type",
