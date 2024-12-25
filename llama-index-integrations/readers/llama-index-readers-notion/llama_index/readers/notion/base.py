@@ -254,7 +254,7 @@ class NotionPageReader(BasePydanticReader):
                 page_ids = self.list_pages()
 
         docs : list[Document] = []
-        all_page_ids : set[str] = set(page_ids) if page_ids is not [] else set()
+        all_page_ids : set[str] = set(page_ids)
         # TODO: in the future add special logic for database_ids
         if database_ids is not None:
             for database_id in database_ids:
