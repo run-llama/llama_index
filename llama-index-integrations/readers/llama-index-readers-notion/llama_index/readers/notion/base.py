@@ -13,7 +13,11 @@ BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
 DATABASE_URL_TMPL = "https://api.notion.com/v1/databases/{database_id}/query"
 SEARCH_URL = "https://api.notion.com/v1/search"
 
-format_json_f = Callable[[dict], str] 
+
+
+
+json_t = dict[str, Any]
+format_json_f = Callable[[json_t], str] 
 
 
 
@@ -71,12 +75,12 @@ class NotionPageReader(BasePydanticReader):
 
     def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
         """Read a block."""
-        done = False
-        result_lines_arr = []
-        cur_block_id = block_id
+        done : bool = False
+        result_lines_arr : list[str] = []
+        cur_block_id : str = block_id
         while not done:
-            block_url = BLOCK_CHILD_URL_TMPL.format(block_id=cur_block_id)
-            query_dict: Dict[str, Any] = {}
+            block_url : str = BLOCK_CHILD_URL_TMPL.format(block_id=cur_block_id)
+            query_dict: json_t = {}
 
             res = self._request_with_retry(
                 "GET", block_url, headers=self.headers, json=query_dict
@@ -87,24 +91,24 @@ class NotionPageReader(BasePydanticReader):
                 result_type = result["type"]
                 result_obj = result[result_type]
 
-                cur_result_text_arr = []
+                cur_result_text_arr : list[str] = []
                 if "rich_text" in result_obj:
                     for rich_text in result_obj["rich_text"]:
                         # skip if doesn't have text object
                         if "text" in rich_text:
-                            text = rich_text["text"]["content"]
-                            prefix = "\t" * num_tabs
+                            text : str = rich_text["text"]["content"]
+                            prefix : str = "\t" * num_tabs
                             cur_result_text_arr.append(prefix + text)
 
-                result_block_id = result["id"]
-                has_children = result["has_children"]
+                result_block_id : str = result["id"]
+                has_children : bool = result["has_children"]
                 if has_children:
-                    children_text = self._read_block(
+                    children_text : str = self._read_block(
                         result_block_id, num_tabs=num_tabs + 1
                     )
                     cur_result_text_arr.append(children_text)
 
-                cur_result_text = "\n".join(cur_result_text_arr)
+                cur_result_text : str = "\n".join(cur_result_text_arr)
                 result_lines_arr.append(cur_result_text)
 
             if data["next_cursor"] is None:
@@ -128,7 +132,7 @@ class NotionPageReader(BasePydanticReader):
 
         for attempt in range(max_retries):
             try:
-                response = requests.request(method, url, headers=headers, json=json)
+                response : requests.Response = requests.request(method, url, headers=headers, json=json)
                 response.raise_for_status()
                 return response
             except requests.exceptions.HTTPError:
@@ -150,9 +154,9 @@ class NotionPageReader(BasePydanticReader):
 
 
 
-    def get_all_pages_from_database(self, database_id: str, query_dict: Dict[str, Any]) -> list[dict]:
+    def get_all_pages_from_database(self, database_id: str, query_dict: Dict[str, Any]) -> list[json_t]:
 
-        pages : list[dict] = []
+        pages : list[json_t] = []
 
         # TODO a while True break / do while would work better here
 
@@ -198,7 +202,7 @@ class NotionPageReader(BasePydanticReader):
         """Search Notion page given a text query."""
         done = False
         next_cursor: Optional[str] = None
-        page_ids = []
+        page_ids : list[str] = []
         while not done:
             query_dict = {
                 "query": query,
@@ -208,9 +212,9 @@ class NotionPageReader(BasePydanticReader):
             res = self._request_with_retry(
                 "POST", SEARCH_URL, headers=self.headers, json=query_dict
             )
-            data = res.json()
+            data : json_t = res.json() 
             for result in data["results"]:
-                page_id = result["id"]
+                page_id : str = result["id"]
                 page_ids.append(page_id)
 
             if data["next_cursor"] is None:
@@ -248,8 +252,8 @@ class NotionPageReader(BasePydanticReader):
                 database_ids = self.list_databases()
                 page_ids = self.list_pages()
 
-        docs = []
-        all_page_ids = set(page_ids) if page_ids is not None else set()
+        docs : list[Document] = []
+        all_page_ids : set[str] = set(page_ids) if page_ids is not [] else set()
         # TODO: in the future add special logic for database_ids
         if database_ids is not None:
             for database_id in database_ids:
@@ -266,20 +270,20 @@ class NotionPageReader(BasePydanticReader):
         return docs
 
     @staticmethod
-    def default_format_db_json(json_database: dict) -> str:
+    def default_format_db_json(json_database: json_t) -> str:
         
         # TODO get title of the database
     
-        database_text = "\n Notion Database Start  -----------------\n"
+        database_text : str = "\n Notion Database Start  -----------------\n"
         for row in json_database.get("results", []):
-            properties = row.get("properties", {})
+            properties : json_t = row.get("properties", {})
 
             database_text += "\nNew row\n"
             for prop_name, prop_value in properties.items():
-                prop_value : dict = prop_value
+                prop_value : json_t = prop_value
                 
                 # this logic remove useless metadata and makes the table human readable compared to json
-                from_type : any = prop_value.get(prop_value["type"], [])
+                from_type : Any = prop_value.get(prop_value["type"], [])
                 database_text += prop_name + ",type:" + prop_value["type"] + ",data:"
                 
 
