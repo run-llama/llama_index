@@ -80,7 +80,9 @@ class VectaraRetriever(BaseRetriever):
             Note that "multilingual_reranker_v1" is a Vectara Scale feature only.
         rerank_k (int): number of results to fetch for Reranking, defaults to 50.
         rerank_limit (int): maximum number of results to return after reranking, defaults to 50.
+            Don't specify this for chain reranking. Instead, put the "limit" parameter in the dict for each individual reranker.
         rerank_cutoff (float): minimum score threshold for results to include after reranking, defaults to 0.
+            Don't specify this for chain reranking. Instead, put the "chain" parameter in the dict for each individual reranker.
         mmr_diversity_bias (float): number between 0 and 1 that determines the degree
             of diversity among the results with 0 corresponding
             to minimum diversity and 1 to maximum diversity.
@@ -129,8 +131,8 @@ class VectaraRetriever(BaseRetriever):
         filter: List[str] | str = "",
         reranker: VectaraReranker = VectaraReranker.NONE,
         rerank_k: int = 50,
-        rerank_limit: int = 50,
-        rerank_cutoff: float = 0,
+        rerank_limit: Optional[int] = None,
+        rerank_cutoff: Optional[float] = None,
         mmr_diversity_bias: float = 0.3,
         udf_expression: str = None,
         rerank_chain: List[Dict] = None,
@@ -161,7 +163,6 @@ class VectaraRetriever(BaseRetriever):
         self._n_sentences_before = n_sentences_before
         self._n_sentences_after = n_sentences_after
         self._filter = filter
-        self._prompt_text = prompt_text
         self._citations_style = citations_style.upper() if citations_style else None
         self._citations_url_pattern = citations_url_pattern
         self._citations_text_pattern = citations_text_pattern
@@ -179,6 +180,7 @@ class VectaraRetriever(BaseRetriever):
             self._reranker = reranker
             self._rerank_k = rerank_k
             self._rerank_limit = rerank_limit
+            self._rerank_cutoff = rerank_cutoff
 
             if self._reranker == VectaraReranker.MMR:
                 self._mmr_diversity_bias = mmr_diversity_bias
@@ -196,12 +198,6 @@ class VectaraRetriever(BaseRetriever):
                         sub_reranker["type"] = "customer_reranker"
                         sub_reranker["reranker_name"] = "Rerank_Multilingual_v1"
 
-            if (
-                self._reranker != VectaraReranker.NONE
-                and self._reranker != VectaraReranker.CHAIN
-            ):
-                self._rerank_cutoff = rerank_cutoff
-
         else:
             self._rerank = False
 
@@ -210,7 +206,7 @@ class VectaraRetriever(BaseRetriever):
             self._summary_response_lang = summary_response_lang
             self._summary_num_results = summary_num_results
             self._summary_prompt_name = summary_prompt_name
-            self._max_response_chars = max_response_chars
+            self._prompt_text = prompt_text
             self._max_response_chars = max_response_chars
             self._max_tokens = max_tokens
             self._temperature = temperature
@@ -262,7 +258,7 @@ class VectaraRetriever(BaseRetriever):
             "query": query_str,
             "search": {
                 "offset": self._offset,
-                "limit": self._similarity_top_k,
+                "limit": self._rerank_k if self._rerank else self._similarity_top_k,
                 "context_configuration": {
                     "sentences_before": self._n_sentences_before,
                     "sentences_after": self._n_sentences_after,
@@ -318,13 +314,11 @@ class VectaraRetriever(BaseRetriever):
             elif self._reranker == VectaraReranker.CHAIN:
                 rerank_config["rerankers"] = self._rerank_chain
 
-            if (
-                self._reranker != VectaraReranker.NONE
-                and self._reranker != VectaraReranker.CHAIN
-            ):
+            if self._rerank_limit:
+                rerank_config["limit"] = self._rerank_limit
+            if self._rerank_cutoff:
                 rerank_config["cutoff"] = self._rerank_cutoff
 
-            rerank_config["limit"] = self._rerank_limit
             data["search"]["reranker"] = rerank_config
 
         if self._summary_enabled:
@@ -335,10 +329,8 @@ class VectaraRetriever(BaseRetriever):
             }
             if self._prompt_text:
                 summary_config["prompt_template"] = self._prompt_text
-            if self._max_response_characters:
-                summary_config[
-                    "max_response_characters"
-                ] = self._max_response_characters
+            if self._max_response_chars:
+                summary_config["max_response_characters"] = self._max_response_chars
 
             model_parameters = {}
             if self._max_tokens:
@@ -494,11 +486,11 @@ class VectaraRetriever(BaseRetriever):
         if response.status_code != 200:
             if response.status_code == 400:
                 _logger.error(
-                    f"Query failed (code {response.status_code}), reason {res['field_errors']}"
+                    f"Query failed (code {response.status_code}), reason {result['field_errors']}"
                 )
             else:
                 _logger.error(
-                    f"Query failed (code {response.status_code}), reason {res['messages'][0]}"
+                    f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
                 )
             return [], {"text": ""}
 
@@ -513,12 +505,13 @@ class VectaraRetriever(BaseRetriever):
         else:
             summary = None
 
+        search_results = result["search_results"]
         top_nodes = [
             NodeWithScore(
                 node=Node(
                     text_resource=MediaResource(text=search_result["text"]),
                     id_=search_result["document_id"],
-                    metadata=search_results["document_metadata"],
+                    metadata=search_result["document_metadata"],
                 ),
                 score=search_result["score"],
             )

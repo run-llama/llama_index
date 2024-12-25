@@ -129,7 +129,7 @@ class VectaraQueryEngine(BaseQueryEngine):
                 source_nodes=nodes,
             )
         else:
-            nodes, response, _ = self._retriever._vectara_query(
+            nodes, response = self._retriever._vectara_query(
                 query_bundle, verbose=self._verbose, **kwargs
             )
             query_response = Response(
@@ -161,6 +161,8 @@ class VectaraQueryEngine(BaseQueryEngine):
         """Update prompts."""
 
 
+## IS THIS STILL RELEVANT SINCE WE CHANGED CHAT TO SAVE QUERY??
+# EITHER NEED TO DELETE THIS OR UPDATE THE CODE TO WORK PROPERLY
 class VectaraChatEngine(BaseChatEngine):
     def __init__(
         self,
@@ -214,9 +216,9 @@ class VectaraChatEngine(BaseChatEngine):
         ) as query_event:
             kwargs = (
                 {
-                    "summary_response_lang": self._summary_response_lang,
-                    "summary_num_results": self._summary_num_results,
-                    "summary_prompt_name": self._summary_prompt_name,
+                    "response_language": self._summary_response_lang,
+                    "max_used_search_results": self._summary_num_results,
+                    "generation_preset_name": self._summary_prompt_name,
                 }
                 if self._summary_enabled
                 else {}

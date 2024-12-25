@@ -121,7 +121,7 @@ def test_mmr_retrieval(vectara1) -> None:
         n_sentences_before=0,
         n_sentences_after=0,
         reranker="mmr",
-        mmr_k=10,
+        rerank_k=10,
         mmr_diversity_bias=0.0,
     )
     res = qe.retrieve("how will I look?")
@@ -135,7 +135,7 @@ def test_mmr_retrieval(vectara1) -> None:
         n_sentences_before=0,
         n_sentences_after=0,
         reranker="mmr",
-        mmr_k=10,
+        rerank_k=10,
         mmr_diversity_bias=1.0,
     )
     res = qe.retrieve("how will I look?")
@@ -243,7 +243,8 @@ def test_chain_rerank_retrieval(vectara1) -> None:
 
     # Second query with same retriever to ensure rerank chain configuration remains the same
     res = qe.retrieve("How will I look when I'm older?")
-    assert qe._rerank_chain[0].get("type") == "slingshot"
+    assert qe._rerank_chain[0].get("type") == "customer_reranker"
+    assert qe._rerank_chain[0].get("reranker_name") == "Rerank_Multilingual_v1"
     assert qe._rerank_chain[1].get("type") == "mmr"
     assert res[0].node.get_content() == docs[2].text
 
