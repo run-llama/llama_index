@@ -10,13 +10,12 @@ import logging
 import asyncio
 import random
 from functools import lru_cache
-import tiktoken
-from typing import TypeGuard
+from typing_extensions import TypeGuard
 
 def is_text_node(node: BaseNode) -> TypeGuard[Union[Node, TextNode]]:
     return isinstance(node, (Node, TextNode))
 
-OversizeStrategy = Literal["truncate_first", "truncate_last", "warn", "error", "ignore"]
+OversizeStrategy = Literal["warn", "error", "ignore"]
 
 # original context prompt from the Anthropic cookbook/blogpost, works well
 ORIGINAL_CONTEXT_PROMPT: str = """
@@ -50,9 +49,7 @@ class DocumentContextExtractor(BaseExtractor):
         max_context_length (int): Maximum allowed document context length
         max_contextual_tokens (int): Maximum tokens in generated context
         oversized_document_strategy (OversizeStrategy): Strategy for handling large documents
-        warn_on_oversize (bool): Whether to log warnings for oversized documents
-        tiktoken_encoder (str): Name of the tiktoken encoding to use
-        
+    
     Example:
         ```python
         extractor = DocumentContextExtractor(
@@ -74,8 +71,6 @@ class DocumentContextExtractor(BaseExtractor):
     max_context_length: int
     max_contextual_tokens: int
     oversized_document_strategy: OversizeStrategy
-    warn_on_oversize: bool = True
-    tiktoken_encoder: str
 
     def __init__(
         self,
@@ -86,10 +81,8 @@ class DocumentContextExtractor(BaseExtractor):
         prompt: str = DEFAULT_CONTEXT_PROMPT,
         num_workers: int = DEFAULT_NUM_WORKERS,
         max_contextual_tokens: int = 512,
-        oversized_document_strategy: OversizeStrategy = "truncate_first",
-        warn_on_oversize: bool = True,
-        tiktoken_encoder: str = "cl100k_base",
-        **kwargs
+        oversized_document_strategy: OversizeStrategy = "warn",
+        **kwargs:Any
     ) -> None:
         super().__init__(num_workers=num_workers, **kwargs)
 
@@ -101,36 +94,18 @@ class DocumentContextExtractor(BaseExtractor):
         self.max_context_length = max_context_length
         self.max_contextual_tokens = max_contextual_tokens
         self.oversized_document_strategy = oversized_document_strategy
-        self.warn_on_oversize = warn_on_oversize
-        self.tiktoken_encoder = tiktoken_encoder
 
     # this can take a surprisingly long time on longer docs so we cache it. For oversized docs, we end up counting twice, the 2nd time withotu the cache.
     # but if you're repeateddly running way oversize docs, the time that takes wont be what matters anyways.
     @staticmethod
     @lru_cache(maxsize=1000)
-    def _count_tokens(text: str, encoder:str="cl100k_base") -> int:
+    def _count_tokens(text: str) -> int:
         """
         This can take a surprisingly long time on longer docs so we cache it, and we need to call it on every doc, regardless of size.
         """
-        encoding = tiktoken.get_encoding(encoder)
-        return len(encoding.encode(text))
-
-    @staticmethod
-    @lru_cache(maxsize=10)
-    def _truncate_text(text: str, max_token_count: int, how: Literal['first', 'last'] = 'first', encoder="cl100k_base") -> str:
-        """
-        This can take a couple seconds. A small cache is nice here because the async calls will mostly happen in-order. If you DO hit an oversized document,
-        you would otherwise be re-truncating 1000s of times as you procses through each chunk in your 200+ document.
-        """
-        encoding = tiktoken.get_encoding(encoder)
-        tokens = encoding.encode(text)
-        
-        if how == 'first':
-            truncated_tokens = tokens[:max_token_count]
-        else:  # 'last'
-            truncated_tokens = tokens[-max_token_count:]
-            
-        return encoding.decode(truncated_tokens)
+        encoder = Settings.tokenizer
+        tokens = encoder(text)
+        return len(tokens)
 
     async def _agenerate_node_context(
     self,
@@ -228,35 +203,28 @@ class DocumentContextExtractor(BaseExtractor):
             logging.warning(f"Document {doc_id} not found in docstore")
             return None
         if not is_text_node(doc):
-            logging.warning(f"Document {doc_id} is an instance of BaseNode 'text' attribute (TextNode, Document)")
+            logging.warning(f"Document {doc_id} is not an instance of (TextNode, Node)")
             return None
         
         # then truncate if necessary. 
         if self.max_context_length is not None:
             strategy = self.oversized_document_strategy
-            token_count = self._count_tokens(doc.get_content(), self.tiktoken_encoder)
+            token_count = self._count_tokens(doc.get_content())
             if token_count > self.max_context_length:
                 message = (
                     f"Document {doc.node_id} is too large ({token_count} tokens) "
                     f"to be processed. Doc metadata: {doc.metadata}"
                 )
                 
-                if self.warn_on_oversize:
-                    logging.warning(message)
-
-                if strategy == "truncate_first":
-                    text = self._truncate_text(doc.get_content(), self.max_context_length, 'first', self.tiktoken_encoder)
-                    doc.set_content(text)
-                elif strategy == "truncate_last":
-                    text = self._truncate_text(doc.get_content(), self.max_context_length, 'last', self.tiktoken_encoder)    
-                    doc.set_content(text)                
+                if strategy == "warn":
+                    logging.warning(message)      
                 elif strategy == "error":
                     raise ValueError(message)
                 elif strategy == "ignore":
                     pass
                 else:
                     raise ValueError(f"Unknown oversized document strategy: {strategy}")
-                
+        
         return doc
         
     async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
