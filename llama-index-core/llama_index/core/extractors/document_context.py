@@ -71,30 +71,32 @@ class DocumentContextExtractor(BaseExtractor):
     max_context_length: int
     max_contextual_tokens: int
     oversized_document_strategy: OversizeStrategy
-
+    num_workers:int = DEFAULT_NUM_WORKERS
     def __init__(
         self,
         docstore: DocumentStore,
-        llm: LLM,
-        max_context_length: int,
+        llm: Optional[LLM] = None,
+        max_context_length: int = 1000,
         key: str = DEFAULT_KEY,
         prompt: str = DEFAULT_CONTEXT_PROMPT,
         num_workers: int = DEFAULT_NUM_WORKERS,
         max_contextual_tokens: int = 512,
         oversized_document_strategy: OversizeStrategy = "warn",
-        **kwargs:Any
+        **kwargs: Any
     ) -> None:
-        super().__init__(num_workers=num_workers, **kwargs)
-
-        self.llm = llm or Settings.llm
-        self.docstore = docstore
-        self.key = key
-        self.prompt = prompt
-        self.doc_ids = set()
-        self.max_context_length = max_context_length
-        self.max_contextual_tokens = max_contextual_tokens
-        self.oversized_document_strategy = oversized_document_strategy
-
+        """Init params."""
+        super().__init__(
+            llm=llm or Settings.llm,
+            docstore=docstore,
+            key=key,
+            prompt=prompt,
+            doc_ids=set(),
+            max_context_length=max_context_length,
+            max_contextual_tokens=max_contextual_tokens,
+            oversized_document_strategy=oversized_document_strategy,
+            num_workers=num_workers,
+            **kwargs
+        )
     # this can take a surprisingly long time on longer docs so we cache it. For oversized docs, we end up counting twice, the 2nd time withotu the cache.
     # but if you're repeateddly running way oversize docs, the time that takes wont be what matters anyways.
     @staticmethod

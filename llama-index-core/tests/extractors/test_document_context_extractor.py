@@ -3,7 +3,7 @@ from llama_index.core.schema import Document, TextNode, NodeRelationship
 from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.core.llms import MockLLM
 from llama_index.core.llms import ChatMessage, ChatResponse
-from llama_index.extractors.document_context.base import DocumentContextExtractor
+from llama_index.core.extractors.document_context import DocumentContextExtractor
 
 @pytest.fixture
 def mock_llm():
@@ -60,7 +60,7 @@ def context_extractor(docstore, mock_llm):
         llm=mock_llm,
         max_context_length=1000,
         max_contextual_tokens=100,
-        oversized_document_strategy="truncate_first"
+        oversized_document_strategy="error"
     ) 
 
 @pytest.mark.asyncio
@@ -110,15 +110,15 @@ async def test_context_extraction_oversized_document(create_text_nodes):
     extractor = DocumentContextExtractor(
         docstore=docstore,
         llm=MockLLM(),
-        max_context_length=100,  # Small limit to trigger truncation
+        max_context_length=100,  # Small limit to trigger error
         max_contextual_tokens=50,
-        oversized_document_strategy="truncate_first"
+        oversized_document_strategy="error"
     )
     
     nodes = create_text_nodes(large_doc, ["This is a test chunk."])
     
-    metadata_list = await extractor.aextract(nodes)
-    assert len(metadata_list) == 1
+    with pytest.raises(ValueError):
+        await extractor.aextract(nodes)
 
 @pytest.mark.asyncio
 async def test_context_extraction_custom_prompt(docstore, mock_llm, sample_documents, create_text_nodes):
