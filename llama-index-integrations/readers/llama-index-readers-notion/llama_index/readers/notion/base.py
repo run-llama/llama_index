@@ -18,7 +18,7 @@ format_json_f = Callable[[dict], str]
 
 
 
-# TODO compare get_all_pages with query_database vs load_data
+# TODO compare query_database vs load_data
 # TODO get titles from databases
 # TODO check you get all content from notion with manual tests
 # TODO next_cursor need a unifying function to combine logic
@@ -150,9 +150,9 @@ class NotionPageReader(BasePydanticReader):
 
 
 
-    def get_all_pages_from_database(self, database_id: str, query_dict: Dict[str, Any]) -> str:
+    def get_all_pages_from_database(self, database_id: str, query_dict: Dict[str, Any]) -> list[dict]:
 
-        pages = []
+        pages : list[dict] = []
 
         # TODO a while True break / do while would work better here
 
@@ -179,9 +179,12 @@ class NotionPageReader(BasePydanticReader):
             data = res.json()
             pages.extend(data.get("results"))
 
+        return pages
+
 
     # TODO this function name can be misleading, it does not say it will return page ids in the signature 
     # TODO this function name is not very descriptive
+    # TODO page_ids_from_notion_database 
     def query_database(
         self, database_id: str, query_dict: Dict[str, Any] = {"page_size": 100}
     ) -> List[str]:
@@ -217,6 +220,7 @@ class NotionPageReader(BasePydanticReader):
                 next_cursor = data["next_cursor"]
         return page_ids
 
+    # TODO this name is bad
     def load_data(
         self,
         page_ids: List[str] = [],
