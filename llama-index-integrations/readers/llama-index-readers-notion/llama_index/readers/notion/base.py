@@ -22,6 +22,22 @@ format_json_f = Callable[[json_t], str]
 
 
 
+"""
+
+This is the most popular python wrapper for the notion api
+https://github.com/ramnes/notion-sdk-py
+
+doing requests directly is difficult and error prone
+
+TODO may be a good idea
+
+"""
+
+
+
+
+
+
 # TODO compare query_database vs load_data
 # TODO get titles from databases
 # TODO check you get all content from notion with manual tests
@@ -73,20 +89,34 @@ class NotionPageReader(BasePydanticReader):
         """Get the name identifier of the class."""
         return "NotionPageReader"
 
+    def _request_block(self, block_id: str, query_dict: json_t = {}) -> json_t:
+        # AI: Helper function to get block data
+        block_url = BLOCK_CHILD_URL_TMPL.format(block_id=block_id)
+        res = self._request_with_retry("GET", block_url, headers=self.headers, json=query_dict)
+        return res.json()
+
+    def _request_database(self, database_id: str, query_dict: json_t) -> json_t:
+        # AI: Helper function to query database
+        res = self._request_with_retry(
+            "POST",
+            DATABASE_URL_TMPL.format(database_id=database_id),
+            headers=self.headers,
+            json=query_dict,
+        )
+        return res.json()
+
+    def _request_search(self, query_dict: json_t) -> json_t:
+        # AI: Helper function for search endpoint
+        res = self._request_with_retry("POST", SEARCH_URL, headers=self.headers, json=query_dict)
+        return res.json()
+
     def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
         """Read a block."""
-        done : bool = False
-        result_lines_arr : list[str] = []
-        cur_block_id : str = block_id
+        done = False
+        result_lines_arr = []
+        cur_block_id = block_id
         while not done:
-            block_url : str = BLOCK_CHILD_URL_TMPL.format(block_id=cur_block_id)
-            query_dict: json_t = {}
-
-            res = self._request_with_retry(
-                "GET", block_url, headers=self.headers, json=query_dict
-            )
-            data = res.json()
-
+            data = self._request_block(cur_block_id)
             for result in data["results"]:
                 result_type = result["type"]
                 result_obj = result[result_type]
@@ -161,27 +191,12 @@ class NotionPageReader(BasePydanticReader):
 
         # TODO a while True break / do while would work better here
 
-        res = self._request_with_retry(
-            "POST",
-            DATABASE_URL_TMPL.format(database_id=database_id),
-            headers=self.headers,
-            json=query_dict,
-        )
-        res.raise_for_status()
-        data = res.json()
+        data = self._request_database(database_id, query_dict)
         pages.extend(data.get("results"))
 
         while data.get("has_more"):
             query_dict["start_cursor"] = data.get("next_cursor")
-
-            res = self._request_with_retry(
-                "POST",
-                DATABASE_URL_TMPL.format(database_id=database_id),
-                headers=self.headers,
-                json=query_dict,
-            )
-            res.raise_for_status()
-            data = res.json()
+            data = self._request_database(database_id, query_dict)
             pages.extend(data.get("results"))
 
         return pages
@@ -205,15 +220,11 @@ class NotionPageReader(BasePydanticReader):
         next_cursor: Optional[str] = None
         page_ids : list[str] = []
         while not done:
-            query_dict = {
-                "query": query,
-            }
+            query_dict = {"query": query}
             if next_cursor is not None:
                 query_dict["start_cursor"] = next_cursor
-            res = self._request_with_retry(
-                "POST", SEARCH_URL, headers=self.headers, json=query_dict
-            )
-            data : json_t = res.json() 
+            
+            data = self._request_search(query_dict)
             for result in data["results"]:
                 page_id : str = result["id"]
                 page_ids.append(page_id)
@@ -321,9 +332,7 @@ class NotionPageReader(BasePydanticReader):
         """Read a database."""
         
         # https://developers.notion.com/reference/post-database-query
-        database_data : dict = self._request_with_retry(
-          "POST",  DATABASE_URL_TMPL.format(database_id=database_id), headers=self.headers, json={}
-        ).json()
+        database_data = self._request_database(database_id, {})
 
         return format_db_json(database_data)
     
@@ -351,21 +360,13 @@ class NotionPageReader(BasePydanticReader):
     def list_databases(self) -> List[str]:
         """List all databases in the Notion workspace."""
         query_dict = {"filter": {"property": "object", "value": "database"}}
-        res = self._request_with_retry(
-            "POST", SEARCH_URL, headers=self.headers, json=query_dict
-        )
-        res.raise_for_status()
-        data = res.json()
+        data = self._request_search(query_dict)
         return [db["id"] for db in data["results"]]
 
     def list_pages(self) -> List[str]:
         """List all pages in the Notion workspace."""
         query_dict = {"filter": {"property": "object", "value": "page"}}
-        res = self._request_with_retry(
-            "POST", SEARCH_URL, headers=self.headers, json=query_dict
-        )
-        res.raise_for_status()
-        data = res.json()
+        data = self._request_search(query_dict)
         return [page["id"] for page in data["results"]]
     
 
