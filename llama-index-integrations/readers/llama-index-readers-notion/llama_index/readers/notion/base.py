@@ -338,41 +338,35 @@ class NotionPageReader(BasePydanticReader):
 
         return docs
 
-    def list_database_ids(self) -> List[notion_db_id_t]:
+    def _list_x(self, function_name: str, value: str) -> List[str]:
         """List all databases in the Notion workspace."""
 
         def search_databases(**kwargs: Any) -> json_t:
-            self._print("list_database_ids -- getting new data")
+            self._print(f"{function_name} -- getting new data")
 
-            search_params = {"filter": {"property": "object", "value": "database"}}
+            # TODO explain this logic
+            search_params = {"filter": {"property": "object", "value": value}}
             if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
                 search_params["start_cursor"] = kwargs["start_cursor"]
+
             return self._request_search(search_params)
 
         results = iterate_paginated_api(search_databases)
-        s = {db["id"] for db in results}
+        set_of_ids = {res["id"] for res in results}
 
-        self._print(f"found {len(s)} databases")
+        self._print(f"found {len(set_of_ids)} databases")
 
-        return list(s)
+        return list(set_of_ids)
+
+    def list_database_ids(self) -> List[notion_db_id_t]:
+        """List all databases in the Notion workspace."""
+        return [
+            notion_db_id_t(id) for id in self._list_x("list_database_ids", "database")
+        ]
 
     def list_page_ids(self) -> List[page_id_t]:
         """List all pages in the Notion workspace."""
-
-        def search_pages(**kwargs: Any) -> json_t:
-            self._print("list_page_ids -- getting new data")
-
-            search_params = {"filter": {"property": "object", "value": "page"}}
-            if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
-                search_params["start_cursor"] = kwargs["start_cursor"]
-            return self._request_search(search_params)
-
-        results = iterate_paginated_api(search_pages)
-        s = {page["id"] for page in results}
-
-        self._print(f"found {len(s)} pages")
-
-        return list(s)
+        return [page_id_t(id) for id in self._list_x("list_page_ids", "page")]
 
     def get_all_pages(
         self,
