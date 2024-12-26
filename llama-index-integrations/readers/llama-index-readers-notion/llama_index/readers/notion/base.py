@@ -9,6 +9,8 @@ from llama_index.core.schema import Document
 from typing import NewType
 
 
+from notion_client.helpers import iterate_paginated_api
+
 
 # TODO may be a good idea to use https://github.com/ramnes/notion-sdk-py
 
@@ -31,7 +33,7 @@ notion_db_id_t = NewType('notion_db_id_t', str)
 
 
 
-
+# TODO print class variable
 
 # TODO get titles from databases
 # TODO check you get all content from notion with manual tests
@@ -157,6 +159,7 @@ class NotionPageReader(BasePydanticReader):
         RATE_LIMIT_ERROR_CODE : int = 429
 
         for attempt in range(max_retries):
+            print("Attempt: ", attempt)
             try:
                 response : requests.Response = requests.request(method, url, headers=headers, json=json)
                 response.raise_for_status()
@@ -179,22 +182,12 @@ class NotionPageReader(BasePydanticReader):
     
 
     def get_all_pages_from_database(self, database_id: notion_db_id_t, query_dict: Dict[str, Any]) -> list[json_t]:
-
-        # TODO from notion_client.helpers import iterate_paginated_api
-        pages : list[json_t] = []
-
-        # TODO a while True break / do while would work better here
-
-        data = self._request_database(database_id, query_dict)
-        pages.extend(data.get("results"))
-
-        while data.get("has_more"):
-            query_dict["start_cursor"] = data.get("next_cursor")
-
-            data = self._request_database(database_id, query_dict)
-            pages.extend(data.get("results"))
-
-        return pages
+        """Get all pages from a database using pagination."""
+        # AI: Using iterate_paginated_api to handle pagination
+        def query_database(**kwargs: Any) -> json_t:
+            return self._request_database(database_id, kwargs)
+        
+        return list(iterate_paginated_api(query_database, **query_dict))
 
 
     # TODO this function name can be misleading, it does not say it will return page ids in the signature 
@@ -211,25 +204,17 @@ class NotionPageReader(BasePydanticReader):
 
     def search(self, query: str) -> List[str]:
         """Search Notion page given a text query."""
-        done = False
-        next_cursor: Optional[str] = None
-        page_ids : list[str] = []
-        while not done:
-            query_dict = {"query": query}
-            if next_cursor is not None:
-                query_dict["start_cursor"] = next_cursor
-            
-            data = self._request_search(query_dict)
-            for result in data["results"]:
-                page_id : str = result["id"]
-                page_ids.append(page_id)
+        # AI: Using iterate_paginated_api with proper cursor handling
+        def search_pages(**kwargs: Any) -> json_t:
 
-            if data["next_cursor"] is None:
-                done = True
-                break
-            else:
-                next_cursor = data["next_cursor"]
-        return page_ids
+            search_params = {"query": query}
+            # AI: Only include start_cursor if it's provided and not None
+            if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
+                search_params["start_cursor"] = kwargs["start_cursor"]
+            return self._request_search(search_params)
+        
+        results = iterate_paginated_api(search_pages)
+        return [result["id"] for result in results]
 
     # TODO this name is bad
     def load_data(
@@ -354,15 +339,32 @@ class NotionPageReader(BasePydanticReader):
 
     def list_databases(self) -> List[notion_db_id_t]:
         """List all databases in the Notion workspace."""
-        query_dict = {"filter": {"property": "object", "value": "database"}}
-        data = self._request_search(query_dict)
-        return [db["id"] for db in data["results"]]
+        # AI: Using iterate_paginated_api with proper cursor handling
+        def search_databases(**kwargs: Any) -> json_t:
+            search_params = {"filter": {"property": "object", "value": "database"}}
+            # AI: Only include start_cursor if it's provided and not None
+            if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
+                search_params["start_cursor"] = kwargs["start_cursor"]
+            return self._request_search(search_params)
+        
+        results = iterate_paginated_api(search_databases)
+        return [db["id"] for db in results]
 
     def list_pages(self) -> List[page_id_t]:
         """List all pages in the Notion workspace."""
-        query_dict = {"filter": {"property": "object", "value": "page"}}
-        data = self._request_search(query_dict)
-        return [page["id"] for page in data["results"]]
+        # AI: Using iterate_paginated_api to handle pagination with proper cursor handling
+        def search_pages(**kwargs: Any) -> json_t:
+            
+            print("list pages page")
+
+            search_params = {"filter": {"property": "object", "value": "page"}}
+            # AI: Only include start_cursor if it's provided and not None
+            if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
+                search_params["start_cursor"] = kwargs["start_cursor"]
+            return self._request_search(search_params)
+        
+        results = iterate_paginated_api(search_pages)
+        return [page["id"] for page in results]
     
 
     def get_all_pages(self, format_db_json: format_json_f = default_format_db_json, print_feedback: bool = False) -> List[Document]:
