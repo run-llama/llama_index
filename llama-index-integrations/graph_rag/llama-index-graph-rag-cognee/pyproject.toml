@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.bedrock_converse"
+import_path = "llama_index.graph_rag.cognee"
 
 [tool.llamahub.class_authors]
-BedrockConverse = "AndreCNF"
+GraphRag = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,18 +22,19 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index llms bedrock converse integration"
+description = "llama-index graph rag cognee integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-llms-bedrock-converse"
+name = "llama-index-graph-rag-cognee"
 readme = "README.md"
-version = "0.4.3"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-boto3 = "^1.34.122"
-aioboto3 = "^13.1.1"
-llama-index-core = "^0.12.0"
+python = ">=3.10,<3.12"
+cognee = "^0.1.20"
+httpx = "~=0.27.0"
+llama-index-core = "^0.12.5"
+pytest-cov = "^6.0.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -41,9 +42,9 @@ jupyter = "^1.0.0"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
-pytest = ">=7.2.1"
-pytest-asyncio = "^0.24.0"
-pytest-mock = ">=3.11.1"
+pytest = "8.2"
+pytest-asyncio = "^0.25.0"
+pytest-mock = "3.11.1"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
@@ -63,3 +64,6 @@ version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
