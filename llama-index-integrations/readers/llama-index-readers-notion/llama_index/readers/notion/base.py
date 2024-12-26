@@ -240,8 +240,8 @@ class NotionPageReader(BasePydanticReader):
                     "`load_all_if_empty` is False."
                 )
             else:
-                database_ids = self.list_databases()
-                page_ids = self.list_pages()
+                database_ids = self.list_database_ids()
+                page_ids = self.list_page_ids()
 
         docs: list[Document] = []
         all_page_ids: set[str] = set(page_ids)
@@ -319,7 +319,7 @@ class NotionPageReader(BasePydanticReader):
         print_feedback: bool = False,
     ) -> List[Document]:
         """Get all databases in the Notion workspace."""
-        databases = self.list_databases()
+        databases = self.list_database_ids()
         if print_feedback:
             print("Found ", len(databases), " databases")
 
@@ -340,7 +340,7 @@ class NotionPageReader(BasePydanticReader):
 
         return docs
 
-    def list_databases(self) -> List[notion_db_id_t]:
+    def list_database_ids(self) -> List[notion_db_id_t]:
         """List all databases in the Notion workspace."""
 
         # AI: Using iterate_paginated_api with proper cursor handling
@@ -354,7 +354,7 @@ class NotionPageReader(BasePydanticReader):
         results = iterate_paginated_api(search_databases)
         return [db["id"] for db in results]
 
-    def list_pages(self) -> List[page_id_t]:
+    def list_page_ids(self) -> List[page_id_t]:
         """List all pages in the Notion workspace."""
 
         # AI: Using iterate_paginated_api to handle pagination with proper cursor handling
@@ -376,7 +376,7 @@ class NotionPageReader(BasePydanticReader):
         print_feedback: bool = False,
     ) -> List[Document]:
         """Get all pages in the Notion workspace."""
-        pages = self.list_pages()
+        pages = self.list_page_ids()
         if print_feedback:
             # it's important for the user to know how long the operation will take
             print("Found ", len(pages), " pages")
@@ -409,4 +409,4 @@ if __name__ == "__main__":
     print(reader.search("What I"))
 
     # get list of database from notion
-    databases = reader.list_databases()
+    databases = reader.list_database_ids()
