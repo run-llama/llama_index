@@ -1136,6 +1136,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             filter.must = conditions
         elif filters.condition == FilterCondition.OR:
             filter.should = conditions
+        elif filters.condition == FilterCondition.NOT:
+            filter.must_not = conditions
         return filter
 
     def _build_query_filter(self, query: VectorStoreQuery) -> Optional[Any]:
