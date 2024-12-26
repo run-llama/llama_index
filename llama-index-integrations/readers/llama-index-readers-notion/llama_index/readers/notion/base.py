@@ -15,6 +15,7 @@ BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
 DATABASE_URL_TMPL = "https://api.notion.com/v1/databases/{database_id}/query"
 SEARCH_URL = "https://api.notion.com/v1/search"
 
+NOTION_READER_PRINT_PREFIX = "Notion reader : "
 
 json_t = dict[str, Any]
 format_json_f = Callable[[json_t], str]
@@ -107,7 +108,13 @@ class NotionPageReader(BasePydanticReader):
         block_text: str = "\n"
 
         def get_block_next_page(**kwargs: Any) -> json_t:
-            return self._request_block(block_id, kwargs)
+            # AI: Only include kwargs if they have a valid start_cursor
+            self._print("_read_block get page")
+
+            query_dict = {}
+            if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
+                query_dict["start_cursor"] = kwargs["start_cursor"]
+            return self._request_block(block_id, query_dict)
 
         # Iterate through all block results using the paginated API helper
         for result in iterate_paginated_api(get_block_next_page):
@@ -167,6 +174,7 @@ class NotionPageReader(BasePydanticReader):
 
     def read_page(self, page_id: page_id_t) -> str:
         """Read a page."""
+        self._print(f"reading page {page_id}")
         return self._read_block(page_id)
 
     def get_all_pages_from_database(
@@ -197,6 +205,8 @@ class NotionPageReader(BasePydanticReader):
 
         # AI: Using iterate_paginated_api with proper cursor handling
         def search_pages(**kwargs: Any) -> json_t:
+            self._print("search_pages get page")
+
             search_params = {"query": query}
             # AI: Only include start_cursor if it's provided and not None
             if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
@@ -301,6 +311,8 @@ class NotionPageReader(BasePydanticReader):
         format_db_json: format_json_f = default_format_db_json,
     ) -> str:
         """Read a database."""
+        self._print(f"reading database {database_id}")
+
         # https://developers.notion.com/reference/post-database-query
         database_data = self._request_database(database_id, {})
 
@@ -312,14 +324,8 @@ class NotionPageReader(BasePydanticReader):
     ) -> List[Document]:
         """Get all databases in the Notion workspace."""
         databases = self.list_database_ids()
-        if self.print_feedback:
-            print("Found ", len(databases), " databases")
-
         docs: list[Document] = []
         for database_id in databases:
-            if self.print_feedback:
-                print("Reading database: ", database_id)
-
             database_text = self.read_notion_database(
                 database_id, format_db_json=format_db_json
             )
@@ -343,13 +349,16 @@ class NotionPageReader(BasePydanticReader):
 
         results = iterate_paginated_api(search_databases)
         s = {db["id"] for db in results}
+
+        self._print(f"found {len(s)} databases")
+
         return list(s)
 
     def list_page_ids(self) -> List[page_id_t]:
         """List all pages in the Notion workspace."""
 
         def search_pages(**kwargs: Any) -> json_t:
-            print("list pages page")
+            self._print("list pages get page")
 
             search_params = {"filter": {"property": "object", "value": "page"}}
             if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
@@ -358,6 +367,9 @@ class NotionPageReader(BasePydanticReader):
 
         results = iterate_paginated_api(search_pages)
         s = {page["id"] for page in results}
+
+        self._print(f"found {len(s)} pages")
+
         return list(s)
 
     def get_all_pages(
@@ -366,13 +378,8 @@ class NotionPageReader(BasePydanticReader):
     ) -> List[Document]:
         """Get all pages in the Notion workspace."""
         pages = self.list_page_ids()
-        if self.print_feedback:
-            print("Found ", len(pages), " pages")
-
         docs: list[Document] = []
         for page_id in pages:
-            if self.print_feedback:
-                print("Reading page: ", page_id)
             page_text = self.read_page(page_id)
             doc = Document(text=page_text, id_=page_id, extra_info={"page_id": page_id})
             docs.append(doc)
@@ -389,6 +396,15 @@ class NotionPageReader(BasePydanticReader):
         ) + self.get_all_pages(
             format_db_json=format_db_json,
         )
+
+    def _print(self, message: str) -> None:
+        """Helper method to print feedback messages if print_feedback is enabled.
+
+        Args:
+            message (str): The message to print
+        """
+        if self.print_feedback:
+            print(NOTION_READER_PRINT_PREFIX + message)
 
 
 if __name__ == "__main__":
