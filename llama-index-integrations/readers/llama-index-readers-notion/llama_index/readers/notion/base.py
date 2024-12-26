@@ -342,6 +342,8 @@ class NotionPageReader(BasePydanticReader):
         """List all databases in the Notion workspace."""
 
         def search_databases(**kwargs: Any) -> json_t:
+            self._print("list_database_ids -- getting new data")
+
             search_params = {"filter": {"property": "object", "value": "database"}}
             if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
                 search_params["start_cursor"] = kwargs["start_cursor"]
@@ -358,7 +360,7 @@ class NotionPageReader(BasePydanticReader):
         """List all pages in the Notion workspace."""
 
         def search_pages(**kwargs: Any) -> json_t:
-            self._print("list pages get page")
+            self._print("list_page_ids -- getting new data")
 
             search_params = {"filter": {"property": "object", "value": "page"}}
             if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
