@@ -42,14 +42,18 @@ class NotionPageReader(BasePydanticReader):
 
     Args:
         integration_token (str): Notion integration token.
+        print_feedback (bool): Whether to print feedback during operations.
 
     """
 
     is_remote: bool = True
     token: str
     headers: Dict[str, str]
+    print_feedback: bool = False
 
-    def __init__(self, integration_token: Optional[str] = None) -> None:
+    def __init__(
+        self, integration_token: Optional[str] = None, print_feedback: bool = False
+    ) -> None:
         """Initialize with parameters."""
         if integration_token is None:
             integration_token = os.getenv(INTEGRATION_TOKEN_NAME)
@@ -67,13 +71,14 @@ class NotionPageReader(BasePydanticReader):
         }
 
         super().__init__(token=token, headers=headers)
+        self.print_feedback = print_feedback
 
     @classmethod
     def class_name(cls) -> str:
         """Get the name identifier of the class."""
         return "NotionPageReader"
 
-    def _request_block(self, block_id: page_id_t, query_dict: json_t = {}) -> json_t:
+    def _request_block(self, block_id: str, query_dict: json_t = {}) -> json_t:
         # AI: Helper function to get block data
         block_url = BLOCK_CHILD_URL_TMPL.format(block_id=block_id)
         res = self._request_with_retry(
@@ -102,39 +107,32 @@ class NotionPageReader(BasePydanticReader):
 
     def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
         """Read a block."""
-        done = False
-
         block_text: str = "\n"
 
-        cur_block_id = block_id
-        while not done:
-            data = self._request_block(cur_block_id)
-            for result in data["results"]:
-                result_type = result["type"]
-                result_obj = result[result_type]
+        def get_block_next_page(**kwargs: Any) -> json_t:
+            return self._request_block(block_id, kwargs)
 
-                if "rich_text" in result_obj:
-                    for rich_text in result_obj["rich_text"]:
-                        # skip if doesn't have text object
-                        if "text" in rich_text:
-                            text: str = rich_text["text"]["content"]
-                            prefix: str = "\t" * num_tabs
-                            block_text += prefix + text + "\n"
+        # Iterate through all block results using the paginated API helper
+        for result in iterate_paginated_api(get_block_next_page):
+            result_type: str = result["type"]
+            result_obj: json_t = result[result_type]
 
-                result_block_id: str = result["id"]
-                has_children: bool = result["has_children"]
-                if has_children:
-                    children_text: str = self._read_block(
-                        result_block_id, num_tabs=num_tabs + 1
-                    )
-                    block_text += children_text + "\n"
-                block_text += "\n"
+            if "rich_text" in result_obj:
+                for rich_text in result_obj["rich_text"]:
+                    # skip if doesn't have text object
+                    if "text" in rich_text:
+                        text: str = rich_text["text"]["content"]
+                        prefix: str = "\t" * num_tabs
+                        block_text += prefix + text + "\n"
 
-            if data["next_cursor"] is None:
-                done = True
-                break
-            else:
-                cur_block_id = data["next_cursor"]
+            result_block_id: str = result["id"]
+            has_children: bool = result["has_children"]
+            if has_children:
+                children_text: str = self._read_block(
+                    result_block_id, num_tabs=num_tabs + 1
+                )
+                block_text += children_text + "\n"
+            block_text += "\n"
 
         return block_text
 
@@ -315,16 +313,15 @@ class NotionPageReader(BasePydanticReader):
     def get_all_databases(
         self,
         format_db_json: format_json_f = default_format_db_json,
-        print_feedback: bool = False,
     ) -> List[Document]:
         """Get all databases in the Notion workspace."""
         databases = self.list_database_ids()
-        if print_feedback:
+        if self.print_feedback:
             print("Found ", len(databases), " databases")
 
         docs: list[Document] = []
         for database_id in databases:
-            if print_feedback:
+            if self.print_feedback:
                 print("Reading database: ", database_id)
 
             database_text = self.read_notion_database(
@@ -372,17 +369,15 @@ class NotionPageReader(BasePydanticReader):
     def get_all_pages(
         self,
         format_db_json: format_json_f = default_format_db_json,
-        print_feedback: bool = False,
     ) -> List[Document]:
         """Get all pages in the Notion workspace."""
         pages = self.list_page_ids()
-        if print_feedback:
-            # it's important for the user to know how long the operation will take
+        if self.print_feedback:
             print("Found ", len(pages), " pages")
 
         docs: list[Document] = []
         for page_id in pages:
-            if print_feedback:
+            if self.print_feedback:
                 print("Reading page: ", page_id)
             page_text = self.read_page(page_id)
             doc = Document(text=page_text, id_=page_id, extra_info={"page_id": page_id})
@@ -393,13 +388,12 @@ class NotionPageReader(BasePydanticReader):
     def get_all_pages_and_databases(
         self,
         format_db_json: format_json_f = default_format_db_json,
-        print_feedback: bool = False,
     ) -> List[Document]:
         """Get all pages and databases in the Notion workspace."""
         return self.get_all_databases(
-            format_db_json=format_db_json, print_feedback=print_feedback
+            format_db_json=format_db_json,
         ) + self.get_all_pages(
-            format_db_json=format_db_json, print_feedback=print_feedback
+            format_db_json=format_db_json,
         )
 
 
