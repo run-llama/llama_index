@@ -103,7 +103,9 @@ class NotionPageReader(BasePydanticReader):
     def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
         """Read a block."""
         done = False
-        result_lines_arr = []
+
+        block_text: str = "\n"
+
         cur_block_id = block_id
         while not done:
             data = self._request_block(cur_block_id)
@@ -111,14 +113,13 @@ class NotionPageReader(BasePydanticReader):
                 result_type = result["type"]
                 result_obj = result[result_type]
 
-                cur_result_text_arr: list[str] = []
                 if "rich_text" in result_obj:
                     for rich_text in result_obj["rich_text"]:
                         # skip if doesn't have text object
                         if "text" in rich_text:
                             text: str = rich_text["text"]["content"]
                             prefix: str = "\t" * num_tabs
-                            cur_result_text_arr.append(prefix + text)
+                            block_text += prefix + text + "\n"
 
                 result_block_id: str = result["id"]
                 has_children: bool = result["has_children"]
@@ -126,10 +127,8 @@ class NotionPageReader(BasePydanticReader):
                     children_text: str = self._read_block(
                         result_block_id, num_tabs=num_tabs + 1
                     )
-                    cur_result_text_arr.append(children_text)
-
-                cur_result_text: str = "\n".join(cur_result_text_arr)
-                result_lines_arr.append(cur_result_text)
+                    block_text += children_text + "\n"
+                block_text += "\n"
 
             if data["next_cursor"] is None:
                 done = True
@@ -137,7 +136,7 @@ class NotionPageReader(BasePydanticReader):
             else:
                 cur_block_id = data["next_cursor"]
 
-        return "\n".join(result_lines_arr)
+        return block_text
 
     def _request_with_retry(
         self,
