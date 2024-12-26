@@ -634,7 +634,7 @@ class OpensearchVectorClient:
             ef_enabled = False
         else:
             self._os_version = self._get_opensearch_version()
-            major, minor, patch = self.os_version.split(".")
+            major, minor, patch = self._os_version.split(".")
             ef_enabled = int(major) >= 2 and int(minor) >= 9
         return ef_enabled
 
