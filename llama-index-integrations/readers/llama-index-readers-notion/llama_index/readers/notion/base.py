@@ -338,7 +338,7 @@ class NotionPageReader(BasePydanticReader):
 
         return docs
 
-    def _list_x(self, function_name: str, value: str) -> List[str]:
+    def _list_ids(self, function_name: str, value: str) -> List[str]:
         """List all databases in the Notion workspace."""
 
         def search_databases(**kwargs: Any) -> json_t:
@@ -361,12 +361,12 @@ class NotionPageReader(BasePydanticReader):
     def list_database_ids(self) -> List[notion_db_id_t]:
         """List all databases in the Notion workspace."""
         return [
-            notion_db_id_t(id) for id in self._list_x("list_database_ids", "database")
+            notion_db_id_t(id) for id in self._list_ids("list_database_ids", "database")
         ]
 
     def list_page_ids(self) -> List[page_id_t]:
         """List all pages in the Notion workspace."""
-        return [page_id_t(id) for id in self._list_x("list_page_ids", "page")]
+        return [page_id_t(id) for id in self._list_ids("list_page_ids", "page")]
 
     def get_all_pages(
         self,
