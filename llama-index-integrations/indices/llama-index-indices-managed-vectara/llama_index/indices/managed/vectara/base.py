@@ -304,25 +304,29 @@ class VectaraIndex(BaseManagedIndex):
             _logger.error(f"File {file_path} does not exist")
             return None
 
-        metadata = metadata or {}
-        metadata["framework"] = "llama_index"
-        chunking_strategy = chunking_strategy or {}
-        table_extraction_config = table_extraction_config or {}
+        if filename is None:
+            filename = file_path
 
-        files: dict = {
-            "file": (filename, open(file_path, "rb")),
-            "metadata": (None, json.dumps(metadata), "application/json"),
-            "chunking_strategy": (
+        files = {"file": (filename, open(file_path, "rb"))}
+
+        if metadata:
+            metadata["framework"] = "llama_index"
+            files["metadata"] = (None, json.dumps(metadata), "application/json")
+
+        if chunking_strategy:
+            files["chunking_strategy"] = (
                 None,
                 json.dumps(chunking_strategy),
                 "application/json",
-            ),
-            "table_extraction_config": (
+            )
+
+        if table_extraction_config:
+            files["table_extraction_config"] = (
                 None,
                 json.dumps(table_extraction_config),
                 "application/json",
-            ),
-        }
+            )
+
         headers = self._get_post_headers()
         headers.pop("Content-Type")
         valid_corpus_key = self._get_corpus_key(corpus_key)
@@ -339,6 +343,9 @@ class VectaraIndex(BaseManagedIndex):
             doc_id = res["id"]
             self.doc_ids.append(doc_id)
             return doc_id
+        elif response.status_code == 400:
+            _logger.info(f"File upload failed with error message {res['field_errors']}")
+            return None
         else:
             _logger.info(f"File upload failed with error message {res['messages'][0]}")
             return None

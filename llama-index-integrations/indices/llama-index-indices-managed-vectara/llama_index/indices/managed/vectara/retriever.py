@@ -7,7 +7,6 @@ import json
 import logging
 from typing import Any, List, Optional, Tuple, Dict
 from enum import Enum
-import urllib.parse
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
@@ -41,14 +40,6 @@ class VectaraReranker(str, Enum):
     SLINGSHOT_ALT_NAME = "slingshot"
     UDF = "userfn"
     CHAIN = "chain"
-
-
-# CHAIN_RERANKER_NAMES = {
-#     VectaraReranker.MMR: "Maximum Marginal Relevance Reranker",
-#     VectaraReranker.SLINGSHOT: "Rerank_Multilingual_v1",
-#     VectaraReranker.SLINGSHOT_ALT_NAME: "Rerank_Multilingual_v1",
-#     VectaraReranker.UDF: "User_Defined_Function_Reranker",
-# }
 
 
 class VectaraRetriever(BaseRetriever):
@@ -149,6 +140,7 @@ class VectaraRetriever(BaseRetriever):
         citations_style: Optional[str] = None,
         citations_url_pattern: Optional[str] = None,
         citations_text_pattern: Optional[str] = None,
+        save_history: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         x_source_str: str = "llama_index",
         **kwargs: Any,
@@ -163,9 +155,10 @@ class VectaraRetriever(BaseRetriever):
         self._n_sentences_before = n_sentences_before
         self._n_sentences_after = n_sentences_after
         self._filter = filter
-        self._citations_style = citations_style.upper() if citations_style else None
+        self._citations_style = citations_style
         self._citations_url_pattern = citations_url_pattern
         self._citations_text_pattern = citations_text_pattern
+        self._save_history = save_history
         self._x_source_str = x_source_str
 
         if reranker in [
@@ -244,14 +237,13 @@ class VectaraRetriever(BaseRetriever):
         Retrieve top k most similar nodes.
 
         Args:
-            query: Query Bundle
+            query_bundle: Query Bundle
         """
         return self._vectara_query(query_bundle, **kwargs)[0]  # return top_nodes only
 
     def _build_vectara_query_body(
         self,
         query_str: str,
-        save_query: bool = False,
         **kwargs: Any,
     ) -> Dict:
         data = {
@@ -347,7 +339,7 @@ class VectaraRetriever(BaseRetriever):
 
             citations_config = {}
             if self._citations_style:
-                if self._citations_style in ["NUMERIC", "NONE"]:
+                if self._citations_style in ["numeric", "none"]:
                     citations_config["style"] = self._citations_style
 
                 elif self._citations_url_pattern:
@@ -359,16 +351,15 @@ class VectaraRetriever(BaseRetriever):
                 summary_config["citations"] = citations_config
 
             data["generation"] = summary_config
-
-            if save_query:
-                data["save_history"] = True
+            data["save_history"] = self._save_history
 
         return data
 
     def _vectara_stream(
         self,
         query_bundle: QueryBundle,
-        save_query: bool = False,
+        chat: bool = False,
+        conv_id: Optional[str] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> TokenGen:
@@ -377,23 +368,40 @@ class VectaraRetriever(BaseRetriever):
 
         Args:
             query_bundle: Query Bundle
-            save_query: whether to save the query in query history
+            chat: whether to use chat API in Vectara
+            conv_id: conversation ID, if adding to existing chat
         """
-        body = self._build_vectara_query_body(query_bundle.query_str, save_query)
+        body = self._build_vectara_query_body(query_bundle.query_str)
+        body["stream_response"] = True
         if verbose:
             print(f"Vectara streaming query request body: {body}")
 
-        # THIS MAY OR MAY NOT BE NECESSARY (NEED TO TEST)
-        # header = self._get_post_headers()
-        # header["Accept"] = "text/event-stream"
+        if chat:
+            if conv_id:
+                response = self._index._session.post(
+                    headers=self._get_post_headers(),
+                    url=f"https://api.vectara.io/v2/chats/{self.conv_id}/turns",
+                    data=json.dumps(body),
+                    timeout=self._index.vectara_api_timeout,
+                    stream=True,
+                )
+            else:
+                response = self._index._session.post(
+                    headers=self._get_post_headers(),
+                    url="https://api.vectara.io/v2/chats",
+                    data=json.dumps(body),
+                    timeout=self._index.vectara_api_timeout,
+                    stream=True,
+                )
 
-        response = self._index._session.post(
-            headers=self._get_post_headers(),
-            url="https://api.vectara.io/v2/query",
-            data=json.dumps(body),
-            timeout=self._index.vectara_api_timeout,
-            stream=True,
-        )
+        else:
+            response = self._index._session.post(
+                headers=self._get_post_headers(),
+                url="https://api.vectara.io/v2/query",
+                data=json.dumps(body),
+                timeout=self._index.vectara_api_timeout,
+                stream=True,
+            )
 
         ## WHY ARE THESE PRINT STATEMENTS WHEN THE OTHER ERRORS USE _logger.error()?
         if response.status_code != 200:
@@ -412,6 +420,7 @@ class VectaraRetriever(BaseRetriever):
             text="", additional_kwargs={"fcs": None}, raw=None, delta=None
         )
 
+        # We are incorrectly parsing the stream output
         for line in response.iter_lines():
             line = line.decode("utf-8")
             if line:
@@ -419,7 +428,7 @@ class VectaraRetriever(BaseRetriever):
                 if key == "data":
                     line = json.loads(value)
                     if line["type"] == "generation_chunk":
-                        chunk = urllib.parse.unquote(line["generation_chunk"])
+                        chunk = line["generation_chunk"]
                         stream_response.text += chunk
                         stream_response.delta = chunk
                         yield stream_response
@@ -437,7 +446,7 @@ class VectaraRetriever(BaseRetriever):
                                         text=search_result["text"]
                                     ),
                                     id_=search_result["document_id"],
-                                    metadata=search_results["document_metadata"],
+                                    metadata=search_result["document_metadata"],
                                 ),
                                 score=search_result["score"],
                             )
@@ -448,39 +457,62 @@ class VectaraRetriever(BaseRetriever):
                         stream_response.additional_kwargs["top_nodes"] = top_nodes
                         stream_response.delta = None
                         yield stream_response
+                    elif line["type"] == "chat_info":
+                        self.conv_id = line["chat_id"]
 
         return
 
     def _vectara_query(
         self,
         query_bundle: QueryBundle,
-        save_query: bool = False,
+        chat: bool = False,
+        conv_id: Optional[str] = None,
         verbose: bool = False,
         **kwargs: Any,
-    ) -> Tuple[List[NodeWithScore], Dict]:
+    ) -> Tuple[List[NodeWithScore], Dict, str]:
         """
         Query Vectara index to get for top k most similar nodes.
 
         Args:
             query: Query Bundle
-            save_query: whether to save the query in query history
+            chat: whether to use chat API in Vectara
+            conv_id: conversation ID, if adding to existing chat
             verbose: whether to print verbose output (e.g. for debugging)
             Additional keyword arguments
 
         Returns:
             List[NodeWithScore]: list of nodes with scores
             Dict: summary
+            str: conversation ID, if applicable
         """
-        data = self._build_vectara_query_body(query_bundle.query_str, save_query)
+        data = self._build_vectara_query_body(query_bundle.query_str)
 
         if verbose:
             print(f"Vectara query request body: {data}")
-        response = self._index._session.post(
-            headers=self._get_post_headers(),
-            url="https://api.vectara.io/v2/query",
-            data=json.dumps(data),
-            timeout=self._index.vectara_api_timeout,
-        )
+
+        if chat:
+            if conv_id:
+                response = self._index._session.post(
+                    headers=self._get_post_headers(),
+                    url=f"https://api.vectara.io/v2/chats/{self.conv_id}/turns",
+                    data=json.dumps(data),
+                    timeout=self._index.vectara_api_timeout,
+                )
+            else:
+                response = self._index._session.post(
+                    headers=self._get_post_headers(),
+                    url="https://api.vectara.io/v2/chats",
+                    data=json.dumps(data),
+                    timeout=self._index.vectara_api_timeout,
+                )
+
+        else:
+            response = self._index._session.post(
+                headers=self._get_post_headers(),
+                url="https://api.vectara.io/v2/query",
+                data=json.dumps(data),
+                timeout=self._index.vectara_api_timeout,
+            )
 
         result = response.json()
         if response.status_code != 200:
@@ -492,14 +524,14 @@ class VectaraRetriever(BaseRetriever):
                 _logger.error(
                     f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
                 )
-            return [], {"text": ""}
+            return [], {"text": ""}, ""
 
         if verbose:
             print(f"Vectara query response: {result}")
 
         if self._summary_enabled:
             summary = {
-                "text": urllib.parse.unquote(result["summary"]),
+                "text": result["summary"],
                 "fcs": result["factual_consistency_score"],
             }
         else:
@@ -518,12 +550,15 @@ class VectaraRetriever(BaseRetriever):
             for search_result in search_results[: self._similarity_top_k]
         ]
 
-        return top_nodes, summary
+        conv_id = result["chat_id"] if chat else None
+
+        return top_nodes, summary, conv_id
 
     async def _avectara_query(
         self,
         query_bundle: QueryBundle,
-        save_query: bool = False,
+        chat: bool = False,
+        conv_id: Optional[str] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> Tuple[List[NodeWithScore], Dict]:
@@ -532,7 +567,8 @@ class VectaraRetriever(BaseRetriever):
 
         Args:
             query: Query Bundle
-            save_query: whether to save the query in query history
+            chat: whether to use chat API in Vectara
+            conv_id: conversation ID, if adding to existing chat
             verbose: whether to print verbose output (e.g. for debugging)
             Additional keyword arguments
 
@@ -540,7 +576,7 @@ class VectaraRetriever(BaseRetriever):
             List[NodeWithScore]: list of nodes with scores
             Dict: summary
         """
-        return await self._vectara_query(query_bundle, save_query, verbose, **kwargs)
+        return await self._vectara_query(query_bundle, chat, conv_id, verbose, **kwargs)
 
 
 class VectaraAutoRetriever(VectorIndexAutoRetriever):
