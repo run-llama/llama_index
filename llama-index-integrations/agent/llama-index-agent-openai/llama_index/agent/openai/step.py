@@ -280,7 +280,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         asyncio.create_task(
             chat_stream_response.awrite_response_to_history(
                 task.extra_state["new_memory"],
-                on_stream_end_fn=partial(self.finalize_task, task),
+                on_stream_end_fn=partial(self.afinalize_task, task),
             )
         )
         chat_stream_response._ensure_async_setup()
@@ -786,6 +786,13 @@ class OpenAIAgentWorker(BaseAgentWorker):
         """Finalize task, after all the steps are completed."""
         # add new messages to memory
         task.memory.put_messages(task.extra_state["new_memory"].get_all())
+        # reset new memory
+        task.extra_state["new_memory"].reset()
+
+    async def afinalize_task(self, task: Task, **kwargs: Any) -> None:
+        """Finalize task, after all the steps are completed."""
+        # add new messages to memory
+        await task.memory.aput_messages(task.extra_state["new_memory"].get_all())
         # reset new memory
         task.extra_state["new_memory"].reset()
 
