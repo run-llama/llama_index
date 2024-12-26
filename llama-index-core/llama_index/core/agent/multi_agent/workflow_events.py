@@ -42,6 +42,7 @@ class AgentStream(Event):
     """Agent stream."""
 
     delta: str
+    current_agent: str
     tool_calls: list[ToolSelection]
     raw_response: Any
 
@@ -52,6 +53,7 @@ class AgentOutput(Event):
     response: str
     tool_outputs: list[ToolOutput]
     raw_response: Any
+    current_agent: str
 
 
 class ToolCall(Event):

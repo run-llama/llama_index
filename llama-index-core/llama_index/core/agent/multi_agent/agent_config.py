@@ -25,11 +25,8 @@ class AgentConfig(BaseModel):
     system_prompt: Optional[str] = None
     tools: Optional[List[BaseTool]] = None
     tool_retriever: Optional[ObjectRetriever] = None
-    tools_requiring_human_confirmation: Optional[List[str]] = Field(
-        default_factory=list
-    )
     can_handoff_to: Optional[List[str]] = Field(default=None)
     handoff_prompt_template: Optional[str] = None
     llm: Optional[LLM] = None
-    is_root_agent: bool = False
+    is_entrypoint_agent: bool = False
     mode: AgentMode = AgentMode.DEFAULT

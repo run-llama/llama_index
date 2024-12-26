@@ -1,5 +1,4 @@
 import asyncio
-import uuid
 from typing import Any, Dict, List, Optional, Union, cast
 
 from llama_index.core.agent.multi_agent.agent_config import AgentConfig, AgentMode
@@ -66,7 +65,6 @@ class MultiAgentWorkflow(Workflow):
         self,
         agent_configs: List[AgentConfig],
         initial_state: Optional[Dict] = None,
-        memory: Optional[BaseMemory] = None,
         handoff_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         timeout: Optional[float] = None,
@@ -77,16 +75,15 @@ class MultiAgentWorkflow(Workflow):
             raise ValueError("At least one agent config must be provided")
 
         self.agent_configs = {cfg.name: cfg for cfg in agent_configs}
-        only_one_root_agent = sum(cfg.is_root_agent for cfg in agent_configs) == 1
+        only_one_root_agent = sum(cfg.is_entrypoint_agent for cfg in agent_configs) == 1
         if not only_one_root_agent:
             raise ValueError("Exactly one root agent must be provided")
 
-        self.root_agent = next(cfg.name for cfg in agent_configs if cfg.is_root_agent)
+        self.root_agent = next(
+            cfg.name for cfg in agent_configs if cfg.is_entrypoint_agent
+        )
 
         self.initial_state = initial_state or {}
-        self.memory = memory or ChatMemoryBuffer.from_defaults(
-            llm=agent_configs[0].llm or Settings.llm
-        )
 
         self.handoff_prompt = handoff_prompt or DEFAULT_HANDOFF_PROMPT
         if isinstance(self.handoff_prompt, str):
@@ -130,10 +127,14 @@ class MultiAgentWorkflow(Workflow):
             async_fn=handoff, description=fn_tool_prompt, return_direct=True
         )
 
-    async def _init_context(self, ctx: Context) -> None:
+    async def _init_context(self, ctx: Context, ev: StartEvent) -> None:
         """Initialize the context once, if needed."""
         if not await ctx.get("memory", default=None):
-            await ctx.set("memory", self.memory)
+            default_memory = ev.get("memory", default=None)
+            default_memory = default_memory or ChatMemoryBuffer.from_defaults(
+                llm=self.agent_configs[self.root_agent].llm or Settings.llm
+            )
+            await ctx.set("memory", default_memory)
         if not await ctx.get("agent_configs", default=None):
             await ctx.set("agent_configs", self.agent_configs)
         if not await ctx.get("current_state", default=None):
@@ -142,13 +143,12 @@ class MultiAgentWorkflow(Workflow):
             await ctx.set("current_agent", self.root_agent)
 
     async def _call_tool(
-        self, ctx: Context, tool: AsyncBaseTool, tool_input: dict, tool_id: str
+        self,
+        ctx: Context,
+        tool: AsyncBaseTool,
+        tool_input: dict,
     ) -> ToolOutput:
         """Call the given tool with the given input."""
-        current_agent = await ctx.get("current_agent")
-        agent_config = self.agent_configs[current_agent]
-
-        # Call the tool once approved
         try:
             if isinstance(tool, FunctionToolWithContext):
                 tool_output = await tool.acall(ctx=ctx, **tool_input)
@@ -182,6 +182,7 @@ class MultiAgentWorkflow(Workflow):
     ) -> AgentOutput:
         """Call the LLM as a function calling agent."""
         memory: BaseMemory = await ctx.get("memory")
+        current_agent = await ctx.get("current_agent")
         tools_by_name = {tool.metadata.name: tool for tool in tools}
 
         current_llm_input = [*llm_input]
@@ -197,6 +198,7 @@ class MultiAgentWorkflow(Workflow):
                     delta=r.delta or "",
                     tool_calls=tool_calls or [],
                     raw_response=r.raw,
+                    current_agent=current_agent,
                 )
             )
 
@@ -227,10 +229,13 @@ class MultiAgentWorkflow(Workflow):
                     if tool.metadata.return_direct:
                         should_return_direct = True
 
-                    job = await self._call_tool(
-                        ctx, tool, tool_call.tool_kwargs, tool_call.tool_id
+                    jobs.append(
+                        self._call_tool(
+                            ctx,
+                            tool,
+                            tool_call.tool_kwargs,
+                        )
                     )
-                    jobs.append(job)
 
             tool_results.extend(await asyncio.gather(*jobs))
             all_tool_results.extend(tool_results)
@@ -251,6 +256,7 @@ class MultiAgentWorkflow(Workflow):
                     response=tool_results[0].content,
                     tool_outputs=all_tool_results,
                     raw_response=None,
+                    current_agent=current_agent,
                 )
 
             current_llm_input.extend(tool_messages)
@@ -266,6 +272,7 @@ class MultiAgentWorkflow(Workflow):
                         delta=r.delta or "",
                         tool_calls=tool_calls or [],
                         raw_response=r.raw,
+                        current_agent=current_agent,
                     )
                 )
 
@@ -279,6 +286,7 @@ class MultiAgentWorkflow(Workflow):
             response=r.message.content,
             tool_outputs=all_tool_results,
             raw_response=r.raw,
+            current_agent=current_agent,
         )
 
     async def _call_react_agent(
@@ -290,6 +298,7 @@ class MultiAgentWorkflow(Workflow):
     ) -> AgentOutput:
         """Call the LLM as a react agent."""
         memory: BaseMemory = await ctx.get("memory")
+        current_agent = await ctx.get("current_agent")
 
         # remove system prompt, since the react prompt will be combined with it
         if llm_input[0].role == "system":
@@ -317,6 +326,7 @@ class MultiAgentWorkflow(Workflow):
                     delta=r.delta or "",
                     tool_calls=[],
                     raw_response=r.raw,
+                    current_agent=current_agent,
                 )
             )
 
@@ -336,6 +346,7 @@ class MultiAgentWorkflow(Workflow):
                 response=error_msg,
                 tool_outputs=[],
                 raw_response=r.raw,
+                current_agent=current_agent,
             )
 
         # If response step, we're done
@@ -360,6 +371,7 @@ class MultiAgentWorkflow(Workflow):
                 response=response,
                 tool_outputs=all_tool_outputs,
                 raw_response=r.raw,
+                current_agent=current_agent,
             )
 
         # Otherwise process action step
@@ -384,7 +396,9 @@ class MultiAgentWorkflow(Workflow):
             else:
                 tool = tools_by_name[reasoning_step.action]
                 tool_output = await self._call_tool(
-                    ctx, tool, reasoning_step.action_input, tool_id=uuid.uuid4().hex[:8]
+                    ctx,
+                    tool,
+                    reasoning_step.action_input,
                 )
                 all_tool_outputs.append(tool_output)
 
@@ -412,6 +426,7 @@ class MultiAgentWorkflow(Workflow):
                     response=tool_output.content,
                     tool_outputs=all_tool_outputs,
                     raw_response=r.raw,
+                    current_agent=current_agent,
                 )
 
             # Get next action from LLM
@@ -426,6 +441,7 @@ class MultiAgentWorkflow(Workflow):
                     AgentStream(
                         delta=r.delta or "",
                         tool_calls=[],
+                        current_agent=current_agent,
                         raw_response=r.raw,
                     )
                 )
@@ -445,7 +461,9 @@ class MultiAgentWorkflow(Workflow):
                 # If we can't parse the output, return an error message
                 error_msg = f"Error: Could not parse output. Please follow the thought-action-input format. Try again. Details: {e!s}"
 
-                current_reasoning.append(ResponseReasoningStep(response=error_msg))
+                current_reasoning.append(
+                    ObservationReasoningStep(observation=error_msg)
+                )
 
                 latest_react_messages = react_chat_formatter.format(
                     tools,
@@ -459,6 +477,7 @@ class MultiAgentWorkflow(Workflow):
                     response=error_msg,
                     tool_outputs=all_tool_outputs,
                     raw_response=r.raw,
+                    current_agent=current_agent,
                 )
 
             # If response step, we're done
@@ -475,6 +494,7 @@ class MultiAgentWorkflow(Workflow):
                     response=reasoning_step.response,
                     tool_outputs=all_tool_outputs,
                     raw_response=r.raw,
+                    current_agent=current_agent,
                 )
 
     async def _call_llm(
@@ -504,7 +524,7 @@ class MultiAgentWorkflow(Workflow):
     async def init_run(self, ctx: Context, ev: StartEvent | AgentOutput) -> AgentInput:
         """Sets up the workflow and validates inputs."""
         if isinstance(ev, StartEvent):
-            await self._init_context(ctx)
+            await self._init_context(ctx, ev)
 
             user_msg = ev.get("user_msg")
             chat_history = ev.get("chat_history")
@@ -556,7 +576,7 @@ class MultiAgentWorkflow(Workflow):
             )
             tools.extend(retrieved_tools)
 
-        if agent_config.can_handoff_to:
+        if agent_config.can_handoff_to or agent_config.can_handoff_to is None:
             handoff_tool = self._get_handoff_tool(agent_config)
             tools.append(handoff_tool)
 
@@ -585,8 +605,11 @@ class MultiAgentWorkflow(Workflow):
             ctx, llm, ev.input, ev.tools, agent_config.mode
         )
         ctx.write_event_to_stream(agent_output)
-        if agent_output.tool_outputs:
-            ctx.write_event_to_stream(agent_output)
+
+        if any(
+            tool_output.tool_name == "handoff"
+            for tool_output in agent_output.tool_outputs
+        ):
             return agent_output
         else:
-            return StopEvent(result=agent_output.response)
+            return StopEvent(result=agent_output)
