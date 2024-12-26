@@ -22,12 +22,9 @@ page_id_t = NewType("page_id_t", str)
 notion_db_id_t = NewType("notion_db_id_t", str)
 
 
-# TODO maybe make print_feedback a class variable
 # TODO may be a good idea to use https://github.com/ramnes/notion-sdk-py
 # TODO get titles from databases
-# TODO check you get all content from notion with manual tests
-# TODO next_cursor need a unifying function to combine logic
-# TODO maybe use a notion api wrapper
+
 
 # This code has two types of databases
 # 1. Notion as a Database
@@ -150,7 +147,6 @@ class NotionPageReader(BasePydanticReader):
         RATE_LIMIT_ERROR_CODE: int = 429
 
         for attempt in range(max_retries):
-            print("Attempt: ", attempt)
             try:
                 response: requests.Response = requests.request(
                     method, url, headers=headers, json=json
@@ -339,32 +335,30 @@ class NotionPageReader(BasePydanticReader):
     def list_database_ids(self) -> List[notion_db_id_t]:
         """List all databases in the Notion workspace."""
 
-        # AI: Using iterate_paginated_api with proper cursor handling
         def search_databases(**kwargs: Any) -> json_t:
             search_params = {"filter": {"property": "object", "value": "database"}}
-            # AI: Only include start_cursor if it's provided and not None
             if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
                 search_params["start_cursor"] = kwargs["start_cursor"]
             return self._request_search(search_params)
 
         results = iterate_paginated_api(search_databases)
-        return [db["id"] for db in results]
+        s = {db["id"] for db in results}
+        return list(s)
 
     def list_page_ids(self) -> List[page_id_t]:
         """List all pages in the Notion workspace."""
 
-        # AI: Using iterate_paginated_api to handle pagination with proper cursor handling
         def search_pages(**kwargs: Any) -> json_t:
             print("list pages page")
 
             search_params = {"filter": {"property": "object", "value": "page"}}
-            # AI: Only include start_cursor if it's provided and not None
             if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
                 search_params["start_cursor"] = kwargs["start_cursor"]
             return self._request_search(search_params)
 
         results = iterate_paginated_api(search_pages)
-        return [page["id"] for page in results]
+        s = {page["id"] for page in results}
+        return list(s)
 
     def get_all_pages(
         self,
