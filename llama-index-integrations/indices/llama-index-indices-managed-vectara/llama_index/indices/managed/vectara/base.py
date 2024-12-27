@@ -119,9 +119,7 @@ class VectaraIndex(BaseManagedIndex):
     ) -> IndexDict:
         docs = [
             Document(
-                text_resource=MediaResource(
-                    text=node.get_content()
-                ),  # may need to add get_content().
+                text_resource=MediaResource(text=node.get_content()),
                 metadata=node.metadata,  # type: ignore
                 id_=node.id_,  # type: ignore
             )
@@ -305,7 +303,7 @@ class VectaraIndex(BaseManagedIndex):
             return None
 
         if filename is None:
-            filename = file_path
+            filename = file_path.split("/")[-1]
 
         files = {"file": (filename, open(file_path, "rb"))}
 

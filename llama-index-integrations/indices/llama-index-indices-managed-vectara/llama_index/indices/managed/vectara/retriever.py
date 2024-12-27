@@ -159,6 +159,8 @@ class VectaraRetriever(BaseRetriever):
         self._citations_url_pattern = citations_url_pattern
         self._citations_text_pattern = citations_text_pattern
         self._save_history = save_history
+
+        self._conv_id = None  # necessary for retrieving conv_id from _vectara_stream()
         self._x_source_str = x_source_str
 
         if reranker in [
@@ -380,7 +382,7 @@ class VectaraRetriever(BaseRetriever):
             if conv_id:
                 response = self._index._session.post(
                     headers=self._get_post_headers(),
-                    url=f"https://api.vectara.io/v2/chats/{self.conv_id}/turns",
+                    url=f"https://api.vectara.io/v2/chats/{conv_id}/turns",
                     data=json.dumps(body),
                     timeout=self._index.vectara_api_timeout,
                     stream=True,
@@ -403,15 +405,14 @@ class VectaraRetriever(BaseRetriever):
                 stream=True,
             )
 
-        ## WHY ARE THESE PRINT STATEMENTS WHEN THE OTHER ERRORS USE _logger.error()?
         if response.status_code != 200:
             result = response.json()
             if response.status_code == 400:
-                print(
+                _logger.error(
                     f"Query failed (code {response.status_code}), reason {result['field_errors']}"
                 )
             else:
-                print(
+                _logger.error(
                     f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
                 )
             return
@@ -420,7 +421,6 @@ class VectaraRetriever(BaseRetriever):
             text="", additional_kwargs={"fcs": None}, raw=None, delta=None
         )
 
-        # We are incorrectly parsing the stream output
         for line in response.iter_lines():
             line = line.decode("utf-8")
             if line:
@@ -432,10 +432,12 @@ class VectaraRetriever(BaseRetriever):
                         stream_response.text += chunk
                         stream_response.delta = chunk
                         yield stream_response
+                    # ISSUE: I DON'T BELIEVE THE NEXT TWO SECTIONS DO ANYTHING (NEED TO FIGURE OUT HOW TO DEBUG)
                     elif line["type"] == "factual_consistency_score":
                         stream_response.additional_kwargs["fcs"] = line[
                             "factual_consistency_score"
                         ]
+                        yield stream_response
 
                     elif line["type"] == "search_results":
                         search_results = line["search_results"]
@@ -458,7 +460,10 @@ class VectaraRetriever(BaseRetriever):
                         stream_response.delta = None
                         yield stream_response
                     elif line["type"] == "chat_info":
-                        self.conv_id = line["chat_id"]
+                        self._conv_id = line["chat_id"]
+                        stream_response.text += self._conv_id
+                        stream_response.delta = self._conv_id
+                        yield stream_response
 
         return
 
@@ -494,7 +499,7 @@ class VectaraRetriever(BaseRetriever):
             if conv_id:
                 response = self._index._session.post(
                     headers=self._get_post_headers(),
-                    url=f"https://api.vectara.io/v2/chats/{self.conv_id}/turns",
+                    url=f"https://api.vectara.io/v2/chats/{conv_id}/turns",
                     data=json.dumps(data),
                     timeout=self._index.vectara_api_timeout,
                 )
@@ -531,7 +536,7 @@ class VectaraRetriever(BaseRetriever):
 
         if self._summary_enabled:
             summary = {
-                "text": result["summary"],
+                "text": result["answer"] if chat else result["summary"],
                 "fcs": result["factual_consistency_score"],
             }
         else:

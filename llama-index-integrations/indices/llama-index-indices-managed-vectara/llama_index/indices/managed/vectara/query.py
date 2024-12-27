@@ -243,16 +243,22 @@ class VectaraChatEngine(BaseChatEngine):
         query_bundle = QueryBundle(message)
         nodes = self._retriever.retrieve(query_bundle)
 
-        response = StreamingAgentChatResponse(
-            chat_stream=self._retriever._vectara_stream(
-                query_bundle, chat=True, conv_id=self.conv_id
-            ),
+        def stream_query_wrapper():
+            for chunk in self._retriever._vectara_stream(
+                query_bundle,
+                chat=True,
+                conv_id=self.conv_id,
+            ):
+                if chunk.delta:
+                    if chunk.delta[:4] == "cht_":
+                        self.conv_id = chunk.delta
+                    else:
+                        yield chunk
+
+        return StreamingAgentChatResponse(
+            chat_stream=stream_query_wrapper(),
             source_nodes=nodes,
         )
-
-        self.conv_id = self._retriever.conv_id
-
-        return response
 
     async def astream_chat(self, message: str) -> StreamingAgentChatResponse:
         return await self.stream_chat(message)

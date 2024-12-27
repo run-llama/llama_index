@@ -104,169 +104,169 @@ def vectara1():
         vectara1._delete_doc(id)
 
 
-# def test_simple_retrieval(vectara1) -> None:
-#     docs = get_docs()
-#     qe = vectara1.as_retriever(similarity_top_k=1)
-#     res = qe.retrieve("Find me something different")
-#     assert len(res) == 1
-#     assert res[0].node.get_content() == docs[1].text
+def test_simple_retrieval(vectara1) -> None:
+    docs = get_docs()
+    qe = vectara1.as_retriever(similarity_top_k=1)
+    res = qe.retrieve("Find me something different")
+    assert len(res) == 1
+    assert res[0].node.get_content() == docs[1].text
 
 
-# def test_mmr_retrieval(vectara1) -> None:
-#     docs = get_docs()
+def test_mmr_retrieval(vectara1) -> None:
+    docs = get_docs()
 
-#     # test with diversity bias = 0
-#     qe = vectara1.as_retriever(
-#         similarity_top_k=2,
-#         n_sentences_before=0,
-#         n_sentences_after=0,
-#         reranker="mmr",
-#         rerank_k=10,
-#         mmr_diversity_bias=0.0,
-#     )
-#     res = qe.retrieve("how will I look?")
-#     assert len(res) == 2
-#     assert res[0].node.get_content() == docs[2].text
-#     assert res[1].node.get_content() == docs[3].text
+    # test with diversity bias = 0
+    qe = vectara1.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="mmr",
+        rerank_k=10,
+        mmr_diversity_bias=0.0,
+    )
+    res = qe.retrieve("how will I look?")
+    assert len(res) == 2
+    assert res[0].node.get_content() == docs[2].text
+    assert res[1].node.get_content() == docs[3].text
 
-#     # test with diversity bias = 1
-#     qe = vectara1.as_retriever(
-#         similarity_top_k=2,
-#         n_sentences_before=0,
-#         n_sentences_after=0,
-#         reranker="mmr",
-#         rerank_k=10,
-#         mmr_diversity_bias=1.0,
-#     )
-#     res = qe.retrieve("how will I look?")
-#     assert len(res) == 2
-#     assert res[0].node.get_content() == docs[2].text
-#     assert res[1].node.get_content() == docs[0].text
-
-
-# def test_retrieval_with_filter(vectara1) -> None:
-#     docs = get_docs()
-
-#     assert isinstance(vectara1, VectaraIndex)
-#     qe = vectara1.as_retriever(similarity_top_k=1, filter="doc.test_num = '1'")
-#     res = qe.retrieve("What does this test?")
-#     assert len(res) == 1
-#     assert res[0].node.get_content() == docs[0].text
+    # test with diversity bias = 1
+    qe = vectara1.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="mmr",
+        rerank_k=10,
+        mmr_diversity_bias=1.0,
+    )
+    res = qe.retrieve("how will I look?")
+    assert len(res) == 2
+    assert res[0].node.get_content() == docs[2].text
+    assert res[1].node.get_content() == docs[0].text
 
 
-# def test_udf_retrieval(vectara1) -> None:
-#     docs = get_docs()
+def test_retrieval_with_filter(vectara1) -> None:
+    docs = get_docs()
 
-#     # test with basic math expression
-#     qe = vectara1.as_retriever(
-#         similarity_top_k=2,
-#         n_sentences_before=0,
-#         n_sentences_after=0,
-#         reranker="userfn",
-#         udf_expression="get('$.score') + get('$.document_metadata.test_score')",
-#     )
-
-#     res = qe.retrieve("What will the future look like?")
-#     assert len(res) == 2
-#     assert res[0].node.get_content() == docs[3].text
-#     assert res[1].node.get_content() == docs[2].text
-
-#     # test with dates: Weight of score subtracted by number of years from current date
-#     qe = vectara1.as_retriever(
-#         similarity_top_k=2,
-#         n_sentences_before=0,
-#         n_sentences_after=0,
-#         reranker="userfn",
-#         udf_expression="max(0, 5 * get('$.score') - (to_unix_timestamp(now()) - to_unix_timestamp(datetime_parse(get('$.document_metadata.date'), 'yyyy-MM-dd'))) / 31536000)",
-#     )
-
-#     res = qe.retrieve("What will the future look like?")
-#     assert len(res) == 2
-#     assert res[0].node.get_content() == docs[2].text
-#     assert res[1].node.get_content() == docs[3].text
+    assert isinstance(vectara1, VectaraIndex)
+    qe = vectara1.as_retriever(similarity_top_k=1, filter="doc.test_num = '1'")
+    res = qe.retrieve("What does this test?")
+    assert len(res) == 1
+    assert res[0].node.get_content() == docs[0].text
 
 
-# def test_chain_rerank_retrieval(vectara1) -> None:
-#     docs = get_docs()
+def test_udf_retrieval(vectara1) -> None:
+    docs = get_docs()
 
-#     # Test basic chain
-#     qe = vectara1.as_retriever(
-#         similarity_top_k=2,
-#         n_sentences_before=0,
-#         n_sentences_after=0,
-#         reranker="chain",
-#         rerank_chain=[{"type": "slingshot"}, {"type": "mmr", "diversity_bias": 0.4}],
-#     )
+    # test with basic math expression
+    qe = vectara1.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="userfn",
+        udf_expression="get('$.score') + get('$.document_metadata.test_score')",
+    )
 
-#     res = qe.retrieve("What's this all about?")
-#     assert len(res) == 2
-#     assert res[0].node.get_content() == docs[0].text
-#     assert res[1].node.get_content() == docs[2].text
+    res = qe.retrieve("What will the future look like?")
+    assert len(res) == 2
+    assert res[0].node.get_content() == docs[3].text
+    assert res[1].node.get_content() == docs[2].text
 
-#     # Test chain with UDF and limit
-#     qe = vectara1.as_retriever(
-#         similarity_top_k=4,
-#         n_sentences_before=0,
-#         n_sentences_after=0,
-#         reranker="chain",
-#         rerank_chain=[
-#             {"type": "slingshot"},
-#             {"type": "mmr"},
-#             {
-#                 "type": "userfn",
-#                 "user_function": "5 * get('$.score') + get('$.document_metadata.test_score') / 2",
-#                 "limit": 2,
-#             },
-#         ],
-#     )
+    # test with dates: Weight of score subtracted by number of years from current date
+    qe = vectara1.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="userfn",
+        udf_expression="max(0, 5 * get('$.score') - (to_unix_timestamp(now()) - to_unix_timestamp(datetime_parse(get('$.document_metadata.date'), 'yyyy-MM-dd'))) / 31536000)",
+    )
 
-#     res = qe.retrieve("What's this all about?")
-#     assert len(res) == 2
-#     assert res[0].node.get_content() == docs[3].text
-#     assert res[1].node.get_content() == docs[2].text
-
-#     # Test chain with cutoff
-#     qe = vectara1.as_retriever(
-#         similarity_top_k=4,
-#         n_sentences_before=0,
-#         n_sentences_after=0,
-#         reranker="chain",
-#         rerank_chain=[
-#             {"type": "slingshot"},
-#             {"type": "mmr", "diversity_bias": 0.4, "cutoff": 0.75},
-#         ],
-#     )
-
-#     res = qe.retrieve("What's this all about?")
-#     assert len(res) == 1
-#     assert res[0].node.get_content() == docs[0].text
-
-#     # Second query with same retriever to ensure rerank chain configuration remains the same
-#     res = qe.retrieve("How will I look when I'm older?")
-#     assert qe._rerank_chain[0].get("type") == "customer_reranker"
-#     assert qe._rerank_chain[0].get("reranker_name") == "Rerank_Multilingual_v1"
-#     assert qe._rerank_chain[1].get("type") == "mmr"
-#     assert res[0].node.get_content() == docs[2].text
+    res = qe.retrieve("What will the future look like?")
+    assert len(res) == 2
+    assert res[0].node.get_content() == docs[2].text
+    assert res[1].node.get_content() == docs[3].text
 
 
-# def test_custom_prompt(vectara1) -> None:
-#     docs = get_docs()
+def test_chain_rerank_retrieval(vectara1) -> None:
+    docs = get_docs()
 
-#     qe = vectara1.as_query_engine(
-#         similarity_top_k=3,
-#         n_sentences_before=0,
-#         n_sentences_after=0,
-#         reranker="mmr",
-#         mmr_diversity_bias=0.2,
-#         summary_enabled=True,
-#         prompt_text='[\n  {"role": "system", "content": "You are an expert in summarizing the future of Vectara\'s inegration with LlamaIndex. Your summaries are insightful, concise, and highlight key innovations and changes."},\n  #foreach ($result in $vectaraQueryResults)\n    {"role": "user", "content": "What are the key points in result number $vectaraIdxWord[$foreach.index] about Vectara\'s LlamaIndex integration?"},\n    {"role": "assistant", "content": "In result number $vectaraIdxWord[$foreach.index], the key points are: ${result.getText()}"},\n  #end\n  {"role": "user", "content": "Can you generate a comprehensive summary on \'Vectara\'s LlamaIndex Integration\' incorporating all the key points discussed?"}\n]\n',
-#     )
+    # Test basic chain
+    qe = vectara1.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[{"type": "slingshot"}, {"type": "mmr", "diversity_bias": 0.4}],
+    )
 
-#     res = qe.query("How will Vectara's integration look in the future?")
-#     assert "integration" in str(res).lower()
-#     assert "llamaindex" in str(res).lower()
-#     assert "vectara" in str(res).lower()
-#     assert "result" in str(res).lower()
+    res = qe.retrieve("What's this all about?")
+    assert len(res) == 2
+    assert res[0].node.get_content() == docs[0].text
+    assert res[1].node.get_content() == docs[2].text
+
+    # Test chain with UDF and limit
+    qe = vectara1.as_retriever(
+        similarity_top_k=4,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[
+            {"type": "slingshot"},
+            {"type": "mmr"},
+            {
+                "type": "userfn",
+                "user_function": "5 * get('$.score') + get('$.document_metadata.test_score') / 2",
+                "limit": 2,
+            },
+        ],
+    )
+
+    res = qe.retrieve("What's this all about?")
+    assert len(res) == 2
+    assert res[0].node.get_content() == docs[3].text
+    assert res[1].node.get_content() == docs[2].text
+
+    # Test chain with cutoff
+    qe = vectara1.as_retriever(
+        similarity_top_k=4,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[
+            {"type": "slingshot"},
+            {"type": "mmr", "diversity_bias": 0.4, "cutoff": 0.75},
+        ],
+    )
+
+    res = qe.retrieve("What's this all about?")
+    assert len(res) == 1
+    assert res[0].node.get_content() == docs[0].text
+
+    # Second query with same retriever to ensure rerank chain configuration remains the same
+    res = qe.retrieve("How will I look when I'm older?")
+    assert qe._rerank_chain[0].get("type") == "customer_reranker"
+    assert qe._rerank_chain[0].get("reranker_name") == "Rerank_Multilingual_v1"
+    assert qe._rerank_chain[1].get("type") == "mmr"
+    assert res[0].node.get_content() == docs[2].text
+
+
+def test_custom_prompt(vectara1) -> None:
+    docs = get_docs()
+
+    qe = vectara1.as_query_engine(
+        similarity_top_k=3,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="mmr",
+        mmr_diversity_bias=0.2,
+        summary_enabled=True,
+        prompt_text='[\n  {"role": "system", "content": "You are an expert in summarizing the future of Vectara\'s inegration with LlamaIndex. Your summaries are insightful, concise, and highlight key innovations and changes."},\n  #foreach ($result in $vectaraQueryResults)\n    {"role": "user", "content": "What are the key points in result number $vectaraIdxWord[$foreach.index] about Vectara\'s LlamaIndex integration?"},\n    {"role": "assistant", "content": "In result number $vectaraIdxWord[$foreach.index], the key points are: ${result.getText()}"},\n  #end\n  {"role": "user", "content": "Can you generate a comprehensive summary on \'Vectara\'s LlamaIndex Integration\' incorporating all the key points discussed?"}\n]\n',
+    )
+
+    res = qe.query("How will Vectara's integration look in the future?")
+    assert "integration" in str(res).lower()
+    assert "llamaindex" in str(res).lower()
+    assert "vectara" in str(res).lower()
+    assert "result" in str(res).lower()
 
 
 @pytest.fixture()
@@ -363,4 +363,66 @@ def test_citations(vectara2) -> None:
     assert re.search(r"\[\d+\]", summary)
 
 
-# ADD TESTS FOR CHATENGINE FUNCTIONALITY
+def test_chat(vectara2) -> None:
+    # Test chat initialization
+    chat_engine = vectara2.as_chat_engine(
+        reranker="chain",
+        rerank_k=30,
+        rerank_chain=[{"type": "slingshot"}, {"type": "mmr", "diversity_bias": 0.2}],
+    )
+    res = chat_engine.chat("What grad schools did Paul apply to?")
+    summary = res.response
+    assert all(s in summary.lower() for s in ["mit", "yale", "harvard"])
+    assert res.metadata["fcs"] > 0.5
+    chat_id = chat_engine.conv_id
+    assert chat_id is not None
+
+    # Test chat follow up
+    res = chat_engine.chat("What did Paul learn while attending this school?")
+    summary = res.response
+    assert "learn" in summary.lower()
+    assert any(s in summary.lower() for s in ["art", "paint"])
+    assert res.metadata["fcs"] > 0.1
+    assert chat_engine.conv_id == chat_id
+
+    # Test chat follow up with streaming
+    res = chat_engine.stream_chat("How did he use what he learned here in his career?")
+    summary = ""
+    for chunk in res.chat_stream:
+        if chunk.delta:
+            summary += chunk.delta
+        if (
+            chunk.additional_kwargs
+            and "fcs" in chunk.additional_kwargs
+            and chunk.additional_kwargs["fcs"] is not None
+        ):
+            assert chunk.additional_kwargs["fcs"] >= 0
+
+    assert "use" in summary.lower()
+    assert "career" in summary.lower()
+
+    # Test chat initialization with streaming
+    chat_engine = vectara2.as_chat_engine(
+        reranker="chain",
+        rerank_k=30,
+        rerank_chain=[
+            {"type": "slingshot", "cutoff": 0.25},
+            {"type": "mmr", "diversity_bias": 0.2},
+        ],
+    )
+    res = chat_engine.stream_chat("How did Paul feel when Yahoo bought his company?")
+    summary = res.response
+    for chunk in res.chat_stream:
+        if chunk.delta:
+            summary += chunk.delta
+        if (
+            chunk.additional_kwargs
+            and "fcs" in chunk.additional_kwargs
+            and chunk.additional_kwargs["fcs"] is not None
+        ):
+            assert chunk.additional_kwargs["fcs"] >= 0
+
+    assert chat_engine.conv_id is not None
+    assert chat_engine.conv_id != chat_id
+    assert "yahoo" in summary.lower()
+    assert "felt" in summary.lower()
