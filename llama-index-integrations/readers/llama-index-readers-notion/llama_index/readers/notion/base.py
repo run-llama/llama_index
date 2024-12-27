@@ -27,10 +27,29 @@ notion_db_id_t = NewType("notion_db_id_t", str)
 # TODO get titles from databases
 
 
+# -------------------------------------------------
+# Notes
+
+
 # This code has two types of databases
 # 1. Notion as a Database
 # 2. Notion databases https://www.notion.com/help/intro-to-databases
 # make sure not to mix them up
+
+
+# What is the start_cursor?
+#
+#   A string that can be used to retrieve the next page of results
+#   by passing the value as the start_cursor parameter to the same endpoint.
+#   Only available when has_more is true.
+#   ie if you have read up to page 10, your start cursor will be page 11
+#
+#   https://developers.notion.com/reference/intro#pagination
+#
+#   you should try not to have any custom code to handle pagination, just use library code
+
+
+# -------------------------------------------------
 
 
 class NotionPageReader(BasePydanticReader):
@@ -80,7 +99,10 @@ class NotionPageReader(BasePydanticReader):
         # AI: Helper function to get block data
         block_url = BLOCK_CHILD_URL_TMPL.format(block_id=block_id)
         res = self._request_with_retry(
-            "GET", block_url, headers=self.headers, json=query_dict
+            "GET",
+            block_url,
+            headers=self.headers,
+            json=query_dict,
         )
         return res.json()
 
@@ -112,8 +134,11 @@ class NotionPageReader(BasePydanticReader):
             self._print("_read_block get page")
 
             query_dict = {}
+
+            # TODO why is this here
             if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
                 query_dict["start_cursor"] = kwargs["start_cursor"]
+
             return self._request_block(block_id, query_dict)
 
         # Iterate through all block results using the paginated API helper
@@ -409,3 +434,73 @@ if __name__ == "__main__":
 
     # get list of database from notion
     databases = reader.list_database_ids()
+
+
+"""
+
+PREVIOUS ERRORS
+
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 161, in _request_with_retry
+    response.raise_for_status()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: https://api.notion.com/v1/blocks/149c2e93-a412-80eb-af36-f334f97f1b93/children
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/henry/Documents/Documents - MacBook Pro (6)/Git.nosync/DatabaseAware/test.py", line 39, in <module>
+    test_notion_reader()
+  File "/Users/henry/Documents/Documents - MacBook Pro (6)/Git.nosync/DatabaseAware/test.py", line 25, in test_notion_reader
+    notion_reader.get_all_pages()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 379, in get_all_pages
+    page_text = self.read_page(page_id)
+                ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 178, in read_page
+    return self._read_block(page_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 135, in _read_block
+    children_text: str = self._read_block(
+                         ^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 135, in _read_block
+    children_text: str = self._read_block(
+                         ^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 135, in _read_block
+    children_text: str = self._read_block(
+                         ^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 120, in _read_block
+    for result in iterate_paginated_api(get_block_next_page):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/notion_client/helpers.py", line 44, in iterate_paginated_api
+    response = function(**kwargs, start_cursor=next_cursor)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 117, in get_block_next_page
+    return self._request_block(block_id, query_dict)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 82, in _request_block
+    res = self._request_with_retry(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 168, in _request_with_retry
+    raise requests.exceptions.HTTPError(
+requests.exceptions.HTTPError: Request failed: {"object":"error","status":400,"code":"validation_error","message":"body failed validation: body.start_cursor should be not present, instead was `\"149c2e93-a412-8069-b844-cf54d8844af9\"`.","request_id":"84b476d0-3d76-4631-86ff-c78a73d38bf6"}
+henry@MacBook-Pro-46 DatabaseAware %
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
