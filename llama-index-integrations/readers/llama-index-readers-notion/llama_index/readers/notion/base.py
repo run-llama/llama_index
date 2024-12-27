@@ -7,7 +7,7 @@ import requests  # type: ignore
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 from typing import NewType
-from notion_client.helpers import iterate_paginated_api
+from notion_client.helpers import iterate_paginated_api, collect_paginated_api
 
 
 INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
@@ -47,7 +47,7 @@ notion_db_id_t = NewType("notion_db_id_t", str)
 #   https://developers.notion.com/reference/intro#pagination
 #
 #   you should try not to have any custom code to handle pagination, just use library code
-
+#   you may get an error related to start_cursor if you have a previous request fail
 
 # -------------------------------------------------
 
@@ -129,15 +129,11 @@ class NotionPageReader(BasePydanticReader):
         """Read a block."""
         block_text: str = "\n"
 
-        def get_block_next_page(**kwargs: Any) -> json_t:
-            # AI: Only include kwargs if they have a valid start_cursor
+        def get_block_next_page(start_cursor: Optional[str]) -> json_t:
             self._print("_read_block get page")
-
             query_dict = {}
-
-            # TODO why is this here
-            if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
-                query_dict["start_cursor"] = kwargs["start_cursor"]
+            if start_cursor is not None:
+                query_dict["start_cursor"] = start_cursor
 
             return self._request_block(block_id, query_dict)
 
@@ -206,12 +202,7 @@ class NotionPageReader(BasePydanticReader):
         self, database_id: notion_db_id_t, query_dict: Dict[str, Any]
     ) -> list[json_t]:
         """Get all pages from a database using pagination."""
-
-        # AI: Using iterate_paginated_api to handle pagination
-        def query_database(**kwargs: Any) -> json_t:
-            return self._request_database(database_id, kwargs)
-
-        return list(iterate_paginated_api(query_database, **query_dict))
+        return collect_paginated_api(self._request_database, database_id=database_id)
 
     # TODO this function name can be misleading, it does not say it will return page ids in the signature
     # TODO this function name is not very descriptive
@@ -228,15 +219,13 @@ class NotionPageReader(BasePydanticReader):
     def search(self, query: str) -> List[str]:
         """Search Notion page given a text query."""
 
-        # AI: Using iterate_paginated_api with proper cursor handling
-        def search_pages(**kwargs: Any) -> json_t:
-            self._print("search_pages get page")
+        def search_pages(start_cursor: Optional[str]) -> json_t:
+            self._print("search_pages -- getting new data")
 
-            search_params = {"query": query}
-            # AI: Only include start_cursor if it's provided and not None
-            if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
-                search_params["start_cursor"] = kwargs["start_cursor"]
-            return self._request_search(search_params)
+            query_dict = {"query": query}
+            if start_cursor is not None:
+                query_dict["start_cursor"] = start_cursor
+            return self._request_search(query_dict)
 
         results = iterate_paginated_api(search_pages)
         return [result["id"] for result in results]
@@ -245,6 +234,7 @@ class NotionPageReader(BasePydanticReader):
     def load_data(
         self,
         page_ids: List[page_id_t] = [],
+        # TODO this does not need to be optional
         database_ids: Optional[
             List[notion_db_id_t]
         ] = None,  # please note : this does not extract any useful table data, only children pages
@@ -280,6 +270,7 @@ class NotionPageReader(BasePydanticReader):
                 db_page_ids = self.query_database(database_id)
                 all_page_ids.update(db_page_ids)
 
+        # TODO put into function
         for page_id in all_page_ids:
             page_text = self.read_page(page_id)
             docs.append(
@@ -365,23 +356,21 @@ class NotionPageReader(BasePydanticReader):
 
     def _list_ids(self, function_name: str, value: str) -> List[str]:
         """List all databases in the Notion workspace."""
+        # TODO use search function? how does query differ from filter?
 
-        def search_databases(**kwargs: Any) -> json_t:
+        def search_databases(start_cursor: Optional[str]) -> json_t:
             self._print(f"{function_name} -- getting new data")
+            query_dict: json_t = {"filter": {"property": "object", "value": value}}
+            if start_cursor is not None:
+                query_dict["start_cursor"] = start_cursor
 
-            # TODO explain this logic
-            search_params = {"filter": {"property": "object", "value": value}}
-            if "start_cursor" in kwargs and kwargs["start_cursor"] is not None:
-                search_params["start_cursor"] = kwargs["start_cursor"]
-
-            return self._request_search(search_params)
+            return self._request_search(query_dict)
 
         results = iterate_paginated_api(search_databases)
-        set_of_ids = {res["id"] for res in results}
-
-        self._print(f"found {len(set_of_ids)} databases")
-
-        return list(set_of_ids)
+        ids: list[str] = [res["id"] for res in results]
+        assert len(ids) == len(set(ids))
+        self._print(f"found {len(ids)} databases")
+        return ids
 
     def list_database_ids(self) -> List[notion_db_id_t]:
         """List all databases in the Notion workspace."""
@@ -438,54 +427,21 @@ if __name__ == "__main__":
 
 """
 
-PREVIOUS ERRORS
+ ERRORS
 
 
-Traceback (most recent call last):
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 161, in _request_with_retry
+
+
+
+why is this invalid: Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 184, in _request_with_retry
     response.raise_for_status()
   File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
     raise HTTPError(http_error_msg, response=self)
 requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: https://api.notion.com/v1/blocks/149c2e93-a412-80eb-af36-f334f97f1b93/children
 
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/Users/henry/Documents/Documents - MacBook Pro (6)/Git.nosync/DatabaseAware/test.py", line 39, in <module>
-    test_notion_reader()
-  File "/Users/henry/Documents/Documents - MacBook Pro (6)/Git.nosync/DatabaseAware/test.py", line 25, in test_notion_reader
-    notion_reader.get_all_pages()
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 379, in get_all_pages
-    page_text = self.read_page(page_id)
-                ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 178, in read_page
-    return self._read_block(page_id)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 135, in _read_block
-    children_text: str = self._read_block(
-                         ^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 135, in _read_block
-    children_text: str = self._read_block(
-                         ^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 135, in _read_block
-    children_text: str = self._read_block(
-                         ^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 120, in _read_block
-    for result in iterate_paginated_api(get_block_next_page):
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/notion_client/helpers.py", line 44, in iterate_paginated_api
-    response = function(**kwargs, start_cursor=next_cursor)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 117, in get_block_next_page
-    return self._request_block(block_id, query_dict)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 82, in _request_block
-    res = self._request_with_retry(
-          ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 168, in _request_with_retry
-    raise requests.exceptions.HTTPError(
-requests.exceptions.HTTPError: Request failed: {"object":"error","status":400,"code":"validation_error","message":"body failed validation: body.start_cursor should be not present, instead was `\"149c2e93-a412-8069-b844-cf54d8844af9\"`.","request_id":"84b476d0-3d76-4631-86ff-c78a73d38bf6"}
-henry@MacBook-Pro-46 DatabaseAware %
-
+This is because i do not have an integration to the execs notion,
+i need to figure out how to avoid what i don't have access to
 
 
 
