@@ -242,6 +242,8 @@ class NotionPageReader(BasePydanticReader):
         page_ids: set[page_id_t] = set()
         for database_id in database_id_list:
             page_ids.update(self.get_all_page_ids_from_database(database_id))
+
+        assert set(page_ids).issubset(self.get_all_pages())
         return page_ids
 
     # TODO compare this to get_all_pages_and_databases
