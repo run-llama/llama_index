@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Callable
 import requests  # type: ignore
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
-from typing import NewType
+from typing import NewType, Iterable
 from notion_client.helpers import iterate_paginated_api, collect_paginated_api
 
 
@@ -204,17 +204,22 @@ class NotionPageReader(BasePydanticReader):
         """Get all pages from a database using pagination."""
         return collect_paginated_api(self._request_database, database_id=database_id)
 
-    # TODO this function name can be misleading, it does not say it will return page ids in the signature
-    # TODO this function name is not very descriptive
-    # TODO page_ids_from_notion_database
-    def query_database(
+    def get_all_page_ids_from_database(
+        self,
+        database_id: notion_db_id_t,
+        query_dict: Dict[str, Any] = {"page_size": 100},
+    ) -> list[page_id_t]:
+        """Get all page ids from a database using pagination."""
+        pages = self.get_all_pages_from_database(database_id, query_dict)
+        return [page["id"] for page in pages]
+
+    def query_database(  # bad function name
         self,
         database_id: notion_db_id_t,
         query_dict: Dict[str, Any] = {"page_size": 100},
     ) -> List[page_id_t]:
         """Get all the pages from a Notion database."""
-        pages = self.get_all_pages_from_database(database_id, query_dict)
-        return [page["id"] for page in pages]
+        return self.get_all_page_ids_from_database(database_id, query_dict)
 
     def search(self, query: str) -> List[str]:
         """Search Notion page given a text query."""
@@ -234,10 +239,9 @@ class NotionPageReader(BasePydanticReader):
     def load_data(
         self,
         page_ids: List[page_id_t] = [],
-        # TODO this does not need to be optional
-        database_ids: Optional[
-            List[notion_db_id_t]
-        ] = None,  # please note : this does not extract any useful table data, only children pages
+        database_ids: List[
+            notion_db_id_t
+        ] = [],  # please note : this does not extract any useful table data, only children pages
         load_all_if_empty: bool = False,
     ) -> List[Document]:
         """Load data from the input directory.
@@ -262,20 +266,18 @@ class NotionPageReader(BasePydanticReader):
                 page_ids = self.list_page_ids()
 
         docs: list[Document] = []
-        all_page_ids: set[str] = set(page_ids)
-        # TODO: in the future add special logic for database_ids
-        if database_ids is not None:
-            for database_id in database_ids:
-                # get all the pages in the database
-                db_page_ids = self.query_database(database_id)
-                all_page_ids.update(db_page_ids)
+        all_page_ids: set[page_id_t] = set(page_ids)
 
-        # TODO put into function
-        for page_id in all_page_ids:
-            page_text = self.read_page(page_id)
-            docs.append(
-                Document(text=page_text, id_=page_id, extra_info={"page_id": page_id})
+        # get page ids from databases
+        for database_id in database_ids:
+            # get all the pages in the database
+            db_page_ids: list[page_id_t] = self.get_all_page_ids_from_database(
+                database_id
             )
+            all_page_ids.update(db_page_ids)
+
+        docs.extend(self.get_notion_databases(databases=database_ids))
+        docs.extend(self.get_pages(pages=all_page_ids))
 
         return docs
 
@@ -321,38 +323,50 @@ class NotionPageReader(BasePydanticReader):
 
         return database_text + "\nNotion Database End  -----------------\n"
 
-    def read_notion_database(
+    def get_notion_database_text(
         self,
         database_id: notion_db_id_t,
         format_db_json: format_json_f = default_format_db_json,
     ) -> str:
         """Read a database."""
         self._print(f"reading database {database_id}")
-
-        # https://developers.notion.com/reference/post-database-query
         database_data = self._request_database(database_id, {})
 
         return format_db_json(database_data)
 
-    def get_all_databases(
+    def get_notion_database(
+        self,
+        database_id: notion_db_id_t,
+        format_db_json: format_json_f = default_format_db_json,
+    ) -> Document:
+        """Get a database in the Notion workspace."""
+        database_text = self.get_notion_database_text(
+            database_id, format_db_json=format_db_json
+        )
+        return Document(
+            text=database_text, id_=database_id, extra_info={"database_id": database_id}
+        )
+
+    def get_notion_databases(
+        self,
+        databases: List[notion_db_id_t],
+        format_db_json: format_json_f = default_format_db_json,
+    ) -> List[Document]:
+        """Get all databases in the Notion workspace."""
+        return [
+            self.get_notion_database(database_id, format_db_json=format_db_json)
+            for database_id in databases
+        ]
+
+    def get_all_notion_databases(
         self,
         format_db_json: format_json_f = default_format_db_json,
     ) -> List[Document]:
         """Get all databases in the Notion workspace."""
         databases = self.list_database_ids()
-        docs: list[Document] = []
-        for database_id in databases:
-            database_text = self.read_notion_database(
-                database_id, format_db_json=format_db_json
-            )
-            doc = Document(
-                text=database_text,
-                id_=database_id,
-                extra_info={"database_id": database_id},
-            )
-            docs.append(doc)
-
-        return docs
+        return self.get_notion_databases(
+            databases=databases, format_db_json=format_db_json
+        )
 
     def _list_ids(self, function_name: str, value: str) -> List[str]:
         """List all databases in the Notion workspace."""
@@ -382,18 +396,21 @@ class NotionPageReader(BasePydanticReader):
         """List all pages in the Notion workspace."""
         return [page_id_t(id) for id in self._list_ids("list_page_ids", "page")]
 
+    def get_page(self, page_id: page_id_t) -> Document:
+        """Get a page in the Notion workspace."""
+        page_text = self.read_page(page_id)
+        return Document(text=page_text, id_=page_id, extra_info={"page_id": page_id})
+
+    def get_pages(self, pages: Iterable[page_id_t]) -> List[Document]:
+        """Get all pages in the Notion workspace."""
+        return [self.get_page(page_id) for page_id in pages]
+
     def get_all_pages(
         self,
     ) -> List[Document]:
         """Get all pages in the Notion workspace."""
         pages = self.list_page_ids()
-        docs: list[Document] = []
-        for page_id in pages:
-            page_text = self.read_page(page_id)
-            doc = Document(text=page_text, id_=page_id, extra_info={"page_id": page_id})
-            docs.append(doc)
-
-        return docs
+        return self.get_pages(pages=pages)
 
     def get_all_pages_and_databases(
         self,
@@ -401,7 +418,7 @@ class NotionPageReader(BasePydanticReader):
     ) -> List[Document]:
         """Get all pages and databases in the Notion workspace."""
         return (
-            self.get_all_databases(
+            self.get_all_notion_databases(
                 format_db_json=format_db_json,
             )
             + self.get_all_pages()
