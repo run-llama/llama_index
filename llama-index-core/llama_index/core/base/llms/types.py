@@ -25,7 +25,9 @@ class ChatMessage(BaseModel):
     role: MessageRole = MessageRole.USER
     content: Optional[Any] = ""
     timestamp: Optional[datetime] = None
-    additional_kwargs: dict = Field(default_factory=dict)
+    additional_kwargs: dict = Field(
+        default_factory=dict, description="This field can be ignored."
+    )
 
     def __str__(self) -> str:
         return f"{self.role.value}: {self.content}"
