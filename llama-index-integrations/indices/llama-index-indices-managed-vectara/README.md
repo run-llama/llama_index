@@ -23,24 +23,27 @@ First let's initialize the index with some sample documents.
 import os
 
 os.environ["VECTARA_API_KEY"] = "<YOUR_VECTARA_API_KEY>"
-os.environ["VECTARA_CORPUS_ID"] = "<YOUR_VECTARA_CORPUS_ID>"
-os.environ["VECTARA_CUSTOMER_ID"] = "<YOUR_VECTARA_CUSTOMER_ID>"
+os.environ["VECTARA_CORPUS_KEY"] = "<YOUR_VECTARA_CORPUS_KEY>"
 
 from llama_index.indices.managed.vectara import VectaraIndex
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, MediaResource
 
 docs = [
     Document(
-        text="""
-        This is test text for Vectara integration with LlamaIndex.
-        Users should love their experience with this integration
-        """,
+        text_resource=MediaResource(
+            text="""
+            This is test text for Vectara integration with LlamaIndex.
+            Users should love their experience with this integration
+            """,
+        )
     ),
     Document(
-        text="""
-        The Vectara index integration with LlamaIndex implements Vectara's RAG pipeline.
-        It can be used both as a retriever and query engine.
-        """,
+        text_resource=MediaResource(
+            text="""
+            The Vectara index integration with LlamaIndex implements Vectara's RAG pipeline.
+            It can be used both as a retriever and query engine.
+            """,
+        )
     ),
 ]
 

@@ -320,6 +320,7 @@ class VectaraRetriever(BaseRetriever):
                 "response_language": self._summary_response_lang,
                 "max_used_search_results": self._summary_num_results,
                 "generation_preset_name": self._summary_prompt_name,
+                "enable_factual_consistency_score": True,
             }
             if self._prompt_text:
                 summary_config["prompt_template"] = self._prompt_text
@@ -531,13 +532,16 @@ class VectaraRetriever(BaseRetriever):
                 )
             return [], {"text": ""}, ""
 
+        if "warnings" in result:
+            _logger.warning(f"Query warning(s) {(', ').join(result['warnings'])}")
+
         if verbose:
             print(f"Vectara query response: {result}")
 
         if self._summary_enabled:
             summary = {
                 "text": result["answer"] if chat else result["summary"],
-                "fcs": result["factual_consistency_score"],
+                "fcs": result.get("factual_consistency_score"),
             }
         else:
             summary = None
