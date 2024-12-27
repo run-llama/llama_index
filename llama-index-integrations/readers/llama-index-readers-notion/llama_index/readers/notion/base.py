@@ -95,6 +95,9 @@ class NotionPageReader(BasePydanticReader):
         """Get the name identifier of the class."""
         return "NotionPageReader"
 
+    # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # META FUNCTIONS
+
     def _request_block(self, block_id: str, query_dict: json_t = {}) -> json_t:
         # AI: Helper function to get block data
         block_url = BLOCK_CHILD_URL_TMPL.format(block_id=block_id)
@@ -193,10 +196,8 @@ class NotionPageReader(BasePydanticReader):
                 raise requests.exceptions.RequestException(f"Request failed: {err}")
         raise Exception("Maximum retries exceeded")
 
-    def read_page(self, page_id: page_id_t) -> str:
-        """Read a page."""
-        self._print(f"reading page {page_id}")
-        return self._read_block(page_id)
+    # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # OTHER FUNCTIONS
 
     def get_all_pages_from_database(
         self, database_id: notion_db_id_t, query_dict: Dict[str, Any]
@@ -235,13 +236,11 @@ class NotionPageReader(BasePydanticReader):
         results = iterate_paginated_api(search_pages)
         return [result["id"] for result in results]
 
-    # TODO this name is bad
+    # TODO compare this to get_all_pages_and_databases
     def load_data(
         self,
         page_ids: List[page_id_t] = [],
-        database_ids: List[
-            notion_db_id_t
-        ] = [],  # please note : this does not extract any useful table data, only children pages
+        database_ids: List[notion_db_id_t] = [],
         load_all_if_empty: bool = False,
     ) -> List[Document]:
         """Load data from the input directory.
@@ -280,6 +279,30 @@ class NotionPageReader(BasePydanticReader):
         docs.extend(self.get_pages(pages=all_page_ids))
 
         return docs
+
+    # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # META FUNCTIONS
+
+    def _list_ids(self, function_name: str, value: str) -> List[str]:
+        """List all databases in the Notion workspace."""
+        # TODO use search function? how does query differ from filter?
+
+        def search_databases(start_cursor: Optional[str]) -> json_t:
+            self._print(f"{function_name} -- getting new data")
+            query_dict: json_t = {"filter": {"property": "object", "value": value}}
+            if start_cursor is not None:
+                query_dict["start_cursor"] = start_cursor
+
+            return self._request_search(query_dict)
+
+        results = iterate_paginated_api(search_databases)
+        ids: list[str] = [res["id"] for res in results]
+        assert len(ids) == len(set(ids))
+        self._print(f"found {len(ids)} databases")
+        return ids
+
+    # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # NOTION DATABASES INTERNAL
 
     @staticmethod
     def default_format_db_json(json_database: json_t) -> str:
@@ -322,6 +345,15 @@ class NotionPageReader(BasePydanticReader):
                 database_text += "\n"
 
         return database_text + "\nNotion Database End  -----------------\n"
+
+    # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # NOTION DATABASES
+
+    def list_database_ids(self) -> List[notion_db_id_t]:
+        """List all databases in the Notion workspace."""
+        return [
+            notion_db_id_t(id) for id in self._list_ids("list_database_ids", "database")
+        ]
 
     def get_notion_database_text(
         self,
@@ -368,37 +400,21 @@ class NotionPageReader(BasePydanticReader):
             databases=databases, format_db_json=format_db_json
         )
 
-    def _list_ids(self, function_name: str, value: str) -> List[str]:
-        """List all databases in the Notion workspace."""
-        # TODO use search function? how does query differ from filter?
-
-        def search_databases(start_cursor: Optional[str]) -> json_t:
-            self._print(f"{function_name} -- getting new data")
-            query_dict: json_t = {"filter": {"property": "object", "value": value}}
-            if start_cursor is not None:
-                query_dict["start_cursor"] = start_cursor
-
-            return self._request_search(query_dict)
-
-        results = iterate_paginated_api(search_databases)
-        ids: list[str] = [res["id"] for res in results]
-        assert len(ids) == len(set(ids))
-        self._print(f"found {len(ids)} databases")
-        return ids
-
-    def list_database_ids(self) -> List[notion_db_id_t]:
-        """List all databases in the Notion workspace."""
-        return [
-            notion_db_id_t(id) for id in self._list_ids("list_database_ids", "database")
-        ]
+    # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # PAGES
 
     def list_page_ids(self) -> List[page_id_t]:
         """List all pages in the Notion workspace."""
         return [page_id_t(id) for id in self._list_ids("list_page_ids", "page")]
 
+    def read_page_text(self, page_id: page_id_t) -> str:
+        """Read a page."""
+        self._print(f"reading page {page_id}")
+        return self._read_block(page_id)
+
     def get_page(self, page_id: page_id_t) -> Document:
         """Get a page in the Notion workspace."""
-        page_text = self.read_page(page_id)
+        page_text = self.read_page_text(page_id)
         return Document(text=page_text, id_=page_id, extra_info={"page_id": page_id})
 
     def get_pages(self, pages: Iterable[page_id_t]) -> List[Document]:
@@ -412,17 +428,20 @@ class NotionPageReader(BasePydanticReader):
         pages = self.list_page_ids()
         return self.get_pages(pages=pages)
 
+    # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # CONVENIENCE FUNCTIONS
+
     def get_all_pages_and_databases(
         self,
         format_db_json: format_json_f = default_format_db_json,
     ) -> List[Document]:
-        """Get all pages and databases in the Notion workspace."""
         return (
-            self.get_all_notion_databases(
-                format_db_json=format_db_json,
-            )
+            self.get_all_notion_databases(format_db_json=format_db_json)
             + self.get_all_pages()
         )
+
+    # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # HELPER FUNCTIONS
 
     def _print(self, message: str) -> None:
         """Helper method to print feedback messages if print_feedback is enabled.
