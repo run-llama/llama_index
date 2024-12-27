@@ -384,7 +384,6 @@ class NotionPageReader(BasePydanticReader):
 
     def get_all_pages(
         self,
-        format_db_json: format_json_f = default_format_db_json,
     ) -> List[Document]:
         """Get all pages in the Notion workspace."""
         pages = self.list_page_ids()
@@ -401,10 +400,11 @@ class NotionPageReader(BasePydanticReader):
         format_db_json: format_json_f = default_format_db_json,
     ) -> List[Document]:
         """Get all pages and databases in the Notion workspace."""
-        return self.get_all_databases(
-            format_db_json=format_db_json,
-        ) + self.get_all_pages(
-            format_db_json=format_db_json,
+        return (
+            self.get_all_databases(
+                format_db_json=format_db_json,
+            )
+            + self.get_all_pages()
         )
 
     def _print(self, message: str) -> None:
