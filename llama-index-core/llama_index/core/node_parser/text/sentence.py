@@ -153,7 +153,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         return "SentenceSplitter"
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
-        metadata_len = len(self._tokenizer(metadata_str))
+        metadata_len = len(self._tokenizer.encode(metadata_str))
         effective_chunk_size = self.chunk_size - metadata_len
         if effective_chunk_size <= 0:
             raise ValueError(
@@ -305,7 +305,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
         return new_chunks
 
     def _token_size(self, text: str) -> int:
-        return len(self._tokenizer(text))
+        return len(self._tokenizer.encode(text))
 
     def _get_splits_by_fns(self, text: str) -> Tuple[List[str], bool]:
         for split_fn in self._split_fns:

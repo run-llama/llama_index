@@ -107,7 +107,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:
         """Split text into chunks, reserving space required for metadata str."""
-        metadata_len = len(self._tokenizer(metadata_str)) + DEFAULT_METADATA_FORMAT_LEN
+        metadata_len = len(self._tokenizer.encode(metadata_str)) + DEFAULT_METADATA_FORMAT_LEN
         effective_chunk_size = self.chunk_size - metadata_len
         if effective_chunk_size <= 0:
             raise ValueError(
@@ -157,7 +157,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
         NOTE: the splits contain the separators.
         """
-        if len(self._tokenizer(text)) <= chunk_size:
+        if len(self._tokenizer.encode(text)) <= chunk_size:
             return [text]
 
         for split_fn in self._split_fns:
@@ -167,7 +167,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
 
         new_splits = []
         for split in splits:
-            split_len = len(self._tokenizer(split))
+            split_len = len(self._tokenizer.encode(split))
             if split_len <= chunk_size:
                 new_splits.append(split)
             else:
@@ -189,7 +189,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         cur_chunk: List[str] = []
         cur_len = 0
         for split in splits:
-            split_len = len(self._tokenizer(split))
+            split_len = len(self._tokenizer.encode(split))
             if split_len > chunk_size:
                 _logger.warning(
                     f"Got a split of size {split_len}, ",
@@ -211,7 +211,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
                 while cur_len > self.chunk_overlap or cur_len + split_len > chunk_size:
                     # pop off the first element
                     first_chunk = cur_chunk.pop(0)
-                    cur_len -= len(self._tokenizer(first_chunk))
+                    cur_len -= len(self._tokenizer.encode(first_chunk))
 
             cur_chunk.append(split)
             cur_len += split_len
