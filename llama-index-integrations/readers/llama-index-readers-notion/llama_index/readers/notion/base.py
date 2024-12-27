@@ -236,6 +236,14 @@ class NotionPageReader(BasePydanticReader):
         results = iterate_paginated_api(search_pages)
         return [result["id"] for result in results]
 
+    def get_page_ids_from_databases(
+        self, database_id_list: list[notion_db_id_t]
+    ) -> set[page_id_t]:
+        page_ids: set[page_id_t] = set()
+        for database_id in database_id_list:
+            page_ids.update(self.get_all_page_ids_from_database(database_id))
+        return page_ids
+
     # TODO compare this to get_all_pages_and_databases
     def load_data(
         self,
@@ -264,17 +272,12 @@ class NotionPageReader(BasePydanticReader):
                 database_ids = self.list_database_ids()
                 page_ids = self.list_page_ids()
 
+        database_page_ids: set[page_id_t] = self.get_page_ids_from_databases(
+            database_ids
+        )
+        all_page_ids: set[page_id_t] = database_page_ids.union(set(page_ids))
+
         docs: list[Document] = []
-        all_page_ids: set[page_id_t] = set(page_ids)
-
-        # get page ids from databases
-        for database_id in database_ids:
-            # get all the pages in the database
-            db_page_ids: list[page_id_t] = self.get_all_page_ids_from_database(
-                database_id
-            )
-            all_page_ids.update(db_page_ids)
-
         docs.extend(self.get_notion_databases(databases=database_ids))
         docs.extend(self.get_pages(pages=all_page_ids))
 
