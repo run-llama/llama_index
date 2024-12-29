@@ -13,7 +13,7 @@ pip install llama-index-tools-scrapegraph
 First, import and initialize the ScrapegraphToolSpec:
 
 ```python
-from llama_index.tools.scrapegraph import ScrapegraphToolSpec
+from llama_index.tools.scrapegraph.base import ScrapegraphToolSpec 
 
 scrapegraph_tool = ScrapegraphToolSpec()
 ```
@@ -22,53 +22,52 @@ scrapegraph_tool = ScrapegraphToolSpec()
 
 The tool provides the following capabilities:
 
-1. **Smart Scraping (Sync)**
+1. **Smart Scraper**
 
 ```python
 from pydantic import BaseModel
 
-
+# Define your schema (optional)
 class ProductSchema(BaseModel):
     name: str
     price: float
     description: str
 
-
 schema = [ProductSchema]
+
+# Perform the scraping
 result = scrapegraph_tool.scrapegraph_smartscraper(
     prompt="Extract product information",
     url="https://example.com/product",
     api_key="your-api-key",
-    schema=schema,
+    schema=schema  # Optional
 )
 ```
 
-2. **Smart Scraping (Async)**
+2. **Markdownify**
+
+Convert webpage content to markdown format:
 
 ```python
-result = await scrapegraph_tool.scrapegraph_smartscraper_async(
-    prompt="Extract product information",
-    url="https://example.com/product",
-    api_key="your-api-key",
-    schema=schema,
+markdown_content = scrapegraph_tool.scrapegraph_markdownify(
+    url="https://example.com",
+    api_key="your-api-key"
 )
 ```
 
-3. **Submit Feedback**
+3. **Local Scrape**
+
+Extract structured data from raw text:
 
 ```python
-response = scrapegraph_tool.scrapegraph_feedback(
-    request_id="request-id",
-    api_key="your-api-key",
-    rating=5,
-    feedback_text="Great results!",
+text = """
+Your raw text content here...
+"""
+
+structured_data = scrapegraph_tool.scrapegraph_local_scrape(
+    text=text,
+    api_key="your-api-key"
 )
-```
-
-4. **Check Credits**
-
-```python
-credits = scrapegraph_tool.scrapegraph_get_credits(api_key="your-api-key")
 ```
 
 ## Requirements
@@ -76,7 +75,3 @@ credits = scrapegraph_tool.scrapegraph_get_credits(api_key="your-api-key")
 - Python 3.8+
 - `scrapegraph-py` package
 - Valid Scrapegraph API key
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
