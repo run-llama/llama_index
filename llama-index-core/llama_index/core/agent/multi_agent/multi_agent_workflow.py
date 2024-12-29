@@ -183,6 +183,16 @@ class MultiAgentWorkflow(Workflow):
                 )
             )
 
+            if tool_call_result.return_direct:
+                current_reasoning.append(
+                    ResponseReasoningStep(
+                        thought=current_reasoning[-1].observation,
+                        response=current_reasoning[-1].observation,
+                        is_streaming=False,
+                    )
+                )
+                break
+
         await ctx.set("current_reasoning", current_reasoning)
 
     async def _handle_function_tool_call(
@@ -198,6 +208,16 @@ class MultiAgentWorkflow(Workflow):
                     additional_kwargs={"tool_call_id": tool_call_result.tool_id},
                 )
             )
+
+            if tool_call_result.return_direct:
+                await memory.aput(
+                    ChatMessage(
+                        role="assistant",
+                        content=str(tool_call_result.tool_output.content),
+                        additional_kwargs={"tool_call_id": tool_call_result.tool_id},
+                    )
+                )
+                break
 
         await ctx.set("memory", memory)
 
@@ -367,20 +387,6 @@ class MultiAgentWorkflow(Workflow):
         current_reasoning: list[BaseReasoningStep] = await ctx.get(
             "current_reasoning", default=[]
         )
-
-        # if we returned a direct tool call, we should add the final reasoning to memory
-        if (
-            len(current_reasoning) > 0
-            and isinstance(current_reasoning[-1], ObservationReasoningStep)
-            and current_reasoning[-1].return_direct
-        ):
-            current_reasoning.append(
-                ResponseReasoningStep(
-                    thought=current_reasoning[-1].observation,
-                    response=current_reasoning[-1].observation,
-                    is_streaming=False,
-                )
-            )
 
         reasoning_str = "\n".join([x.get_content() for x in current_reasoning])
         reasoning_msg = ChatMessage(role="assistant", content=reasoning_str)
@@ -571,11 +577,9 @@ class MultiAgentWorkflow(Workflow):
         ):
             # if any tool calls return directly, take the first one
             return_direct_tool = next(
-                [
-                    tool_call_result
-                    for tool_call_result in tool_call_results
-                    if tool_call_result.return_direct
-                ]
+                tool_call_result
+                for tool_call_result in tool_call_results
+                if tool_call_result.return_direct
             )
 
             # we don't want to finalize the agent if we're just handing off
