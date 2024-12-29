@@ -13,7 +13,7 @@ pip install llama-index-tools-scrapegraph
 First, import and initialize the ScrapegraphToolSpec:
 
 ```python
-from llama_index.tools.scrapegraph.base import ScrapegraphToolSpec 
+from llama_index.tools.scrapegraph import ScrapegraphToolSpec 
 
 scrapegraph_tool = ScrapegraphToolSpec()
 ```

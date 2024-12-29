@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock, patch
 from pydantic import BaseModel
-from llama_index.tools.scrapegraph.base import ScrapegraphToolSpec
+from llama_index.tools.scrapegraph import ScrapegraphToolSpec
 
 
 class TestSchema(BaseModel):
