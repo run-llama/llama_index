@@ -5,6 +5,7 @@ from llama_index.core.agent.multi_agent.agent_config import AgentConfig, AgentMo
 from llama_index.core.agent.multi_agent.workflow_events import (
     HandoffEvent,
     ToolCall,
+    ToolCallResult,
     AgentInput,
     AgentSetup,
     AgentStream,
@@ -15,6 +16,8 @@ from llama_index.core.agent.react.formatter import ReActChatFormatter
 from llama_index.core.agent.react.types import (
     ActionReasoningStep,
     BaseReasoningStep,
+    ObservationReasoningStep,
+    ResponseReasoningStep,
 )
 from llama_index.core.llms import ChatMessage, LLM
 from llama_index.core.llms.function_calling import FunctionCallingLLM
@@ -163,15 +166,40 @@ class MultiAgentWorkflow(Workflow):
                 is_error=True,
             )
 
-        ctx.write_event_to_stream(
-            ToolCall(
-                tool_name=tool.metadata.name,
-                tool_kwargs=tool_input,
-                tool_output=tool_output.content,
-            )
-        )
-
         return tool_output
+
+    async def _handle_react_tool_call(
+        self, ctx: Context, results: List[ToolCallResult]
+    ) -> None:
+        """Adds to the react reasoning list."""
+        current_reasoning: list[BaseReasoningStep] = await ctx.get(
+            "current_reasoning", default=[]
+        )
+        for tool_call_result in results:
+            current_reasoning.append(
+                ObservationReasoningStep(
+                    observation=str(tool_call_result.tool_output.content),
+                    return_direct=tool_call_result.return_direct,
+                )
+            )
+
+        await ctx.set("current_reasoning", current_reasoning)
+
+    async def _handle_function_tool_call(
+        self, ctx: Context, results: List[ToolCallResult]
+    ) -> None:
+        """Adds to memory."""
+        memory: BaseMemory = await ctx.get("memory")
+        for tool_call_result in results:
+            await memory.aput(
+                ChatMessage(
+                    role="tool",
+                    content=str(tool_call_result.tool_output.content),
+                    additional_kwargs={"tool_call_id": tool_call_result.tool_id},
+                )
+            )
+
+        await ctx.set("memory", memory)
 
     async def _call_function_calling_agent(
         self,
@@ -183,7 +211,6 @@ class MultiAgentWorkflow(Workflow):
         """Call the LLM as a function calling agent."""
         memory: BaseMemory = await ctx.get("memory")
         current_agent = await ctx.get("current_agent")
-        tools_by_name = {tool.metadata.name: tool for tool in tools}
 
         current_llm_input = [*llm_input]
         response = await llm.astream_chat_with_tools(
@@ -204,6 +231,8 @@ class MultiAgentWorkflow(Workflow):
 
         current_llm_input.append(r.message)
         await memory.aput(r.message)
+        await ctx.set("memory", memory)
+
         tool_calls = llm.get_tool_calls_from_response(r, error_on_no_tool_call=False)
 
         return AgentOutput(
@@ -212,89 +241,6 @@ class MultiAgentWorkflow(Workflow):
             raw_response=r.raw,
             current_agent=current_agent,
         )
-
-        # all_tool_results = []
-        # while tool_calls:
-        #     tool_results: List[ToolOutput] = []
-        #     tool_ids: List[str] = []
-        #     jobs = []
-        #     should_return_direct = False
-        #     for tool_call in tool_calls:
-        #         tool_ids.append(tool_call.tool_id)
-        #         if tool_call.tool_name not in tools_by_name:
-        #             tool_results.append(
-        #                 ToolOutput(
-        #                     content=f"Tool {tool_call.tool_name} not found. Please select a tool that is available.",
-        #                     tool_name=tool_call.tool_name,
-        #                     raw_input=tool_call.tool_kwargs,
-        #                     raw_output=None,
-        #                     is_error=True,
-        #                 )
-        #             )
-        #         else:
-        #             tool = tools_by_name[tool_call.tool_name]
-        #             if tool.metadata.return_direct:
-        #                 should_return_direct = True
-
-        #             jobs.append(
-        #                 self._call_tool(
-        #                     ctx,
-        #                     tool,
-        #                     tool_call.tool_kwargs,
-        #                 )
-        #             )
-
-        #     tool_results.extend(await asyncio.gather(*jobs))
-        #     all_tool_results.extend(tool_results)
-        #     tool_messages = [
-        #         ChatMessage(
-        #             role="tool",
-        #             content=str(result),
-        #             additional_kwargs={"tool_call_id": tool_id},
-        #         )
-        #         for result, tool_id in zip(tool_results, tool_ids)
-        #     ]
-
-        #     for tool_message in tool_messages:
-        #         await memory.aput(tool_message)
-
-        #     if should_return_direct:
-        #         return AgentOutput(
-        #             response=tool_results[0].content,
-        #             tool_outputs=all_tool_results,
-        #             raw_response=None,
-        #             current_agent=current_agent,
-        #         )
-
-        #     current_llm_input.extend(tool_messages)
-        #     response = await llm.astream_chat_with_tools(
-        #         tools, chat_history=current_llm_input, allow_parallel_tool_calls=True
-        #     )
-        #     async for r in response:
-        #         tool_calls = llm.get_tool_calls_from_response(
-        #             r, error_on_no_tool_call=False
-        #         )
-        #         ctx.write_event_to_stream(
-        #             AgentStream(
-        #                 delta=r.delta or "",
-        #                 tool_calls=tool_calls or [],
-        #                 raw_response=r.raw,
-        #                 current_agent=current_agent,
-        #             )
-        #         )
-
-        #     current_llm_input.append(r.message)
-        #     await memory.aput(r.message)
-        #     tool_calls = llm.get_tool_calls_from_response(
-        #         r, error_on_no_tool_call=False
-        #     )
-
-        # return AgentOutput(
-        #     response=r.message.content,
-        #     tool_outputs=all_tool_results,
-        #     raw_response=r.raw,
-        #     current_agent=current_agent,
-        # )
 
     async def _call_react_agent(
         self,
@@ -352,6 +298,7 @@ class MultiAgentWorkflow(Workflow):
 
             await memory.aput(r.message.content)
             await memory.aput(ChatMessage(role="user", content=error_msg))
+            await ctx.set("memory", memory)
 
             return AgentOutput(
                 response=r.message.content,
@@ -365,17 +312,8 @@ class MultiAgentWorkflow(Workflow):
 
         # If response step, we're done
         if reasoning_step.is_done:
-            reasoning_str = "\n".join([x.get_content() for x in current_reasoning])
-            reasoning_msg = ChatMessage(role="assistant", content=reasoning_str)
-            await memory.aput(reasoning_msg)
-
-            response = (
-                reasoning_step.response
-                if hasattr(reasoning_step, "response")
-                else reasoning_step.get_content()
-            )
             return AgentOutput(
-                response=response,
+                response=r.message.content,
                 tool_calls=[],
                 raw_response=r.raw,
                 current_agent=current_agent,
@@ -385,7 +323,7 @@ class MultiAgentWorkflow(Workflow):
         if not isinstance(reasoning_step, ActionReasoningStep):
             raise ValueError(f"Expected ActionReasoningStep, got {reasoning_step}")
 
-        # Call tool
+        # Create tool call
         tool_calls = [
             ToolSelection(
                 tool_id=str(uuid.uuid4()),
@@ -401,142 +339,55 @@ class MultiAgentWorkflow(Workflow):
             current_agent=current_agent,
         )
 
-        # tools_by_name = {tool.metadata.name: tool for tool in tools}
-        # tool = None
-        # if reasoning_step.action not in tools_by_name:
-        #     tool_output = ToolOutput(
-        #         content=f"Error: No such tool named `{reasoning_step.action}`.",
-        #         tool_name=reasoning_step.action,
-        #         raw_input={"kwargs": reasoning_step.action_input},
-        #         raw_output=None,
-        #         is_error=True,
-        #     )
-        # else:
-        #     tool = tools_by_name[reasoning_step.action]
-        #     tool_output = await self._call_tool(
-        #         ctx,
-        #         tool,
-        #         reasoning_step.action_input,
-        #     )
-        #     all_tool_outputs.append(tool_output)
-
-        # # Add observation to chat history
-        # current_reasoning.append(
-        #     ObservationReasoningStep(
-        #         observation=str(tool_output),
-        #         return_direct=tool.metadata.return_direct,
-        #     )
-        # )
-
-        # if tool and tool.metadata.return_direct:
-        #     current_reasoning.append(
-        #         ResponseReasoningStep(response=tool_output.content)
-        #     )
-        #     latest_react_messages = react_chat_formatter.format(
-        #         tools,
-        #         chat_history=llm_input,
-        #         current_reasoning=current_reasoning,
-        #     )
-        #     for msg in latest_react_messages:
-        #         await memory.aput(msg)
-
-        #     return AgentOutput(
-        #         response=tool_output.content,
-        #         tool_outputs=all_tool_outputs,
-        #         raw_response=r.raw,
-        #         current_agent=current_agent,
-        #     )
-
-        # # Get next action from LLM
-        # input_chat = react_chat_formatter.format(
-        #     tools,
-        #     chat_history=llm_input,
-        #     current_reasoning=current_reasoning,
-        # )
-        # response = await llm.astream_chat(input_chat)
-        # async for r in response:
-        #     ctx.write_event_to_stream(
-        #         AgentStream(
-        #             delta=r.delta or "",
-        #             tool_calls=[],
-        #             current_agent=current_agent,
-        #             raw_response=r.raw,
-        #         )
-        #     )
-
-        # await memory.aput(r.message)
-
-        # # Parse next reasoning step
-        # message_content = r.message.content
-        # if not message_content:
-        #     raise ValueError("Got empty message")
-
-        # try:
-        #     reasoning_step = output_parser.parse(
-        #         message_content, is_streaming=False
-        #     )
-        # except ValueError as e:
-        #     # If we can't parse the output, return an error message
-        #     error_msg = f"Error: Could not parse output. Please follow the thought-action-input format. Try again. Details: {e!s}"
-
-        #     current_reasoning.append(
-        #         ObservationReasoningStep(observation=error_msg)
-        #     )
-
-        #     latest_react_messages = react_chat_formatter.format(
-        #         tools,
-        #         chat_history=llm_input,
-        #         current_reasoning=current_reasoning,
-        #     )
-        #     for msg in latest_react_messages:
-        #         await memory.aput(msg)
-
-        #     return AgentOutput(
-        #         response=error_msg,
-        #         tool_outputs=all_tool_outputs,
-        #         raw_response=r.raw,
-        #         current_agent=current_agent,
-        #     )
-
-        # # If response step, we're done
-        # if reasoning_step.is_done:
-        #     latest_react_messages = react_chat_formatter.format(
-        #         tools,
-        #         chat_history=llm_input,
-        #         current_reasoning=current_reasoning,
-        #     )
-        #     for msg in latest_react_messages:
-        #         await memory.aput(msg)
-
-        #     return AgentOutput(
-        #         response=reasoning_step.response,
-        #         tool_outputs=all_tool_outputs,
-        #         raw_response=r.raw,
-        #         current_agent=current_agent,
-        #     )
-
     async def _call_llm(
         self,
         ctx: Context,
         llm: LLM,
         llm_input: List[ChatMessage],
         tools: List[AsyncBaseTool],
-        mode: AgentMode,
+        agent_config: AgentConfig,
     ) -> AgentOutput:
         """Call the LLM with the given input and tools."""
-        if mode == AgentMode.DEFAULT:
-            if llm.metadata.is_function_calling_model:
-                return await self._call_function_calling_agent(
-                    ctx, llm, llm_input, tools
-                )
-            else:
-                return await self._call_react_agent(ctx, llm, llm_input, tools)
-        elif mode == AgentMode.REACT:
+        if agent_config.get_mode() == AgentMode.REACT:
             return await self._call_react_agent(ctx, llm, llm_input, tools)
-        elif mode == AgentMode.FUNCTION:
+        elif agent_config.get_mode() == AgentMode.FUNCTION:
             return await self._call_function_calling_agent(ctx, llm, llm_input, tools)
         else:
-            raise ValueError(f"Invalid agent mode: {mode}")
+            raise ValueError(f"Invalid agent mode: {agent_config.get_mode()}")
+
+    async def _finalize_function_calling_agent(self, ctx: Context) -> None:
+        """Finalizes the function calling agent.
+
+        This is a no-op for the function calling agent, since we've been writing to memory as we go.
+        """
+
+    async def _finalize_react_agent(self, ctx: Context) -> None:
+        """Finalizes the react agent by writing the current reasoning to memory."""
+        memory: BaseMemory = await ctx.get("memory")
+        current_reasoning: list[BaseReasoningStep] = await ctx.get(
+            "current_reasoning", default=[]
+        )
+
+        # if we returned a direct tool call, we should add the final reasoning to memory
+        if (
+            len(current_reasoning) > 0
+            and isinstance(current_reasoning[-1], ObservationReasoningStep)
+            and current_reasoning[-1].return_direct
+        ):
+            current_reasoning.append(
+                ResponseReasoningStep(
+                    thought=current_reasoning[-1].observation,
+                    response=current_reasoning[-1].observation,
+                    is_streaming=False,
+                )
+            )
+
+        reasoning_str = "\n".join([x.get_content() for x in current_reasoning])
+        reasoning_msg = ChatMessage(role="assistant", content=reasoning_str)
+
+        await memory.aput(reasoning_msg)
+        await ctx.set("memory", memory)
+        await ctx.set("current_reasoning", [])
 
     @step
     async def init_run(self, ctx: Context, ev: StartEvent) -> AgentInput:
@@ -578,7 +429,7 @@ class MultiAgentWorkflow(Workflow):
     @step
     async def setup_agent(self, ctx: Context, ev: AgentInput) -> AgentSetup:
         """Main agent handling logic."""
-        agent_config: AgentConfig = (await ctx.get("agent_configs"))[ev.current_agent]
+        agent_config: AgentConfig = self.agent_configs[ev.current_agent]
         llm_input = ev.input
 
         # Setup the tools
@@ -605,6 +456,8 @@ class MultiAgentWorkflow(Workflow):
                 *llm_input,
             ]
 
+        await ctx.set("tools_by_name", {tool.metadata.name: tool for tool in tools})
+
         return AgentSetup(
             input=llm_input,
             current_agent=ev.current_agent,
@@ -619,7 +472,11 @@ class MultiAgentWorkflow(Workflow):
         llm = agent_config.llm or Settings.llm
 
         agent_output = await self._call_llm(
-            ctx, llm, ev.input, ev.tools, agent_config.mode
+            ctx,
+            llm,
+            ev.input,
+            ev.tools,
+            agent_config,
         )
         ctx.write_event_to_stream(agent_output)
 
@@ -628,15 +485,61 @@ class MultiAgentWorkflow(Workflow):
     @step
     async def parse_agent_output(
         self, ctx: Context, ev: AgentOutput
-    ) -> StopEvent | ToolCall:
-        pass
+    ) -> StopEvent | ToolCall | None:
+        if not ev.tool_calls:
+            agent_configs = self.agent_configs
+            current_config = agent_configs[ev.current_agent]
+            if current_config.get_mode() == AgentMode.REACT:
+                await self._finalize_react_agent(ctx)
+            elif current_config.get_mode() == AgentMode.FUNCTION:
+                await self._finalize_function_calling_agent(ctx)
+            else:
+                raise ValueError(f"Invalid agent mode: {current_config.get_mode()}")
 
-    def _add_tool_call_result_to_memory(self, ctx: Context, ev: ToolCallResult) -> None:
-        """Either adds to memory or adds to the react reasoning list."""
+            return StopEvent(result=ev)
+
+        await ctx.set("num_tool_calls", len(ev.tool_calls))
+
+        for tool_call in ev.tool_calls:
+            ctx.send_event(
+                ToolCall(
+                    tool_name=tool_call.tool_name,
+                    tool_kwargs=tool_call.tool_kwargs,
+                    tool_id=tool_call.tool_id,
+                )
+            )
+
+        return None
 
     @step
     async def call_tool(self, ctx: Context, ev: ToolCall) -> ToolCallResult:
-        pass
+        """Calls the tool and handles the result."""
+        ctx.write_event_to_stream(ev)
+
+        tools_by_name: dict[str, AsyncBaseTool] = await ctx.get("tools_by_name")
+        if ev.tool_name not in tools_by_name:
+            result = ToolOutput(
+                content=f"Tool {ev.tool_name} not found. Please select a tool that is available.",
+                tool_name=ev.tool_name,
+                raw_input=ev.tool_kwargs,
+                raw_output=None,
+                is_error=True,
+                return_direct=False,
+            )
+        else:
+            tool = tools_by_name[ev.tool_name]
+            result = await self._call_tool(ctx, tool, ev.tool_kwargs)
+
+        result_ev = ToolCallResult(
+            tool_name=ev.tool_name,
+            tool_kwargs=ev.tool_kwargs,
+            tool_id=ev.tool_id,
+            tool_output=result,
+            return_direct=tool.metadata.return_direct,
+        )
+
+        ctx.write_event_to_stream(result_ev)
+        return result_ev
 
     @step
     async def aggregate_tool_results(
@@ -647,15 +550,65 @@ class MultiAgentWorkflow(Workflow):
         if num_tool_calls == 0:
             raise ValueError("No tool calls found, cannot aggregate results.")
 
-        tool_call_results = ctx.collect_events(
+        tool_call_results: list[ToolCallResult] = ctx.collect_events(
             ev, expected=[ToolCallResult] * num_tool_calls
         )
         if not tool_call_results:
             return None
 
+        current_agent = await ctx.get("current_agent")
+        current_config: AgentConfig = self.agent_configs[current_agent]
+
+        if current_config.get_mode() == AgentMode.REACT:
+            await self._handle_react_tool_call(ctx, tool_call_results)
+        elif current_config.get_mode() == AgentMode.FUNCTION:
+            await self._handle_function_tool_call(ctx, tool_call_results)
+        else:
+            raise ValueError(f"Invalid agent mode: {current_config.get_mode()}")
+
+        if any(
+            tool_call_result.return_direct for tool_call_result in tool_call_results
+        ):
+            # if any tool calls return directly, take the first one
+            return_direct_tool = next(
+                [
+                    tool_call_result
+                    for tool_call_result in tool_call_results
+                    if tool_call_result.return_direct
+                ]
+            )
+
+            # we don't want to finalize the agent if we're just handing off
+            if return_direct_tool.tool_name != "handoff":
+                current_config = self.agent_configs[current_agent]
+                if current_config.get_mode() == AgentMode.REACT:
+                    await self._finalize_react_agent(ctx)
+                elif current_config.get_mode() == AgentMode.FUNCTION:
+                    await self._finalize_function_calling_agent(ctx)
+                else:
+                    raise ValueError(f"Invalid agent mode: {current_config.get_mode()}")
+
+                return StopEvent(
+                    result=AgentOutput(
+                        response=return_direct_tool.tool_output.content,
+                        tool_calls=[
+                            ToolSelection(
+                                tool_id=t.tool_id,
+                                tool_name=t.tool_name,
+                                tool_kwargs=t.tool_kwargs,
+                            )
+                            for t in tool_call_results
+                        ],
+                        raw_response=return_direct_tool.tool_output.raw_output,
+                        current_agent=current_agent,
+                    )
+                )
+
         user_msg_str = await ctx.get("user_msg_str")
         memory: BaseMemory = await ctx.get("memory")
         input_messages = memory.get(input=user_msg_str)
+
+        # get this again, in case it changed
         current_agent = await ctx.get("current_agent")
 
         return AgentInput(input=input_messages, current_agent=current_agent)

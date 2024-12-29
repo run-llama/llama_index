@@ -30,3 +30,14 @@ class AgentConfig(BaseModel):
     llm: Optional[LLM] = None
     is_entrypoint_agent: bool = False
     mode: AgentMode = AgentMode.DEFAULT
+
+    def get_mode(self) -> AgentMode:
+        """Resolve the mode of the agent."""
+        if self.mode == AgentMode.DEFAULT:
+            return (
+                AgentMode.FUNCTION
+                if self.llm.metadata.is_function_calling_model
+                else AgentMode.REACT
+            )
+
+        return self.mode

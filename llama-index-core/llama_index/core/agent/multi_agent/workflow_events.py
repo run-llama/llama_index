@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from llama_index.core.tools import AsyncBaseTool, ToolSelection
+from llama_index.core.tools import AsyncBaseTool, ToolSelection, ToolOutput
 from llama_index.core.llms import ChatMessage
 from llama_index.core.workflow import Event
 from llama_index.core.agent.multi_agent.agent_config import AgentConfig
@@ -63,7 +63,14 @@ class ToolCall(Event):
 
     tool_name: str
     tool_kwargs: dict
-    tool_output: Any
+    tool_id: str
+
+
+class ToolCallResult(ToolCall):
+    """Tool call result."""
+
+    tool_output: ToolOutput
+    return_direct: bool
 
 
 class HandoffEvent(Event):
