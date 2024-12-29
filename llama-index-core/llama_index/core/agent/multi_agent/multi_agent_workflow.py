@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from llama_index.core.agent.multi_agent.agent_config import AgentConfig, AgentMode
 from llama_index.core.agent.multi_agent.workflow_events import (
-    HandoffEvent,
     ToolCall,
     ToolCallResult,
     AgentInput,
@@ -49,7 +48,7 @@ Currently available agents:
 """
 
 
-async def handoff(ctx: Context, to_agent: str, reason: str) -> HandoffEvent:
+async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
     """Handoff control of that chat to the given agent."""
     agent_configs = await ctx.get("agent_configs")
     current_agent = await ctx.get("current_agent")
@@ -140,8 +139,8 @@ class MultiAgentWorkflow(Workflow):
             await ctx.set("memory", default_memory)
         if not await ctx.get("agent_configs", default=None):
             await ctx.set("agent_configs", self.agent_configs)
-        if not await ctx.get("current_state", default=None):
-            await ctx.set("current_state", self.initial_state)
+        if not await ctx.get("state", default=None):
+            await ctx.set("state", self.initial_state)
         if not await ctx.get("current_agent", default=None):
             await ctx.set("current_agent", self.root_agent)
 
@@ -429,7 +428,7 @@ class MultiAgentWorkflow(Workflow):
             input_messages = memory.get(input=user_msg.content)
 
             # Add the state to the user message if it exists and if requested
-            current_state = await ctx.get("current_state")
+            current_state = await ctx.get("state")
             if self.state_prompt and current_state:
                 user_msg.content = self.state_prompt.format(
                     state=current_state, msg=user_msg.content
@@ -450,7 +449,7 @@ class MultiAgentWorkflow(Workflow):
         agent_config: AgentConfig = self.agent_configs[ev.current_agent]
         llm_input = ev.input
 
-        # Setup the tools
+        # Set up the tools
         tools = list(agent_config.tools or [])
         if agent_config.tool_retriever:
             retrieved_tools = await agent_config.tool_retriever.aretrieve(
