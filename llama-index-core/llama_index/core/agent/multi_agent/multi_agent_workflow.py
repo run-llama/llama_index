@@ -176,6 +176,10 @@ class MultiAgentWorkflow(Workflow):
             "current_reasoning", default=[]
         )
         for tool_call_result in results:
+            # don't add handoff tool calls to reasoning
+            if tool_call_result.tool_name == "handoff":
+                continue
+
             current_reasoning.append(
                 ObservationReasoningStep(
                     observation=str(tool_call_result.tool_output.content),
@@ -201,6 +205,10 @@ class MultiAgentWorkflow(Workflow):
         """Adds to memory."""
         memory: BaseMemory = await ctx.get("memory")
         for tool_call_result in results:
+            # don't add handoff tool calls to memory
+            if tool_call_result.tool_name == "handoff":
+                continue
+
             await memory.aput(
                 ChatMessage(
                     role="tool",
@@ -249,11 +257,13 @@ class MultiAgentWorkflow(Workflow):
                 )
             )
 
-        current_llm_input.append(r.message)
-        await memory.aput(r.message)
-        await ctx.set("memory", memory)
-
         tool_calls = llm.get_tool_calls_from_response(r, error_on_no_tool_call=False)
+
+        # only add to memory if we didn't select the handoff tool
+        if not any(tool_call.tool_name == "handoff" for tool_call in tool_calls):
+            current_llm_input.append(r.message)
+            await memory.aput(r.message)
+            await ctx.set("memory", memory)
 
         return AgentOutput(
             response=r.message.content,
@@ -327,8 +337,10 @@ class MultiAgentWorkflow(Workflow):
                 current_agent=current_agent,
             )
 
-        current_reasoning.append(reasoning_step)
-        await ctx.set("current_reasoning", current_reasoning)
+        # add to reasoning if not a handoff
+        if hasattr(reasoning_step, "action") and reasoning_step.action != "handoff":
+            current_reasoning.append(reasoning_step)
+            await ctx.set("current_reasoning", current_reasoning)
 
         # If response step, we're done
         if reasoning_step.is_done:
@@ -550,7 +562,7 @@ class MultiAgentWorkflow(Workflow):
     @step
     async def aggregate_tool_results(
         self, ctx: Context, ev: ToolCallResult
-    ) -> AgentInput | None:
+    ) -> AgentInput | StopEvent | None:
         """Aggregate tool results and return the next agent input."""
         num_tool_calls = await ctx.get("num_tool_calls", default=0)
         if num_tool_calls == 0:
@@ -582,16 +594,16 @@ class MultiAgentWorkflow(Workflow):
                 if tool_call_result.return_direct
             )
 
-            # we don't want to finalize the agent if we're just handing off
-            if return_direct_tool.tool_name != "handoff":
-                current_config = self.agent_configs[current_agent]
-                if current_config.get_mode() == AgentMode.REACT:
-                    await self._finalize_react_agent(ctx)
-                elif current_config.get_mode() == AgentMode.FUNCTION:
-                    await self._finalize_function_calling_agent(ctx)
-                else:
-                    raise ValueError(f"Invalid agent mode: {current_config.get_mode()}")
+            current_config = self.agent_configs[current_agent]
+            if current_config.get_mode() == AgentMode.REACT:
+                await self._finalize_react_agent(ctx)
+            elif current_config.get_mode() == AgentMode.FUNCTION:
+                await self._finalize_function_calling_agent(ctx)
+            else:
+                raise ValueError(f"Invalid agent mode: {current_config.get_mode()}")
 
+            # we don't want to stop the system if we're just handing off
+            if return_direct_tool.tool_name != "handoff":
                 return StopEvent(
                     result=AgentOutput(
                         response=return_direct_tool.tool_output.content,
