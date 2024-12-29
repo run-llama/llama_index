@@ -13,7 +13,7 @@ pip install llama-index-tools-scrapegraph
 First, import and initialize the ScrapegraphToolSpec:
 
 ```python
-from llama_index.tools.scrapegraph import ScrapegraphToolSpec 
+from llama_index.tools.scrapegraph import ScrapegraphToolSpec
 
 scrapegraph_tool = ScrapegraphToolSpec()
 ```
@@ -27,11 +27,13 @@ The tool provides the following capabilities:
 ```python
 from pydantic import BaseModel
 
+
 # Define your schema (optional)
 class ProductSchema(BaseModel):
     name: str
     price: float
     description: str
+
 
 schema = [ProductSchema]
 
@@ -40,7 +42,7 @@ result = scrapegraph_tool.scrapegraph_smartscraper(
     prompt="Extract product information",
     url="https://example.com/product",
     api_key="your-api-key",
-    schema=schema  # Optional
+    schema=schema,  # Optional
 )
 ```
 
@@ -50,8 +52,7 @@ Convert webpage content to markdown format:
 
 ```python
 markdown_content = scrapegraph_tool.scrapegraph_markdownify(
-    url="https://example.com",
-    api_key="your-api-key"
+    url="https://example.com", api_key="your-api-key"
 )
 ```
 
@@ -65,8 +66,7 @@ Your raw text content here...
 """
 
 structured_data = scrapegraph_tool.scrapegraph_local_scrape(
-    text=text,
-    api_key="your-api-key"
+    text=text, api_key="your-api-key"
 )
 ```
 
