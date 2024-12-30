@@ -158,13 +158,13 @@ class SageMakerLLM(LLM):
         model_kwargs["temperature"] = temperature
         content_handler = content_handler
         self._completion_to_prompt = completion_to_prompt
-        
-        region_name = kwargs.pop('region_name', None)
+
+        region_name = kwargs.pop("region_name", None)
         if region_name is not None:
             warnings.warn(
                 "Kwarg `region_name` is deprecated and will be removed in a future version. "
                 "Please use `aws_region_name` instead.",
-                DeprecationWarning
+                DeprecationWarning,
             )
             if not aws_region_name:
                 aws_region_name = region_name
