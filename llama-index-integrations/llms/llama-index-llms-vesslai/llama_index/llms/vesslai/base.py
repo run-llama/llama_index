@@ -12,7 +12,7 @@ from llama_index.llms.vesslai.utils import (
     wait_for_gateway_enabled,
     read_service,
     abort_in_progress_rollout_by_name,
-    check_service_with_model_name,
+    ensure_service_idempotence_with_model_name,
 )
 from llama_index.llms.openai_like import OpenAILike
 
@@ -99,7 +99,7 @@ class VesslAILLM(OpenAILike, BaseModel):
         serverless: bool = False,
         api_key: str = None,
         service_auth_key: str = None,
-        force: bool = False,
+        force_relaunch: bool = False,
         **kwargs: Any,
     ) -> None:
         self.organization_name = kwargs.get('organization_name', self.organization_name)
@@ -134,10 +134,10 @@ class VesslAILLM(OpenAILike, BaseModel):
 
         self.model = serve_model_name
         self.is_chat_model = is_chat_model
-        if not force:
-            gateway_endpoint = check_service_with_model_name(service_name=service_name, model_name=self.model)
+        if not force_relaunch:
+            gateway_endpoint = ensure_service_idempotence_with_model_name(service_name=service_name, model_name=self.model)
             if gateway_endpoint is not None:
-                print(f"Model Name \"{self.model}\" is already being served. Connecting with Endpoint: {gateway_endpoint} \nIf you want to abort running model_service, please provide force = True")
+                print(f"Model Name \"{self.model}\" is already being served. Connecting with Endpoint: {gateway_endpoint} \nIf you want to abort running model_service, please provide force_relaunch = True")
                 self.connect(
                     served_model_name=self.model,
                     endpoint=gateway_endpoint,

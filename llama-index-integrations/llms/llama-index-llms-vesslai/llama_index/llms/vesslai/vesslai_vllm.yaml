@@ -11,13 +11,7 @@ resources:
   cluster: vessl-gcp-oregon
   preset: gpu-l4-small-spot
 run:
-- command: 'pip install autoawq==0.2.6
-
-    pip install fastapi==0.112.2
-
-    pip install flash-attn==2.6.3
-
-    vllm serve $MODEL_NAME --max-model-len 8192 --disable-frontend-multiprocessing'
+- command: 'vllm serve $MODEL_NAME --max-model-len 8192 --disable-frontend-multiprocessing'
 service:
   autoscaling:
     max: 2

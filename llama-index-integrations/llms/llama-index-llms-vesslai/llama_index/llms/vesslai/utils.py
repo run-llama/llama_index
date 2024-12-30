@@ -55,7 +55,7 @@ def read_service(service_name: str) -> Any:
         model_service_name=service_name
     )
     
-def check_service_with_model_name(service_name: str, model_name: str) -> Any:
+def ensure_service_idempotence_with_model_name(service_name: str, model_name: str) -> Any:
     """Fetches the service configuration using the model name.
 
     Args:
