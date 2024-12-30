@@ -9,30 +9,22 @@ from llama_index.core.indices.keyword_table.simple_base import (
 from llama_index.core.indices.list.base import SummaryIndex
 from llama_index.core.indices.tree.base import TreeIndex
 from llama_index.core.schema import Document
-from llama_index.core.service_context import ServiceContext
 
 
 def test_recursive_query_list_tree(
     documents: List[Document],
-    mock_service_context: ServiceContext,
     index_kwargs: Dict,
+    patch_token_text_splitter,
+    patch_llm_predictor,
 ) -> None:
     """Test query."""
     list_kwargs = index_kwargs["list"]
     tree_kwargs = index_kwargs["tree"]
     # try building a list for every two, then a tree
-    list1 = SummaryIndex.from_documents(
-        documents[0:2], service_context=mock_service_context, **list_kwargs
-    )
-    list2 = SummaryIndex.from_documents(
-        documents[2:4], service_context=mock_service_context, **list_kwargs
-    )
-    list3 = SummaryIndex.from_documents(
-        documents[4:6], service_context=mock_service_context, **list_kwargs
-    )
-    list4 = SummaryIndex.from_documents(
-        documents[6:8], service_context=mock_service_context, **list_kwargs
-    )
+    list1 = SummaryIndex.from_documents(documents[0:2], **list_kwargs)
+    list2 = SummaryIndex.from_documents(documents[2:4], **list_kwargs)
+    list3 = SummaryIndex.from_documents(documents[4:6], **list_kwargs)
+    list4 = SummaryIndex.from_documents(documents[6:8], **list_kwargs)
 
     summary1 = "summary1"
     summary2 = "summary2"
@@ -51,8 +43,7 @@ def test_recursive_query_list_tree(
             list4,
         ],
         index_summaries=summaries,
-        service_context=mock_service_context,
-        **tree_kwargs
+        **tree_kwargs,
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "What is?"
@@ -67,7 +58,8 @@ def test_recursive_query_list_tree(
 
 def test_recursive_query_tree_list(
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     index_kwargs: Dict,
 ) -> None:
     """Test query."""
@@ -75,14 +67,8 @@ def test_recursive_query_tree_list(
     tree_kwargs = index_kwargs["tree"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
-    tree1 = TreeIndex.from_documents(
-        documents[2:6], service_context=mock_service_context, **tree_kwargs
-    )
-    tree2 = TreeIndex.from_documents(
-        documents[:2] + documents[6:],
-        service_context=mock_service_context,
-        **tree_kwargs
-    )
+    tree1 = TreeIndex.from_documents(documents[2:6], **tree_kwargs)
+    tree2 = TreeIndex.from_documents(documents[:2] + documents[6:], **tree_kwargs)
     summaries = [
         "tree_summary1",
         "tree_summary2",
@@ -94,8 +80,7 @@ def test_recursive_query_tree_list(
         SummaryIndex,
         [tree1, tree2],
         index_summaries=summaries,
-        service_context=mock_service_context,
-        **list_kwargs
+        **list_kwargs,
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "What is?"
@@ -110,7 +95,8 @@ def test_recursive_query_tree_list(
 
 def test_recursive_query_table_list(
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     index_kwargs: Dict,
 ) -> None:
     """Test query."""
@@ -118,12 +104,8 @@ def test_recursive_query_table_list(
     table_kwargs = index_kwargs["table"]
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
-    table1 = SimpleKeywordTableIndex.from_documents(
-        documents[4:6], service_context=mock_service_context, **table_kwargs
-    )
-    table2 = SimpleKeywordTableIndex.from_documents(
-        documents[2:3], service_context=mock_service_context, **table_kwargs
-    )
+    table1 = SimpleKeywordTableIndex.from_documents(documents[4:6], **table_kwargs)
+    table2 = SimpleKeywordTableIndex.from_documents(documents[2:3], **table_kwargs)
     summaries = [
         "table_summary1",
         "table_summary2",
@@ -133,8 +115,7 @@ def test_recursive_query_table_list(
         SummaryIndex,
         [table1, table2],
         index_summaries=summaries,
-        service_context=mock_service_context,
-        **list_kwargs
+        **list_kwargs,
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "World?"
@@ -149,7 +130,8 @@ def test_recursive_query_table_list(
 
 def test_recursive_query_list_table(
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     index_kwargs: Dict,
 ) -> None:
     """Test query."""
@@ -158,18 +140,10 @@ def test_recursive_query_list_table(
     # try building a tree for a group of 4, then a list
     # use a diff set of documents
     # try building a list for every two, then a tree
-    list1 = SummaryIndex.from_documents(
-        documents[0:2], service_context=mock_service_context, **list_kwargs
-    )
-    list2 = SummaryIndex.from_documents(
-        documents[2:4], service_context=mock_service_context, **list_kwargs
-    )
-    list3 = SummaryIndex.from_documents(
-        documents[4:6], service_context=mock_service_context, **list_kwargs
-    )
-    list4 = SummaryIndex.from_documents(
-        documents[6:8], service_context=mock_service_context, **list_kwargs
-    )
+    list1 = SummaryIndex.from_documents(documents[0:2], **list_kwargs)
+    list2 = SummaryIndex.from_documents(documents[2:4], **list_kwargs)
+    list3 = SummaryIndex.from_documents(documents[4:6], **list_kwargs)
+    list4 = SummaryIndex.from_documents(documents[6:8], **list_kwargs)
     summaries = [
         "foo bar",
         "apple orange",
@@ -181,8 +155,7 @@ def test_recursive_query_list_table(
         SimpleKeywordTableIndex,
         [list1, list2, list3, list4],
         index_summaries=summaries,
-        service_context=mock_service_context,
-        **table_kwargs
+        **table_kwargs,
     )
     assert isinstance(graph, ComposableGraph)
     query_str = "Foo?"

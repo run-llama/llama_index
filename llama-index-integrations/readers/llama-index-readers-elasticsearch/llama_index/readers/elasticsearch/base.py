@@ -35,6 +35,9 @@ class ElasticsearchReader(BasePydanticReader):
         self, endpoint: str, index: str, httpx_client_args: Optional[dict] = None
     ):
         """Initialize with parameters."""
+        super().__init__(
+            endpoint=endpoint, index=index, httpx_client_args=httpx_client_args
+        )
         import_err_msg = """
             `httpx` package not found. Install via `pip install httpx`
         """
@@ -43,10 +46,6 @@ class ElasticsearchReader(BasePydanticReader):
         except ImportError:
             raise ImportError(import_err_msg)
         self._client = httpx.Client(base_url=endpoint, **(httpx_client_args or {}))
-
-        super().__init__(
-            endpoint=endpoint, index=index, httpx_client_args=httpx_client_args
-        )
 
     @classmethod
     def class_name(cls) -> str:

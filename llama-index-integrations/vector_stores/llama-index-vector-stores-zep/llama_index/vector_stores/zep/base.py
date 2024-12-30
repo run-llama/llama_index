@@ -55,8 +55,8 @@ class ZepVectorStore(BasePydanticVectorStore):
         ```
     """
 
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
 
     _client: ZepClient = PrivateAttr()
     _collection: DocumentCollection = PrivateAttr()

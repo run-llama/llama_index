@@ -1,5 +1,5 @@
 from llama_index.core.tools.types import BaseTool, ToolOutput, adapt_to_async_tool
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Sequence
 from llama_index.core.llms.llm import ToolSelection
 import json
 
@@ -60,7 +60,7 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
 
 def call_tool_with_selection(
     tool_call: ToolSelection,
-    tools: List["BaseTool"],
+    tools: Sequence["BaseTool"],
     verbose: bool = False,
 ) -> ToolOutput:
     from llama_index.core.tools.calling import call_tool
@@ -83,7 +83,7 @@ def call_tool_with_selection(
 
 async def acall_tool_with_selection(
     tool_call: ToolSelection,
-    tools: List["BaseTool"],
+    tools: Sequence["BaseTool"],
     verbose: bool = False,
 ) -> ToolOutput:
     from llama_index.core.tools.calling import acall_tool

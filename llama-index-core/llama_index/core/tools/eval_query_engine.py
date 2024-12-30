@@ -37,9 +37,9 @@ class EvalQueryEngineTool(QueryEngineTool):
     def __init__(
         self,
         evaluator: BaseEvaluator,
-        *args,
+        *args: Any,
         failed_tool_output_template: str = FAILED_TOOL_OUTPUT_TEMPLATE,
-        **kwargs
+        **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
         self._evaluator = evaluator
@@ -63,10 +63,11 @@ class EvalQueryEngineTool(QueryEngineTool):
     def from_defaults(
         cls,
         query_engine: BaseQueryEngine,
-        evaluator: Optional[BaseEvaluator] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        return_direct: bool = False,
         resolve_input_errors: bool = True,
+        evaluator: Optional[BaseEvaluator] = None,
     ) -> "EvalQueryEngineTool":
         return cls(
             evaluator=evaluator or AnswerRelevancyEvaluator(),
@@ -74,6 +75,7 @@ class EvalQueryEngineTool(QueryEngineTool):
             metadata=ToolMetadata(
                 name=name or DEFAULT_NAME,
                 description=description or DEFAULT_DESCRIPTION,
+                return_direct=return_direct,
             ),
             resolve_input_errors=resolve_input_errors,
         )

@@ -1,12 +1,10 @@
 from typing import Dict, Type
 
-from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.llms.llm import LLM
 from llama_index.core.llms.mock import MockLLM
 
 RECOGNIZED_LLMS: Dict[str, Type[LLM]] = {
     MockLLM.class_name(): MockLLM,
-    CustomLLM.class_name(): CustomLLM,
 }
 
 # Conditionals for llama-cloud support
@@ -25,7 +23,7 @@ except ImportError:
     pass
 
 try:
-    from llama_index.llms.huggingface import (
+    from llama_index.llms.huggingface_api import (
         HuggingFaceInferenceAPI,
     )  # pants: no-infer-dep
 

@@ -40,7 +40,7 @@ class NeptuneVectorQueryException(Exception):
 
 class NeptuneAnalyticsVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
-    flat_metadata = True
+    flat_metadata: bool = True
 
     node_label: str
     graph_identifier: str

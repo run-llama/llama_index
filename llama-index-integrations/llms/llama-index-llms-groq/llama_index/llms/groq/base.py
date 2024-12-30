@@ -5,7 +5,8 @@ from llama_index.llms.openai_like import OpenAILike
 
 
 class Groq(OpenAILike):
-    """Groq LLM.
+    """
+    Groq LLM.
 
     Examples:
         `pip install llama-index-llms-groq`
@@ -14,7 +15,7 @@ class Groq(OpenAILike):
         from llama_index.llms.groq import Groq
 
         # Set up the Groq class with the required model and API key
-        llm = Groq(model="mixtral-8x7b-32768", api_key="your_api_key")
+        llm = Groq(model="llama3-70b-8192", api_key="your_api_key")
 
         # Call the complete method with a query
         response = llm.complete("Explain the importance of low latency LLMs")

@@ -11,8 +11,7 @@ from llama_index.core.prompts.mixin import (
     PromptMixinType,
 )
 from llama_index.core.query_engine.flare.schema import QueryTask
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 
 
 class BaseLookaheadAnswerInserter(PromptMixin):
@@ -142,11 +141,10 @@ class LLMLookaheadAnswerInserter(BaseLookaheadAnswerInserter):
     def __init__(
         self,
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         answer_insert_prompt: Optional[BasePromptTemplate] = None,
     ) -> None:
         """Init params."""
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._answer_insert_prompt = (
             answer_insert_prompt or DEFAULT_ANSWER_INSERT_PROMPT
         )

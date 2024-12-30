@@ -162,10 +162,13 @@ def _process_files(client: Any, files: List[str]) -> Dict[str, str]:
     return file_dict
 
 
-def format_attachments(file_ids: Optional[List[str]] = None) -> List[Dict[str, str]]:
-    """Create attachments from file_ids."""
+def format_attachments(
+    file_ids: Optional[List[str]] = None, tools: Optional[List[Dict[str, Any]]] = None
+) -> List[Dict[str, Any]]:
+    """Create attachments from file_ids and include tools."""
     file_ids = file_ids or []
-    return [{"file_id": file_id} for file_id in file_ids]
+    tools = tools or [{"type": "file_search"}]  # Default tool if none provided
+    return [{"file_id": file_id, "tools": tools} for file_id in file_ids]
 
 
 class OpenAIAssistantAgent(BaseAgent):
@@ -365,9 +368,14 @@ class OpenAIAssistantAgent(BaseAgent):
         """Upload files."""
         return _process_files(self._client, files)
 
-    def add_message(self, message: str, file_ids: Optional[List[str]] = None) -> Any:
+    def add_message(
+        self,
+        message: str,
+        file_ids: Optional[List[str]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Any:
         """Add message to assistant."""
-        attachments = format_attachments(file_ids=file_ids)
+        attachments = format_attachments(file_ids=file_ids, tools=tools)
         return self._client.beta.threads.messages.create(
             thread_id=self._thread_id,
             role="user",

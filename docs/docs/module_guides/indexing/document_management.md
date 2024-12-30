@@ -9,9 +9,6 @@ You can "insert" a new Document into any index data structure, after building th
 The underlying mechanism behind insertion depends on the index structure. For instance, for the summary index, a new Document is inserted as additional node(s) in the list.
 For the vector store index, a new Document (and embeddings) is inserted into the underlying document/embedding store.
 
-An example notebook showcasing our insert capabilities is given [here](https://github.com/jerryjliu/llama_index/blob/main/examples/paul_graham_essay/InsertDemo.ipynb).
-In this notebook we showcase how to construct an empty index, manually create Document objects, and add those to our index data structures.
-
 An example code snippet is given below:
 
 ```python
@@ -47,13 +44,8 @@ If a Document is already present within an index, you can "update" a Document wi
 ```python
 # NOTE: the document has a `doc_id` specified
 doc_chunks[0].text = "Brand new document text"
-index.update_ref_doc(
-    doc_chunks[0],
-    update_kwargs={"delete_kwargs": {"delete_from_docstore": True}},
-)
+index.update_ref_doc(doc_chunks[0])
 ```
-
-Here, we passed some extra kwargs to ensure the document is deleted from the docstore. This is of course optional.
 
 ## Refresh
 
@@ -76,9 +68,7 @@ doc_chunks.append(
 )
 
 # refresh the index
-refreshed_docs = index.refresh_ref_docs(
-    doc_chunks, update_kwargs={"delete_kwargs": {"delete_from_docstore": True}}
-)
+refreshed_docs = index.refresh_ref_docs(doc_chunks)
 
 # refreshed_docs[0] and refreshed_docs[-1] should be true
 ```

@@ -51,7 +51,7 @@ class OpenRouter(OpenAILike):
     )
     is_chat_model: bool = Field(
         default=True,
-        description=LLMMetadata.__fields__["is_chat_model"].field_info.description,
+        description=LLMMetadata.model_fields["is_chat_model"].description,
     )
 
     def __init__(

@@ -8,7 +8,7 @@ It can be built on top of [indexes](../../indexing/index.md), but can also be de
 It is used as a key building block in [query engines](../../deploying/query_engine/index.md) (and [Chat Engines](../../deploying/chat_engines/index.md)) for retrieving relevant context.
 
 !!! tip
-    Confused about where retriever fits in the pipeline? Read about [high-level concepts](../../../getting_started/concepts.md)
+    Confused about where retriever fits in the RAG workflow? Read about [high-level concepts](../../../getting_started/concepts.md)
 
 ## Usage Pattern
 

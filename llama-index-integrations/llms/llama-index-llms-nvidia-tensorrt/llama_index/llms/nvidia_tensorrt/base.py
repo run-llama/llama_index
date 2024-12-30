@@ -162,8 +162,8 @@ class LocalTensorRTLLM(CustomLLM):
 
         model_kwargs = model_kwargs or {}
         model_kwargs.update({"n_ctx": context_window, "verbose": verbose})
-        self._max_new_tokens = max_new_tokens
-        self._verbose = verbose
+        max_new_tokens = max_new_tokens
+        verbose = verbose
         # check if model is cached
         if model_path is not None:
             if not os.path.exists(model_path):
@@ -204,7 +204,7 @@ class LocalTensorRTLLM(CustomLLM):
                     num_kv_heads = 1
                 num_kv_heads = (num_kv_heads + tp_size - 1) // tp_size
 
-                self._model_config = ModelConfig(
+                model_config = ModelConfig(
                     num_heads=num_heads,
                     num_kv_heads=num_kv_heads,
                     hidden_size=hidden_size,
@@ -231,10 +231,8 @@ class LocalTensorRTLLM(CustomLLM):
                     torch.cuda.is_available()
                 ), "LocalTensorRTLLM requires a Nvidia CUDA enabled GPU to operate"
                 torch.cuda.set_device(runtime_rank % runtime_mapping.gpus_per_node)
-                self._tokenizer = AutoTokenizer.from_pretrained(
-                    tokenizer_dir, legacy=False
-                )
-                self._sampling_config = SamplingConfig(
+                tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir, legacy=False)
+                sampling_config = SamplingConfig(
                     end_id=EOS_TOKEN,
                     pad_id=PAD_TOKEN,
                     num_beams=1,
@@ -245,9 +243,9 @@ class LocalTensorRTLLM(CustomLLM):
                 with open(serialize_path, "rb") as f:
                     engine_buffer = f.read()
                 decoder = tensorrt_llm.runtime.GenerationSession(
-                    self._model_config, engine_buffer, runtime_mapping, debug_mode=False
+                    model_config, engine_buffer, runtime_mapping, debug_mode=False
                 )
-                self._model = decoder
+                model = decoder
 
         generate_kwargs = generate_kwargs or {}
         generate_kwargs.update(
@@ -266,6 +264,12 @@ class LocalTensorRTLLM(CustomLLM):
             model_kwargs=model_kwargs,
             verbose=verbose,
         )
+        self._model = model
+        self._model_config = model_config
+        self._tokenizer = tokenizer
+        self._sampling_config = sampling_config
+        self._max_new_tokens = max_new_tokens
+        self._verbose = verbose
 
     @classmethod
     def class_name(cls) -> str:

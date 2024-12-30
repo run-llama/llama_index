@@ -63,7 +63,7 @@ class OpenVINOLLM(HuggingFaceLLM):
         }
 
         llm = OpenVINOLLM(
-            model_name="HuggingFaceH4/zephyr-7b-beta",
+            model_id_or_path="HuggingFaceH4/zephyr-7b-beta",
             tokenizer_name="HuggingFaceH4/zephyr-7b-beta",
             context_window=3900,
             max_new_tokens=256,
@@ -79,18 +79,11 @@ class OpenVINOLLM(HuggingFaceLLM):
         ```
     """
 
-    model_name: str = Field(
+    model_id_or_path: str = Field(
         default=DEFAULT_HUGGINGFACE_MODEL,
         description=(
             "The model name to use from HuggingFace. "
             "Unused if `model` is passed in directly."
-        ),
-    )
-    tokenizer_name: str = Field(
-        default=DEFAULT_HUGGINGFACE_MODEL,
-        description=(
-            "The name of the tokenizer to use from HuggingFace. "
-            "Unused if `tokenizer` is passed in directly."
         ),
     )
 
@@ -99,8 +92,7 @@ class OpenVINOLLM(HuggingFaceLLM):
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
         query_wrapper_prompt: Union[str, PromptTemplate] = "{query_str}",
-        tokenizer_name: str = DEFAULT_HUGGINGFACE_MODEL,
-        model_name: str = DEFAULT_HUGGINGFACE_MODEL,
+        model_id_or_path: str = DEFAULT_HUGGINGFACE_MODEL,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
         device_map: Optional[str] = "auto",
@@ -155,22 +147,22 @@ class OpenVINOLLM(HuggingFaceLLM):
             except Exception:
                 return True
 
-        if require_model_export(model_name):
+        if require_model_export(model_id_or_path):
             # use remote model
             ov_model = model or OVModelForCausalLM.from_pretrained(
-                model_name, export=True, device=device_map, **model_kwargs
+                model_id_or_path, export=True, device=device_map, **model_kwargs
             )
         else:
             # use local model
             ov_model = model or OVModelForCausalLM.from_pretrained(
-                model_name, device=device_map, **model_kwargs
+                model_id_or_path, device=device_map, **model_kwargs
             )
         super().__init__(
             context_window=context_window,
             max_new_tokens=max_new_tokens,
             query_wrapper_prompt=query_wrapper_prompt,
-            tokenizer_name=tokenizer_name,
-            model_name=model_name,
+            tokenizer_name=model_id_or_path,
+            model_name=model_id_or_path,
             model=ov_model,
             tokenizer=tokenizer,
             device_map=device_map,

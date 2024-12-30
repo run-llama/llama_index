@@ -97,7 +97,7 @@ class BatchEvalRunner:
         self.asyncio_mod = asyncio_module(show_progress=self.show_progress)
 
     def _format_results(
-        self, results: List[EvaluationResult]
+        self, results: List[Tuple[str, EvaluationResult]]
     ) -> Dict[str, List[EvaluationResult]]:
         """Format results."""
         # Format results
@@ -352,7 +352,7 @@ class BatchEvalRunner:
         queries: Optional[List[str]] = None,
         response_strs: Optional[List[str]] = None,
         contexts_list: Optional[List[List[str]]] = None,
-        **eval_kwargs_lists: List,
+        **eval_kwargs_lists: Dict[str, Any],
     ) -> Dict[str, List[EvaluationResult]]:
         """
         Evaluate query, response pairs.

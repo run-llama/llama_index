@@ -1,7 +1,7 @@
 """Base vector store index query."""
 
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from llama_index.core.base.base_multi_modal_retriever import (
     MultiModalRetriever,
@@ -11,7 +11,6 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
 from llama_index.core.data_structs.data_structs import IndexDict
 from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
-from llama_index.core.indices.multi_modal.base import MultiModalVectorStoreIndex
 from llama_index.core.indices.utils import log_vector_store_query_result
 from llama_index.core.schema import (
     NodeWithScore,
@@ -19,10 +18,7 @@ from llama_index.core.schema import (
     QueryBundle,
     QueryType,
 )
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
     BasePydanticVectorStore,
@@ -31,12 +27,15 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 
+if TYPE_CHECKING:
+    from llama_index.core.indices.multi_modal.base import MultiModalVectorStoreIndex
+
 
 class MultiModalVectorIndexRetriever(MultiModalRetriever):
     """Multi Modal Vector index retriever.
 
     Args:
-        index (MultiModalVectorIndexRetriever): Multi Modal vector store index for images and texts.
+        index (MultiModalVectorStoreIndex): Multi Modal vector store index for images and texts.
         similarity_top_k (int): number of top k results to return.
         vector_store_query_mode (str): vector store query mode
             See reference for VectorStoreQueryMode for full list of supported modes.
@@ -51,7 +50,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
 
     def __init__(
         self,
-        index: MultiModalVectorStoreIndex,
+        index: "MultiModalVectorStoreIndex",
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         image_similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         vector_store_query_mode: VectorStoreQueryMode = VectorStoreQueryMode.DEFAULT,
@@ -72,8 +71,6 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         assert isinstance(self._index.image_embed_model, BaseEmbedding)
         self._image_embed_model = index._image_embed_model
         self._embed_model = index._embed_model
-
-        self._service_context = self._index.service_context
         self._docstore = self._index.docstore
 
         self._similarity_top_k = similarity_top_k
@@ -86,12 +83,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self._sparse_top_k = sparse_top_k
 
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
-        self.callback_manager = (
-            callback_manager
-            or callback_manager_from_settings_or_context(
-                Settings, self._service_context
-            )
-        )
+        self.callback_manager = callback_manager or Settings.callback_manager
 
     @property
     def similarity_top_k(self) -> int:
@@ -260,9 +252,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
                 ):
                     node_id = query_result.nodes[i].node_id
                     if self._docstore.document_exists(node_id):
-                        query_result.nodes[
-                            i
-                        ] = self._docstore.get_node(  # type: ignore[index]
+                        query_result.nodes[i] = self._docstore.get_node(  # type: ignore[index]
                             node_id
                         )
 

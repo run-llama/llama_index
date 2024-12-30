@@ -1,3 +1,5 @@
+import os
+
 from collections import defaultdict
 from enum import Enum
 from tree_sitter import Node
@@ -119,6 +121,20 @@ _DEFAULT_SIGNATURE_IDENTIFIERS: Dict[str, Dict[str, _SignatureCaptureOptions]] =
             name_identifier="property_identifier",
         ),
     },
+    "php": {
+        "function_definition": _SignatureCaptureOptions(
+            end_signature_types=[_SignatureCaptureType(type="}", inclusive=False)],
+            name_identifier="name",
+        ),
+        "class_declaration": _SignatureCaptureOptions(
+            end_signature_types=[_SignatureCaptureType(type="}", inclusive=False)],
+            name_identifier="name",
+        ),
+        "method_declaration": _SignatureCaptureOptions(
+            end_signature_types=[_SignatureCaptureType(type="}", inclusive=False)],
+            name_identifier="name",
+        ),
+    },
 }
 
 
@@ -144,6 +160,9 @@ _COMMENT_OPTIONS: Dict[str, _CommentOptions] = {
         comment_template="# {}", scope_method=_ScopeMethod.INDENTATION
     ),
     "typescript": _CommentOptions(
+        comment_template="// {}", scope_method=_ScopeMethod.BRACKETS
+    ),
+    "php": _CommentOptions(
         comment_template="// {}", scope_method=_ScopeMethod.BRACKETS
     ),
 }
@@ -230,13 +249,8 @@ class CodeHierarchyNodeParser(NodeParser):
     ):
         callback_manager = callback_manager or CallbackManager([])
 
-        if signature_identifiers is None:
-            try:
-                signature_identifiers = _DEFAULT_SIGNATURE_IDENTIFIERS[language]
-            except KeyError:
-                raise ValueError(
-                    f"Must provide signature_identifiers for language {language}."
-                )
+        if signature_identifiers is None and language in _DEFAULT_SIGNATURE_IDENTIFIERS:
+            signature_identifiers = _DEFAULT_SIGNATURE_IDENTIFIERS[language]
 
         super().__init__(
             include_prev_next_rel=False,
@@ -529,6 +543,14 @@ class CodeHierarchyNodeParser(NodeParser):
 
         try:
             parser = tree_sitter_languages.get_parser(self.language)
+            language = tree_sitter_languages.get_language(self.language)
+
+            # Construct the path to the SCM file
+            scm_fname = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "pytree-sitter-queries",
+                f"tree-sitter-{self.language}-tags.scm",
+            )
         except Exception as e:
             print(
                 f"Could not get parser for language {self.language}. Check "
@@ -537,12 +559,37 @@ class CodeHierarchyNodeParser(NodeParser):
             )
             raise e  # noqa: TRY201
 
+        query = None
+        if self.signature_identifiers is None:
+            assert os.path.exists(scm_fname), f"Could not find {scm_fname}"
+            fp = open(scm_fname)
+            query_scm = fp.read()
+            query = language.query(query_scm)
+
         nodes_with_progress = get_tqdm_iterable(
             nodes, show_progress, "Parsing documents into nodes"
         )
+
         for node in nodes_with_progress:
             text = node.text
             tree = parser.parse(bytes(text, "utf-8"))
+
+            if self.signature_identifiers is None:
+                assert query is not None
+                self.signature_identifiers = {}
+                tag_to_type = {}
+                captures = query.captures(tree.root_node)
+                for _node, _tag in captures:
+                    tag_to_type[_tag] = _node.type
+                    if _tag.startswith("name.definition"):
+                        # ignore name.
+                        parent_tag = _tag[5:]
+                        assert parent_tag in tag_to_type
+                        parent_type = tag_to_type[parent_tag]
+                        if parent_type not in self.signature_identifiers:
+                            self.signature_identifiers[
+                                parent_type
+                            ] = _SignatureCaptureOptions(name_identifier=_node.type)
 
             if (
                 not tree.root_node.children

@@ -3,6 +3,8 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
+from llama_index.core.instrumentation import DispatcherSpanMixin
+
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
 from deprecated import deprecated
@@ -32,11 +34,11 @@ class ToolMetadata:
                 "required": ["input"],
             }
         else:
-            parameters = self.fn_schema.schema()
+            parameters = self.fn_schema.model_json_schema()
             parameters = {
                 k: v
                 for k, v in parameters.items()
-                if k in ["type", "properties", "required", "definitions"]
+                if k in ["type", "properties", "required", "definitions", "$defs"]
             }
         return parameters
 
@@ -46,7 +48,7 @@ class ToolMetadata:
         if self.fn_schema is None:
             raise ValueError("fn_schema is None.")
         parameters = self.get_parameters_dict()
-        return json.dumps(parameters)
+        return json.dumps(parameters, ensure_ascii=False)
 
     def get_name(self) -> str:
         """Get name."""
@@ -99,7 +101,7 @@ class ToolOutput(BaseModel):
         return str(self.content)
 
 
-class BaseTool:
+class BaseTool(DispatcherSpanMixin):
     @property
     @abstractmethod
     def metadata(self) -> ToolMetadata:

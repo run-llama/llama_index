@@ -2,12 +2,10 @@ import os
 
 import openai
 from llama_index import (
-    ServiceContext,
     StorageContext,
     VectorStoreIndex,
     load_index_from_storage,
 )
-from llama_index.core.llms import OpenAI
 from llama_index.core.query_engine import CitationQueryEngine
 from llama_index.readers.semanticscholar.base import SemanticScholarReader
 
@@ -16,9 +14,6 @@ s2reader = SemanticScholarReader()
 
 # initialize the service context
 openai.api_key = os.environ["OPENAI_API_KEY"]
-service_context = ServiceContext.from_defaults(
-    llm=OpenAI(model="gpt-3.5-turbo", temperature=0)
-)
 
 query_space = "large language models"
 query_string = "limitations of using large language models"
@@ -35,12 +30,11 @@ persist_dir = (
 if not os.path.exists(persist_dir):
     # Load data from Semantic Scholar
     documents = s2reader.load_data(query_space, total_papers, full_text=full_text)
-    index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+    index = VectorStoreIndex.from_documents(documents)
     index.storage_context.persist(persist_dir=persist_dir)
 else:
     index = load_index_from_storage(
         StorageContext.from_defaults(persist_dir=persist_dir),
-        service_context=service_context,
     )
 # initialize the citation query engine
 query_engine = CitationQueryEngine.from_args(

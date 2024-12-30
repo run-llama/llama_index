@@ -15,12 +15,13 @@ pip install llama-index-readers-mongodb
 ### Usage
 
 ```python
-from llama_index.readers.mongo import SimpleMongoReader
+from llama_index.readers.mongodb import SimpleMongoReader
 
 # Initialize SimpleMongoReader
 reader = SimpleMongoReader(
     host="<Mongo Host>",  # Mongo host address
     port=27017,  # Mongo port (default: 27017)
+    uri="<Mongo Connection String>",  # Provide the URI if not using host and port
 )
 
 # Lazy load data from MongoDB

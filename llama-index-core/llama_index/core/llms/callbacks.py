@@ -22,6 +22,7 @@ from llama_index.core.callbacks import CallbackManager, CBEventType, EventPayloa
 
 # dispatcher setup
 from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.exception import ExceptionEvent
 from llama_index.core.instrumentation.span import active_span_id
 from llama_index.core.instrumentation.events.llm import (
     LLMCompletionEndEvent,
@@ -41,17 +42,16 @@ def llm_chat_callback() -> Callable:
         def wrapper_logic(_self: Any) -> Generator[CallbackManager, None, None]:
             callback_manager = getattr(_self, "callback_manager", None)
             if not isinstance(callback_manager, CallbackManager):
-                raise ValueError(
-                    "Cannot use llm_chat_callback on an instance "
-                    "without a callback_manager attribute."
-                )
+                _self.callback_manager = CallbackManager()
 
-            yield callback_manager
+            yield _self.callback_manager  # type: ignore
 
         async def wrapped_async_llm_chat(
             _self: Any, messages: Sequence[ChatMessage], **kwargs: Any
         ) -> Any:
-            with wrapper_logic(_self) as callback_manager:
+            with wrapper_logic(_self) as callback_manager, callback_manager.as_trace(
+                "chat"
+            ):
                 span_id = active_span_id.get()
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
@@ -84,17 +84,30 @@ def llm_chat_callback() -> Callable:
                     # intercept the generator and add a callback to the end
                     async def wrapped_gen() -> ChatResponseAsyncGen:
                         last_response = None
-                        async for x in f_return_val:
+                        try:
+                            async for x in f_return_val:
+                                dispatcher.event(
+                                    LLMChatInProgressEvent(
+                                        messages=messages,
+                                        response=x,
+                                        span_id=span_id,
+                                    )
+                                )
+                                yield cast(ChatResponse, x)
+                                last_response = x
+                        except BaseException as exception:
+                            callback_manager.on_event_end(
+                                CBEventType.LLM,
+                                payload={EventPayload.EXCEPTION: exception},
+                                event_id=event_id,
+                            )
                             dispatcher.event(
-                                LLMChatInProgressEvent(
-                                    messages=messages,
-                                    response=x,
+                                ExceptionEvent(
+                                    exception=exception,
                                     span_id=span_id,
                                 )
                             )
-                            yield cast(ChatResponse, x)
-                            last_response = x
-
+                            raise
                         callback_manager.on_event_end(
                             CBEventType.LLM,
                             payload={
@@ -134,7 +147,9 @@ def llm_chat_callback() -> Callable:
         def wrapped_llm_chat(
             _self: Any, messages: Sequence[ChatMessage], **kwargs: Any
         ) -> Any:
-            with wrapper_logic(_self) as callback_manager:
+            with wrapper_logic(_self) as callback_manager, callback_manager.as_trace(
+                "chat"
+            ):
                 span_id = active_span_id.get()
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
@@ -167,17 +182,30 @@ def llm_chat_callback() -> Callable:
                     # intercept the generator and add a callback to the end
                     def wrapped_gen() -> ChatResponseGen:
                         last_response = None
-                        for x in f_return_val:
+                        try:
+                            for x in f_return_val:
+                                dispatcher.event(
+                                    LLMChatInProgressEvent(
+                                        messages=messages,
+                                        response=x,
+                                        span_id=span_id,
+                                    )
+                                )
+                                yield cast(ChatResponse, x)
+                                last_response = x
+                        except BaseException as exception:
+                            callback_manager.on_event_end(
+                                CBEventType.LLM,
+                                payload={EventPayload.EXCEPTION: exception},
+                                event_id=event_id,
+                            )
                             dispatcher.event(
-                                LLMChatInProgressEvent(
-                                    messages=messages,
-                                    response=x,
+                                ExceptionEvent(
+                                    exception=exception,
                                     span_id=span_id,
                                 )
                             )
-                            yield cast(ChatResponse, x)
-                            last_response = x
-
+                            raise
                         callback_manager.on_event_end(
                             CBEventType.LLM,
                             payload={
@@ -261,12 +289,9 @@ def llm_completion_callback() -> Callable:
         def wrapper_logic(_self: Any) -> Generator[CallbackManager, None, None]:
             callback_manager = getattr(_self, "callback_manager", None)
             if not isinstance(callback_manager, CallbackManager):
-                raise ValueError(
-                    "Cannot use llm_completion_callback on an instance "
-                    "without a callback_manager attribute."
-                )
+                _self.callback_manager = CallbackManager()
 
-            yield callback_manager
+            yield _self.callback_manager
 
         def extract_prompt(*args: Any, **kwargs: Any) -> str:
             if len(args) > 0:
@@ -282,7 +307,9 @@ def llm_completion_callback() -> Callable:
             _self: Any, *args: Any, **kwargs: Any
         ) -> Any:
             prompt = extract_prompt(*args, **kwargs)
-            with wrapper_logic(_self) as callback_manager:
+            with wrapper_logic(_self) as callback_manager, callback_manager.as_trace(
+                "completion"
+            ):
                 span_id = active_span_id.get()
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
@@ -316,17 +343,30 @@ def llm_completion_callback() -> Callable:
                     # intercept the generator and add a callback to the end
                     async def wrapped_gen() -> CompletionResponseAsyncGen:
                         last_response = None
-                        async for x in f_return_val:
+                        try:
+                            async for x in f_return_val:
+                                dispatcher.event(
+                                    LLMCompletionInProgressEvent(
+                                        prompt=prompt,
+                                        response=x,
+                                        span_id=span_id,
+                                    )
+                                )
+                                yield cast(CompletionResponse, x)
+                                last_response = x
+                        except BaseException as exception:
+                            callback_manager.on_event_end(
+                                CBEventType.LLM,
+                                payload={EventPayload.EXCEPTION: exception},
+                                event_id=event_id,
+                            )
                             dispatcher.event(
-                                LLMCompletionInProgressEvent(
-                                    prompt=prompt,
-                                    response=x,
+                                ExceptionEvent(
+                                    exception=exception,
                                     span_id=span_id,
                                 )
                             )
-                            yield cast(CompletionResponse, x)
-                            last_response = x
-
+                            raise
                         callback_manager.on_event_end(
                             CBEventType.LLM,
                             payload={
@@ -365,7 +405,9 @@ def llm_completion_callback() -> Callable:
 
         def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
             prompt = extract_prompt(*args, **kwargs)
-            with wrapper_logic(_self) as callback_manager:
+            with wrapper_logic(_self) as callback_manager, callback_manager.as_trace(
+                "completion"
+            ):
                 span_id = active_span_id.get()
                 model_dict = _self.to_dict()
                 model_dict.pop("api_key", None)
@@ -398,17 +440,30 @@ def llm_completion_callback() -> Callable:
                     # intercept the generator and add a callback to the end
                     def wrapped_gen() -> CompletionResponseGen:
                         last_response = None
-                        for x in f_return_val:
+                        try:
+                            for x in f_return_val:
+                                dispatcher.event(
+                                    LLMCompletionInProgressEvent(
+                                        prompt=prompt,
+                                        response=x,
+                                        span_id=span_id,
+                                    )
+                                )
+                                yield cast(CompletionResponse, x)
+                                last_response = x
+                        except BaseException as exception:
+                            callback_manager.on_event_end(
+                                CBEventType.LLM,
+                                payload={EventPayload.EXCEPTION: exception},
+                                event_id=event_id,
+                            )
                             dispatcher.event(
-                                LLMCompletionInProgressEvent(
-                                    prompt=prompt,
-                                    response=x,
+                                ExceptionEvent(
+                                    exception=exception,
                                     span_id=span_id,
                                 )
                             )
-                            yield cast(CompletionResponse, x)
-                            last_response = x
-
+                            raise
                         callback_manager.on_event_end(
                             CBEventType.LLM,
                             payload={

@@ -1,5 +1,4 @@
 from typing import Any, List, Dict, Optional, Tuple
-
 from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
@@ -34,11 +33,15 @@ def remove_empty_values(input_dict):
 
 
 BASE_ENTITY_LABEL = "__Entity__"
+BASE_NODE_LABEL = "__Node__"
 EXCLUDED_LABELS = ["_Bloom_Perspective_", "_Bloom_Scene_"]
 EXCLUDED_RELS = ["_Bloom_HAS_SCENE_"]
 EXHAUSTIVE_SEARCH_LIMIT = 10000
 # Threshold for returning all available prop values in graph schema
 DISTINCT_VALUE_LIMIT = 10
+CHUNK_SIZE = 1000
+VECTOR_INDEX_NAME = "entity"
+LONG_TEXT_THRESHOLD = 52
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -70,6 +73,19 @@ RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
 
+def convert_operator(operator: str) -> str:
+    # @Todo add custom mapping for any/all
+    mapping = {}
+    mapping["=="] = "="
+    mapping["!="] = "<>"
+    mapping["nin"] = "in"
+
+    try:
+        return mapping[operator]
+    except KeyError:
+        return operator
+
+
 class Neo4jPropertyGraphStore(PropertyGraphStore):
     r"""
     Neo4j Property Graph Store.
@@ -96,6 +112,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         password (str): The password for the Neo4j database.
         url (str): The URL for the Neo4j database.
         database (Optional[str]): The name of the database to connect to. Defaults to "neo4j".
+        timeout (Optional[float]): The timeout for transactions in seconds.
+        Useful for terminating long-running queries.
+        By default, there is no timeout set.
 
     Examples:
         `pip install llama-index-graph-stores-neo4j`
@@ -117,6 +136,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             documents,
             property_graph_store=graph_store,
         )
+
+        # Close the neo4j connection explicitly.
+        graph_store.close()
         ```
     """
 
@@ -133,32 +155,66 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         refresh_schema: bool = True,
         sanitize_query_output: bool = True,
         enhanced_schema: bool = False,
+        create_indexes: bool = True,
+        timeout: Optional[float] = None,
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
-        self.enhcnaced_schema = enhanced_schema
+        self.enhanced_schema = enhanced_schema
         self._driver = neo4j.GraphDatabase.driver(
-            url, auth=(username, password), **neo4j_kwargs
+            url,
+            auth=(username, password),
+            notifications_min_severity="OFF",
+            **neo4j_kwargs,
         )
         self._async_driver = neo4j.AsyncGraphDatabase.driver(
             url,
             auth=(username, password),
+            notifications_min_severity="OFF",
             **neo4j_kwargs,
         )
         self._database = database
+        self._timeout = timeout
         self.structured_schema = {}
         if refresh_schema:
             self.refresh_schema()
+        # Verify version to check if we can use vector index
+        self.verify_version()
+        # Create index for faster imports and retrieval
+        if create_indexes:
+            self.structured_query(
+                f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_NODE_LABEL}`)
+                REQUIRE n.id IS UNIQUE;"""
+            )
+            self.structured_query(
+                f"""CREATE CONSTRAINT IF NOT EXISTS FOR (n:`{BASE_ENTITY_LABEL}`)
+                REQUIRE n.id IS UNIQUE;"""
+            )
+
+            if self._supports_vector_index:
+                self.structured_query(
+                    f"CREATE VECTOR INDEX {VECTOR_INDEX_NAME} IF NOT EXISTS "
+                    "FOR (m:__Entity__) ON m.embedding"
+                )
 
     @property
     def client(self):
         return self._driver
 
+    def close(self) -> None:
+        self._driver.close()
+
     def refresh_schema(self) -> None:
         """Refresh the schema."""
         node_query_results = self.structured_query(
             node_properties_query,
-            param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
+            param_map={
+                "EXCLUDED_LABELS": [
+                    *EXCLUDED_LABELS,
+                    BASE_ENTITY_LABEL,
+                    BASE_NODE_LABEL,
+                ]
+            },
         )
         node_properties = (
             [el["output"] for el in node_query_results] if node_query_results else []
@@ -173,7 +229,13 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
         rel_objs_query_result = self.structured_query(
             rel_query,
-            param_map={"EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]},
+            param_map={
+                "EXCLUDED_LABELS": [
+                    *EXCLUDED_LABELS,
+                    BASE_ENTITY_LABEL,
+                    BASE_NODE_LABEL,
+                ]
+            },
         )
         relationships = (
             [el["output"] for el in rel_objs_query_result]
@@ -202,7 +264,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             "metadata": {"constraint": constraint, "index": index},
         }
         schema_counts = self.structured_query(
-            "CALL apoc.meta.graphSample() YIELD nodes, relationships "
+            "CALL apoc.meta.subGraph({}) YIELD nodes, relationships "
             "RETURN nodes, [rel in relationships | {name:apoc.any.property"
             "(rel, 'type'), count: apoc.any.property(rel, 'count')}]"
             " AS relationships"
@@ -220,6 +282,19 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             )
             enhanced_info = self.structured_query(enhanced_cypher)[0]["output"]
             for prop in node_props:
+                # Map to custom types
+                # Text
+                if prop["type"] == "STRING" and any(
+                    len(value) >= LONG_TEXT_THRESHOLD
+                    for value in enhanced_info[prop["property"]]["values"]
+                ):
+                    enhanced_info[prop["property"]]["type"] = "TEXT"
+                # Embedding
+                if (
+                    prop["type"] == "LIST"
+                    and enhanced_info[prop["property"]]["max_size"] > LIST_LIMIT
+                ):
+                    enhanced_info[prop["property"]]["type"] = "EMBEDDING"
                 if prop["property"] in enhanced_info:
                     prop.update(enhanced_info[prop["property"]])
         # Update rel info
@@ -262,61 +337,68 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 pass
 
         if chunk_dicts:
-            self.structured_query(
-                """
-                UNWIND $data AS row
-                MERGE (c:Chunk {id: row.id})
-                SET c.text = row.text
-                WITH c, row
-                SET c += row.properties
-                WITH c, row.embedding AS embedding
-                WHERE embedding IS NOT NULL
-                CALL db.create.setNodeVectorProperty(c, 'embedding', embedding)
-                RETURN count(*)
-                """,
-                param_map={"data": chunk_dicts},
-            )
+            for index in range(0, len(chunk_dicts), CHUNK_SIZE):
+                chunked_params = chunk_dicts[index : index + CHUNK_SIZE]
+                self.structured_query(
+                    f"""
+                    UNWIND $data AS row
+                    MERGE (c:{BASE_NODE_LABEL} {{id: row.id}})
+                    SET c.text = row.text, c:Chunk
+                    WITH c, row
+                    SET c += row.properties
+                    WITH c, row.embedding AS embedding
+                    WHERE embedding IS NOT NULL
+                    CALL db.create.setNodeVectorProperty(c, 'embedding', embedding)
+                    RETURN count(*)
+                    """,
+                    param_map={"data": chunked_params},
+                )
 
         if entity_dicts:
-            self.structured_query(
-                """
-                UNWIND $data AS row
-                MERGE (e:`__Entity__` {id: row.id})
-                SET e += apoc.map.clean(row.properties, [], [])
-                SET e.name = row.name
-                WITH e, row
-                CALL apoc.create.addLabels(e, [row.label])
-                YIELD node
-                WITH e, row
-                CALL {
+            for index in range(0, len(entity_dicts), CHUNK_SIZE):
+                chunked_params = entity_dicts[index : index + CHUNK_SIZE]
+                self.structured_query(
+                    f"""
+                    UNWIND $data AS row
+                    MERGE (e:{BASE_NODE_LABEL} {{id: row.id}})
+                    SET e += apoc.map.clean(row.properties, [], [])
+                    SET e.name = row.name, e:`{BASE_ENTITY_LABEL}`
                     WITH e, row
+                    CALL apoc.create.addLabels(e, [row.label])
+                    YIELD node
                     WITH e, row
-                    WHERE row.embedding IS NOT NULL
-                    CALL db.create.setNodeVectorProperty(e, 'embedding', row.embedding)
-                    RETURN count(*) AS count
-                }
-                WITH e, row WHERE row.properties.triplet_source_id IS NOT NULL
-                MERGE (c:Chunk {id: row.properties.triplet_source_id})
-                MERGE (e)<-[:MENTIONS]-(c)
-                """,
-                param_map={"data": entity_dicts},
-            )
+                    CALL (e, row) {{
+                        WITH e, row
+                        WHERE row.embedding IS NOT NULL
+                        CALL db.create.setNodeVectorProperty(e, 'embedding', row.embedding)
+                        RETURN count(*) AS count
+                    }}
+                    WITH e, row WHERE row.properties.triplet_source_id IS NOT NULL
+                    MERGE (c:{BASE_NODE_LABEL} {{id: row.properties.triplet_source_id}})
+                    MERGE (e)<-[:MENTIONS]-(c)
+                    """,
+                    param_map={"data": chunked_params},
+                )
 
     def upsert_relations(self, relations: List[Relation]) -> None:
         """Add relations."""
         params = [r.dict() for r in relations]
+        for index in range(0, len(params), CHUNK_SIZE):
+            chunked_params = params[index : index + CHUNK_SIZE]
 
-        self.structured_query(
-            """
-            UNWIND $data AS row
-            MERGE (source {id: row.source_id})
-            MERGE (target {id: row.target_id})
-            WITH source, target, row
-            CALL apoc.merge.relationship(source, row.label, {}, row.properties, target) YIELD rel
-            RETURN count(*)
-            """,
-            param_map={"data": params},
-        )
+            self.structured_query(
+                f"""
+                UNWIND $data AS row
+                MERGE (source: {BASE_NODE_LABEL} {{id: row.source_id}})
+                ON CREATE SET source:Chunk
+                MERGE (target: {BASE_NODE_LABEL} {{id: row.target_id}})
+                ON CREATE SET target:Chunk
+                WITH source, target, row
+                CALL apoc.merge.relationship(source, row.label, {{}}, row.properties, target) YIELD rel
+                RETURN count(*)
+                """,
+                param_map={"data": chunked_params},
+            )
 
     def get(
         self,
@@ -324,14 +406,13 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> List[LabelledNode]:
         """Get nodes."""
-        cypher_statement = "MATCH (e) "
+        cypher_statement = f"MATCH (e: {BASE_NODE_LABEL}) "
 
         params = {}
-        if properties or ids:
-            cypher_statement += "WHERE "
+        cypher_statement += "WHERE e.id IS NOT NULL "
 
         if ids:
-            cypher_statement += "e.id in $ids "
+            cypher_statement += "AND e.id in $ids "
             params["ids"] = ids
 
         if properties:
@@ -339,7 +420,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             for i, prop in enumerate(properties):
                 prop_list.append(f"e.`{prop}` = $property_{i}")
                 params[f"property_{i}"] = properties[prop]
-            cypher_statement += " AND ".join(prop_list)
+            cypher_statement += " AND " + " AND ".join(prop_list)
 
         return_statement = """
         WITH e
@@ -350,6 +431,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         cypher_statement += return_statement
 
         response = self.structured_query(cypher_statement, param_map=params)
+        response = response if response else []
 
         nodes = []
         for record in response:
@@ -383,7 +465,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         ids: Optional[List[str]] = None,
     ) -> List[Triplet]:
         # TODO: handle ids of chunk nodes
-        cypher_statement = "MATCH (e:`__Entity__`) "
+        cypher_statement = f"MATCH (e:`{BASE_ENTITY_LABEL}`) "
 
         params = {}
         if entity_names or properties or ids:
@@ -406,27 +488,30 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
         return_statement = f"""
         WITH e
-        CALL {{
+        CALL (e) {{
             WITH e
-            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t)
-            RETURN e.name AS source_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS source_type,
+            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t:`{BASE_ENTITY_LABEL}`)
+            RETURN e.name AS source_id, [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
-                   t.name AS target_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS target_type,
+                   r{{.*}} AS rel_properties,
+                   t.name AS target_id, [l in labels(t) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS target_type,
                    t{{.* , embedding: Null, name: Null}} AS target_properties
             UNION ALL
             WITH e
-            MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t)
-            RETURN t.name AS source_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS source_type,
-                   e{{.* , embedding: Null, name: Null}} AS source_properties,
+            MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t:`{BASE_ENTITY_LABEL}`)
+            RETURN t.name AS source_id, [l in labels(t) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
+                   t{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
-                   e.name AS target_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS target_type,
-                   t{{.* , embedding: Null, name: Null}} AS target_properties
+                   r{{.*}} AS rel_properties,
+                   e.name AS target_id, [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS target_type,
+                   e{{.* , embedding: Null, name: Null}} AS target_properties
         }}
-        RETURN source_id, source_type, type, target_id, target_type, source_properties, target_properties"""
+        RETURN source_id, source_type, type, rel_properties, target_id, target_type, source_properties, target_properties"""
         cypher_statement += return_statement
 
         data = self.structured_query(cypher_statement, param_map=params)
+        data = data if data else []
 
         triples = []
         for record in data:
@@ -444,6 +529,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 source_id=record["source_id"],
                 target_id=record["target_id"],
                 label=record["type"],
+                properties=remove_empty_values(record["rel_properties"]),
             )
             triples.append([source, rel, target])
         return triples
@@ -462,24 +548,35 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         # Needs some optimization
         response = self.structured_query(
             f"""
-            MATCH (e:`__Entity__`)
-            WHERE e.id in $ids
+            WITH $ids AS id_list
+            UNWIND range(0, size(id_list) - 1) AS idx
+            MATCH (e:`{BASE_ENTITY_LABEL}`)
+            WHERE e.id = id_list[idx]
             MATCH p=(e)-[r*1..{depth}]-(other)
             WHERE ALL(rel in relationships(p) WHERE type(rel) <> 'MENTIONS')
             UNWIND relationships(p) AS rel
-            WITH distinct rel
+            WITH distinct rel, idx
             WITH startNode(rel) AS source,
                 type(rel) AS type,
-                endNode(rel) AS endNode
-            RETURN source.id AS source_id, [l in labels(source) WHERE l <> '__Entity__' | l][0] AS source_type,
-                    source{{.* , embedding: Null, id: Null}} AS source_properties,
-                    type,
-                    endNode.id AS target_id, [l in labels(endNode) WHERE l <> '__Entity__' | l][0] AS target_type,
-                    endNode{{.* , embedding: Null, id: Null}} AS target_properties
+                rel{{.*}} AS rel_properties,
+                endNode(rel) AS endNode,
+                idx
+            LIMIT toInteger($limit)
+            RETURN source.id AS source_id, [l in labels(source)
+                   WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
+                source{{.* , embedding: Null, id: Null}} AS source_properties,
+                type,
+                rel_properties,
+                endNode.id AS target_id, [l in labels(endNode)
+                   WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS target_type,
+                endNode{{.* , embedding: Null, id: Null}} AS target_properties,
+                idx
+            ORDER BY idx
             LIMIT toInteger($limit)
             """,
             param_map={"ids": ids, "limit": limit},
         )
+        response = response if response else []
 
         ignore_rels = ignore_rels or []
         for record in response:
@@ -500,44 +597,108 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 source_id=record["source_id"],
                 target_id=record["target_id"],
                 label=record["type"],
+                properties=remove_empty_values(record["rel_properties"]),
             )
             triples.append([source, rel, target])
 
         return triples
 
     def structured_query(
-        self, query: str, param_map: Optional[Dict[str, Any]] = None
+        self,
+        query: str,
+        param_map: Optional[Dict[str, Any]] = None,
     ) -> Any:
         param_map = param_map or {}
+        try:
+            data, _, _ = self._driver.execute_query(
+                neo4j.Query(text=query, timeout=self._timeout),
+                database_=self._database,
+                parameters_=param_map,
+            )
+            full_result = [d.data() for d in data]
 
+            if self.sanitize_query_output:
+                return [value_sanitize(el) for el in full_result]
+            return full_result
+        except neo4j.exceptions.Neo4jError as e:
+            if not (
+                (
+                    (  # isCallInTransactionError
+                        e.code == "Neo.DatabaseError.Statement.ExecutionFailed"
+                        or e.code
+                        == "Neo.DatabaseError.Transaction.TransactionStartFailed"
+                    )
+                    and "in an implicit transaction" in e.message
+                )
+                or (  # isPeriodicCommitError
+                    e.code == "Neo.ClientError.Statement.SemanticError"
+                    and (
+                        "in an open transaction is not possible" in e.message
+                        or "tried to execute in an explicit transaction" in e.message
+                    )
+                )
+            ):
+                raise
+        # Fallback to allow implicit transactions
         with self._driver.session(database=self._database) as session:
-            result = session.run(query, param_map)
-            full_result = [d.data() for d in result]
+            data = session.run(
+                neo4j.Query(text=query, timeout=self._timeout), param_map
+            )
+            full_result = [d.data() for d in data]
 
-        if self.sanitize_query_output:
-            return value_sanitize(full_result)
-
-        return full_result
+            if self.sanitize_query_output:
+                return [value_sanitize(el) for el in full_result]
+            return full_result
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> Tuple[List[LabelledNode], List[float]]:
         """Query the graph store with a vector store query."""
-        data = self.structured_query(
-            """MATCH (e:`__Entity__`)
-            WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension
-            WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
-            ORDER BY score DESC LIMIT toInteger($limit)
-            RETURN e.id AS name,
-               [l in labels(e) WHERE l <> '__Entity__' | l][0] AS type,
-               e{.* , embedding: Null, name: Null, id: Null} AS properties,
-               score""",
-            param_map={
-                "embedding": query.query_embedding,
-                "dimension": len(query.query_embedding),
-                "limit": query.similarity_top_k,
-            },
+        conditions = []
+        filter_params = {}
+        if query.filters:
+            for index, filter in enumerate(query.filters.filters):
+                conditions.append(
+                    f"{'NOT' if filter.operator.value in ['nin'] else ''} e.`{filter.key}` "
+                    f"{convert_operator(filter.operator.value)} $param_{index}"
+                )
+                filter_params[f"param_{index}"] = filter.value
+        filters = (
+            f" {query.filters.condition.value} ".join(conditions)
+            if conditions
+            else "1 = 1"
         )
+        if not query.filters and self._supports_vector_index:
+            data = self.structured_query(
+                f"""CALL db.index.vector.queryNodes('{VECTOR_INDEX_NAME}', $limit, $embedding)
+                YIELD node, score RETURN node.id AS name,
+                [l in labels(node) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS type,
+                node{{.* , embedding: Null, name: Null, id: Null}} AS properties,
+                score
+                """,
+                param_map={
+                    "embedding": query.query_embedding,
+                    "limit": query.similarity_top_k,
+                },
+            )
+        else:
+            data = self.structured_query(
+                f"""MATCH (e:`{BASE_ENTITY_LABEL}`)
+                WHERE e.embedding IS NOT NULL AND size(e.embedding) = $dimension AND ({filters})
+                WITH e, vector.similarity.cosine(e.embedding, $embedding) AS score
+                ORDER BY score DESC LIMIT toInteger($limit)
+                RETURN e.id AS name,
+                [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS type,
+                e{{.* , embedding: Null, name: Null, id: Null}} AS properties,
+                score""",
+                param_map={
+                    "embedding": query.query_embedding,
+                    "dimension": len(query.query_embedding),
+                    "limit": query.similarity_top_k,
+                    **filter_params,
+                },
+            )
+        data = data if data else []
 
         nodes = []
         scores = []
@@ -607,7 +768,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 prop_type = prop["type"]
                 if prop_type == "STRING":
                     with_clauses.append(
-                        f"collect(distinct substring(toString(n.`{prop_name}`), 0, 50)) "
+                        f"collect(distinct substring(toString(coalesce(n.`{prop_name}`, '')), 0, {LONG_TEXT_THRESHOLD})) "
                         f"AS `{prop_name}_values`"
                     )
                     return_clauses.append(
@@ -633,12 +794,15 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     )
                 elif prop_type == "LIST":
                     with_clauses.append(
-                        f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, "
-                        f"max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
+                        f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "
+                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`, "
+                        # Get first 3 sub-elements of the first element as sample values
+                        f"collect(n.`{prop_name}`)[0][..3] AS `{prop_name}_values`"
                     )
                     return_clauses.append(
                         f"min_size: `{prop_name}_size_min`, "
-                        f"max_size: `{prop_name}_size_max`"
+                        f"max_size: `{prop_name}_size_max`, "
+                        f"values:`{prop_name}_values`"
                     )
                 elif prop_type in ["BOOLEAN", "POINT", "DURATION"]:
                     continue
@@ -674,7 +838,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                         )
                     else:
                         with_clauses.append(
-                            f"collect(distinct substring(n.`{prop_name}`, 0, 50)) "
+                            f"collect(distinct substring(n.`{prop_name}`, 0, {LONG_TEXT_THRESHOLD})) "
                             f"AS `{prop_name}_values`"
                         )
                         return_clauses.append(f"values: `{prop_name}_values`")
@@ -687,7 +851,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 ]:
                     if not prop_index:
                         with_clauses.append(
-                            f"collect(distinct toString(n.`{prop_name}`)) "
+                            f"collect(distinct toString(coalesce(n.`{prop_name}`, ''))) "
                             f"AS `{prop_name}_values`"
                         )
                         return_clauses.append(f"values: `{prop_name}_values`")
@@ -709,12 +873,15 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
                 elif prop_type == "LIST":
                     with_clauses.append(
-                        f"min(size(n.`{prop_name}`)) AS `{prop_name}_size_min`, "
-                        f"max(size(n.`{prop_name}`)) AS `{prop_name}_size_max`"
+                        f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "
+                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`, "
+                        # Get first 3 sub-elements of the first element as sample values
+                        f"collect(n.`{prop_name}`)[0][..3] AS `{prop_name}_values`"
                     )
                     return_clauses.append(
                         f"min_size: `{prop_name}_size_min`, "
-                        f"max_size: `{prop_name}_size_max`"
+                        f"max_size: `{prop_name}_size_max`, "
+                        f"values:`{prop_name}_values`"
                     )
                 elif prop_type in ["BOOLEAN", "POINT", "DURATION"]:
                     continue
@@ -737,15 +904,37 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
         return self.structured_schema
 
-    def get_schema_str(self, refresh: bool = False) -> str:
+    def get_schema_str(
+        self,
+        refresh: bool = False,
+        exclude_types: List[str] = [],
+        include_types: List[str] = [],
+    ) -> str:
         schema = self.get_schema(refresh=refresh)
+
+        def filter_func(x: str) -> bool:
+            return x in include_types if include_types else x not in exclude_types
+
+        filtered_schema: Dict[str, Any] = {
+            "node_props": {
+                k: v for k, v in schema.get("node_props", {}).items() if filter_func(k)
+            },
+            "rel_props": {
+                k: v for k, v in schema.get("rel_props", {}).items() if filter_func(k)
+            },
+            "relationships": [
+                r
+                for r in schema.get("relationships", [])
+                if all(filter_func(r[t]) for t in ["start", "end", "type"])
+            ],
+        }
 
         formatted_node_props = []
         formatted_rel_props = []
 
-        if self.enhcnaced_schema:
+        if self.enhanced_schema:
             # Enhanced formatting for nodes
-            for node_type, properties in schema["node_props"].items():
+            for node_type, properties in filtered_schema["node_props"].items():
                 formatted_node_props.append(f"- **{node_type}**")
                 for prop in properties:
                     example = ""
@@ -765,7 +954,12 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                                 if prop["values"]
                                 else ""
                             )
-
+                    elif prop["type"] == "TEXT":
+                        example = (
+                            f'Example: "{clean_string_values(prop["values"][0])}"'
+                            if prop["values"]
+                            else ""
+                        )
                     elif prop["type"] in [
                         "INTEGER",
                         "FLOAT",
@@ -783,15 +977,23 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                             )
                     elif prop["type"] == "LIST":
                         # Skip embeddings
-                        if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
-                            continue
-                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                        # if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
+                        #    continue
+                        example = (
+                            f'Min Size: {prop.get("min_size", "N/A")}, '
+                            f'Max Size: {prop.get("max_size", "N/A")}, '
+                            + (
+                                f'Example: [{prop["values"][0]}]'
+                                if prop.get("values") and len(prop["values"]) > 0
+                                else ""
+                            )
+                        )
                     formatted_node_props.append(
                         f"  - `{prop['property']}`: {prop['type']} {example}"
                     )
 
             # Enhanced formatting for relationships
-            for rel_type, properties in schema["rel_props"].items():
+            for rel_type, properties in filtered_schema["rel_props"].items():
                 formatted_rel_props.append(f"- **{rel_type}**")
                 for prop in properties:
                     example = ""
@@ -836,14 +1038,14 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                     )
         else:
             # Format node properties
-            for label, props in schema["node_props"].items():
+            for label, props in filtered_schema["node_props"].items():
                 props_str = ", ".join(
                     [f"{prop['property']}: {prop['type']}" for prop in props]
                 )
                 formatted_node_props.append(f"{label} {{{props_str}}}")
 
             # Format relationship properties using structured_schema
-            for type, props in schema["rel_props"].items():
+            for type, props in filtered_schema["rel_props"].items():
                 props_str = ", ".join(
                     [f"{prop['property']}: {prop['type']}" for prop in props]
                 )
@@ -852,7 +1054,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         # Format relationships
         formatted_rels = [
             f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
-            for el in schema["relationships"]
+            for el in filtered_schema["relationships"]
         ]
 
         return "\n".join(
@@ -865,6 +1067,30 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 "\n".join(formatted_rels),
             ]
         )
+
+    def verify_version(self) -> None:
+        """
+        Check if the connected Neo4j database version supports vector indexing
+        without specifying embedding dimension.
+
+        Queries the Neo4j database to retrieve its version and compares it
+        against a target version (5.23.0) that is known to support vector
+        indexing. Raises a ValueError if the connected Neo4j version is
+        not supported.
+        """
+        db_data = self.structured_query("CALL dbms.components()")
+        version = db_data[0]["versions"][0]
+        if "aura" in version:
+            version_tuple = (*map(int, version.split("-")[0].split(".")), 0)
+        else:
+            version_tuple = tuple(map(int, version.split(".")))
+
+        target_version = (5, 23, 0)
+
+        if version_tuple >= target_version:
+            self._supports_vector_index = True
+        else:
+            self._supports_vector_index = False
 
 
 Neo4jPGStore = Neo4jPropertyGraphStore

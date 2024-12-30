@@ -9,7 +9,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core.utils import get_cache_dir
-from llama_index.core import ServiceContext, VectorStoreIndex
+from llama_index.core import Settings, VectorStoreIndex
 from llama_index.core.response_synthesizers import CompactAndRefine
 from llama_index.core.query_pipeline import InputComponent
 from llama_index.core.llama_pack.base import BaseLlamaPack
@@ -50,13 +50,12 @@ def init_local_rag_cli(
         cache=IngestionCache(),
     )
 
-    service_context = ServiceContext.from_defaults(llm=llm, embed_model=embed_model)
+    Settings.llm = llm
+    Settings.embed_model = embed_model
     retriever = VectorStoreIndex.from_vector_store(
-        ingestion_pipeline.vector_store, service_context=service_context
+        ingestion_pipeline.vector_store
     ).as_retriever(similarity_top_k=8)
-    response_synthesizer = CompactAndRefine(
-        service_context=service_context, streaming=True, verbose=True
-    )
+    response_synthesizer = CompactAndRefine(streaming=True, verbose=True)
     # define query pipeline
     query_pipeline = QueryPipeline(verbose=verbose)
     query_pipeline.add_modules(

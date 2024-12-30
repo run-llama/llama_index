@@ -25,7 +25,7 @@ except ImportError:
     pass
 
 try:
-    from llama_index.embeddings.huggingface import (
+    from llama_index.embeddings.huggingface_api import (
         HuggingFaceInferenceAPIEmbedding,
     )  # pants: no-infer-dep
 

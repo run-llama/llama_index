@@ -166,7 +166,7 @@ for source_node in response.source_nodes:
 
 ## Question Generation
 
-LlamaIndex can also generate questions to answer using your data. Using in combination with the above evaluators, you can create a fully automated evaluation pipeline over your data.
+LlamaIndex can also generate questions to answer using your data. Using in combination with the above evaluators, you can create a fully automated evaluation flow over your data.
 
 ```python
 from llama_index.core import SimpleDirectoryReader

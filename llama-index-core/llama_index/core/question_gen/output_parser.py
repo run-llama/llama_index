@@ -18,7 +18,7 @@ class SubQuestionOutputParser(BaseOutputParser):
         if "items" in json_dict:
             json_dict = json_dict["items"]
 
-        sub_questions = [SubQuestion.parse_obj(item) for item in json_dict]
+        sub_questions = [SubQuestion.model_validate(item) for item in json_dict]
         return StructuredOutput(raw_output=output, parsed_output=sub_questions)
 
     def format(self, prompt_template: str) -> str:

@@ -12,7 +12,7 @@ from llama_index.llms.fireworks.utils import (
 from llama_index.llms.openai import OpenAI
 
 DEFAULT_API_BASE = "https://api.fireworks.ai/inference/v1"
-DEFAULT_MODEL = "accounts/fireworks/models/mixtral-8x7b-instruct"
+DEFAULT_MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
 
 
 class Fireworks(OpenAI):
@@ -46,6 +46,7 @@ class Fireworks(OpenAI):
         api_base: Optional[str] = DEFAULT_API_BASE,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        default_headers: Optional[Dict[str, str]] = None,
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
@@ -67,6 +68,7 @@ class Fireworks(OpenAI):
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             callback_manager=callback_manager,
+            default_headers=default_headers,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,

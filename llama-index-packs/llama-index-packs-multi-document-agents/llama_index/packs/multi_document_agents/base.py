@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 from llama_index.agent.openai import OpenAIAgent
 from llama_index.agent.openai_legacy import FnRetrieverOpenAIAgent
-from llama_index.core import ServiceContext, SummaryIndex, VectorStoreIndex
+from llama_index.core import Settings, SummaryIndex, VectorStoreIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.objects import ObjectIndex, SimpleToolNodeMapping
@@ -32,7 +32,7 @@ class MultiDocumentAgentsPack(BaseLlamaPack):
         """Init params."""
         self.node_parser = SentenceSplitter()
         self.llm = OpenAI(temperature=0, model="gpt-3.5-turbo")
-        self.service_context = ServiceContext.from_defaults(llm=self.llm)
+        Settings.llm = self.llm
 
         # Build agents dictionary
         self.agents = {}
@@ -48,10 +48,10 @@ class MultiDocumentAgentsPack(BaseLlamaPack):
             all_nodes.extend(nodes)
 
             # build vector index
-            vector_index = VectorStoreIndex(nodes, service_context=self.service_context)
+            vector_index = VectorStoreIndex(nodes)
 
             # build summary index
-            summary_index = SummaryIndex(nodes, service_context=self.service_context)
+            summary_index = SummaryIndex(nodes)
             # define query engines
             vector_query_engine = vector_index.as_query_engine()
             summary_query_engine = summary_index.as_query_engine()
