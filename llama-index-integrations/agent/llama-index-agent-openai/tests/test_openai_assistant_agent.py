@@ -250,3 +250,42 @@ async def test_arun_assistant_returns_message_if_tool_not_found(
         tool_outputs: List[ToolOutput] = sources_dict["sources"]
         assert len(tool_outputs) == 1
         assert tool_outputs[0] == NONEXISTENT_TOOL_OUTPUT
+
+
+def test_add_message_calls_agent_create_with_default_tool():
+    default_tool = [{"type": "file_search"}]
+    thread_id = "test_thread_id"
+    message_content = "Hello, this is a test message."
+    fake_message_response = {
+        "thread_id": thread_id,
+        "role": "user",
+        "content": message_content,
+    }
+    file_ids = ["file123", "file456"]
+
+    with patch("openai.OpenAI") as mock_openai:
+        mock_openai.return_value.beta.threads.messages.create.return_value = (
+            fake_message_response
+        )
+
+        agent = OpenAIAssistantAgent.from_existing(
+            assistant_id="",
+            thread_id=thread_id,
+            instructions_prefix="your_instructions_prefix",
+            run_retrieve_sleep_time=0,
+            api_key="",
+            tools=[],
+        )
+
+        result = agent.add_message(message=message_content, file_ids=file_ids, tools=[])
+
+        attachments = [
+            {"file_id": file_id, "tools": default_tool} for file_id in file_ids
+        ]
+        mock_openai.return_value.beta.threads.messages.create.assert_called_once_with(
+            thread_id=thread_id,
+            role="user",
+            content=message_content,
+            attachments=attachments,
+        )
+        assert result == fake_message_response

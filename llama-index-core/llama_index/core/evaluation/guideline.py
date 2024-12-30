@@ -1,4 +1,5 @@
 """Guideline evaluation."""
+
 import asyncio
 import logging
 from typing import Any, Optional, Sequence, Union, cast
@@ -9,8 +10,7 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.output_parsers import PydanticOutputParser
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +46,6 @@ class GuidelineEvaluator(BaseEvaluator):
     This evaluator only considers the query string and the response string.
 
     Args:
-        service_context(Optional[ServiceContext]):
-            The service context to use for evaluation.
         guidelines(Optional[str]): User-added guidelines to use for evaluation.
             Defaults to None, which uses the default guidelines.
         eval_template(Optional[Union[str, BasePromptTemplate]] ):
@@ -60,10 +58,8 @@ class GuidelineEvaluator(BaseEvaluator):
         guidelines: Optional[str] = None,
         eval_template: Optional[Union[str, BasePromptTemplate]] = None,
         output_parser: Optional[PydanticOutputParser] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> None:
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._guidelines = guidelines or DEFAULT_GUIDELINES
 
         self._eval_template: BasePromptTemplate

@@ -34,11 +34,11 @@ class ToolMetadata:
                 "required": ["input"],
             }
         else:
-            parameters = self.fn_schema.schema()
+            parameters = self.fn_schema.model_json_schema()
             parameters = {
                 k: v
                 for k, v in parameters.items()
-                if k in ["type", "properties", "required", "definitions"]
+                if k in ["type", "properties", "required", "definitions", "$defs"]
             }
         return parameters
 
@@ -48,7 +48,7 @@ class ToolMetadata:
         if self.fn_schema is None:
             raise ValueError("fn_schema is None.")
         parameters = self.get_parameters_dict()
-        return json.dumps(parameters)
+        return json.dumps(parameters, ensure_ascii=False)
 
     def get_name(self) -> str:
         """Get name."""

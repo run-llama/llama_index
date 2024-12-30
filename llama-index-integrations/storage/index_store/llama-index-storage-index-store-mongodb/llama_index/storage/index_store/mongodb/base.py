@@ -10,6 +10,7 @@ class MongoIndexStore(KVIndexStore):
     Args:
         mongo_kvstore (MongoDBKVStore): MongoDB key-value store
         namespace (str): namespace for the index store
+        collection_suffix (str): suffix for the collection name
 
     """
 
@@ -17,9 +18,12 @@ class MongoIndexStore(KVIndexStore):
         self,
         mongo_kvstore: MongoDBKVStore,
         namespace: Optional[str] = None,
+        collection_suffix: Optional[str] = None,
     ) -> None:
         """Init a MongoIndexStore."""
-        super().__init__(mongo_kvstore, namespace=namespace)
+        super().__init__(
+            mongo_kvstore, namespace=namespace, collection_suffix=collection_suffix
+        )
 
     @classmethod
     def from_uri(
@@ -27,10 +31,11 @@ class MongoIndexStore(KVIndexStore):
         uri: str,
         db_name: Optional[str] = None,
         namespace: Optional[str] = None,
+        collection_suffix: Optional[str] = None,
     ) -> "MongoIndexStore":
         """Load a MongoIndexStore from a MongoDB URI."""
         mongo_kvstore = MongoDBKVStore.from_uri(uri, db_name)
-        return cls(mongo_kvstore, namespace)
+        return cls(mongo_kvstore, namespace, collection_suffix)
 
     @classmethod
     def from_host_and_port(
@@ -39,7 +44,8 @@ class MongoIndexStore(KVIndexStore):
         port: int,
         db_name: Optional[str] = None,
         namespace: Optional[str] = None,
+        collection_suffix: Optional[str] = None,
     ) -> "MongoIndexStore":
         """Load a MongoIndexStore from a MongoDB host and port."""
         mongo_kvstore = MongoDBKVStore.from_host_and_port(host, port, db_name)
-        return cls(mongo_kvstore, namespace)
+        return cls(mongo_kvstore, namespace, collection_suffix)

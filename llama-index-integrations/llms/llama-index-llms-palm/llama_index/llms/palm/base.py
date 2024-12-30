@@ -92,10 +92,10 @@ class PaLM(CustomLLM):
             )
 
         model_name = model_name
-        self._model = models_dict[model_name]
+        model = models_dict[model_name]
 
         # get num_output
-        num_output = num_output or self._model.output_token_limit
+        num_output = num_output or model.output_token_limit
 
         generate_kwargs = generate_kwargs or {}
         super().__init__(
@@ -109,6 +109,7 @@ class PaLM(CustomLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        self._model = model
 
     @classmethod
     def class_name(cls) -> str:

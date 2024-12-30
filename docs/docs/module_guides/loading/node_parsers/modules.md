@@ -113,7 +113,6 @@ This is most useful for generating embeddings that have a very specific scope. T
 An example of setting up the parser with default settings is below. In practice, you would usually only want to adjust the window size of sentences.
 
 ```python
-import nltk
 from llama_index.core.node_parser import SentenceWindowNodeParser
 
 node_parser = SentenceWindowNodeParser.from_defaults(
@@ -130,7 +129,7 @@ A full example can be found [here in combination with the `MetadataReplacementNo
 
 ### SemanticSplitterNodeParser
 
-"Semantic chunking" is a new concept proposed Greg Kamradt in his video tutorial on 5 levels of embedding chunking: https://youtu.be/8OJC21T2SL4?t=1933.
+"Semantic chunking" is a new concept proposed Greg Kamradt in his video tutorial on 5 levels of embedding chunking: [https://youtu.be/8OJC21T2SL4?t=1933](https://youtu.be/8OJC21T2SL4?t=1933).
 
 Instead of chunking text with a **fixed** chunk size, the semantic splitter adaptively picks the breakpoint in-between sentences using embedding similarity. This ensures that a "chunk" contains sentences that are semantically related to each other.
 

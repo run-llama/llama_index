@@ -6,9 +6,9 @@ requires = ["poetry-core"]
 authors = ["Your Name <you@example.com>"]
 description = ""
 name = "contributor-1"
-version = "0.1.0"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
-llama-index = "^0.10.12"
+python = ">=3.9,<3.12"
+llama-index = "^0.14.0"
 llama-index-networks = {allow-prereleases = true, version = "^0.2.0a0"}

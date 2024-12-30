@@ -11,6 +11,7 @@ from llama_index.core.settings import Settings
 from llama_index.core.types import Model
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import OpenAIToolCall, to_openai_tool
+from deprecated import deprecated
 
 from llama_index.program.openai.utils import parse_partial_json
 
@@ -80,6 +81,7 @@ def _parse_tool_calls(
         return outputs[0]
 
 
+@deprecated("Please use `FunctionCallingProgram` instead.")
 class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
     """
     An OpenAI-based function that returns a pydantic model.
@@ -172,10 +174,12 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
+        if "tool_choice" not in llm_kwargs:
+            llm_kwargs["tool_choice"] = self._tool_choice
+
         chat_response = self._llm.chat(
             messages=messages,
             tools=[openai_fn_spec],
-            tool_choice=self._tool_choice,
             **llm_kwargs,
         )
         message = chat_response.message
@@ -206,10 +210,12 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
+        if "tool_choice" not in llm_kwargs:
+            llm_kwargs["tool_choice"] = self._tool_choice
+
         chat_response = await self._llm.achat(
             messages=messages,
             tools=[openai_fn_spec],
-            tool_choice=self._tool_choice,
             **llm_kwargs,
         )
         message = chat_response.message
@@ -242,10 +248,12 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         list_output_cls = create_list_model(self._output_cls)
         openai_fn_spec = to_openai_tool(list_output_cls, description=description)
 
+        if "tool_choice" not in llm_kwargs:
+            llm_kwargs["tool_choice"] = _default_tool_choice(list_output_cls)
+
         chat_response_gen = self._llm.stream_chat(
             messages=messages,
             tools=[openai_fn_spec],
-            tool_choice=_default_tool_choice(list_output_cls),
             **llm_kwargs,
         )
         # extract function call arguments
@@ -291,10 +299,13 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
         description = self._description_eval(**kwargs)
         openai_fn_spec = to_openai_tool(self._output_cls, description=description)
+
+        if "tool_choice" not in llm_kwargs:
+            llm_kwargs["tool_choice"] = _default_tool_choice(self._output_cls)
+
         chat_response_gen = self._llm.stream_chat(
             messages=messages,
             tools=[openai_fn_spec],
-            tool_choice=self._tool_choice,
             **llm_kwargs,
         )
         for partial_resp in chat_response_gen:

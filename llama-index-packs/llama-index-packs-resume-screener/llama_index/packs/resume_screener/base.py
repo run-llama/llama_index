@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from llama_index.core import ServiceContext
+from llama_index.core import Settings
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.response_synthesizers import TreeSummarize
 from llama_index.core.schema import NodeWithScore
@@ -61,10 +61,8 @@ class ResumeScreenerPack(BaseLlamaPack):
     ) -> None:
         self.reader = PDFReader()
         llm = llm or OpenAI(model="gpt-4")
-        service_context = ServiceContext.from_defaults(llm=llm)
-        self.synthesizer = TreeSummarize(
-            output_cls=ResumeScreenerDecision, service_context=service_context
-        )
+        Settings.llm = llm
+        self.synthesizer = TreeSummarize(output_cls=ResumeScreenerDecision)
         criteria_str = _format_criteria_str(criteria)
         self.query = QUERY_TEMPLATE.format(
             job_description=job_description, criteria_str=criteria_str

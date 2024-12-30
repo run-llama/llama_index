@@ -23,8 +23,8 @@ DEFAULT_DISTANCE_STRATEGY = "cosine"  # or "l2"
 
 
 class TiDBVectorStore(BasePydanticVectorStore):
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
 
     _connection_string: str = PrivateAttr()
     _engine_args: Dict[str, Any] = PrivateAttr()

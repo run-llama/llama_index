@@ -1,9 +1,9 @@
 """Base output parser class."""
 
-from string import Formatter
 from typing import TYPE_CHECKING, Any, Optional
 
 from llama_index.core.output_parsers.base import ChainableOutputParser
+from llama_index.core.prompts.utils import SafeFormatter
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import (
@@ -20,31 +20,22 @@ class LangchainOutputParser(ChainableOutputParser):
         """Init params."""
         self._output_parser = output_parser
         self._format_key = format_key
+        self._formatter = SafeFormatter()
 
     def parse(self, output: str) -> Any:
         """Parse, validate, and correct errors programmatically."""
-        # TODO: this object may be stringified by our upstream llmpredictor,
-        # figure out better
-        # ways to "convert" the object to a proper string format.
-        return self._output_parser.parse(output)
+        # Convert output to string if needed, then parse
+        output_str = str(output) if not isinstance(output, str) else output
+        return self._output_parser.parse(output_str)
 
     def format(self, query: str) -> str:
         """Format a query with structured output formatting instructions."""
         format_instructions = self._output_parser.get_format_instructions()
 
-        # TODO: this is a temporary hack. if there's curly brackets in the format
-        # instructions (and query is a string template), we need to
-        # escape the curly brackets in the format instructions to preserve the
-        # overall template.
-        query_tmpl_vars = {
-            v for _, v, _, _ in Formatter().parse(query) if v is not None
-        }
-        if len(query_tmpl_vars) > 0:
-            format_instructions = format_instructions.replace("{", "{{")
-            format_instructions = format_instructions.replace("}", "}}")
-
         if self._format_key is not None:
-            fmt_query = query.format(**{self._format_key: format_instructions})
+            # Use SafeFormatter for query formatting
+            self._formatter.format_dict = {self._format_key: format_instructions}
+            fmt_query = self._formatter.format(query)
         else:
             fmt_query = query + "\n\n" + format_instructions
 

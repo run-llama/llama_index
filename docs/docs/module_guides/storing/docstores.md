@@ -111,3 +111,51 @@ Under the hood, `FirestoreDocumentStore` connects to a firestore database in Goo
 You can easily reconnect to your Firestore database and reload the index by re-initializing a `FirestoreDocumentStore` with an existing `project`, `database`, and `namespace`.
 
 A more complete example can be found [here](../../examples/docstore/FirestoreDemo.ipynb)
+
+### Couchbase Document Store
+
+We support Couchbase as an alternative document store backend that persists data as `Node` objects are ingested.
+
+```python
+from llama_index.storage.docstore.couchbase import CouchbaseDocumentStore
+from llama_index.core.node_parser import SentenceSplitter
+
+from couchbase.cluster import Cluster
+from couchbase.auth import PasswordAuthenticator
+from couchbase.options import ClusterOptions
+from datetime import timedelta
+
+# create couchbase client
+auth = PasswordAuthenticator("DB_USERNAME", "DB_PASSWORD")
+options = ClusterOptions(authenticator=auth)
+
+cluster = Cluster("couchbase://localhost", options)
+
+# Wait until the cluster is ready for use.
+cluster.wait_until_ready(timedelta(seconds=5))
+
+# create parser and parse document into nodes
+parser = SentenceSplitter()
+nodes = parser.get_nodes_from_documents(documents)
+
+# create (or load) docstore and add nodes
+docstore = CouchbaseDocumentStore.from_couchbase_client(
+    client=cluster,
+    bucket_name="llama-index",
+    scope_name="_default",
+    namespace="default",
+)
+docstore.add_documents(nodes)
+
+# create storage context
+storage_context = StorageContext.from_defaults(docstore=docstore)
+
+# build index
+index = VectorStoreIndex(nodes, storage_context=storage_context)
+```
+
+Under the hood, `CouchbaseDocumentStore` connects to a Couchbase operational database and adds your nodes to a collection named under `{namespace}_data` in the specified `{bucket_name}` and `{scope_name}`.
+
+> Note: You can configure the `namespace`, `bucket` and `scope` when instantiating `CouchbaseIndexStore`. By default, the collection used is `docstore_data`. Apart from alphanumeric characters, `-`, `_` and `%` are only allowed as part of the collection name. The store will automatically convert other special characters to `_`.
+
+You can easily reconnect to your Couchbase database and reload the index by re-initializing a `CouchbaseDocumentStore` with an existing `client`, `bucket_name`, `scope_name` and `namespace`.

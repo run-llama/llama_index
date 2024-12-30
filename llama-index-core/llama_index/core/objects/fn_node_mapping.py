@@ -7,7 +7,7 @@ from llama_index.core.objects.base_node_mapping import (
     DEFAULT_PERSIST_FNAME,
     BaseObjectNodeMapping,
 )
-from llama_index.core.schema import TextNode
+from llama_index.core.schema import BaseNode
 
 
 class FnNodeMapping(BaseObjectNodeMapping[Any]):
@@ -15,18 +15,18 @@ class FnNodeMapping(BaseObjectNodeMapping[Any]):
 
     def __init__(
         self,
-        from_node_fn: Callable[[TextNode], Any],
-        to_node_fn: Callable[[Any], TextNode],
+        from_node_fn: Callable[[BaseNode], Any],
+        to_node_fn: Callable[[Any], BaseNode],
     ) -> None:
         self._to_node_fn = to_node_fn
         self._from_node_fn = from_node_fn
 
     @classmethod
-    def from_objects(
+    def from_objects(  # type: ignore
         cls,
         objs: Sequence[Any],
-        from_node_fn: Callable[[TextNode], Any],
-        to_node_fn: Callable[[Any], TextNode],
+        from_node_fn: Callable[[BaseNode], Any],
+        to_node_fn: Callable[[Any], BaseNode],
         *args: Any,
         **kwargs: Any,
     ) -> "BaseObjectNodeMapping":
@@ -36,11 +36,11 @@ class FnNodeMapping(BaseObjectNodeMapping[Any]):
     def _add_object(self, obj: Any) -> None:
         """Add object. NOTE: unused."""
 
-    def to_node(self, obj: Any) -> TextNode:
+    def to_node(self, obj: Any) -> BaseNode:
         """To node."""
         return self._to_node_fn(obj)
 
-    def _from_node(self, node: TextNode) -> Any:
+    def _from_node(self, node: BaseNode) -> Any:
         """From node."""
         return self._from_node_fn(node)
 

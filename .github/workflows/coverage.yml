@@ -1,0 +1,81 @@
+name: Check Coverage
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  POETRY_VERSION: "1.8.3"
+  SYSTEM_VERSION_COMPAT: "1"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest-unit-tester
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9"]
+    steps:
+      - name: clear space
+        env:
+          CI: true
+        shell: bash
+        run: rm -rf /opt/hostedtoolcache/*
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
+
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pants
+        run: |
+          curl --proto '=https' --tlsv1.2 -fsSLO https://static.pantsbuild.org/setup/get-pants.sh
+          chmod +x get-pants.sh
+          ./get-pants.sh
+
+      - name: Check BUILD files
+        run: |
+          pants tailor --check :: -docs/::
+
+      - name: Run coverage checks on changed packages
+        run: |
+          # Get the changed files
+          CHANGED_FILES=$(pants list --changed-since=origin/main)
+
+          # Find which roots contain changed files
+          CHANGED_ROOTS=""
+          FILTER_PATTERNS="["
+          for file in $CHANGED_FILES; do
+            # Start with the full path
+            root="$file"
+            # Keep going up the directory tree until we find a directory containing a marker file
+            # (e.g., 'pyproject.toml' for python projects)
+            while [[ ! -f "$root/pyproject.toml" && "$root" != "." && "$root" != "/" && "$root" != "./" ]]; do
+              root=$(dirname "$root")
+            done
+
+            if [[ "$root" != "." && "$root" != "/" && "$root" != "./" && ! "$FILTER_PATTERNS" =~ "$root" ]]; then
+              FILTER_PATTERNS="${FILTER_PATTERNS}'${root}/llama_index',"
+              CHANGED_ROOTS="${CHANGED_ROOTS} ${root}/::"
+            fi
+          done
+
+          # remove the last comma and close the bracket
+          FILTER_PATTERNS="${FILTER_PATTERNS%,}]"
+
+          echo "Coverage filter patterns: $FILTER_PATTERNS"
+          echo "Changed roots: $CHANGED_ROOTS"
+
+          pants --level=error --no-local-cache test \
+            --test-use-coverage \
+            --coverage-py-filter="${FILTER_PATTERNS}" \
+            ${CHANGED_ROOTS}

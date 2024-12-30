@@ -42,15 +42,14 @@ class ColbertRerank(BaseNodePostprocessor):
         keep_retrieval_score: Optional[bool] = False,
     ):
         device = infer_torch_device() if device is None else device
-        self._tokenizer = AutoTokenizer.from_pretrained(tokenizer)
-        self._model = AutoModel.from_pretrained(model)
         super().__init__(
             top_n=top_n,
-            model=model,
-            tokenizer=tokenizer,
             device=device,
             keep_retrieval_score=keep_retrieval_score,
+            model=model,
         )
+        self._tokenizer = AutoTokenizer.from_pretrained(tokenizer)
+        self._model = AutoModel.from_pretrained(model)
 
     @classmethod
     def class_name(cls) -> str:

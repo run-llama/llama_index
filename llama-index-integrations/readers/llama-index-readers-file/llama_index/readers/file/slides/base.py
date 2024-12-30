@@ -5,6 +5,7 @@ Contains parsers for .pptx files.
 """
 
 import os
+import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional
 from fsspec import AbstractFileSystem
@@ -107,12 +108,14 @@ class PptxReader(BaseReader):
                     # get image "file" contents
                     image_bytes = image.blob
                     # temporarily save the image to feed into model
-                    image_filename = f"tmp_image.{image.ext}"
-                    with open(image_filename, "wb") as f:
+                    f = tempfile.NamedTemporaryFile("wb", delete=False)
+                    try:
                         f.write(image_bytes)
-                    result += f"\n Image: {self.caption_image(image_filename)}\n\n"
+                        f.close()
+                        result += f"\n Image: {self.caption_image(f.name)}\n\n"
+                    finally:
+                        os.unlink(f.name)
 
-                    os.remove(image_filename)
                 if hasattr(shape, "text"):
                     result += f"{shape.text}\n"
 

@@ -7,10 +7,10 @@ authors = ["Your Name <you@example.com>"]
 description = ""
 name = "contributor-2"
 readme = "README.md"
-version = "0.1.0"
+version = "0.2.0"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-llama-index = "^0.10.20"
+llama-index = "^0.14.0"
 llama-index-networks = {allow-prereleases = true, version = "^0.2.1a2"}
 llama-index-packs-diff-private-simple-dataset = {allow-prereleases = true, version = "^0.1.0a0"}

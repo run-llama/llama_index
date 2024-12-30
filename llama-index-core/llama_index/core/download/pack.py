@@ -92,7 +92,7 @@ def download_module_and_reqs(
 
     # Install dependencies
     if os.path.exists(pyproject_toml_path):
-        with ChangeDirectory(local_dir_path):
+        with ChangeDirectory(str(local_dir_path)):
             subprocess.check_call([sys.executable, "-m", "pip", "install", "."])
 
 

@@ -51,7 +51,7 @@ class Bedrock(LLM):
             aws_access_key_id="AWS Access Key ID to use",
             aws_secret_access_key="AWS Secret Access Key to use",
             aws_session_token="AWS Session Token to use",
-            aws_region_name="AWS Region to use, eg. us-east-1",
+            region_name="AWS Region to use, eg. us-east-1",
         )
 
         resp = llm.complete("Paul Graham is ")
@@ -94,13 +94,27 @@ class Bedrock(LLM):
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )
+    guardrail_identifier: Optional[str] = (
+        Field(
+            description="The unique identifier of the guardrail that you want to use. If you don’t provide a value, no guardrail is applied to the invocation."
+        ),
+    )
+    guardrail_version: Optional[str] = (
+        Field(
+            description="The version number for the guardrail. The value can also be DRAFT"
+        ),
+    )
+    trace: Optional[str] = (
+        Field(
+            description="Specifies whether to enable or disable the Bedrock trace. If enabled, you can see the full Bedrock trace."
+        ),
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional kwargs for the bedrock invokeModel request.",
     )
 
     _client: Any = PrivateAttr()
-    _aclient: Any = PrivateAttr()
     _provider: Provider = PrivateAttr()
 
     def __init__(
@@ -126,6 +140,9 @@ class Bedrock(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        guardrail_identifier: Optional[str] = None,
+        guardrail_version: Optional[str] = None,
+        trace: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         if context_size is None and model not in BEDROCK_FOUNDATION_LLMS:
@@ -163,25 +180,10 @@ class Bedrock(LLM):
                 "boto3 package not found, install with" "'pip install boto3'"
             )
 
-        # Prior to general availability, custom boto3 wheel files were
-        # distributed that used the bedrock service to invokeModel.
-        # This check prevents any services still using those wheel files
-        # from breaking
-        if client is not None:
-            self._client = client
-        elif "bedrock-runtime" in session.get_available_services():
-            self._client = session.client("bedrock-runtime", config=config)
-        else:
-            self._client = session.client("bedrock", config=config)
-
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
         context_size = context_size or BEDROCK_FOUNDATION_LLMS[model]
-        self._provider = get_provider(model)
-        messages_to_prompt = messages_to_prompt or self._provider.messages_to_prompt
-        completion_to_prompt = (
-            completion_to_prompt or self._provider.completion_to_prompt
-        )
+
         super().__init__(
             model=model,
             temperature=temperature,
@@ -192,13 +194,42 @@ class Bedrock(LLM):
             max_retries=max_retries,
             botocore_config=config,
             additional_kwargs=additional_kwargs,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+            region_name=region_name,
+            botocore_session=botocore_session,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            guardrail_identifier=guardrail_identifier,
+            guardrail_version=guardrail_version,
+            trace=trace,
         )
+        self._provider = get_provider(model)
+        self.messages_to_prompt = (
+            messages_to_prompt
+            or self._provider.messages_to_prompt
+            or self.messages_to_prompt
+        )
+        self.completion_to_prompt = (
+            completion_to_prompt
+            or self._provider.completion_to_prompt
+            or self.completion_to_prompt
+        )
+        # Prior to general availability, custom boto3 wheel files were
+        # distributed that used the bedrock service to invokeModel.
+        # This check prevents any services still using those wheel files
+        # from breaking
+        if client is not None:
+            self._client = client
+        elif "bedrock-runtime" in session.get_available_services():
+            self._client = session.client("bedrock-runtime", config=config)
+        else:
+            self._client = session.client("bedrock", config=config)
 
     @classmethod
     def class_name(cls) -> str:
@@ -247,11 +278,18 @@ class Bedrock(LLM):
             model=self.model,
             request_body=request_body_str,
             max_retries=self.max_retries,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
-        )["body"].read()
-        response = json.loads(response)
+        )
+        response_body = response["body"].read()
+        response_headers = response["ResponseMetadata"]["HTTPHeaders"]
+        response_body = json.loads(response_body)
         return CompletionResponse(
-            text=self._provider.get_text_from_response(response), raw=response
+            text=self._provider.get_text_from_response(response_body),
+            raw=response_body,
+            additional_kwargs=self._get_response_token_counts(response_headers),
         )
 
     @llm_completion_callback()
@@ -273,16 +311,26 @@ class Bedrock(LLM):
             request_body=request_body_str,
             max_retries=self.max_retries,
             stream=True,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
-        )["body"]
+        )
+        response_body = response["body"]
+        response_headers = response["ResponseMetadata"]["HTTPHeaders"]
 
         def gen() -> CompletionResponseGen:
             content = ""
-            for r in response:
+            for r in response_body:
                 r = json.loads(r["chunk"]["bytes"])
                 content_delta = self._provider.get_text_from_stream_response(r)
                 content += content_delta
-                yield CompletionResponse(text=content, delta=content_delta, raw=r)
+                yield CompletionResponse(
+                    text=content,
+                    delta=content_delta,
+                    raw=r,
+                    additional_kwargs=self._get_response_token_counts(response_headers),
+                )
 
         return gen()
 
@@ -320,3 +368,16 @@ class Bedrock(LLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError
+
+    def _get_response_token_counts(self, headers: Any) -> dict:
+        """Get the token usage reported by the response."""
+        if not isinstance(headers, dict):
+            return {}
+
+        input_tokens = headers.get("x-amzn-bedrock-input-token-count", None)
+        output_tokens = headers.get("x-amzn-bedrock-output-token-count", None)
+        # NOTE: other model providers that use the OpenAI client may not report usage
+        if (input_tokens and output_tokens) is None:
+            return {}
+
+        return {"prompt_tokens": input_tokens, "completion_tokens": output_tokens}

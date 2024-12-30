@@ -18,10 +18,7 @@ from llama_index.core.schema import (
     QueryBundle,
     QueryType,
 )
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
     BasePydanticVectorStore,
@@ -74,8 +71,6 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         assert isinstance(self._index.image_embed_model, BaseEmbedding)
         self._image_embed_model = index._image_embed_model
         self._embed_model = index._embed_model
-
-        self._service_context = self._index.service_context
         self._docstore = self._index.docstore
 
         self._similarity_top_k = similarity_top_k
@@ -88,12 +83,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
         self._sparse_top_k = sparse_top_k
 
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
-        self.callback_manager = (
-            callback_manager
-            or callback_manager_from_settings_or_context(
-                Settings, self._service_context
-            )
-        )
+        self.callback_manager = callback_manager or Settings.callback_manager
 
     @property
     def similarity_top_k(self) -> int:
@@ -262,9 +252,7 @@ class MultiModalVectorIndexRetriever(MultiModalRetriever):
                 ):
                     node_id = query_result.nodes[i].node_id
                     if self._docstore.document_exists(node_id):
-                        query_result.nodes[
-                            i
-                        ] = self._docstore.get_node(  # type: ignore[index]
+                        query_result.nodes[i] = self._docstore.get_node(  # type: ignore[index]
                             node_id
                         )
 

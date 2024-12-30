@@ -10,7 +10,7 @@ from tenacity import (
 from asyncio import iscoroutinefunction
 
 from requests.exceptions import Timeout, ConnectionError
-from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 
 
 def maybe_decode_sse_data(data: bytes) -> Union[dict, None]:
@@ -64,7 +64,23 @@ def chat_messages_to_list(messages: Sequence[ChatMessage]) -> Sequence[Dict[str,
     Returns:
         Sequence[Dict[str, Any]]: A list of dictionaries.
     """
-    return [{"role": message.role, "content": message.content} for message in messages]
+    chat_messages = []
+    for message in messages:
+        if message.role in [
+            MessageRole.USER,
+            MessageRole.ASSISTANT,
+            MessageRole.SYSTEM,
+            MessageRole.TOOL,
+        ]:
+            chat_messages.append(
+                {
+                    "role": message.role,
+                    "content": message.content,
+                    **message.additional_kwargs,
+                }
+            )
+
+    return chat_messages
 
 
 def create_retry_decorator(retry_limit: int) -> Callable[[Any], Any]:
@@ -141,3 +157,13 @@ async def aretry_request(
             return request_func(*args, **kwargs)
 
     return await retry_func(request_func, *args, **kwargs)
+
+
+def force_single_tool_call(response: ChatResponse) -> None:
+    """
+    Force a single tool call in the response.
+    Overrides the tool calls in the response message.
+    """
+    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    if len(tool_calls) > 1:
+        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]

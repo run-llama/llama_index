@@ -3,14 +3,21 @@ from llama_index.core.schema import Document
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.indices.managed.vectara import VectaraIndex
 import pytest
+import re
 
 #
 # For this test to run properly, please setup as follows:
 # 1. Create a Vectara account: sign up at https://console.vectara.com/signup
-# 2. Create a corpus in your Vectara account, with a "filter attribute" called "test_num".
+# 2. Create a corpus in your Vectara account, with the following filter attributes:
+#   a. doc.test_num (text)
+#   b. doc.test_score (integer)
+#   c. doc.date (text)
+#   d. doc.url (text)
 # 3. Create an API_KEY for this corpus with permissions for query and indexing
 # 4. Setup environment variables:
-#    VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
+#    VECTARA_API_KEY, VECTARA_CORPUS_ID, VECTARA_CUSTOMER_ID, and OPENAI_API_KEY
+#
+# Note: In order to run test_citations, you will need a Scale account.
 #
 
 
@@ -23,19 +30,19 @@ def get_docs() -> List[Document]:
     inputs = [
         {
             "text": "This is test text for Vectara integration with LlamaIndex",
-            "metadata": {"test_num": "1"},
+            "metadata": {"test_num": "1", "test_score": 10, "date": "2020-02-25"},
         },
         {
             "text": "And now for something completely different",
-            "metadata": {"test_num": "2"},
+            "metadata": {"test_num": "2", "test_score": 2, "date": "2015-10-13"},
         },
         {
             "text": "when 900 years you will be, look as good you will not",
-            "metadata": {"test_num": "3"},
+            "metadata": {"test_num": "3", "test_score": 20, "date": "2023-09-12"},
         },
         {
             "text": "when 850 years you will be, look as good you will not",
-            "metadata": {"test_num": "4"},
+            "metadata": {"test_num": "4", "test_score": 50, "date": "2022-01-01"},
         },
     ]
     docs: List[Document] = []
@@ -66,9 +73,9 @@ def vectara1():
 def test_simple_retrieval(vectara1) -> None:
     docs = get_docs()
     qe = vectara1.as_retriever(similarity_top_k=1)
-    res = qe.retrieve("how will I look?")
+    res = qe.retrieve("Find me something different")
     assert len(res) == 1
-    assert res[0].node.get_content() == docs[2].text
+    assert res[0].node.get_content() == docs[1].text
 
 
 def test_mmr_retrieval(vectara1) -> None:
@@ -108,9 +115,123 @@ def test_retrieval_with_filter(vectara1) -> None:
 
     assert isinstance(vectara1, VectaraIndex)
     qe = vectara1.as_retriever(similarity_top_k=1, filter="doc.test_num = '1'")
-    res = qe.retrieve("how will I look?")
+    res = qe.retrieve("What does this test?")
     assert len(res) == 1
     assert res[0].node.get_content() == docs[0].text
+
+
+def test_udf_retrieval(vectara1) -> None:
+    docs = get_docs()
+
+    # test with basic math expression
+    qe = vectara1.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="udf",
+        udf_expression="get('$.score') + get('$.document_metadata.test_score')",
+    )
+
+    res = qe.retrieve("What will the future look like?")
+    assert len(res) == 2
+    assert res[0].node.get_content() == docs[3].text
+    assert res[1].node.get_content() == docs[2].text
+
+    # test with dates: Weight of score subtracted by number of years from current date
+    qe = vectara1.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="udf",
+        udf_expression="max(0, 5 * get('$.score') - (to_unix_timestamp(now()) - to_unix_timestamp(datetime_parse(get('$.document_metadata.date'), 'yyyy-MM-dd'))) / 31536000)",
+    )
+
+    res = qe.retrieve("What will the future look like?")
+    assert len(res) == 2
+    assert res[0].node.get_content() == docs[2].text
+    assert res[1].node.get_content() == docs[3].text
+
+
+def test_chain_rerank_retrieval(vectara1) -> None:
+    docs = get_docs()
+
+    # Test basic chain
+    qe = vectara1.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[{"type": "slingshot"}, {"type": "mmr", "diversity_bias": 0.4}],
+    )
+
+    res = qe.retrieve("What's this all about?")
+    assert len(res) == 2
+    assert res[0].node.get_content() == docs[0].text
+    assert res[1].node.get_content() == docs[2].text
+
+    # Test chain with UDF and limit
+    qe = vectara1.as_retriever(
+        similarity_top_k=4,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[
+            {"type": "slingshot"},
+            {"type": "mmr"},
+            {
+                "type": "udf",
+                "user_function": "5 * get('$.score') + get('$.document_metadata.test_score') / 2",
+                "limit": 2,
+            },
+        ],
+    )
+
+    res = qe.retrieve("What's this all about?")
+    assert len(res) == 2
+    assert res[0].node.get_content() == docs[3].text
+    assert res[1].node.get_content() == docs[2].text
+
+    # Test chain with cutoff
+    qe = vectara1.as_retriever(
+        similarity_top_k=4,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="chain",
+        rerank_chain=[
+            {"type": "slingshot"},
+            {"type": "mmr", "diversity_bias": 0.4, "cutoff": 0.75},
+        ],
+    )
+
+    res = qe.retrieve("What's this all about?")
+    assert len(res) == 1
+    assert res[0].node.get_content() == docs[0].text
+
+    # Second query with same retriever to ensure rerank chain configuration remains the same
+    res = qe.retrieve("How will I look when I'm older?")
+    assert qe._rerank_chain[0].get("type") == "slingshot"
+    assert qe._rerank_chain[1].get("type") == "mmr"
+    assert res[0].node.get_content() == docs[2].text
+
+
+def test_custom_prompt(vectara1) -> None:
+    docs = get_docs()
+
+    qe = vectara1.as_query_engine(
+        similarity_top_k=3,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="mmr",
+        mmr_diversity_bias=0.2,
+        summary_enabled=True,
+        prompt_text='[\n  {"role": "system", "content": "You are an expert in summarizing the future of Vectara\'s inegration with LlamaIndex. Your summaries are insightful, concise, and highlight key innovations and changes."},\n  #foreach ($result in $vectaraQueryResults)\n    {"role": "user", "content": "What are the key points in result number $vectaraIdxWord[$foreach.index] about Vectara\'s LlamaIndex integration?"},\n    {"role": "assistant", "content": "In result number $vectaraIdxWord[$foreach.index], the key points are: ${result.getText()}"},\n  #end\n  {"role": "user", "content": "Can you generate a comprehensive summary on \'Vectara\'s LlamaIndex Integration\' incorporating all the key points discussed?"}\n]\n',
+    )
+
+    res = qe.query("How will Vectara's integration look in the future?")
+    assert "integration" in str(res).lower()
+    assert "llamaindex" in str(res).lower()
+    assert "vectara" in str(res).lower()
+    assert "first" in str(res).lower()
 
 
 @pytest.fixture()
@@ -121,12 +242,14 @@ def vectara2():
         pytest.skip("Missing Vectara credentials, skipping test")
 
     file_path = "docs/docs/examples/data/paul_graham/paul_graham_essay.txt"
-    id = vectara2.insert_file(file_path)
+    id = vectara2.insert_file(
+        file_path, metadata={"url": "https://www.paulgraham.com/worked.html"}
+    )
 
     yield vectara2
 
     # Tear down code
-    print(vectara2._delete_doc(id))
+    vectara2._delete_doc(id)
 
 
 def test_file_upload(vectara2) -> None:
@@ -134,8 +257,74 @@ def test_file_upload(vectara2) -> None:
     query_engine = vectara2.as_query_engine(similarity_top_k=3)
     res = query_engine.query("What software did Paul Graham write?")
     assert "paul graham" in str(res).lower() and "software" in str(res).lower()
+    assert "fcs" in res.metadata
+    assert res.metadata["fcs"] >= 0
+
+    # test query with Vectara summarization (streaming)
+    query_engine = vectara2.as_query_engine(similarity_top_k=3, streaming=True)
+    res = query_engine.query("What software did Paul Graham write?")
+    summary = ""
+    for chunk in res.response_gen:
+        if chunk.delta:
+            summary += chunk.delta
+        if (
+            chunk.additional_kwargs
+            and "fcs" in chunk.additional_kwargs
+            and chunk.additional_kwargs["fcs"] is not None
+        ):
+            assert chunk.additional_kwargs["fcs"] >= 0
+    assert "paul graham" in summary.lower() and "software" in summary.lower()
 
     # test query with VectorStoreQuery (using OpenAI for summarization)
-    query_engine = vectara2.as_query_engine(similarity_top_k=3, summary_enabled=False)
+    query_engine = vectara2.as_query_engine(
+        similarity_top_k=3, summary_enabled=False, verbose=True
+    )
     res = query_engine.query("What software did Paul Graham write?")
     assert "paul graham" in str(res).lower() and "software" in str(res).lower()
+
+    # test query with Vectara summarization (default)
+    query_engine = vectara2.as_query_engine(similarity_top_k=3, verbose=True)
+    res = query_engine.query("How is Paul related to Reddit?")
+    summary = res.response
+    assert "paul graham" in summary.lower() and "reddit" in summary.lower()
+    assert "https://www.paulgraham.com/worked.html" in str(res.source_nodes)
+
+
+def test_citations(vectara2) -> None:
+    # test markdown citations
+    query_engine = vectara2.as_query_engine(
+        similarity_top_k=10,
+        summary_num_results=7,
+        summary_prompt_name="vectara-summary-ext-24-05-med-omni",
+        citations_style="markdown",
+        citations_url_pattern="{doc.url}",
+        citations_text_pattern="(source)",
+    )
+    res = query_engine.query("What colleges has Paul attended?")
+    summary = res.response
+    assert "(source)" in summary
+    assert "https://www.paulgraham.com/worked.html" in summary
+
+    # test numeric citations
+    query_engine = vectara2.as_query_engine(
+        similarity_top_k=10,
+        summary_num_results=7,
+        summary_prompt_name="mockingbird-1.0-2024-07-16",
+        citations_style="numeric",
+    )
+    res = query_engine.query("What colleges has Paul attended?")
+    summary = res.response
+    assert re.search(r"\[\d+\]", summary)
+
+    # test citations with url pattern only (no text pattern)
+    query_engine = vectara2.as_query_engine(
+        similarity_top_k=10,
+        summary_num_results=7,
+        summary_prompt_name="vectara-summary-ext-24-05-med-omni",
+        citations_style="markdown",
+        citations_url_pattern="{doc.url}",
+    )
+    res = query_engine.query("What colleges has Paul attended?")
+    summary = res.response
+    assert "https://www.paulgraham.com/worked.html" in summary
+    assert re.search(r"\[\d+\]", summary)

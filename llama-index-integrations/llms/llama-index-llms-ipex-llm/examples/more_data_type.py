@@ -51,9 +51,8 @@ if __name__ == "__main__":
         "--device",
         "-d",
         type=str,
-        default="xpu",
-        choices=["cpu", "xpu"],
-        help="The device the model will run on.",
+        default="cpu",
+        help="The device (Intel CPU or Intel GPU) the LLM model runs on",
     )
     parser.add_argument(
         "--query",

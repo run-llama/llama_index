@@ -15,7 +15,7 @@ class CohereRerankerFinetuneDataset(BaseModel):
 
     def to_jsonl(self) -> str:
         """Convert the BaseModel instance to a JSONL string."""
-        return self.json() + "\n"
+        return self.model_dump_json() + "\n"
 
 
 def generate_embeddings(embed_model: Any, text: str) -> List[float]:

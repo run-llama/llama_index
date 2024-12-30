@@ -75,3 +75,51 @@ Under the hood, `RedisIndexStore` connects to a redis database and adds your nod
 You can easily reconnect to your Redis client and reload the index by re-initializing a `RedisIndexStore` with an existing `host`, `port`, and `namespace`.
 
 A more complete example can be found [here](../../examples/docstore/RedisDocstoreIndexStoreDemo.ipynb)
+
+### Couchbase Index Store
+
+Couchbase can be used as the storage backend for the index store.
+
+```python
+from llama_index.storage.index_store.couchbase import CouchbaseIndexStore
+from llama_index.core import VectorStoreIndex
+
+from couchbase.cluster import Cluster
+from couchbase.auth import PasswordAuthenticator
+from couchbase.options import ClusterOptions
+from datetime import timedelta
+
+# create couchbase client
+auth = PasswordAuthenticator("DB_USERNAME", "DB_PASSWORD")
+options = ClusterOptions(authenticator=auth)
+
+cluster = Cluster("couchbase://localhost", options)
+
+# Wait until the cluster is ready for use.
+cluster.wait_until_ready(timedelta(seconds=5))
+
+# create (or load) docstore and add nodes
+index_store = CouchbaseIndexStore.from_couchbase_client(
+    client=cluster,
+    bucket_name="llama-index",
+    scope_name="_default",
+    namespace="default",
+)
+
+# create storage context
+storage_context = StorageContext.from_defaults(index_store=index_store)
+
+# build index
+index = VectorStoreIndex(nodes, storage_context=storage_context)
+
+# or alternatively, load index
+from llama_index.core import load_index_from_storage
+
+index = load_index_from_storage(storage_context)
+```
+
+Under the hood, `CouchbaseIndexStore` connects to a Couchbase operational database and adds your nodes to a collection named `{namespace}_index` in the specified `{bucket_name}` and `{scope_name}`.
+
+> Note: You can configure the `namespace`, `bucket` and `scope` when instantiating `CouchbaseIndexStore`. By default, the collection used is `index_store_data`. Apart from alphanumeric characters, `-`, `_` and `%` are only allowed as part of the collection name. The store will automatically convert other special characters to `_`.
+
+You can easily reconnect to your Couchbase client and reload the index by re-initializing a `CouchbaseIndexStore` with an existing `client`, `bucket_name`, `scope_name` and `namespace`.

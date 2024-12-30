@@ -7,6 +7,7 @@ import json
 import logging
 from typing import Any, List, Optional, Tuple, Dict
 from enum import Enum
+import urllib.parse
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
@@ -34,13 +35,24 @@ _logger = logging.getLogger(__name__)
 
 MMR_RERANKER_ID = 272725718
 SLINGSHOT_RERANKER_ID = 272725719
+UDF_RERANKER_ID = 272725722
 
 
 class VectaraReranker(str, Enum):
     NONE = "none"
     MMR = "mmr"
-    SLINGSHOT_ALT_NAME = "slingshot"
     SLINGSHOT = "multilingual_reranker_v1"
+    SLINGSHOT_ALT_NAME = "slingshot"
+    UDF = "udf"
+    CHAIN = "chain"
+
+
+CHAIN_RERANKER_NAMES = {
+    VectaraReranker.MMR: "Maximum Marginal Relevance Reranker",
+    VectaraReranker.SLINGSHOT: "Rerank_Multilingual_v1",
+    VectaraReranker.SLINGSHOT_ALT_NAME: "Rerank_Multilingual_v1",
+    VectaraReranker.UDF: "User_Defined_Function_Reranker",
+}
 
 
 class VectaraRetriever(BaseRetriever):
@@ -50,8 +62,6 @@ class VectaraRetriever(BaseRetriever):
     Args:
         index (VectaraIndex): the Vectara Index
         similarity_top_k (int): number of top k results to return, defaults to 5.
-        reranker (str): reranker to use: none, mmr or multilingual_reranker_v1.
-            Note that "multilingual_reranker_v1" is a Vectara Scale feature only.
         lambda_val (float): for hybrid search.
             0 = neural search only.
             1 = keyword match only.
@@ -61,15 +71,37 @@ class VectaraRetriever(BaseRetriever):
         n_sentences_after (int):
             number of sentences after the matched sentence to return in the node
         filter: metadata filter (if specified)
+        reranker (str): reranker to use: none, mmr, slingshot/multilingual_reranker_v1, udf, or chain.
+            Note that "multilingual_reranker_v1" is a Vectara Scale feature only.
         rerank_k: number of results to fetch for Reranking, defaults to 50.
         mmr_diversity_bias: number between 0 and 1 that determines the degree
             of diversity among the results with 0 corresponding
             to minimum diversity and 1 to maximum diversity.
             Defaults to 0.3.
+        udf_expression: the user defined expression for reranking results.
+            See (https://docs.vectara.com/docs/learn/user-defined-function-reranker)
+            for more details about syntax for udf reranker expressions.
+        rerank_chain: a list of rerankers to be applied in a sequence and their associated parameters
+            for the chain reranker. Each element should specify the "type" of reranker (mmr, slingshot, udf)
+            and any other parameters (e.g. "limit" or "cutoff" for any type,  "diversity_bias" for mmr, and "user_function" for udf).
+            If using slingshot/multilingual_reranker_v1, it must be first in the list.
         summary_enabled: whether to generate summaries or not. Defaults to False.
         summary_response_lang: language to use for summary generation.
         summary_num_results: number of results to use for summary generation.
         summary_prompt_name: name of the prompt to use for summary generation.
+        prompt_text: the custom prompt, using appropriate prompt variables and functions.
+            See (https://docs.vectara.com/docs/1.0/prompts/custom-prompts-with-metadata)
+            for more details.
+        citations_style: The style of the citations in the summary generation,
+            either "numeric", "html", "markdown", or "none".
+            This is a Vectara Scale only feature. Defaults to None.
+        citations_url_pattern: URL pattern for html and markdown citations.
+            If non-empty, specifies the URL pattern to use for citations; e.g. "{doc.url}".
+            See (https://docs.vectara.com/docs/api-reference/search-apis/search
+                 #citation-format-in-summary) for more details.
+            This is a Vectara Scale only feature. Defaults to None.
+        citations_text_pattern: The displayed text for citations.
+            If not specified, numeric citations are displayed for text.
     """
 
     def __init__(
@@ -83,11 +115,18 @@ class VectaraRetriever(BaseRetriever):
         reranker: VectaraReranker = VectaraReranker.NONE,
         rerank_k: int = 50,
         mmr_diversity_bias: float = 0.3,
+        udf_expression: str = None,
+        rerank_chain: List[Dict] = None,
         summary_enabled: bool = False,
         summary_response_lang: str = "eng",
         summary_num_results: int = 7,
         summary_prompt_name: str = "vectara-summary-ext-24-05-sml",
+        prompt_text: Optional[str] = None,
+        citations_style: Optional[str] = None,
+        citations_url_pattern: Optional[str] = None,
+        citations_text_pattern: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        x_source_str: str = "llama_index",
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
@@ -97,6 +136,11 @@ class VectaraRetriever(BaseRetriever):
         self._n_sentences_before = n_sentences_before
         self._n_sentences_after = n_sentences_after
         self._filter = filter
+        self._prompt_text = prompt_text
+        self._citations_style = citations_style.upper() if citations_style else None
+        self._citations_url_pattern = citations_url_pattern
+        self._citations_text_pattern = citations_text_pattern
+        self._x_source_str = x_source_str
 
         if reranker == VectaraReranker.MMR:
             self._rerank = True
@@ -110,6 +154,20 @@ class VectaraRetriever(BaseRetriever):
             self._rerank = True
             self._rerank_k = rerank_k
             self._reranker_id = SLINGSHOT_RERANKER_ID
+        elif reranker == VectaraReranker.UDF and udf_expression is not None:
+            self._rerank = True
+            self._rerank_k = rerank_k
+            self._udf_expression = udf_expression
+            self._reranker_id = UDF_RERANKER_ID
+        elif (
+            reranker == VectaraReranker.CHAIN
+            and rerank_chain is not None
+            and len(rerank_chain) > 0
+        ):
+            self._rerank = True
+            self._rerank_k = rerank_k
+            self._rerank_chain = rerank_chain
+            self._reranker_id = None
         else:
             self._rerank = False
 
@@ -128,7 +186,7 @@ class VectaraRetriever(BaseRetriever):
             "x-api-key": self._index._vectara_api_key,
             "customer-id": self._index._vectara_customer_id,
             "Content-Type": "application/json",
-            "X-Source": "llama_index",
+            "X-Source": self._x_source_str,
         }
 
     @property
@@ -189,7 +247,7 @@ class VectaraRetriever(BaseRetriever):
                 }
             ]
         }
-        if self._rerank:
+        if self._rerank and self._reranker_id is not None:
             reranking_config = {
                 "rerankerId": self._reranker_id,
             }
@@ -197,6 +255,33 @@ class VectaraRetriever(BaseRetriever):
                 reranking_config["mmrConfig"] = {
                     "diversityBias": self._mmr_diversity_bias
                 }
+            elif self._reranker_id == UDF_RERANKER_ID:
+                reranking_config["userFunction"] = self._udf_expression
+
+            data["query"][0]["rerankingConfig"] = reranking_config
+
+        elif self._rerank:
+            reranking_config = current_config = {}
+
+            for i, rerank_info in enumerate(self._rerank_chain):
+                rerank_type = rerank_info.get("type", None)
+                if rerank_type is None:
+                    print("Missing argument 'type' in chain reranker")
+                else:
+                    current_config["reranker_name"] = CHAIN_RERANKER_NAMES[rerank_type]
+
+                    current_config.update(
+                        {
+                            param: value
+                            for param, value in rerank_info.items()
+                            if param != "type"
+                        }
+                    )
+
+                    if i < len(self._rerank_chain) - 1:
+                        current_config["next_reranking_config"] = {}
+                        current_config = current_config["next_reranking_config"]
+
             data["query"][0]["rerankingConfig"] = reranking_config
 
         if self._summary_enabled:
@@ -206,11 +291,26 @@ class VectaraRetriever(BaseRetriever):
                 "summarizerPromptName": self._summary_prompt_name,
             }
             data["query"][0]["summary"] = [summary_config]
+            if self._prompt_text:
+                data["query"][0]["summary"][0]["promptText"] = self._prompt_text
             if chat:
                 data["query"][0]["summary"][0]["chat"] = {
                     "store": True,
                     "conversationId": chat_conv_id,
                 }
+
+            if self._citations_style:
+                if self._citations_style in ["NUMERIC", "NONE"]:
+                    data["query"][0]["summary"][0]["citationParams"] = {
+                        "style": self._citations_style,
+                    }
+
+                elif self._citations_url_pattern:
+                    data["query"][0]["summary"][0]["citationParams"] = {
+                        "style": self._citations_style,
+                        "urlPattern": self._citations_url_pattern,
+                        "textPattern": self._citations_text_pattern,
+                    }
 
         return data
 
@@ -219,6 +319,7 @@ class VectaraRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         chat: bool = False,
         conv_id: Optional[str] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> TokenGen:
         """
@@ -230,6 +331,8 @@ class VectaraRetriever(BaseRetriever):
             conv_id: conversation ID, if chat enabled
         """
         body = self._build_vectara_query_body(query_bundle.query_str)
+        if verbose:
+            print(f"Vectara streaming query request body: {body}")
         response = self._index._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/stream-query",
@@ -288,7 +391,7 @@ class VectaraRetriever(BaseRetriever):
                         continue
 
                     # Yield the summary chunk
-                    chunk = summary["text"]
+                    chunk = urllib.parse.unquote(summary["text"])
                     stream_response.text += chunk
                     stream_response.delta = chunk
                     yield stream_response
@@ -324,6 +427,7 @@ class VectaraRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         chat: bool = False,
         conv_id: Optional[str] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> Tuple[List[NodeWithScore], Dict, str]:
         """
@@ -331,6 +435,9 @@ class VectaraRetriever(BaseRetriever):
 
         Args:
             query: Query Bundle
+            chat: whether to enable chat in Vectara
+            conv_id: conversation ID, if chat enabled
+            verbose: whether to print verbose output (e.g. for debugging)
             Additional keyword arguments
 
         Returns:
@@ -340,6 +447,8 @@ class VectaraRetriever(BaseRetriever):
         """
         data = self._build_vectara_query_body(query_bundle.query_str, chat, conv_id)
 
+        if verbose:
+            print(f"Vectara query request body: {data}")
         response = self._index._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
@@ -356,6 +465,8 @@ class VectaraRetriever(BaseRetriever):
             return [], {"text": ""}, ""
 
         result = response.json()
+        if verbose:
+            print(f"Vectara query response: {result}")
         status = result["responseSet"][0]["status"]
         if len(status) > 0 and status[0]["code"] != "OK":
             _logger.error(
@@ -375,7 +486,11 @@ class VectaraRetriever(BaseRetriever):
                 return [], {"text": ""}, ""
 
             summary = {
-                "text": (summaryJson["text"] if self._summary_enabled else None),
+                "text": (
+                    urllib.parse.unquote(summaryJson["text"])
+                    if self._summary_enabled
+                    else None
+                ),
                 "fcs": summaryJson["factualConsistency"]["score"],
             }
             if summaryJson.get("chat", None):
@@ -405,15 +520,29 @@ class VectaraRetriever(BaseRetriever):
         return top_nodes[: self._similarity_top_k], summary, conv_id
 
     async def _avectara_query(
-        self, query_bundle: QueryBundle
+        self,
+        query_bundle: QueryBundle,
+        chat: bool = False,
+        conv_id: Optional[str] = None,
+        verbose: bool = False,
+        **kwargs: Any,
     ) -> Tuple[List[NodeWithScore], Dict]:
         """
-        Asynchronously retrieve nodes given query.
+        Asynchronously query Vectara index to get for top k most similar nodes.
 
-        Implemented by the user.
+        Args:
+            query: Query Bundle
+            chat: whether to enable chat in Vectara
+            conv_id: conversation ID, if chat enabled
+            verbose: whether to print verbose output (e.g. for debugging)
+            Additional keyword arguments
 
+        Returns:
+            List[NodeWithScore]: list of nodes with scores
+            Dict: summary
+            str: conversation ID, if applicable
         """
-        return await self._vectara_query(query_bundle)
+        return await self._vectara_query(query_bundle, chat, conv_id, verbose, **kwargs)
 
 
 class VectaraAutoRetriever(VectorIndexAutoRetriever):

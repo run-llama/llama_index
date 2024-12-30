@@ -4,6 +4,7 @@ An index that is built on top of an existing vector store.
 
 """
 
+
 import logging
 import os
 from importlib.metadata import version
@@ -12,9 +13,9 @@ from typing import Any, Dict, List, Optional, cast
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
-    MetadataFilters,
     BasePydanticVectorStore,
     VectorStoreQuery,
+    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
@@ -22,18 +23,25 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from llama_index.vector_stores.mongodb.pipelines import (
+    combine_pipelines,
+    filters_to_mql,
+    final_hybrid_stage,
+    fulltext_search_stage,
+    reciprocal_rank_stage,
+    vector_search_stage,
+)
+from .index import (
+    create_vector_search_index,
+    drop_vector_search_index,
+    update_vector_search_index,
+    create_fulltext_search_index,
+)
 from pymongo import MongoClient
+from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
 
 logger = logging.getLogger(__name__)
-
-
-def _to_mongodb_filter(standard_filters: MetadataFilters) -> Dict:
-    """Convert from standard dataclass to filter dict."""
-    filters = {}
-    for filter in standard_filters.legacy_filters():
-        filters[filter.key] = filter.value
-    return filters
 
 
 class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
@@ -51,11 +59,12 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     Please refer to the [documentation](https://www.mongodb.com/docs/atlas/atlas-vector-search/create-index/)
     to get more details on how to define an Atlas Vector Search index. You can name the index {ATLAS_VECTOR_SEARCH_INDEX_NAME}
     and create the index on the namespace {DB_NAME}.{COLLECTION_NAME}.
+
     Finally, write the following definition in the JSON editor on MongoDB Atlas:
 
     ```
     {
-        "name": "index_name",
+        "name": "vector_index",
         "type": "vectorSearch",
         "fields":[
             {
@@ -67,6 +76,9 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         ]
     }
     ```
+
+    Optionally, you can use the experimental convenience methods on this class to manage the vector search
+    index and the full text index.
 
 
     Examples:
@@ -83,31 +95,45 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         # Create an instance of MongoDBAtlasVectorSearch
         vector_store = MongoDBAtlasVectorSearch(mongodb_client)
         ```
+
+        ```python
+        # Create a vector search index programmatically
+        vector_store.create_vector_search_index(path="embedding", dimensions=1536, similarity="cosine")
+
+        # Create a text search index programmatically
+        vector_store.create_fulltext_search_index("foo)
+        ```
     """
 
     stores_text: bool = True
-    flat_metadata: bool = True
+    flat_metadata: bool = False
 
     _mongodb_client: Any = PrivateAttr()
     _collection: Any = PrivateAttr()
-    _index_name: str = PrivateAttr()
+    _vector_index_name: str = PrivateAttr()
     _embedding_key: str = PrivateAttr()
     _id_key: str = PrivateAttr()
     _text_key: str = PrivateAttr()
     _metadata_key: str = PrivateAttr()
+    _fulltext_index_name: str = PrivateAttr()
     _insert_kwargs: Dict = PrivateAttr()
+    _index_name: str = PrivateAttr()  # DEPRECATED
+    _oversampling_factor: int = PrivateAttr()
 
     def __init__(
         self,
         mongodb_client: Optional[Any] = None,
         db_name: str = "default_db",
         collection_name: str = "default_collection",
-        index_name: str = "default",
+        vector_index_name: str = "vector_index",
         id_key: str = "_id",
         embedding_key: str = "embedding",
         text_key: str = "text",
         metadata_key: str = "metadata",
+        fulltext_index_name: str = "fulltext_index",
+        index_name: str = None,
         insert_kwargs: Optional[Dict] = None,
+        oversampling_factor: int = 10,
         **kwargs: Any,
     ) -> None:
         """Initialize the vector store.
@@ -116,7 +142,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             mongodb_client: A MongoDB client.
             db_name: A MongoDB database name.
             collection_name: A MongoDB collection name.
-            index_name: A MongoDB Atlas Vector Search index name.
+            vector_index_name: A MongoDB Atlas *Vector* Search index name. ($vectorSearch)
             id_key: The data field to use as the id.
             embedding_key: A MongoDB field that will contain
             the embedding for each document.
@@ -124,7 +150,15 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             metadata_key: A MongoDB field that will contain
             the metadata for each document.
             insert_kwargs: The kwargs used during `insert`.
+            fulltext_index_name: A MongoDB Atlas *full-text* Search index name. ($search)
+            oversampling_factor: This times n_results is 'ef' in the HNSW algorithm.
+                'ef' determines the number of nearest neighbor candidates to consider during the search phase.
+                A higher value leads to more accuracy, but is slower. Default = 10
+            index_name: DEPRECATED: Please use vector_index_name.
+
         """
+        super().__init__()
+
         if mongodb_client is not None:
             self._mongodb_client = cast(MongoClient, mongodb_client)
         else:
@@ -138,15 +172,27 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
                 driver=DriverInfo(name="llama-index", version=version("llama-index")),
             )
 
-        self._collection = self._mongodb_client[db_name][collection_name]
-        self._index_name = index_name
+        if index_name is not None:
+            logger.warning("index_name is deprecated. Please use vector_index_name")
+            if vector_index_name is None:
+                vector_index_name = index_name
+            else:
+                logger.warning(
+                    "vector_index_name and index_name both specified. Will use vector_index_name"
+                )
+
+        self._collection: Collection = self._mongodb_client[db_name][collection_name]
+        self._vector_index_name = vector_index_name
         self._embedding_key = embedding_key
         self._id_key = id_key
         self._text_key = text_key
         self._metadata_key = metadata_key
+        self._fulltext_index_name = fulltext_index_name
         self._insert_kwargs = insert_kwargs or {}
+        self._oversampling_factor = oversampling_factor
 
-        super().__init__()
+        if collection_name not in self._mongodb_client[db_name].list_collection_names():
+            self._mongodb_client[db_name].create_collection(collection_name)
 
     def add(
         self,
@@ -202,30 +248,111 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         """Return MongoDB client."""
         return self._mongodb_client
 
+    @property
+    def collection(self) -> Any:
+        """Return pymongo Collection."""
+        return self._collection
+
     def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
-        params: Dict[str, Any] = {
-            "queryVector": query.query_embedding,
-            "path": self._embedding_key,
-            "numCandidates": query.similarity_top_k * 10,
-            "limit": query.similarity_top_k,
-            "index": self._index_name,
-        }
-        if query.filters:
-            params["filter"] = _to_mongodb_filter(query.filters)
+        hybrid_top_k = query.hybrid_top_k or query.similarity_top_k
+        sparse_top_k = query.sparse_top_k or query.similarity_top_k
+        dense_top_k = query.similarity_top_k
 
-        query_field = {"$vectorSearch": params}
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            if not query.query_embedding:
+                raise ValueError("query_embedding in VectorStoreQueryMode.DEFAULT")
+            # Atlas Vector Search, potentially with filter
+            logger.debug(f"Running {query.mode} mode query pipeline")
+            filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
+            pipeline = [
+                vector_search_stage(
+                    query_vector=query.query_embedding,
+                    search_field=self._embedding_key,
+                    index_name=self._vector_index_name,
+                    limit=dense_top_k,
+                    filter=filter,
+                    oversampling_factor=self._oversampling_factor,
+                ),
+                {"$set": {"score": {"$meta": "vectorSearchScore"}}},
+            ]
 
-        pipeline = [
-            query_field,
-            {
-                "$project": {
-                    "score": {"$meta": "vectorSearchScore"},
-                    self._embedding_key: 0,
-                }
-            },
-        ]
+        elif query.mode == VectorStoreQueryMode.TEXT_SEARCH:
+            # Atlas Full-Text Search, potentially with filter
+            if not query.query_str:
+                raise ValueError("query_str in VectorStoreQueryMode.TEXT_SEARCH ")
+            logger.debug(f"Running {query.mode} mode query pipeline")
+            filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
+            pipeline = fulltext_search_stage(
+                query=query.query_str,
+                search_field=self._text_key,
+                index_name=self._fulltext_index_name,
+                operator="text",
+                filter=filter,
+                limit=sparse_top_k,
+            )
+            pipeline.append({"$set": {"score": {"$meta": "searchScore"}}})
+
+        elif query.mode == VectorStoreQueryMode.HYBRID:
+            # Combines Vector and Full-Text searches with Reciprocal Rank Fusion weighting
+            logger.debug(f"Running {query.mode} mode query pipeline")
+            scores_fields = ["vector_score", "fulltext_score"]
+            filter = filters_to_mql(query.filters, metadata_key=self._metadata_key)
+            pipeline = []
+            # Vector Search pipeline
+            if query.query_embedding:
+                vector_pipeline = [
+                    vector_search_stage(
+                        query_vector=query.query_embedding,
+                        search_field=self._embedding_key,
+                        index_name=self._vector_index_name,
+                        limit=dense_top_k,
+                        filter=filter,
+                        oversampling_factor=self._oversampling_factor,
+                    )
+                ]
+                vector_pipeline.extend(reciprocal_rank_stage("vector_score"))
+                combine_pipelines(pipeline, vector_pipeline, self._collection.name)
+
+            # Full-Text Search pipeline
+            if query.query_str:
+                text_pipeline = fulltext_search_stage(
+                    query=query.query_str,
+                    search_field=self._text_key,
+                    index_name=self._fulltext_index_name,
+                    operator="text",
+                    filter=filter,
+                    limit=sparse_top_k,
+                )
+                text_pipeline.extend(reciprocal_rank_stage("fulltext_score"))
+                combine_pipelines(pipeline, text_pipeline, self._collection.name)
+
+            # Compute weighted sum and sort pipeline
+            alpha = (
+                query.alpha or 0.5
+            )  # If no alpha is given, equal weighting is applied
+            pipeline += final_hybrid_stage(
+                scores_fields=scores_fields, limit=hybrid_top_k, alpha=alpha
+            )
+
+            # Remove embeddings unless requested.
+            if (
+                query.output_fields is None
+                or self._embedding_key not in query.output_fields
+            ):
+                pipeline.append({"$project": {self._embedding_key: 0}})
+
+        else:
+            raise NotImplementedError(
+                f"{VectorStoreQueryMode.DEFAULT} (vector), "
+                f"{VectorStoreQueryMode.HYBRID} and {VectorStoreQueryMode.TEXT_SEARCH} "
+                f"are available. {query.mode} is not."
+            )
+
+        # Execution
         logger.debug("Running query pipeline: %s", pipeline)
         cursor = self._collection.aggregate(pipeline)  # type: ignore
+
+        # Post-processing
         top_k_nodes = []
         top_k_ids = []
         top_k_scores = []
@@ -263,7 +390,28 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         return result
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        r"""Query index for top k most similar nodes.
+
+        The type of search to be performed is based on the VectorStoreQuery.mode.
+        Choose from DEFAULT (vector), HYBRID (hybrid), or TEXT_SEARCH (full-text).
+        When the mode is one of HYBRID or TEXT_SEARCH,
+        VectorStoreQuery.query_str is used for the full-text search.
+        See MongoDB Atlas documentation for full details on these.
+
+        For details on VectorStoreQueryMode.DEFAULT == 'default',
+        which does vector search, see:
+            https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
+
+        For details on VectorStoreQueryMode.TEXT_SEARCH == "text_search",
+        which performs full-text search, see:
+            https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#mongodb-pipeline-pipe.-search
+
+        For details on VectorStoreQueryMode.HYBRID == "hybrid",
+        which combines the two with Reciprocal Rank Fusion, see the following.
+            https://www.mongodb.com/docs/atlas/atlas-vector-search/tutorials/reciprocal-rank-fusion/
+
+        In the scoring algorithm used, Reciprocal Rank Fusion,
+            scores := \frac{1}{rank + penalty} with rank in [1,2,..,n]
 
         Args:
             query: a VectorStoreQuery object.
@@ -272,3 +420,111 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
             A VectorStoreQueryResult containing the results of the query.
         """
         return self._query(query)
+
+    def create_vector_search_index(
+        self,
+        dimensions: int,
+        path: str,
+        similarity: str,
+        filters: Optional[List[str]] = None,
+        *,
+        wait_until_complete: Optional[float] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Experimental Utility function to create the vector search index for this store.
+
+        Args:
+            dimensions (int): Number of dimensions in embedding
+            path (str): field with vector embedding
+            similarity (str): The similarity score used for the index
+            filters (List[str]): Fields/paths to index to allow filtering in $vectorSearch
+            wait_until_complete (Optional[float]): If provided, number of seconds to wait
+                until search index is ready.
+            kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+        """
+        return create_vector_search_index(
+            self.collection,
+            self._vector_index_name,
+            dimensions,
+            path,
+            similarity,
+            filters,
+            wait_until_complete=wait_until_complete,
+            **kwargs,
+        )
+
+    def drop_vector_search_index(
+        self,
+        *,
+        wait_until_complete: Optional[float] = None,
+    ) -> None:
+        """Drop the created vector search index for this store.
+
+        Args:
+            wait_until_complete (Optional[float]): If provided, number of seconds to wait
+                until search index is ready.
+        """
+        return drop_vector_search_index(
+            self.collection,
+            self._vector_index_name,
+            wait_until_complete=wait_until_complete,
+        )
+
+    def update_vector_search_index(
+        self,
+        dimensions: int,
+        path: str,
+        similarity: str,
+        filters: Optional[List[str]] = None,
+        *,
+        wait_until_complete: Optional[float] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Update the vector search index for this store.
+
+        Replace the existing index definition with the provided definition.
+
+        Args:
+            dimensions (int): Number of dimensions in embedding
+            path (str): field with vector embedding
+            similarity (str): The similarity score used for the index.
+            filters (List[str]): Fields/paths to index to allow filtering in $vectorSearch
+            wait_until_complete (Optional[float]): If provided, number of seconds to wait
+                until search index is ready.
+            kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+        """
+        return update_vector_search_index(
+            self.collection,
+            self._vector_index_name,
+            dimensions,
+            path,
+            similarity,
+            filters,
+            wait_until_complete=wait_until_complete,
+            **kwargs,
+        )
+
+    def create_fulltext_search_index(
+        self,
+        field: str,
+        field_type: str = "string",
+        *,
+        wait_until_complete: Optional[float] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Experimental Utility function to create the Atlas Search index for this store.
+
+        Args:
+            field (str): Field to index
+            wait_until_complete (Optional[float]): If provided, number of seconds to wait
+                until search index is ready
+            kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+        """
+        return create_fulltext_search_index(
+            self.collection,
+            self._fulltext_index_name,
+            field,
+            field_type,
+            wait_until_complete=wait_until_complete,
+            **kwargs,
+        )

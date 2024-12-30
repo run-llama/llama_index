@@ -4,6 +4,8 @@ import time
 import warnings
 from collections import deque
 from typing import Any, List, Optional
+import os
+from pathlib import Path
 
 import pandas as pd
 import tqdm
@@ -20,8 +22,9 @@ from llama_index.core.evaluation.notebook_utils import (
 from llama_index.core.llama_dataset import BaseLlamaDataset, BaseLlamaPredictionDataset
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms import LLM
+from llama_index.core.embeddings import BaseEmbedding
 from llama_index.core.query_engine import BaseQueryEngine
-from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.settings import Settings
 from llama_index.llms.openai import OpenAI
 from openai import RateLimitError
 from tqdm.asyncio import tqdm_asyncio
@@ -41,7 +44,9 @@ class RagEvaluatorPack(BaseLlamaPack):
         query_engine: BaseQueryEngine,
         rag_dataset: BaseLlamaDataset,
         judge_llm: Optional[LLM] = None,
+        embed_model: Optional[BaseEmbedding] = None,
         show_progress: bool = True,
+        result_path: Optional[str] = None,
     ):
         self.query_engine = query_engine
         self.rag_dataset = rag_dataset
@@ -51,6 +56,8 @@ class RagEvaluatorPack(BaseLlamaPack):
         else:
             assert isinstance(judge_llm, LLM)
             self.judge_llm = judge_llm
+
+        self.embed_model = embed_model or Settings.embed_model
         self.show_progress = show_progress
         self.evals = {
             "correctness": [],
@@ -60,6 +67,15 @@ class RagEvaluatorPack(BaseLlamaPack):
         }
         self.eval_queue = deque(range(len(rag_dataset.examples)))
         self.prediction_dataset = None
+        if result_path is None:
+            self.result_path = Path.cwd()
+        else:
+            self.result_path = Path(result_path)
+            if not self.result_path.is_absolute():
+                self.result_path = Path.cwd() / self.result_path
+
+        if not os.path.exists(self.result_path):
+            os.makedirs(self.result_path)
 
     async def _amake_predictions(
         self,
@@ -104,7 +120,7 @@ class RagEvaluatorPack(BaseLlamaPack):
             llm=self.judge_llm,
         )
         judges["semantic_similarity"] = SemanticSimilarityEvaluator(
-            embed_model=OpenAIEmbedding()
+            embed_model=self.embed_model
         )
         return judges
 
@@ -219,7 +235,9 @@ class RagEvaluatorPack(BaseLlamaPack):
             "relevancy": [e.dict() for e in self.evals["relevancy"]],
         }
 
-        with open("_evaluations.json", "w") as json_file:
+        with open(
+            os.path.join(self.result_path, "_evaluations.json"), "w"
+        ) as json_file:
             json.dump(evaluations_objects, json_file)
 
     def _prepare_and_save_benchmark_results(self):
@@ -259,7 +277,7 @@ class RagEvaluatorPack(BaseLlamaPack):
         mean_scores_df.index = mean_scores_df.index.set_names(["metrics"])
 
         # save mean_scores_df
-        mean_scores_df.to_csv("benchmark.csv")
+        mean_scores_df.to_csv(os.path.join(self.result_path, "benchmark.csv"))
         return mean_scores_df
 
     def _make_evaluations(

@@ -1,46 +1,36 @@
-import pytest
+import json
 from typing import List
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole, LogProb
-from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
-from openai.types.completion_choice import Logprobs
-from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.llms.openai.utils import (
-    from_openai_message_dicts,
-    from_openai_messages,
-    to_openai_message_dicts,
-    to_openai_tool,
-)
-
-from llama_index.llms.openai.utils import (
-    from_openai_completion_logprobs,
-    from_openai_token_logprob,
-    from_openai_token_logprobs,
-)
-
-
-from openai.types.chat.chat_completion_assistant_message_param import (
-    FunctionCall as FunctionCallParam,
-)
-
-
-from openai.types.chat.chat_completion_message import (
-    ChatCompletionMessage,
-    ChatCompletionMessageToolCall,
-)
-
-
+import pytest
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_param import (
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionFunctionMessageParam,
     ChatCompletionMessageParam,
-    ChatCompletionUserMessageParam,
 )
-
-
 from openai.types.chat.chat_completion_message_tool_call import (
     ChatCompletionMessageToolCall,
     Function,
+)
+from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.completion_choice import Logprobs
+
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ImageBlock,
+    LogProb,
+    MessageRole,
+    TextBlock,
+)
+from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai.utils import (
+    from_openai_completion_logprobs,
+    from_openai_message_dicts,
+    from_openai_messages,
+    from_openai_token_logprob,
+    from_openai_token_logprobs,
+    to_openai_message_dicts,
+    to_openai_tool,
 )
 
 
@@ -59,10 +49,10 @@ def chat_messages_with_function_calling() -> List[ChatMessage]:
             },
         ),
         ChatMessage(
-            role=MessageRole.FUNCTION,
+            role=MessageRole.TOOL,
             content='{"temperature": "22", "unit": "celsius", "description": "Sunny"}',
             additional_kwargs={
-                "name": "get_current_weather",
+                "tool_call_id": "get_current_weather",
             },
         ),
     ]
@@ -71,23 +61,23 @@ def chat_messages_with_function_calling() -> List[ChatMessage]:
 @pytest.fixture()
 def openi_message_dicts_with_function_calling() -> List[ChatCompletionMessageParam]:
     return [
-        ChatCompletionUserMessageParam(
-            role="user", content="test question with functions"
-        ),
-        ChatCompletionAssistantMessageParam(
-            role="assistant",
-            content=None,
-            function_call=FunctionCallParam(
-                name="get_current_weather",
-                arguments='{ "location": "Boston, MA"}',
-            ),
-        ),
-        ChatCompletionFunctionMessageParam(
-            role="function",
-            content='{"temperature": "22", "unit": "celsius", '
-            '"description": "Sunny"}',
-            name="get_current_weather",
-        ),
+        {
+            "role": "user",
+            "content": "test question with functions",
+        },
+        {
+            "role": "assistant",
+            "content": None,
+            "function_call": {
+                "name": "get_current_weather",
+                "arguments": '{ "location": "Boston, MA"}',
+            },
+        },
+        {
+            "role": "tool",
+            "content": '{"temperature": "22", "unit": "celsius", "description": "Sunny"}',
+            "tool_call_id": "get_current_weather",
+        },
     ]
 
 
@@ -143,7 +133,9 @@ def test_to_openai_message_dicts_basic_enum() -> None:
         ChatMessage(role=MessageRole.USER, content="test question"),
         ChatMessage(role=MessageRole.ASSISTANT, content="test answer"),
     ]
-    openai_messages = to_openai_message_dicts(chat_messages)
+    openai_messages = to_openai_message_dicts(
+        chat_messages,
+    )
     assert openai_messages == [
         {"role": "user", "content": "test question"},
         {"role": "assistant", "content": "test answer"},
@@ -155,7 +147,9 @@ def test_to_openai_message_dicts_basic_string() -> None:
         ChatMessage(role="user", content="test question"),
         ChatMessage(role="assistant", content="test answer"),
     ]
-    openai_messages = to_openai_message_dicts(chat_messages)
+    openai_messages = to_openai_message_dicts(
+        chat_messages,
+    )
     assert openai_messages == [
         {"role": "user", "content": "test question"},
         {"role": "assistant", "content": "test answer"},
@@ -166,7 +160,9 @@ def test_to_openai_message_dicts_function_calling(
     chat_messages_with_function_calling: List[ChatMessage],
     openi_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
 ) -> None:
-    message_dicts = to_openai_message_dicts(chat_messages_with_function_calling)
+    message_dicts = to_openai_message_dicts(
+        chat_messages_with_function_calling,
+    )
     assert message_dicts == openi_message_dicts_with_function_calling
 
 
@@ -233,6 +229,52 @@ def test_to_openai_message_with_pydantic_description() -> None:
     }
 
 
+def test_to_openai_message_dicts_with_content_blocks() -> None:
+    chat_message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            TextBlock(text="test question"),
+            ImageBlock(url="https://example.com/image.jpg"),
+        ],
+    )
+
+    # user messages are converted to blocks
+    openai_message = to_openai_message_dicts([chat_message])[0]
+    assert openai_message == {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "test question"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/image.jpg"},
+            },
+        ],
+    }
+
+    chat_message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            TextBlock(text="test question"),
+            ImageBlock(url="https://example.com/image.jpg"),
+        ],
+    )
+
+    # other messages do not support blocks
+    chat_message = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        blocks=[
+            TextBlock(text="test question"),
+            ImageBlock(url="https://example.com/image.jpg"),
+        ],
+    )
+
+    openai_message = to_openai_message_dicts([chat_message])[0]
+    assert openai_message == {
+        "role": "assistant",
+        "content": "test question",
+    }
+
+
 def test_from_openai_token_logprob_none_top_logprob() -> None:
     logprob = ChatCompletionTokenLogprob(token="", logprob=1.0, top_logprobs=[])
     logprob.top_logprobs = None
@@ -251,3 +293,50 @@ def test_from_openai_completion_logprobs_none_top_logprobs() -> None:
     logprobs = Logprobs(top_logprobs=None)
     result = from_openai_completion_logprobs(logprobs)
     assert isinstance(result, list)
+
+
+def _build_chat_response(arguments: str) -> ChatResponse:
+    return ChatResponse(
+        message=ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content=None,
+            additional_kwargs={
+                "tool_calls": [
+                    ChatCompletionMessageToolCall(
+                        id="0123",
+                        type="function",
+                        function=Function(
+                            name="search",
+                            arguments=arguments,
+                        ),
+                    ),
+                ],
+            },
+        ),
+    )
+
+
+def test_get_tool_calls_from_response_returns_empty_arguments_with_invalid_json_arguments() -> (
+    None
+):
+    response = _build_chat_response("INVALID JSON")
+    tools = OpenAI().get_tool_calls_from_response(response)
+    assert len(tools) == 1
+    assert tools[0].tool_kwargs == {}
+
+
+def test_get_tool_calls_from_response_returns_empty_arguments_with_non_dict_json_input() -> (
+    None
+):
+    response = _build_chat_response("null")
+    tools = OpenAI().get_tool_calls_from_response(response)
+    assert len(tools) == 1
+    assert tools[0].tool_kwargs == {}
+
+
+def test_get_tool_calls_from_response_returns_arguments_with_dict_json_input() -> None:
+    arguments = {"test": 123}
+    response = _build_chat_response(json.dumps(arguments))
+    tools = OpenAI().get_tool_calls_from_response(response)
+    assert len(tools) == 1
+    assert tools[0].tool_kwargs == arguments

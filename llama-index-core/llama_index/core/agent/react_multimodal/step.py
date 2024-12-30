@@ -73,7 +73,6 @@ def add_user_step_to_reasoning(
     # raise error if step.input is None
     if step.input is None:
         raise ValueError("Step input is None.")
-    # TODO: support gemini as well. Currently just supports OpenAI
 
     # TODO: currently assume that you can't generate images in the loop,
     # so step_state contains the original image_docs from the task
@@ -117,6 +116,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
+        generate_chat_message_fn: Optional[ChatMessageCallable] = None,
     ) -> None:
         self._multi_modal_llm = multi_modal_llm
         self.callback_manager = callback_manager or CallbackManager([])
@@ -126,21 +126,27 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         )
         self._output_parser = output_parser or ReActOutputParser()
         self._verbose = verbose
+        self._generate_chat_message_fn = generate_chat_message_fn
+        if self._generate_chat_message_fn is None:
+            try:
+                from llama_index.multi_modal_llms.openai.utils import (
+                    generate_openai_multi_modal_chat_message,
+                )  # pants: no-infer-dep
 
-        try:
-            from llama_index.multi_modal_llms.openai.utils import (
-                generate_openai_multi_modal_chat_message,
-            )  # pants: no-infer-dep
+                self._generate_chat_message_fn = (
+                    generate_openai_multi_modal_chat_message
+                )
 
-            self._add_user_step_to_reasoning = partial(
-                add_user_step_to_reasoning,
-                generate_chat_message_fn=generate_openai_multi_modal_chat_message,
-            )
-        except ImportError:
-            raise ImportError(
-                "`llama-index-multi-modal-llms-openai` package cannot be found. "
-                "Please install it by using `pip install `llama-index-multi-modal-llms-openai`"
-            )
+            except ImportError:
+                raise ImportError(
+                    "`llama-index-multi-modal-llms-openai` package cannot be found. "
+                    "Please install it by using `pip install `llama-index-multi-modal-llms-openai`"
+                )
+
+        self._add_user_step_to_reasoning = partial(
+            add_user_step_to_reasoning,
+            generate_chat_message_fn=self._generate_chat_message_fn,  # type: ignore
+        )
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -165,7 +171,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "MultimodalReActAgentWorker":
-        """Convenience constructor method from set of of BaseTools (Optional).
+        """Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -244,6 +250,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         if output.message.content is None:
             raise ValueError("Got empty message.")
         message_content = output.message.content
+
         current_reasoning = []
         try:
             reasoning_step = self._output_parser.parse(message_content, is_streaming)

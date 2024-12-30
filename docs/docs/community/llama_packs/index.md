@@ -8,7 +8,7 @@ This directly tackles a big pain point in building LLM apps; every use case requ
 
 They can be used in two ways:
 
-- On one hand, they are **prepackaged modules** that can be initialized with parameters and run out of the box to achieve a given use case (whether that’s a full RAG pipeline, application template, or more). You can also import submodules (e.g. LLMs, query engines) to use directly.
+- On one hand, they are **prepackaged modules** that can be initialized with parameters and run out of the box to achieve a given use case (whether that’s a full RAG flow, application template, or more). You can also import submodules (e.g. LLMs, query engines) to use directly.
 - On the other hand, LlamaPacks are **templates** that you can inspect, modify, and use.
 
 **All packs are found on [LlamaHub](https://llamahub.ai/).** Go to the dropdown menu and select "LlamaPacks" to filter by packs.
