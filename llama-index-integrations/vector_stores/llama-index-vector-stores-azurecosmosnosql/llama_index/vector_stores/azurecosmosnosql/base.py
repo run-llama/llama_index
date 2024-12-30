@@ -325,13 +325,8 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
 
         # If limit_offset_clause is not specified, add TOP clause
         if pre_filter is None or pre_filter.get("limit_offset_clause") is None:
-            # query += "TOP @limit "
             query += f"TOP {params.get('k', 2)} "
 
-        # query += (
-        #     "c.id, c.{}, c.text, c.metadata, "
-        #     "VectorDistance(c.@embeddingKey, @embeddings) AS SimilarityScore FROM c"
-        # )
         query += (
             "c.id, c.text, c.metadata, "
             f"VectorDistance(c.{self._embedding_key}, @embeddings) AS SimilarityScore FROM c"
@@ -341,15 +336,12 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         if pre_filter is not None and pre_filter.get("where_clause") is not None:
             query += " {}".format(pre_filter["where_clause"])
 
-        # query += " ORDER BY VectorDistance(c.@embeddingKey, @embeddings)"
         query += f" ORDER BY VectorDistance(c.{self._embedding_key}, @embeddings)"
 
         # Add limit_offset_clause if specified
         if pre_filter is not None and pre_filter.get("limit_offset_clause") is not None:
             query += " {}".format(pre_filter["limit_offset_clause"])
         parameters = [
-            # {"name": "@limit", "value": params["k"]},
-            # {"name": "@embeddingKey", "value": self._embedding_key},
             {"name": "@embeddings", "value": params["vector"]},
         ]
 
