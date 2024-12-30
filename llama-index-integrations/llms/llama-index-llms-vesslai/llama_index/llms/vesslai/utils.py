@@ -55,12 +55,12 @@ def read_service(service_name: str) -> Any:
         model_service_name=service_name
     )
     
-def ensure_service_idempotence_with_model_name(service_name: str, model_name: str) -> Any:
-    """Fetches the service configuration using the model name.
+def ensure_service_idempotence(service_name: str, yaml_str: str) -> Any:
+    """Fetches the service configuration using the yaml string.
 
     Args:
         service_name (str): The name of the service.
-        model_name (str): The name of the model.
+        yaml_str (str): The string value of yaml.
 
     Returns:
         Any: The service configuration object.
@@ -78,11 +78,17 @@ def ensure_service_idempotence_with_model_name(service_name: str, model_name: st
         return None
     
     if running_revision.status == "running":
-        yaml_dict = yaml.safe_load(running_revision.yaml_spec)
-        if yaml_dict.get("env", {}).get("MODEL_NAME", "") == model_name:
+        served_yaml_dict = yaml.safe_load(running_revision.yaml_spec)
+        user_yaml_dict = yaml.safe_load(yaml_str)
+        
+        if all([
+            served_yaml_dict.get("env", {}).get("MODEL_NAME") == user_yaml_dict.get("env", {}).get("MODEL_NAME"),
+            served_yaml_dict.get("run") == user_yaml_dict.get("run"),
+            served_yaml_dict.get("image") == user_yaml_dict.get("image")
+        ]):
             gateway = read_service(service_name=service_name).gateway_config
-            gateway_endpoint = f"https://{gateway.endpoint}/v1"
-            return gateway_endpoint
+            return f"https://{gateway.endpoint}/v1"
+
     return None
 
 def _request_abort_rollout(service_name: str) -> bool:
