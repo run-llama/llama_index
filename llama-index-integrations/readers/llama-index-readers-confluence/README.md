@@ -18,9 +18,10 @@ The following order is used for checking authentication credentials:
 
 1. `oauth2`
 2. `api_token`
-3. `user_name` and `password`
-4. Environment variable `CONFLUENCE_API_TOKEN`
-5. Environment variable `CONFLUENCE_USERNAME` and `CONFLUENCE_PASSWORD`
+3. `cookies`
+4. `user_name` and `password`
+5. Environment variable `CONFLUENCE_API_TOKEN`
+6. Environment variable `CONFLUENCE_USERNAME` and `CONFLUENCE_PASSWORD`
 
 For more on authenticating using OAuth 2.0, checkout:
 

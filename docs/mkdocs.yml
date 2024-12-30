@@ -113,6 +113,7 @@ nav:
           - ./examples/agent/multi_document_agents-v1.ipynb
           - ./examples/agent/multi_document_agents.ipynb
           - ./examples/agent/nvidia_agent.ipynb
+          - ./examples/agent/nvidia_document_research_assistant_for_blog_creation.ipynb
           - ./examples/agent/nvidia_sub_question_query_engine.ipynb
           - ./examples/agent/openai_agent.ipynb
           - ./examples/agent/openai_agent_context_retrieval.ipynb
@@ -151,6 +152,7 @@ nav:
           - ./examples/cookbooks/contextual_retrieval.ipynb
           - ./examples/cookbooks/crewai_llamaindex.ipynb
           - ./examples/cookbooks/llama3_cookbook.ipynb
+          - ./examples/cookbooks/llama3_cookbook_gaudi.ipynb
           - ./examples/cookbooks/llama3_cookbook_groq.ipynb
           - ./examples/cookbooks/llama3_cookbook_ollama_replicate.ipynb
           - ./examples/cookbooks/mistralai.ipynb
@@ -256,7 +258,6 @@ nav:
           - ./examples/embeddings/nomic.ipynb
           - ./examples/embeddings/nvidia.ipynb
           - ./examples/embeddings/oci_genai.ipynb
-          - ./examples/embeddings/octoai.ipynb
           - ./examples/embeddings/ollama_embedding.ipynb
           - ./examples/embeddings/openvino.ipynb
           - ./examples/embeddings/optimum_intel.ipynb
@@ -312,6 +313,7 @@ nav:
           - ./examples/ingestion/document_management_pipeline.ipynb
           - ./examples/ingestion/ingestion_gdrive.ipynb
           - ./examples/ingestion/parallel_execution_ingestion_pipeline.ipynb
+          - ./examples/ingestion/redis_ingestion_pipeline.ipynb
       - LLMs:
           - ./examples/llm/ai21.ipynb
           - ./examples/llm/alephalpha.ipynb
@@ -384,9 +386,7 @@ nav:
           - ./examples/llm/rungpt.ipynb
           - ./examples/llm/sagemaker_endpoint_llm.ipynb
           - ./examples/llm/sambanovasystems.ipynb
-          - ./examples/llm/solar.ipynb
           - ./examples/llm/together.ipynb
-          - ./examples/llm/unify.ipynb
           - ./examples/llm/upstage.ipynb
           - ./examples/llm/vertex.ipynb
           - ./examples/llm/vicuna.ipynb
@@ -448,6 +448,7 @@ nav:
           - ./examples/multi_modal/multi_modal_retrieval.ipynb
           - ./examples/multi_modal/multi_modal_video_RAG.ipynb
           - ./examples/multi_modal/multi_modal_videorag_videodb.ipynb
+          - ./examples/multi_modal/multimodal_rag_guardrail_gemini_llmguard_llmguard.ipynb
           - ./examples/multi_modal/nebius_multi_modal.ipynb
           - ./examples/multi_modal/nvidia_multi_modal.ipynb
           - ./examples/multi_modal/ollama_cookbook.ipynb
@@ -642,7 +643,6 @@ nav:
           - ./examples/vector_stores/LanternAutoRetriever.ipynb
           - ./examples/vector_stores/LanternIndexDemo.ipynb
           - ./examples/vector_stores/LindormDemo.ipynb
-          - ./examples/vector_stores/MetalIndexDemo.ipynb
           - ./examples/vector_stores/MilvusHybridIndexDemo.ipynb
           - ./examples/vector_stores/MilvusIndexDemo.ipynb
           - ./examples/vector_stores/MilvusOperatorFunctionDemo.ipynb
@@ -953,6 +953,8 @@ nav:
           - ./api_reference/evaluation/retrieval.md
           - ./api_reference/evaluation/semantic_similarity.md
           - ./api_reference/evaluation/tonic_validate.md
+      - Graph RAG:
+          - ./api_reference/graph_rag/cognee.md
       - Indexes:
           - ./api_reference/indices/bge_m3.md
           - ./api_reference/indices/colbert.md
@@ -1011,6 +1013,7 @@ nav:
           - ./api_reference/llms/ibm.md
           - ./api_reference/llms/index.md
           - ./api_reference/llms/ipex_llm.md
+          - ./api_reference/llms/keywordsai.md
           - ./api_reference/llms/konko.md
           - ./api_reference/llms/langchain.md
           - ./api_reference/llms/litellm.md
@@ -1647,6 +1650,7 @@ nav:
           - ./api_reference/tools/requests.md
           - ./api_reference/tools/retriever.md
           - ./api_reference/tools/salesforce.md
+          - ./api_reference/tools/scrapegraph.md
           - ./api_reference/tools/shopify.md
           - ./api_reference/tools/slack.md
           - ./api_reference/tools/tavily_research.md
@@ -2308,6 +2312,9 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-nebius
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-bedrock-rerank
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-pinecone-native-rerank
+            - ../llama-index-integrations/tools/llama-index-tools-scrapegraph
+            - ../llama-index-integrations/graph_rag/llama-index-graph-rag-cognee
+            - ../llama-index-integrations/llms/llama-index-llms-keywordsai
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

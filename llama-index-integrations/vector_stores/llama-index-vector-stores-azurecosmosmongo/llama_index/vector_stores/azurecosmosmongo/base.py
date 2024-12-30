@@ -7,7 +7,6 @@ An index that is built on top of an existing vector store.
 import logging
 import os
 from typing import Any, Dict, List, Optional, cast
-from datetime import date
 
 import pymongo
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -261,7 +260,6 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
                 self._embedding_key: node.get_embedding(),
                 self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
-                "timeStamp": date.today(),
             }
             data_to_insert.append(entry)
             ids.append(node.node_id)

@@ -147,6 +147,9 @@ def test_model_basic(
         profile_name=None,
         region_name="us-east-1",
         aws_access_key_id="test",
+        guardrail_identifier="test",
+        guardrail_version="test",
+        trace="ENABLED",
     )
 
     bedrock_stubber = Stubber(llm._client)
@@ -155,13 +158,25 @@ def test_model_basic(
     bedrock_stubber.add_response(
         "invoke_model",
         get_invoke_model_response(response_body),
-        {"body": complete_request, "modelId": model},
+        {
+            "body": complete_request,
+            "modelId": model,
+            "guardrailIdentifier": "test",
+            "guardrailVersion": "test",
+            "trace": "ENABLED",
+        },
     )
     # response for llm.chat()
     bedrock_stubber.add_response(
         "invoke_model",
         get_invoke_model_response(response_body),
-        {"body": chat_request, "modelId": model},
+        {
+            "body": chat_request,
+            "modelId": model,
+            "guardrailIdentifier": "test",
+            "guardrailVersion": "test",
+            "trace": "ENABLED",
+        },
     )
 
     bedrock_stubber.activate()

@@ -34,10 +34,19 @@ DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
 DEFAULT_OPENAI_API_VERSION = ""
 
 O1_MODELS: Dict[str, int] = {
+    "o1": 200000,
+    "o1-2024-12-17": 200000,
     "o1-preview": 128000,
     "o1-preview-2024-09-12": 128000,
     "o1-mini": 128000,
     "o1-mini-2024-09-12": 128000,
+}
+
+O1_MODELS_WITHOUT_FUNCTION_CALLING = {
+    "o1-preview",
+    "o1-preview-2024-09-12",
+    "o1-mini",
+    "o1-mini-2024-09-12",
 }
 
 GPT4_MODELS: Dict[str, int] = {
@@ -245,9 +254,7 @@ def is_function_calling_model(model: str) -> bool:
 
     is_chat_model_ = is_chat_model(model)
     is_old = "0314" in model or "0301" in model
-
-    # TODO: This is temporary for openai's beta
-    is_o1_beta = "o1" in model
+    is_o1_beta = model in O1_MODELS_WITHOUT_FUNCTION_CALLING
 
     return is_chat_model_ and not is_old and not is_o1_beta
 
@@ -304,7 +311,7 @@ def to_openai_message_dict(
     # TODO: O1 models do not support system prompts
     if model is not None and model in O1_MODELS:
         if message_dict["role"] == "system":
-            message_dict["role"] = "user"
+            message_dict["role"] = "developer"
 
     # NOTE: openai messages have additional arguments:
     # - function messages have `name`
