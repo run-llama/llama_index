@@ -18,9 +18,7 @@ import re
 #   d. doc.url (text)
 # 3. Create an API_KEY for this corpus with permissions for query and indexing
 # 4. Setup environment variables:
-#    VECTARA_API_KEY, VECTARA_CORPUS_ID, VECTARA_CUSTOMER_ID, and OPENAI_API_KEY
-#
-# Note: In order to run test_citations, you will need a Scale account.
+#    VECTARA_API_KEY, VECTARA_CORPUS_KEY, and OPENAI_API_KEY
 #
 
 
@@ -51,7 +49,7 @@ def get_docs() -> List[Document]:
     docs: List[Document] = []
     for inp in inputs:
         doc = Document(
-            text=str(inp["text"]),
+            text_resource=MediaResource(text=str(inp["text"])),
             metadata=inp["metadata"],
         )
         docs.append(doc)
@@ -131,7 +129,7 @@ def test_udf_retrieval(vectara1) -> None:
         num_results=2,
         n_sentences_before=0,
         n_sentences_after=0,
-        reranker="udf",
+        reranker="userfn",
         udf_expression="get('$.score') + get('$.document_metadata.test_score')",
     )
 
@@ -145,7 +143,7 @@ def test_udf_retrieval(vectara1) -> None:
         num_results=2,
         n_sentences_before=0,
         n_sentences_after=0,
-        reranker="udf",
+        reranker="userfn",
         udf_expression="max(0, 5 * get('$.score') - (to_unix_timestamp(now()) - to_unix_timestamp(datetime_parse(get('$.document_metadata.date'), 'yyyy-MM-dd'))) / 31536000)",
     )
 
@@ -181,7 +179,7 @@ def test_chain_rerank_retrieval(vectara1) -> None:
             {"type": "slingshot"},
             {"type": "mmr"},
             {
-                "type": "udf",
+                "type": "userfn",
                 "user_function": "5 * get('$.score') + get('$.document_metadata.test_score') / 2",
                 "limit": 2,
             },

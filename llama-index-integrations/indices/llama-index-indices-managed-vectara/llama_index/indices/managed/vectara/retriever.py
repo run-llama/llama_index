@@ -68,7 +68,6 @@ class VectaraRetriever(BaseRetriever):
         filter (List[str] | str): metadata filter (if specified). Provide single string for one corpus
             or a list of strings to specify the filter for each corpus (if multiple corpora).
         reranker (str): reranker to use: none, mmr, slingshot/multilingual_reranker_v1, userfn, or chain.
-            Note that "multilingual_reranker_v1" is a Vectara Scale feature only.
         rerank_k (int): number of results to fetch for Reranking, defaults to 50.
         rerank_limit (int): maximum number of results to return after reranking, defaults to 50.
             Don't specify this for chain reranking. Instead, put the "limit" parameter in the dict for each individual reranker.
@@ -89,24 +88,23 @@ class VectaraRetriever(BaseRetriever):
         summary_response_lang (str): language to use for summary generation.
         summary_num_results (int): number of results to use for summary generation.
         summary_prompt_name (str): name of the prompt to use for summary generation.
+        prompt_text (str): the custom prompt, using appropriate prompt variables and functions.
+            See (https://docs.vectara.com/docs/1.0/prompts/custom-prompts-with-metadata)
+            for more details.
         max_response_chars (int): the desired maximum number of characters for the generated summary.
         max_tokens (int): the maximum number of tokens to be returned by the LLM.
         temperature (float): The sampling temperature; higher values lead to more randomness.
         frequency_penalty (float): How much to penalize repeating tokens in the response, reducing likelihood of repeating the same line.
         presence_penalty (float): How much to penalize repeating tokens in the response, increasing the diversity of topics.
-        prompt_text (str): the custom prompt, using appropriate prompt variables and functions.
-            See (https://docs.vectara.com/docs/1.0/prompts/custom-prompts-with-metadata)
-            for more details.
         citations_style (str): The style of the citations in the summary generation,
-            either "numeric", "html", "markdown", or "none".
-            This is a Vectara Scale only feature. Defaults to None.
+            either "numeric", "html", "markdown", or "none". Defaults to None.
         citations_url_pattern (str): URL pattern for html and markdown citations.
             If non-empty, specifies the URL pattern to use for citations; e.g. "{doc.url}".
             See (https://docs.vectara.com/docs/api-reference/search-apis/search
-                 #citation-format-in-summary) for more details.
-            This is a Vectara Scale only feature. Defaults to None.
+                 #citation-format-in-summary) for more details. Defaults to None.
         citations_text_pattern (str): The displayed text for citations.
             If not specified, numeric citations are displayed for text.
+        save_history (bool): Whether to save the query in history. Defaults to False.
     """
 
     def __init__(
@@ -140,7 +138,7 @@ class VectaraRetriever(BaseRetriever):
         citations_style: Optional[str] = None,
         citations_url_pattern: Optional[str] = None,
         citations_text_pattern: Optional[str] = None,
-        save_history: bool = True,
+        save_history: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         x_source_str: str = "llama_index",
         **kwargs: Any,

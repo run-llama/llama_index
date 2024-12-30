@@ -17,8 +17,6 @@ import re
 # 4. Setup environment variables:
 #    VECTARA_API_KEY, VECTARA_CORPUS_KEY, and OPENAI_API_KEY
 #
-# Note: In order to run test_citations(), you will need a Scale account.
-#
 
 
 def test_class():
