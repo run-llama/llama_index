@@ -140,6 +140,12 @@ class ElasticsearchStore(BasePydanticVectorStore):
         retrieval_strategy: Retrieval strategy to use. AsyncBM25Strategy /
             AsyncSparseVectorStrategy / AsyncDenseVectorStrategy / AsyncRetrievalStrategy.
             Defaults to AsyncDenseVectorStrategy.
+        **kwargs: Additional parameters to be passed to the Elasticsearch
+                  client. This can include parameters such as request_timeout,
+                  retry_on_timeout, max_retries, ca_certs, verify_certs, and
+                  any other valid Elasticsearch client parameters. These
+                  parameters will be passed directly to the connection
+                  creation function.
 
     Raises:
         ConnectionError: If AsyncElasticsearch client cannot connect to Elasticsearch.
@@ -229,6 +235,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
                 api_key=es_api_key,
                 username=es_user,
                 password=es_password,
+                **kwargs,
             )
 
         if retrieval_strategy is None:

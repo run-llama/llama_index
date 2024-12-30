@@ -17,6 +17,7 @@ def get_elasticsearch_client(
     api_key: Optional[str] = None,
     username: Optional[str] = None,
     password: Optional[str] = None,
+    **kwargs,
 ) -> AsyncElasticsearch:
     if url and cloud_id:
         raise ValueError(
@@ -36,6 +37,8 @@ def get_elasticsearch_client(
         connection_params["api_key"] = api_key
     elif username and password:
         connection_params["basic_auth"] = (username, password)
+
+    connection_params.update(kwargs)
 
     sync_es_client = Elasticsearch(
         **connection_params, headers={"user-agent": get_user_agent()}

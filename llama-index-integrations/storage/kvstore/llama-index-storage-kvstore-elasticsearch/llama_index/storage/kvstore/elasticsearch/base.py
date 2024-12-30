@@ -26,6 +26,7 @@ def _get_elasticsearch_client(
     api_key: Optional[str] = None,
     username: Optional[str] = None,
     password: Optional[str] = None,
+    **kwargs
 ) -> elasticsearch.AsyncElasticsearch:
     """Get AsyncElasticsearch client.
 
@@ -35,6 +36,12 @@ def _get_elasticsearch_client(
         api_key: Elasticsearch API key.
         username: Elasticsearch username.
         password: Elasticsearch password.
+        **kwargs: Additional parameters to be passed to the Elasticsearch
+                  client. This can include parameters such as request_timeout,
+                  retry_on_timeout, max_retries, ca_certs, verify_certs, and
+                  any other valid Elasticsearch client parameters. These
+                  parameters will be passed directly to the connection
+                  creation function.
 
     Returns:
         AsyncElasticsearch client.
@@ -60,6 +67,8 @@ def _get_elasticsearch_client(
         connection_params["api_key"] = api_key
     elif username and password:
         connection_params["basic_auth"] = (username, password)
+
+    connection_params.update(kwargs)
 
     sync_es_client = elasticsearch.Elasticsearch(
         **connection_params,
@@ -110,6 +119,7 @@ class ElasticsearchKVStore(BaseKVStore):
         es_api_key: Optional[str] = None,
         es_user: Optional[str] = None,
         es_password: Optional[str] = None,
+        **kwargs,
     ) -> None:
         nest_asyncio.apply()
 
@@ -130,6 +140,7 @@ class ElasticsearchKVStore(BaseKVStore):
                 password=es_password,
                 cloud_id=es_cloud_id,
                 api_key=es_api_key,
+                **kwargs,
             )
         else:
             raise ValueError(
