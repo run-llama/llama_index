@@ -25,7 +25,9 @@ notion_db_id_t = NewType("notion_db_id_t", str)
 
 # TODO may be a good idea to use https://github.com/ramnes/notion-sdk-py
 # TODO get titles from databases
-
+# TODO page_id_t | str
+# TODO try to get rid of if start_cursor is not None:
+# TODO page titles???
 
 # -------------------------------------------------
 # Notes
@@ -490,7 +492,41 @@ i need to figure out how to avoid what i don't have access to
 
 
 
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 185, in _request_with_retry
+    response.raise_for_status()
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: https://api.notion.com/v1/blocks/149c2e93-a412-80eb-af36-f334f97f1b93/children
 
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/henry/Documents/Documents - MacBook Pro (6)/Git.nosync/DatabaseAware/test.py", line 41, in <module>
+    test_notion_reader()
+  File "/Users/henry/Documents/Documents - MacBook Pro (6)/Git.nosync/DatabaseAware/test.py", line 22, in test_notion_reader
+    notion_reader.get_page(page_id=page_id_t("149c2e93-a412-80eb-af36-f334f97f1b93"))
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 422, in get_page
+    page_text = self.read_page_text(page_id)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 418, in read_page_text
+    return self._read_block(page_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 144, in _read_block
+    for result in iterate_paginated_api(get_block_next_page):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/notion_client/helpers.py", line 44, in iterate_paginated_api
+    response = function(**kwargs, start_cursor=next_cursor)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 141, in get_block_next_page
+    return self._request_block(block_id, query_dict)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 104, in _request_block
+    res = self._request_with_retry(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 192, in _request_with_retry
+    raise requests.exceptions.HTTPError(
+requests.exceptions.HTTPError: Request failed: {"object":"error","status":400,"code":"validation_error","message":"body failed validation: body.start_cursor should be not present, instead was `\"149c2e93-a412-8069-b844-cf54d8844af9\"`.","request_id":"bf7126a0-befd-4c8a-922c-a57c4da292fd"}
+henry@MacBook-Pro-46 DatabaseAware %
 
 
 
