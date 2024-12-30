@@ -12,13 +12,14 @@ from llama_index.core.base.llms.types import (
     TextBlock,
 )
 
-from anthropic.types import MessageParam, TextBlockParam, ImageBlockParam
+from anthropic.types import (
+    MessageParam,
+    TextBlockParam,
+    ImageBlockParam,
+    CacheControlEphemeralParam,
+)
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
-from anthropic.types.beta.prompt_caching import (
-    PromptCachingBetaTextBlockParam,
-    PromptCachingBetaCacheControlEphemeralParam,
-)
 
 HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
@@ -156,17 +157,18 @@ def messages_to_anthropic_messages(
             for block in message.blocks:
                 if isinstance(block, TextBlock):
                     content_ = (
-                        PromptCachingBetaTextBlockParam(
+                        TextBlockParam(
                             text=block.text,
                             type="text",
-                            cache_control=PromptCachingBetaCacheControlEphemeralParam(
-                                type="ephemeral"
-                            ),
+                            cache_control=CacheControlEphemeralParam(type="ephemeral"),
                         )
                         if "cache_control" in message.additional_kwargs
                         else TextBlockParam(text=block.text, type="text")
                     )
-                    content.append(content_)
+
+                    # avoid empty text blocks
+                    if content_["text"]:
+                        content.append(content_)
                 elif isinstance(block, ImageBlock):
                     # FUTURE: Claude does not support URLs, so we need to always convert to base64
                     img_bytes = block.resolve_image(as_base64=True).read()

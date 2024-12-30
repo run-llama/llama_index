@@ -12,6 +12,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilter,
     FilterOperator,
     FilterCondition,
+    VectorStoreQueryMode,
 )
 from llama_index.vector_stores.tablestore import TablestoreVectorStore
 
@@ -49,7 +50,7 @@ def test_tablestore() -> None:
         vector_dimension=test_dimension_size,
         vector_metric_type=tablestore.VectorMetricType.VM_COSINE,
         ref_doc_id_field=ref_doc_id_field,
-        # metadata mapping is used to filter non-vector fields.
+        # custom metadata mapping is used to filter non-vector fields.
         metadata_mappings=[
             tablestore.FieldSchema(
                 "type",
@@ -165,3 +166,68 @@ def test_tablestore() -> None:
     assert query_result.ids is not None
     assert query_result.similarities is not None
     assert query_result.similarities is not None
+
+    # 8. query mode = TEXT
+    # modify it for test
+    query_embedding[0] = 0.1
+    query_result = store.query(
+        query=VectorStoreQuery(
+            mode=VectorStoreQueryMode.TEXT_SEARCH,
+            query_str="python",
+            similarity_top_k=5,
+        ),
+    )
+    print(query_result)
+    assert query_result is not None
+    assert query_result.ids is not None
+    assert query_result.similarities is not None
+    assert query_result.similarities is not None
+
+    # 9. query mode = HYBRID
+    query_embedding = embedder.get_text_embedding("nature fight physical")
+    # modify it for test
+    query_embedding[0] = 0.1
+    query_result = store.query(
+        query=VectorStoreQuery(
+            mode=VectorStoreQueryMode.HYBRID,
+            query_embedding=query_embedding,
+            query_str="python",
+            similarity_top_k=5,
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(key="type", value="a", operator=FilterOperator.EQ),
+                    MetadataFilter(key="time", value=2020, operator=FilterOperator.LTE),
+                ],
+                condition=FilterCondition.AND,
+            ),
+        ),
+    )
+    print(query_result)
+    assert query_result is not None
+    assert query_result.ids is not None
+    assert query_result.similarities is not None
+    assert query_result.similarities is not None
+
+
+def test_tablestore_add_dim() -> None:
+    store = TablestoreVectorStore(
+        endpoint="http://test.a.com",
+        instance_name="test",
+        access_key_id="test",
+        access_key_secret="test",
+        vector_dimension=512,
+        vector_metric_type=tablestore.VectorMetricType.VM_COSINE,
+    )
+    embedder = MockEmbedding(128)
+    node = TextNode(
+        id_="1",
+        text="hello world",
+        metadata={"type": "a", "time": 1995},
+    )
+    node.embedding = embedder.get_text_embedding(node.get_text())
+
+    try:
+        store.add([node])
+        raise RuntimeError("should failed")
+    except Exception as e:
+        assert "not the same as" in e.args[0]

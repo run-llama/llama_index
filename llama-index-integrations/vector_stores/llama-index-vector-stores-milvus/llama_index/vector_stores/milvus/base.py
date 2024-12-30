@@ -35,7 +35,13 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-from pymilvus import Collection, MilvusClient, DataType, AnnSearchRequest
+from pymilvus import (
+    Collection,
+    MilvusClient,
+    AsyncMilvusClient,
+    DataType,
+    AnnSearchRequest,
+)
 from pymilvus.client.types import LoadState
 
 logger = logging.getLogger(__name__)
@@ -208,6 +214,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     scalar_field_types: Optional[List[DataType]]
 
     _milvusclient: MilvusClient = PrivateAttr()
+    _async_milvusclient: AsyncMilvusClient = PrivateAttr()
     _collection: Any = PrivateAttr()
 
     def __init__(
@@ -271,6 +278,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
         )
         # Connect to Milvus instance
         self._milvusclient = MilvusClient(
+            uri=uri,
+            token=token,
+            **kwargs,  # pass additional arguments such as server_pem_path
+        )
+        self._async_milvusclient = AsyncMilvusClient(
             uri=uri,
             token=token,
             **kwargs,  # pass additional arguments such as server_pem_path
@@ -381,6 +393,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """Get client."""
         return self._milvusclient
 
+    @property
+    def aclient(self) -> AsyncMilvusClient:
+        """Get async client."""
+        return self._async_milvusclient
+
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into Milvus.
 
@@ -427,6 +444,46 @@ class MilvusVectorStore(BasePydanticVectorStore):
         )
         return insert_ids
 
+    async def async_add(
+        self,
+        nodes: List[BaseNode],
+        **add_kwargs: Any,
+    ) -> List[str]:
+        """Asynchronous version of the add method."""
+        insert_list = []
+        insert_ids = []
+
+        if self.enable_sparse is True and self.sparse_embedding_function is None:
+            logger.fatal(
+                "sparse_embedding_function is None when enable_sparse is True."
+            )
+
+        # Process that data we are going to insert
+        for node in nodes:
+            entry = node_to_metadata_dict(node)
+            entry[MILVUS_ID_FIELD] = node.node_id
+            entry[self.embedding_field] = node.embedding
+
+            if self.enable_sparse is True:
+                entry[
+                    self.sparse_embedding_field
+                ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+
+            insert_ids.append(node.node_id)
+            insert_list.append(entry)
+
+        # Insert the data into milvus
+        for insert_batch in iter_batch(insert_list, self.batch_size):
+            await self.aclient.insert(self.collection_name, insert_batch)
+        if add_kwargs.get("force_flush", False):
+            raise NotImplementedError("force_flush is not supported in async mode.")
+            # await self.aclient.flush(self.collection_name)
+        logger.debug(
+            f"Successfully inserted embeddings into: {self.collection_name} "
+            f"Num Inserted: {len(insert_list)}"
+        )
+        return insert_ids
+
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id.
@@ -453,6 +510,26 @@ class MilvusVectorStore(BasePydanticVectorStore):
         if len(entries) > 0:
             ids = [entry["id"] for entry in entries]
             self.client.delete(collection_name=self.collection_name, pks=ids)
+            logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
+
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """Asynchronous version of the delete method."""
+        # Adds ability for multiple doc delete in future.
+        doc_ids: List[str]
+        if isinstance(ref_doc_id, list):
+            doc_ids = ref_doc_id  # type: ignore
+        else:
+            doc_ids = [ref_doc_id]
+
+        # Begin by querying for the primary keys to delete
+        doc_ids = ['"' + entry + '"' for entry in doc_ids]
+        entries = await self.aclient.query(
+            collection_name=self.collection_name,
+            filter=f"{self.doc_id_field} in [{','.join(doc_ids)}]",
+        )
+        if len(entries) > 0:
+            ids = [entry["id"] for entry in entries]
+            await self.aclient.delete(collection_name=self.collection_name, pks=ids)
             logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
 
     def delete_nodes(
@@ -486,9 +563,39 @@ class MilvusVectorStore(BasePydanticVectorStore):
         )
         logger.debug(f"Successfully deleted node_ids: {node_ids}")
 
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Asynchronous version of the delete_nodes method."""
+        filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
+
+        if node_ids:
+            filters_cpy.filters.append(
+                MetadataFilter(key="id", value=node_ids, operator=FilterOperator.IN)
+            )
+
+        if filters_cpy is not None:
+            filter = _to_milvus_filter(filters_cpy)
+        else:
+            filter = None
+
+        await self.aclient.delete(
+            collection_name=self.collection_name,
+            filter=filter,
+            **delete_kwargs,
+        )
+        logger.debug(f"Successfully deleted node_ids: {node_ids}")
+
     def clear(self) -> None:
         """Clears db."""
         self.client.drop_collection(self.collection_name)
+
+    async def aclear(self) -> None:
+        """Asynchronous version of the clear method."""
+        await self.aclient.drop_collection(self.collection_name)
 
     def get_nodes(
         self,
@@ -517,6 +624,47 @@ class MilvusVectorStore(BasePydanticVectorStore):
             raise ValueError("Only one of node_ids or filters can be provided.")
 
         res = self.client.query(
+            ids=node_ids, collection_name=self.collection_name, filter=milvus_filter
+        )
+
+        nodes = []
+        for item in res:
+            if not self.text_key:
+                node = metadata_dict_to_node(item)
+                node.embedding = item.get(self.embedding_field, None)
+            else:
+                try:
+                    text = item.pop(self.text_key)
+                except Exception:
+                    raise ValueError(
+                        "The passed in text_key value does not exist "
+                        "in the retrieved entity."
+                    ) from None
+                embedding = item.pop(self.embedding_field, None)
+                node = TextNode(
+                    text=text,
+                    embedding=embedding,
+                    metadata=item,
+                )
+            nodes.append(node)
+        return nodes
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Asynchronous version of the get_nodes method."""
+        if node_ids is None and filters is None:
+            raise ValueError("Either node_ids or filters must be provided.")
+
+        filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
+        milvus_filter = _to_milvus_filter(filters_cpy)
+
+        if node_ids is not None and milvus_filter:
+            raise ValueError("Only one of node_ids or filters can be provided.")
+
+        res = await self.aclient.query(
             ids=node_ids, collection_name=self.collection_name, filter=milvus_filter
         )
 
@@ -578,6 +726,40 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         else:
             nodes, similarities, ids = self._hybrid_search(
+                query, string_expr, output_fields
+            )
+
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
+        """Asynchronous version of the query method."""
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            pass
+        elif query.mode == VectorStoreQueryMode.HYBRID:
+            if self.enable_sparse is False:
+                raise ValueError(f"QueryMode is HYBRID, but enable_sparse is False.")
+        elif query.mode == VectorStoreQueryMode.MMR:
+            pass
+        else:
+            raise ValueError(f"Milvus does not support {query.mode} yet.")
+
+        string_expr, output_fields = self._prepare_before_search(query, **kwargs)
+
+        # Perform the search
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            nodes, similarities, ids = await self._async_default_search(
+                query, string_expr, output_fields, **kwargs
+            )
+
+        elif query.mode == VectorStoreQueryMode.MMR:
+            nodes, similarities, ids = await self._async_mmr_search(
+                query, string_expr, output_fields, **kwargs
+            )
+
+        else:
+            nodes, similarities, ids = await self._async_hybrid_search(
                 query, string_expr, output_fields
             )
 
@@ -654,6 +836,32 @@ class MilvusVectorStore(BasePydanticVectorStore):
         nodes, similarities, ids = self._parse_from_milvus_results(res)
         return nodes, similarities, ids
 
+    async def _async_default_search(
+        self,
+        query: VectorStoreQuery,
+        string_expr: str,
+        output_fields: List[str],
+        **kwargs,
+    ) -> Tuple[List[BaseNode], List[float], List[str]]:
+        """
+        Perform asynchronous default search.
+        """
+        res = await self.aclient.search(
+            collection_name=self.collection_name,
+            data=[query.query_embedding],
+            filter=string_expr,
+            limit=query.similarity_top_k,
+            output_fields=output_fields,
+            search_params=kwargs.get("milvus_search_config", self.search_config),
+            anns_field=self.embedding_field,
+        )
+        logger.debug(
+            f"Successfully searched embedding in collection: {self.collection_name}"
+            f" Num Results: {len(res[0])}"
+        )
+        nodes, similarities, ids = self._parse_from_milvus_results(res)
+        return nodes, similarities, ids
+
     def _mmr_search(
         self,
         query: VectorStoreQuery,
@@ -682,6 +890,66 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     * kwargs.get("mmr_prefetch_factor", DEFAULT_MMR_PREFETCH_FACTOR)
                 )
         res = self.client.search(
+            collection_name=self.collection_name,
+            data=[query.query_embedding],
+            filter=string_expr,
+            limit=prefetch_k0,
+            output_fields=output_fields,
+            search_params=kwargs.get("milvus_search_config", self.search_config),
+            anns_field=self.embedding_field,
+        )
+        nodes = res[0]
+        node_embeddings = []
+        node_ids = []
+        for node in nodes:
+            node_embeddings.append(node["entity"]["embedding"])
+            node_ids.append(node["id"])
+        mmr_similarities, mmr_ids = get_top_k_mmr_embeddings(
+            query_embedding=query.query_embedding,
+            embeddings=node_embeddings,
+            similarity_top_k=query.similarity_top_k,
+            embedding_ids=node_ids,
+            mmr_threshold=mmr_threshold,
+        )
+        node_dict = dict(list(zip(node_ids, nodes)))
+        selected_nodes = [node_dict[id] for id in mmr_ids if id in node_dict]
+        similarities = mmr_similarities  # Passing the MMR similarities instead of the original similarities
+        ids = mmr_ids
+        nodes, _, _ = self._parse_from_milvus_results([selected_nodes])
+        logger.debug(
+            f"Successfully performed MMR on embeddings in collection: {self.collection_name}"
+        )
+        return nodes, similarities, ids
+
+    async def _async_mmr_search(
+        self,
+        query: VectorStoreQuery,
+        string_expr: str,
+        output_fields: List[str],
+        **kwargs,
+    ) -> Tuple[List[BaseNode], List[float], List[str]]:
+        """
+        Perform asynchronous MMR search.
+        """
+        mmr_threshold = kwargs.get("mmr_threshold", None)
+        if (
+            kwargs.get("mmr_prefetch_factor") is not None
+            and kwargs.get("mmr_prefetch_k") is not None
+        ):
+            raise ValueError(
+                "'mmr_prefetch_factor' and 'mmr_prefetch_k' "
+                "cannot coexist in a call to query()"
+            )
+        else:
+            if kwargs.get("mmr_prefetch_k") is not None:
+                prefetch_k0 = int(kwargs["mmr_prefetch_k"])
+            else:
+                prefetch_k0 = int(
+                    query.similarity_top_k
+                    * kwargs.get("mmr_prefetch_factor", DEFAULT_MMR_PREFETCH_FACTOR)
+                )
+
+        res = await self.aclient.search(
             collection_name=self.collection_name,
             data=[query.query_embedding],
             filter=string_expr,
@@ -760,6 +1028,70 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 "Your pymilvus version does not support hybrid search. please update it by `pip install -U pymilvus`"
             )
         res = self.client.hybrid_search(
+            self.collection_name,
+            [dense_req, sparse_req],
+            ranker=ranker,
+            limit=query.similarity_top_k,
+            output_fields=output_fields,
+        )
+        logger.debug(
+            f"Successfully searched embedding in collection: {self.collection_name}"
+            f" Num Results: {len(res[0])}"
+        )
+        nodes, similarities, ids = self._parse_from_milvus_results(res)
+        return nodes, similarities, ids
+
+    async def _async_hybrid_search(
+        self,
+        query: VectorStoreQuery,
+        string_expr: str,
+        output_fields: List[str],
+        **kwargs,
+    ) -> Tuple[List[BaseNode], List[float], List[str]]:
+        """
+        Perform asynchronous hybrid search.
+        """
+        sparse_emb = self.sparse_embedding_function.encode_queries([query.query_str])[0]
+        sparse_search_params = {"metric_type": "IP"}
+        sparse_req = AnnSearchRequest(
+            data=[sparse_emb],
+            anns_field=self.sparse_embedding_field,
+            param=sparse_search_params,
+            limit=query.similarity_top_k,
+            expr=string_expr,  # Apply metadata filters to sparse search
+        )
+        dense_search_params = {
+            "metric_type": self.similarity_metric,
+            "params": self.search_config,
+        }
+        dense_emb = query.query_embedding
+        dense_req = AnnSearchRequest(
+            data=[dense_emb],
+            anns_field=self.embedding_field,
+            param=dense_search_params,
+            limit=query.similarity_top_k,
+            expr=string_expr,  # Apply metadata filters to dense search
+        )
+        if WeightedRanker is None or RRFRanker is None:
+            logger.error("Hybrid retrieval is only supported in Milvus 2.4.0 or later.")
+            raise ValueError(
+                "Hybrid retrieval is only supported in Milvus 2.4.0 or later."
+            )
+        if self.hybrid_ranker == "WeightedRanker":
+            if self.hybrid_ranker_params == {}:
+                self.hybrid_ranker_params = {"weights": [1.0, 1.0]}
+            ranker = WeightedRanker(*self.hybrid_ranker_params["weights"])
+        elif self.hybrid_ranker == "RRFRanker":
+            if self.hybrid_ranker_params == {}:
+                self.hybrid_ranker_params = {"k": 60}
+            ranker = RRFRanker(self.hybrid_ranker_params["k"])
+        else:
+            raise ValueError(f"Unsupported ranker: {self.hybrid_ranker}")
+        if not hasattr(self.aclient, "hybrid_search"):
+            raise ValueError(
+                "Your pymilvus version does not support hybrid search. please update it by `pip install -U pymilvus`"
+            )
+        res = await self.aclient.hybrid_search(
             self.collection_name,
             [dense_req, sparse_req],
             ranker=ranker,

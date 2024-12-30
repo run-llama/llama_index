@@ -1,19 +1,19 @@
 """Voyage embeddings file."""
+
 import logging
+import os
+from io import BytesIO
+from pathlib import Path
 from typing import Any, List, Optional, Union
+
+import voyageai
+from PIL import Image
 
 from llama_index.core.base.embeddings.base import Embedding
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
-
-import voyageai
 from llama_index.core.embeddings import MultiModalEmbedding
-import base64
-from io import BytesIO
-from pathlib import Path
 from llama_index.core.schema import ImageType
-from PIL import Image
-
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,8 @@ class VoyageEmbedding(MultiModalEmbedding):
     _client: voyageai.Client = PrivateAttr(None)
     _aclient: voyageai.client_async.AsyncClient = PrivateAttr()
     truncation: Optional[bool] = None
+    output_dtype: Optional[str] = None
+    output_dimension: Optional[int] = None
 
     def __init__(
         self,
@@ -43,6 +45,8 @@ class VoyageEmbedding(MultiModalEmbedding):
         voyage_api_key: Optional[str] = None,
         embed_batch_size: Optional[int] = None,
         truncation: Optional[bool] = None,
+        output_dtype: Optional[str] = None,
+        output_dimension: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
@@ -73,6 +77,8 @@ class VoyageEmbedding(MultiModalEmbedding):
         self._client = voyageai.Client(api_key=voyage_api_key)
         self._aclient = voyageai.AsyncClient(api_key=voyage_api_key)
         self.truncation = truncation
+        self.output_dtype = output_dtype
+        self.output_dimension = output_dimension
 
     @classmethod
     def class_name(cls) -> str:
@@ -83,36 +89,29 @@ class VoyageEmbedding(MultiModalEmbedding):
         """Validate image format."""
         return file_type.lower() in SUPPORTED_IMAGE_FORMATS
 
-    def _text_to_content(self, input_str: str) -> dict:
-        return {"type": "text", "text": input_str}
-
-    def _texts_to_content(self, input_strs: List[str]) -> List[dict]:
+    @classmethod
+    def _texts_to_content(cls, input_strs: List[str]) -> List[dict]:
         return [{"content": [{"type": "text", "text": x}]} for x in input_strs]
 
-    def _image_to_content(self, image_input: Union[str, Path, BytesIO]) -> dict:
+    def _image_to_content(self, image_input: Union[str, Path, BytesIO]) -> Image:
         """Convert an image to a base64 Data URL."""
         if isinstance(image_input, (str, Path)):
+            image = Image.open(str(image_input))
             # If it's a string or Path, assume it's a file path
-            content = {"type": "image_url", "image_url": image_input}
+            image_path = str(image_input)
+            file_extension = os.path.splitext(image_path)[1][1:].lower()
         elif isinstance(image_input, BytesIO):
             # If it's a BytesIO, use it directly
             image = Image.open(image_input)
             file_extension = image.format.lower()
             image_input.seek(0)  # Reset the BytesIO stream to the beginning
-            image_data = image_input.read()
-
-            if self._validate_image_format(file_extension):
-                enc_img = base64.b64encode(image_data).decode("utf-8")
-                content = {
-                    "type": "image_base64",
-                    "image_base64": f"data:image/{file_extension};base64,{enc_img}",
-                }
-            else:
-                raise ValueError(f"Unsupported image format: {file_extension}")
         else:
             raise ValueError("Unsupported input type. Must be a file path or BytesIO.")
 
-        return {"content": [content]}
+        if self._validate_image_format(file_extension):
+            return image
+        else:
+            raise ValueError(f"Unsupported image format: {file_extension}")
 
     def _embed_image(
         self, image_path: ImageType, input_type: Optional[str] = None
@@ -125,7 +124,7 @@ class VoyageEmbedding(MultiModalEmbedding):
         processed_image = self._image_to_content(image_path)
         return self._client.multimodal_embed(
             model=self.model_name,
-            inputs=[processed_image],
+            inputs=[[processed_image]],
             input_type=input_type,
             truncation=self.truncation,
         ).embeddings[0]
@@ -142,7 +141,7 @@ class VoyageEmbedding(MultiModalEmbedding):
         return (
             await self._aclient.multimodal_embed(
                 model=self.model_name,
-                inputs=[processed_image],
+                inputs=[[processed_image]],
                 input_type=input_type,
                 truncation=self.truncation,
             )
@@ -168,6 +167,8 @@ class VoyageEmbedding(MultiModalEmbedding):
                 model=self.model_name,
                 input_type=input_type,
                 truncation=self.truncation,
+                output_dtype=self.output_dtype,
+                output_dimension=self.output_dimension,
             ).embeddings
 
     async def _aembed(self, texts: List[str], input_type: str) -> List[List[float]]:
@@ -184,6 +185,8 @@ class VoyageEmbedding(MultiModalEmbedding):
                 model=self.model_name,
                 input_type=input_type,
                 truncation=self.truncation,
+                output_dtype=self.output_dtype,
+                output_dimension=self.output_dimension,
             )
         return r.embeddings
 
