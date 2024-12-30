@@ -2,12 +2,11 @@ version: "3"
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1 # https://www.docker.elastic.co/r/elasticsearch/elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.2
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false # security has been disabled, so no login or password is required.
-      - xpack.security.http.ssl.enabled=false
       - xpack.license.self_generated.type=trial
+      - xpack.security.enabled=false # disable password and TLS; never do this in production!
     ports:
       - "9200:9200"
     healthcheck:

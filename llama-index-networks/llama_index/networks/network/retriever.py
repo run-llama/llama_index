@@ -19,9 +19,9 @@ class NetworkRetriever(BaseRetriever):
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
+        super().__init__(callback_manager=callback_manager)
         self._contributors = contributors
         self._node_postprocessors = node_postprocessors or []
-        super().__init__(callback_manager=callback_manager)
 
     def _postprocess_nodes(
         self, nodes: List[NodeWithScore], query_bundle: QueryBundle

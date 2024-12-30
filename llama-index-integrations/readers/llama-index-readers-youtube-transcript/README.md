@@ -34,4 +34,4 @@ is_youtube_video("https://youtube.com/watch?v=j83jrh2")  # => True
 is_youtube_video("https://vimeo.com/272134160")  # => False
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

@@ -29,13 +29,11 @@ index = load_index_from_storage(storage_context)
 ```
 
 !!! tip
-Important: if you had initialized your index with a custom
-`transformations`, `embed_model`, etc., you will need to pass in the same
-options during `load_index_from_storage`, or have it set as the [global settings](../../module_guides/supporting_modules/settings.md).
+    Important: if you had initialized your index with a custom `transformations`, `embed_model`, etc., you will need to pass in the same options during `load_index_from_storage`, or have it set as the [global settings](../../module_guides/supporting_modules/settings.md).
 
 ## Using Vector Stores
 
-As discussed in [indexing](../indexing/indexing.md), one of the most common types of Index is the VectorStoreIndex. The API calls to create the {ref}`embeddings <what-is-an-embedding>` in a VectorStoreIndex can be expensive in terms of time and money, so you will want to store them to avoid having to constantly re-index things.
+As discussed in [indexing](../indexing/indexing.md), one of the most common types of Index is the VectorStoreIndex. The API calls to create the [embeddings](../indexing/indexing.md#what-is-an-embedding) in a VectorStoreIndex can be expensive in terms of time and money, so you will want to store them to avoid having to constantly re-index things.
 
 LlamaIndex supports a [huge number of vector stores](../../module_guides/storing/vector_stores.md) which vary in architecture, complexity and cost. In this example we'll be using Chroma, an open-source vector store.
 
@@ -114,7 +112,7 @@ print(response)
 ```
 
 !!! tip
-We have a [more thorough example of using Chroma](../../examples/vector_stores/ChromaIndexDemo.ipynb) if you want to go deeper on this store.
+    We have a [more thorough example of using Chroma](../../examples/vector_stores/ChromaIndexDemo.ipynb) if you want to go deeper on this store.
 
 ### You're ready to query!
 

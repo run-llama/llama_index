@@ -40,12 +40,15 @@ class QueryEngineTool(AsyncBaseTool):
         query_engine: BaseQueryEngine,
         name: Optional[str] = None,
         description: Optional[str] = None,
+        return_direct: bool = False,
         resolve_input_errors: bool = True,
     ) -> "QueryEngineTool":
         name = name or DEFAULT_NAME
         description = description or DEFAULT_DESCRIPTION
 
-        metadata = ToolMetadata(name=name, description=description)
+        metadata = ToolMetadata(
+            name=name, description=description, return_direct=return_direct
+        )
         return cls(
             query_engine=query_engine,
             metadata=metadata,
@@ -93,7 +96,7 @@ class QueryEngineTool(AsyncBaseTool):
         )
         return LlamaIndexTool.from_tool_config(tool_config=tool_config)
 
-    def _get_query_str(self, *args, **kwargs) -> str:
+    def _get_query_str(self, *args: Any, **kwargs: Any) -> str:
         if args is not None and len(args) > 0:
             query_str = str(args[0])
         elif kwargs is not None and "input" in kwargs:

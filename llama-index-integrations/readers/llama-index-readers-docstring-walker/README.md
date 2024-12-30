@@ -7,7 +7,7 @@ At the same time, sometimes LLMs are used to read the full code from a repositor
 DocstringWalker tries to find a sweet spot between these two approaches. You can use it to:
 
 1. Parse all docstrings from modules, classes, and functions in your local code directory.
-2. Convert them do Llama Documents.
+2. Convert them do LlamaIndex Documents.
 3. Feed into LLM of your choice to produce a code-buddy chatbot or generate documentation.
    DocstringWalker utilizes only AST module, to process the code.
 

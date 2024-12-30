@@ -10,32 +10,42 @@ LlamaIndex offers multiple integration points with vector stores / vector databa
 LlamaIndex also supports different vector stores
 as the storage backend for `VectorStoreIndex`.
 
+- Alibaba Cloud OpenSearch (`AlibabaCloudOpenSearchStore`). [QuickStart](https://help.aliyun.com/zh/open-search/vector-search-edition).
+- Amazon Neptune - Neptune Analytics (`NeptuneAnalyticsVectorStore`). [Working with vector similarity in Neptune Analytics](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/vector-similarity.html).
 - Apache Cassandra® and Astra DB through CQL (`CassandraVectorStore`). [Installation](https://cassandra.apache.org/doc/stable/cassandra/getting_started/installing.html) [Quickstart](https://docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html)
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
+- AWS Document DB (`AWSDocDbVectorStore`). [Quickstart](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
+- Couchbase (`CouchbaseVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
 - Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
 - Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- Hnswlib (`HnswlibVectorStore`). [Installation](https://github.com/nmslib/hnswlib?tab=readme-ov-file#bindings-installation).
 - txtai (`TxtaiVectorStore`). [Installation](https://neuml.github.io/txtai/install/).
 - Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
 - Lantern (`LanternVectorStore`). [Quickstart](https://docs.lantern.dev/get-started/overview).
+- MariaDB (`MariaDBVectorStore`). [MariaDB Vector Overview](https://mariadb.com/kb/en/vector-overview/)
 - Milvus (`MilvusVectorStore`). [Installation](https://milvus.io/docs)
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart](https://www.mongodb.com/atlas/database).
 - MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
 - Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
+- OceanBase (`OceanBaseVectorStore`). [OceanBase Overview](https://github.com/oceanbase/oceanbase). [Quickstart](../../examples/vector_stores/OceanBaseVectorStore.ipynb). [Python Client](https://github.com/oceanbase/pyobvector)
 - Pinecone (`PineconeVectorStore`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - LanceDB (`LanceDBVectorStore`) [Installation/Quickstart](https://lancedb.github.io/lancedb/basic/)
-- Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/getting-started/installation/).
+- Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/).
+- Relyt (`RelytVectorStore`). [Quickstart](https://docs.relyt.cn/docs/vector-engine/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
-- TiDB (`TiDBVectorStore`). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
+- Tablestore (`Tablestore`). [Tablestore Overview](https://www.aliyun.com/product/ots). [Quickstart](../../examples/vector_stores/TablestoreDemo.ipynb). [Python Client](https://github.com/aliyun/aliyun-tablestore-python-sdk).
+- TiDB (`TiDBVectorStore`). [Quickstart](../../examples/vector_stores/TiDBVector.ipynb). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
+- Vertex AI Vector Search (`VertexAIVectorStore`). [Quickstart](https://cloud.google.com/vertex-ai/docs/vector-search/quickstart)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
@@ -93,6 +103,38 @@ response = query_engine.query("What did the author do growing up?")
 ```
 
 Below we show more examples of how to construct various vector stores we support.
+
+**Alibaba Cloud OpenSearch**
+
+```python
+from llama_index.vector_stores.alibabacloud_opensearch import (
+    AlibabaCloudOpenSearchStore,
+    AlibabaCloudOpenSearchConfig,
+)
+
+config = AlibabaCloudOpenSearchConfig(
+    endpoint="***",
+    instance_id="***",
+    username="your_username",
+    password="your_password",
+    table_name="llama",
+)
+
+vector_store = AlibabaCloudOpenSearchStore(config)
+```
+
+**Amazon Neptune - Neptune Analytics**
+
+```python
+from llama_index.vector_stores.neptune import NeptuneAnalyticsVectorStore
+
+graph_identifier = ""
+embed_dim = 1536
+
+neptune_vector_store = NeptuneAnalyticsVectorStore(
+    graph_identifier=graph_identifier, embedding_dimension=1536
+)
+```
 
 **Apache Cassandra®**
 
@@ -187,6 +229,33 @@ client = clickhouse_connect.get_client(
 
 # construct vector store
 vector_store = ClickHouseVectorStore(clickhouse_client=client)
+```
+
+**Couchbase**
+
+```python
+from datetime import timedelta
+
+from couchbase.auth import PasswordAuthenticator
+from couchbase.cluster import Cluster
+from couchbase.options import ClusterOptions
+
+# Create a Couchbase Cluster object
+auth = PasswordAuthenticator("DATABASE_USERNAME", "DATABASE_PASSWORD")
+options = ClusterOptions(auth)
+cluster = Cluster("CLUSTER_CONNECTION_STRING", options)
+
+# Wait until the cluster is ready for use.
+cluster.wait_until_ready(timedelta(seconds=5))
+
+# Create the Vector Store
+vector_store = CouchbaseVectorStore(
+    cluster=cluster,
+    bucket_name="BUCKET_NAME",
+    scope_name="SCOPE_NAME",
+    collection_name="COLLECTION_NAME",
+    index_name="SEARCH_INDEX_NAME",
+)
 ```
 
 **DashVector**
@@ -418,6 +487,22 @@ vector_store.logout()
 **Note**: Client(requires jaguardb-http-client) <--> Http Gateway <--> JaguarDB Server
 Client side needs to run: "pip install -U jaguardb-http-client"
 
+**MariaDB**
+
+```python
+from llama_index.vector_stores.mariadb import MariaDBVectorStore
+
+vector_store = MariaDBVectorStore.from_params(
+    host="localhost",
+    port=3306,
+    user="llamaindex",
+    password="password",
+    database="vectordb",
+    table_name="llama_index_vectorstore",
+    embed_dim=1536,  # OpenAI embedding dimension
+)
+```
+
 **Milvus**
 
 - Milvus Index offers the ability to store both Documents and their embeddings.
@@ -579,6 +664,46 @@ vector_store = SingleStoreVectorStore(
 )
 ```
 
+**Tablestore**
+
+```python
+import tablestore
+from llama_index.vector_stores.tablestore import TablestoreVectorStore
+
+# create a vector store that does not support filtering non-vector fields
+simple_vector_store = TablestoreVectorStore(
+    endpoint="<end_point>",
+    instance_name="<instance_name>",
+    access_key_id="<access_key_id>",
+    access_key_secret="<access_key_secret>",
+    vector_dimension=512,
+)
+
+# create a vector store that support filtering non-vector fields
+vector_store_with_meta_data = TablestoreVectorStore(
+    endpoint="<end_point>",
+    instance_name="<instance_name>",
+    access_key_id="<access_key_id>",
+    access_key_secret="<access_key_secret>",
+    vector_dimension=512,
+    # optional: custom metadata mapping is used to filter non-vector fields.
+    metadata_mappings=[
+        tablestore.FieldSchema(
+            "type",  # non-vector fields
+            tablestore.FieldType.KEYWORD,
+            index=True,
+            enable_sort_and_agg=True,
+        ),
+        tablestore.FieldSchema(
+            "time",  # non-vector fields
+            tablestore.FieldType.LONG,
+            index=True,
+            enable_sort_and_agg=True,
+        ),
+    ],
+)
+```
+
 **TiDB**
 
 ```python
@@ -611,6 +736,19 @@ vector_store = TimescaleVectorStore.from_params(
 from llama_index.vector_stores.upstash import UpstashVectorStore
 
 vector_store = UpstashVectorStore(url="YOUR_URL", token="YOUR_TOKEN")
+```
+
+**Vertex AI Vector Search**
+
+```python
+from llama_index.vector_stores.vertexaivectorsearch import VertexAIVectorStore
+
+vector_store = VertexAIVectorStore(
+    project_id="[your-google-cloud-project-id]",
+    region="[your-google-cloud-region]",
+    index_id="[your-index-resource-name]",
+    endpoint_id="[your-index-endpoint-name]",
+)
 ```
 
 **Weaviate**
@@ -787,12 +925,15 @@ documents = reader.load_data(
 
 ## Vector Store Examples
 
+- [Alibaba Cloud OpenSearch](../../examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb)
+- [Amazon Neptune - Neptune Analytics](../../examples/vector_stores/AmazonNeptuneVectorDemo.ipynb)
 - [Astra DB](../../examples/vector_stores/AstraDBIndexDemo.ipynb)
 - [Async Index Creation](../../examples/vector_stores/AsyncIndexCreationDemo.ipynb)
 - [Azure AI Search](../../examples/vector_stores/AzureAISearchIndexDemo.ipynb)
 - [Azure Cosmos DB](../../examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb)
 - [Caasandra](../../examples/vector_stores/CassandraIndexDemo.ipynb)
 - [Chromadb](../../examples/vector_stores/ChromaIndexDemo.ipynb)
+- [Couchbase](../../examples/vector_stores/CouchbaseVectorStoreDemo.ipynb)
 - [Dash](../../examples/vector_stores/DashvectorIndexDemo.ipynb)
 - [Deeplake](../../examples/vector_stores/DeepLakeIndexDemo.ipynb)
 - [DocArray HNSW](../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb)
@@ -802,6 +943,7 @@ documents = reader.load_data(
 - [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
 - [Metal](../../examples/vector_stores/MetalIndexDemo.ipynb)
 - [Milvus](../../examples/vector_stores/MilvusIndexDemo.ipynb)
+- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
 - [MyScale](../../examples/vector_stores/MyScaleIndexDemo.ipynb)
 - [ElsaticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)
 - [FAISS](../../examples/vector_stores/FaissIndexDemo.ipynb)
@@ -818,6 +960,7 @@ documents = reader.load_data(
 - [Rockset](../../examples/vector_stores/RocksetIndexDemo.ipynb)
 - [Simple](../../examples/vector_stores/SimpleIndexDemo.ipynb)
 - [Supabase](../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb)
+- [Tablestore](../../examples/vector_stores/TablestoreDemo.ipynb)
 - [Tair](../../examples/vector_stores/TairIndexDemo.ipynb)
 - [Tencent](../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb)
 - [Timesacle](../../examples/vector_stores/Timescalevector.ipynb)

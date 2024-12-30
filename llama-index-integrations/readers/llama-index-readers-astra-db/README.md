@@ -45,6 +45,6 @@ reader = AstraDBReader(
 documents = reader.load_data(vector=query_vector, limit=5)
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).
 
 > **Note**: Please see the AstraDB documentation [here](https://docs.datastax.com/en/astra/astra-db-vector/clients/python.html).

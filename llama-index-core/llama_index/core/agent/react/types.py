@@ -43,6 +43,7 @@ class ObservationReasoningStep(BaseReasoningStep):
     """Observation reasoning step."""
 
     observation: str
+    return_direct: bool = False
 
     def get_content(self) -> str:
         """Get content."""
@@ -51,7 +52,7 @@ class ObservationReasoningStep(BaseReasoningStep):
     @property
     def is_done(self) -> bool:
         """Is the reasoning step the last one."""
-        return False
+        return self.return_direct
 
 
 class ResponseReasoningStep(BaseReasoningStep):

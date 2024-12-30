@@ -35,10 +35,9 @@ class MockChatLLM(MockLLM):
     _responses: List[ChatMessage] = PrivateAttr()
 
     def __init__(self, responses: List[ChatMessage]) -> None:
+        super().__init__()
         self._i = 0  # call counter, determines which response to return
         self._responses = responses  # list of responses to return
-
-        super().__init__()
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         del messages  # unused
@@ -141,10 +140,9 @@ class MockStreamChatLLM(MockLLM):
     _responses: List[ChatMessage] = PrivateAttr()
 
     def __init__(self, responses: List[ChatMessage]) -> None:
+        super().__init__()
         self._i = 0  # call counter, determines which response to return
         self._responses = responses  # list of responses to return
-
-        super().__init__()
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -303,6 +301,26 @@ def _get_observations(task: Task) -> List[str]:
         if isinstance(s, ObservationReasoningStep)
     ]
     return [s.observation for s in obs_steps]
+
+
+def test_complaint_when_no_reasoning_step():
+    runner = ReActAgent.from_tools(
+        tools=[],
+        llm=MockLLM(),
+    )
+    task = runner.create_task("lorem")
+    chat_response = ChatResponse(
+        message=ChatMessage(
+            content="Thought: ipsum\nAction: dolor", role=MessageRole.ASSISTANT
+        )
+    )
+    current_reasoning, is_done = runner.agent_worker._process_actions(
+        task, tools=[], output=chat_response
+    )
+    assert (
+        current_reasoning[0].get_content()
+        == "Observation: Error: Could not parse output. Please follow the thought-action-input format. Try again."
+    )
 
 
 def test_add_step(

@@ -1,4 +1,4 @@
-::: llama_index.core.query_engine
+::: llama_index.experimental.query_engine
     options:
        members:
          - PandasQueryEngine

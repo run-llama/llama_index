@@ -69,5 +69,3 @@ result = query_engine.query("<YOUR_QUERY>")
 # Process the result as needed
 logging.info("Result: %s", result)
 ```
-
-This loader is designed to be used as a way to load data from WordLift KGs into [LlamaIndex](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/apify/actor#:~:text=load%20data%20into-,LlamaIndex,-and/or%20subsequently) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.

@@ -9,6 +9,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
@@ -78,8 +79,8 @@ class LiteLLM(LLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate.",
@@ -281,7 +282,7 @@ class LiteLLM(LLM):
                 **all_kwargs,
             ):
                 delta = response["choices"][0]["delta"]
-                role = delta.get("role", "assistant")
+                role = delta.get("role") or MessageRole.ASSISTANT
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
 
@@ -449,7 +450,7 @@ class LiteLLM(LLM):
                 **all_kwargs,
             ):
                 delta = response["choices"][0]["delta"]
-                role = delta.get("role", "assistant")
+                role = delta.get("role") or MessageRole.ASSISTANT
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
 

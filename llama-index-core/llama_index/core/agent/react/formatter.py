@@ -13,7 +13,7 @@ from llama_index.core.agent.react.types import (
     ObservationReasoningStep,
 )
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 from llama_index.core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
@@ -36,8 +36,7 @@ def get_react_tool_descriptions(tools: Sequence[BaseTool]) -> List[str]:
 class BaseAgentChatFormatter(BaseModel):
     """Base chat formatter."""
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @abstractmethod
     def format(

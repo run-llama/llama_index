@@ -1,12 +1,14 @@
 import json
-from tempfile import TemporaryDirectory
-
+import os
 import unittest
+from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock
-from llama_index.readers.google import GoogleDriveReader
+
+import pytest
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 from llama_index.core.readers.base import BaseReader
-import pytest
 from llama_index.readers.google import GoogleDriveReader
 
 test_client_config = {"client_config": {"key": "value"}}
@@ -90,3 +92,68 @@ class TestGoogleDriveReader(unittest.TestCase):
         )
 
         assert result == ["document1", "document2"]
+
+    def test_get_credentials_not_writing_to_file_on_cloud(self):
+        mock_credentials = MagicMock(spec=Credentials)
+        mock_flow = MagicMock(
+            spec=InstalledAppFlow,
+            run_local_server=MagicMock(return_value=mock_credentials),
+        )
+
+        # force InstalledAppFlow to be called
+        reader = GoogleDriveReader(
+            authorized_user_info=None,
+            service_account_key=None,
+            client_config={"web": {}},
+            token_path="credentials.json",
+            is_cloud=True,
+        )
+
+        with unittest.mock.patch(
+            "llama_index.readers.google.drive.base.InstalledAppFlow.from_client_config",
+            return_value=mock_flow,
+        ) as mock_from_client_config:
+            result = reader._get_credentials()
+
+        mock_from_client_config.assert_called_once()
+        mock_flow.run_local_server.assert_called_once()
+        mock_credentials.to_json.assert_not_called()
+        assert result == mock_credentials
+        assert os.path.exists(reader.token_path) is False
+
+    def test_get_relative_path(self):
+        # Mock the necessary objects and methods
+        mock_credentials = MagicMock()
+        mock_service = MagicMock()
+        GoogleDriveReader._get_credentials = MagicMock(return_value=mock_credentials)
+
+        reader = GoogleDriveReader(
+            client_config={
+                "client_id": "example_client_id",
+                "client_secret": "example_client_secret",
+            },
+        )
+
+        # Test case 1: Simple file without root_folder_id
+        file_id = "example_file_id"
+        mock_file_response = {"name": "test_file", "parents": ["parent_id"]}
+        mock_service.files().get().execute.return_value = mock_file_response
+
+        result = reader._get_relative_path(mock_service, file_id)
+        assert result == "test_file"
+
+        # Test case 2: File with path traversal to root_folder_id
+        root_folder_id = "root_folder_id"
+        mock_file_responses = [
+            {"name": "test_file", "parents": ["parent1_id"]},  # File
+            {"name": "parent1", "parents": ["parent2_id"]},  # Parent 1
+            {"name": "parent2", "parents": ["root_folder_id"]},  # Parent 2
+        ]
+
+        mock_service.files().get().execute.side_effect = mock_file_responses
+
+        result = reader._get_relative_path(mock_service, file_id, root_folder_id)
+        assert result == "parent2/parent1/test_file"
+
+        # Verify API calls
+        assert mock_service.files().get.call_count >= 1

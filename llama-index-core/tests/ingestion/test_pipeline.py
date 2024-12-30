@@ -4,7 +4,7 @@ from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.extractors import KeywordExtractor
 from llama_index.core.ingestion.pipeline import IngestionPipeline
 from llama_index.core.llms.mock import MockLLM
-from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.node_parser import SentenceSplitter, MarkdownElementNodeParser
 from llama_index.core.readers import ReaderConfig, StringIterableReader
 from llama_index.core.schema import Document
 from llama_index.core.storage.docstore import SimpleDocumentStore
@@ -57,6 +57,25 @@ def test_run_pipeline() -> None:
     assert len(nodes[0].metadata) > 0
 
 
+def test_run_pipeline_with_ref_doc_id():
+    documents = [
+        Document(text="one", doc_id="1"),
+    ]
+    pipeline = IngestionPipeline(
+        documents=documents,
+        transformations=[
+            MarkdownElementNodeParser(),
+            SentenceSplitter(),
+            MockEmbedding(embed_dim=8),
+        ],
+    )
+
+    nodes = pipeline.run()
+
+    assert len(nodes) == 1
+    assert nodes[0].ref_doc_id == "1"
+
+
 def test_save_load_pipeline() -> None:
     documents = [
         Document(text="one", doc_id="1"),
@@ -98,6 +117,45 @@ def test_save_load_pipeline() -> None:
     assert len(nodes) == 0
     assert pipeline.docstore is not None
     assert len(pipeline.docstore.docs) == 2
+
+
+def test_save_load_pipeline_without_docstore() -> None:
+    documents = [
+        Document(text="one", doc_id="1"),
+        Document(text="two", doc_id="2"),
+        Document(text="one", doc_id="1"),
+    ]
+
+    pipeline = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+        ],
+    )
+
+    nodes = pipeline.run(documents=documents)
+    assert len(nodes) == 3
+    assert pipeline.docstore is None
+
+    # dedup will not catch the last node if the document store is not set
+    nodes = pipeline.run(documents=[documents[-1]])
+    assert len(nodes) == 1
+    assert pipeline.docstore is None
+
+    # test save/load
+    pipeline.persist("./test_pipeline")
+
+    pipeline2 = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+        ],
+    )
+
+    pipeline2.load("./test_pipeline")
+
+    # dedup will not catch the last node if the document store is not set
+    nodes = pipeline.run(documents=[documents[-1]])
+    assert len(nodes) == 1
+    assert pipeline.docstore is None
 
 
 def test_pipeline_update() -> None:

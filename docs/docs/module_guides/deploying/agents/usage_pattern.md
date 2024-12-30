@@ -64,6 +64,7 @@ query_engine_tools = [
             description="Provides information about Lyft financials for year 2021. "
             "Use a detailed plain text question as input to the tool.",
         ),
+        return_direct=False,
     ),
     QueryEngineTool(
         query_engine=uber_engine,
@@ -72,6 +73,7 @@ query_engine_tools = [
             description="Provides information about Uber financials for year 2021. "
             "Use a detailed plain text question as input to the tool.",
         ),
+        return_direct=False,
     ),
 ]
 
@@ -106,6 +108,27 @@ query_engine_tools = [
 outer_agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
 ```
 
+## Agent With Planning
+
+Breaking down an initial task into easier-to-digest sub-tasks is a powerful pattern.
+
+LlamaIndex provides an agent planning module that does just this:
+
+```python
+from llama_index.agent.openai import OpenAIAgentWorker
+from llama_index.core.agent import (
+    StructuredPlannerAgent,
+    FunctionCallingAgentWorker,
+)
+
+worker = FunctionCallingAgentWorker.from_tools(tools, llm=llm)
+agent = StructuredPlannerAgent(worker)
+```
+
+In general, this agent may take longer to respond compared to the basic `AgentRunner` class, but the outputs will often be more complete. Another tradeoff to consider is that planning often requires a very capable LLM (for context, `gpt-3.5-turbo` is sometimes flakey for planning, while `gpt-4-turbo` does much better.)
+
+See more in the [complete guide](../../../examples/agent/structured_planner.ipynb)
+
 ## Lower-Level API
 
 The OpenAIAgent and ReActAgent are simple wrappers on top of an `AgentRunner` interacting with an `AgentWorker`.
@@ -127,20 +150,44 @@ Check out the [lower-level agent guide](agent_runner.md) for more details.
 
 ## Customizing your Agent
 
-If you wish to customize your agent, you can choose to subclass the `CustomSimpleAgentWorker`, and plug it into an AgentRunner (see above).
+If you wish to define a custom agent, the easiest way to do so is to just define a stateful function and wrap it with a `FnAgentWorker`.
+
+The `state` variable passed in and out of the function can contain anything you want it to, whether it's tools or arbitrary variables. It also contains task and output objects.
 
 ```python
-from llama_index.core.agent import CustomSimpleAgentWorker
+## This is an example showing a trivial function that multiplies an input number by 2 each time.
+## Pass this into an agent
+def multiply_agent_fn(state: dict) -> Tuple[Dict[str, Any], bool]:
+    """Mock agent input function."""
+    if "max_count" not in state:
+        raise ValueError("max_count must be specified.")
+
+    # __output__ is a special key indicating the final output of the agent
+    # __task__ is a special key representing the Task object passed by the agent to the function.
+    # `task.input` is the input string passed
+    if "__output__" not in state:
+        state["__output__"] = int(state["__task__"].input)
+        state["count"] = 0
+    else:
+        state["__output__"] = state["__output__"] * 2
+        state["count"] += 1
+
+    is_done = state["count"] >= state["max_count"]
+
+    # the output of this function should be a tuple of the state variable and is_done
+    return state, is_done
 
 
-class MyAgentWorker(CustomSimpleAgentWorker):
-    """Custom agent worker."""
+from llama_index.core.agent import FnAgentWorker
 
-    # define class here
-    pass
+agent = FnAgentWorker(
+    fn=multiply_agent_fn, initial_state={"max_count": 5}
+).as_agent()
+agent.query("5")
 ```
 
 Check out our [Custom Agent Notebook Guide](../../../examples/agent/custom_agent.ipynb) for more details.
+
 
 ## Advanced Concepts (for `OpenAIAgent`, in beta)
 
@@ -161,25 +208,25 @@ We first build an `ObjectIndex` over an existing set of Tools.
 ```python
 # define an "object" index over these tools
 from llama_index.core import VectorStoreIndex
-from llama_index.core.objects import ObjectIndex, SimpleToolNodeMapping
+from llama_index.core.objects import ObjectIndex
 
-tool_mapping = SimpleToolNodeMapping.from_objects(all_tools)
 obj_index = ObjectIndex.from_objects(
     all_tools,
-    tool_mapping,
-    VectorStoreIndex,
+    index_cls=VectorStoreIndex,
 )
 ```
 
-We then define our `FnRetrieverOpenAIAgent`:
+We then define our `OpenAIAgent`:
 
 ```python
-from llama_index.agent.openai_legacy import FnRetrieverOpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
-agent = FnRetrieverOpenAIAgent.from_retriever(
-    obj_index.as_retriever(), verbose=True
+agent = OpenAIAgent.from_tools(
+    tool_retriever=obj_index.as_retriever(similarity_top_k=2), verbose=True
 )
 ```
+
+You can find more details on the object index in the [full guide](../../../examples/objects/object_index.ipynb).
 
 ### Context Retrieval Agents
 

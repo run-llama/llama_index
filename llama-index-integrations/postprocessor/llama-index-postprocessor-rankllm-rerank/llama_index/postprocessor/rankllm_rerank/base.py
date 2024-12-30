@@ -1,55 +1,72 @@
-from typing import Any, List
-from enum import Enum
+from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.rerank import (
+    ReRankEndEvent,
+    ReRankStartEvent,
+)
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
+
+dispatcher = get_dispatcher(__name__)
+
+try:
+    from rank_llm.rerank.reranker import Reranker
+    from rank_llm.data import Request, Query, Candidate
+except ImportError:
+    raise ImportError("RankLLM requires `pip install rank-llm`")
 
 
 class RankLLMRerank(BaseNodePostprocessor):
-    """RankLLM-based reranker."""
+    """
+    RankLLM reranking suite. This class allows access to several reranking models supported by RankLLM. To use a model offered by the RankLLM suite, pass the desired model's hugging face path, found at https://huggingface.co/castorini. e.g., to access LiT5-Distill-base, pass 'castorini/LiT5-Distill-base' as the model name (https://huggingface.co/castorini/LiT5-Distill-base).
 
-    top_n: int = Field(default=5, description="Top N nodes to return from reranking.")
-    model: str = Field(default="zephyr", description="Reranker model name.")
-    with_retrieval: bool = Field(
-        default=False, description="Perform retrieval before reranking."
+    Below are all the rerankers supported with the model name to be passed as an argument to the constructor. Some model have convenience names for ease of use:
+        Listwise:
+            - RankZephyr. model='rank_zephyr' or 'castorini/rank_zephyr_7b_v1_full'
+            - RankVicuna. model='rank_zephyr' or 'castorini/rank_vicuna_7b_v1'
+            - RankGPT. Takes in a valid gpt model. e.g., 'gpt-3.5-turbo', 'gpt-4','gpt-3'
+            - LiT5 Distill. model='castorini/LiT5-Distill-base'
+            - LiT5 Score. model='castorini/LiT5-Score-base'
+        Pointwise:
+            - MonoT5. model='monot5'
+
+    """
+
+    model: str = Field(description="Model name.")
+    top_n: Optional[int] = Field(
+        description="Number of nodes to return sorted by reranking score."
     )
+    window_size: Optional[int] = Field(
+        description="Reranking window size. Applicable only for listwise and pairwise models."
+    )
+    batch_size: Optional[int] = Field(
+        description="Reranking batch size. Applicable only for pointwise models."
+    )
+
     _model: Any = PrivateAttr()
-    _result: Any = PrivateAttr()
-    _retriever: Any = PrivateAttr()
 
     def __init__(
         self,
-        model,
-        top_n: int = 10,
-        with_retrieval: bool = False,
+        model: str,
+        top_n: Optional[int] = None,
+        window_size: Optional[int] = None,
+        batch_size: Optional[int] = None,
     ):
-        try:
-            model_enum = ModelType(model.lower())
-        except ValueError:
-            raise ValueError("Unsupported model type. Please use 'vicuna' or 'zephyr'.")
-        from rank_llm.result import Result
-
-        self._result = Result
-
-        if model_enum == ModelType.VICUNA:
-            from rank_llm.rerank.vicuna_reranker import VicunaReranker
-
-            self._model = VicunaReranker()
-        elif model_enum == ModelType.ZEPHYR:
-            from rank_llm.rerank.zephyr_reranker import ZephyrReranker
-
-            self._model = ZephyrReranker()
-
-        if with_retrieval:
-            from rank_llm.retrieve.retriever import Retriever
-
-            self._retriever = Retriever
-
         super().__init__(
-            top_n=top_n,
-            with_retrieval=with_retrieval,
             model=model,
+            top_n=top_n,
+            window_size=window_size,
+            batch_size=batch_size,
+        )
+
+        self._model = Reranker.create_agent(
+            model.lower(),
+            default_agent=None,
+            interactive=False,
+            window_size=window_size,
+            batch_size=batch_size,
         )
 
     @classmethod
@@ -61,54 +78,60 @@ class RankLLMRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        docs = [(node.get_content(), node.get_score()) for node in nodes]
-
-        if self.with_retrieval:
-            hits = [
-                {
-                    "content": doc[0],
-                    "qid": 1,
-                    "docid": str(index),
-                    "rank": index,
-                    "score": doc[1],
-                }
-                for index, doc in enumerate(docs)
-            ]
-            retrieved_results = self._retriever.from_inline_hits(
-                query=query_bundle.query_str, hits=hits
+        dispatcher.event(
+            ReRankStartEvent(
+                query=query_bundle,
+                nodes=nodes,
+                top_n=self.top_n,
+                model_name=self.model,
             )
-        else:
-            retrieved_results = [
-                self._result(
-                    query=query_bundle.query_str,
-                    hits=[
-                        {
-                            "content": doc[0],
-                            "qid": 1,
-                            "docid": str(index),
-                            "rank": index,
-                            "score": doc[1],
-                        }
-                        for index, doc in enumerate(docs)
-                    ],
-                )
-            ]
+        )
 
-        permutation = self._model.rerank(
-            retrieved_results=retrieved_results,
-            rank_end=len(docs),
-            window_size=min(20, len(docs)),
+        docs = [
+            (node.get_content(metadata_mode=MetadataMode.EMBED), node.get_score())
+            for node in nodes
+        ]
+
+        request: List[Request] = [
+            Request(
+                query=Query(
+                    text=query_bundle.query_str,
+                    qid=1,
+                ),
+                candidates=[
+                    Candidate(
+                        docid=index,
+                        score=doc[1],
+                        doc={
+                            "body": doc[0],
+                            "headings": "",
+                            "title": "",
+                            "url": "",
+                        },
+                    )
+                    for index, doc in enumerate(docs)
+                ],
+            )
+        ]
+
+        # scores are maintained the same as generated from the retriever
+        permutation = self._model.rerank_batch(
+            request,
+            rank_end=len(request[0].candidates),
+            rank_start=0,
+            shuffle_candidates=False,
+            logging=False,
+            top_k_retrieve=len(request[0].candidates),
         )
 
         new_nodes: List[NodeWithScore] = []
-        for hit in permutation[0].hits:
-            idx: int = int(hit["docid"])
-            new_nodes.append(
-                NodeWithScore(node=nodes[idx].node, score=nodes[idx].score)
-            )
-        return new_nodes[: self.top_n]
+        for candidate in permutation[0].candidates:
+            id: int = int(candidate.docid)
+            new_nodes.append(NodeWithScore(node=nodes[id].node, score=nodes[id].score))
 
-
-class ModelType(Enum):
-    VICUNA = "vicuna"
-    ZEPHYR = "zephyr"
+        if self.top_n is None:
+            dispatcher.event(ReRankEndEvent(nodes=new_nodes))
+            return new_nodes
+        else:
+            dispatcher.event(ReRankEndEvent(nodes=new_nodes[: self.top_n]))
+            return new_nodes[: self.top_n]

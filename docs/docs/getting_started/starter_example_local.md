@@ -1,9 +1,9 @@
 # Starter Tutorial (Local Models)
 
 !!! tip
-Make sure you've followed the [custom installation](installation.md) steps first.
+    Make sure you've followed the [custom installation](installation.md) steps first.
 
-This is our famous "5 lines of code" starter example with local LLM and embedding models. We will use `BAAI/bge-small-en-v1.5` as our embedding model and `Mistral-7B` served through `Ollama` as our LLM.
+This is our famous "5 lines of code" starter example with local LLM and embedding models. We will use [`BAAI/bge-base-en-v1.5`](https://huggingface.co/BAAI/bge-base-en-v1.5) as our embedding model and `Llama3` served through `Ollama`.
 
 ## Download data
 
@@ -17,9 +17,15 @@ Ollama is a tool to help you get set up with LLMs locally (currently supported o
 
 Follow the [README](https://github.com/jmorganca/ollama) to learn how to install it.
 
-To load in a Mistral-7B model just do `ollama pull mistral`
+To download the Llama3 model just do `ollama pull llama3`.
 
 **NOTE**: You will need a machine with at least 32GB of RAM.
+
+To import `llama_index.llms.ollama`, you should run `pip install llama-index-llms-ollama`.
+
+To import `llama_index.embeddings.huggingface`, you should run `pip install llama-index-embeddings-huggingface`.
+
+More integrations are all listed on [https://llamahub.ai](https://llamahub.ai).
 
 ## Load data and build an index
 
@@ -27,16 +33,16 @@ In the same folder where you created the `data` folder, create a file called `st
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
-from llama_index.core.embeddings import resolve_embed_model
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.ollama import Ollama
 
 documents = SimpleDirectoryReader("data").load_data()
 
-# bge embedding model
-Settings.embed_model = resolve_embed_model("local:BAAI/bge-small-en-v1.5")
+# bge-base embedding model
+Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
 
 # ollama
-Settings.llm = Ollama(model="mistral", request_timeout=30.0)
+Settings.llm = Ollama(model="llama3", request_timeout=360.0)
 
 index = VectorStoreIndex.from_documents(
     documents,
@@ -53,7 +59,7 @@ Your directory structure should look like this:
     └── paul_graham_essay.txt
 </pre>
 
-We use the `BAAI/bge-small-en-v1.5` model through `resolve_embed_model`, which resolves to our HuggingFaceEmbedding class. We also use our `Ollama` LLM wrapper to load in the mistral model.
+We use the `BAAI/bge-base-en-v1.5` model through our [`HuggingFaceEmbedding`](../api_reference/embeddings/huggingface.md#llama_index.embeddings.huggingface.HuggingFaceEmbedding) class and our `Ollama` LLM wrapper to load in the Llama3 model. Learn more in the [Local Embedding Models](../module_guides/models/embeddings.md#local-embedding-models) page.
 
 ## Query your data
 
@@ -70,5 +76,6 @@ This creates an engine for Q&A over your index and asks a simple question. You s
 You can view logs, persist/load the index similar to our [starter example](starter_example.md).
 
 !!! tip
-_ learn more about the [high-level concepts](./concepts.md).
-_ tell me how to [customize things](./customization.md). \* curious about a specific module? check out the guides on the left 👈
+    - learn more about the [high-level concepts](./concepts.md).
+    - tell me how to [customize things](./customization.md).
+    - curious about a specific module? check out the [component guides](../module_guides/index.md).

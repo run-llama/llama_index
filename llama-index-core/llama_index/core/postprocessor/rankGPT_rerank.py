@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, SerializeAsAny
 from llama_index.core.llms import LLM, ChatMessage, ChatResponse
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
@@ -15,7 +15,7 @@ logger.setLevel(logging.WARNING)
 
 
 def get_default_llm() -> LLM:
-    from llama_index.llms.openai import OpenAI
+    from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
 
     return OpenAI(model="gpt-3.5-turbo-16k")
 
@@ -31,7 +31,7 @@ class RankGPTRerank(BaseNodePostprocessor):
     verbose: bool = Field(
         default=False, description="Whether to print intermediate steps."
     )
-    rankgpt_rerank_prompt: BasePromptTemplate = Field(
+    rankgpt_rerank_prompt: SerializeAsAny[BasePromptTemplate] = Field(
         description="rankGPT rerank prompt."
     )
 
@@ -69,6 +69,43 @@ class RankGPTRerank(BaseNodePostprocessor):
 
         messages = self.create_permutation_instruction(item=items)
         permutation = self.run_llm(messages=messages)
+        return self._llm_result_to_nodes(permutation, nodes, items)
+
+    async def _apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        if query_bundle is None:
+            raise ValueError("Query bundle must be provided.")
+
+        items = {
+            "query": query_bundle.query_str,
+            "hits": [{"content": node.get_content()} for node in nodes],
+        }
+
+        messages = self.create_permutation_instruction(item=items)
+        permutation = await self.arun_llm(messages=messages)
+        return self._llm_result_to_nodes(permutation, nodes, items)
+
+    async def apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+        query_str: Optional[str] = None,
+    ) -> List[NodeWithScore]:
+        """Postprocess nodes asynchronously."""
+        if query_str is not None and query_bundle is not None:
+            raise ValueError("Cannot specify both query_str and query_bundle")
+        elif query_str is not None:
+            query_bundle = QueryBundle(query_str)
+        else:
+            pass
+        return await self._apostprocess_nodes(nodes, query_bundle)
+
+    def _llm_result_to_nodes(
+        self, permutation: ChatResponse, nodes: List[NodeWithScore], items: Dict
+    ) -> List[NodeWithScore]:
         if permutation.message is not None and permutation.message.content is not None:
             rerank_ranks = self._receive_permutation(
                 items, str(permutation.message.content)
@@ -135,6 +172,9 @@ class RankGPTRerank(BaseNodePostprocessor):
 
     def run_llm(self, messages: Sequence[ChatMessage]) -> ChatResponse:
         return self.llm.chat(messages)
+
+    async def arun_llm(self, messages: Sequence[ChatMessage]) -> ChatResponse:
+        return await self.llm.achat(messages)
 
     def _clean_response(self, response: str) -> str:
         new_response = ""

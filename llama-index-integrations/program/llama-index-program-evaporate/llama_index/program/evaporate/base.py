@@ -5,7 +5,6 @@ from typing import Any, Dict, Generic, List, Optional, Type
 import pandas as pd
 from llama_index.core.llms import LLM
 from llama_index.core.schema import BaseNode, TextNode
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.types import BasePydanticProgram, Model
 from llama_index.core.utils import print_text
 from llama_index.program.evaporate.df import (
@@ -60,7 +59,6 @@ class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):
         fields_to_extract: Optional[List[str]] = None,
         fields_context: Optional[Dict[str, Any]] = None,
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         schema_id_prompt: Optional[SchemaIDPrompt] = None,
         fn_generate_prompt: Optional[FnGeneratePrompt] = None,
         field_extract_query_tmpl: str = DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
@@ -70,7 +68,6 @@ class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):
         """Evaporate program."""
         extractor = EvaporateExtractor(
             llm=llm,
-            service_context=service_context,
             schema_id_prompt=schema_id_prompt,
             fn_generate_prompt=fn_generate_prompt,
             field_extract_query_tmpl=field_extract_query_tmpl,
@@ -206,7 +203,6 @@ class MultiValueEvaporateProgram(BaseEvaporateProgram[DataFrameValuesPerColumn])
         fields_to_extract: Optional[List[str]] = None,
         fields_context: Optional[Dict[str, Any]] = None,
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         schema_id_prompt: Optional[SchemaIDPrompt] = None,
         fn_generate_prompt: Optional[FnGeneratePrompt] = None,
         field_extract_query_tmpl: str = DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
@@ -219,7 +215,6 @@ class MultiValueEvaporateProgram(BaseEvaporateProgram[DataFrameValuesPerColumn])
             fields_to_extract=fields_to_extract,
             fields_context=fields_context,
             llm=llm,
-            service_context=service_context,
             schema_id_prompt=schema_id_prompt,
             fn_generate_prompt=fn_generate_prompt,
             field_extract_query_tmpl=field_extract_query_tmpl,

@@ -35,7 +35,7 @@ example1 = LabelledRagDataExample(
         "of contexts used to",
         "generate the reference_answer",
     ],
-    reference_by=CreatedBy(type=CreateByType.HUMAN),
+    reference_by=CreatedBy(type=CreatedByType.HUMAN),
 )
 
 # a sad dataset consisting of one measely example
@@ -105,7 +105,7 @@ contexts retrieved by the RAG system to generated the predicted response.
 ## Where To Find `LabelledRagDataset`'s
 
 You can find all of the `LabelledRagDataset`'s in [llamahub](https://llamahub.ai). You can browse each one of these and decide
-if you do decide that you'd like to use it to benchmark your RAG pipeline, then
+if you do decide that you'd like to use it to benchmark your RAG workflow, then
 you can download the dataset as well as the source `Document`'s conveniently thru
 one of two ways: the `llamaindex-cli` or through Python code using the
 `download_llama_dataset` utility function.

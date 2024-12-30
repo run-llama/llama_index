@@ -7,7 +7,7 @@ from llama_index.core.base.embeddings.base import (
 )
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
-from llama_index.embeddings.huggingface.utils import format_query, format_text
+from llama_index.utils.huggingface import format_query, format_text
 
 DEFAULT_URL = "http://127.0.0.1:8080"
 
@@ -70,9 +70,11 @@ class TextEmbeddingsInference(BaseEmbedding):
         headers = {"Content-Type": "application/json"}
         if self.auth_token is not None:
             if callable(self.auth_token):
-                headers["Authorization"] = self.auth_token(self.base_url)
+                auth_token = self.auth_token(self.base_url)
             else:
-                headers["Authorization"] = self.auth_token
+                auth_token = self.auth_token
+            headers["Authorization"] = f"Bearer {auth_token}"
+
         json_data = {"inputs": texts, "truncate": self.truncate_text}
 
         with httpx.Client() as client:

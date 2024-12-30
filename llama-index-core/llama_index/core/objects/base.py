@@ -2,7 +2,7 @@
 
 import pickle
 import warnings
-from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar
+from typing import Any, Callable, Dict, Generic, List, Optional, Sequence, Type, TypeVar
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.query_pipeline.query import (
@@ -12,16 +12,17 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
+from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.objects.base_node_mapping import (
     DEFAULT_PERSIST_FNAME,
     BaseObjectNodeMapping,
     SimpleObjectNodeMapping,
 )
-from llama_index.core.schema import QueryType
+from llama_index.core.schema import BaseNode, QueryBundle, QueryType
 from llama_index.core.storage.storage_context import (
     DEFAULT_PERSIST_DIR,
     StorageContext,
@@ -34,22 +35,56 @@ class ObjectRetriever(ChainableMixin, Generic[OT]):
     """Object retriever."""
 
     def __init__(
-        self, retriever: BaseRetriever, object_node_mapping: BaseObjectNodeMapping[OT]
+        self,
+        retriever: BaseRetriever,
+        object_node_mapping: BaseObjectNodeMapping[OT],
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
     ):
         self._retriever = retriever
         self._object_node_mapping = object_node_mapping
+        self._node_postprocessors = node_postprocessors or []
 
     @property
     def retriever(self) -> BaseRetriever:
         """Retriever."""
         return self._retriever
 
+    @property
+    def object_node_mapping(self) -> BaseObjectNodeMapping[OT]:
+        """Object node mapping."""
+        return self._object_node_mapping
+
+    @property
+    def node_postprocessors(self) -> List[BaseNodePostprocessor]:
+        """Node postprocessors."""
+        return self._node_postprocessors
+
     def retrieve(self, str_or_query_bundle: QueryType) -> List[OT]:
-        nodes = self._retriever.retrieve(str_or_query_bundle)
+        if isinstance(str_or_query_bundle, str):
+            query_bundle = QueryBundle(query_str=str_or_query_bundle)
+        else:
+            query_bundle = str_or_query_bundle
+
+        nodes = self._retriever.retrieve(query_bundle)
+        for node_postprocessor in self._node_postprocessors:
+            nodes = node_postprocessor.postprocess_nodes(
+                nodes, query_bundle=query_bundle
+            )
+
         return [self._object_node_mapping.from_node(node.node) for node in nodes]
 
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[OT]:
-        nodes = await self._retriever.aretrieve(str_or_query_bundle)
+        if isinstance(str_or_query_bundle, str):
+            query_bundle = QueryBundle(query_str=str_or_query_bundle)
+        else:
+            query_bundle = str_or_query_bundle
+
+        nodes = await self._retriever.aretrieve(query_bundle)
+        for node_postprocessor in self._node_postprocessors:
+            nodes = node_postprocessor.postprocess_nodes(
+                nodes, query_bundle=query_bundle
+            )
+
         return [self._object_node_mapping.from_node(node.node) for node in nodes]
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
@@ -60,10 +95,8 @@ class ObjectRetriever(ChainableMixin, Generic[OT]):
 class ObjectRetrieverComponent(QueryComponent):
     """Object retriever component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     retriever: ObjectRetriever = Field(..., description="Retriever.")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -105,18 +138,59 @@ class ObjectIndex(Generic[OT]):
         self._index = index
         self._object_node_mapping = object_node_mapping
 
+    @property
+    def index(self) -> BaseIndex:
+        """Index."""
+        return self._index
+
+    @property
+    def object_node_mapping(self) -> BaseObjectNodeMapping:
+        """Object node mapping."""
+        return self._object_node_mapping
+
     @classmethod
     def from_objects(
         cls,
         objects: Sequence[OT],
         object_mapping: Optional[BaseObjectNodeMapping] = None,
+        from_node_fn: Optional[Callable[[BaseNode], OT]] = None,
+        to_node_fn: Optional[Callable[[OT], BaseNode]] = None,
         index_cls: Type[BaseIndex] = VectorStoreIndex,
         **index_kwargs: Any,
     ) -> "ObjectIndex":
+        from llama_index.core.objects.utils import get_object_mapping
+
+        # pick the best mapping if not provided
         if object_mapping is None:
-            object_mapping = SimpleObjectNodeMapping.from_objects(objects)
+            object_mapping = get_object_mapping(
+                objects,
+                from_node_fn=from_node_fn,
+                to_node_fn=to_node_fn,
+            )
+
         nodes = object_mapping.to_nodes(objects)
         index = index_cls(nodes, **index_kwargs)
+        return cls(index, object_mapping)
+
+    @classmethod
+    def from_objects_and_index(
+        cls,
+        objects: Sequence[OT],
+        index: BaseIndex,
+        object_mapping: Optional[BaseObjectNodeMapping] = None,
+        from_node_fn: Optional[Callable[[BaseNode], OT]] = None,
+        to_node_fn: Optional[Callable[[OT], BaseNode]] = None,
+    ) -> "ObjectIndex":
+        from llama_index.core.objects.utils import get_object_mapping
+
+        # pick the best mapping if not provided
+        if object_mapping is None:
+            object_mapping = get_object_mapping(
+                objects,
+                from_node_fn=from_node_fn,
+                to_node_fn=to_node_fn,
+            )
+
         return cls(index, object_mapping)
 
     def insert_object(self, obj: Any) -> None:
@@ -124,10 +198,15 @@ class ObjectIndex(Generic[OT]):
         node = self._object_node_mapping.to_node(obj)
         self._index.insert_nodes([node])
 
-    def as_retriever(self, **kwargs: Any) -> ObjectRetriever:
+    def as_retriever(
+        self,
+        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+        **kwargs: Any,
+    ) -> ObjectRetriever:
         return ObjectRetriever(
             retriever=self._index.as_retriever(**kwargs),
             object_node_mapping=self._object_node_mapping,
+            node_postprocessors=node_postprocessors,
         )
 
     def as_node_retriever(self, **kwargs: Any) -> BaseRetriever:

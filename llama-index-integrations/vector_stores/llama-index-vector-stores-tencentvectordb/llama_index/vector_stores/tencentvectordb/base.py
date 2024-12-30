@@ -7,6 +7,7 @@ An index that is built with Tencent Vector Database.
 import json
 from typing import Any, Dict, List, Optional
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
     NodeRelationship,
@@ -14,7 +15,7 @@ from llama_index.core.schema import (
     TextNode,
 )
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -130,8 +131,8 @@ class CollectionParams:
         vector_params: Optional[Dict] = None,
         filter_fields: Optional[List[FilterField]] = [],
     ):
-        self.collection_name = collection_name
-        self.collection_description = collection_description
+        self._collection_name = collection_name
+        self._collection_description = collection_description
         self.dimension = dimension
         self.shard = shard
         self.replicas = replicas
@@ -139,10 +140,10 @@ class CollectionParams:
         self.metric_type = metric_type
         self.vector_params = vector_params
         self.drop_exists = drop_exists
-        self.filter_fields = filter_fields or []
+        self._filter_fields = filter_fields or []
 
 
-class TencentVectorDB(VectorStore):
+class TencentVectorDB(BasePydanticVectorStore):
     """Tencent Vector Store.
 
     In this vector store, embeddings and docs are stored within a Collection.
@@ -177,6 +178,12 @@ class TencentVectorDB(VectorStore):
     stores_text: bool = True
     filter_fields: List[FilterField] = []
 
+    batch_size: int
+    _tencent_client: Any = PrivateAttr()
+    _database: Any = PrivateAttr()
+    _collection: Any = PrivateAttr()
+    _filter_fields: List[FilterField] = PrivateAttr()
+
     def __init__(
         self,
         url: str,
@@ -189,17 +196,17 @@ class TencentVectorDB(VectorStore):
         **kwargs: Any,
     ):
         """Init params."""
+        super().__init__(batch_size=batch_size)
         self._init_client(url, username, key, read_consistency)
         self._create_database_if_not_exists(database_name)
         self._create_collection(database_name, collection_params)
         self._init_filter_fields()
-        self.batch_size = batch_size
 
     def _init_filter_fields(self) -> None:
-        fields = vars(self.collection).get("indexes", [])
+        fields = vars(self._collection).get("indexes", [])
         for field in fields:
             if field["fieldName"] not in [FIELD_ID, DEFAULT_DOC_ID_KEY, FIELD_VECTOR]:
-                self.filter_fields.append(
+                self._filter_fields.append(
                     FilterField(name=field["fieldName"], data_type=field["fieldType"])
                 )
 
@@ -247,7 +254,7 @@ class TencentVectorDB(VectorStore):
                 VALUE_RANGE_ERROR.format(READ_CONSISTENCY, READ_CONSISTENCY_VALUES)
             )
 
-        self.tencent_client = tcvectordb.VectorDBClient(
+        self._tencent_client = tcvectordb.VectorDBClient(
             url=url,
             username=username,
             key=key,
@@ -256,12 +263,12 @@ class TencentVectorDB(VectorStore):
         )
 
     def _create_database_if_not_exists(self, database_name: str) -> None:
-        db_list = self.tencent_client.list_databases()
+        db_list = self._tencent_client.list_databases()
 
         if database_name in [db.database_name for db in db_list]:
-            self.database = self.tencent_client.database(database_name)
+            self._database = self._tencent_client.database(database_name)
         else:
-            self.database = self.tencent_client.create_database(database_name)
+            self._database = self._tencent_client.create_database(database_name)
 
     def _create_collection(
         self, database_name: str, collection_params: CollectionParams
@@ -271,15 +278,15 @@ class TencentVectorDB(VectorStore):
         collection_name: str = self._compute_collection_name(
             database_name, collection_params
         )
-        collection_description = collection_params.collection_description
+        collection_description = collection_params._collection_description
 
         if collection_params is None:
             raise ValueError(VALUE_NONE_ERROR.format("collection_params"))
 
         try:
-            self.collection = self.database.describe_collection(collection_name)
+            self._collection = self._database.describe_collection(collection_name)
             if collection_params.drop_exists:
-                self.database.drop_collection(collection_name)
+                self._database.drop_collection(collection_name)
                 self._create_collection_in_db(
                     collection_name, collection_description, collection_params
                 )
@@ -293,9 +300,9 @@ class TencentVectorDB(VectorStore):
         database_name: str, collection_params: CollectionParams
     ) -> str:
         if database_name == DEFAULT_DATABASE_NAME:
-            return collection_params.collection_name
-        if collection_params.collection_name != DEFAULT_COLLECTION_NAME:
-            return collection_params.collection_name
+            return collection_params._collection_name
+        if collection_params._collection_name != DEFAULT_COLLECTION_NAME:
+            return collection_params._collection_name
         else:
             return database_name + "_" + DEFAULT_COLLECTION_NAME
 
@@ -333,7 +340,7 @@ class TencentVectorDB(VectorStore):
         for field in collection_params.filter_fields:
             index.add(field.to_vdb_filter())
 
-        self.collection = self.database.create_collection(
+        self._collection = self._database.create_collection(
             name=collection_name,
             shard=collection_params.shard,
             replicas=collection_params.replicas,
@@ -412,7 +419,7 @@ class TencentVectorDB(VectorStore):
     @property
     def client(self) -> Any:
         """Get client."""
-        return self.tencent_client
+        return self._tencent_client
 
     def add(
         self,
@@ -435,7 +442,7 @@ class TencentVectorDB(VectorStore):
                 document.__dict__[DEFAULT_DOC_ID_KEY] = node.ref_doc_id
             if node.metadata is not None:
                 document.__dict__[FIELD_METADATA] = json.dumps(node.metadata)
-                for field in self.filter_fields:
+                for field in self._filter_fields:
                     v = node.metadata.get(field.name)
                     if field.match_value(v):
                         document.__dict__[field.name] = v
@@ -446,13 +453,13 @@ class TencentVectorDB(VectorStore):
             ids.append(node.node_id)
 
             if len(entries) >= self.batch_size:
-                self.collection.upsert(
+                self._collection.upsert(
                     documents=entries, build_index=True, timeout=DEFAULT_TIMEOUT
                 )
                 entries = []
 
         if len(entries) > 0:
-            self.collection.upsert(
+            self._collection.upsert(
                 documents=entries, build_index=True, timeout=DEFAULT_TIMEOUT
             )
 
@@ -472,16 +479,18 @@ class TencentVectorDB(VectorStore):
         from tcvectordb.model.document import Filter
 
         delete_ids = ref_doc_id if isinstance(ref_doc_id, list) else [ref_doc_id]
-        self.collection.delete(filter=Filter(Filter.In(DEFAULT_DOC_ID_KEY, delete_ids)))
+        self._collection.delete(
+            filter=Filter(Filter.In(DEFAULT_DOC_ID_KEY, delete_ids))
+        )
 
     def query_by_ids(self, ids: List[str]) -> List[Dict]:
-        return self.collection.query(document_ids=ids, limit=len(ids))
+        return self._collection.query(document_ids=ids, limit=len(ids))
 
     def truncate(self) -> None:
-        self.database.truncate_collection(self.collection.collection_name)
+        self._database.truncate_collection(self._collection.collection_name)
 
     def describe_collection(self) -> Any:
-        return self.database.describe_collection(self.collection.collection_name)
+        return self._database.describe_collection(self._collection.collection_name)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
@@ -502,7 +511,7 @@ class TencentVectorDB(VectorStore):
                using filter: `doc_id in (query.doc_ids)`
         """
         search_filter = self._to_vdb_filter(query, **kwargs)
-        results = self.collection.search(
+        results = self._collection.search(
             vectors=[query.query_embedding],
             limit=query.similarity_top_k,
             retrieve_vector=True,

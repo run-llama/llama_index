@@ -12,6 +12,11 @@ from llama_index.core.tools.types import (
     ToolOutput,
     adapt_to_async_tool,
 )
+from llama_index.core.tools.calling import (
+    ToolSelection,
+    call_tool_with_selection,
+    acall_tool_with_selection,
+)
 
 __all__ = [
     "BaseTool",
@@ -24,4 +29,7 @@ __all__ = [
     "FunctionTool",
     "QueryPlanTool",
     "download_tool",
+    "ToolSelection",
+    "call_tool_with_selection",
+    "acall_tool_with_selection",
 ]

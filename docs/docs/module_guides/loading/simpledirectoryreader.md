@@ -19,7 +19,7 @@ By default `SimpleDirectoryReader` will try to read any files it finds, treating
 - .png - Portable Network Graphics
 - .ppt, .pptm, .pptx - Microsoft PowerPoint
 
-One file type you may be expecting to find here is JSON; for that we recommend you use our [JSON Loader](https://llamahub.ai/l/file-json).
+One file type you may be expecting to find here is JSON; for that we recommend you use our [JSON Loader](https://llamahub.ai/l/readers/llama-index-readers-json).
 
 ## Usage
 

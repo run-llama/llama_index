@@ -134,7 +134,7 @@ class LoadAndSearchToolSpec(BaseToolSpec):
         elif isinstance(docs, Document):
             docs = [docs]
         else:
-            doc = [Document(text=str(docs))]
+            docs = [Document(text=str(docs))]
 
         if self._index:
             for doc in docs:

@@ -51,7 +51,7 @@ def _depth_first_yield(
 class JSONReader(BaseReader):
     """JSON reader.
 
-    Reads JSON documents with options to help suss out relationships between nodes.
+    Reads JSON documents with options to help us out relationships between nodes.
 
     Args:
         levels_back (int): the number of levels to go back in the JSON tree, 0

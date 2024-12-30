@@ -21,11 +21,14 @@ See the associated guides below:
 
 ## `KuzuGraphStore`
 
-We support a `KuzuGraphStore` integration, for persisting graphs directly in [Kuzu](https://kuzudb.com).
+We support a `KuzuGraphStore` integration, for persisting triples directly in [Kuzu](https://kuzudb.com).
+Additionally, we support the `PropertyGraphIndex`, which allows you to store and query property graphs
+using a Kuzu backend.
 
 See the associated guides below:
 
 - [Kuzu Graph Store](../../examples/index_structs/knowledge_graph/KuzuGraphDemo.ipynb)
+- [Kuzu Graph Store](../../examples/property_graph/property_graph_kuzu.ipynb)
 
 ## `FalkorDBGraphStore`
 
@@ -34,3 +37,20 @@ We support a `FalkorDBGraphStore` integration, for persisting graphs directly in
 See the associated guides below:
 
 - [FalkorDB Graph Store](../../examples/index_structs/knowledge_graph/FalkorDBGraphDemo.ipynb)
+
+## `Amazon Neptune Graph Stores`
+
+We support `Amazon Neptune` integrations for both [Neptune Database](https://docs.aws.amazon.com/neptune/latest/userguide/feature-overview.html) and [Neptune Analytics](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/what-is-neptune-analytics.html) as a graph store integration.
+
+See the associated guides below:
+
+- [Amazon Neptune Graph Store](../../examples/index_structs/knowledge_graph/NeptuneDatabaseKGIndexDemo).
+
+
+## `TiDB Graph Store`
+
+We support a `TiDBGraphStore` integration, for persisting graphs directly in [TiDB](https://docs.pingcap.com/tidb/stable/overview)!
+
+See the associated guides below:
+
+- [TiDB Graph Store](../../examples/index_structs/knowledge_graph/TiDBKGIndexDemo.ipynb)

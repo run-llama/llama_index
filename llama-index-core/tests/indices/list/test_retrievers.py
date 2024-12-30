@@ -6,7 +6,6 @@ from llama_index.core.indices.list.retrievers import SummaryIndexEmbeddingRetrie
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.schema import BaseNode, Document
-from llama_index.core.service_context import ServiceContext
 
 
 def _get_embeddings(
@@ -26,11 +25,9 @@ def _get_embeddings(
     return [1.0, 0, 0, 0, 0], node_embeddings
 
 
-def test_retrieve_default(
-    documents: List[Document], mock_service_context: ServiceContext
-) -> None:
+def test_retrieve_default(documents: List[Document], patch_token_text_splitter) -> None:
     """Test list query."""
-    index = SummaryIndex.from_documents(documents, service_context=mock_service_context)
+    index = SummaryIndex.from_documents(documents)
 
     query_str = "What is?"
     retriever = index.as_retriever(retriever_mode="default")
@@ -46,12 +43,10 @@ def test_retrieve_default(
     side_effect=_get_embeddings,
 )
 def test_embedding_query(
-    _patch_get_embeddings: Any,
-    documents: List[Document],
-    mock_service_context: ServiceContext,
+    _patch_get_embeddings: Any, documents: List[Document], patch_token_text_splitter
 ) -> None:
     """Test embedding query."""
-    index = SummaryIndex.from_documents(documents, service_context=mock_service_context)
+    index = SummaryIndex.from_documents(documents)
 
     # test embedding query
     query_str = "What is?"
@@ -74,12 +69,9 @@ def mock_llmpredictor_predict(
     "predict",
     mock_llmpredictor_predict,
 )
-def test_llm_query(
-    documents: List[Document],
-    mock_service_context: ServiceContext,
-) -> None:
+def test_llm_query(documents: List[Document], patch_token_text_splitter) -> None:
     """Test llm query."""
-    index = SummaryIndex.from_documents(documents, service_context=mock_service_context)
+    index = SummaryIndex.from_documents(documents)
 
     # test llm query (batch size 10)
     query_str = "What is?"

@@ -1,4 +1,7 @@
-# Pydantic Program
+# Pydantic Programs
+
+!!! tip
+    Pydantic Programs are a lower-level abstraction for structured output extraction. The default way to perform structured output extraction is with our LLM classes, which lets you plug these LLMs easily into higher-level workflows. Check out our [structured data extraction tutorial](../../../understanding/extraction/index.md).
 
 A pydantic program is a generic abstraction that takes in an input string and converts it to a structured Pydantic object type.
 
@@ -6,16 +9,17 @@ Because this abstraction is so generic, it encompasses a broad range of LLM work
 
 There's a few general types of Pydantic Programs:
 
-- **LLM Text Completion Pydantic Programs**: These convert input text into a user-specified structured object through a text completion API + output parsing.
-- **LLM Function Calling Pydantic Program**: These convert input text into a user-specified structured object through an LLM function calling API.
+- **Text Completion Pydantic Programs**: These convert input text into a user-specified structured object through a text completion API + output parsing.
+- **Function Calling Pydantic Programs**: These convert input text into a user-specified structured object through an LLM function calling API.
 - **Prepackaged Pydantic Programs**: These convert input text into prespecified structured objects.
 
-## LLM Text Completion Pydantic Programs
+## Text Completion Pydantic Programs
 
 See the example notebook on [LLM Text Completion programs](../../../examples/output_parsing/llm_program.ipynb)
 
-## LLM Function Calling Pydantic Programs
+## Function Calling Pydantic Programs
 
+- [Function Calling Pydantic Program](../../../examples/output_parsing/function_program.ipynb)
 - [OpenAI Pydantic Program](../../../examples/output_parsing/openai_pydantic_program.ipynb)
 - [Guidance Pydantic Program](../../../examples/output_parsing/guidance_pydantic_program.ipynb)
 - [Guidance Sub-Question Generator](../../../examples/output_parsing/guidance_sub_question.ipynb)

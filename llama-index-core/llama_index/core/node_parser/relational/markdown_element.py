@@ -4,7 +4,7 @@ from llama_index.core.node_parser.relational.base_element import (
     BaseElementNodeParser,
     Element,
 )
-from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.schema import BaseNode, TextNode, NodeRelationship
 from llama_index.core.node_parser.relational.utils import md_to_df
 
 
@@ -23,16 +23,40 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
     def get_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
         """Get nodes from node."""
         elements = self.extract_elements(
-            node.get_content(),
-            table_filters=[self.filter_table],
-            node_id=node.id_,
+            node.get_content(), table_filters=[self.filter_table], node_id=node.node_id
         )
         table_elements = self.get_table_elements(elements)
         # extract summaries over table elements
         self.extract_table_summaries(table_elements)
         # convert into nodes
         # will return a list of Nodes and Index Nodes
-        return self.get_nodes_from_elements(elements, node.metadata)
+        nodes = self.get_nodes_from_elements(
+            elements, node, ref_doc_text=node.get_content()
+        )
+        source_document = node.source_node or node.as_related_node_info()
+        for n in nodes:
+            n.relationships[NodeRelationship.SOURCE] = source_document
+            n.metadata.update(node.metadata)
+        return nodes
+
+    async def aget_nodes_from_node(self, node: TextNode) -> List[BaseNode]:
+        """Get nodes from node."""
+        elements = self.extract_elements(
+            node.get_content(), table_filters=[self.filter_table], node_id=node.node_id
+        )
+        table_elements = self.get_table_elements(elements)
+        # extract summaries over table elements
+        await self.aextract_table_summaries(table_elements)
+        # convert into nodes
+        # will return a list of Nodes and Index Nodes
+        nodes = self.get_nodes_from_elements(
+            elements, node, ref_doc_text=node.get_content()
+        )
+        source_document = node.source_node or node.as_related_node_info()
+        for n in nodes:
+            n.relationships[NodeRelationship.SOURCE] = source_document
+            n.metadata.update(node.metadata)
+        return nodes
 
     def extract_elements(
         self,
@@ -151,7 +175,7 @@ class MarkdownElementNodeParser(BaseElementNodeParser):
                         elements[idx] = Element(
                             id=f"id_{node_id}_{idx}" if node_id else f"id_{idx}",
                             type="table",
-                            element=element,
+                            element=element.element,
                             table=table,
                         )
                     else:

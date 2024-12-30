@@ -4,12 +4,9 @@ from llama_index.core.evaluation.dataset_generation import DatasetGenerator
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.schema import TextNode
-from llama_index.core.service_context import ServiceContext
 
 
-def test_dataset_generation(
-    mock_service_context: ServiceContext,
-) -> None:
+def test_dataset_generation(patch_llm_predictor) -> None:
     """Test dataset generation."""
     test_nodes = [TextNode(text="hello_world"), TextNode(text="foo_bar")]
 
@@ -28,7 +25,6 @@ generate only questions based on the below query.
 
     dataset_generator = DatasetGenerator(
         test_nodes,
-        service_context=mock_service_context,
         text_question_template=question_gen_prompt,
         question_gen_query="gen_question",
     )

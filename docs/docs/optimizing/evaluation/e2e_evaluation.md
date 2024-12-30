@@ -1,6 +1,6 @@
 # End-to-End Evaluation
 
-End-to-End evaluation should be the guiding signal for your RAG application - will my pipeline generate the right responses given the data sources and a set of queries?
+End-to-End evaluation should be the guiding signal for your RAG application - will my workflow generate the right responses given the data sources and a set of queries?
 
 While it helps initially to individually inspect queries and responses, as you deal with more failure and corner cases, it may stop being feasible to look at each query individually, and rather it may help instead to define a set of summary metrics or automated evaluation, and gain an intuition for what they might be telling you and where you might dive deeper.
 
@@ -34,7 +34,7 @@ Below is some example usage of the [evaluation modules](evaluation.md):
 
 ## Discovery - Sensitivity Testing
 
-With a complex pipeline, it may be unclear which parts of the pipeline are affecting your results.
+With a complex workflow, it may be unclear which parts of the flow are affecting your results.
 
 Sensitivity testing can be a good inroad into choosing which components to individually test or tweak more thoroughly, or which parts of your dataset (e.g. queries) may be producing problematic results.
 

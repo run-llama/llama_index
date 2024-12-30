@@ -30,11 +30,24 @@ class ConfluenceReader(BaseReader):
         oauth2 (dict): Atlassian OAuth 2.0, minimum fields are `client_id` and `token`, where `token` is a dict and must at least contain "access_token" and "token_type".
         base_url (str): 'base_url' for confluence cloud instance, this is suffixed with '/wiki', eg 'https://yoursite.atlassian.com/wiki'
         cloud (bool): connecting to Confluence Cloud or self-hosted instance
+        api_token (str): Confluence API token, see https://confluence.atlassian.com/cloud/api-tokens-938839638.html
+        cookies (dict): Confluence cookies, see https://atlassian-python-api.readthedocs.io/index.html
+        user_name (str): Confluence username, used for basic auth. Must be used with `password`.
+        password (str): Confluence password, used for basic auth. Must be used with `user_name`.
+        client_args (dict): Additional keyword arguments to pass directly to the Atlassian Confluence client constructor, for example `{'backoff_and_retry': True}`.
 
     """
 
     def __init__(
-        self, base_url: str = None, oauth2: Optional[Dict] = None, cloud: bool = True
+        self,
+        base_url: str = None,
+        oauth2: Optional[Dict] = None,
+        cloud: bool = True,
+        api_token: Optional[str] = None,
+        cookies: Optional[dict] = None,
+        user_name: Optional[str] = None,
+        password: Optional[str] = None,
+        client_args: Optional[dict] = None,
     ) -> None:
         if base_url is None:
             raise ValueError("Must provide `base_url`")
@@ -49,28 +62,52 @@ class ConfluenceReader(BaseReader):
                 " atlassian-python-api`"
             )
         self.confluence: Confluence = None
+        if client_args is None:
+            client_args = {}
         if oauth2:
-            self.confluence = Confluence(url=base_url, oauth2=oauth2, cloud=cloud)
+            self.confluence = Confluence(
+                url=base_url, oauth2=oauth2, cloud=cloud, **client_args
+            )
         else:
-            api_token = os.getenv(CONFLUENCE_API_TOKEN)
             if api_token is not None:
-                self.confluence = Confluence(url=base_url, token=api_token, cloud=cloud)
-            else:
-                user_name = os.getenv(CONFLUENCE_USERNAME)
-                if user_name is None:
-                    raise ValueError(
-                        "Must set environment variable `CONFLUENCE_USERNAME` if oauth,"
-                        " oauth2, or `CONFLUENCE_API_TOKEN` are not provided."
-                    )
-                password = os.getenv(CONFLUENCE_PASSWORD)
-                if password is None:
-                    raise ValueError(
-                        "Must set environment variable `CONFLUENCE_PASSWORD` if oauth,"
-                        " oauth2, or `CONFLUENCE_API_TOKEN` are not provided."
-                    )
                 self.confluence = Confluence(
-                    url=base_url, username=user_name, password=password, cloud=cloud
+                    url=base_url, token=api_token, cloud=cloud, **client_args
                 )
+            elif cookies is not None:
+                self.confluence = Confluence(
+                    url=base_url, cookies=cookies, cloud=cloud, **client_args
+                )
+            elif user_name is not None and password is not None:
+                self.confluence = Confluence(
+                    url=base_url,
+                    username=user_name,
+                    password=password,
+                    cloud=cloud,
+                    **client_args,
+                )
+            else:
+                api_token = os.getenv(CONFLUENCE_API_TOKEN)
+                if api_token is not None:
+                    self.confluence = Confluence(
+                        url=base_url, token=api_token, cloud=cloud, **client_args
+                    )
+                else:
+                    user_name = os.getenv(CONFLUENCE_USERNAME)
+                    password = os.getenv(CONFLUENCE_PASSWORD)
+                    if user_name is not None and password is not None:
+                        self.confluence = Confluence(
+                            url=base_url,
+                            username=user_name,
+                            password=password,
+                            cloud=cloud,
+                            **client_args,
+                        )
+                    else:
+                        raise ValueError(
+                            "Must set one of environment variables `CONFLUENCE_API_KEY`, or"
+                            " `CONFLUENCE_USERNAME` and `CONFLUENCE_PASSWORD`, if oauth2, or"
+                            " api_token, or user_name and password parameters are not provided"
+                        )
 
         self._next_cursor = None
 

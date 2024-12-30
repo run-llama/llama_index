@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from llama_index.core import Document, ServiceContext, VectorStoreIndex
+from llama_index.core import Document, VectorStoreIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser import SentenceSplitter
@@ -18,7 +18,7 @@ DEFAULT_CHUNK_SIZES = [128, 256, 512, 1024]
 
 
 def reciprocal_rank_fusion(
-    results: List[List[NodeWithScore]],
+    results: List[NodeWithScore],
 ) -> List[NodeWithScore]:
     """Apply reciprocal rank fusion.
 
@@ -30,15 +30,14 @@ def reciprocal_rank_fusion(
     text_to_node = {}
 
     # compute reciprocal rank scores
-    for nodes_with_scores in results:
-        for rank, node_with_score in enumerate(
-            sorted(nodes_with_scores, key=lambda x: x.score or 0.0, reverse=True)
-        ):
-            text = node_with_score.node.get_content()
-            text_to_node[text] = node_with_score
-            if text not in fused_scores:
-                fused_scores[text] = 0.0
-            fused_scores[text] += 1.0 / (rank + k)
+    for rank, node_with_score in enumerate(
+        sorted(results, key=lambda x: x.score or 0.0, reverse=True)
+    ):
+        text = node_with_score.node.get_content()
+        text_to_node[text] = node_with_score
+        if text not in fused_scores:
+            fused_scores[text] = 0.0
+        fused_scores[text] += 1.0 / (rank + k)
 
     # sort results
     reranked_results = dict(
@@ -65,6 +64,7 @@ class RAGFusionPipelinePack(BaseLlamaPack):
         self,
         documents: List[Document],
         llm: Optional[LLM] = None,
+        embed_model: Optional[Any] = "default",
         chunk_sizes: Optional[List[int]] = None,
     ) -> None:
         """Init params."""
@@ -80,9 +80,8 @@ class RAGFusionPipelinePack(BaseLlamaPack):
             splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=0)
             nodes = splitter.get_nodes_from_documents(documents)
 
-            service_context = ServiceContext.from_defaults(llm=self.llm)
-            vector_index = VectorStoreIndex(nodes, service_context=service_context)
-            self.query_engines.append(vector_index.as_query_engine())
+            vector_index = VectorStoreIndex(nodes, embed_model=embed_model)
+            self.query_engines.append(vector_index.as_query_engine(llm=self.llm))
 
             self.retrievers[str(chunk_size)] = vector_index.as_retriever()
 
@@ -94,7 +93,7 @@ class RAGFusionPipelinePack(BaseLlamaPack):
         module_dict = {
             **self.retrievers,
             "input": InputComponent(),
-            "summarizer": TreeSummarize(),
+            "summarizer": TreeSummarize(llm=llm),
             # NOTE: Join args
             "join": ArgPackComponent(),
             "reranker": rerank_component,

@@ -12,6 +12,16 @@ Set the ZULIP_TOKEN environment variable to your Zulip bot's API token:
 export ZULIP_TOKEN="your-zulip-bot-api-token"
 ```
 
+### Installation
+
+You can install the Zulip Reader via pip:
+
+```bash
+pip install llama-index-readers-zulip
+```
+
+### Usage
+
 Use the ZulipReader class to load data from Zulip streams:
 
 ```python
@@ -33,3 +43,7 @@ data = reader.load_data(stream_names)
 ```
 
 For more customization, you can pass the `reverse_chronological` parameter to the load_data() method to indicate the order of messages in the output.
+
+This loader is designed to be used as a way to load data into
+[LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently
+used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.

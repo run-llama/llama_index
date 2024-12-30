@@ -4,6 +4,7 @@ from llama_index.core.data_structs.data_structs import (
     IndexDict,
     IndexGraph,
     IndexList,
+    IndexLPG,
     KeywordTable,
     Node,
 )
@@ -13,6 +14,7 @@ __all__ = [
     "IndexGraph",
     "KeywordTable",
     "IndexList",
+    "IndexLPG",
     "IndexDict",
     "StructDatapoint",
     "Node",

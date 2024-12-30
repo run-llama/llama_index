@@ -49,7 +49,7 @@ class SlackToolSpec(BaseToolSpec):
         message: str,
     ) -> None:
         """Send a message to a channel given the channel ID."""
-        slack_client = self.reader.client
+        slack_client = self.reader._client
         try:
             msg_result = slack_client.chat_postMessage(
                 channel=channel_id,
@@ -64,7 +64,7 @@ class SlackToolSpec(BaseToolSpec):
         self,
     ) -> List[str]:
         """Fetch a list of relevant channels."""
-        slack_client = self.reader.client
+        slack_client = self.reader._client
         try:
             msg_result = slack_client.conversations_list()
             logger.info(msg_result)
