@@ -71,11 +71,3 @@ class ToolCallResult(ToolCall):
 
     tool_output: ToolOutput
     return_direct: bool
-
-
-class HandoffEvent(Event):
-    """Internal event for agent handoffs."""
-
-    from_agent: str
-    to_agent: str
-    reason: str
