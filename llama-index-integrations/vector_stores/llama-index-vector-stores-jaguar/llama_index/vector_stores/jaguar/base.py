@@ -17,9 +17,11 @@ import logging
 from typing import Any, List, Optional, Tuple, Union, cast
 
 from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
+
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, Document, TextNode
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -27,7 +29,7 @@ from llama_index.core.vector_stores.types import (
 logger = logging.getLogger(__name__)
 
 
-class JaguarVectorStore(VectorStore):
+class JaguarVectorStore(BasePydanticVectorStore):
     """Jaguar vector store.
 
     See http://www.jaguardb.com
@@ -51,6 +53,14 @@ class JaguarVectorStore(VectorStore):
 
     stores_text: bool = True
 
+    _pod: str = PrivateAttr()
+    _store: str = PrivateAttr()
+    _vector_index: str = PrivateAttr()
+    _vector_type: str = PrivateAttr()
+    _vector_dimension: int = PrivateAttr()
+    _jag: JaguarHttpClient = PrivateAttr()
+    _token: str = PrivateAttr()
+
     def __init__(
         self,
         pod: str,
@@ -70,6 +80,7 @@ class JaguarVectorStore(VectorStore):
             vector_dimension: int:  dimension of the vector index
             url: str:  URL end point of jaguar http server
         """
+        super().__init__()
         self._pod = pod
         self._store = store
         self._vector_index = vector_index

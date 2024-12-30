@@ -2665,3 +2665,43 @@ Hello world!
     assert len(nodes) == 1
 
     assert nodes[0].ref_doc_id == test_document.doc_id
+
+
+def test_start_end_char_idx():
+    test_document = Document(
+        text="""
+# This is a test
+
+| Year | Benefits |
+| ---- | -------- |
+| 2020 | 12,000   |
+| 2021 | 10,000   |
+| 2022 | 130,000  |
+
+""",
+    )
+
+    node_parser = MarkdownElementNodeParser(llm=MockLLM())
+
+    nodes = node_parser.get_nodes_from_documents([test_document])
+    assert len(nodes) == 3
+    assert (
+        test_document.text[nodes[0].start_char_idx : nodes[0].end_char_idx]
+        == "This is a test"
+    )
+    assert (
+        test_document.text[nodes[1].start_char_idx : nodes[1].end_char_idx]
+        == """| Year | Benefits |
+| ---- | -------- |
+| 2020 | 12,000   |
+| 2021 | 10,000   |
+| 2022 | 130,000  |"""
+    )
+    assert (
+        test_document.text[nodes[2].start_char_idx : nodes[2].end_char_idx]
+        == """| Year | Benefits |
+| ---- | -------- |
+| 2020 | 12,000   |
+| 2021 | 10,000   |
+| 2022 | 130,000  |"""
+    )

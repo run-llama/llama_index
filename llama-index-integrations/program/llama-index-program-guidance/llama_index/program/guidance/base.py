@@ -10,7 +10,7 @@ from llama_index.program.guidance.utils import (
 
 from guidance import assistant, gen, user
 from guidance.models import Model as GuidanceLLM
-from guidance.models import OpenAIChat
+from guidance.models import OpenAI
 
 
 class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
@@ -30,7 +30,7 @@ class GuidancePydanticProgram(BaseLLMFunctionProgram["GuidanceLLM"]):
         if not guidance_llm:
             llm = guidance_llm
         else:
-            llm = OpenAIChat("gpt-3.5-turbo")
+            llm = OpenAI("gpt-3.5-turbo")
 
         full_str = prompt_template_str + "\n"
         self._full_str = full_str

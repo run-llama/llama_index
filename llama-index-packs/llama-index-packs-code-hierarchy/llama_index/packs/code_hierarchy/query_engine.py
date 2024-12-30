@@ -114,8 +114,10 @@ class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):
             return self.node_dict[query][1]
 
         kvs = get_all_dict_recursive(self.repo_map[0])
+        if query not in kvs:
+            return None
         parent_query = query
-        while parent_query not in kvs:
+        while parent_query not in self.node_dict:
             parent_query = get_parent_dict_recursive(self.repo_map[0], parent_query)
             if parent_query is None:
                 return "None"

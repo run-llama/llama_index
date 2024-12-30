@@ -7,11 +7,12 @@ An index that is built on top of an existing vector store.
 import logging
 from typing import Any, Callable, List, Optional, cast
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.utils import get_tokenizer
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -34,7 +35,7 @@ DEFAULT_BATCH_SIZE = 100
 DEFAULT_METADATA_KEY = "metadata"
 
 
-class TypesenseVectorStore(VectorStore):
+class TypesenseVectorStore(BasePydanticVectorStore):
     """Typesense Vector Store.
 
     In this vector store, embeddings and docs are stored within a
@@ -72,6 +73,14 @@ class TypesenseVectorStore(VectorStore):
     is_embedding_query: bool = False
     flat_metadata: bool = False
 
+    _tokenizer: Callable[[str], List] = PrivateAttr()
+    _text_key: str = PrivateAttr()
+    _collection_name: str = PrivateAttr()
+    _collection: Any = PrivateAttr()
+    _batch_size: int = PrivateAttr()
+    _metadata_key: str = PrivateAttr()
+    _client: typesense.Client = PrivateAttr()
+
     def __init__(
         self,
         client: Any,
@@ -83,6 +92,8 @@ class TypesenseVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
+        super().__init__()
+
         if client is not None:
             if not isinstance(client, typesense.Client):
                 raise ValueError(
@@ -96,6 +107,11 @@ class TypesenseVectorStore(VectorStore):
         self._collection = self._client.collections[self._collection_name]
         self._batch_size = batch_size
         self._metadata_key = metadata_key
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "TypesenseVectorStore"
 
     @property
     def client(self) -> Any:

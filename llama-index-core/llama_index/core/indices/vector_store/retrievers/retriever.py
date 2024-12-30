@@ -48,6 +48,7 @@ class VectorIndexRetriever(BaseRetriever):
         node_ids: Optional[List[str]] = None,
         doc_ids: Optional[List[str]] = None,
         sparse_top_k: Optional[int] = None,
+        hybrid_top_k: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
         object_map: Optional[dict] = None,
         embed_model: Optional[BaseEmbedding] = None,
@@ -67,6 +68,7 @@ class VectorIndexRetriever(BaseRetriever):
         self._doc_ids = doc_ids
         self._filters = filters
         self._sparse_top_k = sparse_top_k
+        self._hybrid_top_k = hybrid_top_k
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
 
         callback_manager = callback_manager or CallbackManager()
@@ -102,15 +104,16 @@ class VectorIndexRetriever(BaseRetriever):
 
     @dispatcher.span
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        embedding = query_bundle.embedding
         if self._vector_store.is_embedding_query:
             if query_bundle.embedding is None and len(query_bundle.embedding_strs) > 0:
                 embed_model = self._embed_model
-                query_bundle.embedding = (
-                    await embed_model.aget_agg_embedding_from_queries(
-                        query_bundle.embedding_strs
-                    )
+                embedding = await embed_model.aget_agg_embedding_from_queries(
+                    query_bundle.embedding_strs
                 )
-        return await self._aget_nodes_with_embeddings(query_bundle)
+        return await self._aget_nodes_with_embeddings(
+            QueryBundle(query_str=query_bundle.query_str, embedding=embedding)
+        )
 
     def _build_vector_store_query(
         self, query_bundle_with_embeddings: QueryBundle
@@ -125,6 +128,7 @@ class VectorIndexRetriever(BaseRetriever):
             alpha=self._alpha,
             filters=self._filters,
             sparse_top_k=self._sparse_top_k,
+            hybrid_top_k=self._hybrid_top_k,
         )
 
     def _build_node_list_from_query_result(
@@ -154,9 +158,9 @@ class VectorIndexRetriever(BaseRetriever):
                 ):
                     node_id = query_result.nodes[i].node_id
                     if self._docstore.document_exists(node_id):
-                        query_result.nodes[i] = self._docstore.get_node(
+                        query_result.nodes[i] = self._docstore.get_node(  # type: ignore
                             node_id
-                        )  # type: ignore[index]
+                        )
 
         log_vector_store_query_result(query_result)
 

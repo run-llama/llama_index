@@ -46,7 +46,7 @@ class AsyncWebPageReader(BaseReader):
         self._dedupe = dedupe
         self._fail_on_error = fail_on_error
 
-    def load_data(self, urls: List[str]) -> List[Document]:
+    async def aload_data(self, urls: List[str]) -> List[Document]:
         """Load data from the input urls.
 
         Args:
@@ -81,7 +81,7 @@ class AsyncWebPageReader(BaseReader):
             raise ValueError("urls must be a list of strings.")
 
         documents = []
-        responses = asyncio.run(fetch_urls(urls))
+        responses = await fetch_urls(urls)
 
         for i, response_tuple in enumerate(responses):
             if not isinstance(response_tuple, tuple):
@@ -113,3 +113,15 @@ class AsyncWebPageReader(BaseReader):
             )
 
         return documents
+
+    def load_data(self, urls: List[str]) -> List[Document]:
+        """Load data from the input urls.
+
+        Args:
+            urls (List[str]): List of URLs to scrape.
+
+        Returns:
+            List[Document]: List of documents.
+
+        """
+        return asyncio.run(self.aload_data(urls))

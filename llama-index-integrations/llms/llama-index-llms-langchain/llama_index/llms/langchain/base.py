@@ -1,4 +1,3 @@
-from threading import Thread
 from typing import Any, Callable, Generator, Optional, Sequence
 
 from llama_index.core.base.llms.types import (
@@ -19,7 +18,7 @@ from llama_index.core.base.llms.generic_utils import (
     stream_completion_response_to_chat_response,
 )
 from llama_index.core.llms.llm import LLM
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
 
 from langchain.base_language import BaseLanguageModel
 
@@ -56,7 +55,6 @@ class LangChainLLM(LLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        self._llm = llm
         super().__init__(
             callback_manager=callback_manager,
             system_prompt=system_prompt,
@@ -65,6 +63,7 @@ class LangChainLLM(LLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        self._llm = llm
 
     @classmethod
     def class_name(cls) -> str:

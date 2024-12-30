@@ -3,9 +3,11 @@ from typing import Any, Dict, List, Optional
 import json
 import logging
 from typing import Union
+
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -36,9 +38,18 @@ class NeptuneVectorQueryException(Exception):
         return self.details
 
 
-class NeptuneAnalyticsVectorStore(VectorStore):
+class NeptuneAnalyticsVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
-    flat_metadata = True
+    flat_metadata: bool = True
+
+    node_label: str
+    graph_identifier: str
+    embedding_dimension: int
+    text_node_property: str
+    hybrid_search: bool
+    retrieval_query: Optional[str]
+
+    _client: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -54,12 +65,15 @@ class NeptuneAnalyticsVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Create a new Neptune Analytics graph wrapper instance."""
-        self.node_label = node_label
-        self.graph_identifier = graph_identifier
-        self.embedding_dimension = embedding_dimension
-        self.text_node_property = text_node_property
-        self.hybrid_search = hybrid_search
-        self.retrieval_query = retrieval_query
+        super().__init__(
+            graph_identifier=graph_identifier,
+            embedding_dimension=embedding_dimension,
+            node_label=node_label,
+            text_node_property=text_node_property,
+            hybrid_search=hybrid_search,
+            retrieval_query=retrieval_query,
+        )
+
         try:
             if client is not None:
                 self._client = client
@@ -118,6 +132,10 @@ class NeptuneAnalyticsVectorStore(VectorStore):
             raise ValueError(
                 f"Vector search index does not exist for the Neptune Analytics graph."
             )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "NeptuneAnalyticsVectorStore"
 
     def database_query(
         self, query: str, params: Optional[dict] = None

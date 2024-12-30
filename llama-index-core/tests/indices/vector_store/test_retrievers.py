@@ -8,18 +8,17 @@ from llama_index.core.schema import (
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.vector_stores.simple import SimpleVectorStore
 
 
 def test_simple_query(
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    mock_embed_model,
 ) -> None:
     """Test embedding query."""
-    index = VectorStoreIndex.from_documents(
-        documents, service_context=mock_service_context
-    )
+    index = VectorStoreIndex.from_documents(documents, embed_model=mock_embed_model)
 
     # test embedding query
     query_str = "What is?"
@@ -30,7 +29,8 @@ def test_simple_query(
 
 
 def test_query_and_similarity_scores(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
 ) -> None:
     """Test that sources nodes have similarity scores."""
     doc_text = (
@@ -40,9 +40,7 @@ def test_query_and_similarity_scores(
         "This is a test v2."
     )
     document = Document(text=doc_text)
-    index = VectorStoreIndex.from_documents(
-        [document], service_context=mock_service_context
-    )
+    index = VectorStoreIndex.from_documents([document])
 
     # test embedding query
     query_str = "What is?"
@@ -53,7 +51,8 @@ def test_query_and_similarity_scores(
 
 
 def test_simple_check_ids(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
 ) -> None:
     """Test build VectorStoreIndex."""
     ref_doc_id = "ref_doc_id_test"
@@ -64,7 +63,7 @@ def test_simple_check_ids(
         TextNode(text="This is another test.", id_="node3", relationships=source_rel),
         TextNode(text="This is a test v2.", id_="node4", relationships=source_rel),
     ]
-    index = VectorStoreIndex(all_nodes, service_context=mock_service_context)
+    index = VectorStoreIndex(all_nodes)
 
     # test query
     query_str = "What is?"
@@ -78,7 +77,10 @@ def test_simple_check_ids(
     assert "node3" in vector_store._data.text_id_to_ref_doc_id
 
 
-def test_query(mock_service_context: ServiceContext) -> None:
+def test_query(
+    patch_llm_predictor,
+    patch_token_text_splitter,
+) -> None:
     """Test embedding query."""
     doc_text = (
         "Hello world.\n"
@@ -87,9 +89,7 @@ def test_query(mock_service_context: ServiceContext) -> None:
         "This is a test v2."
     )
     document = Document(text=doc_text)
-    index = VectorStoreIndex.from_documents(
-        [document], service_context=mock_service_context
-    )
+    index = VectorStoreIndex.from_documents([document])
 
     # test embedding query
     query_str = "What is?"

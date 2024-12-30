@@ -9,10 +9,11 @@ https://upstash.com/docs/vector/overall/getstarted
 import logging
 from typing import Any, List
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode
 from llama_index.core.utils import iter_batch
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -24,6 +25,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from upstash_vector import Index
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +88,7 @@ def _to_upstash_filters(filters: MetadataFilters) -> str:
     # print(combined_filters)
 
 
-class UpstashVectorStore(VectorStore):
+class UpstashVectorStore(BasePydanticVectorStore):
     """Upstash Vector Store.
 
     Examples:
@@ -106,6 +108,11 @@ class UpstashVectorStore(VectorStore):
     stores_text: bool = True
     flat_metadata: bool = False
 
+    namespace: str = ""
+
+    batch_size: int
+    _index: Index = PrivateAttr()
+
     @classmethod
     def class_name(cls) -> str:
         return "UpstashVectorStore"
@@ -116,7 +123,12 @@ class UpstashVectorStore(VectorStore):
         return self._index
 
     def __init__(
-        self, url: str, token: str, batch_size: int = DEFAULT_BATCH_SIZE
+        self,
+        url: str,
+        token: str,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        # Upstash uses ("") as the default namespace, if not provided
+        namespace: str = "",
     ) -> None:
         """
         Create a UpstashVectorStore. The index can be created using the Upstash console.
@@ -129,15 +141,7 @@ class UpstashVectorStore(VectorStore):
         Raises:
             ImportError: If the upstash-vector python package is not installed.
         """
-        self.batch_size = batch_size
-
-        try:
-            from upstash_vector import Index
-        except ImportError:
-            raise ImportError(
-                "Could not import upstash_vector.Index, Please install it with `pip install upstash-vector`"
-            )
-
+        super().__init__(batch_size=batch_size, namespace=namespace)
         self._index = Index(url=url, token=token)
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
@@ -159,7 +163,7 @@ class UpstashVectorStore(VectorStore):
                 ids.append(node.node_id)
                 vectors.append((node.node_id, node.embedding, metadata_dict))
 
-            self.client.upsert(vectors=vectors)
+            self.client.upsert(vectors=vectors, namespace=self.namespace)
 
         return ids
 
@@ -198,6 +202,7 @@ class UpstashVectorStore(VectorStore):
             include_vectors=True,
             include_metadata=True,
             filter=_to_upstash_filters(query.filters),
+            namespace=self.namespace,
         )
 
         top_k_nodes = []

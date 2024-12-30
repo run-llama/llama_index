@@ -1,15 +1,16 @@
 import os
 
 # import socket
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import openai
 import pytest
 from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.node_parser.text import SentenceSplitter, TokenTextSplitter
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.service_context_elements.llm_predictor import LLMPredictor
+from llama_index.core.settings import _Settings
+
 from tests.indices.vector_store.mock_services import MockEmbedding
 from tests.mock_utils.mock_predict import (
     patch_llmpredictor_apredict,
@@ -94,16 +95,24 @@ def patch_llm_predictor(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture()
-def mock_service_context(
-    patch_token_text_splitter: Any,
-    patch_llm_predictor: Any,
-) -> ServiceContext:
-    return ServiceContext.from_defaults(embed_model=MockEmbedding())
+def mock_llm() -> MockLLM:
+    return MockLLM()
 
 
 @pytest.fixture()
-def mock_llm() -> MockLLM:
-    return MockLLM()
+def mock_embed_model():
+    return MockEmbedding()
+
+
+@pytest.fixture()
+def mock_settings():
+    from llama_index.core import Settings
+
+    old = Settings
+    Settings = _Settings()
+    Settings.embed_model = MockEmbedding()
+    yield Settings
+    Settings = old
 
 
 @pytest.fixture(autouse=True)

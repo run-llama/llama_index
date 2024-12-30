@@ -524,3 +524,70 @@ class Example {{
 }}
 """
     )
+
+
+def test_skeletonize_with_repeated_function() -> None:
+    """Test case for code splitting using python."""
+    if "CI" in os.environ:
+        return
+
+    code_splitter = CodeHierarchyNodeParser(
+        language="python", skeleton=True, chunk_min_characters=0
+    )
+
+    text = """\
+def _handle_extra_radiation_types(datetime_or_doy, epoch_year):
+    if np.isscalar(datetime_or_doy):
+        def to_doy(x): return x                                 # noqa: E306
+        to_datetimeindex = partial(tools._doy_to_datetimeindex,
+                                   epoch_year=epoch_year)
+        to_output = tools._scalar_out
+    else:
+        def to_doy(x): return x                                 # noqa: E306
+        to_datetimeindex = partial(tools._doy_to_datetimeindex,
+                                   epoch_year=epoch_year)
+        to_output = tools._array_out
+
+    return to_doy, to_datetimeindex, to_output"""
+
+    text_node = TextNode(
+        text=text,
+        metadata={
+            "module": "example.foo",
+        },
+    )
+
+    chunks: List[TextNode] = code_splitter.get_nodes_from_documents([text_node])
+    assert len(chunks) == 4
+    assert (
+        chunks[0].text
+        == f"""def _handle_extra_radiation_types(datetime_or_doy, epoch_year):
+    # {CodeHierarchyNodeParser._get_comment_text(chunks[1])}"""
+    )
+
+    assert (
+        chunks[1].text
+        == f"""def _handle_extra_radiation_types(datetime_or_doy, epoch_year):
+    if np.isscalar(datetime_or_doy):
+        def to_doy(x):
+                # {CodeHierarchyNodeParser._get_comment_text(chunks[2])}
+        to_datetimeindex = partial(tools._doy_to_datetimeindex,
+                                   epoch_year=epoch_year)
+        to_output = tools._scalar_out
+    else:
+        def to_doy(x):
+                # {CodeHierarchyNodeParser._get_comment_text(chunks[3])}
+        to_datetimeindex = partial(tools._doy_to_datetimeindex,
+                                   epoch_year=epoch_year)
+        to_output = tools._array_out
+
+    return to_doy, to_datetimeindex, to_output"""
+    )
+    assert (
+        chunks[2].text
+        == """        def to_doy(x): return x                                 # noqa: E306"""
+    )
+    assert (
+        chunks[3].text
+        == """        def to_doy(x): return x                                 # noqa: E306"""
+    )

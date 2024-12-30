@@ -1,6 +1,5 @@
 from typing import List, Tuple, Type
 
-from llama_index.core import Document
 from llama_index.core.download.dataset import (
     LLAMA_DATASETS_LFS_URL,
     LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
@@ -18,6 +17,7 @@ from llama_index.core.llama_dataset.evaluator_evaluation import (
 )
 from llama_index.core.llama_dataset.rag import LabelledRagDataset
 from llama_index.core.readers import SimpleDirectoryReader
+from llama_index.core.schema import Document
 
 
 def _resolve_dataset_class(filename: str) -> Type[BaseLlamaDataset]:
@@ -40,7 +40,7 @@ def download_llama_dataset(
     llama_datasets_source_files_tree_url: str = LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     show_progress: bool = False,
     load_documents: bool = True,
-) -> Tuple[Type[BaseLlamaDataset], List[Document]]:
+) -> Tuple[BaseLlamaDataset, List[Document]]:
     """Download dataset from datasets-LFS and llamahub.
 
     Args:

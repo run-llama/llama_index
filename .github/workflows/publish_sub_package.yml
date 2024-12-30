@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  POETRY_VERSION: "1.6.1"
+  POETRY_VERSION: "1.8.3"
   PYTHON_VERSION: "3.10"
 
 jobs:
@@ -14,17 +14,17 @@ jobs:
     if: github.repository == 'run-llama/llama_index'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Install Poetry
+        run: pipx install poetry==${{ env.POETRY_VERSION }}
       - name: Set up python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
+          cache: "poetry"
+          cache-dependency-path: "**/poetry.lock"
       - name: Get changed pyproject files
         id: changed-files
         run: |

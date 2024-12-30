@@ -1,5 +1,5 @@
 from llama_index.core.tools.types import BaseTool, ToolOutput, adapt_to_async_tool
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Sequence
 from llama_index.core.llms.llm import ToolSelection
 import json
 
@@ -14,8 +14,12 @@ def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
             len(tool.metadata.get_parameters_dict()["properties"]) == 1
             and len(arguments) == 1
         ):
-            single_arg = arguments[next(iter(arguments))]
-            return tool(single_arg)
+            try:
+                single_arg = arguments[next(iter(arguments))]
+                return tool(single_arg)
+            except Exception:
+                # some tools will REQUIRE kwargs, so try it
+                return tool(**arguments)
         else:
             return tool(**arguments)
     except Exception as e:
@@ -36,8 +40,12 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
             len(tool.metadata.get_parameters_dict()["properties"]) == 1
             and len(arguments) == 1
         ):
-            single_arg = arguments[next(iter(arguments))]
-            return await async_tool.acall(single_arg)
+            try:
+                single_arg = arguments[next(iter(arguments))]
+                return await async_tool.acall(single_arg)
+            except Exception:
+                # some tools will REQUIRE kwargs, so try it
+                return await async_tool.acall(**arguments)
         else:
             return await async_tool.acall(**arguments)
     except Exception as e:
@@ -52,7 +60,7 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
 
 def call_tool_with_selection(
     tool_call: ToolSelection,
-    tools: List["BaseTool"],
+    tools: Sequence["BaseTool"],
     verbose: bool = False,
 ) -> ToolOutput:
     from llama_index.core.tools.calling import call_tool
@@ -75,7 +83,7 @@ def call_tool_with_selection(
 
 async def acall_tool_with_selection(
     tool_call: ToolSelection,
-    tools: List["BaseTool"],
+    tools: Sequence["BaseTool"],
     verbose: bool = False,
 ) -> ToolOutput:
     from llama_index.core.tools.calling import acall_tool

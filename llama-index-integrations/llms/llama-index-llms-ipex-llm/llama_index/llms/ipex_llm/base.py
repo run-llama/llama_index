@@ -1,5 +1,8 @@
+# This file is adapted from
+# https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/
+# llms/llama-index-llms-huggingface/llama_index/llms/huggingface/base.py
+
 import logging
-from threading import Thread
 from typing import Any, Callable, List, Optional, Sequence
 
 import torch
@@ -28,7 +31,7 @@ from llama_index.core.base.llms.generic_utils import (
     stream_completion_response_to_chat_response,
     messages_to_prompt as generic_messages_to_prompt,
 )
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
 from transformers import (
     StoppingCriteria,
     StoppingCriteriaList,
@@ -90,7 +93,7 @@ class IpexLLM(CustomLLM):
         ),
     )
     device_map: str = Field(
-        default="auto", description="The device_map to use. Defaults to 'auto'."
+        default="cpu", description="The device_map to use. Defaults to 'cpu'."
     )
     stopping_ids: List[int] = Field(
         default_factory=list,
@@ -141,7 +144,7 @@ class IpexLLM(CustomLLM):
         load_in_low_bit: Optional[str] = None,
         model: Optional[Any] = None,
         tokenizer: Optional[Any] = None,
-        device_map: Optional[str] = "auto",
+        device_map: str = "cpu",
         stopping_ids: Optional[List[int]] = None,
         tokenizer_kwargs: Optional[dict] = None,
         tokenizer_outputs_to_remove: Optional[list] = None,
@@ -153,6 +156,7 @@ class IpexLLM(CustomLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        low_bit_model: Optional[bool] = False,
     ) -> None:
         """
         Construct IpexLLM.
@@ -166,7 +170,7 @@ class IpexLLM(CustomLLM):
                         Unused if `model` is passed in directly.
             model: The HuggingFace model.
             tokenizer: The tokenizer.
-            device_map: The device_map to use. Defaults to 'auto'.
+            device_map: The device_map to use. Defaults to 'cpu'.
             stopping_ids: The stopping ids to use.
                         Generation stops when these token IDs are predicted.
             tokenizer_kwargs: The kwargs to pass to the tokenizer.
@@ -185,45 +189,23 @@ class IpexLLM(CustomLLM):
             None.
         """
         model_kwargs = model_kwargs or {}
-        from ipex_llm.transformers import AutoModelForCausalLM
 
         if model:
-            self._model = model
+            model = model
         else:
-            try:
-                if load_in_low_bit:
-                    self._model = AutoModelForCausalLM.from_pretrained(
-                        model_name,
-                        load_in_low_bit=load_in_low_bit,
-                        use_cache=True,
-                        trust_remote_code=True,
-                        **model_kwargs,
-                    )
-                else:
-                    self._model = AutoModelForCausalLM.from_pretrained(
-                        model_name,
-                        load_in_4bit=load_in_4bit,
-                        use_cache=True,
-                        trust_remote_code=True,
-                        **model_kwargs,
-                    )
-            except Exception:
-                from ipex_llm.transformers import AutoModel
-
-                if load_in_low_bit:
-                    self._model = AutoModel.from_pretrained(
-                        model_name, load_in_low_bit=load_in_low_bit, **model_kwargs
-                    )
-                else:
-                    self._model = AutoModel.from_pretrained(
-                        model_name, load_in_4bit=load_in_4bit, **model_kwargs
-                    )
-
+            model = self._load_model(
+                low_bit_model, load_in_4bit, load_in_low_bit, model_name, model_kwargs
+            )
+        if device_map not in ["cpu", "xpu"] and not device_map.startswith("xpu:"):
+            raise ValueError(
+                "IpexLLMEmbedding currently only supports device to be 'cpu', 'xpu', "
+                f"or 'xpu:<device_id>', but you have: {device_map}."
+            )
         if "xpu" in device_map:
-            self._model = self._model.to(device_map)
+            model = model.to(device_map)
 
         # check context_window
-        config_dict = self._model.config.to_dict()
+        config_dict = model.config.to_dict()
         model_context_window = int(
             config_dict.get("max_position_embeddings", context_window)
         )
@@ -240,26 +222,28 @@ class IpexLLM(CustomLLM):
             tokenizer_kwargs["max_length"] = context_window
 
         if tokenizer:
-            self._tokenizer = tokenizer
+            tokenizer = tokenizer
         else:
-            print(f"load tokenizer: {tokenizer_name}")
             try:
-                self._tokenizer = AutoTokenizer.from_pretrained(
+                tokenizer = AutoTokenizer.from_pretrained(
                     tokenizer_name, **tokenizer_kwargs
                 )
             except Exception:
-                self._tokenizer = LlamaTokenizer.from_pretrained(
+                tokenizer = LlamaTokenizer.from_pretrained(
                     tokenizer_name, trust_remote_code=True
                 )
 
         if tokenizer_name != model_name:
             logger.warning(
                 f"The model `{model_name}` and tokenizer `{tokenizer_name}` "
-                f"are different, please ensure that they are compatible."
+                f"are from different paths, please ensure that they are compatible."
             )
 
         # setup stopping criteria
         stopping_ids_list = stopping_ids or []
+
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
 
         class StopOnTokens(StoppingCriteria):
             def __call__(
@@ -273,7 +257,7 @@ class IpexLLM(CustomLLM):
                         return True
                 return False
 
-        self._stopping_criteria = StoppingCriteriaList([StopOnTokens()])
+        stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 
         messages_to_prompt = messages_to_prompt or self._tokenizer_messages_to_prompt
 
@@ -296,6 +280,102 @@ class IpexLLM(CustomLLM):
             output_parser=output_parser,
         )
 
+        self._model = model
+        self._tokenizer = tokenizer
+        self._stopping_criteria = stopping_criteria
+
+    @classmethod
+    def from_model_id(
+        cls,
+        context_window: int = DEFAULT_CONTEXT_WINDOW,
+        max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
+        tokenizer_name: str = DEFAULT_HUGGINGFACE_MODEL,
+        model_name: str = DEFAULT_HUGGINGFACE_MODEL,
+        load_in_4bit: Optional[bool] = True,
+        load_in_low_bit: Optional[str] = None,
+        model: Optional[Any] = None,
+        tokenizer: Optional[Any] = None,
+        device_map: str = "cpu",
+        stopping_ids: Optional[List[int]] = None,
+        tokenizer_kwargs: Optional[dict] = None,
+        tokenizer_outputs_to_remove: Optional[list] = None,
+        model_kwargs: Optional[dict] = None,
+        generate_kwargs: Optional[dict] = None,
+        is_chat_model: Optional[bool] = False,
+        callback_manager: Optional[CallbackManager] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
+    ):
+        return cls(
+            context_window=context_window,
+            max_new_tokens=max_new_tokens,
+            tokenizer_name=tokenizer_name,
+            model_name=model_name,
+            load_in_4bit=load_in_4bit,
+            load_in_low_bit=load_in_low_bit,
+            model=model,
+            tokenizer=tokenizer,
+            device_map=device_map,
+            stopping_ids=stopping_ids,
+            tokenizer_kwargs=tokenizer_kwargs,
+            tokenizer_outputs_to_remove=tokenizer_outputs_to_remove,
+            model_kwargs=model_kwargs,
+            generate_kwargs=generate_kwargs,
+            is_chat_model=is_chat_model,
+            callback_manager=callback_manager,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+            low_bit_model=False,
+        )
+
+    @classmethod
+    def from_model_id_low_bit(
+        cls,
+        context_window: int = DEFAULT_CONTEXT_WINDOW,
+        max_new_tokens: int = DEFAULT_NUM_OUTPUTS,
+        tokenizer_name: str = DEFAULT_HUGGINGFACE_MODEL,
+        model_name: str = DEFAULT_HUGGINGFACE_MODEL,
+        model: Optional[Any] = None,
+        tokenizer: Optional[Any] = None,
+        device_map: str = "cpu",
+        stopping_ids: Optional[List[int]] = None,
+        tokenizer_kwargs: Optional[dict] = None,
+        tokenizer_outputs_to_remove: Optional[list] = None,
+        model_kwargs: Optional[dict] = None,
+        generate_kwargs: Optional[dict] = None,
+        is_chat_model: Optional[bool] = False,
+        callback_manager: Optional[CallbackManager] = None,
+        messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
+        completion_to_prompt: Optional[Callable[[str], str]] = None,
+        pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
+        output_parser: Optional[BaseOutputParser] = None,
+    ):
+        return cls(
+            context_window=context_window,
+            max_new_tokens=max_new_tokens,
+            tokenizer_name=tokenizer_name,
+            model_name=model_name,
+            model=model,
+            tokenizer=tokenizer,
+            device_map=device_map,
+            stopping_ids=stopping_ids,
+            tokenizer_kwargs=tokenizer_kwargs,
+            tokenizer_outputs_to_remove=tokenizer_outputs_to_remove,
+            model_kwargs=model_kwargs,
+            generate_kwargs=generate_kwargs,
+            is_chat_model=is_chat_model,
+            callback_manager=callback_manager,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+            pydantic_program_mode=pydantic_program_mode,
+            output_parser=output_parser,
+            low_bit_model=True,
+        )
+
     @classmethod
     def class_name(cls) -> str:
         return "IpexLLM"
@@ -309,6 +389,61 @@ class IpexLLM(CustomLLM):
             model_name=self.model_name,
             is_chat_model=self.is_chat_model,
         )
+
+    def _load_model(
+        self,
+        low_bit_model: bool,
+        load_in_4bit: bool,
+        load_in_low_bit: str,
+        model_name: str,
+        model_kwargs: Any,
+    ) -> Any:
+        """Attempts to load a model with AutoModelForCausalLM and falls back to AutoModel on failure."""
+        from ipex_llm.transformers import AutoModelForCausalLM, AutoModel
+
+        load_kwargs = {"use_cache": True, "trust_remote_code": True}
+
+        if not low_bit_model:
+            if load_in_low_bit is not None:
+                load_function_name = "from_pretrained"
+                load_kwargs["load_in_low_bit"] = load_in_low_bit
+            else:
+                load_function_name = "from_pretrained"
+                load_kwargs["load_in_4bit"] = load_in_4bit
+        else:
+            load_function_name = "load_low_bit"
+
+        try:
+            # Attempt to load with AutoModelForCausalLM
+            return self._load_model_general(
+                AutoModelForCausalLM,
+                load_function_name,
+                model_name,
+                load_kwargs,
+                model_kwargs,
+            )
+        except Exception:
+            # Fallback to AutoModel if there's an exception
+            return self._load_model_general(
+                AutoModel, load_function_name, model_name, load_kwargs, model_kwargs
+            )
+
+    def _load_model_general(
+        self,
+        model_class: Any,
+        load_function_name: str,
+        model_name: str,
+        load_kwargs,
+        model_kwargs: dict,
+    ) -> Any:
+        """General function to attempt to load a model."""
+        try:
+            load_function = getattr(model_class, load_function_name)
+            return load_function(model_name, **{**load_kwargs, **model_kwargs})
+        except Exception as e:
+            logger.error(
+                f"Failed to load model using {model_class.__name__}.{load_function_name}: {e}"
+            )
 
     def _tokenizer_messages_to_prompt(self, messages: Sequence[ChatMessage]) -> str:
         """
@@ -371,6 +506,7 @@ class IpexLLM(CustomLLM):
             **input_ids,
             max_new_tokens=self.max_new_tokens,
             stopping_criteria=self._stopping_criteria,
+            pad_token_id=self._tokenizer.pad_token_id,
             **self.generate_kwargs,
         )
         completion_tokens = tokens[0][input_ids["input_ids"].size(1) :]
@@ -413,6 +549,7 @@ class IpexLLM(CustomLLM):
             streamer=streamer,
             max_new_tokens=self.max_new_tokens,
             stopping_criteria=self._stopping_criteria,
+            pad_token_id=self._tokenizer.pad_token_id,
             **self.generate_kwargs,
         )
         thread = Thread(target=self._model.generate, kwargs=generation_kwargs)

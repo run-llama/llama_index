@@ -3,9 +3,6 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from deprecated import deprecated
-from llama_index.core.base.llms.types import ChatMessage, LogProb, CompletionResponse
-from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from tenacity import (
     before_sleep_log,
     retry,
@@ -18,17 +15,39 @@ from tenacity import (
 from tenacity.stop import stop_base
 
 import openai
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ImageBlock,
+    LogProb,
+    TextBlock,
+)
+from llama_index.core.bridge.pydantic import BaseModel
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
 from openai.types.completion_choice import Logprobs
-from openai.types.completion import Completion
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
 DEFAULT_OPENAI_API_VERSION = ""
 
+O1_MODELS: Dict[str, int] = {
+    "o1": 200000,
+    "o1-2024-12-17": 200000,
+    "o1-preview": 128000,
+    "o1-preview-2024-09-12": 128000,
+    "o1-mini": 128000,
+    "o1-mini-2024-09-12": 128000,
+}
+
+O1_MODELS_WITHOUT_FUNCTION_CALLING = {
+    "o1-preview",
+    "o1-preview-2024-09-12",
+    "o1-mini",
+    "o1-mini-2024-09-12",
+}
 
 GPT4_MODELS: Dict[str, int] = {
     # stable model names:
@@ -42,6 +61,17 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4-turbo-preview": 128000,
     # multimodal model
     "gpt-4-vision-preview": 128000,
+    "gpt-4-1106-vision-preview": 128000,
+    "gpt-4-turbo-2024-04-09": 128000,
+    "gpt-4-turbo": 128000,
+    "gpt-4o": 128000,
+    "gpt-4o-2024-05-13": 128000,
+    "gpt-4o-2024-08-06": 128000,
+    "gpt-4o-2024-11-20": 128000,
+    # Intended for research and evaluation
+    "chatgpt-4o-latest": 128000,
+    "gpt-4o-mini": 128000,
+    "gpt-4o-mini-2024-07-18": 128000,
     # 0613 models (function calling):
     #   https://openai.com/blog/function-calling-and-other-api-updates
     "gpt-4-0613": 8192,
@@ -52,10 +82,12 @@ GPT4_MODELS: Dict[str, int] = {
 }
 
 AZURE_TURBO_MODELS: Dict[str, int] = {
+    "gpt-4o": 128000,
+    "gpt-4o-mini": 128000,
     "gpt-35-turbo-16k": 16384,
     "gpt-35-turbo": 4096,
     # 0125 (2024) model (JSON mode)
-    "gpt-35-turbo-0125": 16385,
+    "gpt-35-turbo-0125": 16384,
     # 1106 model (JSON mode)
     "gpt-35-turbo-1106": 16384,
     # 0613 models (function calling):
@@ -65,15 +97,13 @@ AZURE_TURBO_MODELS: Dict[str, int] = {
 
 TURBO_MODELS: Dict[str, int] = {
     # stable model names:
-    #   resolves to gpt-3.5-turbo-0301 before 2023-06-27,
-    #   resolves to gpt-3.5-turbo-0613 until 2023-12-11,
-    #   resolves to gpt-3.5-turbo-1106 after
-    "gpt-3.5-turbo": 4096,
+    #   resolves to gpt-3.5-turbo-0125 as of 2024-04-29.
+    "gpt-3.5-turbo": 16384,
     # resolves to gpt-3.5-turbo-16k-0613 until 2023-12-11
     # resolves to gpt-3.5-turbo-1106 after
     "gpt-3.5-turbo-16k": 16384,
     # 0125 (2024) model (JSON mode)
-    "gpt-3.5-turbo-0125": 16385,
+    "gpt-3.5-turbo-0125": 16384,
     # 1106 model (JSON mode)
     "gpt-3.5-turbo-1106": 16384,
     # 0613 models (function calling):
@@ -102,6 +132,7 @@ GPT3_MODELS: Dict[str, int] = {
 }
 
 ALL_AVAILABLE_MODELS = {
+    **O1_MODELS,
     **GPT4_MODELS,
     **TURBO_MODELS,
     **GPT3_5_MODELS,
@@ -110,6 +141,7 @@ ALL_AVAILABLE_MODELS = {
 }
 
 CHAT_MODELS = {
+    **O1_MODELS,
     **GPT4_MODELS,
     **TURBO_MODELS,
     **AZURE_TURBO_MODELS,
@@ -159,11 +191,10 @@ def create_retry_decorator(
         retry=(
             retry_if_exception_type(
                 (
-                    openai.APITimeoutError,
-                    openai.APIError,
                     openai.APIConnectionError,
+                    openai.APITimeoutError,
                     openai.RateLimitError,
-                    openai.APIStatusError,
+                    openai.InternalServerError,
                 )
             )
         ),
@@ -172,7 +203,8 @@ def create_retry_decorator(
 
 
 def openai_modelname_to_contextsize(modelname: str) -> int:
-    """Calculate the maximum number of tokens possible to generate for a model.
+    """
+    Calculate the maximum number of tokens possible to generate for a model.
 
     Args:
         modelname: The modelname we want to know the context size for.
@@ -212,19 +244,74 @@ def is_chat_model(model: str) -> bool:
 
 
 def is_function_calling_model(model: str) -> bool:
+    # checking whether the model is fine-tuned or not.
+    # fine-tuned model names these days look like:
+    # ft:gpt-3.5-turbo:acemeco:suffix:abc123
+    if model.startswith("ft-"):  # legacy fine-tuning
+        model = model.split(":")[0]
+    elif model.startswith("ft:"):
+        model = model.split(":")[1]
+
     is_chat_model_ = is_chat_model(model)
     is_old = "0314" in model or "0301" in model
-    return is_chat_model_ and not is_old
+    is_o1_beta = model in O1_MODELS_WITHOUT_FUNCTION_CALLING
+
+    return is_chat_model_ and not is_old and not is_o1_beta
 
 
 def to_openai_message_dict(
-    message: ChatMessage, drop_none: bool = False
+    message: ChatMessage,
+    drop_none: bool = False,
+    model: Optional[str] = None,
 ) -> ChatCompletionMessageParam:
-    """Convert generic message to OpenAI message dict."""
+    """Convert a ChatMessage to an OpenAI message dict."""
+    content = []
+    content_txt = ""
+    for block in message.blocks:
+        if isinstance(block, TextBlock):
+            content.append({"type": "text", "text": block.text})
+            content_txt += block.text
+        elif isinstance(block, ImageBlock):
+            if block.url:
+                content.append(
+                    {"type": "image_url", "image_url": {"url": str(block.url)}}
+                )
+            else:
+                img_bytes = block.resolve_image(as_base64=True).read()
+                img_str = img_bytes.decode("utf-8")
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{block.image_mimetype};base64,{img_str}",
+                            "detail": block.detail or "low",
+                        },
+                    }
+                )
+        else:
+            msg = f"Unsupported content block type: {type(block).__name__}"
+            raise ValueError(msg)
+
+    # NOTE: Sending a blank string to openai will cause an error.
+    # This will commonly happen with tool calls.
+    content_txt = None if content_txt == "" else content_txt
+
+    # NOTE: Despite what the openai docs say, if the role is ASSISTANT, SYSTEM
+    # or TOOL, 'content' cannot be a list and must be string instead.
+    # Furthermore, if all blocks are text blocks, we can use the content_txt
+    # as the content. This will avoid breaking openai-like APIs.
     message_dict = {
         "role": message.role.value,
-        "content": message.content,
+        "content": content_txt
+        if message.role.value in ("assistant", "tool", "system")
+        or all(isinstance(block, TextBlock) for block in message.blocks)
+        else content,
     }
+
+    # TODO: O1 models do not support system prompts
+    if model is not None and model in O1_MODELS:
+        if message_dict["role"] == "system":
+            message_dict["role"] = "developer"
 
     # NOTE: openai messages have additional arguments:
     # - function messages have `name`
@@ -241,11 +328,18 @@ def to_openai_message_dict(
 
 
 def to_openai_message_dicts(
-    messages: Sequence[ChatMessage], drop_none: bool = False
+    messages: Sequence[ChatMessage],
+    drop_none: bool = False,
+    model: Optional[str] = None,
 ) -> List[ChatCompletionMessageParam]:
     """Convert generic messages to OpenAI message dicts."""
     return [
-        to_openai_message_dict(message, drop_none=drop_none) for message in messages
+        to_openai_message_dict(
+            message,
+            drop_none=drop_none,
+            model=model,
+        )
+        for message in messages
     ]
 
 
@@ -258,7 +352,7 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
     # function_call = None  # deprecated in OpenAI v 1.1.0
 
     additional_kwargs: Dict[str, Any] = {}
-    if openai_message.tool_calls is not None:
+    if openai_message.tool_calls:
         tool_calls: List[ChatCompletionMessageToolCall] = openai_message.tool_calls
         additional_kwargs.update(tool_calls=tool_calls)
 
@@ -269,14 +363,16 @@ def from_openai_token_logprob(
     openai_token_logprob: ChatCompletionTokenLogprob,
 ) -> List[LogProb]:
     """Convert a single openai token logprob to generic list of logprobs."""
-    try:
-        result = [
-            LogProb(token=el.token, logprob=el.logprob, bytes=el.bytes or [])
-            for el in openai_token_logprob.top_logprobs
-        ]
-    except Exception as e:
-        print(openai_token_logprob)
-        raise
+    result = []
+    if openai_token_logprob.top_logprobs:
+        try:
+            result = [
+                LogProb(token=el.token, logprob=el.logprob, bytes=el.bytes or [])
+                for el in openai_token_logprob.top_logprobs
+            ]
+        except Exception:
+            print(openai_token_logprob)
+            raise
     return result
 
 
@@ -284,14 +380,15 @@ def from_openai_token_logprobs(
     openai_token_logprobs: Sequence[ChatCompletionTokenLogprob],
 ) -> List[List[LogProb]]:
     """Convert openai token logprobs to generic list of LogProb."""
-    return [
-        from_openai_token_logprob(token_logprob)
-        for token_logprob in openai_token_logprobs
-    ]
+    result = []
+    for token_logprob in openai_token_logprobs:
+        if logprobs := from_openai_token_logprob(token_logprob):
+            result.append(logprobs)
+    return result
 
 
 def from_openai_completion_logprob(
-    openai_completion_logprob: Dict[str, float]
+    openai_completion_logprob: Dict[str, float],
 ) -> List[LogProb]:
     """Convert openai completion logprobs to generic list of LogProb."""
     return [
@@ -304,15 +401,13 @@ def from_openai_completion_logprobs(
     openai_completion_logprobs: Logprobs,
 ) -> List[List[LogProb]]:
     """Convert openai completion logprobs to generic list of LogProb."""
-    return [
-        from_openai_completion_logprob(completion_logprob)
-        for completion_logprob in openai_completion_logprobs.top_logprobs
-    ]
-
-
-def from_openai_completion(openai_completion: Completion) -> CompletionResponse:
-    """Convert openai completion to CompletionResponse."""
-    text = openai_completion.choices[0].text
+    result = []
+    if openai_completion_logprobs.top_logprobs:
+        result = [
+            from_openai_completion_logprob(completion_logprob)
+            for completion_logprob in openai_completion_logprobs.top_logprobs
+        ]
+    return result
 
 
 def from_openai_messages(
@@ -326,13 +421,32 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = message_dict["role"]
     # NOTE: Azure OpenAI returns function calling messages without a content key
-    content = message_dict.get("content", None)
+    content = message_dict.get("content")
+    blocks = []
+    if isinstance(content, list):
+        for elem in content:
+            t = elem.get("type")
+            if t == "text":
+                blocks.append(TextBlock(text=elem.get("text")))
+            elif t == "image_url":
+                img = elem["image_url"]["url"]
+                detail = elem["image_url"]["detail"]
+                if img.startswith("data:"):
+                    blocks.append(ImageBlock(image=img, detail=detail))
+                else:
+                    blocks.append(ImageBlock(url=img, detail=detail))
+            else:
+                msg = f"Unsupported message type: {t}"
+                raise ValueError(msg)
+        content = None
 
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")
     additional_kwargs.pop("content", None)
 
-    return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
+    return ChatMessage(
+        role=role, content=content, additional_kwargs=additional_kwargs, blocks=blocks
+    )
 
 
 def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage]:
@@ -342,7 +456,8 @@ def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage
 
 @deprecated("Deprecated in favor of `to_openai_tool`, which should be used instead.")
 def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
-    """Deprecated in favor of `to_openai_tool`.
+    """
+    Deprecated in favor of `to_openai_tool`.
 
     Convert pydantic class to OpenAI function.
     """
@@ -368,7 +483,8 @@ def resolve_openai_credentials(
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[Optional[str], str, str]:
-    """ "Resolve OpenAI credentials.
+    """
+    "Resolve OpenAI credentials.
 
     The order of precedence is:
     1. param
@@ -396,3 +512,62 @@ def validate_openai_api_key(api_key: Optional[str] = None) -> None:
 
     if not openai_api_key:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
+
+
+def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
+    """
+    Resolve tool choice.
+
+    If tool_choice is a function name string, return the appropriate dict.
+    """
+    if isinstance(tool_choice, str) and tool_choice not in ["none", "auto", "required"]:
+        return {"type": "function", "function": {"name": tool_choice}}
+
+    return tool_choice
+
+
+def update_tool_calls(
+    tool_calls: List[ChoiceDeltaToolCall],
+    tool_calls_delta: Optional[List[ChoiceDeltaToolCall]],
+) -> List[ChoiceDeltaToolCall]:
+    """
+    Use the tool_calls_delta objects received from openai stream chunks
+    to update the running tool_calls object.
+
+    Args:
+        tool_calls (List[ChoiceDeltaToolCall]): the list of tool calls
+        tool_calls_delta (ChoiceDeltaToolCall): the delta to update tool_calls
+
+    Returns:
+        List[ChoiceDeltaToolCall]: the updated tool calls
+    """
+    # openai provides chunks consisting of tool_call deltas one tool at a time
+    if tool_calls_delta is None:
+        return tool_calls
+
+    tc_delta = tool_calls_delta[0]
+
+    if len(tool_calls) == 0:
+        tool_calls.append(tc_delta)
+    else:
+        # we need to either update latest tool_call or start a
+        # new tool_call (i.e., multiple tools in this turn) and
+        # accumulate that new tool_call with future delta chunks
+        t = tool_calls[-1]
+        if t.index != tc_delta.index:
+            # the start of a new tool call, so append to our running tool_calls list
+            tool_calls.append(tc_delta)
+        else:
+            # not the start of a new tool call, so update last item of tool_calls
+
+            # validations to get passed by mypy
+            assert t.function is not None
+            assert tc_delta.function is not None
+            assert t.function.arguments is not None
+            assert t.function.name is not None
+            assert t.id is not None
+
+            t.function.arguments += tc_delta.function.arguments or ""
+            t.function.name += tc_delta.function.name or ""
+            t.id += tc_delta.id or ""
+    return tool_calls

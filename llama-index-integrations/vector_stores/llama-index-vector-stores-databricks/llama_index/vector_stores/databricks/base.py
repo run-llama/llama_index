@@ -126,6 +126,8 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
         text_column: Optional[str] = None,
         columns: Optional[List[str]] = None,
     ) -> None:
+        super().__init__(text_column=text_column, columns=columns)
+
         try:
             from databricks.vector_search.client import VectorSearchIndex
         except ImportError:
@@ -155,10 +157,6 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
             columns = []
         if "doc_id" not in columns:
             columns = columns[:19] + ["doc_id"]
-        super().__init__(
-            text_column=text_column,
-            columns=columns,
-        )
 
         # initialize the column name for the text column in the delta table
         if self._is_databricks_managed_embeddings():
@@ -223,7 +221,8 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
             metadata_columns = self.columns or []
 
             # explicitly record doc_id as metadata (for delete)
-            metadata_columns.append("doc_id")
+            if "doc_id" not in metadata_columns:
+                metadata_columns.append("doc_id")
 
             entry = {
                 self._primary_key: node_id,

@@ -7,8 +7,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 from llama_index.core.llms.llm import LLM
 from llama_index.core.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.program.evaporate.prompts import (
     DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL,
     DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
@@ -98,7 +97,6 @@ class EvaporateExtractor:
     def __init__(
         self,
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         schema_id_prompt: Optional[SchemaIDPrompt] = None,
         fn_generate_prompt: Optional[FnGeneratePrompt] = None,
         field_extract_query_tmpl: str = DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
@@ -107,7 +105,7 @@ class EvaporateExtractor:
     ) -> None:
         """Initialize params."""
         # TODO: take in an entire index instead of forming a response builder
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._schema_id_prompt = schema_id_prompt or SCHEMA_ID_PROMPT
         self._fn_generate_prompt = fn_generate_prompt or FN_GENERATION_PROMPT
         self._field_extract_query_tmpl = field_extract_query_tmpl

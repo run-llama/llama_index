@@ -4,7 +4,7 @@ This tool loads and updates documents from Notion. The user specifies an API tok
 
 ## Usage
 
-This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/notion.ipynb)
+This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-notion/examples/notion.ipynb)
 
 Here's an example usage of the NotionToolSpec.
 
@@ -23,4 +23,4 @@ agent.chat("Append the heading 'I am legend' to the movies page")
 `search_data`: Searches for matching pages or databases
 `append_data`: Appends content to the matching page or database
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

@@ -113,6 +113,42 @@ p = QueryPipeline(chain=[prompt_tmpl, llm, summarizer_c])
 p.run(topic="YC")
 ```
 
+### Batch Input
+
+If you wish to run the pipeline for several rounds of single/multi-inputs, set `batch=True` in the function call - supported by `run`, `arun`, `run_multi`, and `arun_multi`. Pass in a list of individual single/multi-inputs you would like to run. `batch` mode will return a list of responses in the same order as the inputs.
+
+Example for single-input/single-output: `p.run(field=[in1: Any, in2: Any], batch=True)` --> `[out1: Any, out2: Any]`
+
+```python
+output = p.run(topic=["YC", "RAG", "LlamaIndex"], batch=True)
+# output is [ResponseYC, ResponseRAG, ResponseLlamaIndex]
+print(output)
+```
+
+Example for multi-input/multi-output: `p.run_multi("root_node": {"field": [in1: Any, in2, Any]}, batch=True)` --> `{"output_node": {"field": [out1: Any, out2: Any]}}`
+
+```python
+output_dict = p.run_multi({"llm": {"topic": ["YC", "RAG", "LlamaIndex"]}})
+print(output_dict)
+
+# output dict is {"summarizer": {"output": [ResponseYC, ResponseRAG, ResponseLlamaIndex]}}
+```
+
+
+### Intermediate outputs
+
+If you wish to obtain the intermediate outputs of modules in QueryPipeline, you can use `run_with_intermediates` or `run_multi_with_intermediates` for single-input and multi-input, respectively.
+
+The output will be a tuple of the normal output and a dictionary containing module key -> `ComponentIntermediates`. ComponentIntermediates has 2 fields: `inputs` dict and `outputs` dict.
+
+```python
+output, intermediates = p.run_with_intermediates(topic="YC")
+print(output)
+print(intermediates)
+
+# output is (Response, {"module_key": ComponentIntermediates("inputs": {}, "outputs": {})})
+```
+
 ## Defining a Custom Query Component
 
 You can easily define a custom component: Either passing a function to a `FnComponent` or subclassing a `CustomQueryComponent`.
