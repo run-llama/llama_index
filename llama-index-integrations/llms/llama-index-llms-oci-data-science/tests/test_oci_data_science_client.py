@@ -665,7 +665,7 @@ class TestAsyncClient:
         await self.client.close()
         self.client._client.aclose.assert_called_once()
 
-    def test_is_closed(self):
+    async def test_is_closed(self):
         """Ensures that is_closed returns the client's is_closed status."""
         self.client._client.is_closed = False
         assert not self.client.is_closed()
