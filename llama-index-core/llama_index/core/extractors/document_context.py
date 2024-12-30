@@ -19,25 +19,12 @@ def is_text_node(node: BaseNode) -> TypeGuard[Union[Node, TextNode]]:
 
 OversizeStrategy = Literal["warn", "error", "ignore"]
 
-# original context prompt from the Anthropic cookbook/blogpost, works well
-ORIGINAL_CONTEXT_PROMPT: str = """
-Please give a short succinct context to situate this chunk within the overall document for the purposes of improving search retrieval of the chunk.
-Answer only with the succinct context and nothing else.
-"""
-
-# miniaturized context prompt, generates better results, produces more keyword-laden results for better matches
-SUCCINCT_CONTEXT_PROMPT: str = """
-Generate keywords and brief phrases describing the main topics, entities, and actions in this text. Replace pronouns with their specific referents. Disambiguate pronouns and ambiguous terms in the chunk. Format as comma-separated phrases. Exclude meta-commentary about the text itself.
-"""
-
-DEFAULT_CONTEXT_PROMPT: str = SUCCINCT_CONTEXT_PROMPT
-
-DEFAULT_KEY: str = "context"
-
 
 class DocumentContextExtractor(BaseExtractor):
     """
     An LLM-based context extractor for enhancing RAG accuracy through document analysis.
+
+    ! Nodes that already have the 'key' in node.metadata will NOT be processed - will be skipped !
 
     This extractor processes documents and their nodes to generate contextual metadata,
     implementing the approach described in the Anthropic "Contextual Retrieval" blog post.
@@ -50,7 +37,7 @@ class DocumentContextExtractor(BaseExtractor):
         prompt (str): Prompt template for context generation
         doc_ids (Set[str]): Set of processed document IDs
         max_context_length (int): Maximum allowed document context length
-        max_contextual_tokens (int): Maximum tokens in generated context
+        max_output_tokens (int): Maximum tokens in generated context
         oversized_document_strategy (OversizeStrategy): Strategy for handling large documents
 
     Example:
@@ -59,7 +46,7 @@ class DocumentContextExtractor(BaseExtractor):
             docstore=my_docstore,
             llm=my_llm,
             max_context_length=64000,
-            max_contextual_tokens=256
+            max_output_tokens=256
         )
         metadata_list = await extractor.aextract(nodes)
         ```
@@ -72,9 +59,31 @@ class DocumentContextExtractor(BaseExtractor):
     prompt: str
     doc_ids: Set[str]
     max_context_length: int
-    max_contextual_tokens: int
+    max_output_tokens: int
     oversized_document_strategy: OversizeStrategy
     num_workers: int = DEFAULT_NUM_WORKERS
+    failed_nodes: Set[str]
+
+    # original context prompt from the Anthropic cookbook/blogpost, works well
+    ORIGINAL_CONTEXT_PROMPT: str = """
+    Please give a short succinct context to situate this chunk within the overall document for the purposes of improving search retrieval of the chunk.
+    Answer only with the succinct context and nothing else.
+    """
+
+    # miniaturized context prompt, generates better results, produces more keyword-laden results for better matches
+    SUCCINCT_CONTEXT_PROMPT: str = """
+    Generate keywords and brief phrases describing the main topics, entities, and actions in this text. Replace pronouns with their specific referents. Disambiguate pronouns and ambiguous terms in the chunk. Format as comma-separated phrases. Exclude meta-commentary about the text itself.
+    """
+
+    DEFAULT_CONTEXT_PROMPT: str = SUCCINCT_CONTEXT_PROMPT
+
+    DEFAULT_KEY: str = "context"
+
+    def is_job_complete(self) -> bool:
+        """
+        Simply tracks if the contextual retrieval is 100% finished through all nodes.
+        """
+        return len(self.failed_nodes) == 0
 
     def __init__(
         self,
@@ -84,7 +93,7 @@ class DocumentContextExtractor(BaseExtractor):
         key: str = DEFAULT_KEY,
         prompt: str = DEFAULT_CONTEXT_PROMPT,
         num_workers: int = DEFAULT_NUM_WORKERS,
-        max_contextual_tokens: int = 512,
+        max_output_tokens: int = 512,
         oversized_document_strategy: OversizeStrategy = "warn",
         **kwargs: Any,
     ) -> None:
@@ -96,8 +105,9 @@ class DocumentContextExtractor(BaseExtractor):
             prompt=prompt,
             doc_ids=set(),
             max_context_length=max_context_length,
-            max_contextual_tokens=max_contextual_tokens,
+            max_output_tokens=max_output_tokens,
             oversized_document_strategy=oversized_document_strategy,
+            failed_nodes=set(),
             num_workers=num_workers,
             **kwargs,
         )
@@ -167,7 +177,7 @@ class DocumentContextExtractor(BaseExtractor):
             try:
                 response: ChatResponse = await self.llm.achat(
                     messages,
-                    max_tokens=self.max_contextual_tokens,
+                    max_tokens=self.max_output_tokens,
                     extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
                 )
                 first_block: Union[TextBlock, ImageBlock] = response.message.blocks[0]
@@ -194,6 +204,9 @@ class DocumentContextExtractor(BaseExtractor):
                     await asyncio.sleep(delay)
                     continue
 
+                # Count as failure for all other exceptions
+                self.failed_nodes.add(node.node_id)
+
                 if is_rate_limit:
                     logging.error(
                         f"Failed after {max_retries} retries due to rate limiting"
@@ -210,7 +223,12 @@ class DocumentContextExtractor(BaseExtractor):
     async def _get_document(self, doc_id: str) -> Optional[Union[Node, TextNode]]:
         """Counting tokens can be slow, as can awaiting the docstore (potentially), so we keep a small lru_cache."""
         # first we need to get the document
-        doc = await self.docstore.aget_document(doc_id)
+        try:
+            doc = await self.docstore.aget_document(doc_id)
+        except ValueError as e:
+            if "not found" in str(e):
+                logging.warning(f"Document {doc_id} not found in docstore")
+                return None
         if not doc:
             logging.warning(f"Document {doc_id} not found in docstore")
             return None
@@ -251,6 +269,9 @@ class DocumentContextExtractor(BaseExtractor):
         Returns:
             List of metadata dictionaries with generated context
         """
+        # reset failed nodes count
+        self.failed_nodes = set()
+
         metadata_list: List[Dict] = []
         for _ in nodes:
             metadata_list.append({})
@@ -269,9 +290,11 @@ class DocumentContextExtractor(BaseExtractor):
         # iterate over all the nodes and generate the jobs
         node_tasks: List[Coroutine[Any, Any, Any]] = []
         for node in sorted_nodes:
-            if not node.source_node:
+            if not (node.source_node and is_text_node(node)):
                 continue
-            if not is_text_node(node):
+
+            # Skip already processed nodes
+            if self.key in node.metadata:
                 continue
 
             doc: Optional[Union[Node, TextNode]] = await self._get_document(
