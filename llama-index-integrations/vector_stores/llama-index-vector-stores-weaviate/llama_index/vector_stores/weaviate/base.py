@@ -34,12 +34,12 @@ from llama_index.vector_stores.weaviate._exceptions import (
 
 import weaviate
 import weaviate.classes as wvc
-
 from weaviate.collections.batch.batch_wrapper import (
     _ContextManagerWrapper as BatchWrapper,
 )
 
 _logger = logging.getLogger(__name__)
+_WEAVIATE_DEFAULT_GRPC_PORT = 50051
 
 
 def _transform_weaviate_filter_condition(condition: str) -> str:
@@ -127,14 +127,19 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         `pip install llama-index-vector-stores-weaviate`
 
         ```python
+        from llama_index.vector_stores.weaviate import WeaviateVectorStore
         import weaviate
 
-        resource_owner_config = weaviate.AuthClientPassword(
+        resource_owner_config = weaviate.auth.AuthClientPassword(
             username="<username>",
             password="<password>",
         )
-        client = weaviate.Client(
-            "https://llama-test-ezjahb4m.weaviate.network",
+        connection_params = weaviate.connect.ConnectionParams.from_url(
+            url="https://llama-test-ezjahb4m.weaviate.network",
+            grpc_port=50051,
+        )
+        client = weaviate.WeaviateClient(
+            connection_params=connection_params,
             auth_client_secret=resource_owner_config,
         )
 
@@ -163,7 +168,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        weaviate_client: Optional[Any] = None,
+        weaviate_client: Optional[weaviate.WeaviateClient] = None,
         class_prefix: Optional[str] = None,
         index_name: Optional[str] = None,
         text_key: str = DEFAULT_TEXT_KEY,

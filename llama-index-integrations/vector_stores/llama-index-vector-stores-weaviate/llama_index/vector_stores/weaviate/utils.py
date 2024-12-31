@@ -47,12 +47,14 @@ def validate_client(client: Any) -> None:
     """Validate client and import weaviate library."""
     try:
         import weaviate
-
-        client = cast(weaviate.WeaviateClient, client)
     except ImportError:
         raise ImportError(
             "Weaviate is not installed. "
             "Please install it with `pip install weaviate-client`."
+        )
+    if not isinstance(client, weaviate.WeaviateClient):
+        raise ValueError(
+            f"Invalid client type, expected weaviate.WeaviateClient, got {type(client)}"
         )
     cast(weaviate.WeaviateClient, client)
 
