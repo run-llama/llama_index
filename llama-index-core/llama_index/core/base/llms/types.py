@@ -75,11 +75,17 @@ class ImageBlock(BaseModel):
         if not self.image:
             return self
 
-        if not self.image_mimetype:
-            guess = filetype.guess(self.image)
-            self.image_mimetype = guess.mime if guess else None
+        try:
+            # Check if image is already base64 encoded
+            decoded_img = base64.b64decode(self.image)
+        except Exception:
+            decoded_img = self.image
+            # Not base64 - encode it
+            self.image = base64.b64encode(self.image)
 
-        self.image = base64.b64encode(self.image)
+        if not self.image_mimetype:
+            guess = filetype.guess(decoded_img)
+            self.image_mimetype = guess.mime if guess else None
 
         return self
 

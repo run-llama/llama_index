@@ -27,12 +27,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-anthropic"
 readme = "README.md"
-version = "0.5.0"
+version = "0.6.3"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-anthropic = {extras = ["bedrock", "vertex"], version = ">=0.39.0"}
-llama-index-core = "^0.12.0"
+anthropic = {extras = ["bedrock", "vertex"], version = ">=0.41.0"}
+llama-index-core = "^0.12.5"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

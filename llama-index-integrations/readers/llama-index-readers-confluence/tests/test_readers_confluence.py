@@ -33,6 +33,14 @@ def test_confluence_reader_with_api_token():
     assert reader.confluence is not None
 
 
+def test_confluence_reader_with_cookies():
+    reader = ConfluenceReader(
+        base_url="https://example.atlassian.net/wiki",
+        cookies={"key": "value"},
+    )
+    assert reader.confluence is not None
+
+
 def test_confluence_reader_with_client_args():
     with patch("atlassian.Confluence") as MockConstructor:
         reader = ConfluenceReader(

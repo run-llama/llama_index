@@ -17,7 +17,6 @@ pip install llama-index
 This is a starter bundle of packages, containing
 
 - `llama-index-core`
-- `llama-index-legacy  # temporarily included`
 - `llama-index-llms-openai`
 - `llama-index-embeddings-openai`
 - `llama-index-program-openai`

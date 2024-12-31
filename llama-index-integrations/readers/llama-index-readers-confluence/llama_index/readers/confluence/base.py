@@ -31,6 +31,7 @@ class ConfluenceReader(BaseReader):
         base_url (str): 'base_url' for confluence cloud instance, this is suffixed with '/wiki', eg 'https://yoursite.atlassian.com/wiki'
         cloud (bool): connecting to Confluence Cloud or self-hosted instance
         api_token (str): Confluence API token, see https://confluence.atlassian.com/cloud/api-tokens-938839638.html
+        cookies (dict): Confluence cookies, see https://atlassian-python-api.readthedocs.io/index.html
         user_name (str): Confluence username, used for basic auth. Must be used with `password`.
         password (str): Confluence password, used for basic auth. Must be used with `user_name`.
         client_args (dict): Additional keyword arguments to pass directly to the Atlassian Confluence client constructor, for example `{'backoff_and_retry': True}`.
@@ -43,6 +44,7 @@ class ConfluenceReader(BaseReader):
         oauth2: Optional[Dict] = None,
         cloud: bool = True,
         api_token: Optional[str] = None,
+        cookies: Optional[dict] = None,
         user_name: Optional[str] = None,
         password: Optional[str] = None,
         client_args: Optional[dict] = None,
@@ -70,6 +72,10 @@ class ConfluenceReader(BaseReader):
             if api_token is not None:
                 self.confluence = Confluence(
                     url=base_url, token=api_token, cloud=cloud, **client_args
+                )
+            elif cookies is not None:
+                self.confluence = Confluence(
+                    url=base_url, cookies=cookies, cloud=cloud, **client_args
                 )
             elif user_name is not None and password is not None:
                 self.confluence = Confluence(

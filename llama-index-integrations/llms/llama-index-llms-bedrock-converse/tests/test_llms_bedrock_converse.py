@@ -14,6 +14,9 @@ EXP_STREAM_RESPONSE = ["Test ", "value"]
 EXP_MAX_TOKENS = 100
 EXP_TEMPERATURE = 0.7
 EXP_MODEL = "anthropic.claude-v2"
+EXP_GUARDRAIL_ID = "IDENTIFIER"
+EXP_GUARDRAIL_VERSION = "DRAFT"
+EXP_GUARDRAIL_TRACE = "ENABLED"
 
 # Reused chat message and prompt
 messages = [ChatMessage(role=MessageRole.USER, content="Test")]
@@ -88,6 +91,9 @@ def bedrock_converse(mock_boto3_session, mock_aioboto3_session):
         model=EXP_MODEL,
         max_tokens=EXP_MAX_TOKENS,
         temperature=EXP_TEMPERATURE,
+        guardrail_identifier=EXP_GUARDRAIL_ID,
+        guardrail_version=EXP_GUARDRAIL_VERSION,
+        trace=EXP_GUARDRAIL_TRACE,
         callback_manager=CallbackManager(),
     )
 
