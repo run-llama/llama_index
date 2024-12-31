@@ -4,7 +4,7 @@ from typing import Any, Callable
 
 from packaging import version
 
-MIN_ADS_VERSION = "2.12.6"
+MIN_ADS_VERSION = "2.12.9"
 
 logger = logging.getLogger(__name__)
 

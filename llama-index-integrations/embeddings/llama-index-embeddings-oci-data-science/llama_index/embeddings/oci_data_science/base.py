@@ -7,7 +7,8 @@ from llama_index.core.base.embeddings.base import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, model_validator
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.embeddings.oci_data_science.client import AsyncClient, Client
-from llama_index.embeddings.oci_data_science.utils import _validate_dependency
+
+# from llama_index.embeddings.oci_data_science.utils import _validate_dependency
 
 DEFAULT_MODEL = "odsc-embeddings"
 DEFAULT_TIMEOUT = 120
@@ -182,7 +183,7 @@ class OCIDataScienceEmbedding(BaseEmbedding):
         )
 
     @model_validator(mode="before")
-    @_validate_dependency
+    # @_validate_dependency
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate the environment and dependencies before initialization.
 

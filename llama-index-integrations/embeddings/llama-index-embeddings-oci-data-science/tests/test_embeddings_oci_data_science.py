@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -39,21 +39,20 @@ def embeddings():
     default_headers = {"Custom-Header": "value"}
     callback_manager = CallbackManager([])
 
-    with patch("ads.common.auth.default_signer", return_value=auth):
-        embeddings_instance = OCIDataScienceEmbedding(
-            endpoint=endpoint,
-            model_name=model_name,
-            auth=auth,
-            embed_batch_size=embed_batch_size,
-            timeout=timeout,
-            max_retries=max_retries,
-            additional_kwargs=additional_kwargs,
-            default_headers=default_headers,
-            callback_manager=callback_manager,
-        )
-        # Mock the client
-        embeddings_instance._client = Mock(spec=Client)
-        embeddings_instance._async_client = AsyncMock(spec=AsyncClient)
+    embeddings_instance = OCIDataScienceEmbedding(
+        endpoint=endpoint,
+        model_name=model_name,
+        auth={"signer": Mock()},
+        embed_batch_size=embed_batch_size,
+        timeout=timeout,
+        max_retries=max_retries,
+        additional_kwargs=additional_kwargs,
+        default_headers=default_headers,
+        callback_manager=callback_manager,
+    )
+    # Mock the client
+    embeddings_instance._client = Mock(spec=Client)
+    embeddings_instance._async_client = AsyncMock(spec=AsyncClient)
     return embeddings_instance
 
 

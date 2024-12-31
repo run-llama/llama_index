@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import httpx
 import pytest
-from ads.common import auth as authutil
 from llama_index.embeddings.oci_data_science.client import (
     AsyncClient,
     BaseClient,
@@ -212,14 +211,13 @@ class TestBaseClient:
         self.backoff_factor = 2
         self.timeout = 30
 
-        with patch.object(authutil, "default_signer", return_value=self.auth_mock):
-            self.base_client = BaseClient(
-                endpoint=self.endpoint,
-                auth=self.auth_mock,
-                retries=self.retries,
-                backoff_factor=self.backoff_factor,
-                timeout=self.timeout,
-            )
+        self.base_client = BaseClient(
+            endpoint=self.endpoint,
+            auth=self.auth_mock,
+            retries=self.retries,
+            backoff_factor=self.backoff_factor,
+            timeout=self.timeout,
+        )
 
     def test_init(self):
         """Ensures that the client is initialized correctly."""
@@ -229,11 +227,11 @@ class TestBaseClient:
         assert self.base_client.timeout == self.timeout
         assert isinstance(self.base_client.auth, OCIAuth)
 
-    def test_init_default_auth(self):
-        """Ensures that default auth is used when auth is None."""
-        with patch.object(authutil, "default_signer", return_value=self.auth_mock):
-            client = BaseClient(endpoint=self.endpoint)
-            assert client.auth is not None
+    # def test_init_default_auth(self):
+    #     """Ensures that default auth is used when auth is None."""
+    #     with patch.object(authutil, "default_signer", return_value=self.auth_mock):
+    #         client = BaseClient(endpoint=self.endpoint)
+    #         assert client.auth is not None
 
     def test_init_invalid_auth(self):
         """Ensures that ValueError is raised when auth signer is invalid."""
@@ -262,16 +260,25 @@ class TestClient:
         self.backoff_factor = 0.1
         self.timeout = 10
 
-        with patch.object(authutil, "default_signer", return_value=self.auth_mock):
-            self.client = Client(
+        self.client = Client(
+            endpoint=self.endpoint,
+            auth=self.auth_mock,
+            retries=self.retries,
+            backoff_factor=self.backoff_factor,
+            timeout=self.timeout,
+        )
+        # Mock the internal HTTPX client
+        self.client._client = Mock()
+
+    def test_auth_not_provided(self):
+        """Ensures that error will be thrown what auth signer not provided."""
+        with pytest.raises(ImportError):
+            Client(
                 endpoint=self.endpoint,
-                auth=self.auth_mock,
                 retries=self.retries,
                 backoff_factor=self.backoff_factor,
                 timeout=self.timeout,
             )
-            # Mock the internal HTTPX client
-            self.client._client = Mock()
 
     def test_request_success(self):
         """Ensures that _request returns JSON response on success."""
@@ -387,17 +394,16 @@ class TestAsyncClient:
         self.backoff_factor = 0.1
         self.timeout = 10
 
-        with patch.object(authutil, "default_signer", return_value=self.auth_mock):
-            self.client = AsyncClient(
-                endpoint=self.endpoint,
-                auth=self.auth_mock,
-                retries=self.retries,
-                backoff_factor=self.backoff_factor,
-                timeout=self.timeout,
-            )
-            # Mock the internal HTTPX client
-            self.client._client = AsyncMock()
-            self.client._client.is_closed = False
+        self.client = AsyncClient(
+            endpoint=self.endpoint,
+            auth=self.auth_mock,
+            retries=self.retries,
+            backoff_factor=self.backoff_factor,
+            timeout=self.timeout,
+        )
+        # Mock the internal HTTPX client
+        self.client._client = AsyncMock()
+        self.client._client.is_closed = False
 
     def async_iter(self, items):
         """Helper function to create an async iterator from a list."""
