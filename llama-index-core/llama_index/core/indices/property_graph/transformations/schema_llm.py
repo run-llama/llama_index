@@ -150,7 +150,7 @@ class SchemaLLMPathExtractor(TransformComponent):
 
         # Build a pydantic model on the fly
         if kg_schema_cls is None:
-            possible_entities = possible_entities or DEFAULT_ENTITIES
+            possible_entities = possible_entities or DEFAULT_ENTITIES  # type: ignore
             if possible_entity_props and isinstance(possible_entity_props[0], tuple):
                 entity_props = [  # type: ignore
                     f"Property label `{k}` with description ({v})"
@@ -160,7 +160,7 @@ class SchemaLLMPathExtractor(TransformComponent):
                 entity_props = possible_entity_props  # type: ignore
             entity_cls = get_entity_class(possible_entities, entity_props, strict)
 
-            possible_relations = possible_relations or DEFAULT_RELATIONS
+            possible_relations = possible_relations or DEFAULT_RELATIONS  # type: ignore
             if possible_relation_props and isinstance(
                 possible_relation_props[0], tuple
             ):
