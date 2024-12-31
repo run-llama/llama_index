@@ -43,6 +43,7 @@ class BaseAgentChatFormatter(BaseModel):
         self,
         tools: Sequence[BaseTool],
         chat_history: List[ChatMessage],
+        allowance: int,
         current_reasoning: Optional[List[BaseReasoningStep]] = None,
     ) -> List[ChatMessage]:
         """Format chat history into list of ChatMessage."""
@@ -58,6 +59,7 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         self,
         tools: Sequence[BaseTool],
         chat_history: List[ChatMessage],
+        allowance: int,
         current_reasoning: Optional[List[BaseReasoningStep]] = None,
     ) -> List[ChatMessage]:
         """Format chat history into list of ChatMessage."""
@@ -66,6 +68,7 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         format_args = {
             "tool_desc": "\n".join(get_react_tool_descriptions(tools)),
             "tool_names": ", ".join([tool.metadata.get_name() for tool in tools]),
+            "allowance": allowance,
         }
         if self.context:
             format_args["context"] = self.context
