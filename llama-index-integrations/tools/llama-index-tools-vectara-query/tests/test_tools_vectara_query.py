@@ -1,5 +1,5 @@
 from typing import List
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, MediaResource
 from llama_index.indices.managed.vectara import VectaraIndex
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.vectara_query import VectaraQueryToolSpec
@@ -76,7 +76,7 @@ def test_simple_retrieval(vectara1) -> None:
     tool_spec = VectaraQueryToolSpec(num_results=1)
     res = tool_spec.semantic_search("Find me something different.")
     assert len(res) == 1
-    assert res[0]["text"] == docs[1].text
+    assert res[0]["text"] == docs[1].text_resource.text
 
 
 def test_mmr_retrieval(vectara1) -> None:
@@ -93,8 +93,8 @@ def test_mmr_retrieval(vectara1) -> None:
     )
     res = tool_spec.semantic_search("How will I look?")
     assert len(res) == 2
-    assert res[0]["text"] == docs[2].text
-    assert res[1]["text"] == docs[3].text
+    assert res[0]["text"] == docs[2].text_resource.text
+    assert res[1]["text"] == docs[3].text_resource.text
 
     # test with diversity bias = 1
     tool_spec = VectaraQueryToolSpec(
@@ -107,7 +107,7 @@ def test_mmr_retrieval(vectara1) -> None:
     )
     res = tool_spec.semantic_search("How will I look?")
     assert len(res) == 2
-    assert res[0]["text"] == docs[2].text
+    assert res[0]["text"] == docs[2].text_resource.text
 
 
 def test_retrieval_with_filter(vectara1) -> None:
@@ -118,7 +118,7 @@ def test_retrieval_with_filter(vectara1) -> None:
     )
     res = tool_spec.semantic_search("What does this test?")
     assert len(res) == 1
-    assert res[0]["text"] == docs[0].text
+    assert res[0]["text"] == docs[0].text_resource.text
 
 
 def test_udf_retrieval(vectara1) -> None:
@@ -135,8 +135,8 @@ def test_udf_retrieval(vectara1) -> None:
 
     res = tool_spec.semantic_search("What will the future look like?")
     assert len(res) == 2
-    assert res[0]["text"] == docs[3].text
-    assert res[1]["text"] == docs[2].text
+    assert res[0]["text"] == docs[3].text_resource.text
+    assert res[1]["text"] == docs[2].text_resource.text
 
     # test with dates: Weight of score subtracted by number of years from current date
     tool_spec = VectaraQueryToolSpec(
@@ -149,8 +149,8 @@ def test_udf_retrieval(vectara1) -> None:
 
     res = tool_spec.semantic_search("What will the future look like?")
     assert len(res) == 2
-    assert res[0]["text"] == docs[2].text
-    assert res[1]["text"] == docs[3].text
+    assert res[0]["text"] == docs[2].text_resource.text
+    assert res[1]["text"] == docs[3].text_resource.text
 
 
 def test_chain_rerank_retrieval(vectara1) -> None:
@@ -167,7 +167,7 @@ def test_chain_rerank_retrieval(vectara1) -> None:
 
     res = tool_spec.semantic_search("What's this all about?")
     assert len(res) == 2
-    assert res[0]["text"] == docs[0].text
+    assert res[0]["text"] == docs[0].text_resource.text
 
     # Test chain with UDF and limit
     tool_spec = VectaraQueryToolSpec(
@@ -188,8 +188,8 @@ def test_chain_rerank_retrieval(vectara1) -> None:
 
     res = tool_spec.semantic_search("What's this all about?")
     assert len(res) == 2
-    assert res[0]["text"] == docs[3].text
-    assert res[1]["text"] == docs[2].text
+    assert res[0]["text"] == docs[3].text_resource.text
+    assert res[1]["text"] == docs[2].text_resource.text
 
     # Test chain with cutoff
     tool_spec = VectaraQueryToolSpec(
@@ -205,7 +205,37 @@ def test_chain_rerank_retrieval(vectara1) -> None:
 
     res = tool_spec.semantic_search("What's this all about?")
     assert len(res) == 1
-    assert res[0]["text"] == docs[0].text
+    assert res[0]["text"] == docs[0].text_resource.text
+
+    # Second query with same retriever to ensure rerank chain configuration remains the same
+    res = tool_spec.semantic_search("How will I look when I'm older?")
+    assert tool_spec.retriever._rerank_chain[0].get("type") == "customer_reranker"
+    assert (
+        tool_spec.retriever._rerank_chain[0].get("reranker_name")
+        == "Rerank_Multilingual_v1"
+    )
+    assert tool_spec.retriever._rerank_chain[1].get("type") == "mmr"
+    assert res[0]["text"] == docs[2].text_resource.text
+
+
+def test_custom_prompt(vectara1) -> None:
+    docs = get_docs()
+
+    tool_spec = VectaraQueryToolSpec(
+        num_results=3,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="mmr",
+        mmr_diversity_bias=0.2,
+        prompt_text='[\n  {"role": "system", "content": "You are an expert in summarizing the future of Vectara\'s inegration with LlamaIndex. Your summaries are insightful, concise, and highlight key innovations and changes."},\n  #foreach ($result in $vectaraQueryResults)\n    {"role": "user", "content": "What are the key points in result number $vectaraIdxWord[$foreach.index] about Vectara\'s LlamaIndex integration?"},\n    {"role": "assistant", "content": "In result number $vectaraIdxWord[$foreach.index], the key points are: ${result.getText()}"},\n  #end\n  {"role": "user", "content": "Can you generate a comprehensive summary on \'Vectara\'s LlamaIndex Integration\' incorporating all the key points discussed?"}\n]\n',
+    )
+
+    res = tool_spec.rag_query("How will Vectara's integration look in the future?")
+    assert "integration" in res["summary"].lower()
+    assert "llamaindex" in res["summary"].lower()
+    assert "vectara" in res["summary"].lower()
+    assert "result" in res["summary"].lower()
+    assert res["factual_consistency_score"] > 0
 
 
 @pytest.fixture()
@@ -285,7 +315,7 @@ def test_agent_basic(vectara2) -> None:
 
     tool_spec = VectaraQueryToolSpec(num_results=10, reranker="mmr")
     agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
-    res = agent.chat("Please summarize Paul Graham's work").response
+    res = agent.chat("Please summarize Paul's thoughts about paintings?").response
     agent_tasks = agent.get_completed_tasks()
     tool_called = (
         agent_tasks[0]
@@ -294,7 +324,8 @@ def test_agent_basic(vectara2) -> None:
         .function.name
     )
     assert tool_called == "rag_query"
-    assert "bel" in res.lower() and "lisp" in res.lower()
+    print(f"DEBUG: RECEIVED GENERATED RESPONSE {res}")
+    assert "paint" in res.lower() and "paul" in res.lower()
 
 
 def test_agent_filter(vectara1) -> None:

@@ -24,40 +24,6 @@ def test_class():
     assert BaseManagedIndex.__name__ in names_of_base_classes
 
 
-# def get_docs() -> List[Document]:
-#     inputs = [
-#         {
-#             "id": 1,
-#             "text": "This is test text for Vectara integration with LlamaIndex",
-#             "metadata": {"test_num": "1", "test_score": 10, "date": "2020-02-25"},
-#         },
-#         {
-#             "id": 2,
-#             "text": "And now for something completely different",
-#             "metadata": {"test_num": "2", "test_score": 2, "date": "2015-10-13"},
-#         },
-#         {
-#             "id": 3,
-#             "text": "when 900 years you will be, look as good you will not",
-#             "metadata": {"test_num": "3", "test_score": 20, "date": "2023-09-12"},
-#         },
-#         {
-#             "id": 4,
-#             "text": "when 850 years you will be, look as good you will not",
-#             "metadata": {"test_num": "4", "test_score": 50, "date": "2022-01-01"},
-#         },
-#     ]
-#     docs: List[Document] = []
-#     for inp in inputs:
-#         doc = Document(
-#             text_resource=MediaResource(text=str(inp["text"])),
-#             metadata=inp["metadata"],  # type: ignore
-#             id_=str(inp["id"])
-#         )
-#         docs.append(doc)
-#     return docs
-
-
 def get_docs() -> List[Document]:
     inputs = [
         {
