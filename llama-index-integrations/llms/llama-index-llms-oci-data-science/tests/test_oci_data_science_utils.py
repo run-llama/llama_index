@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, LogProb, MessageRole
 from llama_index.llms.oci_data_science.utils import (
@@ -11,7 +9,7 @@ from llama_index.llms.oci_data_science.utils import (
     _resolve_tool_choice,
     _to_message_dicts,
     _update_tool_calls,
-    _validate_dependency,
+    # _validate_dependency,
 )
 
 
@@ -33,39 +31,39 @@ class TestUnsupportedOracleAdsVersionError:
         assert str(exception) == expected_message
 
 
-class TestValidateDependency:
-    """Unit tests for _validate_dependency decorator."""
+# class TestValidateDependency:
+#     """Unit tests for _validate_dependency decorator."""
 
-    def setup_method(self):
-        @_validate_dependency
-        def sample_function():
-            return "function executed"
+#     def setup_method(self):
+#         @_validate_dependency
+#         def sample_function():
+#             return "function executed"
 
-        self.sample_function = sample_function
+#         self.sample_function = sample_function
 
-    @patch("llama_index.llms.oci_data_science.utils.MIN_ADS_VERSION", new="2.12.6")
-    @patch("ads.__version__", new="2.12.7")
-    def test_valid_version(self):
-        """Ensures the function executes when the oracle-ads version is sufficient."""
-        result = self.sample_function()
-        assert result == "function executed"
+#     @patch("llama_index.llms.oci_data_science.utils.MIN_ADS_VERSION", new="2.12.6")
+#     @patch("ads.__version__", new="2.12.7")
+#     def test_valid_version(self):
+#         """Ensures the function executes when the oracle-ads version is sufficient."""
+#         result = self.sample_function()
+#         assert result == "function executed"
 
-    @patch("llama_index.llms.oci_data_science.utils.MIN_ADS_VERSION", new="2.12.6")
-    @patch("ads.__version__", new="2.12.5")
-    def test_unsupported_version(self):
-        """Ensures UnsupportedOracleAdsVersionError is raised for insufficient version."""
-        with pytest.raises(UnsupportedOracleAdsVersionError) as exc_info:
-            self.sample_function()
+#     @patch("llama_index.llms.oci_data_science.utils.MIN_ADS_VERSION", new="2.12.6")
+#     @patch("ads.__version__", new="2.12.5")
+#     def test_unsupported_version(self):
+#         """Ensures UnsupportedOracleAdsVersionError is raised for insufficient version."""
+#         with pytest.raises(UnsupportedOracleAdsVersionError) as exc_info:
+#             self.sample_function()
 
-    @patch("llama_index.llms.oci_data_science.utils.MIN_ADS_VERSION", new="2.12.6")
-    def test_oracle_ads_not_installed(self):
-        """Ensures ImportError is raised when oracle-ads is not installed."""
-        with patch.dict("sys.modules", {"ads": None}):
-            with pytest.raises(ImportError) as exc_info:
-                self.sample_function()
-            assert "Could not import `oracle-ads` Python package." in str(
-                exc_info.value
-            )
+#     @patch("llama_index.llms.oci_data_science.utils.MIN_ADS_VERSION", new="2.12.6")
+#     def test_oracle_ads_not_installed(self):
+#         """Ensures ImportError is raised when oracle-ads is not installed."""
+#         with patch.dict("sys.modules", {"ads": None}):
+#             with pytest.raises(ImportError) as exc_info:
+#                 self.sample_function()
+#             assert "Could not import `oracle-ads` Python package." in str(
+#                 exc_info.value
+#             )
 
 
 class TestToMessageDicts:

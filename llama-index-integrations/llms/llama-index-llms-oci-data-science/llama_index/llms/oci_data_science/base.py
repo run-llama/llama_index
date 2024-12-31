@@ -2,7 +2,6 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
 
 import llama_index.core.instrumentation as instrument
-from ads.common import auth as authutil
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -36,7 +35,6 @@ from llama_index.llms.oci_data_science.utils import (
     _resolve_tool_choice,
     _to_message_dicts,
     _update_tool_calls,
-    _validate_dependency,
 )
 
 
@@ -307,7 +305,7 @@ class OCIDataScience(FunctionCallingLLM):
         super().__init__(
             endpoint=endpoint,
             model=model,
-            auth=auth or authutil.default_signer(),
+            auth=auth,
             temperature=temperature,
             context_window=context_window,
             max_tokens=max_tokens,
@@ -335,7 +333,7 @@ class OCIDataScience(FunctionCallingLLM):
         )
 
     @model_validator(mode="before")
-    @_validate_dependency
+    # @_validate_dependency
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate the environment and dependencies."""
         return values

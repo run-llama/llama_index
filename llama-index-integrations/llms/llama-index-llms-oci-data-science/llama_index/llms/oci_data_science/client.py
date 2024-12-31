@@ -22,7 +22,6 @@ from typing import (
 import httpx
 import oci
 import requests
-from ads.common import auth as authutil
 from tenacity import (
     before_sleep_log,
     retry,
@@ -245,8 +244,27 @@ class BaseClient(ABC):
         self.timeout = timeout or TIMEOUT
         self.kwargs = kwargs
 
+        # Use default signer from ADS if `auth` not provided
+        if not auth:
+            try:
+                from ads.common import auth as authutil
+
+                auth = auth or authutil.default_signer()
+            except ImportError as ex:
+                raise ImportError(
+                    "The authentication signer for the requests was not provided. "
+                    "Use `auth` attribute to provide the signer. "
+                    "The authentication methods supported for LlamaIndex are equivalent to those "
+                    "used with other OCI services and follow the standard SDK authentication methods, "
+                    "specifically API Key, session token, instance principal, and resource principal. "
+                    "For more details, refer to the documentation: "
+                    "`https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html`. "
+                    "Alternatively you can use the `oracle-ads` package. "
+                    "Please install it with `pip install oracle-ads` and follow the example provided here: "
+                    "`https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html#authentication`."
+                ) from ex
+
         # Validate auth object
-        auth = auth or authutil.default_signer()
         if not callable(auth.get("signer")):
             raise ValueError("Auth object must have a 'signer' callable attribute.")
         self.auth = OCIAuth(auth["signer"])

@@ -1,7 +1,6 @@
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
 import pytest
-from ads.common import auth as authutil
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.function_calling import FunctionCallingLLM
@@ -28,21 +27,21 @@ def llm():
     additional_kwargs = {"top_p": 0.9}
     callback_manager = CallbackManager([])
 
-    with patch.object(authutil, "default_signer", return_value=auth):
-        llm_instance = OCIDataScience(
-            endpoint=endpoint,
-            auth=auth,
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            timeout=timeout,
-            max_retries=max_retries,
-            additional_kwargs=additional_kwargs,
-            callback_manager=callback_manager,
-        )
-        # Mock the client
-        llm_instance._client = Mock(spec=Client)
-        llm_instance._async_client = AsyncMock(spec=AsyncClient)
+    llm_instance = OCIDataScience(
+        endpoint=endpoint,
+        auth=auth,
+        model=model,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        timeout=timeout,
+        max_retries=max_retries,
+        additional_kwargs=additional_kwargs,
+        callback_manager=callback_manager,
+    )
+    # Mock the client
+    llm_instance._client = Mock(spec=Client)
+    llm_instance._async_client = AsyncMock(spec=AsyncClient)
+
     return llm_instance
 
 
