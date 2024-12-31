@@ -1,11 +1,5 @@
 import asyncio
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union
-
-try:
-    from typing import TypeAlias  # type: ignore
-except ImportError:
-    # python 3.8 and 3.9 compatibility
-    from typing import Any as TypeAlias  # type: ignore
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.bridge.pydantic import create_model, field_validator
@@ -101,12 +95,12 @@ class SchemaLLMPathExtractor(TransformComponent):
             The language model to use.
         extract_prompt (Union[PromptTemplate, str], optional):
             The template to use for the extraction query. Defaults to None.
-        possible_entities (Optional[TypeAlias], optional):
+        possible_entities (Optional[Type[Any]], optional):
             The possible entities to extract. Defaults to None.
         possible_entity_props (Optional[Union[List[str], List[Tuple[str, str]]], optional):
             The possible entity properties to extract. Defaults to None.
             Can be a list of strings or a list of tuples with the format (name, description).
-        possible_relations (Optional[TypeAlias], optional):
+        possible_relations (Optional[Type[Any]], optional):
             The possible relations to extract. Defaults to None.
         possible_relation_props (Optional[Union[List[str], List[Tuple[str, str]]], optional):
             The possible relation properties to extract. Defaults to None.
@@ -138,9 +132,9 @@ class SchemaLLMPathExtractor(TransformComponent):
         self,
         llm: LLM,
         extract_prompt: Optional[Union[PromptTemplate, str]] = None,
-        possible_entities: Optional[TypeAlias] = None,
+        possible_entities: Optional[Type[Any]] = None,
         possible_entity_props: Optional[Union[List[str], List[Tuple[str, str]]]] = None,
-        possible_relations: Optional[TypeAlias] = None,
+        possible_relations: Optional[Type[Any]] = None,
         possible_relation_props: Optional[
             Union[List[str], List[Tuple[str, str]]]
         ] = None,
