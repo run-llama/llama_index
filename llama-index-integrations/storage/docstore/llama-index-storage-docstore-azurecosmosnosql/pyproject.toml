@@ -9,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.storage.index_store.azurecosmosnosql"
+import_path = "llama_index.storage.docstore.azurecosmosnosql"
 
 [tool.llamahub.class_authors]
 AzureCosmosNoSqlIndexStore = "Aayush"
@@ -22,17 +22,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Aayush Kataria <aayushkataria3011@gmail.com>"]
-description = "llama-index storage-index-store azure cosmosdb nosql integration"
+description = "llama-index storage-docstore azure cosmosdb nosql integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-storage-index-store-azurecosmosnosql"
+name = "llama-index-storage-docstore-azurecosmosnosql"
 readme = "README.md"
 version = "1.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-azure-cosmos = "^4.7.0"
-azure-identity = "^1.7.1"
+azure-cosmos = "^4.9.0"
+azure-identity = "^1.19.0"
 llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
