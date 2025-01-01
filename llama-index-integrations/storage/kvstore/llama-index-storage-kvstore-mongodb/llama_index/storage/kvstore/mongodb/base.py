@@ -1,5 +1,8 @@
+import json
+
 from typing import Any, Dict, List, Optional, Tuple, cast
 
+from llama_index.core.data_structs.struct_type import IndexStructType
 from llama_index.core.storage.kvstore.types import (
     DEFAULT_BATCH_SIZE,
     DEFAULT_COLLECTION,
@@ -53,6 +56,8 @@ class MongoDBKVStore(BaseKVStore):
         self._db_name = db_name or "db_docstore"
         self._db = self._client[self._db_name]
         self._adb = self._aclient[self._db_name] if self._aclient else None
+
+        self._has_kg_index_struct = False
 
     @classmethod
     def from_uri(
@@ -119,6 +124,47 @@ class MongoDBKVStore(BaseKVStore):
         if self._adb is None:
             raise ValueError("MongoDBKVStore was not initialized with an async client")
 
+    def _process_index_struct(
+        self,
+        index_struct_doc: dict,
+    ) -> List[Dict]:
+        from pymongo import InsertOne
+
+        insert_docs = []
+        data = json.loads(index_struct_doc["__data__"])
+
+        for key, val in data.items():
+            if isinstance(val, dict):
+                for k, v in data[key].items():
+                    insert_docs.append(
+                        InsertOne({"struct_id": index_struct_doc["_id"], key: {k: v}})
+                    )
+            else:
+                insert_docs.append(
+                    InsertOne({"struct_id": index_struct_doc["_id"], key: val})
+                )
+        return insert_docs
+
+    def _reconstruct_index_struct(self, result_doc: dict, output: dict) -> None:
+        struct_id = result_doc["struct_id"]
+        if struct_id not in output:
+            # Initialize new KG index struct
+            output[struct_id] = {
+                "__type__": IndexStructType.KG,
+                "__data__": {"table": {}, "rel_map": {}, "embedding_dict": {}},
+            }
+
+        data = output[struct_id]["__data__"]
+        # Fill in string fields
+        for key in ["index_id", "summary"]:
+            if key in result_doc:
+                data[key] = result_doc[key]
+        # Fill in dict fields
+        for key in ["table", "rel_map", "embedding_dict"]:
+            if key in result_doc:
+                k, v = next(iter(result_doc[key].items()))
+                data[key][k] = v
+
     def put(
         self,
         key: str,
@@ -168,10 +214,14 @@ class MongoDBKVStore(BaseKVStore):
         ):
             new_docs = []
             for doc in batch:
-                new_docs.append(
-                    UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True)
-                )
-
+                # Add KG index struct to the database as separate documents
+                if doc.get("__type__") == IndexStructType.KG:
+                    self._has_kg_index_struct = True
+                    new_docs.extend(self._process_index_struct(doc))
+                else:
+                    new_docs.append(
+                        UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True)
+                    )
             self._db[collection].bulk_write(new_docs)
 
     async def aput_all(
@@ -193,9 +243,14 @@ class MongoDBKVStore(BaseKVStore):
         ):
             new_docs = []
             for doc in batch:
-                new_docs.append(
-                    UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True)
-                )
+                # Add KG index struct to the database as separate documents
+                if doc.get("__type__") == IndexStructType.KG:
+                    self._has_kg_index_struct = True
+                    new_docs.extend(self._process_index_struct(doc))
+                else:
+                    new_docs.append(
+                        UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True)
+                    )
 
             await self._adb[collection].bulk_write(new_docs)
 
@@ -207,10 +262,19 @@ class MongoDBKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        result = self._db[collection].find_one({"_id": key})
-        if result is not None:
-            result.pop("_id")
-            return result
+        if self._has_kg_index_struct:
+            # Reconstruct KG index struct from its component documents
+            results = self._db[collection].find({"struct_id": key})
+            if results is not None:
+                output = {}
+                for result_doc in results:
+                    self._reconstruct_index_struct(result_doc, output)
+                return output.pop(key)
+        else:
+            result = self._db[collection].find_one({"_id": key})
+            if result is not None:
+                result.pop("_id")
+                return result
         return None
 
     async def aget(
@@ -225,10 +289,19 @@ class MongoDBKVStore(BaseKVStore):
         """
         self._check_async_client()
 
-        result = await self._adb[collection].find_one({"_id": key})
-        if result is not None:
-            result.pop("_id")
-            return result
+        if self._has_kg_index_struct:
+            # Reconstruct KG index struct from its component documents
+            results = await self._adb[collection].find({"struct_id": key})
+            if results is not None:
+                output = {}
+                for result_doc in results:
+                    self._reconstruct_index_struct(result_doc, output)
+                return output.pop(key)
+        else:
+            result = await self._adb[collection].find_one({"_id": key})
+            if result is not None:
+                result.pop("_id")
+                return result
         return None
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
@@ -239,10 +312,15 @@ class MongoDBKVStore(BaseKVStore):
 
         """
         results = self._db[collection].find()
+
         output = {}
         for result in results:
-            key = result.pop("_id")
-            output[key] = result
+            # Reconstruct KG index struct from its component documents
+            if result.get("struct_id"):
+                self._reconstruct_index_struct(result, output)
+            else:
+                key = result.pop("_id")
+                output[key] = result
         return output
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
@@ -257,8 +335,12 @@ class MongoDBKVStore(BaseKVStore):
         results = self._adb[collection].find()
         output = {}
         for result in await results.to_list(length=None):
-            key = result.pop("_id")
-            output[key] = result
+            # Reconstruct KG index struct from its component documents
+            if result.get("struct_id"):
+                self._reconstruct_index_struct(result, output)
+            else:
+                key = result.pop("_id")
+                output[key] = result
         return output
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
@@ -269,7 +351,11 @@ class MongoDBKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        result = self._db[collection].delete_one({"_id": key})
+        if self._has_kg_index_struct:
+            # Delete all documents that are part of the index struct
+            result = self._db[collection].delete_many({"struct_id": key})
+        else:
+            result = self._db[collection].delete_one({"_id": key})
         return result.deleted_count > 0
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
@@ -282,5 +368,9 @@ class MongoDBKVStore(BaseKVStore):
         """
         self._check_async_client()
 
-        result = await self._adb[collection].delete_one({"_id": key})
+        if self._has_kg_index_struct:
+            # Delete all documents that are part of the index struct
+            result = await self._adb[collection].delete_many({"struct_id": key})
+        else:
+            result = await self._adb[collection].delete_one({"_id": key})
         return result.deleted_count > 0
