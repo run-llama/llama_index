@@ -12,7 +12,9 @@ from pydantic import (
     PrivateAttr,
     Secret,
     SecretStr,
+    SerializationInfo,
     SerializeAsAny,
+    SerializerFunctionWrapHandler,
     StrictFloat,
     StrictInt,
     StrictStr,
@@ -60,4 +62,6 @@ __all__ = [
     "model_serializer",
     "AnyUrl",
     "FilePath",
+    "SerializationInfo",
+    "SerializerFunctionWrapHandler",
 ]
