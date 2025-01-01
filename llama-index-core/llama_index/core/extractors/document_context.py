@@ -11,6 +11,7 @@ import asyncio
 import random
 from functools import lru_cache
 from typing_extensions import TypeGuard
+from typing import ClassVar
 
 
 def is_text_node(node: BaseNode) -> TypeGuard[Union[Node, TextNode]]:
@@ -18,6 +19,18 @@ def is_text_node(node: BaseNode) -> TypeGuard[Union[Node, TextNode]]:
 
 
 OversizeStrategy = Literal["warn", "error", "ignore"]
+
+
+# original context prompt from the Anthropic cookbook/blogpost, works well
+ORIGINAL_CONTEXT_PROMPT: str = """
+Please give a short succinct context to situate this chunk within the overall document for the purposes of improving search retrieval of the chunk.
+Answer only with the succinct context and nothing else.
+"""
+
+# miniaturized context prompt, generates better results, produces more keyword-laden results for better matches
+SUCCINCT_CONTEXT_PROMPT: str = """
+Generate keywords and brief phrases describing the main topics, entities, and actions in this text. Replace pronouns with their specific referents. Disambiguate pronouns and ambiguous terms in the chunk. Format as comma-separated phrases. Exclude meta-commentary about the text itself.
+"""
 
 
 class DocumentContextExtractor(BaseExtractor):
@@ -64,18 +77,8 @@ class DocumentContextExtractor(BaseExtractor):
     num_workers: int = DEFAULT_NUM_WORKERS
     failed_nodes: Set[str]
 
-    # original context prompt from the Anthropic cookbook/blogpost, works well
-    ORIGINAL_CONTEXT_PROMPT: str = """
-    Please give a short succinct context to situate this chunk within the overall document for the purposes of improving search retrieval of the chunk.
-    Answer only with the succinct context and nothing else.
-    """
-
-    # miniaturized context prompt, generates better results, produces more keyword-laden results for better matches
-    SUCCINCT_CONTEXT_PROMPT: str = """
-    Generate keywords and brief phrases describing the main topics, entities, and actions in this text. Replace pronouns with their specific referents. Disambiguate pronouns and ambiguous terms in the chunk. Format as comma-separated phrases. Exclude meta-commentary about the text itself.
-    """
-
-    DEFAULT_CONTEXT_PROMPT: str = SUCCINCT_CONTEXT_PROMPT
+    ORIGINAL_CONTEXT_PROMPT: ClassVar[str] = ORIGINAL_CONTEXT_PROMPT
+    SUCCINCT_CONTEXT_PROMPT: ClassVar[str] = SUCCINCT_CONTEXT_PROMPT
 
     DEFAULT_KEY: str = "context"
 
@@ -91,13 +94,17 @@ class DocumentContextExtractor(BaseExtractor):
         llm: Optional[LLM] = None,
         max_context_length: int = 1000,
         key: str = DEFAULT_KEY,
-        prompt: str = DEFAULT_CONTEXT_PROMPT,
+        prompt: str = ORIGINAL_CONTEXT_PROMPT,
         num_workers: int = DEFAULT_NUM_WORKERS,
         max_output_tokens: int = 512,
         oversized_document_strategy: OversizeStrategy = "warn",
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        assert hasattr(
+            llm, "achat"
+        )  # not all LLMs have this, particularly the huggingfaceapi ones.
+
         super().__init__(
             llm=llm or Settings.llm,
             docstore=docstore,
@@ -213,9 +220,9 @@ class DocumentContextExtractor(BaseExtractor):
                     )
                 else:
                     logging.warning(
-                        f"Error generating context for node {node.node_id}: {e!s}"
+                        f"Error generating context for node {node.node_id}: {e}",
+                        exc_info=True,
                     )
-
                 return metadata
 
         return metadata
@@ -318,3 +325,7 @@ class DocumentContextExtractor(BaseExtractor):
         )
 
         return metadata_list
+
+
+if __name__ == "__main__":
+    print(DocumentContextExtractor.DEFAULT_CONTEXT_PROMPT)

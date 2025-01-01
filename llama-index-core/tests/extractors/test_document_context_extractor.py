@@ -142,7 +142,7 @@ async def test_context_extraction_custom_prompt(
     extractor = DocumentContextExtractor(
         docstore=docstore,
         llm=mock_llm,
-        prompts=[custom_prompt],
+        prompt=DocumentContextExtractor.ORIGINAL_CONTEXT_PROMPT,
         max_context_length=1000,
         max_output_tokens=100,
     )
