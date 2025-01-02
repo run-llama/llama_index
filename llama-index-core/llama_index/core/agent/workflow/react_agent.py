@@ -1,5 +1,5 @@
 import uuid
-from typing import List, cast
+from typing import List, Optional, cast
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
@@ -16,6 +16,7 @@ from llama_index.core.agent.react.types import (
     ObservationReasoningStep,
     ResponseReasoningStep,
 )
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.memory import BaseMemory
@@ -25,6 +26,15 @@ from llama_index.core.workflow import Context
 
 class ReactAgent(BaseWorkflowAgent):
     """React agent implementation."""
+
+    reasoning_key: str = "current_reasoning"
+    output_parser: Optional[ReActOutputParser] = Field(
+        default=None, description="The react output parser"
+    )
+    formatter: Optional[ReActChatFormatter] = Field(
+        default=None,
+        description="The react chat formatter to format the reasoning steps and chat history into an llm input.",
+    )
 
     async def take_step(
         self,
@@ -41,12 +51,14 @@ class ReactAgent(BaseWorkflowAgent):
         else:
             system_prompt = ""
 
-        output_parser = ReActOutputParser()
-        react_chat_formatter = ReActChatFormatter(context=system_prompt)
+        output_parser = self.output_parser or ReActOutputParser()
+        react_chat_formatter = self.formatter or ReActChatFormatter(
+            context=system_prompt
+        )
 
         # Format initial chat input
         current_reasoning: list[BaseReasoningStep] = await ctx.get(
-            "current_reasoning", default=[]
+            self.reasoning_key, default=[]
         )
         input_chat = react_chat_formatter.format(
             tools,
@@ -93,7 +105,7 @@ class ReactAgent(BaseWorkflowAgent):
         # add to reasoning if not a handoff
         if hasattr(reasoning_step, "action") and reasoning_step.action != "handoff":
             current_reasoning.append(reasoning_step)
-            await ctx.set("current_reasoning", current_reasoning)
+            await ctx.set(self.reasoning_key, current_reasoning)
 
         # If response step, we're done
         if reasoning_step.is_done:
@@ -129,7 +141,7 @@ class ReactAgent(BaseWorkflowAgent):
     ) -> None:
         """Handle tool call results for React agent."""
         current_reasoning: list[BaseReasoningStep] = await ctx.get(
-            "current_reasoning", default=[]
+            self.reasoning_key, default=[]
         )
         for tool_call_result in results:
             # don't add handoff tool calls to reasoning
@@ -152,14 +164,14 @@ class ReactAgent(BaseWorkflowAgent):
                 )
                 break
 
-        await ctx.set("current_reasoning", current_reasoning)
+        await ctx.set(self.reasoning_key, current_reasoning)
 
     async def finalize(
         self, ctx: Context, output: AgentOutput, memory: BaseMemory
     ) -> AgentOutput:
         """Finalize the React agent."""
         current_reasoning: list[BaseReasoningStep] = await ctx.get(
-            "current_reasoning", default=[]
+            self.reasoning_key, default=[]
         )
 
         reasoning_str = "\n".join([x.get_content() for x in current_reasoning])
@@ -167,7 +179,7 @@ class ReactAgent(BaseWorkflowAgent):
         if reasoning_str:
             reasoning_msg = ChatMessage(role="assistant", content=reasoning_str)
             await memory.aput(reasoning_msg)
-            await ctx.set("current_reasoning", [])
+            await ctx.set(self.reasoning_key, [])
 
         # remove "Answer:" from the response
         if output.response and "Answer:" in output.response:
