@@ -571,7 +571,8 @@ class OpenAI(LLM):
             astream_complete_fn = self._astream_complete
         return await astream_complete_fn(prompt, **kwargs)
 
-    @llm_retry_decorator
+    # TEST
+    # @llm_retry_decorator
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
@@ -667,7 +668,8 @@ class OpenAI(LLM):
 
         return gen()
 
-    @llm_retry_decorator
+    # TEST
+    # @llm_retry_decorator
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         aclient = self._get_aclient()
         all_kwargs = self._get_model_kwargs(**kwargs)
