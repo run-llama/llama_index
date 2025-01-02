@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from llama_index.tools.scrapegraph import ScrapegraphToolSpec
+from llama_index.tools.scrapegraph.base import ScrapegraphToolSpec
 
 scrapegraph_tool = ScrapegraphToolSpec()
 
