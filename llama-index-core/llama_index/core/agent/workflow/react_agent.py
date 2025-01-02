@@ -64,8 +64,9 @@ class ReactAgent(BaseWorkflowAgent):
             ctx.write_event_to_stream(
                 AgentStream(
                     delta=r.delta or "",
+                    response=r.message.content,
                     tool_calls=[],
-                    raw_response=r.raw,
+                    raw=r.raw,
                     current_agent_name=self.name,
                 )
             )
@@ -85,7 +86,7 @@ class ReactAgent(BaseWorkflowAgent):
             return AgentOutput(
                 response=r.message.content,
                 tool_calls=[],
-                raw_response=r.raw,
+                raw=r.raw,
                 current_agent_name=self.name,
             )
 
@@ -99,7 +100,7 @@ class ReactAgent(BaseWorkflowAgent):
             return AgentOutput(
                 response=r.message.content,
                 tool_calls=[],
-                raw_response=r.raw,
+                raw=r.raw,
                 current_agent_name=self.name,
             )
 
@@ -119,7 +120,7 @@ class ReactAgent(BaseWorkflowAgent):
         return AgentOutput(
             response=r.message.content,
             tool_calls=tool_calls,
-            raw_response=r.raw,
+            raw=r.raw,
             current_agent_name=self.name,
         )
 

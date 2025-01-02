@@ -24,9 +24,10 @@ class AgentStream(Event):
     """Agent stream."""
 
     delta: str
+    response: str
     current_agent_name: str
     tool_calls: list[ToolSelection]
-    raw_response: Any
+    raw: Any
 
 
 class AgentOutput(Event):
@@ -34,8 +35,11 @@ class AgentOutput(Event):
 
     response: str
     tool_calls: list[ToolSelection]
-    raw_response: Any
+    raw: Any
     current_agent_name: str
+
+    def __str__(self) -> str:
+        return str(self.response)
 
 
 class ToolCall(Event):

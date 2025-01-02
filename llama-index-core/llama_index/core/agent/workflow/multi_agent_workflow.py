@@ -240,7 +240,7 @@ class MultiAgentWorkflow(Workflow):
     @step
     async def parse_agent_output(
         self, ctx: Context, ev: AgentOutput
-    ) -> StopEvent | ToolCall | None:
+    ) -> Union[StopEvent, ToolCall, None]:
         if not ev.tool_calls:
             agent = self.agents[ev.current_agent_name]
             memory: BaseMemory = await ctx.get("memory")
@@ -294,7 +294,7 @@ class MultiAgentWorkflow(Workflow):
     @step
     async def aggregate_tool_results(
         self, ctx: Context, ev: ToolCallResult
-    ) -> AgentInput | StopEvent | None:
+    ) -> Union[AgentInput, StopEvent, None]:
         """Aggregate tool results and return the next agent input."""
         num_tool_calls = await ctx.get("num_tool_calls", default=0)
         if num_tool_calls == 0:
@@ -338,7 +338,7 @@ class MultiAgentWorkflow(Workflow):
                     )
                     for t in tool_call_results
                 ],
-                raw_response=return_direct_tool.tool_output.raw_output,
+                raw=return_direct_tool.tool_output.raw_output,
                 current_agent_name=agent.name,
             )
             result = await agent.finalize(ctx, result, memory)

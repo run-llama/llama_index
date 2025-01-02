@@ -43,6 +43,7 @@ class FunctionAgent(BaseWorkflowAgent):
             ctx.write_event_to_stream(
                 AgentStream(
                     delta=r.delta or "",
+                    response=r.message.content,
                     tool_calls=tool_calls or [],
                     raw_response=r.raw,
                     current_agent_name=self.name,
@@ -61,7 +62,7 @@ class FunctionAgent(BaseWorkflowAgent):
         return AgentOutput(
             response=r.message.content,
             tool_calls=tool_calls or [],
-            raw_response=r.raw,
+            raw=r.raw,
             current_agent_name=self.name,
         )
 
