@@ -40,9 +40,6 @@ class BaseWorkflowAgent(BaseModel, ABC):
     can_handoff_to: Optional[List[str]] = Field(
         default=None, description="The agent names that this agent can hand off to"
     )
-    handoff_prompt_template: Optional[str] = Field(
-        default=None, description="The prompt template for an artificial handoff tool"
-    )
     llm: LLM = Field(
         default_factory=get_default_llm, description="The LLM that the agent uses"
     )

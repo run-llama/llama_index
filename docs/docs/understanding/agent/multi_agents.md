@@ -1,19 +1,18 @@
 # Multi-Agent Workflows
 
-The MultiAgentWorkflow allows you to create a system of multiple agents that can collaborate and hand off tasks to each other based on their specialized capabilities. This enables building more complex agent systems where different agents handle different aspects of a task.
+The MultiAgentWorkflow uses Workflow Agents to allow you to create a system of multiple agents that can collaborate and hand off tasks to each other based on their specialized capabilities. This enables building more complex agent systems where different agents handle different aspects of a task.
 
 ## Quick Start
 
 Here's a simple example of setting up a multi-agent workflow with a calculator agent and a retriever agent:
 
 ```python
-from llama_index.core.agent.multi_agent import (
+from llama_index.core.agent.workflow import (
     MultiAgentWorkflow,
-    AgentConfig,
-    AgentMode,
+    FunctionAgent,
+    ReactAgent,
 )
 from llama_index.core.tools import FunctionTool
-from llama_index.core.workflow import FunctionToolWithContext
 
 
 # Define some tools
@@ -28,11 +27,13 @@ def subtract(a: int, b: int) -> int:
 
 
 # Create agent configs
-calculator_agent = AgentConfig(
+# NOTE: we can use FunctionAgent or ReactAgent here.
+# FunctionAgent works for LLMs with a function calling API.
+# ReactAgent works for any LLM.
+calculator_agent = FunctionAgent(
     name="calculator",
     description="Performs basic arithmetic operations",
     system_prompt="You are a calculator assistant.",
-    mode=AgentMode.REACT,
     tools=[
         FunctionTool.from_defaults(fn=add),
         FunctionTool.from_defaults(fn=subtract),
@@ -40,11 +41,10 @@ calculator_agent = AgentConfig(
     llm=OpenAI(model="gpt-4"),
 )
 
-retriever_agent = AgentConfig(
+retriever_agent = FunctionAgent(
     name="retriever",
     description="Manages data retrieval",
     system_prompt="You are a retrieval assistant.",
-    mode=AgentMode.FUNCTION,
     is_entrypoint_agent=True,
     llm=OpenAI(model="gpt-4"),
 )
@@ -66,7 +66,7 @@ async for event in handler.stream_events():
 
 ## How It Works
 
-The MultiAgentWorkflow manages a collection of agents, each with their own specialized capabilities. One agent must be designated as the entry point agent (is_entrypoint_agent=True).
+The MultiAgentWorkflow manages a collection of agents, each with their own specialized capabilities. One agent must be designated as the entry point agent (`is_entrypoint_agent=True`).
 
 When a user message comes in, it's first routed to the entry point agent. Each agent can then:
 
@@ -74,26 +74,20 @@ When a user message comes in, it's first routed to the entry point agent. Each a
 2. Hand off to another agent better suited for the task
 3. Return a response to the user
 
-Agents can be configured in two modes:
-- REACT: Uses ReAct prompting for reasoning about tool usage
-- FUNCTION: Uses OpenAI function calling style for tool usage
-
 ## Configuration Options
 
 ### Agent Config
 
-Each agent is configured with an `AgentConfig`:
+Each agent holds a certain set of configuration options. Whether you use `FunctionAgent` or `ReactAgent`, the core options are the same.
 
 ```python
-AgentConfig(
+FunctionAgent(
     # Unique name for the agent (str)
     name="name",
     # Description of agent's capabilities (str)
     description="description",
     # System prompt for the agent (str)
     system_prompt="system_prompt",
-    # react or function -- defaults to function when possible. (str)
-    mode="function",
     # Tools available to this agent (List[BaseTool])
     tools=[...],
     # LLM to use for this agent. (BaseLLM)
@@ -111,8 +105,8 @@ The MultiAgentWorkflow constructor accepts:
 
 ```python
 MultiAgentWorkflow(
-    # List of agent configs. (List[AgentConfig])
-    agent_configs=[...],
+    # List of agent configs. (List[BaseWorkflowAgent])
+    agents=[...],
     # Initial state dict. (Optional[dict])
     initial_state=None,
     # Custom prompt for handoffs. Should contain the `agent_info` string variable. (Optional[str])
@@ -124,17 +118,21 @@ MultiAgentWorkflow(
 
 ### State Management
 
+#### Initial Global State
+
 You can provide an initial state dict that will be available to all agents:
 
 ```python
 workflow = MultiAgentWorkflow(
-    agent_configs=[...],
+    agents=[...],
     initial_state={"counter": 0},
     state_prompt="Current state: {state}. User message: {msg}",
 )
 ```
 
 The state is stored in the `state` key of the workflow context.
+
+#### Persisting State Between Runs
 
 In order to persist state between runs, you can pass in the context from the previous run:
 
@@ -146,8 +144,11 @@ handler = workflow.run(user_msg="Can you add 5 and 3?")
 response = await handler
 
 # Pass in the context from the previous run
-response = await workflow.run(ctx=handler.ctx, user_msg="Can you add 5 and 3?")
+handler = workflow.run(ctx=handler.ctx, user_msg="Can you add 5 and 3?")
+response = await handler
 ```
+
+#### Serializing Context / State
 
 As with normal workflows, the context is serializable:
 
@@ -173,16 +174,16 @@ The workflow emits various events during execution that you can stream:
 async for event in workflow.run(...).stream_events():
     if isinstance(event, AgentInput):
         print(event.input)
-        print(event.current_agent)
+        print(event.current_agent_name)
     elif isinstance(event, AgentStream):
         # Agent thinking/tool calling response stream
         print(event.delta)
-        print(event.current_agent)
+        print(event.current_agent_name)
     elif isinstance(event, AgentOutput):
         print(event.response)
         print(event.tool_calls)
-        print(event.raw_response)
-        print(event.current_agent)
+        print(event.raw)
+        print(event.current_agent_name)
     elif isinstance(event, ToolCall):
         # Tool being called
         print(event.tool_name)
@@ -210,7 +211,7 @@ counter_tool = FunctionToolWithContext.from_defaults(
 )
 ```
 
-### Human in the Loop
+## Human in the Loop
 
 Using the context, you can implement a human in the loop pattern in your tools:
 
@@ -244,7 +245,13 @@ async def ask_for_confirmation(ctx: Context) -> bool:
 When this function is called, it will block the workflow execution until the user sends the required confirmation event.
 
 ```python
-handler.ctx.send_event(
-    ConfirmationEvent(confirmation=True, confirmation_id="1234")
-)
+handler = workflow.run(user_msg="Can you add 5 and 3?")
+
+async for event in handler.stream_events():
+    if isinstance(event, AskForConfirmationEvent):
+        print(event.confirmation_id)
+        handler.ctx.send_event(
+            ConfirmationEvent(confirmation=True, confirmation_id="1234")
+        )
+    ...
 ```
