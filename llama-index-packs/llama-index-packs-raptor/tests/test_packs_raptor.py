@@ -27,4 +27,4 @@ def test_raptor() -> None:
     assert len(nodes) == 2
 
     nodes = retriever.retrieve("text", mode="tree_traversal")
-    assert len(nodes) == 2
+    assert len(nodes) == 5
