@@ -138,8 +138,7 @@ def get_embedding(client: OpenAI, text: str, engine: str, **kwargs: Any) -> List
     )
 
 
-# TEST
-# @embedding_retry_decorator
+@embedding_retry_decorator
 async def aget_embedding(
     aclient: AsyncOpenAI, text: str, engine: str, **kwargs: Any
 ) -> List[float]:
