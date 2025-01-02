@@ -163,10 +163,11 @@ class ReactAgent(BaseWorkflowAgent):
         )
 
         reasoning_str = "\n".join([x.get_content() for x in current_reasoning])
-        reasoning_msg = ChatMessage(role="assistant", content=reasoning_str)
 
-        await memory.aput(reasoning_msg)
-        await ctx.set("current_reasoning", [])
+        if reasoning_str:
+            reasoning_msg = ChatMessage(role="assistant", content=reasoning_str)
+            await memory.aput(reasoning_msg)
+            await ctx.set("current_reasoning", [])
 
         # remove "Answer:" from the response
         if output.response and "Answer:" in output.response:
