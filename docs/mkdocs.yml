@@ -1492,6 +1492,7 @@ nav:
               - ./api_reference/storage/chat_store/upstash.md
           - Docstore:
               - ./api_reference/storage/docstore/azure.md
+              - ./api_reference/storage/docstore/azurecosmosnosql.md
               - ./api_reference/storage/docstore/couchbase.md
               - ./api_reference/storage/docstore/dynamodb.md
               - ./api_reference/storage/docstore/elasticsearch.md
