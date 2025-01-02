@@ -293,48 +293,19 @@ class Context:
             The event type that was requested.
         """
         requirements = requirements or {}
-        waiter_id = uuid.uuid4()
+        waiter_id = str(uuid.uuid4())
         self._queues[waiter_id] = asyncio.Queue()
 
-        try:
-            while True:
-                event = await self._queues[waiter_id].get()
-                if isinstance(event, event_type):
-                    if all(
-                        event.get(k, default=None) == v for k, v in requirements.items()
-                    ):
-                        return event
-                    else:
-                        continue
-        finally:
-            # Ensure queue cleanup happens even if cancelled
-            del self._queues[waiter_id]
-
-    async def wait_for_event(
-        self, event_type: Type[T], requirements: Optional[Dict[str, Any]] = None
-    ) -> T:
-        """Asynchronously wait for a specific event type to be received.
-
-        Returns:
-            The event type that was requested.
-        """
-        requirements = requirements or {}
-        waiter_id = uuid.uuid4()
-        self._queues[waiter_id] = asyncio.Queue()
-
-        try:
-            while True:
-                event = await self._queues[waiter_id].get()
-                if isinstance(event, event_type):
-                    if all(
-                        event.get(k, default=None) == v for k, v in requirements.items()
-                    ):
-                        return event
-                    else:
-                        continue
-        finally:
-            # Ensure queue cleanup happens even if cancelled
-            del self._queues[waiter_id]
+        while True:
+            event = await self._queues[waiter_id].get()
+            if isinstance(event, event_type):
+                if all(
+                    event.get(k, default=None) == v for k, v in requirements.items()
+                ):
+                    del self._queues[waiter_id]
+                    return event
+                else:
+                    continue
 
     def write_event_to_stream(self, ev: Optional[Event]) -> None:
         self._streaming_queue.put_nowait(ev)

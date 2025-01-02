@@ -33,11 +33,11 @@ class FunctionAgent(BaseWorkflowAgent):
             AgentInput(input=current_llm_input, current_agent_name=self.name)
         )
 
-        response = await self.llm.astream_chat_with_tools(
+        response = await self.llm.astream_chat_with_tools(  # type: ignore
             tools, chat_history=current_llm_input, allow_parallel_tool_calls=True
         )
         async for r in response:
-            tool_calls = self.llm.get_tool_calls_from_response(
+            tool_calls = self.llm.get_tool_calls_from_response(  # type: ignore
                 r, error_on_no_tool_call=False
             )
             ctx.write_event_to_stream(
@@ -45,12 +45,12 @@ class FunctionAgent(BaseWorkflowAgent):
                     delta=r.delta or "",
                     response=r.message.content,
                     tool_calls=tool_calls or [],
-                    raw_response=r.raw,
+                    raw=r.raw,
                     current_agent_name=self.name,
                 )
             )
 
-        tool_calls = self.llm.get_tool_calls_from_response(
+        tool_calls = self.llm.get_tool_calls_from_response(  # type: ignore
             r, error_on_no_tool_call=False
         )
 

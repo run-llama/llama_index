@@ -11,6 +11,11 @@ from llama_index.core.memory import BaseMemory
 from llama_index.core.tools import BaseTool, AsyncBaseTool
 from llama_index.core.workflow import Context
 from llama_index.core.objects import ObjectRetriever
+from llama_index.core.settings import Settings
+
+
+def get_default_llm() -> LLM:
+    return Settings.llm
 
 
 class BaseWorkflowAgent(BaseModel, ABC):
@@ -18,15 +23,33 @@ class BaseWorkflowAgent(BaseModel, ABC):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    name: str
-    description: str
-    system_prompt: Optional[str] = None
-    tools: Optional[List[BaseTool]] = None
-    tool_retriever: Optional[ObjectRetriever] = None
-    can_handoff_to: Optional[List[str]] = Field(default=None)
-    handoff_prompt_template: Optional[str] = None
-    llm: Optional[LLM] = None
-    is_entrypoint_agent: bool = False
+    name: str = Field(description="The name of the agent")
+    description: str = Field(
+        description="The description of what the agent does and is responsible for"
+    )
+    system_prompt: Optional[str] = Field(
+        default=None, description="The system prompt for the agent"
+    )
+    tools: Optional[List[BaseTool]] = Field(
+        default=None, description="The tools that the agent can use"
+    )
+    tool_retriever: Optional[ObjectRetriever] = Field(
+        default=None,
+        description="The tool retriever for the agent, can be provided instead of tools",
+    )
+    can_handoff_to: Optional[List[str]] = Field(
+        default=None, description="The agent names that this agent can hand off to"
+    )
+    handoff_prompt_template: Optional[str] = Field(
+        default=None, description="The prompt template for an artificial handoff tool"
+    )
+    llm: LLM = Field(
+        default_factory=get_default_llm, description="The LLM that the agent uses"
+    )
+    is_entrypoint_agent: bool = Field(
+        default=False,
+        description="Whether the agent is the entrypoint agent in a multi-agent workflow",
+    )
 
     @abstractmethod
     async def take_step(

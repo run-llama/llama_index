@@ -136,18 +136,17 @@ class ReactAgent(BaseWorkflowAgent):
             if tool_call_result.tool_name == "handoff":
                 continue
 
-            current_reasoning.append(
-                ObservationReasoningStep(
-                    observation=str(tool_call_result.tool_output.content),
-                    return_direct=tool_call_result.return_direct,
-                )
+            obs_step = ObservationReasoningStep(
+                observation=str(tool_call_result.tool_output.content),
+                return_direct=tool_call_result.return_direct,
             )
+            current_reasoning.append(obs_step)
 
             if tool_call_result.return_direct:
                 current_reasoning.append(
                     ResponseReasoningStep(
-                        thought=current_reasoning[-1].observation,
-                        response=current_reasoning[-1].observation,
+                        thought=obs_step.observation,
+                        response=obs_step.observation,
                         is_streaming=False,
                     )
                 )

@@ -110,7 +110,7 @@ class FunctionToolWithContext(FunctionTool):
             )
         return cls(fn=fn, metadata=tool_metadata, async_fn=async_fn)
 
-    def call(self, ctx: Context, *args: Any, **kwargs: Any) -> ToolOutput:
+    def call(self, ctx: Context, *args: Any, **kwargs: Any) -> ToolOutput:  # type: ignore
         """Call."""
         tool_output = self._fn(ctx, *args, **kwargs)
         return ToolOutput(
@@ -120,7 +120,7 @@ class FunctionToolWithContext(FunctionTool):
             raw_output=tool_output,
         )
 
-    async def acall(self, ctx: Context, *args: Any, **kwargs: Any) -> ToolOutput:
+    async def acall(self, ctx: Context, *args: Any, **kwargs: Any) -> ToolOutput:  # type: ignore
         """Call."""
         tool_output = await self._async_fn(ctx, *args, **kwargs)
         return ToolOutput(

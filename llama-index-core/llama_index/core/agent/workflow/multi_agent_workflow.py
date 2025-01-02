@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
@@ -89,7 +89,9 @@ class MultiAgentWorkflow(Workflow):
             ):
                 raise ValueError("State prompt must contain {state} and {msg}")
 
-    def _ensure_tools_are_async(self, tools: List[BaseTool]) -> List[AsyncBaseTool]:
+    def _ensure_tools_are_async(
+        self, tools: Sequence[BaseTool]
+    ) -> Sequence[AsyncBaseTool]:
         """Ensure all tools are async."""
         return [adapt_to_async_tool(tool) for tool in tools]
 
@@ -208,7 +210,7 @@ class MultiAgentWorkflow(Workflow):
             handoff_tool = self._get_handoff_tool(agent)
             tools.append(handoff_tool)
 
-        tools = self._ensure_tools_are_async(tools)
+        async_tools = self._ensure_tools_are_async(tools)
 
         if agent.system_prompt:
             llm_input = [
@@ -221,7 +223,7 @@ class MultiAgentWorkflow(Workflow):
         return AgentSetup(
             input=llm_input,
             current_agent_name=ev.current_agent_name,
-            tools=tools,
+            tools=async_tools,
         )
 
     @step
@@ -300,7 +302,7 @@ class MultiAgentWorkflow(Workflow):
         if num_tool_calls == 0:
             raise ValueError("No tool calls found, cannot aggregate results.")
 
-        tool_call_results: list[ToolCallResult] = ctx.collect_events(
+        tool_call_results: list[ToolCallResult] = ctx.collect_events(  # type: ignore
             ev, expected=[ToolCallResult] * num_tool_calls
         )
         if not tool_call_results:
@@ -351,6 +353,6 @@ class MultiAgentWorkflow(Workflow):
         input_messages = memory.get(input=user_msg_str)
 
         # get this again, in case it changed
-        agent: BaseWorkflowAgent = await ctx.get("current_agent")
+        agent = await ctx.get("current_agent")
 
         return AgentInput(input=input_messages, current_agent_name=agent.name)
