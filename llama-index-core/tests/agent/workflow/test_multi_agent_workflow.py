@@ -2,8 +2,9 @@ from typing import Any, List
 import pytest
 
 from llama_index.core.llms import MockLLM
-from llama_index.core.agent.multi_agent.multi_agent_workflow import MultiAgentWorkflow
-from llama_index.core.agent.multi_agent.agent_config import AgentConfig, AgentMode
+from llama_index.core.agent.workflow.multi_agent_workflow import MultiAgentWorkflow
+from llama_index.core.agent.workflow.function_agent import FunctionAgent
+from llama_index.core.agent.workflow.react_agent import ReactAgent
 from llama_index.core.llms import (
     ChatMessage,
     ChatResponse,
@@ -16,15 +17,14 @@ from llama_index.core.memory import ChatMemoryBuffer
 
 
 class MockLLM(MockLLM):
-    def __init__(self, responses: List[ChatMessage], is_function_calling: bool = False):
+    def __init__(self, responses: List[ChatMessage]):
         super().__init__()
         self._responses = responses
         self._response_index = 0
-        self._is_function_calling = is_function_calling
 
     @property
     def metadata(self) -> LLMMetadata:
-        return LLMMetadata(is_function_calling_model=self._is_function_calling)
+        return LLMMetadata(is_function_calling_model=True)
 
     async def astream_chat(
         self, messages: List[ChatMessage], **kwargs: Any
@@ -74,11 +74,10 @@ def subtract(a: int, b: int) -> int:
 
 @pytest.fixture()
 def calculator_agent():
-    return AgentConfig(
+    return ReactAgent(
         name="calculator",
         description="Performs basic arithmetic operations",
         system_prompt="You are a calculator assistant.",
-        mode=AgentMode.REACT,
         tools=[
             FunctionTool.from_defaults(fn=add),
             FunctionTool.from_defaults(fn=subtract),
@@ -100,12 +99,11 @@ def calculator_agent():
 
 @pytest.fixture()
 def retriever_agent():
-    return AgentConfig(
+    return FunctionAgent(
         name="retriever",
         description="Manages data retrieval",
         system_prompt="You are a retrieval assistant.",
         is_entrypoint_agent=True,
-        mode=AgentMode.FUNCTION,
         llm=MockLLM(
             responses=[
                 ChatMessage(
@@ -124,24 +122,7 @@ def retriever_agent():
                         ]
                     },
                 ),
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content="handoff calculator Because this requires arithmetic operations.",
-                    additional_kwargs={
-                        "tool_calls": [
-                            ToolSelection(
-                                tool_id="one",
-                                tool_name="handoff",
-                                tool_kwargs={
-                                    "to_agent": "calculator",
-                                    "reason": "This requires arithmetic operations.",
-                                },
-                            )
-                        ]
-                    },
-                ),
             ],
-            is_function_calling=True,
         ),
     )
 
@@ -150,13 +131,13 @@ def retriever_agent():
 async def test_basic_workflow(calculator_agent, retriever_agent):
     """Test basic workflow initialization and validation."""
     workflow = MultiAgentWorkflow(
-        agent_configs=[calculator_agent, retriever_agent],
+        agents=[calculator_agent, retriever_agent],
     )
 
-    assert workflow.root_agent == "retriever"
-    assert len(workflow.agent_configs) == 2
-    assert "calculator" in workflow.agent_configs
-    assert "retriever" in workflow.agent_configs
+    assert workflow.root_agent == retriever_agent
+    assert len(workflow.agents) == 2
+    assert "calculator" in workflow.agents
+    assert "retriever" in workflow.agents
 
 
 @pytest.mark.asyncio()
@@ -164,16 +145,26 @@ async def test_workflow_requires_root_agent():
     """Test that workflow requires exactly one root agent."""
     with pytest.raises(ValueError, match="Exactly one root agent must be provided"):
         MultiAgentWorkflow(
-            agent_configs=[
-                AgentConfig(
+            agents=[
+                FunctionAgent(
                     name="agent1",
                     description="test",
                     is_entrypoint_agent=True,
+                    llm=MockLLM(
+                        responses=[
+                            ChatMessage(role=MessageRole.ASSISTANT, content="test"),
+                        ]
+                    ),
                 ),
-                AgentConfig(
+                ReactAgent(
                     name="agent2",
                     description="test",
                     is_entrypoint_agent=True,
+                    llm=MockLLM(
+                        responses=[
+                            ChatMessage(role=MessageRole.ASSISTANT, content="test"),
+                        ]
+                    ),
                 ),
             ]
         )
@@ -183,7 +174,7 @@ async def test_workflow_requires_root_agent():
 async def test_workflow_execution(calculator_agent, retriever_agent):
     """Test basic workflow execution with agent handoff."""
     workflow = MultiAgentWorkflow(
-        agent_configs=[calculator_agent, retriever_agent],
+        agents=[calculator_agent, retriever_agent],
     )
 
     memory = ChatMemoryBuffer.from_defaults()
@@ -197,11 +188,15 @@ async def test_workflow_execution(calculator_agent, retriever_agent):
 
     # Verify we got events indicating handoff and calculation
     assert any(
-        ev.current_agent == "retriever" if hasattr(ev, "current_agent") else False
+        ev.current_agent_name == "retriever"
+        if hasattr(ev, "current_agent_name")
+        else False
         for ev in events
     )
     assert any(
-        ev.current_agent == "calculator" if hasattr(ev, "current_agent") else False
+        ev.current_agent_name == "calculator"
+        if hasattr(ev, "current_agent_name")
+        else False
         for ev in events
     )
     assert "8" in response.response
@@ -210,7 +205,7 @@ async def test_workflow_execution(calculator_agent, retriever_agent):
 @pytest.mark.asyncio()
 async def test_invalid_handoff():
     """Test handling of invalid agent handoff."""
-    agent1 = AgentConfig(
+    agent1 = FunctionAgent(
         name="agent1",
         description="test",
         is_entrypoint_agent=True,
@@ -234,12 +229,11 @@ async def test_invalid_handoff():
                 ),
                 ChatMessage(role=MessageRole.ASSISTANT, content="guess im stuck here"),
             ],
-            is_function_calling=True,
         ),
     )
 
     workflow = MultiAgentWorkflow(
-        agent_configs=[agent1],
+        agents=[agent1],
     )
 
     handler = workflow.run(user_msg="test")
@@ -254,7 +248,7 @@ async def test_invalid_handoff():
 @pytest.mark.asyncio()
 async def test_workflow_with_state():
     """Test workflow with state management."""
-    agent = AgentConfig(
+    agent = FunctionAgent(
         name="agent",
         description="test",
         is_entrypoint_agent=True,
@@ -264,12 +258,11 @@ async def test_workflow_with_state():
                     role=MessageRole.ASSISTANT, content="Current state processed"
                 )
             ],
-            is_function_calling=True,
         ),
     )
 
     workflow = MultiAgentWorkflow(
-        agent_configs=[agent],
+        agents=[agent],
         initial_state={"counter": 0},
         state_prompt="Current state: {state}. User message: {msg}",
     )
