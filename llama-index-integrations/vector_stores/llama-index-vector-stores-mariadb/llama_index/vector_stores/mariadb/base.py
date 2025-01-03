@@ -179,16 +179,19 @@ class MariaDBVectorStore(BasePydanticVectorStore):
 
     def _create_table_if_not_exists(self) -> None:
         with self._engine.connect() as connection:
+            # Note that we define the vector index with DISTANCE=cosine, because we use VEC_DISTANCE_COSINE.
+            # This is because searches using a different distance function do not use the vector index.
+            # Reference: https://mariadb.com/kb/en/create-table-with-vectors/
             stmt = f"""
             CREATE TABLE IF NOT EXISTS `{self.table_name}` (
                 id SERIAL PRIMARY KEY,
                 node_id VARCHAR(255) NOT NULL,
                 text TEXT,
                 metadata JSON,
-                embedding BLOB NOT NULL,
+                embedding VECTOR({self.embed_dim}) NOT NULL,
                 INDEX `{self.table_name}_node_id_idx` (`node_id`),
-                VECTOR INDEX (embedding)
-            );
+                VECTOR INDEX (embedding) DISTANCE=cosine
+            )
             """
             connection.execute(sqlalchemy.text(stmt))
 
@@ -252,7 +255,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
                 VALUES (
                     :node_id,
                     :text,
-                    vec_fromtext(:embedding),
+                    VEC_FromText(:embedding),
                     :metadata
                 )
                 """
@@ -368,7 +371,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             text,
             embedding,
             metadata,
-            vec_distance(embedding, vec_fromtext('{query.query_embedding}')) AS distance
+            VEC_DISTANCE_COSINE(embedding, vec_fromtext('{query.query_embedding}')) AS distance
         FROM `{self.table_name}`
         ORDER BY distance
         LIMIT {query.similarity_top_k}
@@ -387,7 +390,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
                     text,
                     embedding,
                     metadata,
-                    vec_distance(embedding, vec_fromtext('{query.query_embedding}')) AS distance
+                    VEC_DISTANCE_COSINE(embedding, vec_fromtext('{query.query_embedding}')) AS distance
                 FROM `{self.table_name}`
                 WHERE {where}
                 LIMIT 1000000

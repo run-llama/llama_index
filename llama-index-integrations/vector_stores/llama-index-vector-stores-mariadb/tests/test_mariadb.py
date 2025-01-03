@@ -51,6 +51,7 @@ TEST_NODES: List[TextNode] = [
 vector_store = MariaDBVectorStore.from_params(
     database="test",
     table_name="vector_store_test",
+    embed_dim=3,
     host="127.0.0.1",
     user="root",
     password="test",
