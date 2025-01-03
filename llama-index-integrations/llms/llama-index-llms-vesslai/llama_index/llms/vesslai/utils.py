@@ -3,6 +3,7 @@ import yaml
 from typing import Any
 from vessl import vessl_api
 
+
 def wait_for_gateway_enabled(
     gateway: Any, service_name: str, max_timeout_sec: int = 8 * 60
 ) -> bool:
@@ -16,13 +17,18 @@ def wait_for_gateway_enabled(
     Returns:
         bool: True if the gateway is successfully enabled, False otherwise.
     """
+
     def _check_gateway_enabled(gateway):
-        return gateway.enabled and gateway.status == "success" and gateway.endpoint is not None
+        return (
+            gateway.enabled
+            and gateway.status == "success"
+            and gateway.endpoint is not None
+        )
 
     if not _check_gateway_enabled(gateway):
         print("Endpoint update in progress. Please wait a moment.")
         print(">> Wait for the endpoint to be ready...")
-        
+
         gateway_update_timeout = max_timeout_sec
 
         while gateway_update_timeout > 0:
@@ -32,13 +38,16 @@ def wait_for_gateway_enabled(
 
             gateway_update_timeout -= 5
             time.sleep(5)
-            print(f">> Waiting for {max_timeout_sec - gateway_update_timeout} seconds...")
+            print(
+                f">> Waiting for {max_timeout_sec - gateway_update_timeout} seconds..."
+            )
 
         if gateway_update_timeout <= 0:
             print("Endpoint update timeout. Please check the status of the endpoint.")
             return False
 
     return True
+
 
 def read_service(service_name: str) -> Any:
     """Fetches the service configuration using the service name.
@@ -51,10 +60,10 @@ def read_service(service_name: str) -> Any:
         ```
     """
     return vessl_api.model_service_read_api(
-        organization_name=vessl_api.organization.name,
-        model_service_name=service_name
+        organization_name=vessl_api.organization.name, model_service_name=service_name
     )
-    
+
+
 def ensure_service_idempotence(service_name: str, yaml_str: str) -> Any:
     """Fetches the service configuration using the yaml string.
 
@@ -76,20 +85,24 @@ def ensure_service_idempotence(service_name: str, yaml_str: str) -> Any:
             break
     if running_revision is None:
         return None
-    
+
     if running_revision.status == "running":
         served_yaml_dict = yaml.safe_load(running_revision.yaml_spec)
         user_yaml_dict = yaml.safe_load(yaml_str)
-        
-        if all([
-            served_yaml_dict.get("env", {}).get("MODEL_NAME") == user_yaml_dict.get("env", {}).get("MODEL_NAME"),
-            served_yaml_dict.get("run") == user_yaml_dict.get("run"),
-            served_yaml_dict.get("image") == user_yaml_dict.get("image")
-        ]):
+
+        if all(
+            [
+                served_yaml_dict.get("env", {}).get("MODEL_NAME")
+                == user_yaml_dict.get("env", {}).get("MODEL_NAME"),
+                served_yaml_dict.get("run") == user_yaml_dict.get("run"),
+                served_yaml_dict.get("image") == user_yaml_dict.get("image"),
+            ]
+        ):
             gateway = read_service(service_name=service_name).gateway_config
             return f"https://{gateway.endpoint}/v1"
 
     return None
+
 
 def _request_abort_rollout(service_name: str) -> bool:
     """Requests to abort the ongoing rollout of a service.
@@ -110,9 +123,12 @@ def _request_abort_rollout(service_name: str) -> bool:
     else:
         print("Current update aborted.")
         print("Could not determine the original status. Rollback is not requested.\n")
-        print(f"Please check the status of the service and the gateway at: "
-              f"https://app.vessl.ai/{vessl_api.organization.name}/services/{service_name}\n")
+        print(
+            f"Please check the status of the service and the gateway at: "
+            f"https://app.vessl.ai/{vessl_api.organization.name}/services/{service_name}\n"
+        )
         return False
+
 
 def _get_recent_rollout(service_name: str) -> Any:
     """Fetches the most recent rollout information for a service.
@@ -129,6 +145,7 @@ def _get_recent_rollout(service_name: str) -> Any:
     )
     return resp.rollouts[0] if resp.rollouts else None
 
+
 def abort_in_progress_rollout_by_name(service_name: str):
     """Aborts an ongoing rollout for a given service.
 
@@ -143,5 +160,6 @@ def abort_in_progress_rollout_by_name(service_name: str):
             time.sleep(30)
     else:
         print("No existing rollout found.")
+
 
 # Note: The above functions are designed to work with the internal rules of the `vessl` package

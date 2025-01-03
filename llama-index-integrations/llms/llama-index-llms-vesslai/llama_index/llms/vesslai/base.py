@@ -1,5 +1,4 @@
 import os
-import sys
 import vessl.serving
 import yaml
 from typing import Any, Optional
@@ -54,13 +53,14 @@ class VesslAILLM(OpenAILike, BaseModel):
         print(resp)
         ```
     """
+
     organization_name: str = None
     default_service_yaml: str = "vesslai_vllm.yaml"
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__()
         self._configure()
-    
+
     def _configure(self) -> None:
         vessl.configure()
         if vessl.vessl_api.is_in_run_exec_context():
@@ -87,9 +87,9 @@ class VesslAILLM(OpenAILike, BaseModel):
             if user is None or organization_name is None:
                 print("Please run `vessl configure` first.")
                 return
-        
+
         self.organization_name = organization_name
-    
+
     def serve(
         self,
         service_name: str,
@@ -102,45 +102,55 @@ class VesslAILLM(OpenAILike, BaseModel):
         force_relaunch: bool = False,
         **kwargs: Any,
     ) -> None:
-        self.organization_name = kwargs.get('organization_name', self.organization_name)
+        self.organization_name = kwargs.get("organization_name", self.organization_name)
         self._validate_openai_key(api_key=api_key)
 
         if not model_name and not yaml_path:
-            raise ValueError("You must provide either 'model_name' or 'yaml_path', but not both")
+            raise ValueError(
+                "You must provide either 'model_name' or 'yaml_path', but not both"
+            )
         if model_name and yaml_path:
-            raise ValueError("You must provide only one of 'model_name' or 'yaml_path', not both")
+            raise ValueError(
+                "You must provide only one of 'model_name' or 'yaml_path', not both"
+            )
 
         serve_yaml_path = self._get_default_yaml_path()
-        with open(serve_yaml_path, 'r') as file:
+        with open(serve_yaml_path) as file:
             serve_config = yaml.safe_load(file)
-        
+
         serve_model_name = None
         # serve with custom service yaml file
         if yaml_path:
-            serve_model_name = serve_config['env']['MODEL_NAME']
+            serve_model_name = serve_config["env"]["MODEL_NAME"]
             serve_yaml_path = yaml_path
-        
+
         # serve with model name
         if model_name:
             serve_model_name = model_name
             hf_token = kwargs.get("hf_token", os.environ.get("HF_TOKEN"))
             if hf_token is None:
-                raise ValueError("HF_TOKEN must be set either as a parameter or environment variable")
+                raise ValueError(
+                    "HF_TOKEN must be set either as a parameter or environment variable"
+                )
             serve_config = self._build_model_serve_config(
                 serve_model_name, serve_config, service_auth_key, hf_token
             )
             serve_yaml_path = self._get_temporary_yaml_path()
-            with open(serve_yaml_path, 'w') as file:
+            with open(serve_yaml_path, "w") as file:
                 yaml.dump(serve_config, file)
 
         self.model = serve_model_name
         self.is_chat_model = is_chat_model
         if not force_relaunch:
-            with open(serve_yaml_path, 'r') as file:
+            with open(serve_yaml_path) as file:
                 yaml_str = file.read()
-            gateway_endpoint = ensure_service_idempotence(service_name=service_name, yaml_str=yaml_str)
+            gateway_endpoint = ensure_service_idempotence(
+                service_name=service_name, yaml_str=yaml_str
+            )
             if gateway_endpoint is not None:
-                print(f"Model Name \"{self.model}\" is already being served. Connecting with Endpoint: {gateway_endpoint} \nIf you want to abort running model_service, please provide force_relaunch = True")
+                print(
+                    f'Model Name "{self.model}" is already being served. Connecting with Endpoint: {gateway_endpoint} \nIf you want to abort running model_service, please provide force_relaunch = True'
+                )
                 self.connect(
                     served_model_name=self.model,
                     endpoint=gateway_endpoint,
@@ -148,14 +158,14 @@ class VesslAILLM(OpenAILike, BaseModel):
                     api_key=api_key,
                 )
                 return
-        
+
         self.api_base = self._launch_service_revision_from_yaml(
             organization_name=self.organization_name,
             yaml_path=serve_yaml_path,
             service_name=service_name,
             serverless=serverless,
         )
-        
+
         if model_name:
             os.remove(serve_yaml_path)
 
@@ -168,34 +178,38 @@ class VesslAILLM(OpenAILike, BaseModel):
         **kwargs: Any,
     ) -> None:
         self._validate_openai_key(api_key=api_key)
-        
+
         self.model = served_model_name
         self.api_base = endpoint
         self.is_chat_model = is_chat_model
-    
+
     def _validate_openai_key(self, api_key: str):
-        if api_key is None and os.environ.get('OPENAI_API_KEY') is None:
+        if api_key is None and os.environ.get("OPENAI_API_KEY") is None:
             raise ValueError("Set OPENAI_API_KEY or api_key")
-        
-        self.api_key = os.environ.get('OPENAI_API_KEY')
+
+        self.api_key = os.environ.get("OPENAI_API_KEY")
         if api_key is not None:
             self.api_key = api_key
-    
+
     def _build_model_serve_config(
-        self, model_name: str, service_config: dict, service_auth_key: str, hf_token: str
+        self,
+        model_name: str,
+        service_config: dict,
+        service_auth_key: str,
+        hf_token: str,
     ) -> str:
         if hf_token.startswith("hf_"):
-            service_config['env']['HF_TOKEN'] = hf_token
+            service_config["env"]["HF_TOKEN"] = hf_token
         else:
-            service_config['env']['HF_TOKEN'] = {
-                'secret': hf_token,
+            service_config["env"]["HF_TOKEN"] = {
+                "secret": hf_token,
             }
         if service_auth_key:
-            service_config['env']['SERVICE_AUTH_KEY'] = service_auth_key
-        
-        service_config['env']['MODEL_NAME'] = model_name
+            service_config["env"]["SERVICE_AUTH_KEY"] = service_auth_key
+
+        service_config["env"]["MODEL_NAME"] = model_name
         return service_config
-    
+
     def _launch_service_revision_from_yaml(
         self,
         organization_name: str,
@@ -206,7 +220,7 @@ class VesslAILLM(OpenAILike, BaseModel):
         assert organization_name is not None
         assert yaml_path is not None
 
-        with open(yaml_path, "r") as f:
+        with open(yaml_path) as f:
             yaml_body = f.read()
         print(yaml_body)
 
@@ -224,11 +238,15 @@ class VesslAILLM(OpenAILike, BaseModel):
             model_service_name=revision.model_service_name,
             desired_active_revisions_to_weight_map={revision.number: 100},
         )
-        service_url = f"https://app.vessl.ai/{organization_name}/services/{service_name}"
+        service_url = (
+            f"https://app.vessl.ai/{organization_name}/services/{service_name}"
+        )
         print(f"Check your Service at: {service_url}")
 
         gateway = read_service(service_name=service_name).gateway_config
-        wait_for_gateway_enabled(gateway=gateway, service_name=revision.model_service_name)
+        wait_for_gateway_enabled(
+            gateway=gateway, service_name=revision.model_service_name
+        )
 
         print("Endpoint is enabled.")
         gateway = read_service(service_name=service_name).gateway_config
@@ -236,13 +254,11 @@ class VesslAILLM(OpenAILike, BaseModel):
         print(f"You can test your service via {gateway_endpoint}")
 
         return gateway_endpoint
-    
+
     def _get_default_yaml_path(self) -> str:
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        default_yaml_path = os.path.join(current_dir, self.default_service_yaml)
-        return default_yaml_path
-    
+        return os.path.join(current_dir, self.default_service_yaml)
+
     def _get_temporary_yaml_path(self) -> str:
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        default_yaml_path = os.path.join(current_dir, "tmp_vesslai_vllm.yaml")
-        return default_yaml_path
+        return os.path.join(current_dir, "tmp_vesslai_vllm.yaml")

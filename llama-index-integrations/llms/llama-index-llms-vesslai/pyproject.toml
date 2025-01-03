@@ -63,8 +63,3 @@ version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
-
-[[tool.poetry.source]]
-name = "testpypi"
-url = "https://test.pypi.org/simple"
-priority = "explicit"
