@@ -378,6 +378,7 @@ class VectaraRetriever(BaseRetriever):
             print(f"Vectara streaming query request body: {body}")
 
         if chat:
+            body["chat"] = {"store": True}
             if conv_id:
                 response = self._index._session.post(
                     headers=self._get_post_headers(),
@@ -495,6 +496,7 @@ class VectaraRetriever(BaseRetriever):
             print(f"Vectara query request body: {data}")
 
         if chat:
+            data["chat"] = {"store": True}
             if conv_id:
                 response = self._index._session.post(
                     headers=self._get_post_headers(),
