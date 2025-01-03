@@ -129,6 +129,7 @@ class VesslAILLM(OpenAILike, BaseModel):
             serve_config = self._build_model_serve_config(
                 serve_model_name, serve_config, service_auth_key, hf_token
             )
+            serve_yaml_path = self._get_temporary_yaml_path()
             with open(serve_yaml_path, 'w') as file:
                 yaml.dump(serve_config, file)
 
@@ -154,6 +155,9 @@ class VesslAILLM(OpenAILike, BaseModel):
             service_name=service_name,
             serverless=serverless,
         )
+        
+        if model_name:
+            os.remove(serve_yaml_path)
 
     def connect(
         self,
@@ -236,4 +240,9 @@ class VesslAILLM(OpenAILike, BaseModel):
     def _get_default_yaml_path(self) -> str:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         default_yaml_path = os.path.join(current_dir, self.default_service_yaml)
+        return default_yaml_path
+    
+    def _get_temporary_yaml_path(self) -> str:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        default_yaml_path = os.path.join(current_dir, "tmp_vesslai_vllm.yaml")
         return default_yaml_path
