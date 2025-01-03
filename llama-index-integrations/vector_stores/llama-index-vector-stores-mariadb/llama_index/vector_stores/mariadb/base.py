@@ -186,6 +186,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
                 text TEXT,
                 metadata JSON,
                 embedding BLOB NOT NULL,
+                INDEX `{self.table_name}_node_id_idx` (`node_id`),
                 VECTOR INDEX (embedding)
             );
             """
