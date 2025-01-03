@@ -371,33 +371,17 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             text,
             embedding,
             metadata,
-            VEC_DISTANCE_COSINE(embedding, vec_fromtext('{query.query_embedding}')) AS distance
-        FROM `{self.table_name}`
+            VEC_DISTANCE_COSINE(embedding, VEC_FromText('{query.query_embedding}')) AS distance
+        FROM `{self.table_name}`"""
+
+        if query.filters:
+            stmt += f"""
+        WHERE {self._filters_to_where_clause(query.filters)}"""
+
+        stmt += f"""
         ORDER BY distance
         LIMIT {query.similarity_top_k}
         """
-
-        if query.filters:
-            where = self._filters_to_where_clause(query.filters)
-
-            # We cannot use the query above when there is a WHERE clause,
-            # because of a bug in MariaDB: https://jira.mariadb.org/browse/MDEV-34774.
-            # The following query works around it.
-            stmt = f"""
-            SELECT * FROM (
-                SELECT
-                    node_id,
-                    text,
-                    embedding,
-                    metadata,
-                    VEC_DISTANCE_COSINE(embedding, vec_fromtext('{query.query_embedding}')) AS distance
-                FROM `{self.table_name}`
-                WHERE {where}
-                LIMIT 1000000
-            ) AS unordered
-            ORDER BY distance
-            LIMIT {query.similarity_top_k}
-            """
 
         with self._engine.connect() as connection:
             result = connection.execute(sqlalchemy.text(stmt))
