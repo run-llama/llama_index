@@ -96,6 +96,23 @@ def test_image_node_hash() -> None:
     assert node3.hash == node4.hash
 
 
+def test_image_node_mimetype() -> None:
+    node = ImageNode(image_path="path")
+    node2 = ImageNode(image_path="path.png")
+
+    assert node.image_mimetype is None
+    assert node2.image_mimetype == "image/png"
+
+
+def test_build_image_node_image_resource() -> None:
+    ir = MediaResource(path="my-image.jpg", mimetype=None)
+    tr = MediaResource(text="test data")
+    node = ImageNode(id_="test_node", image_resource=ir, text_resource=tr)
+    assert node.text == "test data"
+    assert node.image_mimetype == "image/jpeg"
+    assert node.image_path == "my-image.jpg"
+
+
 def test_build_text_node_text_resource() -> None:
     node = TextNode(id_="test_node", text_resource=MediaResource(text="test data"))
     assert node.text == "test data"
