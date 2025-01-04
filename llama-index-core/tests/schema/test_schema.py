@@ -110,6 +110,7 @@ def test_build_image_node_image_resource() -> None:
     node = ImageNode(id_="test_node", image_resource=ir, text_resource=tr)
     assert node.text == "test data"
     assert node.image_mimetype == "image/jpeg"
+    assert node.image_path == "my-image.jpg"
 
 
 def test_build_text_node_text_resource() -> None:
