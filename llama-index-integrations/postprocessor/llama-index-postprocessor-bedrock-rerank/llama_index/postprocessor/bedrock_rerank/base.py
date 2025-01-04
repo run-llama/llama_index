@@ -208,6 +208,9 @@ class AWSBedrockRerank(BaseNodePostprocessor):
                         },
                     }
                 )
+            # change top_n if the number of nodes is less than top_n
+            if len(nodes) < self.top_n:
+                self.top_n = len(nodes)
 
             queries = [
                 {
