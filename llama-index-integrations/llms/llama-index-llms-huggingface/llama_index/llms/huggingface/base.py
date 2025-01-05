@@ -5,7 +5,6 @@ from deprecated import deprecated
 import torch
 from huggingface_hub import AsyncInferenceClient, InferenceClient, model_info
 from huggingface_hub.hf_api import ModelInfo
-from huggingface_hub.inference._types import ConversationalOutput
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -637,12 +636,13 @@ class HuggingFaceInferenceAPI(CustomLLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # default to conversational task as that was the previous functionality
         if self.task == "conversational" or self.task is None:
-            output: "ConversationalOutput" = self._sync_client.conversational(
+            output = self._sync_client.chat_completion(
                 **{**chat_messages_to_conversational_kwargs(messages), **kwargs}
             )
             return ChatResponse(
                 message=ChatMessage(
-                    role=MessageRole.ASSISTANT, content=output["generated_text"]
+                    role=MessageRole.ASSISTANT,
+                    content=output.choices[0].message.content or "",
                 )
             )
         else:
@@ -675,7 +675,24 @@ class HuggingFaceInferenceAPI(CustomLLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        raise NotImplementedError
+        # default to conversational task as that was the previous functionality
+        if self.task == "conversational" or self.task is None:
+            output = await self._async_client.chat_completion(
+                **{**chat_messages_to_conversational_kwargs(messages), **kwargs}
+            )
+            return ChatResponse(
+                message=ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content=output.choices[0].message.content or "",
+                )
+            )
+        else:
+            # try and use text generation
+            prompt = self.messages_to_prompt(messages)
+            completion = await self.acomplete(prompt)
+            return ChatResponse(
+                message=ChatMessage(role=MessageRole.ASSISTANT, content=completion.text)
+            )
 
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
