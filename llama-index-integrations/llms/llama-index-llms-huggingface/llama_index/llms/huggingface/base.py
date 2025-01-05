@@ -642,7 +642,7 @@ class HuggingFaceInferenceAPI(CustomLLM):
             return ChatResponse(
                 message=ChatMessage(
                     role=MessageRole.ASSISTANT,
-                    content=output.choices[0].message.content or "",
+                    content=output["choices"][0]["message"]["content"] or "",
                 )
             )
         else:
@@ -683,7 +683,7 @@ class HuggingFaceInferenceAPI(CustomLLM):
             return ChatResponse(
                 message=ChatMessage(
                     role=MessageRole.ASSISTANT,
-                    content=output.choices[0].message.content or "",
+                    content=output["choices"][0]["message"]["content"] or "",
                 )
             )
         else:
