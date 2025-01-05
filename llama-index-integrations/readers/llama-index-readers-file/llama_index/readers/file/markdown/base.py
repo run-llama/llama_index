@@ -76,7 +76,7 @@ class MarkdownReader(BaseReader):
 
     def remove_images(self, content: str) -> str:
         """Remove images in markdown content."""
-        pattern = r"!{1}\[\[(.*)\]\]"
+        pattern = r"!\[.*?\]\(.*?\)"
         return re.sub(pattern, "", content)
 
     def remove_hyperlinks(self, content: str) -> str:
