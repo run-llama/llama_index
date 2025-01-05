@@ -433,34 +433,6 @@ class HuggingFaceLLM(CustomLLM):
         return stream_completion_response_to_chat_response(completion_response)
 
 
-def chat_messages_to_conversational_kwargs(
-    messages: Sequence[ChatMessage],
-) -> Dict[str, Any]:
-    """Convert ChatMessages to keyword arguments for Inference API conversational."""
-    if len(messages) % 2 != 1:
-        raise NotImplementedError("Messages passed in must be of odd length.")
-    last_message = messages[-1]
-    kwargs: Dict[str, Any] = {
-        "text": last_message.content,
-        **last_message.additional_kwargs,
-    }
-    if len(messages) != 1:
-        kwargs["past_user_inputs"] = []
-        kwargs["generated_responses"] = []
-        for user_msg, assistant_msg in zip(messages[::2], messages[1::2]):
-            if (
-                user_msg.role != MessageRole.USER
-                or assistant_msg.role != MessageRole.ASSISTANT
-            ):
-                raise NotImplementedError(
-                    "Didn't handle when messages aren't ordered in alternating"
-                    f" pairs of {(MessageRole.USER, MessageRole.ASSISTANT)}."
-                )
-            kwargs["past_user_inputs"].append(user_msg.content)
-            kwargs["generated_responses"].append(assistant_msg.content)
-    return kwargs
-
-
 @deprecated(
     "Deprecated in favor of `HuggingFaceInferenceAPI` from `llama-index-llms-huggingface-api` which should be used instead.",
     action="always",
@@ -637,7 +609,11 @@ class HuggingFaceInferenceAPI(CustomLLM):
         # default to conversational task as that was the previous functionality
         if self.task == "conversational" or self.task is None:
             output = self._sync_client.chat_completion(
-                **{**chat_messages_to_conversational_kwargs(messages), **kwargs}
+                messages=[
+                    {"role": m.role.value, "content": m.content} for m in messages
+                ],
+                model=self.model_name,
+                **kwargs,
             )
             return ChatResponse(
                 message=ChatMessage(
@@ -678,7 +654,11 @@ class HuggingFaceInferenceAPI(CustomLLM):
         # default to conversational task as that was the previous functionality
         if self.task == "conversational" or self.task is None:
             output = await self._async_client.chat_completion(
-                **{**chat_messages_to_conversational_kwargs(messages), **kwargs}
+                messages=[
+                    {"role": m.role.value, "content": m.content} for m in messages
+                ],
+                model=self.model_name,
+                **kwargs,
             )
             return ChatResponse(
                 message=ChatMessage(
