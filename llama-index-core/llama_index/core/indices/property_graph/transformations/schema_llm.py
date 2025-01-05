@@ -348,7 +348,7 @@ class SchemaLLMPathExtractor(TransformComponent):
                 max_triplets_per_chunk=self.max_triplets_per_chunk,
             )
             triplets = self._prune_invalid_triplets(kg_schema)
-        except ValueError:
+        except (ValueError, TypeError, AttributeError):
             triplets = []
 
         existing_nodes = node.metadata.pop(KG_NODES_KEY, [])
