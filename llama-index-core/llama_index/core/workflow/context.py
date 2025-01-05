@@ -285,23 +285,38 @@ class Context:
         self._broker_log.append(message)
 
     async def wait_for_event(
-        self, event_type: Type[T], requirements: Optional[Dict[str, Any]] = None
+        self,
+        event_type: Type[T],
+        requirements: Optional[Dict[str, Any]] = None,
+        timeout: Optional[float] = 2000,
     ) -> T:
         """Asynchronously wait for a specific event type to be received.
 
+        Args:
+            event_type: The type of event to wait for
+            requirements: Optional dict of requirements the event must match
+            timeout: Optional timeout in seconds. Defaults to 2000s.
+
         Returns:
             The event type that was requested.
+
+        Raises:
+            asyncio.TimeoutError: If the timeout is reached before receiving matching event
         """
         requirements = requirements or {}
         waiter_id = str(uuid.uuid4())
         self._queues[waiter_id] = asyncio.Queue()
 
         while True:
-            event = await self._queues[waiter_id].get()
+            event = await asyncio.wait_for(
+                self._queues[waiter_id].get(), timeout=timeout
+            )
             if isinstance(event, event_type):
                 if all(
                     event.get(k, default=None) == v for k, v in requirements.items()
                 ):
+                    # in the case of checkpointing/resuming, we only want to delete
+                    # once we've received the event we're looking for
                     del self._queues[waiter_id]
                     return event
                 else:
