@@ -65,9 +65,8 @@ class TestHuggingFaceInferenceAPI:
         assert response.message.role == MessageRole.ASSISTANT
         assert response.message.content == generated_response
         mock_conversational.assert_called_once_with(
-            text="Can you explain why?",
-            past_user_inputs=["Which movie is the best?"],
-            generated_responses=["It's Die Hard for sure."],
+            messages=[{"role": m.role.value, "content": m.content} for m in messages],
+            model=STUB_MODEL_NAME,
         )
 
     def test_chat_text_generation(
