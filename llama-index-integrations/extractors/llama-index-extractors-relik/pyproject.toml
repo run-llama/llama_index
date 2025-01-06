@@ -27,12 +27,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-extractors-relik"
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 relik = "^1.0.3"
-huggingface-hub = "<0.24.0"  # TODO: relik breaks on newer versions
+huggingface-hub = ">=0.23.0"
 spacy = "*"
 llama-index-core = "^0.12.0"
 
