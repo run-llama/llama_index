@@ -90,7 +90,7 @@ class Gemini(CustomLLM):
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
         generation_config: Optional[genai.types.GenerationConfigDict] = None,
-        safety_settings: genai.types.SafetySettingOptions = None,
+        safety_settings: Optional[genai.types.SafetySettingDict] = None,
         callback_manager: Optional[CallbackManager] = None,
         api_base: Optional[str] = None,
         transport: Optional[str] = None,
