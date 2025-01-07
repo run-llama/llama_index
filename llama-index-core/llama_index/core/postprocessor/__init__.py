@@ -2,6 +2,7 @@
 
 
 from llama_index.core.postprocessor.llm_rerank import LLMRerank
+from llama_index.core.postprocessor.rebel_rerank import REBELRerank
 from llama_index.core.postprocessor.metadata_replacement import (
     MetadataReplacementPostProcessor,
 )
