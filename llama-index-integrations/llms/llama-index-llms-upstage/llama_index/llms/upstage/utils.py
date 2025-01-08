@@ -8,7 +8,6 @@ DEFAULT_CONTEXT_WINDOW = 32768
 CHAT_MODELS = {
     "solar-1-mini-chat": 32768,
     "solar-pro": 4096,
-    "solar-docvision": 65536,
 }
 
 FUNCTION_CALLING_MODELS = ["solar-1-mini-chat"]
@@ -19,7 +18,6 @@ ALL_AVAILABLE_MODELS = {**CHAT_MODELS}
 SOLAR_TOKENIZERS = {
     "solar-pro": "upstage/solar-pro-preview-tokenizer",
     "solar-1-mini-chat": "upstage/solar-1-mini-tokenizer",
-    "solar-docvision": "upstage/solar-docvision-preview-tokenizer",
 }
 
 logger = logging.getLogger(__name__)
