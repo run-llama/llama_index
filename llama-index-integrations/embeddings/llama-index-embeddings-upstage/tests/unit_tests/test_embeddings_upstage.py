@@ -1,5 +1,6 @@
 import pytest
 from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.embeddings.upstage import UpstageEmbedding
 
 UPSTAGE_TEST_API_KEY = "upstage_test_key"
 
@@ -26,11 +27,11 @@ def test_upstage_embedding_fail_wrong_model(upstage_embedding):
         upstage_embedding(model="foo")
 
 
-def test_upstage_embedding_model_name(upstage_embedding):
-    embedding = upstage_embedding(model="embedding")
+def test_upstage_embedding_model_name():
+    embedding = UpstageEmbedding(model="embedding")
     assert embedding.query_engine == "embedding-query"
 
-    embedding = upstage_embedding(model="solar-embedding-1-large")
+    embedding = UpstageEmbedding(model="solar-embedding-1-large")
     assert embedding.query_engine == "solar-embedding-1-large-query"
 
 
