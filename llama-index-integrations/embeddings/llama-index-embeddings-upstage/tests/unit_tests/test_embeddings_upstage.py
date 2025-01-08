@@ -26,6 +26,11 @@ def test_upstage_embedding_fail_wrong_model(upstage_embedding):
         upstage_embedding(model="foo")
 
 
+def test_upstage_embedding_model_name(upstage_embedding):
+    embedding = upstage_embedding(model="embedding")
+    assert embedding.query_engine == "embedding-query"
+
+
 def test_upstage_embedding_api_key_alias(upstage_embedding):
     embedding1 = upstage_embedding(api_key=UPSTAGE_TEST_API_KEY)
     embedding2 = upstage_embedding(upstage_api_key=UPSTAGE_TEST_API_KEY)
