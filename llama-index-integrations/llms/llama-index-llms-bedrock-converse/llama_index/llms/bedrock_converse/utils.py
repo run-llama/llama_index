@@ -17,6 +17,9 @@ HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
 
 BEDROCK_MODELS = {
+    "amazon.nova-pro-v1:0": 300000,
+    "amazon.nova-lite-v1:0": 300000,
+    "amazon.nova-micro-v1:0": 128000,
     "amazon.titan-text-express-v1": 8192,
     "amazon.titan-text-lite-v1": 4096,
     "amazon.titan-text-premier-v1:0": 3072,
@@ -56,6 +59,9 @@ BEDROCK_MODELS = {
 }
 
 BEDROCK_FUNCTION_CALLING_MODELS = (
+    "amazon.nova-pro-v1:0",
+    "amazon.nova-lite-v1:0",
+    "amazon.nova-micro-v1:0",
     "anthropic.claude-3-sonnet-20240229-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
@@ -75,6 +81,9 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
 )
 
 BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
+    "amazon.nova-pro-v1:0",
+    "amazon.nova-lite-v1:0",
+    "amazon.nova-micro-v1:0",
     "anthropic.claude-3-sonnet-20240229-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
@@ -298,6 +307,9 @@ def converse_with_retry(
     max_tokens: int = 1000,
     temperature: float = 0.1,
     stream: bool = False,
+    guardrail_identifier: Optional[str] = None,
+    guardrail_version: Optional[str] = None,
+    trace: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -314,8 +326,19 @@ def converse_with_retry(
         converse_kwargs["system"] = [{"text": system_prompt}]
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
+    if guardrail_identifier and guardrail_version:
+        converse_kwargs["guardrailConfig"] = {}
+        converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
+        converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
+        if trace:
+            converse_kwargs["guardrailConfig"]["trace"] = trace
     converse_kwargs = join_two_dicts(
-        converse_kwargs, {k: v for k, v in kwargs.items() if k != "tools"}
+        converse_kwargs,
+        {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
+        },
     )
 
     @retry_decorator
@@ -337,6 +360,9 @@ async def converse_with_retry_async(
     max_tokens: int = 1000,
     temperature: float = 0.1,
     stream: bool = False,
+    guardrail_identifier: Optional[str] = None,
+    guardrail_version: Optional[str] = None,
+    trace: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -353,8 +379,19 @@ async def converse_with_retry_async(
         converse_kwargs["system"] = [{"text": system_prompt}]
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
+    if guardrail_identifier and guardrail_version:
+        converse_kwargs["guardrailConfig"] = {}
+        converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
+        converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
+        if trace:
+            converse_kwargs["guardrailConfig"]["trace"] = trace
     converse_kwargs = join_two_dicts(
-        converse_kwargs, {k: v for k, v in kwargs.items() if k != "tools"}
+        converse_kwargs,
+        {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
+        },
     )
 
     ## NOTE: Returning the generator directly from converse_stream doesn't work

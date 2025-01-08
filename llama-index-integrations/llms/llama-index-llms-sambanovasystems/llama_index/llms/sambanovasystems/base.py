@@ -25,7 +25,7 @@ from llama_index.core.base.llms.generic_utils import (
     stream_chat_to_completion_decorator,
     achat_to_completion_decorator,
 )
-from llama_index.core.bridge.pydantic import Field, SecretStr
+from llama_index.core.bridge.pydantic import ConfigDict, Field, SecretStr
 import json
 from requests import Response
 
@@ -39,7 +39,6 @@ def _convert_message_to_dict(message: ChatMessage) -> Dict[str, Any]:
 
     Args:
         message: ChatMessage
-
     Returns:
         messages_dict:  role / content dict
     """
@@ -55,7 +54,6 @@ def _create_message_dicts(messages: Sequence[ChatMessage]) -> List[Dict[str, Any
 
     Args:
         messages: list of ChatMessages
-
     Returns:
         messages_dicts:  list of role / content dicts
     """
@@ -63,28 +61,29 @@ def _create_message_dicts(messages: Sequence[ChatMessage]) -> List[Dict[str, Any
 
 
 class SambaNovaCloud(LLM):
-    """
-    SambaNova Cloud model.
+    """SambaNova Cloud models.
 
     Setup:
         To use, you should have the environment variables:
-        ``SAMBANOVA_URL`` set with your SambaNova Cloud URL.
-        ``SAMBANOVA_API_KEY`` set with your SambaNova Cloud API Key.
-        http://cloud.sambanova.ai/
-
-    Example:
-        .. code-block:: python
-            SambaNovaCloud(
-                sambanova_url = SambaNova cloud endpoint URL,
-                sambanova_api_key = set with your SambaNova cloud API key,
-                model = model name,
-                max_tokens = max number of tokens to generate,
-                temperature = model temperature,
-                top_p = model top p,
-                top_k = model top k,
-                stream_options = include usage to get generation metrics
-            )
-
+        `SAMBANOVA_URL` set with your SambaNova Cloud URL.
+        `SAMBANOVA_API_KEY` set with your SambaNova Cloud API Key.
+        http://cloud.sambanova.ai/.
+        Additionally, download the following packages:
+        `pip install llama-index-llms-sambanovasystems`
+        `pip install sseclient-py`
+    Examples:
+    ```python
+    SambaNovaCloud(
+        sambanova_url = SambaNova cloud endpoint URL,
+        sambanova_api_key = set with your SambaNova cloud API key,
+        model = model name,
+        max_tokens = max number of tokens to generate,
+        temperature = model temperature,
+        top_p = model top p,
+        top_k = model top k,
+        stream_options = include usage to get generation metrics
+    )
+    ```
     Key init args — completion params:
         model: str
             The name of the model to use, e.g., Meta-Llama-3-70B-Instruct.
@@ -100,18 +99,14 @@ class SambaNovaCloud(LLM):
             model top k
         stream_options: dict
             stream options, include usage to get generation metrics
-
     Key init args — client params:
         sambanova_url: str
             SambaNova Cloud Url
         sambanova_api_key: str
             SambaNova Cloud api key
-
     Instantiate:
-        .. code-block:: python
-
+            ```python
             from llama_index.llms.sambanovacloud import SambaNovaCloud
-
             llm = SambaNovaCloud(
                 sambanova_url = SambaNova cloud endpoint URL,
                 sambanova_api_key = set with your SambaNova cloud API key,
@@ -123,21 +118,22 @@ class SambaNovaCloud(LLM):
                 stream_options = include usage to get generation metrics
                 context_window = model context window
             )
+            ```
     Complete:
-        .. code-block:: python
+            ```python
             prompt = "Tell me about Naruto Uzumaki in one sentence"
             response = llm.complete(prompt)
-
+            ```
     Chat:
-        .. code-block:: python
+            ```python
             messages = [
                 ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
                 ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
             ]
             response = llm.chat(messages)
-
+            ```
     Stream:
-        .. code-block:: python
+        ```python
         prompt = "Tell me about Naruto Uzumaki in one sentence"
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
@@ -147,34 +143,35 @@ class SambaNovaCloud(LLM):
             print(chunk.text)
         for chunk in llm.stream_chat(messages):
             print(chunk.message.content)
-
+        ```
     Async:
-        .. code-block:: python
+        ```python
         prompt = "Tell me about Naruto Uzumaki in one sentence"
         asyncio.run(llm.acomplete(prompt))
-
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
             ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
         ]
         asyncio.run(llm.achat(chat_text_msgs))
-
+        ```
     Response metadata and usage
-        .. code-block:: python
-
+        ```python
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
             ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
         ]
         metadata_and_usage = llm.chat(messages).message.additional_kwargs
         print(metadata_and_usage)
+        ```
     """
 
-    sambanova_url: str = Field(default_factory=str, description="SambaNova Cloud Url")
-
-    sambanova_api_key: SecretStr = Field(
-        default_factory=str, description="SambaNova Cloud api key"
+    model_config = ConfigDict(
+        protected_namespaces=("pydantic_model_",), arbitrary_types_allowed=True
     )
+
+    sambanova_url: str = Field(description="SambaNova Cloud Url")
+
+    sambanova_api_key: SecretStr = Field(description="SambaNova Cloud api key")
 
     model: str = Field(
         default="Meta-Llama-3.1-8B-Instruct",
@@ -197,7 +194,7 @@ class SambaNovaCloud(LLM):
     top_k: Optional[int] = Field(default=None, description="model top k")
 
     stream_options: dict = Field(
-        default={"include_usage": True},
+        default_factory=lambda: {"include_usage": True},
         description="stream options, include usage to get generation metrics",
     )
 
@@ -217,13 +214,13 @@ class SambaNovaCloud(LLM):
     def __init__(self, **kwargs: Any) -> None:
         """Init and validate environment variables."""
         kwargs["sambanova_url"] = get_from_param_or_env(
-            "url",
-            kwargs.get("sambanova_url"),
+            "sambanova_api_key",
+            kwargs.get("sambanova_api_key"),
             "SAMBANOVA_URL",
             default="https://api.sambanova.ai/v1/chat/completions",
         )
         kwargs["sambanova_api_key"] = get_from_param_or_env(
-            "api_key", kwargs.get("sambanova_api_key"), "SAMBANOVA_API_KEY"
+            "sambanova_api_key", kwargs.get("sambanova_api_key"), "SAMBANOVA_API_KEY"
         )
         super().__init__(**kwargs)
 
@@ -236,7 +233,6 @@ class SambaNovaCloud(LLM):
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
-
         Returns:
             A response dict.
         """
@@ -282,7 +278,6 @@ class SambaNovaCloud(LLM):
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
-
         Returns:
             A response dict.
         """
@@ -327,7 +322,6 @@ class SambaNovaCloud(LLM):
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
-
         Yields:
             An iterator of response dicts.
         """
@@ -411,7 +405,6 @@ class SambaNovaCloud(LLM):
         Args:
             messages_dicts: List of role / content dicts to use as input.
             stop: list of stop tokens
-
         Yields:
             An iterator of response dicts.
         """
@@ -646,16 +639,15 @@ class SambaNovaCloud(LLM):
 
 
 class SambaStudio(LLM):
-    """
-    SambaStudio model.
+    """SambaStudio model.
 
     Setup:
         To use, you should have the environment variables:
         ``SAMBASTUDIO_URL`` set with your SambaStudio deployed endpoint URL.
         ``SAMBASTUDIO_API_KEY`` set with your SambaStudio deployed endpoint Key.
         https://docs.sambanova.ai/sambastudio/latest/index.html
-        Example:
-        .. code-block:: python
+        Examples:
+            ```python
             SambaStudio(
                 sambastudio_url = set with your SambaStudio deployed endpoint URL,
                 sambastudio_api_key = set with your SambaStudio deployed endpoint Key.
@@ -674,7 +666,7 @@ class SambaStudio(LLM):
                      set to false or for StandAlone v1 and v2 endpoints)
                 model_kwargs: Optional = Extra Key word arguments to pass to the model.
             )
-
+            ```
     Key init args — completion params:
         model: str
             The name of the model to use, e.g., Meta-Llama-3-70B-Instruct-4096
@@ -703,51 +695,48 @@ class SambaStudio(LLM):
              or for StandAlone v1 and v2 endpoints) default to llama3 special tokens
         model_kwargs: dict
             Extra Key word arguments to pass to the model.
-
     Key init args — client params:
         sambastudio_url: str
-            SambaStudio endpoint Url
+            SambaStudio endpoint URL
         sambastudio_api_key: str
             SambaStudio endpoint api key
-
     Instantiate:
-        .. code-block:: python
-
-            from llama_index.llms.sambanova import SambaStudio
-
-            llm = SambaStudio=(
-                sambastudio_url = set with your SambaStudio deployed endpoint URL,
-                sambastudio_api_key = set with your SambaStudio deployed endpoint Key.
-                model = model or expert name (set for CoE endpoints),
-                max_tokens = max number of tokens to generate,
-                temperature = model temperature,
-                context_window = model context window,
-                top_p = model top p,
-                top_k = model top k,
-                do_sample = whether to do sample
-                process_prompt = whether to process prompt
-                    (set for CoE generic v1 and v2 endpoints)
-                stream_options = include usage to get generation metrics
-                special_tokens = start, start_role, end_role, and special tokens
-                    (set for CoE generic v1 and v2 endpoints when process prompt
-                     set to false or for StandAlone v1 and v2 endpoints)
-                model_kwargs: Optional = Extra Key word arguments to pass to the model.
-            )
+        ```python
+        from llama_index.llms.sambanova import SambaStudio
+        llm = SambaStudio=(
+            sambastudio_url = set with your SambaStudio deployed endpoint URL,
+            sambastudio_api_key = set with your SambaStudio deployed endpoint Key.
+            model = model or expert name (set for CoE endpoints),
+            max_tokens = max number of tokens to generate,
+            temperature = model temperature,
+            context_window = model context window,
+            top_p = model top p,
+            top_k = model top k,
+            do_sample = whether to do sample
+            process_prompt = whether to process prompt
+                (set for CoE generic v1 and v2 endpoints)
+            stream_options = include usage to get generation metrics
+            special_tokens = start, start_role, end_role, and special tokens
+                (set for CoE generic v1 and v2 endpoints when process prompt
+                 set to false or for StandAlone v1 and v2 endpoints)
+            model_kwargs: Optional = Extra Key word arguments to pass to the model.
+        )
+        ```
     Complete:
-        .. code-block:: python
-            prompt = "Tell me about Naruto Uzumaki in one sentence"
-            response = llm.complete(prompt)
-
+        ```python
+        prompt = "Tell me about Naruto Uzumaki in one sentence"
+        response = llm.complete(prompt)
+        ```
     Chat:
-        .. code-block:: python
-            messages = [
-                ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
-                ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
-            ]
-            response = llm.chat(messages)
-
+        ```python
+        messages = [
+            ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
+            ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
+        ]
+        response = llm.chat(messages)
+        ```
     Stream:
-        .. code-block:: python
+        ```python
         prompt = "Tell me about Naruto Uzumaki in one sentence"
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
@@ -757,45 +746,46 @@ class SambaStudio(LLM):
             print(chunk.text)
         for chunk in llm.stream_chat(messages):
             print(chunk.message.content)
-
+        ```
     Async:
-        .. code-block:: python
+        ```python
         prompt = "Tell me about Naruto Uzumaki in one sentence"
         asyncio.run(llm.acomplete(prompt))
-
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
             ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
         ]
         asyncio.run(llm.achat(chat_text_msgs))
-
+        ```
     Response metadata and usage
-        .. code-block:: python
-
+        ```python
         messages = [
             ChatMessage(role=MessageRole.SYSTEM, content=("You're a helpful assistant")),
             ChatMessage(role=MessageRole.USER, content="Tell me about Naruto Uzumaki in one sentence")
         ]
         metadata_and_usage = llm.chat(messages).message.additional_kwargs
         print(metadata_and_usage)
+        ```
     """
 
-    sambastudio_url: str = Field(default_factory=str, description="SambaStudio Url")
-
-    sambastudio_api_key: SecretStr = Field(
-        default_factory=str, description="SambaStudio api key"
+    model_config = ConfigDict(
+        protected_namespaces=("pydantic_model_",), arbitrary_types_allowed=True
     )
 
+    sambastudio_url: str = Field(description="SambaStudio Url")
+
+    sambastudio_api_key: SecretStr = Field(description="SambaStudio api key")
+
     base_url: str = Field(
-        default_factory=str, exclude=True, description="SambaStudio non streaming Url"
+        default="", exclude=True, description="SambaStudio non streaming Url"
     )
 
     streaming_url: str = Field(
-        default_factory=str, exclude=True, description="SambaStudio streaming Url"
+        default="", exclude=True, description="SambaStudio streaming Url"
     )
 
     model: Optional[str] = Field(
-        default_factory=Optional[str],
+        default=None,
         description="The name of the model or expert to use (for CoE endpoints)",
     )
 
@@ -824,7 +814,7 @@ class SambaStudio(LLM):
     )
 
     stream_options: dict = Field(
-        default={"include_usage": True},
+        default_factory=lambda: {"include_usage": True},
         description="stream options, include usage to get generation metrics",
     )
 
@@ -858,12 +848,14 @@ class SambaStudio(LLM):
     def __init__(self, **kwargs: Any) -> None:
         """Init and validate environment variables."""
         kwargs["sambastudio_url"] = get_from_param_or_env(
-            "url", kwargs.get("sambastudio_url"), "SAMBASTUDIO_URL"
+            "sambastudio_url", kwargs.get("sambastudio_url"), "SAMBASTUDIO_URL"
         )
         kwargs["sambastudio_api_key"] = get_from_param_or_env(
-            "api_key", kwargs.get("sambastudio_api_key"), "SAMBASTUDIO_API_KEY"
+            "sambastudio_api_key",
+            kwargs.get("sambastudio_api_key"),
+            "SAMBASTUDIO_API_KEY",
         )
-        kwargs["base_url"], kwargs["streaming_url"] = self._get_sambastudio_urls(
+        kwargs["sambastudio_url"], kwargs["streaming_url"] = self._get_sambastudio_urls(
             kwargs["sambastudio_url"]
         )
         super().__init__(**kwargs)
@@ -875,7 +867,6 @@ class SambaStudio(LLM):
 
         Args:
             messages: sequence of ChatMessages
-
         Returns:
             str: string to send as model input depending on process_prompt param
         """
@@ -909,12 +900,11 @@ class SambaStudio(LLM):
 
         Args:
             url: string with sambastudio base or streaming endpoint url
-
         Returns:
             base_url: string with url to do non streaming calls
             streaming_url: string with url to do streaming calls
         """
-        if "openai" in url:
+        if "chat/completions" in url:
             base_url = url
             stream_url = url
         else:
@@ -941,12 +931,11 @@ class SambaStudio(LLM):
         messages_dicts: List of role / content dicts to use as input.
         stop: list of stop tokens
         streaming: whether to do a streaming call
-
         Returns:
             A request Response object
         """
         # create request payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             messages_dicts = _create_message_dicts(messages)
             data = {
                 "messages": messages_dicts,
@@ -1049,12 +1038,11 @@ class SambaStudio(LLM):
         messages_dicts: List of role / content dicts to use as input.
         stop: list of stop tokens
         streaming: whether to do a streaming call
-
         Returns:
             A request Response object
         """
         # create request payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             messages_dicts = _create_message_dicts(messages)
             data = {
                 "messages": messages_dicts,
@@ -1158,7 +1146,6 @@ class SambaStudio(LLM):
 
         Args:
             response: A request Response object
-
         Returns:
             generation: a ChatMessage with model generation
         """
@@ -1172,7 +1159,7 @@ class SambaStudio(LLM):
             )
 
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             content = response_dict["choices"][0]["message"]["content"]
             response_metadata = {
                 "finish_reason": response_dict["choices"][0]["finish_reason"],
@@ -1209,7 +1196,6 @@ class SambaStudio(LLM):
 
         Args:
             response: An iterable request Response object
-
         Yields:
             generation: an Iterator[ChatMessage] with model partial generation
         """
@@ -1222,7 +1208,7 @@ class SambaStudio(LLM):
             )
 
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             finish_reason = ""
             content = ""
             client = sseclient.SSEClient(response)
@@ -1416,12 +1402,11 @@ class SambaStudio(LLM):
 
         Args:
             response: A request Response object
-
         Returns:
             generation: a ChatMessage with model generation
         """
         # process response payload for openai compatible API
-        if "openai" in self.sambastudio_url:
+        if "chat/completions" in self.sambastudio_url:
             content = response_dict["choices"][0]["message"]["content"]
             response_metadata = {
                 "finish_reason": response_dict["choices"][0]["finish_reason"],

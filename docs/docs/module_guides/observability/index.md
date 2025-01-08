@@ -222,6 +222,41 @@ You will see the following traces in Opik:
 - [Llama-index + Opik documentation page](https://www.comet.com/docs/opik/tracing/integrations/llama_index?utm_source=llamaindex&utm_medium=docs&utm_campaign=opik)
 - [Llama-index integration cookbook](https://www.comet.com/docs/opik/cookbook/llama-index?utm_source=llama-index&utm_medium=docs&utm_campaign=opik)
 
+### Argilla
+
+[Argilla](https://github.com/argilla-io/argilla) is a collaboration tool for AI engineers and domain experts who need to build high-quality datasets for their projects.
+
+To get started, you need to deploy the Argilla server. If you have not done so, you can easily deploy it following this [guide](https://docs.argilla.io/latest/getting_started/quickstart/).
+
+#### Usage Pattern
+
+- Install the Argilla LlamaIndex integration package with `pip install argilla-llama-index`
+- Initialize the ArgillaHandler. The `<api_key>` is in the `My Settings` page of your Argilla Space but make sure you are logged in with the `owner` account you used to create the Space. The `<api_url>` is the URL shown in your browser.
+- Add the ArgillaHandler to the dispatcher.
+
+```python
+from llama_index.core.instrumentation import get_dispatcher
+from argilla_llama_index import ArgillaHandler
+
+argilla_handler = ArgillaHandler(
+    dataset_name="query_llama_index",
+    api_url="http://localhost:6900",
+    api_key="argilla.apikey",
+    number_of_retrievals=2,
+)
+root_dispatcher = get_dispatcher()
+root_dispatcher.add_span_handler(argilla_handler)
+root_dispatcher.add_event_handler(argilla_handler)
+```
+
+#### Example Guides
+
+- [Getting started with Argilla's LlamaIndex Integration](https://github.com/argilla-io/argilla-llama-index/blob/main/docs/tutorials/getting_started.ipynb)
+- [Other example tutorials](https://github.com/argilla-io/argilla-llama-index/tree/main/docs/tutorials)
+
+![Argilla integration with LlamaIndex](../../_static/integrations/argilla.png)
+
+
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.

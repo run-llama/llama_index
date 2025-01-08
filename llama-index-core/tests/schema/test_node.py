@@ -12,10 +12,10 @@ def test_get_content():
 
 def test_hash():
     node = Node()
-    node.audio = MediaResource(data=b"test audio", mimetype="audio/aac")
-    node.image = MediaResource(data=b"test image", mimetype="image/png")
-    node.text = MediaResource(text="some text", mimetype="text/plain")
-    node.video = MediaResource(data=b"some video", mimetype="video/mpeg")
+    node.audio_resource = MediaResource(data=b"test audio", mimetype="audio/aac")
+    node.image_resource = MediaResource(data=b"test image", mimetype="image/png")
+    node.text_resource = MediaResource(text="some text", mimetype="text/plain")
+    node.video_resource = MediaResource(data=b"some video", mimetype="video/mpeg")
     assert (
-        node.hash == "ee411edd3dffb27470eef165ccf4df9fabaa02e7c7c39415950d3ac4d7e35e61"
+        node.hash == "6f08712269634de7e53e62a3aaee59d60e9a32a43bc05284a21244f960f0cda4"
     )

@@ -29,11 +29,11 @@ license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-readers-huggingface-fs"
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-huggingface-hub = "^0.20.3"
+huggingface-hub = ">=0.20.3"
 pandas = "*"
 llama-index-core = "^0.12.0"
 

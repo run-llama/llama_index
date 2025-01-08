@@ -319,6 +319,7 @@ class VectaraRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         chat: bool = False,
         conv_id: Optional[str] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> TokenGen:
         """
@@ -330,6 +331,8 @@ class VectaraRetriever(BaseRetriever):
             conv_id: conversation ID, if chat enabled
         """
         body = self._build_vectara_query_body(query_bundle.query_str)
+        if verbose:
+            print(f"Vectara streaming query request body: {body}")
         response = self._index._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/stream-query",
@@ -424,6 +427,7 @@ class VectaraRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         chat: bool = False,
         conv_id: Optional[str] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> Tuple[List[NodeWithScore], Dict, str]:
         """
@@ -431,6 +435,9 @@ class VectaraRetriever(BaseRetriever):
 
         Args:
             query: Query Bundle
+            chat: whether to enable chat in Vectara
+            conv_id: conversation ID, if chat enabled
+            verbose: whether to print verbose output (e.g. for debugging)
             Additional keyword arguments
 
         Returns:
@@ -440,6 +447,8 @@ class VectaraRetriever(BaseRetriever):
         """
         data = self._build_vectara_query_body(query_bundle.query_str, chat, conv_id)
 
+        if verbose:
+            print(f"Vectara query request body: {data}")
         response = self._index._session.post(
             headers=self._get_post_headers(),
             url="https://api.vectara.io/v1/query",
@@ -456,6 +465,8 @@ class VectaraRetriever(BaseRetriever):
             return [], {"text": ""}, ""
 
         result = response.json()
+        if verbose:
+            print(f"Vectara query response: {result}")
         status = result["responseSet"][0]["status"]
         if len(status) > 0 and status[0]["code"] != "OK":
             _logger.error(
@@ -509,15 +520,29 @@ class VectaraRetriever(BaseRetriever):
         return top_nodes[: self._similarity_top_k], summary, conv_id
 
     async def _avectara_query(
-        self, query_bundle: QueryBundle
+        self,
+        query_bundle: QueryBundle,
+        chat: bool = False,
+        conv_id: Optional[str] = None,
+        verbose: bool = False,
+        **kwargs: Any,
     ) -> Tuple[List[NodeWithScore], Dict]:
         """
-        Asynchronously retrieve nodes given query.
+        Asynchronously query Vectara index to get for top k most similar nodes.
 
-        Implemented by the user.
+        Args:
+            query: Query Bundle
+            chat: whether to enable chat in Vectara
+            conv_id: conversation ID, if chat enabled
+            verbose: whether to print verbose output (e.g. for debugging)
+            Additional keyword arguments
 
+        Returns:
+            List[NodeWithScore]: list of nodes with scores
+            Dict: summary
+            str: conversation ID, if applicable
         """
-        return await self._vectara_query(query_bundle)
+        return await self._vectara_query(query_bundle, chat, conv_id, verbose, **kwargs)
 
 
 class VectaraAutoRetriever(VectorIndexAutoRetriever):

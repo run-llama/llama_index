@@ -1,9 +1,9 @@
 import logging
-from typing import Any, Dict, Optional, Sequence
+from pathlib import Path
+from typing import Optional, Sequence
 
-from llama_index.core.multi_modal_llms.base import ChatMessage
-from llama_index.core.multi_modal_llms.generic_utils import encode_image
-from llama_index.core.schema import ImageDocument
+from llama_index.core.base.llms.types import ImageBlock
+from llama_index.core.multi_modal_llms.base import ChatMessage, ImageNode
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
@@ -16,8 +16,11 @@ GPT4V_MODELS = {
     "gpt-4o": 128000,
     "gpt-4o-2024-05-13": 128000,
     "gpt-4o-2024-08-06": 128000,
+    "gpt-4o-2024-11-20": 128000,
     "gpt-4o-mini": 128000,
     "gpt-4o-mini-2024-07-18": 128000,
+    "o1": 200000,
+    "o1-2024-12-17": 200000,
 }
 
 
@@ -34,55 +37,44 @@ logger = logging.getLogger(__name__)
 def generate_openai_multi_modal_chat_message(
     prompt: str,
     role: str,
-    image_documents: Optional[Sequence[ImageDocument]] = None,
+    image_documents: Optional[Sequence[ImageNode]] = None,
     image_detail: Optional[str] = "low",
 ) -> ChatMessage:
-    # if image_documents is empty, return text only chat message
+    """Create a ChatMessage to be used in a multimodal query."""
+    chat_msg = ChatMessage(role=role, content=prompt)
     if image_documents is None:
-        return ChatMessage(role=role, content=prompt)
+        # if image_documents is empty, return text only chat message
+        return chat_msg
 
-    # if image_documents is not empty, return text with images chat message
-    completion_content = [{"type": "text", "text": prompt}]
     for image_document in image_documents:
-        image_content: Dict[str, Any] = {}
-        mimetype = image_document.image_mimetype or "image/jpeg"
-        if image_document.image and image_document.image != "":
-            image_content = {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:{mimetype};base64,{image_document.image}",
-                    "detail": image_detail,
-                },
-            }
-        elif image_document.image_url and image_document.image_url != "":
-            image_content = {
-                "type": "image_url",
-                "image_url": {
-                    "url": image_document.image_url,
-                    "detail": image_detail,
-                },
-            }
-        elif image_document.image_path and image_document.image_path != "":
-            base64_image = encode_image(image_document.image_path)
-            image_content = {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:{mimetype};base64,{base64_image}",
-                    "detail": image_detail,
-                },
-            }
-        elif (
-            "file_path" in image_document.metadata
-            and image_document.metadata["file_path"] != ""
-        ):
-            base64_image = encode_image(image_document.metadata["file_path"])
-            image_content = {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/jpeg;base64,{base64_image}",
-                    "detail": image_detail,
-                },
-            }
+        # Create the appropriate ContentBlock depending on the document content
+        if image_document.image:
+            chat_msg.blocks.append(
+                ImageBlock(
+                    image=bytes(image_document.image, encoding="utf-8"),
+                    detail=image_detail,
+                )
+            )
+        elif image_document.image_url:
+            chat_msg.blocks.append(
+                ImageBlock(url=image_document.image_url, detail=image_detail)
+            )
+        elif image_document.image_path:
+            chat_msg.blocks.append(
+                ImageBlock(
+                    path=Path(image_document.image_path),
+                    detail=image_detail,
+                    image_mimetype=image_document.image_mimetype
+                    or image_document.metadata.get("file_type"),
+                )
+            )
+        elif f_path := image_document.metadata.get("file_path"):
+            chat_msg.blocks.append(
+                ImageBlock(
+                    path=Path(f_path),
+                    detail=image_detail,
+                    image_mimetype=image_document.metadata.get("file_type"),
+                )
+            )
 
-        completion_content.append(image_content)
-    return ChatMessage(role=role, content=completion_content)
+    return chat_msg

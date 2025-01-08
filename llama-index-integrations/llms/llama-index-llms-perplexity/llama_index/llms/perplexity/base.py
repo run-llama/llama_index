@@ -18,10 +18,12 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.llms.openai.utils import to_openai_message_dicts
 
 
 class Perplexity(LLM):
-    """Perplexity LLM.
+    """
+    Perplexity LLM.
 
     Examples:
         `pip install llama-index-llms-perplexity`
@@ -181,11 +183,10 @@ class Perplexity(LLM):
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         url = f"{self.api_base}/chat/completions"
+        message_dicts = to_openai_message_dicts(messages)
         payload = {
             "model": self.model,
-            "messages": [
-                message.dict(exclude={"additional_kwargs"}) for message in messages
-            ],
+            "messages": message_dicts,
             **self._get_all_kwargs(**kwargs),
         }
         response = requests.post(url, json=payload, headers=self.headers)
@@ -228,11 +229,10 @@ class Perplexity(LLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         url = f"{self.api_base}/chat/completions"
+        message_dicts = to_openai_message_dicts(messages)
         payload = {
             "model": self.model,
-            "messages": [
-                message.dict(exclude={"additional_kwargs"}) for message in messages
-            ],
+            "messages": message_dicts,
             **self._get_all_kwargs(**kwargs),
         }
         async with httpx.AsyncClient() as client:
@@ -332,11 +332,10 @@ class Perplexity(LLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         url = f"{self.api_base}/chat/completions"
+        message_dicts = to_openai_message_dicts(messages)
         payload = {
             "model": self.model,
-            "messages": [
-                message.dict(exclude={"additional_kwargs"}) for message in messages
-            ],
+            "messages": message_dicts,
             "stream": True,
             **self._get_all_kwargs(**kwargs),
         }
@@ -374,11 +373,10 @@ class Perplexity(LLM):
         import aiohttp
 
         url = f"{self.api_base}/chat/completions"
+        message_dicts = to_openai_message_dicts(messages)
         payload = {
             "model": self.model,
-            "messages": [
-                message.dict(exclude={"additional_kwargs"}) for message in messages
-            ],
+            "messages": message_dicts,
             "stream": True,
             **self._get_all_kwargs(**kwargs),
         }

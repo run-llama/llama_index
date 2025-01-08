@@ -299,6 +299,9 @@ def completion_with_retry(
     request_body: str,
     max_retries: int,
     stream: bool = False,
+    guardrail_identifier: Optional[str] = None,
+    guardrail_version: Optional[str] = None,
+    trace: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -307,9 +310,29 @@ def completion_with_retry(
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
         if stream:
-            return client.invoke_model_with_response_stream(
-                modelId=model, body=request_body
-            )
-        return client.invoke_model(modelId=model, body=request_body)
+            if guardrail_identifier is None or guardrail_version is None:
+                return client.invoke_model_with_response_stream(
+                    modelId=model,
+                    body=request_body,
+                )
+            else:
+                return client.invoke_model_with_response_stream(
+                    modelId=model,
+                    body=request_body,
+                    guardrailIdentifier=guardrail_identifier,
+                    guardrailVersion=guardrail_version,
+                    trace=trace,
+                )
+        else:
+            if guardrail_identifier is None or guardrail_version is None:
+                return client.invoke_model(modelId=model, body=request_body)
+            else:
+                return client.invoke_model(
+                    modelId=model,
+                    body=request_body,
+                    guardrailIdentifier=guardrail_identifier,
+                    guardrailVersion=guardrail_version,
+                    trace=trace,
+                )
 
     return _completion_with_retry(**kwargs)

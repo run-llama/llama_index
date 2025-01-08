@@ -375,13 +375,13 @@ class NDCG(BaseRetrievalMetric):
             discounted_gain(rel=docid in expected_set, i=i, mode=mode)
             for i, docid in enumerate(retrieved_ids, start=1)
         )
+
         idcg = sum(
             discounted_gain(rel=True, i=i, mode=mode)
-            for i in range(1, len(retrieved_ids) + 1)
+            for i in range(1, len(expected_ids) + 1)
         )
 
         ndcg_score = dcg / idcg
-
         return RetrievalMetricResult(score=ndcg_score)
 
 
