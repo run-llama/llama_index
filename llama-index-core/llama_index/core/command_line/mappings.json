@@ -917,7 +917,6 @@
   "ArxivReader": "llama_index.readers.papers",
   "PubmedReader": "llama_index.readers.papers",
   "ObsidianReader": "llama_index.readers.obsidian",
-  "UpstageLayoutAnalysisReader": "llama_index.readers.upstage",
   "ZepReader": "llama_index.readers.zep",
   "MemosReader": "llama_index.readers.memos",
   "PsychicReader": "llama_index.readers.psychic",
