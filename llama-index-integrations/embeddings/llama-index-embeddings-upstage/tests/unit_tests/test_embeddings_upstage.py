@@ -27,12 +27,12 @@ def test_upstage_embedding_fail_wrong_model(upstage_embedding):
         upstage_embedding(model="foo")
 
 
-def test_upstage_embedding_model_name():
-    embedding = UpstageEmbedding(model="embedding")
-    assert embedding.query_engine == "embedding-query"
+def test_upstage_embedding_model_name(upstage_embedding):
+    embedding = upstage_embedding(model="embedding")
+    assert embedding._query_engine == "embedding-query"
 
     embedding = UpstageEmbedding(model="solar-embedding-1-large")
-    assert embedding.query_engine == "solar-embedding-1-large-query"
+    assert embedding._query_engine == "solar-embedding-1-large-query"
 
 
 def test_upstage_embedding_api_key_alias(upstage_embedding):
