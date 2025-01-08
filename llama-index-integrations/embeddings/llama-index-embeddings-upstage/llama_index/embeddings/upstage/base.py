@@ -15,9 +15,13 @@ from llama_index.embeddings.upstage.utils import (
 logger = logging.getLogger(__name__)
 
 UPSTAGE_EMBEDDING_MODELS = {
-    "solar-1-mini-embedding": {
-        "query": "solar-1-mini-embedding-query",
-        "passage": "solar-1-mini-embedding-passage",
+    "embedding-query": {
+        "query": "embedding-query",
+        "passage": "embedding-passage",
+    },
+    "embedding-passage": {
+        "query": "embedding-query",
+        "passage": "embedding-passage",
     },
     "solar-embedding-1-large": {
         "query": "solar-embedding-1-large-query",
