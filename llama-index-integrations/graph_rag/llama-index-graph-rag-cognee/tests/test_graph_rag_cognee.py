@@ -47,6 +47,15 @@ async def test_graph_rag_cognee():
     for result in search_results:
         print(f"{result}\n")
 
+    # Answer prompt based on RAG
+    search_results = await cogneeRAG.rag_search("Tell me who are the people mentioned?")
+
+    assert len(search_results) > 0, "No search results found"
+
+    print("\n\nAnswer based on RAG:\n")
+    for result in search_results:
+        print(f"{result}\n")
+
     # Search for related nodes
     search_results = await cogneeRAG.get_related_nodes("person")
     print("\n\nRelated nodes are:\n")
