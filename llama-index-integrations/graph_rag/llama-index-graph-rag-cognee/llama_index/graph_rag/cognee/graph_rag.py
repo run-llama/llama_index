@@ -84,7 +84,7 @@ class CogneeGraphRAG(GraphRAG):
             }
         )
 
-        self.set_graph_db_config(
+        cognee.config.set_graph_db_config(
             {
                 "graph_database_provider": graph_db_provider,
                 "graph_database_url": graph_database_url,
@@ -137,22 +137,6 @@ class CogneeGraphRAG(GraphRAG):
         )
         await cognee.cognify(datasets, user)
 
-    # TODO: Replace with cognee setter for graph db
-    def set_graph_db_config(self, config_dict: dict) -> None:
-        """
-        Updates the graph db config with values from config_dict.
-        """
-        from cognee.infrastructure.databases.graph.config import get_graph_config
-
-        graph_db_config = get_graph_config()
-        for key, value in config_dict.items():
-            if hasattr(graph_db_config, key):
-                object.__setattr__(graph_db_config, key, value)
-            else:
-                raise AttributeError(
-                    message=f"'{key}' is not a valid attribute of the config."
-                )
-
     async def get_graph_url(self, graphistry_password, graphistry_username) -> str:
         """Retrieve the URL or endpoint for visualizing or interacting with the graph.
 
@@ -178,6 +162,17 @@ class CogneeGraphRAG(GraphRAG):
         print(graph_url)
         return graph_url
 
+    async def rag_search(self, query: str) -> list:
+        """Answer query based on data chunk most relevant to query.
+
+        Args:
+            query (str): The query string.
+        """
+        user = await cognee.modules.users.methods.get_default_user()
+        return await cognee.search(
+            cognee.api.v1.search.SearchType.COMPLETION, query, user
+        )
+
     async def search(self, query: str) -> list:
         """Search the graph for relevant information based on a query.
 
@@ -186,7 +181,7 @@ class CogneeGraphRAG(GraphRAG):
         """
         user = await cognee.modules.users.methods.get_default_user()
         return await cognee.search(
-            cognee.api.v1.search.SearchType.SUMMARIES, query, user
+            cognee.api.v1.search.SearchType.GRAPH_COMPLETION, query, user
         )
 
     async def get_related_nodes(self, node_id: str) -> list:
