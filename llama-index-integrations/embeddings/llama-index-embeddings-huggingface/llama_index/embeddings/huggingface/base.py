@@ -195,7 +195,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
     )
     def _embed_with_retry(
         self,
-        inputs: List[str | BytesIO],
+        inputs: List[Union[str, BytesIO]],
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
         """
@@ -238,7 +238,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
     def _embed(
         self,
-        inputs: List[str | BytesIO],
+        inputs: List[Union[str, BytesIO]],
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
         """
