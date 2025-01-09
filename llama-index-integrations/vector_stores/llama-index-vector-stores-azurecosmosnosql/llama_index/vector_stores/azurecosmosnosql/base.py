@@ -5,7 +5,6 @@ An index that is built on top of an existing vector store.
 """
 import logging
 from typing import Any, Optional, Dict, cast, List
-from datetime import date
 
 from azure.identity import ClientSecretCredential
 from azure.cosmos import CosmosClient
@@ -289,7 +288,6 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                 self._embedding_key: node.get_embedding(),
                 self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
-                "timeStamp": date.today(),
             }
             data_to_insert.append(entry)
             ids.append(node.node_id)
@@ -327,25 +325,23 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
 
         # If limit_offset_clause is not specified, add TOP clause
         if pre_filter is None or pre_filter.get("limit_offset_clause") is None:
-            query += "TOP @limit "
+            query += f"TOP {params.get('k', 2)} "
 
         query += (
-            "c.id, c.{}, c.text, c.metadata, "
-            "VectorDistance(c.@embeddingKey, @embeddings) AS SimilarityScore FROM c"
+            "c.id, c.text, c.metadata, "
+            f"VectorDistance(c.{self._embedding_key}, @embeddings) AS SimilarityScore FROM c"
         )
 
         # Add where_clause if specified
         if pre_filter is not None and pre_filter.get("where_clause") is not None:
             query += " {}".format(pre_filter["where_clause"])
 
-        query += " ORDER BY VectorDistance(c.@embeddingKey, @embeddings)"
+        query += f" ORDER BY VectorDistance(c.{self._embedding_key}, @embeddings)"
 
         # Add limit_offset_clause if specified
         if pre_filter is not None and pre_filter.get("limit_offset_clause") is not None:
             query += " {}".format(pre_filter["limit_offset_clause"])
         parameters = [
-            {"name": "@limit", "value": params["k"]},
-            {"name": "@embeddingKey", "value": self._embedding_key},
             {"name": "@embeddings", "value": params["vector"]},
         ]
 

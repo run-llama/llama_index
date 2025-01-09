@@ -41,12 +41,13 @@ as the storage backend for `VectorStoreIndex`.
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/).
 - Relyt (`RelytVectorStore`). [Quickstart](https://docs.relyt.cn/docs/vector-engine/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
-- Tablestore (`Tablestore`). [Installation](https://www.aliyun.com/product/ots).
+- Tablestore (`Tablestore`). [Tablestore Overview](https://www.aliyun.com/product/ots). [Quickstart](../../examples/vector_stores/TablestoreDemo.ipynb). [Python Client](https://github.com/aliyun/aliyun-tablestore-python-sdk).
 - TiDB (`TiDBVectorStore`). [Quickstart](../../examples/vector_stores/TiDBVector.ipynb). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
 - Vertex AI Vector Search (`VertexAIVectorStore`). [Quickstart](https://cloud.google.com/vertex-ai/docs/vector-search/quickstart)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
+- WordLift (`WordliftVectorStore`). [Python Client](https://pypi.org/project/wordlift-client/).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
 
@@ -667,27 +668,35 @@ vector_store = SingleStoreVectorStore(
 **Tablestore**
 
 ```python
-import os
 import tablestore
 from llama_index.vector_stores.tablestore import TablestoreVectorStore
 
-vector_store = TablestoreVectorStore(
-    endpoint=os.getenv("end_point"),
-    instance_name=os.getenv("instance_name"),
-    access_key_id=os.getenv("access_key_id"),
-    access_key_secret=os.getenv("access_key_secret"),
+# create a vector store that does not support filtering non-vector fields
+simple_vector_store = TablestoreVectorStore(
+    endpoint="<end_point>",
+    instance_name="<instance_name>",
+    access_key_id="<access_key_id>",
+    access_key_secret="<access_key_secret>",
     vector_dimension=512,
-    vector_metric_type=tablestore.VectorMetricType.VM_COSINE,
-    # metadata mapping is used to filter non-vector fields.
+)
+
+# create a vector store that support filtering non-vector fields
+vector_store_with_meta_data = TablestoreVectorStore(
+    endpoint="<end_point>",
+    instance_name="<instance_name>",
+    access_key_id="<access_key_id>",
+    access_key_secret="<access_key_secret>",
+    vector_dimension=512,
+    # optional: custom metadata mapping is used to filter non-vector fields.
     metadata_mappings=[
         tablestore.FieldSchema(
-            "type",
+            "type",  # non-vector fields
             tablestore.FieldType.KEYWORD,
             index=True,
             enable_sort_and_agg=True,
         ),
         tablestore.FieldSchema(
-            "time",
+            "time",  # non-vector fields
             tablestore.FieldType.LONG,
             index=True,
             enable_sort_and_agg=True,
@@ -959,4 +968,5 @@ documents = reader.load_data(
 - [Upstash](../../examples/vector_stores/UpstashVectorDemo.ipynb)
 - [Weaviate](../../examples/vector_stores/WeaviateIndexDemo.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
+- [WordLift](../../examples/vector_stores/WordLiftDemo.ipynb)
 - [Zep](../../examples/vector_stores/ZepIndexDemo.ipynb)

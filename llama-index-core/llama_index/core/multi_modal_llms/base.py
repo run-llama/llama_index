@@ -30,7 +30,7 @@ from llama_index.core.constants import (
 )
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
-from llama_index.core.schema import BaseComponent, ImageNode
+from llama_index.core.schema import BaseComponent, ImageDocument, ImageNode
 
 
 class MultiModalLLMMetadata(BaseModel):
@@ -217,7 +217,7 @@ class MultiModalCompleteComponent(BaseMultiModalComponent):
             if not isinstance(input["image_documents"], list):
                 raise ValueError("image_documents must be a list.")
             for doc in input["image_documents"]:
-                if not isinstance(doc, ImageNode):
+                if not isinstance(doc, (ImageDocument, ImageNode)):
                     raise ValueError(
                         "image_documents must be a list of ImageNode objects."
                     )

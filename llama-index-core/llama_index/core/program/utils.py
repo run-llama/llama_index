@@ -42,7 +42,7 @@ def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:
     list_items = (
         List[base_cls],  # type: ignore
         Field(
-            default_factory=list,
+            default_factory=list,  # type: ignore
             repr=False,
             description=f"List of {base_cls.__name__} items",
         ),

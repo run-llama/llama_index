@@ -27,12 +27,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-embeddings-openvino"
 readme = "README.md"
-version = "0.5.0"
+version = "0.5.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 llama-index-embeddings-huggingface = "^0.4.0"
-huggingface-hub = "^0.23.0"
+huggingface-hub = ">=0.23.0"
 llama-index-core = "^0.12.0"
 
 [tool.poetry.dependencies.optimum]

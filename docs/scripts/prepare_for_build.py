@@ -72,6 +72,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "embeddings": "Embeddings",
     "evaluation": "Evaluation",
     "extractors": "Metadata Extractors",
+    "graph_rag": "Graph RAG",
     "indices": "Indexes",
     "ingestion": "Ingestion",
     "instrumentation": "Instrumentation",
