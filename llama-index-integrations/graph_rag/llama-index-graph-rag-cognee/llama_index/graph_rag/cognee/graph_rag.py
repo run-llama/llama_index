@@ -21,13 +21,16 @@ class CogneeGraphRAG(GraphRAG):
     llm_provider: str: Provider for desired LLM (default: "openai").
     llm_model: str: Model for desired LLM (default: "gpt-4o-mini").
     graph_db_provider: str: The graph database provider (default: "networkx").
+                            Supported providers: "neo4j", "networkx".
     graph_database_url: str: URL for the graph database.
     graph_database_username: str: Username for accessing the graph database.
     graph_database_password: str: Password for accessing the graph database.
     vector_db_provider: str: The vector database provider (default: "lancedb").
+                             Supported providers: "lancedb", "pgvector", "qdrant", "weviate".
     vector_db_url: str: URL for the vector database.
     vector_db_key: str: API key for accessing the vector database.
     relational_db_provider: str: The relational database provider (default: "sqlite").
+                            Supported providers: "sqlite", "postgres".
     db_name: str: The name of the databases (default: "cognee_db").
     db_host: str: Host for the relational database.
     db_port: str: Port for the relational database.
@@ -134,6 +137,7 @@ class CogneeGraphRAG(GraphRAG):
         )
         await cognee.cognify(datasets, user)
 
+    # TODO: Replace with cognee setter for graph db
     def set_graph_db_config(self, config_dict: dict) -> None:
         """
         Updates the graph db config with values from config_dict.

@@ -65,3 +65,11 @@ async def example_graph_rag_cognee():
 if __name__ == "__main__":
     asyncio.run(example_graph_rag_cognee())
 ```
+
+## Supported databases
+
+**Relational databases:** SQLite, PostgreSQL
+
+**Vector databases:** LanceDB, PGVector, QDrant, Weviate
+
+**Graph databases:** Neo4j, NetworkX
