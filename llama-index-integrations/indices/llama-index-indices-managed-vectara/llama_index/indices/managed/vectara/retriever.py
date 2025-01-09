@@ -342,7 +342,10 @@ class VectaraRetriever(BaseRetriever):
             if self._citations_style:
                 if self._citations_style in ["numeric", "none"]:
                     citations_config["style"] = self._citations_style
-                elif self._citations_url_pattern in ["html", "markdown"]:
+                elif (
+                    self._citations_style in ["html", "markdown"]
+                    and self._citations_url_pattern
+                ):
                     citations_config["style"] = self._citations_style
                     citations_config["url_pattern"] = self._citations_url_pattern
                     citations_config["text_pattern"] = self._citations_text_pattern

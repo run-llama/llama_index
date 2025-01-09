@@ -30,18 +30,22 @@ def test_class():
 def get_docs() -> List[Document]:
     inputs = [
         {
+            "id": "doc_1",
             "text": "This is test text for Vectara integration with LlamaIndex",
             "metadata": {"test_num": "1", "test_score": 10, "date": "2020-02-25"},
         },
         {
+            "id": "doc_2",
             "text": "And now for something completely different",
             "metadata": {"test_num": "2", "test_score": 2, "date": "2015-10-13"},
         },
         {
+            "id": "doc_3",
             "text": "when 900 years you will be, look as good you will not",
             "metadata": {"test_num": "3", "test_score": 20, "date": "2023-09-12"},
         },
         {
+            "id": "doc_4",
             "text": "when 850 years you will be, look as good you will not",
             "metadata": {"test_num": "4", "test_score": 50, "date": "2022-01-01"},
         },
@@ -49,7 +53,8 @@ def get_docs() -> List[Document]:
     docs: List[Document] = []
     for inp in inputs:
         doc = Document(
-            text_resource=MediaResource(text=str(inp["text"])),
+            id_=inp["id"],
+            text_resource=MediaResource(text=inp["text"]),
             metadata=inp["metadata"],
         )
         docs.append(doc)
@@ -324,7 +329,6 @@ def test_agent_basic(vectara2) -> None:
         .function.name
     )
     assert tool_called == "rag_query"
-    print(f"DEBUG: RECEIVED GENERATED RESPONSE {res}")
     assert "paint" in res.lower() and "paul" in res.lower()
 
 
