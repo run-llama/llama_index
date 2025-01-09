@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Protocol
 
 from deprecated import deprecated
 from huggingface_hub import (
@@ -27,14 +27,22 @@ from llama_index.embeddings.huggingface.utils import (
 )
 from sentence_transformers import SentenceTransformer
 from tenacity import retry, stop_after_attempt, wait_exponential
+from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
+from llama_index.core.schema import ImageType
 
 DEFAULT_HUGGINGFACE_LENGTH = 512
 logger = logging.getLogger(__name__)
 
 
-class HuggingFaceEmbedding(BaseEmbedding):
+class ImageProcessorFn(Protocol):
+    def __call__(self, image: ImageType) -> ImageType:
+        """Process an image into a format suitable for the model."""
+        ...
+
+
+class HuggingFaceEmbedding(MultiModalEmbedding):
     """
-    HuggingFace class for text embeddings.
+    HuggingFace class for text and image embeddings.
 
     Args:
         model_name (str, optional): If it is a filepath on disc, it loads the model from that path.
@@ -108,7 +116,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         description="Cache folder for Hugging Face files.", default=None
     )
 
-    _model: Any = PrivateAttr()
+    _model: SentenceTransformer = PrivateAttr()
     _device: str = PrivateAttr()
     _parallel_process: bool = PrivateAttr()
     _target_devices: Optional[List[str]] = PrivateAttr()
@@ -185,19 +193,6 @@ class HuggingFaceEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "HuggingFaceEmbedding"
 
-    def _validate_input(self, text: str) -> None:
-        """
-        Validate input text.
-
-        Args:
-            text: Input text to validate
-
-        Raises:
-            ValueError: If text is empty
-        """
-        if not text.strip():
-            raise ValueError("Input text cannot be empty or whitespace")
-
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=4, max=10),
@@ -205,14 +200,14 @@ class HuggingFaceEmbedding(BaseEmbedding):
     )
     def _embed_with_retry(
         self,
-        sentences: List[str],
+        inputs: List[str | ImageType],
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
         """
         Generates embeddings with retry mechanism.
 
         Args:
-            sentences: List of texts to embed
+            inputs: List of texts or images to embed
             prompt_name: Optional prompt type
 
         Returns:
@@ -227,7 +222,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
                     target_devices=self._target_devices
                 )
                 emb = self._model.encode_multi_process(
-                    sentences=sentences,
+                    inputs,
                     pool=pool,
                     batch_size=self.embed_batch_size,
                     prompt_name=prompt_name,
@@ -236,7 +231,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
                 self._model.stop_multi_process_pool(pool=pool)
             else:
                 emb = self._model.encode(
-                    sentences,
+                    inputs,
                     batch_size=self.embed_batch_size,
                     prompt_name=prompt_name,
                     normalize_embeddings=self.normalize,
@@ -248,7 +243,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
 
     def _embed(
         self,
-        sentences: List[str],
+        inputs: List[str | ImageType],
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
         """
@@ -265,11 +260,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
             ValueError: If any input text is invalid
             Exception: If embedding fails after retries
         """
-        # Validate all inputs
-        for text in sentences:
-            self._validate_input(text)
-
-        return self._embed_with_retry(sentences, prompt_name)
+        return self._embed_with_retry(inputs, prompt_name)
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """
@@ -330,6 +321,38 @@ class HuggingFaceEmbedding(BaseEmbedding):
             List[List[float]]: numpy array of embeddings
         """
         return self._embed(texts, prompt_name="text")
+
+    def _get_image_embedding(self, img_file_path: ImageType) -> List[float]:
+        """Generate embedding for an image."""
+        if self.image_processor is None:
+            raise ValueError(
+                "Image processor function must be provided to embed images"
+            )
+
+        processed_image = self.image_processor(img_file_path)
+        return self._embed([processed_image])[0]
+
+    async def _aget_image_embedding(self, img_file_path: ImageType) -> List[float]:
+        """Generate embedding for an image asynchronously."""
+        return self._get_image_embedding(img_file_path)
+
+    def _get_image_embeddings(
+        self, img_file_paths: List[ImageType]
+    ) -> List[List[float]]:
+        """Generate embeddings for multiple images."""
+        if self.image_processor is None:
+            raise ValueError(
+                "Image processor function must be provided to embed images"
+            )
+
+        processed_images = [self.image_processor(img) for img in img_file_paths]
+        return self._embed(processed_images)
+
+    async def _aget_image_embeddings(
+        self, img_file_paths: List[ImageType]
+    ) -> List[List[float]]:
+        """Generate embeddings for multiple images asynchronously."""
+        return self._get_image_embeddings(img_file_paths)
 
 
 @deprecated(
