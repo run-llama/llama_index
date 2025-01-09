@@ -96,6 +96,23 @@ def test_image_node_hash() -> None:
     assert node3.hash == node4.hash
 
 
+def test_image_node_mimetype() -> None:
+    node = ImageNode(image_path="path")
+    node2 = ImageNode(image_path="path.png")
+
+    assert node.image_mimetype is None
+    assert node2.image_mimetype == "image/png"
+
+
+def test_build_image_node_image_resource() -> None:
+    ir = MediaResource(path="my-image.jpg", mimetype=None)
+    tr = MediaResource(text="test data")
+    node = ImageNode(id_="test_node", image_resource=ir, text_resource=tr)
+    assert node.text == "test data"
+    assert node.image_mimetype == "image/jpeg"
+    assert node.image_path == "my-image.jpg"
+
+
 def test_build_text_node_text_resource() -> None:
     node = TextNode(id_="test_node", text_resource=MediaResource(text="test data"))
     assert node.text == "test data"
@@ -186,6 +203,34 @@ def test_document_legacy_roundtrip():
     }
     dest = Document(**origin.model_dump())
     assert dest.text == "this is a test"
+
+
+def test_document_model_dump_exclude():
+    doc = Document(id_="test_id", text="this is a test")
+    model_dump = doc.model_dump(exclude={"text", "metadata", "relationships"})
+    assert "text" not in model_dump
+    assert "metadata" not in model_dump
+    assert "relationships" not in model_dump
+    assert model_dump == {
+        "id_": "test_id",
+        "embedding": None,
+        "excluded_embed_metadata_keys": [],
+        "excluded_llm_metadata_keys": [],
+        "metadata_template": "{key}: {value}",
+        "metadata_separator": "\n",
+        "text_resource": {
+            "embeddings": None,
+            "text": "this is a test",
+            "mimetype": None,
+            "path": None,
+            "url": None,
+        },
+        "image_resource": None,
+        "audio_resource": None,
+        "video_resource": None,
+        "text_template": "{metadata_str}\n\n{content}",
+        "class_name": "Document",
+    }
 
 
 def test_image_document_empty():

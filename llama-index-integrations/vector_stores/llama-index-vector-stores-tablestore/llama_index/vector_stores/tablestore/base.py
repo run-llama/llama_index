@@ -16,44 +16,81 @@ from llama_index.core.vector_stores.types import (
     FilterCondition,
     MetadataFilter,
     FilterOperator,
+    VectorStoreQueryMode,
 )
 
 
 class TablestoreVectorStore(BasePydanticVectorStore):
-    """`Tablestore` vector store.
+    """Tablestore vector store.
 
-    To use, you should have the ``tablestore`` python package installed.
+    In this vector store we store the text, its embedding and
+    its metadata in Tablestore.
+
+    Args:
+        tablestore_client (OTSClient, optional): External tablestore(ots) client.
+                If this parameter is set, the following endpoint/instance_name/access_key_id/access_key_secret will be ignored.
+        endpoint (str, optional): Tablestore instance endpoint.
+        instance_name (str, optional): Tablestore instance name.
+        access_key_id (str, optional): Aliyun access key id.
+        access_key_secret (str, optional): Aliyun access key secret.
+        table_name (str, optional): Tablestore table name.
+        index_name (str, optional): Tablestore SearchIndex index name.
+        text_field (str, optional): Name of the Tablestore field that stores the text.
+        vector_field (str, optional): Name of the Tablestore field that stores the embedding.
+        ref_doc_id_field (str, optional): Name of the Tablestore field that stores the ref doc id.
+        vector_dimension (int): The dimension of the embedding vectors.
+        vector_metric_type (VectorMetricType, optional): The similarity metric type to use.
+        metadata_mappings (list[FieldSchema], optional): Custom metadata mapping is used to filter non-vector fields.
+                See the following documentation for details:
+                https://help.aliyun.com/zh/tablestore/developer-reference/create-search-indexes-by-using-python-sdk
+        kwargs (Any): Additional arguments to pass to the tablestore(ots) client.
+
+    Returns:
+        TablestoreVectorStore: Vectorstore that supports add, delete, and query.
 
     Examples:
+        `pip install llama-index-vector-stores-tablestore`
         ```python
         import tablestore
-        import os
 
-        store = TablestoreVectorStore(
-            endpoint=os.getenv("end_point"),
-            instance_name=os.getenv("instance_name"),
-            access_key_id=os.getenv("access_key_id"),
-            access_key_secret=os.getenv("access_key_secret"),
+        # create a vector store that does not support filtering non-vector fields
+        vector_store = TablestoreVectorStore(
+            endpoint="<end_point>",
+            instance_name="<instance_name>",
+            access_key_id="<access_key_id>",
+            access_key_secret="<access_key_secret>",
             vector_dimension=512,
-            vector_metric_type=tablestore.VectorMetricType.VM_COSINE,
-            # metadata mapping is used to filter non-vector fields.
+        )
+
+        # create a vector store that support filtering non-vector fields
+        vector_store_with_meta_data = TablestoreVectorStore(
+            endpoint="<end_point>",
+            instance_name="<instance_name>",
+            access_key_id="<access_key_id>",
+            access_key_secret="<access_key_secret>",
+            vector_dimension=512,
+            # optional: custom metadata mapping is used to filter non-vector fields.
             metadata_mappings=[
                 tablestore.FieldSchema(
-                    "type",
+                    "type",  # non-vector fields
                     tablestore.FieldType.KEYWORD,
                     index=True,
                     enable_sort_and_agg=True,
                 ),
                 tablestore.FieldSchema(
-                    "time", tablestore.FieldType.LONG, index=True, enable_sort_and_agg=True
+                    "time", # non-vector fields
+                    tablestore.FieldType.LONG,
+                    index=True,
+                    enable_sort_and_agg=True,
                 ),
             ],
         )
         ```
     """
 
-    is_embedding_query: bool = True
     stores_text: bool = True
+
+    _vector_dimension: int = PrivateAttr(default=512)
     _logger: Any = PrivateAttr(default=None)
     _tablestore_client: tablestore.OTSClient = PrivateAttr(default=None)
     _table_name: str = PrivateAttr(default="llama_index_vector_store_ots_v1")
@@ -78,7 +115,9 @@ class TablestoreVectorStore(BasePydanticVectorStore):
         vector_dimension: int = 512,
         vector_metric_type: tablestore.VectorMetricType = tablestore.VectorMetricType.VM_COSINE,
         metadata_mappings: Optional[List[tablestore.FieldSchema]] = None,
+        **kwargs: Any,
     ) -> None:
+        """Init params."""
         super().__init__()
         self._logger = getLogger(__name__)
         if not tablestore_client:
@@ -88,9 +127,11 @@ class TablestoreVectorStore(BasePydanticVectorStore):
                 access_key_secret,
                 instance_name,
                 retry_policy=tablestore.WriteRetryPolicy(),
+                **kwargs,  # pass additional arguments
             )
         else:
             self._tablestore_client = tablestore_client
+        self._vector_dimension = vector_dimension
         self._table_name = table_name
         self._index_name = index_name
         self._text_field = text_field
@@ -329,12 +370,43 @@ class TablestoreVectorStore(BasePydanticVectorStore):
         self, query: VectorStoreQuery, knn_top_k: int
     ) -> VectorStoreQueryResult:
         filter_query = self._parse_filters(query.filters)
-        ots_query = tablestore.KnnVectorQuery(
+        query_mode = query.mode
+        query_str = query.query_str
+        query_embedding = query.query_embedding
+        ots_text_query = tablestore.BoolQuery(
+            must_queries=[
+                filter_query,
+                tablestore.MatchQuery(field_name=self._text_field, text=query_str),
+            ],
+            must_not_queries=[],
+            filter_queries=[],
+            should_queries=[],
+        )
+        ots_vector_query = tablestore.KnnVectorQuery(
             field_name=self._vector_field,
             top_k=knn_top_k,
-            float32_query_vector=query.query_embedding,
+            float32_query_vector=query_embedding,
             filter=filter_query,
         )
+        if query_mode == VectorStoreQueryMode.HYBRID:
+            if query_str is None:
+                raise ValueError("query_str cannot be None")
+            ots_query = tablestore.BoolQuery(
+                must_queries=[],
+                must_not_queries=[],
+                filter_queries=[],
+                should_queries=[
+                    ots_text_query,
+                    ots_vector_query,
+                ],
+                minimum_should_match=1,
+            )
+        elif query_mode == VectorStoreQueryMode.TEXT_SEARCH:
+            if query_str is None:
+                raise ValueError("query_str cannot be None")
+            ots_query = ots_text_query
+        else:
+            ots_query = ots_vector_query
         sort = tablestore.Sort(
             sorters=[tablestore.ScoreSort(sort_order=tablestore.SortOrder.DESC)]
         )
@@ -632,6 +704,11 @@ class TablestoreVectorStore(BasePydanticVectorStore):
             return []
         ids = []
         for node in nodes:
+            if len(node.get_embedding()) != self._vector_dimension:
+                raise RuntimeError(
+                    "node embedding size:%d is not the same as vector store dim:%d"
+                    % (len(node.get_embedding()), self._vector_dimension)
+                )
             self._write_row(
                 row_id=node.node_id,
                 content=node.text,

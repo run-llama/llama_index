@@ -29,6 +29,7 @@ MODEL_ENDPOINT_MAP = {
     "nvidia/nv-embedqa-e5-v5": "https://integrate.api.nvidia.com/v1/",
     "baai/bge-m3": "https://integrate.api.nvidia.com/v1/",
     "nvidia/llama-3.2-nv-embedqa-1b-v1": "https://integrate.api.nvidia.com/v1/",
+    "nvidia/llama-3.2-nv-embedqa-1b-v2": "https://integrate.api.nvidia.com/v1/",
 }
 
 KNOWN_URLS = list(MODEL_ENDPOINT_MAP.values())
@@ -65,6 +66,14 @@ class NVIDIAEmbedding(BaseEmbedding):
         ge=0,
     )
 
+    dimensions: Optional[int] = Field(
+        default=None,
+        description=(
+            "The number of dimensions for the embeddings. This parameter is not "
+            "supported by all models."
+        ),
+    )
+
     _client: Any = PrivateAttr()
     _aclient: Any = PrivateAttr()
     _is_hosted: bool = PrivateAttr(True)
@@ -74,6 +83,7 @@ class NVIDIAEmbedding(BaseEmbedding):
         model: Optional[str] = None,
         timeout: Optional[float] = 120,
         max_retries: Optional[int] = 5,
+        dimensions: Optional[int] = 0,
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
@@ -91,6 +101,8 @@ class NVIDIAEmbedding(BaseEmbedding):
         - model (str, optional): The name of the model to use for embeddings.
         - timeout (float, optional): The timeout for requests to the NIM service, in seconds. Defaults to 120.
         - max_retries (int, optional): The maximum number of retries for requests to the NIM service. Defaults to 5.
+        - dimensions (int, optional): The number of dimensions for the embeddings. This
+                              parameter is not supported by all models.
         - nvidia_api_key (str, optional): The API key for the NIM service. This is required if using a hosted NIM.
         - api_key (str, optional): An alternative parameter for providing the API key.
         - base_url (str, optional): The base URL for the NIM service. If not provided, the service will default to a hosted NIM.
@@ -106,8 +118,10 @@ class NVIDIAEmbedding(BaseEmbedding):
             model=model,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
+            dimensions=dimensions,
             **kwargs,
         )
+        self.dimensions = dimensions
 
         if embed_batch_size > 259:
             raise ValueError("The batch size should not be larger than 259.")
@@ -235,11 +249,14 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
+        extra_body = {"input_type": "passage", "truncate": self.truncate}
+        if self.dimensions:
+            extra_body["dimensions"] = self.dimensions
         return (
             self._client.embeddings.create(
                 input=[query],
                 model=self.model,
-                extra_body={"input_type": "query", "truncate": self.truncate},
+                extra_body=extra_body,
             )
             .data[0]
             .embedding
@@ -247,11 +264,14 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     def _get_text_embedding(self, text: str) -> List[float]:
         """Get text embedding."""
+        extra_body = {"input_type": "passage", "truncate": self.truncate}
+        if self.dimensions:
+            extra_body["dimensions"] = self.dimensions
         return (
             self._client.embeddings.create(
                 input=[text],
                 model=self.model,
-                extra_body={"input_type": "passage", "truncate": self.truncate},
+                extra_body=extra_body,
             )
             .data[0]
             .embedding
@@ -260,11 +280,13 @@ class NVIDIAEmbedding(BaseEmbedding):
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get text embeddings."""
         assert len(texts) <= 259, "The batch size should not be larger than 259."
-
+        extra_body = {"input_type": "passage", "truncate": self.truncate}
+        if self.dimensions:
+            extra_body["dimensions"] = self.dimensions
         data = self._client.embeddings.create(
             input=texts,
             model=self.model,
-            extra_body={"input_type": "passage", "truncate": self.truncate},
+            extra_body=extra_body,
         ).data
         return [d.embedding for d in data]
 

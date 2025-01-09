@@ -838,7 +838,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                         )
                     else:
                         with_clauses.append(
-                            f"collect(distinct substring(n.`{prop_name}`, 0, {LONG_TEXT_THRESHOLD})) "
+                            f"collect(distinct substring(toString(n.`{prop_name}`), 0, {LONG_TEXT_THRESHOLD})) "
                             f"AS `{prop_name}_values`"
                         )
                         return_clauses.append(f"values: `{prop_name}_values`")
