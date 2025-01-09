@@ -35,6 +35,7 @@ as the storage backend for `VectorStoreIndex`.
 - MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
 - Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
 - OceanBase (`OceanBaseVectorStore`). [OceanBase Overview](https://github.com/oceanbase/oceanbase). [Quickstart](../../examples/vector_stores/OceanBaseVectorStore.ipynb). [Python Client](https://github.com/oceanbase/pyobvector)
+- Opensearch (`OpensearchVectorStore`) [Opensearch as vector database](https://opensearch.org/platform/search/vector-database.html). [QuickStart](https://opensearch.org/docs/latest/search-plugins/knn/index/)
 - Pinecone (`PineconeVectorStore`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - LanceDB (`LanceDBVectorStore`) [Installation/Quickstart](https://lancedb.github.io/lancedb/basic/)
