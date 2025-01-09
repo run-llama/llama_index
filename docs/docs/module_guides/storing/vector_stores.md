@@ -118,4 +118,5 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Vertex AI Vector Search](../../examples/vector_stores/VertexAIVectorSearchDemo.ipynb)
 - [Weaviate](../../examples/vector_stores/WeaviateIndexDemo.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
+- [WordLift](../../examples/vector_stores/WordLiftDemo.ipynb)
 - [Zep](../../examples/vector_stores/ZepIndexDemo.ipynb)
