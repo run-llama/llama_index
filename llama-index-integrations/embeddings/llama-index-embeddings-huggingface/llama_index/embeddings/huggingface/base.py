@@ -1,6 +1,7 @@
 import asyncio
+from io import BytesIO
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Protocol
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 from deprecated import deprecated
 from huggingface_hub import (
@@ -17,6 +18,7 @@ from llama_index.core.base.embeddings.base import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.embeddings.huggingface.pooling import Pooling
+from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.utils import get_cache_dir, infer_torch_device
 from llama_index.embeddings.huggingface.utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
@@ -25,19 +27,12 @@ from llama_index.embeddings.huggingface.utils import (
     get_query_instruct_for_model_name,
     get_text_instruct_for_model_name,
 )
+from llama_index.core.schema import ImageType
 from sentence_transformers import SentenceTransformer
 from tenacity import retry, stop_after_attempt, wait_exponential
-from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
-from llama_index.core.schema import ImageType
 
 DEFAULT_HUGGINGFACE_LENGTH = 512
 logger = logging.getLogger(__name__)
-
-
-class ImageProcessorFn(Protocol):
-    def __call__(self, image: ImageType) -> ImageType:
-        """Process an image into a format suitable for the model."""
-        ...
 
 
 class HuggingFaceEmbedding(MultiModalEmbedding):
@@ -200,7 +195,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
     )
     def _embed_with_retry(
         self,
-        inputs: List[str | ImageType],
+        inputs: List[str | BytesIO],
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
         """
@@ -243,7 +238,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
     def _embed(
         self,
-        inputs: List[str | ImageType],
+        inputs: List[str | BytesIO],
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
         """
