@@ -1,5 +1,5 @@
 from typing import List
-from llama_index.core.schema import Document, MediaResource
+from llama_index.core.schema import Document, Node, MediaResource
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.indices.managed.vectara import VectaraIndex
 import pytest
@@ -27,6 +27,40 @@ def test_class():
 def get_docs() -> List[Document]:
     inputs = [
         {
+            "id": "doc_1",
+            "text": "This is test text for Vectara integration with LlamaIndex",
+            "metadata": {"test_num": "1", "test_score": 10, "date": "2020-02-25"},
+        },
+        {
+            "id": "doc_2",
+            "text": "And now for something completely different",
+            "metadata": {"test_num": "2", "test_score": 2, "date": "2015-10-13"},
+        },
+        {
+            "id": "doc_3",
+            "text": "when 900 years you will be, look as good you will not",
+            "metadata": {"test_num": "3", "test_score": 20, "date": "2023-09-12"},
+        },
+        {
+            "id": "doc_4",
+            "text": "when 850 years you will be, look as good you will not",
+            "metadata": {"test_num": "4", "test_score": 50, "date": "2022-01-01"},
+        },
+    ]
+    docs: List[Document] = []
+    for inp in inputs:
+        doc = Document(
+            id_=inp["id"],
+            text_resource=MediaResource(text=inp["text"]),
+            metadata=inp["metadata"],
+        )
+        docs.append(doc)
+    return docs
+
+
+def get_nodes() -> List[Node]:
+    inputs = [
+        {
             "text": "This is test text for Vectara integration with LlamaIndex",
             "metadata": {"test_num": "1", "test_score": 10, "date": "2020-02-25"},
         },
@@ -43,14 +77,14 @@ def get_docs() -> List[Document]:
             "metadata": {"test_num": "4", "test_score": 50, "date": "2022-01-01"},
         },
     ]
-    docs: List[Document] = []
+
+    nodes: List[Node] = []
     for inp in inputs:
-        doc = Document(
-            text_resource=MediaResource(text=str(inp["text"])),
-            metadata=inp["metadata"],  # type: ignore
+        node = Node(
+            text_resource=MediaResource(text=inp["text"]), metadata=inp["metadata"]
         )
-        docs.append(doc)
-    return docs
+        nodes.append(node)
+    return nodes
 
 
 @pytest.fixture()
@@ -74,6 +108,7 @@ def test_simple_retrieval(vectara1) -> None:
     res = qe.retrieve("Find me something different")
     assert len(res) == 1
     assert res[0].node.get_content() == docs[1].text
+    assert res[0].node.node_id == docs[1].doc_id
 
 
 def test_mmr_retrieval(vectara1) -> None:
@@ -390,3 +425,35 @@ def test_chat(vectara2) -> None:
     assert chat_engine.conv_id != chat_id
     assert "yahoo" in summary.lower()
     assert "felt" in summary.lower()
+
+
+@pytest.fixture()
+def vectara3():
+    nodes = get_nodes()
+    try:
+        vectara3 = VectaraIndex()
+        vectara3.add_nodes(
+            nodes,
+            document_id="doc_1",
+            document_metadata={"author": "Vectara", "title": "LlamaIndex Integration"},
+        )
+    except ValueError:
+        pytest.skip("Missing Vectara credentials, skipping test")
+
+    yield vectara3
+
+    # Tear down code
+    for id in vectara3.doc_ids:
+        vectara3._delete_doc(id)
+
+
+def test_simple_retrieval_with_nodes(vectara3) -> None:
+    nodes = get_nodes()
+    qe = vectara3.as_retriever(
+        similarity_top_k=1, n_sentences_before=0, n_sentences_after=0
+    )
+    res = qe.retrieve("Find me something different")
+    assert len(res) == 1
+    assert res[0].node.metadata["author"] == "Vectara"
+    assert res[0].node.metadata["title"] == "LlamaIndex Integration"
+    assert res[0].node.get_content() == nodes[1].text_resource.text

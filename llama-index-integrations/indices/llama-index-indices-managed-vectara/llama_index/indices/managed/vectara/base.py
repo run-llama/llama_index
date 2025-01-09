@@ -9,8 +9,7 @@ import json
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
-from hashlib import blake2b
-from typing import Any, List, Optional, Sequence, Type
+from typing import Any, List, Optional, Sequence, Type, Dict
 
 import requests
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -24,7 +23,6 @@ from llama_index.core.schema import (
     BaseNode,
     Document,
     Node,
-    MediaResource,
     TransformComponent,
 )
 from llama_index.core.settings import Settings
@@ -63,10 +61,8 @@ class VectaraIndex(BaseManagedIndex):
     def __init__(
         self,
         show_progress: bool = False,
-        nodes: Optional[Sequence[BaseNode]] = None,
         vectara_corpus_key: Optional[str] = None,
         vectara_api_key: Optional[str] = None,
-        use_core_api: bool = False,
         parallelize_ingest: bool = False,
         x_source_str: str = "llama_index",
         **kwargs: Any,
@@ -106,27 +102,7 @@ class VectaraIndex(BaseManagedIndex):
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("https://", adapter)
         self.vectara_api_timeout = 90
-        self.use_core_api = use_core_api
         self.doc_ids: List[str] = []
-
-        # if nodes is specified, consider each node as a single document
-        # and use _build_index_from_nodes() to add them to the index
-        if nodes is not None:
-            self._build_index_from_nodes(nodes, self.use_core_api)
-
-    def _build_index_from_nodes(
-        self, nodes: Sequence[BaseNode], use_core_api: bool = False
-    ) -> IndexDict:
-        docs = [
-            Document(
-                text_resource=MediaResource(text=node.get_content()),
-                metadata=node.metadata,  # type: ignore
-                id_=node.id_,  # type: ignore
-            )
-            for node in nodes
-        ]
-        self.add_documents(docs, use_core_api)
-        return self.index_struct
 
     def _get_corpus_key(self, corpus_key: str) -> str:
         """
@@ -176,8 +152,6 @@ class VectaraIndex(BaseManagedIndex):
             return False
         return True
 
-    # THE WAY THAT DOCUMENTS ARE INDEXED NOW IS VERY DIFFERENT THAN BEFORE, SO WE WILL NEED TO RESTRUCTURE HOW THIS IS DONE (SEE API PLAYGROUND)
-    # DIFFERENCE IN TWO IMPLEMENTATION STYLES IS SPECIFIED BY PARAMETER `use_core_api` (check where it is used in process of creating documents).
     def _index_doc(self, doc: dict, corpus_key) -> str:
         response = self._session.post(
             headers=self._get_post_headers(),
@@ -196,76 +170,122 @@ class VectaraIndex(BaseManagedIndex):
 
     def _insert(
         self,
-        nodes: Sequence[BaseNode],
+        document: Optional[Document] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
         corpus_key: Optional[str] = None,
-        use_core_api: bool = False,
         **insert_kwargs: Any,
     ) -> None:
-        """Insert a set of documents (each a node)."""
-
-        def gen_hash(s: str) -> str:
-            hash_object = blake2b(digest_size=32)
-            hash_object.update(s.encode("utf-8"))
-            return hash_object.hexdigest()
-
-        docs = []
-        for node in nodes:
-            metadata = node.metadata.copy()
-            metadata["framework"] = "llama_index"  # NOT SURE WHAT THIS IS FOR
-            section_key = "document_parts" if use_core_api else "sections"
-            text = node.get_content()
-
-            # NEED TO FIGURE OUT A WAY TO LET PEOPLE CHOOSE THEIR OWN DOC ID
-            # IF THEY DON'T SPECIFY ONE, THEN A RANDOM ONE IS CREATED AUTOMATICALLY.
-            # THIS IS PROBLEMATIC BECAUSE THEN THE SAME DOCUMENT CAN BE INGESTED TWICE.
-            doc_id = gen_hash(text) if len(node.node_id) == 36 else node.node_id
+        """Insert a document into a corpus."""
+        if document:
+            # Use Structured Document type
+            metadata = document.metadata.copy()
+            metadata["framework"] = "llama_index"
             doc = {
-                "id": doc_id,
-                "type": "core" if use_core_api else "structured",
-                "metadata": node.metadata,
-                section_key: [{"text": text}],
+                "id": document.id_,
+                "type": "structured",
+                "metadata": metadata,
+                "sections": [{"text": document.text_resource.text}],
             }
-            docs.append(doc)
+
+            if insert_kwargs["description"]:
+                doc["description"] = insert_kwargs["description"]
+
+            if insert_kwargs["max_chars_per_chunk"]:
+                doc["chunking_strategy"] = {
+                    "type": "max_chars_chunking_strategy",
+                    "max_chars_per_chunk": insert_kwargs["max_chars_per_chunk"],
+                }
+
+        elif nodes:
+            # Use Core Document type
+            metadata = insert_kwargs["doc_metadata"]
+            metadata["framework"] = "llama_index"
+            doc = {
+                "id": insert_kwargs["doc_id"],
+                "type": "core",
+                "metadata": metadata,
+                "document_parts": [
+                    {"text": node.text_resource.text, "metadata": node.metadata}
+                    for node in nodes
+                ],
+            }
+
+        else:
+            _logger.error(
+                "Error indexing document. Must provide either a document or a list of nodes."
+            )
+            return
 
         valid_corpus_key = self._get_corpus_key(corpus_key)
         if self.parallelize_ingest:
             with ThreadPoolExecutor() as executor:
-                futures = [
-                    executor.submit(self._index_doc, doc, valid_corpus_key)
-                    for doc in docs
-                ]
-                for future in futures:
-                    ecode = future.result()
-                    if ecode != "E_SUCCEEDED":
-                        _logger.error(
-                            f"Error indexing document in Vectara with error code {ecode}"
-                        )
-            self.doc_ids.extend([doc["id"] for doc in docs])
-        else:
-            for doc in docs:
-                ecode = self._index_doc(doc, valid_corpus_key)
+                future = executor.submit(self._index_doc, doc, valid_corpus_key)
+                ecode = future.result()
                 if ecode != "E_SUCCEEDED":
                     _logger.error(
                         f"Error indexing document in Vectara with error code {ecode}"
                     )
-                self.doc_ids.append(doc["id"])
+            self.doc_ids.append(doc["id"])
+        else:
+            ecode = self._index_doc(doc, valid_corpus_key)
+            if ecode != "E_SUCCEEDED":
+                _logger.error(
+                    f"Error indexing document in Vectara with error code {ecode}"
+                )
+            self.doc_ids.append(doc["id"])
 
-    def add_documents(
+    def add_document(
         self,
-        docs: Sequence[Document],
-        corpus_key: Optional[str],
-        use_core_api: bool = False,
-        allow_update: bool = True,
+        doc: Document,
+        corpus_key: Optional[str] = None,
+        description: Optional[str] = None,
+        max_chars_per_chunk: Optional[int] = None,
     ) -> None:
-        nodes = [
-            Node(
-                text_resource=MediaResource(text=doc.text),
-                metadata=doc.metadata,
-                id_=doc.doc_id,
-            )
-            for doc in docs
-        ]
-        self._insert(nodes, corpus_key, use_core_api)
+        """ "
+        Indexes a document into a corpus using the Vectara Structured Document format.
+
+        Full API Docs: https://docs.vectara.com/docs/api-reference/indexing-apis/indexing#structured-document-object-definition
+
+        Args:
+            doc (Document): The document object to be indexed.
+                You should provide the value you want for the document id in the corpus as the id_ member of this object.
+                You should provide any document_metadata in the metadata member of this object.
+            corpus_key (str): If multiple corpora are provided for this index, the corpus_key of the corpus you want to add the document to.
+            description (str): The description of the document.
+            max_chars_per_chunk (int): The maximum number of characters per chunk.
+        """
+        self._insert(
+            document=doc,
+            corpus_key=corpus_key,
+            description=description,
+            max_chars_per_chunk=max_chars_per_chunk,
+        )
+
+    def add_nodes(
+        self,
+        nodes: Sequence[Node],
+        document_id: str,
+        document_metadata: Optional[Dict] = {},
+        corpus_key: Optional[str] = None,
+    ) -> None:
+        """
+        Indexes a document into a corpus using the Vectara Core Document format.
+
+        Full API Docs: https://docs.vectara.com/docs/api-reference/indexing-apis/indexing#core-document-object-definition
+
+        Args:
+            nodes (Sequence[Node]): The user-specified document parts.
+                You should provide any part_metadata in the metadata member of each node.
+            document_id (str): The document id (must be unique for the corpus).
+            document_metadata (Dict): The document_metadata to be associated with this document.
+            corpus_key (str): If multiple corpora are provided for this index, the corpus_key of the corpus you want to add the document to.
+        """
+        self._insert(
+            nodes=nodes,
+            corpus_key=corpus_key,
+            doc_id=document_id,
+            doc_metadata=document_metadata,
+        )
 
     def insert_file(
         self,
@@ -420,17 +440,12 @@ class VectaraIndex(BaseManagedIndex):
         **kwargs: Any,
     ) -> IndexType:
         """Build a Vectara index from a sequence of documents."""
-        nodes = [
-            Node(
-                text_resource=MediaResource(text=document.text),
-                metadata=document.metadata,
-                id_=document.doc_id,
-            )
-            for document in documents
-        ]
-
-        return cls(
-            nodes=nodes,
+        index = cls(
             show_progress=show_progress,
             **kwargs,
         )
+
+        for doc in documents:
+            index.add_document(doc)
+
+        return index
