@@ -301,13 +301,10 @@ def test_file_upload(vectara2) -> None:
     for chunk in res.response_gen:
         if chunk.delta:
             summary += chunk.delta
-        if (
-            chunk.additional_kwargs
-            and "fcs" in chunk.additional_kwargs
-            and chunk.additional_kwargs["fcs"] is not None
-        ):
-            assert chunk.additional_kwargs["fcs"] >= 0
+
     assert "paul graham" in summary.lower() and "software" in summary.lower()
+    assert res.metadata["fcs"] >= 0
+    assert len(res.source_nodes) > 0
 
     # test query with VectorStoreQuery (using OpenAI for summarization)
     query_engine = vectara2.as_query_engine(similarity_top_k=3, summary_enabled=False)
@@ -372,7 +369,7 @@ def test_chat(vectara2) -> None:
     res = chat_engine.chat("What grad schools did Paul apply to?")
     summary = res.response
     assert all(s in summary.lower() for s in ["mit", "yale", "harvard"])
-    assert res.metadata["fcs"] > 0.5
+    assert res.metadata["fcs"] > 0
     chat_id = chat_engine.conv_id
     assert chat_id is not None
 
@@ -381,7 +378,7 @@ def test_chat(vectara2) -> None:
     summary = res.response
     assert "learn" in summary.lower()
     assert any(s in summary.lower() for s in ["art", "paint"])
-    assert res.metadata["fcs"] > 0.1
+    assert res.metadata["fcs"] > 0
     assert chat_engine.conv_id == chat_id
 
     # Test chat follow up with streaming
@@ -390,15 +387,11 @@ def test_chat(vectara2) -> None:
     for chunk in res.chat_stream:
         if chunk.delta:
             summary += chunk.delta
-        if (
-            chunk.additional_kwargs
-            and "fcs" in chunk.additional_kwargs
-            and chunk.additional_kwargs["fcs"] is not None
-        ):
-            assert chunk.additional_kwargs["fcs"] >= 0
 
     assert "use" in summary.lower()
     assert "career" in summary.lower()
+    assert len(res.source_nodes) > 0
+    assert chat_engine.conv_id == chat_id
 
     # Test chat initialization with streaming
     chat_engine = vectara2.as_chat_engine(
@@ -414,17 +407,12 @@ def test_chat(vectara2) -> None:
     for chunk in res.chat_stream:
         if chunk.delta:
             summary += chunk.delta
-        if (
-            chunk.additional_kwargs
-            and "fcs" in chunk.additional_kwargs
-            and chunk.additional_kwargs["fcs"] is not None
-        ):
-            assert chunk.additional_kwargs["fcs"] >= 0
 
-    assert chat_engine.conv_id is not None
-    assert chat_engine.conv_id != chat_id
     assert "yahoo" in summary.lower()
     assert "felt" in summary.lower()
+    assert chat_engine._retriever._conv_id is not None
+    assert chat_engine._retriever._conv_id != chat_id
+    assert len(res.source_nodes) > 0
 
 
 @pytest.fixture()

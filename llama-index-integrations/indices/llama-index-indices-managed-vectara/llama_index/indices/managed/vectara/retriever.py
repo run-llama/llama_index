@@ -15,6 +15,9 @@ from llama_index.core.indices.vector_store.retrievers.auto_retriever.auto_retrie
 )
 from llama_index.core.schema import NodeWithScore, QueryBundle, Node, MediaResource
 from llama_index.core.types import TokenGen
+from llama_index.core.base.response.schema import StreamingResponse
+
+# MAY NOT NEED THIS ANY MORE
 from llama_index.core.llms import (
     CompletionResponse,
 )
@@ -362,6 +365,117 @@ class VectaraRetriever(BaseRetriever):
 
         return data
 
+    # def _vectara_stream(
+    #     self,
+    #     query_bundle: QueryBundle,
+    #     chat: bool = False,
+    #     conv_id: Optional[str] = None,
+    #     verbose: bool = False,
+    #     **kwargs: Any,
+    # ) -> TokenGen:
+    #     """
+    #     Query Vectara index to get for top k most similar nodes.
+
+    #     Args:
+    #         query_bundle: Query Bundle
+    #         chat: whether to use chat API in Vectara
+    #         conv_id: conversation ID, if adding to existing chat
+    #     """
+    #     body = self._build_vectara_query_body(query_bundle.query_str)
+    #     body["stream_response"] = True
+    #     if verbose:
+    #         print(f"Vectara streaming query request body: {body}")
+
+    #     if chat:
+    #         body["chat"] = {"store": True}
+    #         if conv_id:
+    #             response = self._index._session.post(
+    #                 headers=self._get_post_headers(),
+    #                 url=f"https://api.vectara.io/v2/chats/{conv_id}/turns",
+    #                 data=json.dumps(body),
+    #                 timeout=self._index.vectara_api_timeout,
+    #                 stream=True,
+    #             )
+    #         else:
+    #             response = self._index._session.post(
+    #                 headers=self._get_post_headers(),
+    #                 url="https://api.vectara.io/v2/chats",
+    #                 data=json.dumps(body),
+    #                 timeout=self._index.vectara_api_timeout,
+    #                 stream=True,
+    #             )
+
+    #     else:
+    #         response = self._index._session.post(
+    #             headers=self._get_post_headers(),
+    #             url="https://api.vectara.io/v2/query",
+    #             data=json.dumps(body),
+    #             timeout=self._index.vectara_api_timeout,
+    #             stream=True,
+    #         )
+
+    #     if response.status_code != 200:
+    #         result = response.json()
+    #         if response.status_code == 400:
+    #             _logger.error(
+    #                 f"Query failed (code {response.status_code}), reason {result['field_errors']}"
+    #             )
+    #         else:
+    #             _logger.error(
+    #                 f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
+    #             )
+    #         return
+
+    #     stream_response = CompletionResponse(
+    #         text="", additional_kwargs={"fcs": None}, raw=None, delta=None
+    #     )
+
+    #     for line in response.iter_lines():
+    #         line = line.decode("utf-8")
+    #         if line:
+    #             key, value = line.split(":", 1)
+    #             if key == "data":
+    #                 line = json.loads(value)
+    #                 if line["type"] == "generation_chunk":
+    #                     chunk = line["generation_chunk"]
+    #                     stream_response.text += chunk
+    #                     stream_response.delta = chunk
+    #                     yield stream_response
+    #                 # ISSUE: I DON'T BELIEVE THE NEXT TWO SECTIONS DO ANYTHING (NEED TO FIGURE OUT HOW TO DEBUG)
+    #                 elif line["type"] == "factual_consistency_score":
+    #                     stream_response.additional_kwargs["fcs"] = line[
+    #                         "factual_consistency_score"
+    #                     ]
+    #                     yield stream_response
+
+    #                 elif line["type"] == "search_results":
+    #                     search_results = line["search_results"]
+    #                     top_nodes = [
+    #                         NodeWithScore(
+    #                             node=Node(
+    #                                 text_resource=MediaResource(
+    #                                     text=search_result["text"]
+    #                                 ),
+    #                                 id_=search_result["document_id"],
+    #                                 metadata=search_result["document_metadata"],
+    #                             ),
+    #                             score=search_result["score"],
+    #                         )
+    #                         for search_result in search_results[
+    #                             : self._similarity_top_k
+    #                         ]
+    #                     ]
+    #                     stream_response.additional_kwargs["top_nodes"] = top_nodes
+    #                     stream_response.delta = None
+    #                     yield stream_response
+    #                 elif line["type"] == "chat_info":
+    #                     self._conv_id = line["chat_id"]
+    #                     stream_response.text += self._conv_id
+    #                     stream_response.delta = self._conv_id
+    #                     yield stream_response
+
+    #     return
+
     def _vectara_stream(
         self,
         query_bundle: QueryBundle,
@@ -369,7 +483,7 @@ class VectaraRetriever(BaseRetriever):
         conv_id: Optional[str] = None,
         verbose: bool = False,
         **kwargs: Any,
-    ) -> TokenGen:
+    ) -> StreamingResponse:
         """
         Query Vectara index to get for top k most similar nodes.
 
@@ -385,7 +499,8 @@ class VectaraRetriever(BaseRetriever):
 
         if chat:
             body["chat"] = {"store": True}
-            if conv_id:
+            if conv_id or self._conv_id:
+                conv_id = conv_id or self._conv_id
                 response = self._index._session.post(
                     headers=self._get_post_headers(),
                     url=f"https://api.vectara.io/v2/chats/{conv_id}/turns",
@@ -421,57 +536,67 @@ class VectaraRetriever(BaseRetriever):
                 _logger.error(
                     f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
                 )
-            return
+            return None
 
-        stream_response = CompletionResponse(
-            text="", additional_kwargs={"fcs": None}, raw=None, delta=None
+        def process_chunks(response):
+            source_nodes = []
+            response_metadata = {}
+
+            def text_generator() -> TokenGen:
+                stream_response = CompletionResponse(text="")
+                for line in response.iter_lines():
+                    line = line.decode("utf-8")
+                    if line:
+                        key, value = line.split(":", 1)
+                        if key == "data":
+                            line = json.loads(value)
+                            if line["type"] == "generation_chunk":
+                                chunk = line["generation_chunk"]
+                                stream_response.text += chunk
+                                stream_response.delta = chunk
+                                yield stream_response
+                                # yield line["generation_chunk"]
+
+                            elif line["type"] == "factual_consistency_score":
+                                response_metadata["fcs"] = line[
+                                    "factual_consistency_score"
+                                ]
+
+                            elif line["type"] == "search_results":
+                                search_results = line["search_results"]
+                                source_nodes.extend(
+                                    [
+                                        NodeWithScore(
+                                            node=Node(
+                                                text_resource=MediaResource(
+                                                    text=search_result["text"]
+                                                ),
+                                                id_=search_result["document_id"],
+                                                metadata=search_result[
+                                                    "document_metadata"
+                                                ],
+                                            ),
+                                            score=search_result["score"],
+                                        )
+                                        for search_result in search_results[
+                                            : self._similarity_top_k
+                                        ]
+                                    ]
+                                )
+
+                            elif line["type"] == "chat_info":
+                                self._conv_id = line["chat_id"]
+                                response_metadata["chat_id"] = line["chat_id"]
+
+            return text_generator(), source_nodes, response_metadata
+
+        response_chunks, response_nodes, response_metadata = process_chunks(response)
+
+        return StreamingResponse(
+            response_gen=response_chunks,
+            source_nodes=response_nodes,
+            metadata=response_metadata,
         )
-
-        for line in response.iter_lines():
-            line = line.decode("utf-8")
-            if line:
-                key, value = line.split(":", 1)
-                if key == "data":
-                    line = json.loads(value)
-                    if line["type"] == "generation_chunk":
-                        chunk = line["generation_chunk"]
-                        stream_response.text += chunk
-                        stream_response.delta = chunk
-                        yield stream_response
-                    # ISSUE: I DON'T BELIEVE THE NEXT TWO SECTIONS DO ANYTHING (NEED TO FIGURE OUT HOW TO DEBUG)
-                    elif line["type"] == "factual_consistency_score":
-                        stream_response.additional_kwargs["fcs"] = line[
-                            "factual_consistency_score"
-                        ]
-                        yield stream_response
-
-                    elif line["type"] == "search_results":
-                        search_results = line["search_results"]
-                        top_nodes = [
-                            NodeWithScore(
-                                node=Node(
-                                    text_resource=MediaResource(
-                                        text=search_result["text"]
-                                    ),
-                                    id_=search_result["document_id"],
-                                    metadata=search_result["document_metadata"],
-                                ),
-                                score=search_result["score"],
-                            )
-                            for search_result in search_results[
-                                : self._similarity_top_k
-                            ]
-                        ]
-                        stream_response.additional_kwargs["top_nodes"] = top_nodes
-                        stream_response.delta = None
-                        yield stream_response
-                    elif line["type"] == "chat_info":
-                        self._conv_id = line["chat_id"]
-                        stream_response.text += self._conv_id
-                        stream_response.delta = self._conv_id
-                        yield stream_response
-
-        return
 
     def _vectara_query(
         self,

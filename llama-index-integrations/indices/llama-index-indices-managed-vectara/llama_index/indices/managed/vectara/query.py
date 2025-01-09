@@ -18,7 +18,6 @@ from llama_index.core.chat_engine.types import (
 from llama_index.core.base.response.schema import (
     RESPONSE_TYPE,
     Response,
-    StreamingResponse,
 )
 from llama_index.indices.managed.vectara.retriever import VectaraRetriever
 
@@ -121,12 +120,8 @@ class VectaraQueryEngine(BaseQueryEngine):
         )
 
         if self._streaming:
-            nodes = self.retrieve(query_bundle)
-            query_response = StreamingResponse(
-                response_gen=self._retriever._vectara_stream(
-                    query_bundle, chat=False, verbose=self._verbose
-                ),
-                source_nodes=nodes,
+            query_response = self._retriever._vectara_stream(
+                query_bundle, chat=False, verbose=self._verbose
             )
         else:
             nodes, response, _ = self._retriever._vectara_query(
@@ -241,23 +236,18 @@ class VectaraChatEngine(BaseChatEngine):
 
     def stream_chat(self, message: str) -> StreamingAgentChatResponse:
         query_bundle = QueryBundle(message)
-        nodes = self._retriever.retrieve(query_bundle)
 
-        def stream_query_wrapper():
-            for chunk in self._retriever._vectara_stream(
-                query_bundle,
-                chat=True,
-                conv_id=self.conv_id,
-            ):
-                if chunk.delta:
-                    if chunk.delta[:4] == "cht_":
-                        self.conv_id = chunk.delta
-                    else:
-                        yield chunk
+        query_response = self._retriever._vectara_stream(
+            query_bundle, chat=True, conv_id=self.conv_id
+        )
+
+        # THIS WILL NEVER WORK BASED ON CURRENT IMPLEMENTATION
+        if "chat_id" in query_response.metadata:
+            self.conv_id = query_response.metadata["chat_id"]
 
         return StreamingAgentChatResponse(
-            chat_stream=stream_query_wrapper(),
-            source_nodes=nodes,
+            chat_stream=query_response.response_gen,
+            source_nodes=query_response.source_nodes,
         )
 
     async def astream_chat(self, message: str) -> StreamingAgentChatResponse:
