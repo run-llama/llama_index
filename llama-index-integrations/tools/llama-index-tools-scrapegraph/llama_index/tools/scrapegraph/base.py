@@ -1,10 +1,11 @@
 """scrapegraph tool specification module for web scraping operations."""
 
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
-from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from scrapegraph_py import Client
+
+from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class ScrapegraphToolSpec(BaseToolSpec):

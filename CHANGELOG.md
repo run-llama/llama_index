@@ -1,5 +1,96 @@
 # ChangeLog
 
+## [2024-12-31]
+
+### `llama-index-core` [0.12.10]
+
+- remove asserts from schema llm extractor (#17425)
+- feat: support typing.Annotated for adding parameter descriptions in FunctionTools (#17411)
+- Guess image_mimetype for ImageNode (#17422)
+
+### `llama-index-embeddings-nvidia` [0.3.1]
+
+- NVIDIA Support for v2 Embedding & Reranking NIMs #(17410)
+
+### `llama-index-embeddings-openvino` [0.5.1]
+
+- update deps of OpenVINO packages (#17419)
+
+### `llama-index-multi-modal-llms-openai` [0.4.2]
+
+- Add support for gpt-4o-2024-08-06 to multi modal llms (#17405)
+
+### `llama-index-packs-raptor` [0.3.1]
+
+- Fix for llama_index.packs.raptor tree_traversal retrieval (#17406)
+
+### `llama-index-postprocessor-openvino-rerank` [0.4.1]
+
+- update deps of OpenVINO packages (#17419)
+
+### `llama-index-readers-file` [0.4.2]
+
+- Remove MarkdownReader from the default loaders in SimpleDirectoryReader (#17412)
+
+### `llama-index-core` [0.12.9]
+
+- clean up type hints in schema extractor (#17394)
+- Fix IndexError in LLM Reranking when handling malformed LLM responses (#17353)
+
+### `llama-index-llms-bedrock-converse` [0.4.3]
+
+- Fix Regression on Tools use for Bedrock Converse (#17364)
+
+### `llama-index-llms-sagemaker-endpoint` [0.3.1]
+
+- Pass `aws_region_name` to `get_aws_service_client()` in SageMakerLLM (#12000)
+
+### `llama-index-postprocessor-voyageai-rerank` [0.3.2]
+
+- VoyageAIRerank constructor fix for truncation (#17343)
+
+### `llama-index-readers-gitlab` [0.3.1]
+
+- Fix: Properly add blob documents from Gitlab Repo (#17392)
+
+### `llama-index-readers-rss` [0.3.2]
+
+- Fix minor issues in rss (#17351)
+
+### `llama-index-readers-web` [0.3.3]
+
+- fix: prevent infinite recursion in `get_article_urls` (#17360)
+
+### `llama-index-vector-stores-azureaisearch` [0.3.2]
+
+- azureaisearch: add semantic search mode support for async queries (#17335)
+
+### `llama-index-vector-stores-azurecosmosnosql` [1.3.1]
+
+- fix storeindex cosmosnosql query issue - (BadRequest) (#17385)
+
+### `llama-index-vector-stores-milvus` [0.5.0]
+
+- feat: milvus async (#17378)
+
+### `llama-index-vector-stores-opensearch` [0.5.2]
+
+- Fix typo in property name (#17365)
+- bugfix when initializing with async aoss vector store (#17340)
+
+### `llama-index-vector-stores-tablestore` [0.2.2]
+
+- TablestoreVectorStore: support hybrid query, modify some documents. (#17366)
+- TablestoreVectorStore check the Dimension of the embedding when writing it to store. (#17321)
+
+### `llama-index-vector-stores-qdrant` [0.4.2]
+
+- qdrant filter fix for `query_str` is None (#17377)
+
+### `llama-index-vector-stores-weaviate` [1.3.1]
+
+- implement `client_kwargs["custom_batch"]` for weaviate (#17347)
+
 ## [2024-12-20]
 
 ### `llama-index-core` [0.12.8]

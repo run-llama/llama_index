@@ -1,7 +1,6 @@
 """Google's hosted Gemini API."""
 
 import os
-import typing
 from typing import Any, Dict, Optional, Sequence
 import warnings
 
@@ -27,9 +26,7 @@ from llama_index.llms.gemini.utils import (
     chat_message_to_gemini,
     completion_from_gemini_response,
 )
-
-if typing.TYPE_CHECKING:
-    import google.generativeai as genai
+import google.generativeai as genai
 
 
 GEMINI_MODELS = (
@@ -82,8 +79,9 @@ class Gemini(CustomLLM):
         default_factory=dict, description="Kwargs for generation."
     )
 
-    _model: "genai.GenerativeModel" = PrivateAttr()
-    _model_meta: "genai.types.Model" = PrivateAttr()
+    _model: genai.GenerativeModel = PrivateAttr()
+    _model_meta: genai.types.Model = PrivateAttr()
+    _request_options: Optional[genai.types.RequestOptions] = PrivateAttr()
 
     def __init__(
         self,
@@ -91,23 +89,17 @@ class Gemini(CustomLLM):
         model: Optional[str] = GEMINI_MODELS[0],
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
-        generation_config: Optional["genai.types.GenerationConfigDict"] = None,
-        safety_settings: "genai.types.SafetySettingOptions" = None,
+        generation_config: Optional[genai.types.GenerationConfigDict] = None,
+        safety_settings: Optional[genai.types.SafetySettingDict] = None,
         callback_manager: Optional[CallbackManager] = None,
         api_base: Optional[str] = None,
         transport: Optional[str] = None,
         model_name: Optional[str] = None,
         default_headers: Optional[Dict[str, str]] = None,
+        request_options: Optional[genai.types.RequestOptions] = None,
         **generate_kwargs: Any,
     ):
         """Creates a new Gemini model interface."""
-        try:
-            import google.generativeai as genai
-        except ImportError:
-            raise ValueError(
-                "Gemini is not installed. Please install it with "
-                "`pip install 'google-generativeai>=0.3.0'`."
-            )
         if model_name is not None:
             warnings.warn(
                 "model_name is deprecated, please use model instead",
@@ -169,6 +161,7 @@ class Gemini(CustomLLM):
 
         self._model_meta = model_meta
         self._model = genai_model
+        self._request_options = request_options
 
     @classmethod
     def class_name(cls) -> str:
@@ -188,31 +181,45 @@ class Gemini(CustomLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        result = self._model.generate_content(prompt, **kwargs)
+        request_options = self._request_options or kwargs.pop("request_options", None)
+        result = self._model.generate_content(
+            prompt, request_options=request_options, **kwargs
+        )
         return completion_from_gemini_response(result)
 
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        it = self._model.generate_content(prompt, stream=True, **kwargs)
+        request_options = self._request_options or kwargs.pop("request_options", None)
+        it = self._model.generate_content(
+            prompt, stream=True, request_options=request_options, **kwargs
+        )
         yield from map(completion_from_gemini_response, it)
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        request_options = self._request_options or kwargs.pop("request_options", None)
         merged_messages = merge_neighboring_same_role_messages(messages)
         *history, next_msg = map(chat_message_to_gemini, merged_messages)
         chat = self._model.start_chat(history=history)
-        response = chat.send_message(next_msg)
+        response = chat.send_message(
+            next_msg,
+            request_options=request_options,
+            **kwargs,
+        )
         return chat_from_gemini_response(response)
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        request_options = self._request_options or kwargs.pop("request_options", None)
         merged_messages = merge_neighboring_same_role_messages(messages)
         *history, next_msg = map(chat_message_to_gemini, merged_messages)
         chat = self._model.start_chat(history=history)
-        response = chat.send_message(next_msg, stream=True)
+        response = chat.send_message(
+            next_msg, stream=True, request_options=request_options, **kwargs
+        )
 
         def gen() -> ChatResponseGen:
             content = ""
