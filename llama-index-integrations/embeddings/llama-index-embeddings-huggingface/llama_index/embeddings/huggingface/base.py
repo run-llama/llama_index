@@ -319,13 +319,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
     def _get_image_embedding(self, img_file_path: ImageType) -> List[float]:
         """Generate embedding for an image."""
-        if self.image_processor is None:
-            raise ValueError(
-                "Image processor function must be provided to embed images"
-            )
-
-        processed_image = self.image_processor(img_file_path)
-        return self._embed([processed_image])[0]
+        return self._embed([img_file_path])[0]
 
     async def _aget_image_embedding(self, img_file_path: ImageType) -> List[float]:
         """Generate embedding for an image asynchronously."""
@@ -335,13 +329,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
         self, img_file_paths: List[ImageType]
     ) -> List[List[float]]:
         """Generate embeddings for multiple images."""
-        if self.image_processor is None:
-            raise ValueError(
-                "Image processor function must be provided to embed images"
-            )
-
-        processed_images = [self.image_processor(img) for img in img_file_paths]
-        return self._embed(processed_images)
+        return self._embed(img_file_paths)
 
     async def _aget_image_embeddings(
         self, img_file_paths: List[ImageType]
