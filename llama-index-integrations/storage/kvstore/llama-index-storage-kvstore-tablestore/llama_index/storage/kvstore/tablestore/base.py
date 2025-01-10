@@ -117,7 +117,7 @@ class TablestoreKVStore(BaseKVStore):
         """
         raise NotImplementedError
 
-    def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> dict | None:
+    def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """Get a value from the store.
 
         Args:
@@ -143,7 +143,9 @@ class TablestoreKVStore(BaseKVStore):
             ):
                 return None
 
-    async def aget(self, key: str, collection: str = DEFAULT_COLLECTION) -> dict | None:
+    async def aget(
+        self, key: str, collection: str = DEFAULT_COLLECTION
+    ) -> Optional[dict]:
         """Get a value from the store.
 
         Args:
