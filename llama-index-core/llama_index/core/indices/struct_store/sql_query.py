@@ -628,6 +628,30 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
 
 
 class NLSQLRetrieverWithSampleRows(NLSQLRetriever):
+    """Text-to-SQL Retriever.
+
+    Retrieves via text. Retrieves sample rows with each retrieved table schema.
+    Overwrites the `_get_table_context` method in the parent class `NLSQLRetriever`
+    to include sample rows in the context.
+
+    Args:
+        sql_database (SQLDatabase): SQL database.
+        text_to_sql_prompt (BasePromptTemplate): Prompt template for text-to-sql.
+            Defaults to DEFAULT_TEXT_TO_SQL_PROMPT.
+        context_query_kwargs (dict): Mapping from table name to context query.
+            Defaults to None.
+        tables (Union[List[str], List[Table]]): List of table names or Table objects.
+        table_retriever (ObjectRetriever[SQLTableSchema]): Object retriever for
+            SQLTableSchema objects. Defaults to None.
+        context_str_prefix (str): Prefix for context string. Defaults to None.
+        return_raw (bool): Whether to return plain-text dump of SQL results, or parsed into Nodes.
+        handle_sql_errors (bool): Whether to handle SQL errors. Defaults to True.
+        sql_only (bool) : Whether to get only sql and not the sql query result.
+            Default to False.
+        llm (Optional[LLM]): Language model to use.
+        similarity_top_k (int): how many rows to retrieve for each table
+
+    """
     def __init__(
             self,
             sql_database: SQLDatabase,
@@ -694,8 +718,10 @@ class NLSQLRetrieverWithSampleRows(NLSQLRetriever):
                 ].as_retriever(similarity_top_k=self._similarity_top_k)
                 relevant_nodes = rows_retriever.retrieve(query_bundle.query_str)
             else:
+                # Retrieve the top `similarity_top_k` rows from each table and add them to the context
                 relevant_nodes = [TextNode(text=str(t)) for t in self._sql_database.run_sql(
-                    f"SELECT TOP {self._similarity_top_k} * from [{self._sql_database._schema}].[{table_schema_obj.table_name}]")]
+                    f"SELECT TOP {self._similarity_top_k} * "
+                    f"from [{self._sql_database._schema}].[{table_schema_obj.table_name}]")]
             if len(relevant_nodes) > 0:
                 table_row_context = "\nHere are some relevant example rows (values in the same order as columns above)\n"
                 for node in relevant_nodes:
