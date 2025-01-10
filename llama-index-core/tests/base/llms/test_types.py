@@ -77,6 +77,8 @@ def test_chat_message_content_legacy_set():
 
 def test_chat_message_content_returns_empty_string():
     m = ChatMessage(content=[TextBlock(text="test content"), ImageBlock()])
+    assert m.content == "test content"
+    m = ChatMessage()
     assert m.content is None
 
 
