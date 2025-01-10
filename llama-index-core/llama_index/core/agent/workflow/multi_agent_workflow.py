@@ -199,7 +199,7 @@ class MultiAgentWorkflow(Workflow):
         llm_input = ev.input
 
         # Set up the tools
-        tools = agent.tools or []
+        tools = [*agent.tools] if agent.tools else []
         if agent.tool_retriever:
             retrieved_tools = await agent.tool_retriever.aretrieve(
                 llm_input[-1].content or str(llm_input)
@@ -232,6 +232,7 @@ class MultiAgentWorkflow(Workflow):
         memory: BaseMemory = await ctx.get("memory")
         agent = self.agents[ev.current_agent_name]
 
+        breakpoint()
         return await agent.take_step(
             ctx,
             ev.input,
