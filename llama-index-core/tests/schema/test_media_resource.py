@@ -19,6 +19,17 @@ def test_mimetype():
     assert m.mimetype == "image/png"
 
 
+def test_mimetype_from_path():
+    m = MediaResource(path="my-image.jpg", mimetype=None)
+    assert m.mimetype == "image/jpeg"
+
+
+def test_mimetype_prioritizes_data():
+    png_1px = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    m = MediaResource(data=png_1px.encode("utf-8"), mimetype=None, path="my_image.jpg")
+    assert m.mimetype == "image/png"
+
+
 def test_hash():
     assert (
         MediaResource(
