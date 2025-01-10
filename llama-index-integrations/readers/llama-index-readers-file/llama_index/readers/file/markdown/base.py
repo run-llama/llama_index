@@ -73,7 +73,7 @@ class MarkdownReader(BaseReader):
             )
             for key, value in markdown_tups
         ]
-    
+
     def remove_images(self, content: str) -> str:
         """Remove images in markdown content but keep the description."""
         pattern = r"![(.?)](.?)"
