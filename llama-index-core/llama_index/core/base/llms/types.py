@@ -12,6 +12,7 @@ from typing import (
     Literal,
     Optional,
     Union,
+    cast,
 )
 
 import filetype
@@ -29,6 +30,7 @@ from llama_index.core.bridge.pydantic import (
     model_validator,
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.core.schema import ImageDocument
 
 
 class MessageRole(str, Enum):
@@ -140,6 +142,20 @@ class ChatMessage(BaseModel):
                 data["blocks"] = content
 
         super().__init__(**data)
+
+    @model_validator(mode="after")
+    def legacy_additional_kwargs_image(self) -> Self:
+        """Provided for backward compatibility.
+
+        If `additional_kwargs` contains an `images` key, assume the value is a list
+        of ImageDocument and convert them into image blocks.
+        """
+        if documents := self.additional_kwargs.get("images"):
+            documents = cast(list[ImageDocument], documents)
+            for doc in documents:
+                img_base64_bytes = doc.resolve_image(as_base64=True).read()
+                self.blocks.append(ImageBlock(image=img_base64_bytes))
+        return self
 
     @property
     def content(self) -> str | None:

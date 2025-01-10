@@ -6,11 +6,14 @@ from unittest import mock
 import pytest
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    ChatResponse,
+    CompletionResponse,
     ImageBlock,
     MessageRole,
     TextBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.schema import ImageDocument
 from pydantic import AnyUrl
 
 
@@ -172,3 +175,21 @@ def test_image_block_store_as_base64(png_1px_b64: bytes, png_1px: bytes):
     assert ImageBlock(image=png_1px).image == png_1px_b64
     # Store already encoded data
     assert ImageBlock(image=png_1px_b64).image == png_1px_b64
+
+
+def test_legacy_image_additional_kwargs(png_1px_b64: bytes):
+    image_doc = ImageDocument(image=png_1px_b64)
+    msg = ChatMessage(additional_kwargs={"images": [image_doc]})
+    assert len(msg.blocks) == 1
+    assert msg.blocks[0].image == png_1px_b64
+
+
+def test_chat_response():
+    message = ChatMessage("some content")
+    cr = ChatResponse(message=message)
+    assert str(cr) == str(message)
+
+
+def test_completion_response():
+    cr = CompletionResponse(text="some text")
+    assert str(cr) == "some text"
