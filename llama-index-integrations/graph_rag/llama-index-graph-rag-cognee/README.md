@@ -53,7 +53,7 @@ async def example_graph_rag_cognee():
     search_results = await cogneeRAG.search(
         "Tell me who are the people mentioned?"
     )
-    print("\n\nExtracted sentences are:\n")
+    print("\n\nAnswer based on knowledge graph:\n")
     for result in search_results:
         print(f"{result}\n")
 
@@ -61,7 +61,7 @@ async def example_graph_rag_cognee():
     search_results = await cogneeRAG.rag_search(
         "Tell me who are the people mentioned?"
     )
-    print("\n\nExtracted sentences are:\n")
+    print("\n\nAnswer based on RAG:\n")
     for result in search_results:
         print(f"{result}\n")
 
