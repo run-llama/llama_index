@@ -42,12 +42,14 @@ def tablestore_doc_store() -> TablestoreDocumentStore:
         )
 
     # 1. create tablestore vector store
-    return TablestoreDocumentStore.from_config(
+    store = TablestoreDocumentStore.from_config(
         endpoint=os.getenv("tablestore_end_point"),
         instance_name=os.getenv("tablestore_instance_name"),
         access_key_id=os.getenv("tablestore_access_key_id"),
         access_key_secret=os.getenv("tablestore_access_key_secret"),
     )
+    store.clear_all()
+    return store
 
 
 # noinspection DuplicatedCode

@@ -27,6 +27,7 @@ class TablestoreIndexStore(KVIndexStore):
             namespace=namespace,
             collection_suffix=collection_suffix,
         )
+        self._tablestore_kvstore = tablestore_kvstore
 
     @classmethod
     def from_config(
@@ -46,3 +47,7 @@ class TablestoreIndexStore(KVIndexStore):
             kwargs=kwargs,
         )
         return cls(tablestore_kvstore=kv_store)
+
+    def delete_all_index(self):
+        """Delete all index."""
+        self._tablestore_kvstore.delete_all(self._collection)

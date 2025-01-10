@@ -32,12 +32,14 @@ def tablestore_index_store() -> TablestoreIndexStore:
         )
 
     # 1. create tablestore vector store
-    return TablestoreIndexStore.from_config(
+    index = TablestoreIndexStore.from_config(
         endpoint=os.getenv("tablestore_end_point"),
         instance_name=os.getenv("tablestore_instance_name"),
         access_key_id=os.getenv("tablestore_access_key_id"),
         access_key_secret=os.getenv("tablestore_access_key_secret"),
     )
+    index.delete_all_index()
+    return index
 
 
 def test_postgres_index_store(tablestore_index_store: TablestoreIndexStore) -> None:
