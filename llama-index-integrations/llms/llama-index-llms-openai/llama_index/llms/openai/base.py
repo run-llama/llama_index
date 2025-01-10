@@ -170,7 +170,7 @@ class OpenAI(FunctionCallingLLM):
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
         ge=0.0,
-        le=1.0,
+        le=2.0,
     )
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate.",
