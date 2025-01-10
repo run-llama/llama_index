@@ -1,13 +1,10 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 import boto3
 import aioboto3
 from botocore.config import Config
 from llama_index.core.base.llms.types import (
     CompletionResponse,
-    CompletionResponseGen,
-    CompletionResponseAsyncGen,
-    MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -147,7 +144,7 @@ class BedrockMultiModal(MultiModalLLM):
             aws_secret_access_key=self.aws_secret_access_key,
             region_name=self.region_name,
         )
-        return session.client('bedrock-runtime', config=self._config)
+        return session.client("bedrock-runtime", config=self._config)
 
     @classmethod
     def class_name(cls) -> str:
@@ -169,19 +166,19 @@ class BedrockMultiModal(MultiModalLLM):
             "contentType": "application/json",
             "accept": "application/json",
         }
-        
+
         if self.model.startswith("anthropic.claude"):
             model_kwargs["body"] = {
                 "anthropic_version": "bedrock-2023-05-31",
                 "max_tokens": self.max_tokens if self.max_tokens is not None else 300,
                 "temperature": self.temperature,
             }
-        
+
         # Add any additional kwargs
         if "body" in model_kwargs:
             model_kwargs["body"].update(self.additional_kwargs)
             model_kwargs["body"].update(kwargs)
-        
+
         return model_kwargs
 
     def _complete(
@@ -203,6 +200,7 @@ class BedrockMultiModal(MultiModalLLM):
         # Convert body to JSON string
         if isinstance(model_kwargs.get("body"), dict):
             import json
+
             body_str = json.dumps(model_kwargs["body"])
             del model_kwargs["body"]
         else:
@@ -219,7 +217,7 @@ class BedrockMultiModal(MultiModalLLM):
 
         # Parse the streaming response body
         response_body = json.loads(response["body"].read())
-        
+
         # Parse response based on model
         if self.model.startswith("anthropic.claude"):
             completion = response_body["content"][0]["text"]
@@ -231,8 +229,12 @@ class BedrockMultiModal(MultiModalLLM):
             text=completion,
             raw=response_body,
             additional_kwargs={
-                "input_tokens": response["ResponseMetadata"]["HTTPHeaders"].get("x-amzn-bedrock-input-token-count"),
-                "output_tokens": response["ResponseMetadata"]["HTTPHeaders"].get("x-amzn-bedrock-output-token-count"),
+                "input_tokens": response["ResponseMetadata"]["HTTPHeaders"].get(
+                    "x-amzn-bedrock-input-token-count"
+                ),
+                "output_tokens": response["ResponseMetadata"]["HTTPHeaders"].get(
+                    "x-amzn-bedrock-output-token-count"
+                ),
             },
         )
 
@@ -261,6 +263,7 @@ class BedrockMultiModal(MultiModalLLM):
         # Convert body to JSON string
         if isinstance(model_kwargs.get("body"), dict):
             import json
+
             body_str = json.dumps(model_kwargs["body"])
             del model_kwargs["body"]
         else:
@@ -278,7 +281,7 @@ class BedrockMultiModal(MultiModalLLM):
 
         # Parse the streaming response body
         response_body = json.loads(await response["body"].read())
-        
+
         # Parse response based on model
         if self.model.startswith("anthropic.claude"):
             completion = response_body["content"][0]["text"]
@@ -290,8 +293,12 @@ class BedrockMultiModal(MultiModalLLM):
             text=completion,
             raw=response_body,
             additional_kwargs={
-                "input_tokens": response["ResponseMetadata"]["HTTPHeaders"].get("x-amzn-bedrock-input-token-count"),
-                "output_tokens": response["ResponseMetadata"]["HTTPHeaders"].get("x-amzn-bedrock-output-token-count"),
+                "input_tokens": response["ResponseMetadata"]["HTTPHeaders"].get(
+                    "x-amzn-bedrock-input-token-count"
+                ),
+                "output_tokens": response["ResponseMetadata"]["HTTPHeaders"].get(
+                    "x-amzn-bedrock-output-token-count"
+                ),
             },
         )
 
@@ -299,9 +306,7 @@ class BedrockMultiModal(MultiModalLLM):
         """Chat with the model."""
         raise NotImplementedError("Chat is not supported for this model.")
 
-    def stream_chat(
-        self, messages: Sequence[Any], **kwargs: Any
-    ) -> Any:
+    def stream_chat(self, messages: Sequence[Any], **kwargs: Any) -> Any:
         """Stream chat with the model."""
         raise NotImplementedError("Stream chat is not supported for this model.")
 
@@ -309,9 +314,7 @@ class BedrockMultiModal(MultiModalLLM):
         """Chat with the model asynchronously."""
         raise NotImplementedError("Async chat is not supported for this model.")
 
-    async def astream_chat(
-        self, messages: Sequence[Any], **kwargs: Any
-    ) -> Any:
+    async def astream_chat(self, messages: Sequence[Any], **kwargs: Any) -> Any:
         """Stream chat with the model asynchronously."""
         raise NotImplementedError("Async stream chat is not supported for this model.")
 
@@ -319,10 +322,14 @@ class BedrockMultiModal(MultiModalLLM):
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> Any:
         """Complete the prompt with image support in a streaming fashion."""
-        raise NotImplementedError("Streaming completion is not supported for this model.")
+        raise NotImplementedError(
+            "Streaming completion is not supported for this model."
+        )
 
     async def astream_complete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> Any:
         """Complete the prompt with image support in a streaming fashion asynchronously."""
-        raise NotImplementedError("Async streaming completion is not supported for this model.")
+        raise NotImplementedError(
+            "Async streaming completion is not supported for this model."
+        )

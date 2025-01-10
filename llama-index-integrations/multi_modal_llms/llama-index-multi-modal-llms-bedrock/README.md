@@ -24,7 +24,7 @@ llm = BedrockMultiModal(
     model="anthropic.claude-3-haiku-20240307-v1:0",  # or other Bedrock multi-modal models
     temperature=0.0,
     max_tokens=300,
-    region_name="eu-central-1"  # make sure to use the region where the model access is granted
+    region_name="eu-central-1",  # make sure to use the region where the model access is granted
 )
 
 # Method 1: Load images using SimpleDirectoryReader
@@ -36,13 +36,13 @@ image_documents = SimpleDirectoryReader(
 image_doc = ImageDocument(
     image_path="/path/to/image.jpg",  # Local file path
     # OR
-    image="base64_encoded_image_string"  # Base64 encoded image
+    image="base64_encoded_image_string",  # Base64 encoded image
 )
 
 # Get a completion with both text and image
 response = llm.complete(
     prompt="Describe this image in detail:",
-    image_documents=image_documents  # or [image_doc]
+    image_documents=image_documents,  # or [image_doc]
 )
 
 print(response.text)
@@ -53,6 +53,7 @@ print(response.text)
 You can authenticate with AWS Bedrock in several ways:
 
 1. Environment variables:
+
 ```bash
 export AWS_ACCESS_KEY_ID=your_access_key
 export AWS_SECRET_ACCESS_KEY=your_secret_key
@@ -60,16 +61,18 @@ export AWS_REGION=us-east-1  # optional
 ```
 
 2. Explicit credentials:
+
 ```python
 llm = BedrockMultiModal(
     model="anthropic.claude-3-haiku-20240307-v1:0",
     aws_access_key_id="your_access_key",
     aws_secret_access_key="your_secret_key",
-    region_name="eu-central-1"
+    region_name="eu-central-1",
 )
 ```
 
 3. AWS CLI configuration:
+
 ```bash
 aws configure
 ```
@@ -96,8 +99,7 @@ image_docs = SimpleDirectoryReader(
 ).load_data()
 
 response = llm.complete(
-    prompt="Compare these two images:",
-    image_documents=image_docs
+    prompt="Compare these two images:", image_documents=image_docs
 )
 
 # Custom parameters
@@ -109,7 +111,7 @@ llm = BedrockMultiModal(
     max_retries=10,  # Maximum number of API retries
     additional_kwargs={
         # Add other model-specific parameters
-    }
+    },
 )
 
 # Response includes token counts
@@ -133,4 +135,4 @@ pytest tests/
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License.

@@ -1,3 +1,3 @@
-package(default_visibility = ["//visibility:public"])
-
-exports_files(["pyproject.toml"]) 
+poetry_requirements(
+    name="poetry",
+)

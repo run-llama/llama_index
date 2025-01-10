@@ -25,4 +25,4 @@ install:
 	poetry install --with dev
 
 install_editable:
-	pip install -e ".[dev]" 
+	pip install -e ".[dev]"

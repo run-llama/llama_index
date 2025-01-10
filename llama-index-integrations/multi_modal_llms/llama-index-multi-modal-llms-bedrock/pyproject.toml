@@ -65,4 +65,4 @@ version = ">=v2.2.6"
 include = "llama_index/"
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto" 
+asyncio_mode = "auto"

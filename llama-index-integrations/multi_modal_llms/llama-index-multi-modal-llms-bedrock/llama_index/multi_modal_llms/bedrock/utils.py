@@ -1,6 +1,6 @@
 import base64
 import logging
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 import filetype
 from tenacity import (
     before_sleep_log,
@@ -35,14 +35,16 @@ Please set up your AWS credentials using one of the following methods:
 
 logger = logging.getLogger(__name__)
 
+
 def infer_image_mimetype_from_base64(base64_string) -> str:
     decoded_data = base64.b64decode(base64_string)
     kind = filetype.guess(decoded_data)
     return kind.mime if kind is not None else None
 
+
 def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
     file_extension = image_file_path.split(".")[-1].lower()
-    
+
     if file_extension in ["jpg", "jpeg"]:
         return "image/jpeg"
     elif file_extension == "png":
@@ -51,8 +53,9 @@ def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
         return "image/gif"
     elif file_extension == "webp":
         return "image/webp"
-    
+
     return "image/jpeg"
+
 
 def generate_bedrock_multi_modal_message(
     prompt: str,
@@ -60,20 +63,11 @@ def generate_bedrock_multi_modal_message(
 ) -> Dict[str, Any]:
     """Generate message for Bedrock multi-modal API."""
     if image_documents is None:
-        return {
-            "role": "user",
-            "content": [{
-                "type": "text",
-                "text": prompt
-            }]
-        }
+        return {"role": "user", "content": [{"type": "text", "text": prompt}]}
 
     message_content = []
     # Add text content first
-    message_content.append({
-        "type": "text",
-        "text": prompt
-    })
+    message_content.append({"type": "text", "text": prompt})
 
     # Add image content
     for image_document in image_documents:
@@ -85,8 +79,8 @@ def generate_bedrock_multi_modal_message(
                 "source": {
                     "type": "base64",
                     "media_type": "image/jpeg",  # Default to JPEG
-                    "data": base64_image
-                }
+                    "data": base64_image,
+                },
             }
         elif "file_path" in image_document.metadata:
             base64_image = encode_image(image_document.metadata["file_path"])
@@ -95,8 +89,8 @@ def generate_bedrock_multi_modal_message(
                 "source": {
                     "type": "base64",
                     "media_type": "image/jpeg",  # Default to JPEG
-                    "data": base64_image
-                }
+                    "data": base64_image,
+                },
             }
         elif image_document.image:
             image_content = {
@@ -104,17 +98,15 @@ def generate_bedrock_multi_modal_message(
                 "source": {
                     "type": "base64",
                     "media_type": "image/jpeg",  # Default to JPEG
-                    "data": image_document.image
-                }
+                    "data": image_document.image,
+                },
             }
-        
+
         if image_content:
             message_content.append(image_content)
 
-    return {
-        "role": "user",
-        "content": message_content
-    }
+    return {"role": "user", "content": message_content}
+
 
 def resolve_bedrock_credentials(
     region_name: Optional[str] = None,
@@ -140,6 +132,7 @@ def resolve_bedrock_credentials(
 
     return access_key, secret_key, region
 
+
 def _create_retry_decorator(client: Any, max_retries: int) -> Any:
     """Create a retry decorator for Bedrock API calls."""
     min_seconds = 4
@@ -159,6 +152,7 @@ def _create_retry_decorator(client: Any, max_retries: int) -> Any:
         retry=(retry_if_exception_type(client.exceptions.ThrottlingException)),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
+
 
 def _create_retry_decorator_async(max_retries: int) -> Any:
     """Create a retry decorator for async Bedrock API calls."""
@@ -180,6 +174,7 @@ def _create_retry_decorator_async(max_retries: int) -> Any:
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
+
 def invoke_model_with_retry(
     client: Any,
     model: str,
@@ -193,12 +188,13 @@ def invoke_model_with_retry(
     @retry_decorator
     def _invoke_with_retry(**kwargs: Any) -> Any:
         return client.invoke_model(**kwargs)
-    
+
     return _invoke_with_retry(
         modelId=model,
         body=messages,
         **kwargs,
     )
+
 
 async def invoke_model_with_retry_async(
     session: Any,
@@ -220,4 +216,4 @@ async def invoke_model_with_retry_async(
         modelId=model,
         body=messages,
         **kwargs,
-    ) 
+    )

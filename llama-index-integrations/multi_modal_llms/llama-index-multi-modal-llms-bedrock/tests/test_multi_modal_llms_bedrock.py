@@ -36,17 +36,12 @@ def test_completion(mock_session):
     """Test completion."""
     # Mock the invoke_model response
     mock_client = mock_session.return_value.client.return_value
-    mock_client.invoke_model.return_value = {
-        "content": [{"text": "test response"}]
-    }
+    mock_client.invoke_model.return_value = {"content": [{"text": "test response"}]}
 
     llm = BedrockMultiModal()
     image_doc = ImageDocument(image="base64_encoded_string")
-    
-    response = llm.complete(
-        prompt="test prompt",
-        image_documents=[image_doc]
-    )
+
+    response = llm.complete(prompt="test prompt", image_documents=[image_doc])
 
     assert response.text == "test response"
     # Verify the call was made with correct parameters
@@ -56,7 +51,7 @@ def test_completion(mock_session):
     assert call_args["modelId"] == "anthropic.claude-3-sonnet-20240229-v1:0"
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @patch("aioboto3.Session")
 async def test_async_completion(mock_session):
     """Test async completion."""
@@ -68,11 +63,8 @@ async def test_async_completion(mock_session):
 
     llm = BedrockMultiModal()
     image_doc = ImageDocument(image="base64_encoded_string")
-    
-    response = await llm.acomplete(
-        prompt="test prompt",
-        image_documents=[image_doc]
-    )
+
+    response = await llm.acomplete(prompt="test prompt", image_documents=[image_doc])
 
     assert response.text == "async test response"
-    # No need to verify call args for async as the mock is structured differently 
+    # No need to verify call args for async as the mock is structured differently
