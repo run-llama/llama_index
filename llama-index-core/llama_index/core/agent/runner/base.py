@@ -141,6 +141,14 @@ class BaseAgentRunner(BaseAgent):
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Finalize response."""
 
+    async def afinalize_response(
+        self,
+        task_id: str,
+        step_output: Optional[TaskStepOutput] = None,
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
+        """Finalize response."""
+        return self.finalize_response(task_id, step_output)
+
     @abstractmethod
     def undo_step(self, task_id: str) -> None:
         """Undo previous step."""
