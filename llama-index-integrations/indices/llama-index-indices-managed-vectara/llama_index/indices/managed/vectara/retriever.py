@@ -17,7 +17,6 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, Node, MediaResou
 from llama_index.core.types import TokenGen
 from llama_index.core.base.response.schema import StreamingResponse
 
-# MAY NOT NEED THIS ANY MORE
 from llama_index.core.vector_stores.types import (
     FilterCondition,
     MetadataFilters,
@@ -158,7 +157,7 @@ class VectaraRetriever(BaseRetriever):
         self._citations_text_pattern = citations_text_pattern
         self._save_history = save_history
 
-        self._conv_id = None  # necessary for retrieving conv_id from _vectara_stream()
+        self._conv_id = None
         self._x_source_str = x_source_str
 
         if reranker in [
@@ -429,11 +428,7 @@ class VectaraRetriever(BaseRetriever):
             source_nodes = []
             response_metadata = {}
 
-            # TODO: UPDATE SO THAT WE JUST YIELD A GENERATOR AND DON'T USE DELTA CHUNKS WITH COMPLETIONRESPONSE
-            # USE BUILT IN PRINT/GETTER FUNCTION FOR GETTING THE STREAMING RESPONSE
-
             def text_generator() -> TokenGen:
-                # stream_response = CompletionResponse(text="")
                 for line in response.iter_lines():
                     line = line.decode("utf-8")
                     if line:
@@ -441,10 +436,6 @@ class VectaraRetriever(BaseRetriever):
                         if key == "data":
                             line = json.loads(value)
                             if line["type"] == "generation_chunk":
-                                # chunk = line["generation_chunk"]
-                                # stream_response.text += chunk
-                                # stream_response.delta = chunk
-                                # yield stream_response
                                 yield line["generation_chunk"]
 
                             elif line["type"] == "factual_consistency_score":
