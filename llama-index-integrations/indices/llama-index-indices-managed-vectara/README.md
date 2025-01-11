@@ -17,6 +17,8 @@ Finally, set up your Vectara corpus. If you don't have a Vectara account, you ca
 
 ## Usage
 
+Please note that this usage example is for versions >= 0.4.0 and will not be the same as for earlier versions of Vectara Managed Index.
+
 First let's initialize the index with some sample documents.
 
 ```python
@@ -30,20 +32,22 @@ from llama_index.core.schema import Document, MediaResource
 
 docs = [
     Document(
+        id_="doc1",
         text_resource=MediaResource(
             text="""
             This is test text for Vectara integration with LlamaIndex.
             Users should love their experience with this integration
             """,
-        )
+        ),
     ),
     Document(
+        id_="doc2",
         text_resource=MediaResource(
             text="""
             The Vectara index integration with LlamaIndex implements Vectara's RAG pipeline.
             It can be used both as a retriever and query engine.
             """,
-        )
+        ),
     ),
 ]
 

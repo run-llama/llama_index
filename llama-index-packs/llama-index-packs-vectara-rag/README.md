@@ -1,6 +1,7 @@
 # Vectara RAG Pack
 
 This LlamaPack provides an end-to-end Retrieval Augmented Generation flow using Vectara.
+Please note that this guide is only relevant for versions >= 0.4.0
 
 To use the Vectara RAG Pack, you will need a Vectara account. If you don't have one already, you can [sign up](https://vectara.com/integrations/llamaindex)
 and follow our [Quick Start](https://docs.vectara.com/docs/quickstart) guide to create a corpus and an API key (make sure it has both indexing and query permissions).

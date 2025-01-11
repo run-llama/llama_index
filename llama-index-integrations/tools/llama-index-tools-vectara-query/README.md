@@ -4,6 +4,8 @@ This tool connects to a Vectara corpus and allows agents to make semantic search
 
 ## Usage
 
+Please note that this usage example relies on version >=0.3.0.
+
 This tool has a more extensive example usage documented in a Jupyter notebok [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-vectara-query/examples/vectara_query.ipynb)
 
 To use this tool, you'll need a Vectara account (If you don't have an account, you can create one [here](https://vectara.com/integrations/llamaindex)) and the following information in your environment:

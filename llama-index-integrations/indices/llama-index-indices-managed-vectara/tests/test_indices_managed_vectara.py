@@ -297,10 +297,7 @@ def test_file_upload(vectara2) -> None:
     # test query with Vectara summarization (streaming)
     query_engine = vectara2.as_query_engine(similarity_top_k=3, streaming=True)
     res = query_engine.query("What software did Paul Graham write?")
-    summary = ""
-    for chunk in res.response_gen:
-        if chunk.delta:
-            summary += chunk.delta
+    summary = str(res)
 
     assert "paul graham" in summary.lower() and "software" in summary.lower()
     assert res.metadata["fcs"] >= 0
@@ -317,6 +314,25 @@ def test_file_upload(vectara2) -> None:
     summary = res.response
     assert "paul graham" in summary.lower() and "reddit" in summary.lower()
     assert "https://www.paulgraham.com/worked.html" in str(res.source_nodes)
+
+
+def test_knee_reranker(vectara2) -> None:
+    query_engine = vectara2.as_query_engine(
+        rerank_k=50,
+        similarity_top_k=50,
+        reranker="chain",
+        rerank_chain=[
+            {"type": "slingshot"},
+            {"type": "userfn", "user_function": "knee()"},
+        ],
+    )
+
+    # test query with knee reranker (should return less results than rerank_k)
+    res = query_engine.query("How is Paul related to Reddit?")
+    summary = res.response
+    assert "paul" in summary.lower() and "reddit" in summary.lower()
+    assert "https://www.paulgraham.com/worked.html" in str(res.source_nodes)
+    assert len(res.source_nodes) > 0 and len(res.source_nodes) < 20
 
 
 def test_citations(vectara2) -> None:
@@ -383,10 +399,7 @@ def test_chat(vectara2) -> None:
 
     # Test chat follow up with streaming
     res = chat_engine.stream_chat("How did he use what he learned here in his career?")
-    summary = ""
-    for chunk in res.chat_stream:
-        if chunk.delta:
-            summary += chunk.delta
+    summary = str(res)
 
     assert "use" in summary.lower()
     assert "career" in summary.lower()
@@ -403,10 +416,7 @@ def test_chat(vectara2) -> None:
         ],
     )
     res = chat_engine.stream_chat("How did Paul feel when Yahoo bought his company?")
-    summary = res.response
-    for chunk in res.chat_stream:
-        if chunk.delta:
-            summary += chunk.delta
+    summary = str(res)
 
     assert "yahoo" in summary.lower()
     assert "felt" in summary.lower()

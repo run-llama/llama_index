@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Dict, Optional
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -15,6 +15,7 @@ from llama_index.core.chat_engine.types import (
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
+
 from llama_index.core.base.response.schema import (
     RESPONSE_TYPE,
     Response,
@@ -234,20 +235,18 @@ class VectaraChatEngine(BaseChatEngine):
         """Chat with the agent asynchronously."""
         return await self.chat(message)
 
+    def set_chat_id(self, source_nodes: List, metadata: Dict) -> None:
+        """Callback function for setting the conv_id."""
+        self.conv_id = metadata.get("chat_id", self.conv_id)
+
     def stream_chat(self, message: str) -> StreamingAgentChatResponse:
         query_bundle = QueryBundle(message)
 
-        query_response = self._retriever._vectara_stream(
-            query_bundle, chat=True, conv_id=self.conv_id
-        )
-
-        # THIS WILL NEVER WORK BASED ON CURRENT IMPLEMENTATION
-        if "chat_id" in query_response.metadata:
-            self.conv_id = query_response.metadata["chat_id"]
-
-        return StreamingAgentChatResponse(
-            chat_stream=query_response.response_gen,
-            source_nodes=query_response.source_nodes,
+        return self._retriever._vectara_stream(
+            query_bundle,
+            chat=True,
+            conv_id=self.conv_id,
+            callback_func=self.set_chat_id,
         )
 
     async def astream_chat(self, message: str) -> StreamingAgentChatResponse:
