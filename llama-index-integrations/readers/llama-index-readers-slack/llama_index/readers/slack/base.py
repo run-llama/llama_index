@@ -38,6 +38,7 @@ class SlackReader(BasePydanticReader):
     slack_token: str
     earliest_date_timestamp: Optional[float]
     latest_date_timestamp: float
+    channel_types: str
 
     _client: Any = PrivateAttr()
 
@@ -49,6 +50,7 @@ class SlackReader(BasePydanticReader):
         latest_date: Optional[datetime] = None,
         earliest_date_timestamp: Optional[float] = None,
         latest_date_timestamp: Optional[float] = None,
+        channel_types: Optional[str] = None,
     ) -> None:
         """Initialize with parameters."""
         from slack_sdk import WebClient
@@ -76,6 +78,10 @@ class SlackReader(BasePydanticReader):
             latest_date_timestamp = latest_date.timestamp()
         else:
             latest_date_timestamp = datetime.now().timestamp() or latest_date_timestamp
+        if channel_types is not None:
+            channel_types = channel_types
+        else:
+            channel_types = "public_channel,private_channel"
         res = client.api_test()
         if not res["ok"]:
             raise ValueError(f"Error initializing Slack API: {res['error']}")
@@ -84,6 +90,7 @@ class SlackReader(BasePydanticReader):
             slack_token=slack_token,
             earliest_date_timestamp=earliest_date_timestamp,
             latest_date_timestamp=latest_date_timestamp,
+            channel_types=channel_types,
         )
         self._client = client
 
@@ -244,13 +251,11 @@ class SlackReader(BasePydanticReader):
             return False
 
     def _list_channels(self) -> List[Dict[str, Any]]:
-        """List all channels (public and private)."""
+        """List channels based on the types."""
         from slack_sdk.errors import SlackApiError
 
         try:
-            result = self._client.conversations_list(
-                types="public_channel,private_channel"
-            )
+            result = self._client.conversations_list(types=self.channel_types)
             return result["channels"]
         except SlackApiError as e:
             logger.error(f"Error fetching channels: {e.response['error']}")

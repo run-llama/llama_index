@@ -34,7 +34,7 @@ from pydantic import ConfigDict, Field, PrivateAttr
 from openai import OpenAI as SyncOpenAI
 from openai import AsyncOpenAI
 
-DEFAULT_UPSTAGE_MODEL = "solar-1-mini-chat"
+DEFAULT_UPSTAGE_MODEL = "solar-mini"
 
 llm_retry_decorator = create_retry_decorator(
     max_retries=6,
