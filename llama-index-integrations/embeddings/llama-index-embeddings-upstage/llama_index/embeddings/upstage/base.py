@@ -15,11 +15,7 @@ from llama_index.embeddings.upstage.utils import (
 logger = logging.getLogger(__name__)
 
 UPSTAGE_EMBEDDING_MODELS = {
-    "embedding-query": {
-        "query": "embedding-query",
-        "passage": "embedding-passage",
-    },
-    "embedding-passage": {
+    "embedding": {
         "query": "embedding-query",
         "passage": "embedding-passage",
     },
@@ -66,7 +62,7 @@ class UpstageEmbedding(OpenAIEmbedding):
 
     def __init__(
         self,
-        model: str = "solar-embedding-1-large",
+        model: str = "embedding",
         embed_batch_size: int = 100,
         dimensions: Optional[int] = None,
         additional_kwargs: Dict[str, Any] = None,
