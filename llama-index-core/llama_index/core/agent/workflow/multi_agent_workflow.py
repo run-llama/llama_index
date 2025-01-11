@@ -232,7 +232,6 @@ class MultiAgentWorkflow(Workflow):
         memory: BaseMemory = await ctx.get("memory")
         agent = self.agents[ev.current_agent_name]
 
-        breakpoint()
         return await agent.take_step(
             ctx,
             ev.input,
