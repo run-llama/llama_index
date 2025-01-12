@@ -1,72 +1,58 @@
-"""LLM reranker."""
+import logging
+from typing import Any, Dict, List, Optional, Sequence
 
-from typing import Callable, List, Optional
-
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, SerializeAsAny
-from llama_index.core.indices.utils import (
-    default_format_node_batch_fn,
-    default_parse_choice_select_answer_fn,
-)
-from llama_index.core.llms.llm import LLM
+from llama_index.core.bridge.pydantic import Field, SerializeAsAny
+from llama_index.core.llms import LLM, ChatMessage, ChatResponse
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
-from llama_index.core.prompts.default_prompts import DEFAULT_CHOICE_SELECT_PROMPT
+from llama_index.core.prompts.default_prompts import REBEL_RERANK_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import NodeWithScore, QueryBundle
-from llama_index.core.settings import Settings
+from llama_index.core.utils import print_text
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
+
+
+def get_default_llm() -> LLM:
+    from llama_index.llms.openai import OpenAI  # pants: no-infer-dep
+
+    return OpenAI(model="gpt-3.5-turbo-16k")
 
 
 class REBELRerank(BaseNodePostprocessor):
-    """LLM-based reranker."""
+    """REBEL (Rerank Beyond Relevance) reranker."""
 
-    top_n: int = Field(description="Top N nodes to return.")
-    choice_select_prompt: SerializeAsAny[BasePromptTemplate] = Field(
-        description="Choice select prompt."
+    top_n: int = Field(default=5, description="Top N nodes to return from reranking.")
+    llm: LLM = Field(
+        default_factory=get_default_llm,
+        description="LLM to use for REBEL",
     )
-    choice_batch_size: int = Field(description="Batch size for choice select.")
-    llm: LLM = Field(description="The LLM to rerank with.")
-
-    _format_node_batch_fn: Callable = PrivateAttr()
-    _parse_choice_select_answer_fn: Callable = PrivateAttr()
+    verbose: bool = Field(
+        default=False, description="Whether to print intermediate steps."
+    )
+    rebel_rerank_prompt: SerializeAsAny[BasePromptTemplate] = Field(
+        description="REBEL rerank prompt."
+    )
 
     def __init__(
         self,
+        top_n: int = 5,
         llm: Optional[LLM] = None,
-        choice_select_prompt: Optional[BasePromptTemplate] = None,
-        choice_batch_size: int = 10,
-        format_node_batch_fn: Optional[Callable] = None,
-        parse_choice_select_answer_fn: Optional[Callable] = None,
-        top_n: int = 10,
-    ) -> None:
-        choice_select_prompt = choice_select_prompt or DEFAULT_CHOICE_SELECT_PROMPT
-
-        llm = llm or Settings.llm
-
+        verbose: bool = False,
+        rebel_rerank_prompt: Optional[BasePromptTemplate] = None,
+    ):
+        rebel_rerank_prompt = rebel_rerank_prompt or REBEL_RERANK_PROMPT
         super().__init__(
+            verbose=verbose,
             llm=llm,
-            choice_select_prompt=choice_select_prompt,
-            choice_batch_size=choice_batch_size,
             top_n=top_n,
+            rebel_rerank_prompt=rebel_rerank_prompt,
         )
-        self._format_node_batch_fn = (
-            format_node_batch_fn or default_format_node_batch_fn
-        )
-        self._parse_choice_select_answer_fn = (
-            parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
-        )
-
-    def _get_prompts(self) -> PromptDictType:
-        """Get prompts."""
-        return {"choice_select_prompt": self.choice_select_prompt}
-
-    def _update_prompts(self, prompts: PromptDictType) -> None:
-        """Update prompts."""
-        if "choice_select_prompt" in prompts:
-            self.choice_select_prompt = prompts["choice_select_prompt"]
 
     @classmethod
     def class_name(cls) -> str:
-        return "LLMRerank"
+        return "REBELRerank"
 
     def _postprocess_nodes(
         self,
@@ -78,13 +64,29 @@ class REBELRerank(BaseNodePostprocessor):
         if len(nodes) == 0:
             return []
 
+        query_str = query_bundle.query_str
+
+        # Replace [USER QUERY] in the meta_prompt with the actual query
+        final_meta_prompt = self.meta_prompt.replace("{user_query}", query_str)
+
+        # Call LLM to generate the final choice select prompt
+        # Wrap final_meta_prompt in a PromptTemplate
+        final_meta_template = PromptTemplate(final_meta_prompt, prompt_type=PromptType.REBEL_RERANK)
+
+        # Now call llm.predict with a BasePromptTemplate
+        final_choice_select_prompt_str = self.llm.predict(final_meta_template)
+
+        # Construct the prompt template for choice select
+        final_choice_select_prompt = PromptTemplate(
+            final_choice_select_prompt_str, prompt_type=PromptType.CHOICE_SELECT
+        )
+        self.choice_select_prompt = final_choice_select_prompt
+
+
         initial_results: List[NodeWithScore] = []
         for idx in range(0, len(nodes), self.choice_batch_size):
-            nodes_batch = [
-                node.node for node in nodes[idx : idx + self.choice_batch_size]
-            ]
+            nodes_batch = [node.node for node in nodes[idx : idx + self.choice_batch_size]]
 
-            query_str = query_bundle.query_str
             fmt_batch_str = self._format_node_batch_fn(nodes_batch)
             # call each batch independently
             raw_response = self.llm.predict(
@@ -97,8 +99,9 @@ class REBELRerank(BaseNodePostprocessor):
                 raw_response, len(nodes_batch)
             )
             choice_idxs = [int(choice) - 1 for choice in raw_choices]
-            choice_nodes = [nodes_batch[idx] for idx in choice_idxs]
+            choice_nodes = [nodes_batch[i] for i in choice_idxs]
             relevances = relevances or [1.0 for _ in choice_nodes]
+
             initial_results.extend(
                 [
                     NodeWithScore(node=node, score=relevance)
