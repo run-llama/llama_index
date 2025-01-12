@@ -120,3 +120,13 @@ async def test_deprecated_params(ctx):
         DeprecationWarning, match="`make_private` is deprecated and will be ignored"
     ):
         await ctx.set("foo", 42, make_private=True)
+
+
+@pytest.mark.asyncio()
+async def test_empty_inprogress_when_workflow_done(workflow):
+    h = workflow.run()
+    _ = await h
+
+    # there shouldn't be any in progress events
+    for inprogress_list in h.ctx._in_progress.values():
+        assert len(inprogress_list) == 0

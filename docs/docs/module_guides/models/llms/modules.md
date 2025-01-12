@@ -49,6 +49,7 @@ We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 - [Replicate Vector Index Llama2](../../../examples/vector_stores/SimpleIndexDemoLlama2.ipynb)
 - [RunGPT](../../../examples/llm/rungpt.ipynb)
 - [SageMaker](../../../examples/llm/sagemaker_endpoint_llm.ipynb)
+- [SambaNova Systems](../../../examples/llm/sambanovasystems.ipynb)
 - [Solar](../../../examples/llm/solar.ipynb)
 - [Together.ai](../../../examples/llm/together.ipynb)
 - [Unify AI](../../../examples/llm/unify.ipynb)
