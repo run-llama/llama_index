@@ -1,9 +1,9 @@
 import pytest
-from llama_index.core.schema import Document, TextNode, NodeRelationship
-from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
-from llama_index.core.llms import MockLLM
-from llama_index.core.llms import ChatMessage, ChatResponse
+
 from llama_index.core.extractors import DocumentContextExtractor
+from llama_index.core.llms import ChatMessage, ChatResponse, MockLLM
+from llama_index.core.schema import Document, NodeRelationship, TextNode
+from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
 
 
 @pytest.fixture()

@@ -1,17 +1,27 @@
-from llama_index.core.llms import ChatMessage, LLM
-from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
-from llama_index.core.extractors import BaseExtractor
-from llama_index.core.schema import BaseNode, TextNode, Node
-from llama_index.core import Settings
-from llama_index.core.storage.docstore.simple_docstore import DocumentStore
-from typing import Optional, Dict, List, Set, Literal, Any, Sequence, Coroutine, Union
-from llama_index.core.llms import TextBlock, ImageBlock, ChatResponse
-import logging
 import asyncio
+import logging
 import random
 from functools import lru_cache
+from typing import (
+    Any,
+    ClassVar,
+    Coroutine,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 from typing_extensions import TypeGuard
-from typing import ClassVar
+
+from llama_index.core import Settings
+from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
+from llama_index.core.extractors import BaseExtractor
+from llama_index.core.llms import ChatMessage, ChatResponse, ImageBlock, LLM, TextBlock
+from llama_index.core.schema import BaseNode, Node, TextNode
+from llama_index.core.storage.docstore.simple_docstore import DocumentStore
 
 
 def is_text_node(node: BaseNode) -> TypeGuard[Union[Node, TextNode]]:
@@ -164,15 +174,20 @@ class DocumentContextExtractor(BaseExtractor):
             ChatMessage(
                 role="user",
                 content=[
-                    {
-                        "text": cached_text,
-                        "block_type": "text",
-                        "cache_control": {"type": "ephemeral"},
-                    },
-                    {
-                        "text": f"Here is the chunk we want to situate within the whole document:\n<chunk>{node.get_content()}</chunk>\n{prompt}",
-                        "block_type": "text",
-                    },
+                    TextBlock(
+                        text=cached_text,
+                        type="text",
+                    )
+                ],
+                additional_kwargs={"cache_control": {"type": "ephemeral"}},
+            ),
+            ChatMessage(
+                role="user",
+                content=[
+                    TextBlock(
+                        text=f"Here is the chunk we want to situate within the whole document:\n<chunk>{node.get_content()}</chunk>\n{prompt}",
+                        type="text",
+                    )
                 ],
             ),
         ]
@@ -182,11 +197,13 @@ class DocumentContextExtractor(BaseExtractor):
 
         for attempt in range(max_retries):
             try:
+                # Extra headers typically dont cause issues
+                headers = {"anthropic-beta": "prompt-caching-2024-07-31"}
+
                 response: ChatResponse = await self.llm.achat(
-                    messages,
-                    max_tokens=self.max_output_tokens,
-                    extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
+                    messages, max_tokens=self.max_output_tokens, extra_headers=headers
                 )
+
                 first_block: Union[TextBlock, ImageBlock] = response.message.blocks[0]
                 if isinstance(first_block, TextBlock):
                     metadata[key] = first_block.text
@@ -328,4 +345,4 @@ class DocumentContextExtractor(BaseExtractor):
 
 
 if __name__ == "__main__":
-    print(DocumentContextExtractor.DEFAULT_CONTEXT_PROMPT)
+    print(DocumentContextExtractor.ORIGINAL_CONTEXT_PROMPT)
