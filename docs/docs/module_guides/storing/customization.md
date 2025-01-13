@@ -97,6 +97,7 @@ The vector stores that support this practice are:
 - OpensearchVectorStore
 - PineconeVectorStore
 - QdrantVectorStore
+- TablestoreVectorStore
 - RedisVectorStore
 - UpstashVectorStore
 - WeaviateVectorStore
