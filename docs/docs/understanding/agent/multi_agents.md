@@ -115,6 +115,8 @@ AgentWorkflow(
     handoff_prompt=None,
     # Custom prompt for state. Should contain the `state` and `msg` string variables. (Optional[str])
     state_prompt=None,
+    # Timeout for the workflow, in seconds. (Optional[float])
+    timeout=None,
 )
 ```
 
