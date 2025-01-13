@@ -83,21 +83,19 @@ class HyperbrowserWebReader(BaseReader):
                 metadata = data.metadata
         return content, metadata
 
-    """
-    Lazy load documents
-
-    Args:
-        urls: List of URLs to scrape or crawl
-        operation: Operation to perform. Can be "scrape" or "crawl"
-        params: Optional params for scrape or crawl. For more information on the supported params, visit https://docs.hyperbrowser.ai/reference/sdks/python/scrape#start-scrape-job-and-wait or https://docs.hyperbrowser.ai/reference/sdks/python/crawl#start-crawl-job-and-wait
-    """
-
     def lazy_load_data(
         self,
         urls: List[str],
         operation: Literal["scrape", "crawl"] = "scrape",
         params: Optional[Dict] = {},
     ) -> Iterable[Document]:
+        """Lazy load documents.
+
+        Args:
+            urls: List of URLs to scrape or crawl
+            operation: Operation to perform. Can be "scrape" or "crawl"
+            params: Optional params for scrape or crawl. For more information on the supported params, visit https://docs.hyperbrowser.ai/reference/sdks/python/scrape#start-scrape-job-and-wait or https://docs.hyperbrowser.ai/reference/sdks/python/crawl#start-crawl-job-and-wait
+        """
         try:
             from hyperbrowser.models.scrape import StartScrapeJobParams
             from hyperbrowser.models.crawl import StartCrawlJobParams
@@ -131,21 +129,19 @@ class HyperbrowserWebReader(BaseReader):
                 logger.error(f"Error crawling {urls[0]}: {e}")
                 yield self._create_document("", {})
 
-    """
-    Async lazy load documents
-
-    Args:
-        urls: List of URLs to scrape or crawl
-        operation: Operation to perform. Can be "scrape" or "crawl"
-        params: Optional params for scrape or crawl. For more information on the supported params, visit https://docs.hyperbrowser.ai/reference/sdks/python/scrape#start-scrape-job-and-wait or https://docs.hyperbrowser.ai/reference/sdks/python/crawl#start-crawl-job-and-wait
-    """
-
     async def alazy_load_data(
         self,
         urls: Sequence[str],
         operation: Literal["scrape", "crawl"] = "scrape",
         params: Optional[Dict] = {},
     ) -> AsyncIterable[Document]:
+        """Async lazy load documents.
+
+        Args:
+            urls: List of URLs to scrape or crawl
+            operation: Operation to perform. Can be "scrape" or "crawl"
+            params: Optional params for scrape or crawl. For more information on the supported params, visit https://docs.hyperbrowser.ai/reference/sdks/python/scrape#start-scrape-job-and-wait or https://docs.hyperbrowser.ai/reference/sdks/python/crawl#start-crawl-job-and-wait
+        """
         try:
             from hyperbrowser.models.scrape import StartScrapeJobParams
             from hyperbrowser.models.crawl import StartCrawlJobParams
