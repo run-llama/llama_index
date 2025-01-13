@@ -36,6 +36,13 @@ Currently available agents:
 {agent_info}
 """
 
+DEFAULT_STATE_PROMPT = """Current state:
+{state}
+
+Current message:
+{msg}
+"""
+
 
 async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
     """Handoff control of that chat to the given agent."""
@@ -56,6 +63,7 @@ class AgentWorkflow(Workflow):
         self,
         agents: List[BaseWorkflowAgent],
         initial_state: Optional[Dict] = None,
+        root_agent: Optional[str] = None,
         handoff_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         timeout: Optional[float] = None,
@@ -66,26 +74,31 @@ class AgentWorkflow(Workflow):
             raise ValueError("At least one agent must be provided")
 
         self.agents = {cfg.name: cfg for cfg in agents}
-        only_one_root_agent = sum(cfg.is_entrypoint_agent for cfg in agents) == 1
-        if not only_one_root_agent:
+        if len(agents) == 1:
+            root_agent = agents[0].name
+        elif root_agent is None:
             raise ValueError("Exactly one root agent must be provided")
+        else:
+            root_agent = root_agent
 
-        self.root_agent = next(agent for agent in agents if agent.is_entrypoint_agent)
+        if root_agent not in self.agents:
+            raise ValueError(f"Root agent {root_agent} not found in provided agents")
 
+        self.root_agent = root_agent
         self.initial_state = initial_state or {}
 
         self.handoff_prompt = handoff_prompt or DEFAULT_HANDOFF_PROMPT
         if isinstance(self.handoff_prompt, str):
             self.handoff_prompt = PromptTemplate(self.handoff_prompt)
-            if "{agent_info}" not in self.handoff_prompt.template:
+            if "{agent_info}" not in self.handoff_prompt.get_template():
                 raise ValueError("Handoff prompt must contain {agent_info}")
 
-        self.state_prompt = state_prompt
+        self.state_prompt = state_prompt or DEFAULT_STATE_PROMPT
         if isinstance(self.state_prompt, str):
             self.state_prompt = PromptTemplate(self.state_prompt)
             if (
-                "{state}" not in self.state_prompt.template
-                or "{msg}" not in self.state_prompt.template
+                "{state}" not in self.state_prompt.get_template()
+                or "{msg}" not in self.state_prompt.get_template()
             ):
                 raise ValueError("State prompt must contain {state} and {msg}")
 
@@ -123,7 +136,7 @@ class AgentWorkflow(Workflow):
         if not await ctx.get("memory", default=None):
             default_memory = ev.get("memory", default=None)
             default_memory = default_memory or ChatMemoryBuffer.from_defaults(
-                llm=self.agents[self.root_agent.name].llm or Settings.llm
+                llm=self.agents[self.root_agent].llm or Settings.llm
             )
             await ctx.set("memory", default_memory)
         if not await ctx.get("agents", default=None):
@@ -131,7 +144,7 @@ class AgentWorkflow(Workflow):
         if not await ctx.get("state", default=None):
             await ctx.set("state", self.initial_state)
         if not await ctx.get("current_agent", default=None):
-            await ctx.set("current_agent", self.root_agent)
+            await ctx.set("current_agent", self.agents[self.root_agent])
 
     async def _call_tool(
         self,
@@ -176,10 +189,9 @@ class AgentWorkflow(Workflow):
         if user_msg:
             # Add the state to the user message if it exists and if requested
             current_state = await ctx.get("state")
-            if self.state_prompt and current_state:
-                user_msg.content = self.state_prompt.format(
-                    state=current_state, msg=user_msg.content
-                )
+            user_msg.content = self.state_prompt.format(
+                state=current_state, msg=user_msg.content
+            )
 
             await memory.aput(user_msg)
             input_messages = memory.get(input=user_msg.content)

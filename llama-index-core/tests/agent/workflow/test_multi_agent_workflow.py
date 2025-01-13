@@ -103,7 +103,6 @@ def retriever_agent():
         name="retriever",
         description="Manages data retrieval",
         system_prompt="You are a retrieval assistant.",
-        is_entrypoint_agent=True,
         llm=MockLLM(
             responses=[
                 ChatMessage(
@@ -132,9 +131,10 @@ async def test_basic_workflow(calculator_agent, retriever_agent):
     """Test basic workflow initialization and validation."""
     workflow = AgentWorkflow(
         agents=[calculator_agent, retriever_agent],
+        root_agent="retriever",
     )
 
-    assert workflow.root_agent == retriever_agent
+    assert workflow.root_agent == retriever_agent.name
     assert len(workflow.agents) == 2
     assert "calculator" in workflow.agents
     assert "retriever" in workflow.agents
@@ -149,7 +149,6 @@ async def test_workflow_requires_root_agent():
                 FunctionAgent(
                     name="agent1",
                     description="test",
-                    is_entrypoint_agent=True,
                     llm=MockLLM(
                         responses=[
                             ChatMessage(role=MessageRole.ASSISTANT, content="test"),
@@ -159,7 +158,6 @@ async def test_workflow_requires_root_agent():
                 ReactAgent(
                     name="agent2",
                     description="test",
-                    is_entrypoint_agent=True,
                     llm=MockLLM(
                         responses=[
                             ChatMessage(role=MessageRole.ASSISTANT, content="test"),
@@ -175,6 +173,7 @@ async def test_workflow_execution(calculator_agent, retriever_agent):
     """Test basic workflow execution with agent handoff."""
     workflow = AgentWorkflow(
         agents=[calculator_agent, retriever_agent],
+        root_agent="retriever",
     )
 
     memory = ChatMemoryBuffer.from_defaults()
@@ -208,7 +207,6 @@ async def test_invalid_handoff():
     agent1 = FunctionAgent(
         name="agent1",
         description="test",
-        is_entrypoint_agent=True,
         llm=MockLLM(
             responses=[
                 ChatMessage(
@@ -251,7 +249,6 @@ async def test_workflow_with_state():
     agent = FunctionAgent(
         name="agent",
         description="test",
-        is_entrypoint_agent=True,
         llm=MockLLM(
             responses=[
                 ChatMessage(

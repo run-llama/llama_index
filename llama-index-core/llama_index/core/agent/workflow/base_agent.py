@@ -43,10 +43,6 @@ class BaseWorkflowAgent(BaseModel, ABC):
     llm: LLM = Field(
         default_factory=get_default_llm, description="The LLM that the agent uses"
     )
-    is_entrypoint_agent: bool = Field(
-        default=False,
-        description="Whether the agent is the entrypoint agent in a multi-agent workflow",
-    )
 
     @abstractmethod
     async def take_step(

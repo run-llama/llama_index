@@ -45,12 +45,13 @@ retriever_agent = FunctionAgent(
     name="retriever",
     description="Manages data retrieval",
     system_prompt="You are a retrieval assistant.",
-    is_entrypoint_agent=True,
     llm=OpenAI(model="gpt-4"),
 )
 
 # Create and run the workflow
-workflow = AgentWorkflow(agent_configs=[calculator_agent, retriever_agent])
+workflow = AgentWorkflow(
+    agents=[calculator_agent, retriever_agent], root_agent="calculator"
+)
 
 # Run the system
 response = await workflow.run(user_msg="Can you add 5 and 3?")
@@ -64,9 +65,9 @@ async for event in handler.stream_events():
 
 ## How It Works
 
-The AgentWorkflow manages a collection of agents, each with their own specialized capabilities. One agent must be designated as the entry point agent (`is_entrypoint_agent=True`).
+The AgentWorkflow manages a collection of agents, each with their own specialized capabilities. One agent must be designated as the root agent in the `AgentWorkflow` constructor.
 
-When a user message comes in, it's first routed to the entry point agent. Each agent can then:
+When a user message comes in, it's first routed to the root agent. Each agent can then:
 
 1. Handle the request directly using their tools
 2. Hand off to another agent better suited for the task
@@ -90,8 +91,6 @@ FunctionAgent(
     tools=[...],
     # LLM to use for this agent. (BaseLLM)
     llm=OpenAI(model="gpt-4"),
-    # Whether this is the entry point. (bool)
-    is_entrypoint_agent=True,
     # List of agents this one can hand off to. Defaults to all agents. (List[str])
     can_handoff_to=[...],
 )
@@ -105,6 +104,8 @@ The AgentWorkflow constructor accepts:
 AgentWorkflow(
     # List of agent configs. (List[BaseWorkflowAgent])
     agents=[...],
+    # Root agent name. (str)
+    root_agent="root_agent",
     # Initial state dict. (Optional[dict])
     initial_state=None,
     # Custom prompt for handoffs. Should contain the `agent_info` string variable. (Optional[str])
@@ -123,6 +124,7 @@ You can provide an initial state dict that will be available to all agents:
 ```python
 workflow = AgentWorkflow(
     agents=[...],
+    root_agent="root_agent",
     initial_state={"counter": 0},
     state_prompt="Current state: {state}. User message: {msg}",
 )
