@@ -1,6 +1,6 @@
 # Multi-Agent Workflows
 
-The MultiAgentWorkflow uses Workflow Agents to allow you to create a system of multiple agents that can collaborate and hand off tasks to each other based on their specialized capabilities. This enables building more complex agent systems where different agents handle different aspects of a task.
+The AgentWorkflow uses Workflow Agents to allow you to create a system of multiple agents that can collaborate and hand off tasks to each other based on their specialized capabilities. This enables building more complex agent systems where different agents handle different aspects of a task.
 
 ## Quick Start
 
@@ -8,7 +8,7 @@ Here's a simple example of setting up a multi-agent workflow with a calculator a
 
 ```python
 from llama_index.core.agent.workflow import (
-    MultiAgentWorkflow,
+    AgentWorkflow,
     FunctionAgent,
     ReactAgent,
 )
@@ -50,9 +50,7 @@ retriever_agent = FunctionAgent(
 )
 
 # Create and run the workflow
-workflow = MultiAgentWorkflow(
-    agent_configs=[calculator_agent, retriever_agent]
-)
+workflow = AgentWorkflow(agent_configs=[calculator_agent, retriever_agent])
 
 # Run the system
 response = await workflow.run(user_msg="Can you add 5 and 3?")
@@ -66,7 +64,7 @@ async for event in handler.stream_events():
 
 ## How It Works
 
-The MultiAgentWorkflow manages a collection of agents, each with their own specialized capabilities. One agent must be designated as the entry point agent (`is_entrypoint_agent=True`).
+The AgentWorkflow manages a collection of agents, each with their own specialized capabilities. One agent must be designated as the entry point agent (`is_entrypoint_agent=True`).
 
 When a user message comes in, it's first routed to the entry point agent. Each agent can then:
 
@@ -101,10 +99,10 @@ FunctionAgent(
 
 ### Workflow Options
 
-The MultiAgentWorkflow constructor accepts:
+The AgentWorkflow constructor accepts:
 
 ```python
-MultiAgentWorkflow(
+AgentWorkflow(
     # List of agent configs. (List[BaseWorkflowAgent])
     agents=[...],
     # Initial state dict. (Optional[dict])
@@ -123,7 +121,7 @@ MultiAgentWorkflow(
 You can provide an initial state dict that will be available to all agents:
 
 ```python
-workflow = MultiAgentWorkflow(
+workflow = AgentWorkflow(
     agents=[...],
     initial_state={"counter": 0},
     state_prompt="Current state: {state}. User message: {msg}",
@@ -137,7 +135,7 @@ The state is stored in the `state` key of the workflow context.
 In order to persist state between runs, you can pass in the context from the previous run:
 
 ```python
-workflow = MultiAgentWorkflow(...)
+workflow = AgentWorkflow(...)
 
 # Run the workflow
 handler = workflow.run(user_msg="Can you add 5 and 3?")

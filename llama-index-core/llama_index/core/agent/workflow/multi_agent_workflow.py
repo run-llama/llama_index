@@ -49,7 +49,7 @@ async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
     return f"Handed off to {to_agent} because: {reason}"
 
 
-class MultiAgentWorkflow(Workflow):
+class AgentWorkflow(Workflow):
     """A workflow for managing multiple agents with handoffs."""
 
     def __init__(

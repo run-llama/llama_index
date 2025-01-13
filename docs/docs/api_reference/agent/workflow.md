@@ -1,7 +1,7 @@
 ::: llama_index.core.agent.workflow
     options:
       members:
-        - MultiAgentWorkflow
+        - AgentWorkflow
         - BaseWorkflowAgent
         - FunctionAgent
         - ReactAgent

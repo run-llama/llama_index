@@ -2,7 +2,7 @@ from typing import Any, List
 import pytest
 
 from llama_index.core.llms import MockLLM
-from llama_index.core.agent.workflow.multi_agent_workflow import MultiAgentWorkflow
+from llama_index.core.agent.workflow.multi_agent_workflow import AgentWorkflow
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
 from llama_index.core.agent.workflow.react_agent import ReactAgent
 from llama_index.core.llms import (
@@ -130,7 +130,7 @@ def retriever_agent():
 @pytest.mark.asyncio()
 async def test_basic_workflow(calculator_agent, retriever_agent):
     """Test basic workflow initialization and validation."""
-    workflow = MultiAgentWorkflow(
+    workflow = AgentWorkflow(
         agents=[calculator_agent, retriever_agent],
     )
 
@@ -144,7 +144,7 @@ async def test_basic_workflow(calculator_agent, retriever_agent):
 async def test_workflow_requires_root_agent():
     """Test that workflow requires exactly one root agent."""
     with pytest.raises(ValueError, match="Exactly one root agent must be provided"):
-        MultiAgentWorkflow(
+        AgentWorkflow(
             agents=[
                 FunctionAgent(
                     name="agent1",
@@ -173,7 +173,7 @@ async def test_workflow_requires_root_agent():
 @pytest.mark.asyncio()
 async def test_workflow_execution(calculator_agent, retriever_agent):
     """Test basic workflow execution with agent handoff."""
-    workflow = MultiAgentWorkflow(
+    workflow = AgentWorkflow(
         agents=[calculator_agent, retriever_agent],
     )
 
@@ -232,7 +232,7 @@ async def test_invalid_handoff():
         ),
     )
 
-    workflow = MultiAgentWorkflow(
+    workflow = AgentWorkflow(
         agents=[agent1],
     )
 
@@ -261,7 +261,7 @@ async def test_workflow_with_state():
         ),
     )
 
-    workflow = MultiAgentWorkflow(
+    workflow = AgentWorkflow(
         agents=[agent],
         initial_state={"counter": 0},
         state_prompt="Current state: {state}. User message: {msg}",
