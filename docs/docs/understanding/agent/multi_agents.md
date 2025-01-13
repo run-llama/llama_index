@@ -133,7 +133,9 @@ workflow = AgentWorkflow(
 )
 ```
 
-The state is stored in the `state` key of the workflow context.
+The state is stored in the `state` key of the workflow context. It will be injected into the `state_prompt` which augments each new user message.
+
+The state can also be modified by tools by accessing the workflow context directly in the tool body.
 
 #### Persisting State Between Runs
 
