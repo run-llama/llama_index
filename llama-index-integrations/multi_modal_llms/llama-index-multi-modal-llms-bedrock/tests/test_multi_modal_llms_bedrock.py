@@ -2,7 +2,7 @@
 import json
 from io import BytesIO
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch, AsyncMock
 
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.multi_modal_llms.bedrock import BedrockMultiModal
@@ -45,7 +45,7 @@ def test_completion(mock_session):
                 "x-amzn-bedrock-input-token-count": "100",
                 "x-amzn-bedrock-output-token-count": "50",
             }
-        }
+        },
     }
     mock_client.invoke_model.return_value = mock_response
 
@@ -61,14 +61,16 @@ def test_completion(mock_session):
     mock_client.invoke_model.assert_called_once()
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @patch("aioboto3.Session")
 async def test_async_completion(mock_session):
     """Test async completion."""
     # Mock the async client
     mock_client = mock_session.return_value.client.return_value.__aenter__.return_value
     mock_body = AsyncMock()
-    mock_body.read.return_value = json.dumps({"content": [{"text": "async test response"}]}).encode()
+    mock_body.read.return_value = json.dumps(
+        {"content": [{"text": "async test response"}]}
+    ).encode()
     mock_response = {
         "body": mock_body,
         "ResponseMetadata": {
@@ -76,7 +78,7 @@ async def test_async_completion(mock_session):
                 "x-amzn-bedrock-input-token-count": "100",
                 "x-amzn-bedrock-output-token-count": "50",
             }
-        }
+        },
     }
     mock_client.invoke_model.return_value = mock_response
 
