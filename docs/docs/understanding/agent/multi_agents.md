@@ -245,7 +245,7 @@ async def ask_for_confirmation(ctx: Context) -> bool:
     return result.confirmation
 ```
 
-When this function is called, it will block the workflow execution until the user sends the required confirmation event.
+When this function is called (i.e, when an agent calls this tool), it will block the workflow execution until the user sends the required confirmation event.
 
 ```python
 handler = workflow.run(user_msg="Can you add 5 and 3?")
