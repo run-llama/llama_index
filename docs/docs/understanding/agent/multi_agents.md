@@ -1,6 +1,9 @@
 # Multi-Agent Workflows
 
-The AgentWorkflow uses Workflow Agents to allow you to create a system of multiple agents that can collaborate and hand off tasks to each other based on their specialized capabilities. This enables building more complex agent systems where different agents handle different aspects of a task.
+The `AgentWorkflow` uses Workflow Agents to allow you to create a system of one or more agents that can collaborate and hand off tasks to each other based on their specialized capabilities. This enables building complex agent systems where different agents handle different aspects of a task.
+
+!!! tip
+    The `AgentWorkflow` class is built on top of LlamaIndex `Workflows`. For more information on how workflows work, check out the [detailed guide](../../module_guides/workflow/index.md) or [introductory tutorial](../workflows/index.md).
 
 ## Quick Start
 
