@@ -174,24 +174,14 @@ def messages_to_anthropic_messages(
                     img_bytes = block.resolve_image(as_base64=True).read()
                     img_str = img_bytes.decode("utf-8")
 
-                    if block.image_mimetype == "application/pdf":
-                        block = ImageBlockParam(
-                            type="document",
-                            source={
-                                "type": "base64",
-                                "media_type": block.image_mimetype,
-                                "data": img_str,
-                            },
-                        )
-                    else:
-                        block = ImageBlockParam(
-                            type="image",
-                            source={
-                                "type": "base64",
-                                "media_type": block.image_mimetype or "image/png"
-                                "data": img_str,
-                            },
-                        )
+                    block = ImageBlockParam(
+                        type="document" if block.image_mimetype == "application/pdf" else "image"
+                        source={
+                            "type": "base64",
+                            "media_type": block.image_mimetype,
+                            "data": img_str,
+                        },
+                    )
                     content.append(block)
 
             tool_calls = message.additional_kwargs.get("tool_calls", [])
