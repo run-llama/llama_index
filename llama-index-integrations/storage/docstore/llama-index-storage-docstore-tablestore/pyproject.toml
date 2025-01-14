@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.qdrant"
+import_path = "llama_index.storage.docstore.tablestore"
 
 [tool.llamahub.class_authors]
-QdrantVectorStore = "llama-index"
+TablestoreDocumentStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,32 +21,26 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index vector_stores qdrant integration"
+authors = ["xunjian.sl <xunjian.sl@alibaba-inc.com>"]
+description = "llama-index docstore tablestore integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-vector-stores-qdrant"
+name = "llama-index-storage-docstore-tablestore"
 readme = "README.md"
-version = "0.4.3"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
-qdrant-client = ">=1.7.1"
-grpcio = "^1.60.0"
-llama-index-core = "^0.12.7"
-
-[tool.poetry.extras]
-fastembed = ["fastembed"]
+python = ">=3.9,<4.0"
+llama-index-storage-kvstore-tablestore = "^0.1.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
-fastembed = {optional = true, version = "^0.2.5"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
-pytest-asyncio = "*"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
