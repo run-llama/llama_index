@@ -76,7 +76,7 @@ class ReactAgent(BaseWorkflowAgent):
             ctx.write_event_to_stream(
                 AgentStream(
                     delta=r.delta or "",
-                    response=r.message.content,
+                    response=r.message.content or "",
                     tool_calls=[],
                     raw=r.raw,
                     current_agent_name=self.name,
@@ -96,7 +96,7 @@ class ReactAgent(BaseWorkflowAgent):
             await memory.aput(ChatMessage(role="user", content=error_msg))
 
             return AgentOutput(
-                response=r.message.content,
+                response=r.message.content or "",
                 tool_calls=[],
                 raw=r.raw,
                 current_agent_name=self.name,
@@ -110,7 +110,7 @@ class ReactAgent(BaseWorkflowAgent):
         # If response step, we're done
         if reasoning_step.is_done:
             return AgentOutput(
-                response=r.message.content,
+                response=r.message.content or "",
                 tool_calls=[],
                 raw=r.raw,
                 current_agent_name=self.name,
@@ -130,7 +130,7 @@ class ReactAgent(BaseWorkflowAgent):
         ]
 
         return AgentOutput(
-            response=r.message.content,
+            response=r.message.content or "",
             tool_calls=tool_calls,
             raw=r.raw,
             current_agent_name=self.name,

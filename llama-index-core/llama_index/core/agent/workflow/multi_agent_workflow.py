@@ -349,7 +349,7 @@ class AgentWorkflow(Workflow):
 
             # always finalize the agent, even if we're just handing off
             result = AgentOutput(
-                response=return_direct_tool.tool_output.content,
+                response=return_direct_tool.tool_output.content or "",
                 tool_calls=[
                     ToolSelection(
                         tool_id=t.tool_id,

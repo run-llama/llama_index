@@ -46,7 +46,7 @@ class FunctionAgent(BaseWorkflowAgent):
             ctx.write_event_to_stream(
                 AgentStream(
                     delta=r.delta or "",
-                    response=r.message.content,
+                    response=r.message.content or "",
                     tool_calls=tool_calls or [],
                     raw=r.raw,
                     current_agent_name=self.name,
@@ -63,7 +63,7 @@ class FunctionAgent(BaseWorkflowAgent):
             await ctx.set(self.scratchpad_key, scratchpad)
 
         return AgentOutput(
-            response=r.message.content,
+            response=r.message.content or "",
             tool_calls=tool_calls or [],
             raw=r.raw,
             current_agent_name=self.name,
