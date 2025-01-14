@@ -652,26 +652,27 @@ class NLSQLRetrieverWithSampleRows(NLSQLRetriever):
         similarity_top_k (int): how many rows to retrieve for each table
 
     """
+
     def __init__(
-            self,
-            sql_database: SQLDatabase,
-            text_to_sql_prompt: Optional[BasePromptTemplate] = None,
-            context_query_kwargs: Optional[dict] = None,
-            tables: Optional[Union[List[str], List[Table]]] = None,
-            table_retriever: Optional[ObjectRetriever[SQLTableSchema]] = None,
-            rows_retrievers: Optional[dict[str, VectorStoreIndex]] = None,
-            context_str_prefix: Optional[str] = None,
-            sql_parser_mode: SQLParserMode = SQLParserMode.DEFAULT,
-            llm: Optional[LLM] = None,
-            embed_model: Optional[BaseEmbedding] = None,
-            return_raw: bool = True,
-            handle_sql_errors: bool = True,
-            sql_only: bool = False,
-            callback_manager: Optional[CallbackManager] = None,
-            verbose: bool = False,
-            similarity_top_k: int = 5,
-            **kwargs: Any,
-        ) -> None:
+        self,
+        sql_database: SQLDatabase,
+        text_to_sql_prompt: Optional[BasePromptTemplate] = None,
+        context_query_kwargs: Optional[dict] = None,
+        tables: Optional[Union[List[str], List[Table]]] = None,
+        table_retriever: Optional[ObjectRetriever[SQLTableSchema]] = None,
+        rows_retrievers: Optional[dict[str, VectorStoreIndex]] = None,
+        context_str_prefix: Optional[str] = None,
+        sql_parser_mode: SQLParserMode = SQLParserMode.DEFAULT,
+        llm: Optional[LLM] = None,
+        embed_model: Optional[BaseEmbedding] = None,
+        return_raw: bool = True,
+        handle_sql_errors: bool = True,
+        sql_only: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = False,
+        similarity_top_k: int = 5,
+        **kwargs: Any,
+    ) -> None:
         """Initialize params."""
         super().__init__(
             sql_database,
@@ -693,11 +694,10 @@ class NLSQLRetrieverWithSampleRows(NLSQLRetriever):
         self._rows_retrievers = rows_retrievers
         self._similarity_top_k = similarity_top_k
 
-
     def _get_table_context(
-            self,
-            query_bundle: QueryBundle
-        ):
+        self,
+        query_bundle: QueryBundle
+    ) -> str:
         """Get table context string."""
         table_schema_objs = self._get_tables(query_bundle.query_str)
         context_strs = []
