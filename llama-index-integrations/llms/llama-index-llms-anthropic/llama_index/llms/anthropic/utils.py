@@ -174,7 +174,11 @@ def messages_to_anthropic_messages(
                     img_bytes = block.resolve_image(as_base64=True).read()
                     img_str = img_bytes.decode("utf-8")
 
-                    block_type = "document" if block.image_mimetype == "application/pdf" else "image"
+                    block_type = (
+                        "document"
+                        if block.image_mimetype == "application/pdf"
+                        else "image"
+                    )  
                     block = ImageBlockParam(
                         type=block_type,
                         source={
