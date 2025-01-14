@@ -178,7 +178,7 @@ def messages_to_anthropic_messages(
                         "document"
                         if block.image_mimetype == "application/pdf"
                         else "image"
-                    )  
+                    )
                     block = ImageBlockParam(
                         type=block_type,
                         source={
