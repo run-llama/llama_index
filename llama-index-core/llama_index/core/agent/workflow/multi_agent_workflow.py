@@ -108,7 +108,9 @@ class AgentWorkflow(Workflow):
         """Ensure all tools are async."""
         return [adapt_to_async_tool(tool) for tool in tools]
 
-    def _get_handoff_tool(self, current_agent: BaseWorkflowAgent) -> AsyncBaseTool:
+    def _get_handoff_tool(
+        self, current_agent: BaseWorkflowAgent
+    ) -> Optional[AsyncBaseTool]:
         """Creates a handoff tool for the given agent."""
         agent_info = {cfg.name: cfg.description for cfg in self.agents.values()}
 
@@ -125,6 +127,9 @@ class AgentWorkflow(Workflow):
 
         for name in configs_to_remove:
             agent_info.pop(name)
+
+        if not agent_info:
+            return None
 
         fn_tool_prompt = self.handoff_prompt.format(agent_info=str(agent_info))
         return FunctionToolWithContext.from_defaults(
@@ -220,7 +225,8 @@ class AgentWorkflow(Workflow):
 
         if agent.can_handoff_to or agent.can_handoff_to is None:
             handoff_tool = self._get_handoff_tool(agent)
-            tools.append(handoff_tool)
+            if handoff_tool:
+                tools.append(handoff_tool)
 
         async_tools = self._ensure_tools_are_async(tools)
 
