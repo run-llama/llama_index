@@ -185,4 +185,7 @@ class ReactAgent(BaseWorkflowAgent):
             start_idx = output.response.index("Answer:")
             output.response = output.response[start_idx + len("Answer:") :].strip()
 
+        # clear scratchpad
+        await ctx.set(self.reasoning_key, [])
+
         return output
