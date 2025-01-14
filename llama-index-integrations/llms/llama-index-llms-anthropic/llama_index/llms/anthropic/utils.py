@@ -183,21 +183,12 @@ def messages_to_anthropic_messages(
                                 "data": img_str,
                             },
                         )
-                    elif block.image_mimetype:
-                        block = ImageBlockParam(
-                            type="image",
-                            source={
-                                "type": "base64",
-                                "media_type": block.image_mimetype,
-                                "data": img_str,
-                            },
-                        )
                     else:
                         block = ImageBlockParam(
                             type="image",
                             source={
                                 "type": "base64",
-                                "media_type": "image/png",
+                                "media_type": block.image_mimetype or "image/png"
                                 "data": img_str,
                             },
                         )
