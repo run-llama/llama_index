@@ -20,7 +20,6 @@ from llama_index.core.data_structs.data_structs import IndexDict, IndexStructTyp
 from llama_index.core.indices.managed.base import BaseManagedIndex, IndexType
 from llama_index.core.llms.utils import LLMType, resolve_llm
 from llama_index.core.schema import (
-    BaseNode,
     Document,
     Node,
     TransformComponent,
@@ -171,11 +170,18 @@ class VectaraIndex(BaseManagedIndex):
     def _insert(
         self,
         document: Optional[Document] = None,
-        nodes: Optional[Sequence[BaseNode]] = None,
+        nodes: Optional[Sequence[Node]] = None,
         corpus_key: Optional[str] = None,
         **insert_kwargs: Any,
     ) -> None:
-        """Insert a document into a corpus."""
+        """
+        Insert a document into a corpus using Vectara's indexing API.
+
+        Args:
+            document (Document): a document to index using Vectara's Structured Document type.
+            nodes (Sequence[Node]): a list of nodes representing document parts to index a document using Vectara's Core Document type.
+            corpus_key (str): If multiple corpora are provided for this index, the corpus_key of the corpus you want to add the document to.
+        """
         if document:
             # Use Structured Document type
             metadata = document.metadata.copy()
@@ -187,10 +193,13 @@ class VectaraIndex(BaseManagedIndex):
                 "sections": [{"text": document.text_resource.text}],
             }
 
-            if insert_kwargs["description"]:
+            if "description" in insert_kwargs and insert_kwargs["description"]:
                 doc["description"] = insert_kwargs["description"]
 
-            if insert_kwargs["max_chars_per_chunk"]:
+            if (
+                "max_chars_per_chunk" in insert_kwargs
+                and insert_kwargs["max_chars_per_chunk"]
+            ):
                 doc["chunking_strategy"] = {
                     "type": "max_chars_chunking_strategy",
                     "max_chars_per_chunk": insert_kwargs["max_chars_per_chunk"],
@@ -292,7 +301,7 @@ class VectaraIndex(BaseManagedIndex):
         file_path: str,
         metadata: Optional[dict] = None,
         chunking_strategy: Optional[dict] = None,
-        table_extraction_config: Optional[dict] = None,
+        table_extraction_config: Optional[bool] = None,
         filename: Optional[str] = None,
         corpus_key: Optional[str] = None,
         **insert_kwargs: Any,
@@ -311,7 +320,7 @@ class VectaraIndex(BaseManagedIndex):
                 see API docs for full list
             metadata: Optional dict of metadata associated with the file
             chunking_strategy: Optional dict specifying max number of characters per chunk
-            table_extraction_config: Optional dict specifying whether or not to extract tables from document
+            table_extraction_config: Optional bool specifying whether or not to extract tables from document
             filename: Optional string specifying the filename
 
 
@@ -341,7 +350,7 @@ class VectaraIndex(BaseManagedIndex):
         if table_extraction_config:
             files["table_extraction_config"] = (
                 None,
-                json.dumps(table_extraction_config),
+                json.dumps({"extract_tables": table_extraction_config}),
                 "application/json",
             )
 

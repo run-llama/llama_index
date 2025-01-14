@@ -17,7 +17,7 @@ Finally, set up your Vectara corpus. If you don't have a Vectara account, you ca
 
 ## Usage
 
-Please note that this usage example is for versions >= 0.4.0 and will not be the same as for earlier versions of Vectara Managed Index.
+Please note that this usage example is for versions >= 0.4.0 and will not be the same as for earlier versions of Vectara ManagedIndex.
 
 First let's initialize the index with some sample documents.
 

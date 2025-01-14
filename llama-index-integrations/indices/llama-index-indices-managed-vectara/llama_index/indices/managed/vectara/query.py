@@ -112,9 +112,9 @@ class VectaraQueryEngine(BaseQueryEngine):
         """Answer a query."""
         kwargs = (
             {
-                "summary_response_lang": self._summary_response_lang,
-                "summary_num_results": self._summary_num_results,
-                "summary_prompt_name": self._summary_prompt_name,
+                "response_language": self._summary_response_lang,
+                "max_used_search_results": self._summary_num_results,
+                "generation_preset_name": self._summary_prompt_name,
             }
             if self._summary_enabled
             else {}
