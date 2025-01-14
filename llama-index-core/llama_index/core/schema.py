@@ -535,12 +535,15 @@ class MediaResource(BaseModel):
             # a full roundtrip to make sure it's not a false positive
             decoded = base64.b64decode(v)
             encoded = base64.b64encode(decoded)
-            if encoded == v:
-                # This is a true positive, return as is
-                return v
-        finally:
-            # Either a false positive or b64decode failed, return encoded
+            if encoded != v:
+                # Roundtrip failed, this is a false positive, return encoded
+                return base64.b64encode(v)
+        except Exception:
+            # b64decode failed, return encoded
             return base64.b64encode(v)
+
+        # Good as is, return unchanged
+        return v
 
     @field_validator("mimetype", mode="after")
     @classmethod
@@ -550,7 +553,7 @@ class MediaResource(BaseModel):
 
         # Since this field validator runs after the one for `data`
         # then the contents of `data` should be encoded already
-        b64_data = info.data["data"]
+        b64_data = info.data.get("data")
         if b64_data:  # encoded bytes
             decoded_data = base64.b64decode(b64_data)
             if guess := filetype.guess(decoded_data):
@@ -1188,11 +1191,17 @@ class ImageDocument(Document):
         text_embedding = kwargs.pop("text_embedding", None)
 
         if image:
-            kwargs["image_resource"] = MediaResource(data=image)
+            kwargs["image_resource"] = MediaResource(
+                data=image, mimetype=image_mimetype
+            )
         elif image_path:
-            kwargs["image_resource"] = MediaResource(path=image_path)
+            kwargs["image_resource"] = MediaResource(
+                path=image_path, mimetype=image_mimetype
+            )
         elif image_url:
-            kwargs["image_resource"] = MediaResource(url=image_url)
+            kwargs["image_resource"] = MediaResource(
+                url=image_url, mimetype=image_mimetype
+            )
 
         super().__init__(**kwargs)
 

@@ -14,8 +14,8 @@ def test_defaults():
 
 
 def test_mimetype():
-    png_1px = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
-    m = MediaResource(data=png_1px.encode("utf-8"), mimetype=None)
+    png_1px = b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    m = MediaResource(data=png_1px, mimetype=None)
     assert m.mimetype == "image/png"
 
 
