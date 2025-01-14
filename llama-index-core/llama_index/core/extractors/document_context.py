@@ -85,18 +85,11 @@ class DocumentContextExtractor(BaseExtractor):
     max_output_tokens: int
     oversized_document_strategy: OversizeStrategy
     num_workers: int = DEFAULT_NUM_WORKERS
-    failed_nodes: Set[str]
 
     ORIGINAL_CONTEXT_PROMPT: ClassVar[str] = ORIGINAL_CONTEXT_PROMPT
     SUCCINCT_CONTEXT_PROMPT: ClassVar[str] = SUCCINCT_CONTEXT_PROMPT
 
     DEFAULT_KEY: str = "context"
-
-    def is_job_complete(self) -> bool:
-        """
-        Simply tracks if the contextual retrieval is 100% finished through all nodes.
-        """
-        return len(self.failed_nodes) == 0
 
     def __init__(
         self,
@@ -124,7 +117,6 @@ class DocumentContextExtractor(BaseExtractor):
             max_context_length=max_context_length,
             max_output_tokens=max_output_tokens,
             oversized_document_strategy=oversized_document_strategy,
-            failed_nodes=set(),
             num_workers=num_workers,
             **kwargs,
         )
@@ -228,9 +220,6 @@ class DocumentContextExtractor(BaseExtractor):
                     await asyncio.sleep(delay)
                     continue
 
-                # Count as failure for all other exceptions
-                self.failed_nodes.add(node.node_id)
-
                 if is_rate_limit:
                     logging.error(
                         f"Failed after {max_retries} retries due to rate limiting"
@@ -293,9 +282,6 @@ class DocumentContextExtractor(BaseExtractor):
         Returns:
             List of metadata dictionaries with generated context
         """
-        # reset failed nodes count
-        self.failed_nodes = set()
-
         metadata_list: List[Dict] = []
         for _ in nodes:
             metadata_list.append({})
