@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, 'D:\project\github\llama_index\llama-index-integrations\\readers')
 from llama_index.readers.file.markdown.base import MarkdownReader
 
 
