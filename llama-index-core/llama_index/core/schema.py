@@ -43,9 +43,9 @@ from llama_index.core.bridge.pydantic import (
     SerializationInfo,
     SerializeAsAny,
     SerializerFunctionWrapHandler,
-    model_serializer,
-    field_validator,
     ValidationInfo,
+    field_validator,
+    model_serializer,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -512,6 +512,11 @@ class MediaResource(BaseModel):
         default=None, description="MIME type of this resource."
     )
 
+    model_config = {
+        # This ensures validation runs even for None values
+        "validate_default": True
+    }
+
     @field_validator("data", mode="after")
     @classmethod
     def validate_data(cls, v: bytes | None, info: ValidationInfo) -> bytes | None:
@@ -525,12 +530,17 @@ class MediaResource(BaseModel):
             return v
 
         try:
-            # Check if data is already base64 encoded
-            base64.b64decode(v)
-        except Exception:
-            v = base64.b64encode(v)
-
-        return v
+            # Check if data is already base64 encoded.
+            # b64decode() can succeed on random binary data, we make
+            # a full roundtrip to make sure it's not a false positive
+            decoded = base64.b64decode(v)
+            encoded = base64.b64encode(decoded)
+            if encoded == v:
+                # This is a true positive, return as is
+                return v
+        finally:
+            # Either a false positive or b64decode failed, return encoded
+            return base64.b64encode(v)
 
     @field_validator("mimetype", mode="after")
     @classmethod
@@ -780,7 +790,7 @@ class ImageNode(TextNode):
                 kwargs["image_url"] = ir.get("url", None)
                 kwargs["image_mimetype"] = ir.get("mimetype", None)
 
-        mimetype = kwargs.get("image_mimetype", None)
+        mimetype = kwargs.get("image_mimetype")
         if not mimetype and "image_path" in kwargs:
             # guess mimetype from image_path
             extension = Path(kwargs["image_path"]).suffix.replace(".", "")
