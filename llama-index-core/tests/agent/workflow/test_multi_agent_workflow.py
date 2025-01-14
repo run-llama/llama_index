@@ -198,7 +198,7 @@ async def test_workflow_execution(calculator_agent, retriever_agent):
         else False
         for ev in events
     )
-    assert "8" in response.response
+    assert "8" in str(response.response)
 
 
 @pytest.mark.asyncio()

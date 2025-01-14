@@ -65,7 +65,6 @@ class ReactAgent(BaseWorkflowAgent):
             chat_history=llm_input,
             current_reasoning=current_reasoning,
         )
-
         ctx.write_event_to_stream(
             AgentInput(input=input_chat, current_agent_name=self.name)
         )
@@ -96,7 +95,7 @@ class ReactAgent(BaseWorkflowAgent):
             await memory.aput(ChatMessage(role="user", content=error_msg))
 
             return AgentOutput(
-                response=r.message.content or "",
+                response=r.message,
                 tool_calls=[],
                 raw=r.raw,
                 current_agent_name=self.name,
@@ -110,7 +109,7 @@ class ReactAgent(BaseWorkflowAgent):
         # If response step, we're done
         if reasoning_step.is_done:
             return AgentOutput(
-                response=r.message.content or "",
+                response=r.message,
                 tool_calls=[],
                 raw=r.raw,
                 current_agent_name=self.name,
@@ -130,7 +129,7 @@ class ReactAgent(BaseWorkflowAgent):
         ]
 
         return AgentOutput(
-            response=r.message.content or "",
+            response=r.message,
             tool_calls=tool_calls,
             raw=r.raw,
             current_agent_name=self.name,

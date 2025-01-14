@@ -63,7 +63,7 @@ class FunctionAgent(BaseWorkflowAgent):
             await ctx.set(self.scratchpad_key, scratchpad)
 
         return AgentOutput(
-            response=r.message.content or "",
+            response=r.message,
             tool_calls=tool_calls or [],
             raw=r.raw,
             current_agent_name=self.name,
@@ -110,5 +110,8 @@ class FunctionAgent(BaseWorkflowAgent):
         scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
         for msg in scratchpad:
             await memory.aput(msg)
+
+        # reset scratchpad
+        await ctx.set(self.scratchpad_key, [])
 
         return output

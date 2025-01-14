@@ -194,9 +194,10 @@ class AgentWorkflow(Workflow):
         if user_msg:
             # Add the state to the user message if it exists and if requested
             current_state = await ctx.get("state")
-            user_msg.content = self.state_prompt.format(
-                state=current_state, msg=user_msg.content
-            )
+            if current_state:
+                user_msg.content = self.state_prompt.format(
+                    state=current_state, msg=user_msg.content
+                )
 
             await memory.aput(user_msg)
             input_messages = memory.get(input=user_msg.content)
@@ -250,12 +251,15 @@ class AgentWorkflow(Workflow):
         memory: BaseMemory = await ctx.get("memory")
         agent = self.agents[ev.current_agent_name]
 
-        return await agent.take_step(
+        agent_output = await agent.take_step(
             ctx,
             ev.input,
             ev.tools,
             memory,
         )
+
+        ctx.write_event_to_stream(agent_output)
+        return agent_output
 
     @step
     async def parse_agent_output(
@@ -349,7 +353,10 @@ class AgentWorkflow(Workflow):
 
             # always finalize the agent, even if we're just handing off
             result = AgentOutput(
-                response=return_direct_tool.tool_output.content or "",
+                response=ChatMessage(
+                    role="assistant",
+                    content=return_direct_tool.tool_output.content or "",
+                ),
                 tool_calls=[
                     ToolSelection(
                         tool_id=t.tool_id,

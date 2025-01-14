@@ -33,13 +33,13 @@ class AgentStream(Event):
 class AgentOutput(Event):
     """LLM output."""
 
-    response: str
+    response: ChatMessage
     tool_calls: list[ToolSelection]
     raw: Any
     current_agent_name: str
 
     def __str__(self) -> str:
-        return str(self.response)
+        return self.response.content or ""
 
 
 class ToolCall(Event):
