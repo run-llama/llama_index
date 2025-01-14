@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.llms.stepfun"
 
 [tool.llamahub.class_authors]
-Stepfun = "llama-index"
+StepFun = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
