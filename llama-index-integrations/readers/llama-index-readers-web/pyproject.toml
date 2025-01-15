@@ -16,6 +16,7 @@ AsyncWebPageReader = "Hironsan"
 BeautifulSoupWebReader = "thejessezhang"
 BrowserbaseWebReader = "llama-index"
 FireCrawlWebReader = "llama-index"
+HyperbrowserWebReader = "NikhilShahi"
 KnowledgeBaseWebReader = "jasonwcfan"
 MainContentExtractorReader = "HawkClaws"
 NewsArticleReader = "ruze00"
@@ -45,7 +46,7 @@ license = "MIT"
 maintainers = ["HawkClaws", "Hironsan", "NA", "an-bluecat", "bborn", "jasonwcfan", "kravetsmic", "pandazki", "ruze00", "selamanse", "thejessezhang"]
 name = "llama-index-readers-web"
 readme = "README.md"
-version = "0.3.3"
+version = "0.3.4"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
