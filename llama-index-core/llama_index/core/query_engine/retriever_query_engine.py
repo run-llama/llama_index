@@ -5,7 +5,6 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
@@ -18,8 +17,22 @@ from llama_index.core.response_synthesizers import (
 from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
 import llama_index.core.instrumentation as instrument
+from llama_index.core.workflow import (
+    Context,
+    StartEvent,
+    StopEvent,
+    step,
+    Event,
+)
 
 dispatcher = instrument.get_dispatcher(__name__)
+
+
+class RetrieveEvent(Event):
+    """Result of running retrieval."""
+
+    query_bundle: QueryBundle
+    nodes: List[NodeWithScore]
 
 
 class RetrieverQueryEngine(BaseQueryEngine):
@@ -169,37 +182,17 @@ class RetrieverQueryEngine(BaseQueryEngine):
             additional_source_nodes=additional_source_nodes,
         )
 
-    @dispatcher.span
-    def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Answer a query."""
-        with self.callback_manager.event(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        ) as query_event:
-            nodes = self.retrieve(query_bundle)
-            response = self._response_synthesizer.synthesize(
-                query=query_bundle,
-                nodes=nodes,
-            )
-            query_event.on_end(payload={EventPayload.RESPONSE: response})
+    @step
+    async def retrieve_step(self, ctx: Context, ev: StartEvent) -> RetrieveEvent:
+        """Retrieve step."""
+        nodes = await self.aretrieve(ev.query_bundle)
+        return RetrieveEvent(query_bundle=ev.query_bundle, nodes=nodes)
 
-        return response
-
-    @dispatcher.span
-    async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
-        """Answer a query."""
-        with self.callback_manager.event(
-            CBEventType.QUERY, payload={EventPayload.QUERY_STR: query_bundle.query_str}
-        ) as query_event:
-            nodes = await self.aretrieve(query_bundle)
-
-            response = await self._response_synthesizer.asynthesize(
-                query=query_bundle,
-                nodes=nodes,
-            )
-
-            query_event.on_end(payload={EventPayload.RESPONSE: response})
-
-        return response
+    @step
+    async def synthesize_step(self, ctx: Context, ev: RetrieveEvent) -> StopEvent:
+        """Synthesize step."""
+        response = await self.asynthesize(query_bundle=ev.query_bundle, nodes=ev.nodes)
+        return StopEvent(result=response)
 
     @property
     def retriever(self) -> BaseRetriever:
