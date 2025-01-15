@@ -18,7 +18,7 @@ Visit [https://opea.dev](https://opea.dev) for more information, and their [GitH
 from llama_index.embeddings.opea import OPEAEmbedding
 
 embed_model = OPEAEmbedding(
-    model="<model_name>",
+    model_name="<model_name>",
     api_base="http://localhost:8080/v1",
     embed_batch_size=10,
 )
