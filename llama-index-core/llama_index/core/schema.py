@@ -59,7 +59,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from llama_index.core.bridge.langchain import Document as LCDocument  # type: ignore
 
 
-DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
+DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\nContent:\n{content}"
 DEFAULT_METADATA_TMPL = "{key}: {value}"
 # NOTE: for pretty printing
 TRUNCATE_LENGTH = 350
@@ -741,7 +741,7 @@ class TextNode(BaseNode):
             [
                 self.metadata_template.format(key=key, value=str(value))
                 for key, value in self.metadata.items()
-                if key in usable_metadata_keys
+                if key in usable_metadata_keys and value
             ]
         )
 

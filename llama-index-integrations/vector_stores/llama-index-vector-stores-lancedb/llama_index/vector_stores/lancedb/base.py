@@ -176,7 +176,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         api_key: Optional[str] = None,
         region: Optional[str] = None,
         mode: str = "overwrite",
-        query_type: str = "vector",
+        query_type: str = "hybrid",
         reranker: Optional[Any] = None,
         overfetch_factor: int = 1,
         **kwargs: Any,
@@ -351,7 +351,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             )
         else:
             if self.api_key is None:
-                self._table.add(data, mode=self.mode)
+                self._table.add(data, mode="append")
             else:
                 self._table.add(data)
 
