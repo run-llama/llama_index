@@ -50,6 +50,7 @@ nav:
           - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
           - Memory: ./understanding/agent/memory.md
           - Adding other tools: ./understanding/agent/tools.md
+          - Multi-agent workflows: ./understanding/agent/multi_agents.md
       - Building Workflows:
           - Introduction to workflows: ./understanding/workflows/index.md
           - A basic workflow: ./understanding/workflows/basic_flow.md
@@ -853,6 +854,7 @@ nav:
           - ./api_reference/agent/openai.md
           - ./api_reference/agent/openai_legacy.md
           - ./api_reference/agent/react.md
+          - ./api_reference/agent/workflow.md
       - Callbacks:
           - ./api_reference/callbacks/agentops.md
           - ./api_reference/callbacks/aim.md
