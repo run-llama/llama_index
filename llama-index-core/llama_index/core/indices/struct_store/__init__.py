@@ -17,6 +17,8 @@ from llama_index.core.indices.struct_store.sql_query import (
     NLStructStoreQueryEngine,
     SQLStructStoreQueryEngine,
     SQLTableRetrieverQueryEngine,
+    NLSQLRetrieverWithSampleRows,
+    NLSQLTableQueryEngineWithSampleRows
 )
 
 __all__ = [
@@ -33,4 +35,6 @@ __all__ = [
     "GPTSQLStructStoreQueryEngine",
     "SQLTableRetrieverQueryEngine",
     "NLSQLTableQueryEngine",
+    "NLSQLRetrieverWithSampleRows",
+    "NLSQLTableQueryEngineWithSampleRows"
 ]
