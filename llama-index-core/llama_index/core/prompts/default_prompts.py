@@ -526,7 +526,7 @@ DEFAULT_JSONALYZE_PROMPT = PromptTemplate(
 # REBEL MetaPrompt Template
 ###########################################
 
-DEFAULT_REBEL_RERANK_PROPMPT_TMPL = (
+DEFAULT_REBEL_RERANK_PROMPT_TMPL = (
     '''You are a prompt generator. You will receive only a user’s query as input. Your task is to:
 
 Analyze the user’s query and identify additional properties beyond basic relevance that would be desirable for selecting and ranking context documents. These properties should be inferred from the query’s subject matter, without the user specifying them. Such properties may include:
@@ -786,5 +786,5 @@ Now, here is the user’s query:
 )
 
 DEFAULT_REBEL_RERANK_PROMPT = PromptTemplate(
-    DEFAULT_REBEL_PROMPT_TMPL, prompt_type=PromptType.REBEL_RERANK
+    DEFAULT_REBEL_RERANK_PROMPT_TMPL, prompt_type=PromptType.REBEL_RERANK
 )

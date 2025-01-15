@@ -36,6 +36,7 @@ __all__ = [
     "PIINodePostprocessor",
     "NERPIINodePostprocessor",
     "LLMRerank",
+    "REBELRerank",
     "SentenceEmbeddingOptimizer",
     "SentenceTransformerRerank",
     "MetadataReplacementPostProcessor",
