@@ -51,7 +51,7 @@ class FunctionTool(AsyncBaseTool):
         # If async_fn is provided explicitly, use it. Otherwise check if fn is async
         if async_fn is not None:
             self._async_fn = async_fn
-            self._fn = async_to_sync(async_fn)
+            self._fn = fn or async_to_sync(async_fn)
         else:
             assert fn is not None
             if inspect.iscoroutinefunction(fn):

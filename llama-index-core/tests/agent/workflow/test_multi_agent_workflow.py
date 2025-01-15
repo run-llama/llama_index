@@ -230,8 +230,14 @@ async def test_invalid_handoff():
         ),
     )
 
+    agent2 = FunctionAgent(
+        **agent1.model_dump(exclude={"llm"}), llm=MockLLM(responses=[])
+    )
+    agent2.name = "agent2"
+
     workflow = AgentWorkflow(
-        agents=[agent1],
+        agents=[agent1, agent2],
+        root_agent="agent1",
     )
 
     handler = workflow.run(user_msg="test")

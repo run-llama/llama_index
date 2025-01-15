@@ -27,6 +27,7 @@ def create_schema_from_function(
 ) -> Type[BaseModel]:
     """Create schema from function."""
     fields = {}
+    ignore_fields = ignore_fields or []
     params = signature(func).parameters
     for param_name in params:
         if param_name in ignore_fields:
