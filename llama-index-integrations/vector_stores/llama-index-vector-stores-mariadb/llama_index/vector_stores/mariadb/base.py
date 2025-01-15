@@ -200,7 +200,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
                 text TEXT,
                 metadata JSON,
                 embedding VECTOR({self.embed_dim}) NOT NULL,
-                INDEX `{self.table_name}_node_id_idx` (`node_id`),
+                INDEX (`node_id`),
                 VECTOR INDEX (embedding) DISTANCE=cosine
             )
             """
@@ -225,6 +225,10 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         self._initialize()
 
         stmt = f"""SELECT text, metadata FROM `{self.table_name}` WHERE node_id IN :node_ids"""
+
+        if not node_ids or len(node_ids) == 0:
+            node_ids = None
+            stmt = f"""SELECT text, metadata FROM `{self.table_name}`"""
 
         with self._engine.connect() as connection:
             result = connection.execute(sqlalchemy.text(stmt), {"node_ids": node_ids})
