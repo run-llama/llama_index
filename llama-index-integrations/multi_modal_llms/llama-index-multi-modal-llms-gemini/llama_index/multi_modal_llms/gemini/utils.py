@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Any
+from typing import Any, Optional, Sequence
 
 from llama_index.core.multi_modal_llms.base import ChatMessage
 from llama_index.core.schema import ImageDocument
