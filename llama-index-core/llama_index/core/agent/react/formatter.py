@@ -73,13 +73,13 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         fmt_sys_header = self.system_header.format(**format_args)
 
         # format reasoning history as alternating user and assistant messages
-        # where the assistant messages are thoughts and actions and the user
+        # where the assistant messages are thoughts and actions and the tool
         # messages are observations
         reasoning_history = []
         for reasoning_step in current_reasoning:
             if isinstance(reasoning_step, ObservationReasoningStep):
                 message = ChatMessage(
-                    role=MessageRole.USER,
+                    role=MessageRole.TOOL,
                     content=reasoning_step.get_content(),
                 )
             else:
