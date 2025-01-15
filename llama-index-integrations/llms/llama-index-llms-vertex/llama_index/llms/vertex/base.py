@@ -82,6 +82,9 @@ class Vertex(FunctionCallingLLM):
         default=4096, description="The context window to use for sampling."
     )
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
+    datastore: Optional[str] = Field(
+        default=None, description="The datastore to use for grounding the model."
+    )
     examples: Optional[Sequence[ChatMessage]] = Field(
         description="Example messages for the chat model."
     )
@@ -104,6 +107,7 @@ class Vertex(FunctionCallingLLM):
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[Any] = None,
+        datastore: Optional[str] = None,
         examples: Optional[Sequence[ChatMessage]] = None,
         temperature: float = 0.1,
         max_tokens: int = 512,
@@ -129,6 +133,7 @@ class Vertex(FunctionCallingLLM):
             temperature=temperature,
             context_window=context_window,
             max_tokens=max_tokens,
+            datastore=datastore,
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
             model=model,
@@ -253,6 +258,7 @@ class Vertex(FunctionCallingLLM):
             is_gemini=self._is_gemini,
             params=chat_params,
             max_retries=self.max_retries,
+            datastore = self.datastore,
             **params,
         )
 
@@ -281,6 +287,7 @@ class Vertex(FunctionCallingLLM):
             prompt,
             max_retries=self.max_retries,
             is_gemini=self._is_gemini,
+            datastore = self.datastore,
             **params,
         )
         return CompletionResponse(text=completion.text, raw=completion.__dict__)
@@ -315,6 +322,7 @@ class Vertex(FunctionCallingLLM):
             prompt=question,
             chat=True,
             stream=True,
+            datastore = self.datastore,
             is_gemini=self._is_gemini,
             params=chat_params,
             max_retries=self.max_retries,
@@ -350,6 +358,7 @@ class Vertex(FunctionCallingLLM):
             stream=True,
             is_gemini=self._is_gemini,
             max_retries=self.max_retries,
+            datastore = self.datastore,
             **params,
         )
 
@@ -395,6 +404,7 @@ class Vertex(FunctionCallingLLM):
             is_gemini=self._is_gemini,
             params=chat_params,
             max_retries=self.max_retries,
+            datastore = self.datastore,
             **params,
         )
         ##this is due to a bug in vertex AI we have to await twice
@@ -424,6 +434,7 @@ class Vertex(FunctionCallingLLM):
             prompt=prompt,
             max_retries=self.max_retries,
             is_gemini=self._is_gemini,
+            datastore = self.datastore,
             **params,
         )
         return CompletionResponse(text=completion.text)
