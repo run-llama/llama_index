@@ -78,7 +78,7 @@ When a user message comes in, it's first routed to the root agent. Each agent ca
 
 ## Configuration Options
 
-### Agent Config
+### Agent Workflow Config
 
 Each agent holds a certain set of configuration options. Whether you use `FunctionAgent` or `ReactAgent`, the core options are the same.
 
@@ -265,3 +265,41 @@ async for event in handler.stream_events():
         )
     ...
 ```
+
+## A Detailed Look at the Workflow
+
+Now that we've covered the basics, let's take a look at how the workflow operates in more detail using an end-to-end example. In this example, assume we have an `AgentWorkflow` with two agents: `generate` and `review`. In this workflow, `generate` is the root agent, and responsible for generating content. The `review` agent is responsible for reviewing the generated content.
+
+When the user sends in a request, here's the actual sequence of events:
+
+1. The workflow initializes the context with:
+   - A memory buffer for chat history.
+   - The available agents
+   - The [initial state](#initial-global-state) dictionary
+   - The current agent (initially set to the root agent, `generate`)
+
+2. The user's message is processed:
+   - If [state exists](#initial-global-state), it's added to the user's message using the [state prompt](#agent-workflow-config)
+   - The message is added to memory
+   - The chat history is prepared for the current agent
+
+3. The current agent is set up:
+   - The agent's tools are gathered (including any retrieved tools)
+   - A special `handoff` tool is added if the agent can hand off to others
+   - The agent's system prompt is prepended to the chat history
+   - An `AgentInput` event is emitted just before the LLM is called
+
+4. The agent processes the input:
+   - The agent generates a response and/or makes tool calls. This generates both `AgentStream` events and an `AgentOutput` event
+   - If there are no tool calls, the agent finalizes its response and returns it
+   - If there are tool calls, each tool is executed and the results are processed. This will generate a `ToolCall` event and a `ToolCallResult` event for each tool call
+
+5. After tool execution:
+   - If any tool was marked as `return_direct=True`, its result becomes the final output
+   - If a handoff occurred (via the handoff tool), the workflow switches to the new agent. This will not be added to the chat history in order to maintain the conversation flow.
+   - Otherwise, the updated chat history is sent back to the current agent for another step
+
+This cycle continues until either:
+- The current agent provides a response without tool calls
+- A tool marked as `return_direct=True` is called (except for handoffs)
+- The workflow times out (if a timeout was configured)
