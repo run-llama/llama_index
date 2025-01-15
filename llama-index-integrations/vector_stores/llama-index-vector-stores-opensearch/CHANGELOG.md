@@ -1,5 +1,9 @@
 # CHANGELOG — llama-index-vector-stores-opensearch
 
+## [0.4.1]
+
+- Added ability to create OpensearchVectorClient with custom os_async_client (like os_client)
+
 ## [0.2.2]
 
 - Fixed issue where Opensearch Serverless does not support painless scripting so handling the case where is_aoss is set and using knn_score script instead.

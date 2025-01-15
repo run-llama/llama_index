@@ -280,7 +280,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         asyncio.create_task(
             chat_stream_response.awrite_response_to_history(
                 task.extra_state["new_memory"],
-                on_stream_end_fn=partial(self.finalize_task, task),
+                on_stream_end_fn=partial(self.afinalize_task, task),
             )
         )
         chat_stream_response._ensure_async_setup()
@@ -661,7 +661,6 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 step, task.extra_state["new_memory"], verbose=self._verbose
             )
 
-        # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
         openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
 
@@ -670,7 +669,6 @@ class OpenAIAgentWorker(BaseAgentWorker):
             task, mode=mode, **llm_chat_kwargs
         )
 
-        # TODO: implement _should_continue
         latest_tool_calls = self.get_latest_tool_calls(task) or []
         latest_tool_outputs: List[ToolOutput] = []
 
@@ -678,32 +676,39 @@ class OpenAIAgentWorker(BaseAgentWorker):
             latest_tool_calls, task.extra_state["n_function_calls"]
         ):
             is_done = True
-
         else:
             is_done = False
+
+            # Validate all tool calls first
             for tool_call in latest_tool_calls:
-                # Some validation
                 if not isinstance(tool_call, get_args(OpenAIToolCall)):
                     raise ValueError("Invalid tool_call object")
-
                 if tool_call.type != "function":
                     raise ValueError("Invalid tool type. Unsupported by OpenAI")
 
-                # TODO: maybe execute this with multi-threading
-                return_direct = await self._acall_function(
-                    tools,
-                    tool_call,
-                    task.extra_state["new_memory"],
-                    latest_tool_outputs,
-                )
+            # Execute all tool calls in parallel using asyncio.gather
+            tool_results = await asyncio.gather(
+                *[
+                    self._acall_function(
+                        tools,
+                        tool_call,
+                        task.extra_state["new_memory"],
+                        latest_tool_outputs,
+                    )
+                    for tool_call in latest_tool_calls
+                ]
+            )
+
+            # Process results
+            for return_direct in tool_results:
                 task.extra_state["sources"].append(latest_tool_outputs[-1])
 
-                # change function call to the default value, if a custom function was given
-                # as an argument (none and auto are predefined by OpenAI)
+                # change function call to the default value if a custom function was given
                 if tool_choice not in ("auto", "none"):
                     tool_choice = "auto"
                 task.extra_state["n_function_calls"] += 1
 
+                # If any tool call requests direct return and it's the only call
                 if return_direct and len(latest_tool_calls) == 1:
                     is_done = True
                     response_str = latest_tool_outputs[-1].content
@@ -723,7 +728,6 @@ class OpenAIAgentWorker(BaseAgentWorker):
             [
                 step.get_next_step(
                     step_id=str(uuid.uuid4()),
-                    # NOTE: input is unused
                     input=None,
                 )
             ]
@@ -782,6 +786,13 @@ class OpenAIAgentWorker(BaseAgentWorker):
         """Finalize task, after all the steps are completed."""
         # add new messages to memory
         task.memory.put_messages(task.extra_state["new_memory"].get_all())
+        # reset new memory
+        task.extra_state["new_memory"].reset()
+
+    async def afinalize_task(self, task: Task, **kwargs: Any) -> None:
+        """Finalize task, after all the steps are completed."""
+        # add new messages to memory
+        await task.memory.aput_messages(task.extra_state["new_memory"].get_all())
         # reset new memory
         task.extra_state["new_memory"].reset()
 

@@ -112,6 +112,7 @@ class ConcurrentFlow(Workflow):
 ```
 
 There are several changes we've made to handle multiple event types:
+
 * `start` is now declared as emitting 3 different event types
 * `step_three` is now declared as accepting 3 different event types
 * `collect_events` now takes an array of the event types to wait for

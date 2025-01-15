@@ -1,41 +1,79 @@
+"""
+Utility functions for the Anthropic SDK LLM integration.
+"""
+
 from typing import Dict, Sequence, Tuple
 
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ImageBlock,
+    MessageRole,
+    TextBlock,
+)
 
-from anthropic.types import MessageParam, TextBlockParam, ImageBlockParam
+from anthropic.types import (
+    MessageParam,
+    TextBlockParam,
+    ImageBlockParam,
+    CacheControlEphemeralParam,
+)
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
-from anthropic.types.beta.prompt_caching import (
-    PromptCachingBetaTextBlockParam,
-    PromptCachingBetaCacheControlEphemeralParam,
-)
 
 HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
 
-CLAUDE_MODELS: Dict[str, int] = {
+# AWS Bedrock Anthropic identifiers
+BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
+    "anthropic.claude-3-haiku-20240307-v1:0": 200000,
+    "anthropic.claude-3-sonnet-20240229-v1:0": 200000,
+    "anthropic.claude-3-opus-20240229-v1:0": 200000,
+    "anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
+    "anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
+}
+BEDROCK_CLAUDE_MODELS: Dict[str, int] = {
+    "anthropic.claude-instant-v1": 100000,
+    "anthropic.claude-v2": 100000,
+    "anthropic.claude-v2:1": 200000,
+}
+
+# GCP Vertex AI Anthropic identifiers
+VERTEX_CLAUDE_MODELS: Dict[str, int] = {
+    "claude-3-opus@20240229": 200000,
+    "claude-3-sonnet@20240229": 200000,
+    "claude-3-haiku@20240307": 200000,
+    "claude-3-5-sonnet@20240620": 200000,
+    "claude-3-5-sonnet-v2@20241022": 200000,
+    "claude-3-5-haiku@20241022": 200000,
+}
+
+# Anthropic API/SDK identifiers
+ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-instant-1": 100000,
     "claude-instant-1.2": 100000,
     "claude-2": 100000,
     "claude-2.0": 100000,
     "claude-2.1": 200000,
-    "claude-3-opus-latest": 180000,
-    "claude-3-opus-20240229": 180000,
-    "claude-3-opus@20240229": 180000,  # Alternate name for Vertex AI
-    "anthropic.claude-3-opus-20240229-v1:0": 180000,  # Alternate name for Bedrock
-    "claude-3-sonnet-latest": 180000,
-    "claude-3-sonnet-20240229": 180000,
-    "claude-3-sonnet@20240229": 180000,  # Alternate name for Vertex AI
-    "anthropic.claude-3-sonnet-20240229-v1:0": 180000,  # Alternate name for Bedrock
-    "claude-3-haiku-latest": 180000,
-    "claude-3-haiku-20240307": 180000,
-    "claude-3-haiku@20240307": 180000,  # Alternate name for Vertex AI
-    "anthropic.claude-3-haiku-20240307-v1:0": 180000,  # Alternate name for Bedrock
-    "claude-3-5-sonnet-latest": 180000,
-    "claude-3-5-sonnet-20240620": 180000,
-    "claude-3-5-sonnet-20241022": 180000,
-    "anthropic.claude-3-5-sonnet-20241022-v2:0": 180000,  # Alternate name for Bedrock
-    "claude-3-5-sonnet@20240620": 180000,  # Alternate name for Vertex AI
+    "claude-3-opus-latest": 200000,
+    "claude-3-opus-20240229": 200000,
+    "claude-3-sonnet-latest": 200000,
+    "claude-3-sonnet-20240229": 200000,
+    "claude-3-haiku-latest": 200000,
+    "claude-3-haiku-20240307": 200000,
+    "claude-3-5-sonnet-latest": 200000,
+    "claude-3-5-sonnet-20240620": 200000,
+    "claude-3-5-sonnet-20241022": 200000,
+    "claude-3-5-haiku-20241022": 200000,
+}
+
+# All provider Anthropic identifiers
+CLAUDE_MODELS: Dict[str, int] = {
+    **BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS,
+    **BEDROCK_CLAUDE_MODELS,
+    **VERTEX_CLAUDE_MODELS,
+    **ANTHROPIC_MODELS,
 }
 
 
@@ -44,6 +82,19 @@ def is_function_calling_model(modelname: str) -> bool:
 
 
 def anthropic_modelname_to_contextsize(modelname: str) -> int:
+    """Get the context size for an Anthropic model.
+
+    Args:
+        modelname (str): Anthropic model name.
+
+    Returns:
+        int: Context size for the specific model.
+    """
+    for model, context_size in BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS.items():
+        # Only US & EU inference profiles are currently supported by AWS
+        CLAUDE_MODELS[f"us.{model}"] = context_size
+        CLAUDE_MODELS[f"eu.{model}"] = context_size
+
     if modelname not in CLAUDE_MODELS:
         raise ValueError(
             f"Unknown model: {modelname}. Please provide a valid Anthropic model name."
@@ -86,7 +137,10 @@ def messages_to_anthropic_messages(
     system_prompt = ""
     for message in messages:
         if message.role == MessageRole.SYSTEM:
-            system_prompt += message.content + "\n"
+            # For system messages, concatenate all text blocks
+            for block in message.blocks:
+                if isinstance(block, TextBlock):
+                    system_prompt += block.text + "\n"
         elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
             content = ToolResultBlockParam(
                 tool_use_id=message.additional_kwargs["tool_call_id"],
@@ -99,39 +153,43 @@ def messages_to_anthropic_messages(
             )
             anthropic_messages.append(anth_message)
         else:
-            content = []
-            if message.content and isinstance(message.content, list):
-                for item in message.content:
-                    if item and isinstance(item, dict) and item.get("type", None):
-                        if item["type"] == "image":
-                            content.append(ImageBlockParam(**item))
-                        elif "cache_control" in item and item["type"] == "text":
-                            content.append(
-                                PromptCachingBetaTextBlockParam(
-                                    text=item["text"],
-                                    type="text",
-                                    cache_control=PromptCachingBetaCacheControlEphemeralParam(
-                                        type="ephemeral"
-                                    ),
-                                )
-                            )
-                        else:
-                            content.append(TextBlockParam(**item))
-                    else:
-                        content.append(TextBlockParam(text=item, type="text"))
-            elif message.content:
-                content_ = (
-                    PromptCachingBetaTextBlockParam(
-                        text=message.content,
-                        type="text",
-                        cache_control=PromptCachingBetaCacheControlEphemeralParam(
-                            type="ephemeral"
-                        ),
+            content: list[TextBlockParam | ImageBlockParam] = []
+            for block in message.blocks:
+                if isinstance(block, TextBlock):
+                    content_ = (
+                        TextBlockParam(
+                            text=block.text,
+                            type="text",
+                            cache_control=CacheControlEphemeralParam(type="ephemeral"),
+                        )
+                        if "cache_control" in message.additional_kwargs
+                        else TextBlockParam(text=block.text, type="text")
                     )
-                    if "cache_control" in message.additional_kwargs
-                    else TextBlockParam(text=message.content, type="text")
-                )
-                content.append(content_)
+
+                    # avoid empty text blocks
+                    if content_["text"]:
+                        content.append(content_)
+                elif isinstance(block, ImageBlock):
+                    # FUTURE: Claude does not support URLs, so we need to always convert to base64
+                    img_bytes = block.resolve_image(as_base64=True).read()
+                    img_str = img_bytes.decode("utf-8")
+
+                    content.append(
+                        ImageBlockParam(
+                            type="image",
+                            source={
+                                "type": "base64",
+                                "media_type": block.image_mimetype,
+                                "data": img_str,
+                            }
+                            if block.image_mimetype
+                            else {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": img_str,
+                            },
+                        )
+                    )
 
             tool_calls = message.additional_kwargs.get("tool_calls", [])
             for tool_call in tool_calls:
@@ -150,7 +208,7 @@ def messages_to_anthropic_messages(
 
             anth_message = MessageParam(
                 role=message.role.value,
-                content=content,  # TODO: type detect for multimodal
+                content=content,
             )
             anthropic_messages.append(anth_message)
     return __merge_common_role_msgs(anthropic_messages), system_prompt.strip()

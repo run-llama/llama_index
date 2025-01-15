@@ -1,6 +1,24 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
-
 from ollama import Client, AsyncClient
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    Generator,
+    AsyncGenerator,
+)
+
+from llama_index.core.base.llms.generic_utils import (
+    chat_to_completion_decorator,
+    achat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -12,22 +30,21 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.base.llms.generic_utils import (
-    chat_to_completion_decorator,
-    achat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
-)
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.tools import ToolSelection
+from llama_index.core.types import PydanticProgramMode
+from llama_index.core.program.utils import process_streaming_objects
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
 DEFAULT_REQUEST_TIMEOUT = 30.0
+dispatcher = get_dispatcher(__name__)
 
 
 def get_additional_kwargs(
@@ -186,6 +203,11 @@ class Ollama(FunctionCallingLLM):
             {
                 "role": message.role.value,
                 "content": message.content or "",
+                **(
+                    {"tool_calls": message.additional_kwargs["tool_calls"]}
+                    if "tool_calls" in message.additional_kwargs
+                    else {}
+                ),
             }
             for message in messages
         ]
@@ -197,6 +219,8 @@ class Ollama(FunctionCallingLLM):
             completion_tokens = raw_response["eval_count"]
             total_tokens = prompt_tokens + completion_tokens
         except KeyError:
+            return {}
+        except TypeError:
             return {}
         return {
             "prompt_tokens": prompt_tokens,
@@ -277,16 +301,19 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
+        format = kwargs.pop("format", "json" if self.json_mode else None)
 
         response = self.client.chat(
             model=self.model,
             messages=ollama_messages,
             stream=False,
-            format="json" if self.json_mode else "",
+            format=format,
             tools=tools,
             options=self._model_kwargs,
             keep_alive=self.keep_alive,
         )
+
+        response = dict(response)
 
         tool_calls = response["message"].get("tool_calls", [])
         token_counts = self._get_response_token_counts(response)
@@ -309,13 +336,14 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
+        format = kwargs.pop("format", "json" if self.json_mode else None)
 
         def gen() -> ChatResponseGen:
             response = self.client.chat(
                 model=self.model,
                 messages=ollama_messages,
                 stream=True,
-                format="json" if self.json_mode else "",
+                format=format,
                 tools=tools,
                 options=self._model_kwargs,
                 keep_alive=self.keep_alive,
@@ -326,6 +354,8 @@ class Ollama(FunctionCallingLLM):
             for r in response:
                 if r["message"]["content"] is None:
                     continue
+
+                r = dict(r)
 
                 response_txt += r["message"]["content"]
 
@@ -353,13 +383,14 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
+        format = kwargs.pop("format", "json" if self.json_mode else None)
 
         async def gen() -> ChatResponseAsyncGen:
             response = await self.async_client.chat(
                 model=self.model,
                 messages=ollama_messages,
                 stream=True,
-                format="json" if self.json_mode else "",
+                format=format,
                 tools=tools,
                 options=self._model_kwargs,
                 keep_alive=self.keep_alive,
@@ -370,6 +401,8 @@ class Ollama(FunctionCallingLLM):
             async for r in response:
                 if r["message"]["content"] is None:
                     continue
+
+                r = dict(r)
 
                 response_txt += r["message"]["content"]
 
@@ -397,16 +430,19 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
+        format = kwargs.pop("format", "json" if self.json_mode else None)
 
         response = await self.async_client.chat(
             model=self.model,
             messages=ollama_messages,
             stream=False,
-            format="json" if self.json_mode else "",
+            format=format,
             tools=tools,
             options=self._model_kwargs,
             keep_alive=self.keep_alive,
         )
+
+        response = dict(response)
 
         tool_calls = response["message"].get("tool_calls", [])
         token_counts = self._get_response_token_counts(response)
@@ -447,3 +483,148 @@ class Ollama(FunctionCallingLLM):
         return await astream_chat_to_completion_decorator(self.astream_chat)(
             prompt, **kwargs
         )
+
+    @dispatcher.span
+    def structured_predict(
+        self,
+        output_cls: Type[BaseModel],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> BaseModel:
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+            llm_kwargs = llm_kwargs or {}
+            llm_kwargs["format"] = output_cls.model_json_schema()
+
+            messages = prompt.format_messages(**prompt_args)
+            response = self.chat(messages, **llm_kwargs)
+
+            return output_cls.model_validate_json(response.message.content or "")
+        else:
+            return super().structured_predict(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
+
+    @dispatcher.span
+    async def astructured_predict(
+        self,
+        output_cls: Type[BaseModel],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> BaseModel:
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+            llm_kwargs = llm_kwargs or {}
+            llm_kwargs["format"] = output_cls.model_json_schema()
+
+            messages = prompt.format_messages(**prompt_args)
+            response = await self.achat(messages, **llm_kwargs)
+
+            return output_cls.model_validate_json(response.message.content or "")
+        else:
+            return await super().astructured_predict(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
+
+    @dispatcher.span
+    def stream_structured_predict(
+        self,
+        output_cls: Type[BaseModel],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Generator[Union[BaseModel, List[BaseModel]], None, None]:
+        """Stream structured predictions as they are generated.
+
+        Args:
+            output_cls: The Pydantic class to parse responses into
+            prompt: The prompt template to use
+            llm_kwargs: Optional kwargs for the LLM
+            **prompt_args: Args to format the prompt with
+
+        Returns:
+            Generator yielding partial objects as they are generated
+        """
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+
+            def gen(
+                output_cls: Type[BaseModel],
+                prompt: PromptTemplate,
+                llm_kwargs: Dict[str, Any],
+                prompt_args: Dict[str, Any],
+            ) -> Generator[Union[BaseModel, List[BaseModel]], None, None]:
+                llm_kwargs = llm_kwargs or {}
+                llm_kwargs["format"] = output_cls.model_json_schema()
+
+                messages = prompt.format_messages(**prompt_args)
+                response_gen = self.stream_chat(messages, **llm_kwargs)
+
+                cur_objects = None
+                for response in response_gen:
+                    try:
+                        objects = process_streaming_objects(
+                            response,
+                            output_cls,
+                            cur_objects=cur_objects,
+                            allow_parallel_tool_calls=False,
+                            flexible_mode=True,
+                        )
+                        cur_objects = (
+                            objects if isinstance(objects, list) else [objects]
+                        )
+                        yield objects
+                    except Exception:
+                        continue
+
+            return gen(output_cls, prompt, llm_kwargs, prompt_args)
+        else:
+            return super().stream_structured_predict(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
+
+    @dispatcher.span
+    async def astream_structured_predict(
+        self,
+        output_cls: Type[BaseModel],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[Union[BaseModel, List[BaseModel]], None]:
+        """Async version of stream_structured_predict."""
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+
+            async def gen(
+                output_cls: Type[BaseModel],
+                prompt: PromptTemplate,
+                llm_kwargs: Dict[str, Any],
+                prompt_args: Dict[str, Any],
+            ) -> AsyncGenerator[Union[BaseModel, List[BaseModel]], None]:
+                llm_kwargs = llm_kwargs or {}
+                llm_kwargs["format"] = output_cls.model_json_schema()
+
+                messages = prompt.format_messages(**prompt_args)
+                response_gen = await self.astream_chat(messages, **llm_kwargs)
+
+                cur_objects = None
+                async for response in response_gen:
+                    try:
+                        objects = process_streaming_objects(
+                            response,
+                            output_cls,
+                            cur_objects=cur_objects,
+                            allow_parallel_tool_calls=False,
+                            flexible_mode=True,
+                        )
+                        cur_objects = (
+                            objects if isinstance(objects, list) else [objects]
+                        )
+                        yield objects
+                    except Exception:
+                        continue
+
+            return gen(output_cls, prompt, llm_kwargs, prompt_args)
+        else:
+            # Fall back to non-streaming structured predict
+            return await super().astream_structured_predict(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )

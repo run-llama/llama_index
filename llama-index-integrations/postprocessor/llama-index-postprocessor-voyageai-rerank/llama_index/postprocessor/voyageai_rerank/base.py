@@ -15,21 +15,23 @@ dispatcher = get_dispatcher(__name__)
 
 class VoyageAIRerank(BaseNodePostprocessor):
     model: str = Field(description="Name of the model to use.")
-    top_n: int = Field(
-        description="The number of most relevant documents to return. If not specified, the reranking results of all documents will be returned."
+    top_n: Optional[int] = Field(
+        description="The number of most relevant documents to return. If not specified, the reranking results of all documents will be returned.",
+        default=None,
     )
     truncation: bool = Field(
-        description="Whether to truncate the input to satisfy the 'context length limit' on the query and the documents."
+        description="Whether to truncate the input to satisfy the 'context length limit' on the query and the documents.",
+        default=True,
     )
 
     _client: Any = PrivateAttr()
 
     def __init__(
         self,
-        api_key: str,
         model: str,
+        api_key: Optional[str] = None,
         top_n: Optional[int] = None,
-        truncation: Optional[bool] = None,
+        truncation: bool = True,
         # deprecated
         top_k: Optional[int] = None,
     ):
@@ -55,7 +57,10 @@ class VoyageAIRerank(BaseNodePostprocessor):
     ) -> List[NodeWithScore]:
         dispatcher.event(
             ReRankStartEvent(
-                query=query_bundle, nodes=nodes, top_n=self.top_n, model_name=self.model
+                query=query_bundle,
+                nodes=nodes,
+                top_n=self.top_n or len(nodes),
+                model_name=self.model,
             )
         )
 
@@ -70,7 +75,7 @@ class VoyageAIRerank(BaseNodePostprocessor):
                 EventPayload.NODES: nodes,
                 EventPayload.MODEL_NAME: self.model,
                 EventPayload.QUERY_STR: query_bundle.query_str,
-                EventPayload.TOP_K: self.top_n,
+                EventPayload.TOP_K: self.top_n or len(nodes),
             },
         ) as event:
             texts = [

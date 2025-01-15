@@ -108,6 +108,33 @@ class AzureDocumentStore(KVDocumentStore):
         )
 
     @classmethod
+    def from_account_and_id(
+        cls,
+        account_name: str,
+        namespace: Optional[str] = None,
+        node_collection_suffix: Optional[str] = None,
+        ref_doc_collection_suffix: Optional[str] = None,
+        metadata_collection_suffix: Optional[str] = None,
+        service_mode: ServiceMode = ServiceMode.STORAGE,
+        partition_key: Optional[str] = None,
+        **kwargs,
+    ) -> "AzureDocumentStore":
+        """Initialize an AzureDocumentStore from an account name and managed ID."""
+        azure_kvstore = AzureKVStore.from_account_and_id(
+            account_name,
+            service_mode=service_mode,
+            partition_key=partition_key,
+        )
+        return cls(
+            azure_kvstore,
+            namespace,
+            node_collection_suffix,
+            ref_doc_collection_suffix,
+            metadata_collection_suffix,
+            **kwargs,
+        )
+
+    @classmethod
     def from_sas_token(
         cls,
         endpoint: str,

@@ -149,6 +149,7 @@ class PGVectorStore(BasePydanticVectorStore):
     debug: bool
     use_jsonb: bool
     create_engine_kwargs: Dict
+    initialization_fail_on_error: bool = False
 
     hnsw_kwargs: Optional[Dict[str, Any]]
 
@@ -175,6 +176,7 @@ class PGVectorStore(BasePydanticVectorStore):
         use_jsonb: bool = False,
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
         create_engine_kwargs: Optional[Dict[str, Any]] = None,
+        initialization_fail_on_error: bool = False,
     ) -> None:
         """Constructor.
 
@@ -220,6 +222,7 @@ class PGVectorStore(BasePydanticVectorStore):
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
             create_engine_kwargs=create_engine_kwargs or {},
+            initialization_fail_on_error=initialization_fail_on_error,
         )
 
         # sqlalchemy model
@@ -341,7 +344,11 @@ class PGVectorStore(BasePydanticVectorStore):
         )
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
-    def _create_schema_if_not_exists(self) -> None:
+    def _create_schema_if_not_exists(self) -> bool:
+        """
+        Create the schema if it does not exist.
+        Returns True if the schema was created, False if it already existed.
+        """
         if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", self.schema_name):
             raise ValueError(f"Invalid schema_name: {self.schema_name}")
         with self._session() as session, session.begin():
@@ -352,7 +359,8 @@ class PGVectorStore(BasePydanticVectorStore):
             result = session.execute(check_schema_statement).fetchone()
 
             # If the schema does not exist, then create it
-            if not result:
+            schema_doesnt_exist = result is None
+            if schema_doesnt_exist:
                 create_schema_statement = sqlalchemy.text(
                     # DDL won't tolerate quoted string literal here for schema_name,
                     # so use a format string to embed the schema_name directly, instead of a param.
@@ -361,6 +369,7 @@ class PGVectorStore(BasePydanticVectorStore):
                 session.execute(create_schema_statement)
 
             session.commit()
+            return schema_doesnt_exist
 
     def _create_tables_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
@@ -399,14 +408,35 @@ class PGVectorStore(BasePydanticVectorStore):
             session.commit()
 
     def _initialize(self) -> None:
+        fail_on_error = self.initialization_fail_on_error
         if not self._is_initialized:
             self._connect()
             if self.perform_setup:
-                self._create_extension()
-                self._create_schema_if_not_exists()
-                self._create_tables_if_not_exists()
+                try:
+                    self._create_schema_if_not_exists()
+                except Exception as e:
+                    _logger.warning(f"PG Setup: Error creating schema: {e}")
+                    if fail_on_error:
+                        raise
+                try:
+                    self._create_extension()
+                except Exception as e:
+                    _logger.warning(f"PG Setup: Error creating extension: {e}")
+                    if fail_on_error:
+                        raise
+                try:
+                    self._create_tables_if_not_exists()
+                except Exception as e:
+                    _logger.warning(f"PG Setup: Error creating tables: {e}")
+                    if fail_on_error:
+                        raise
                 if self.hnsw_kwargs is not None:
-                    self._create_hnsw_index()
+                    try:
+                        self._create_hnsw_index()
+                    except Exception as e:
+                        _logger.warning(f"PG Setup: Error creating HNSW index: {e}")
+                        if fail_on_error:
+                            raise
             self._is_initialized = True
 
     def _node_to_table_row(self, node: BaseNode) -> Any:
@@ -464,6 +494,8 @@ class PGVectorStore(BasePydanticVectorStore):
             return "@>"
         elif operator == FilterOperator.TEXT_MATCH:
             return "LIKE"
+        elif operator == FilterOperator.TEXT_MATCH_INSENSITIVE:
+            return "ILIKE"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
@@ -490,8 +522,11 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"'[\"{filter_.value}\"]'"
             )
-        elif filter_.operator == FilterOperator.TEXT_MATCH:
-            # Where the operator is text_match, we need to wrap the filter in '%' characters
+        elif (
+            filter_.operator == FilterOperator.TEXT_MATCH
+            or filter_.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
+        ):
+            # Where the operator is text_match or ilike, we need to wrap the filter in '%' characters
             return text(
                 f"metadata_->>'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "

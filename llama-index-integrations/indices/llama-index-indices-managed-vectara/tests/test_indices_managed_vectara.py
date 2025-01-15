@@ -207,6 +207,32 @@ def test_chain_rerank_retrieval(vectara1) -> None:
     assert len(res) == 1
     assert res[0].node.get_content() == docs[0].text
 
+    # Second query with same retriever to ensure rerank chain configuration remains the same
+    res = qe.retrieve("How will I look when I'm older?")
+    assert qe._rerank_chain[0].get("type") == "slingshot"
+    assert qe._rerank_chain[1].get("type") == "mmr"
+    assert res[0].node.get_content() == docs[2].text
+
+
+def test_custom_prompt(vectara1) -> None:
+    docs = get_docs()
+
+    qe = vectara1.as_query_engine(
+        similarity_top_k=3,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="mmr",
+        mmr_diversity_bias=0.2,
+        summary_enabled=True,
+        prompt_text='[\n  {"role": "system", "content": "You are an expert in summarizing the future of Vectara\'s inegration with LlamaIndex. Your summaries are insightful, concise, and highlight key innovations and changes."},\n  #foreach ($result in $vectaraQueryResults)\n    {"role": "user", "content": "What are the key points in result number $vectaraIdxWord[$foreach.index] about Vectara\'s LlamaIndex integration?"},\n    {"role": "assistant", "content": "In result number $vectaraIdxWord[$foreach.index], the key points are: ${result.getText()}"},\n  #end\n  {"role": "user", "content": "Can you generate a comprehensive summary on \'Vectara\'s LlamaIndex Integration\' incorporating all the key points discussed?"}\n]\n',
+    )
+
+    res = qe.query("How will Vectara's integration look in the future?")
+    assert "integration" in str(res).lower()
+    assert "llamaindex" in str(res).lower()
+    assert "vectara" in str(res).lower()
+    assert "first" in str(res).lower()
+
 
 @pytest.fixture()
 def vectara2():
@@ -250,12 +276,14 @@ def test_file_upload(vectara2) -> None:
     assert "paul graham" in summary.lower() and "software" in summary.lower()
 
     # test query with VectorStoreQuery (using OpenAI for summarization)
-    query_engine = vectara2.as_query_engine(similarity_top_k=3, summary_enabled=False)
+    query_engine = vectara2.as_query_engine(
+        similarity_top_k=3, summary_enabled=False, verbose=True
+    )
     res = query_engine.query("What software did Paul Graham write?")
     assert "paul graham" in str(res).lower() and "software" in str(res).lower()
 
     # test query with Vectara summarization (default)
-    query_engine = vectara2.as_query_engine(similarity_top_k=3)
+    query_engine = vectara2.as_query_engine(similarity_top_k=3, verbose=True)
     res = query_engine.query("How is Paul related to Reddit?")
     summary = res.response
     assert "paul graham" in summary.lower() and "reddit" in summary.lower()

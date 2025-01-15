@@ -76,6 +76,9 @@ async def test_workflow_run_step(workflow):
     result = await handler
     assert handler.is_done()
     assert result == "Workflow completed"
+    # there shouldn't be any in progress events
+    for inprogress_list in handler.ctx._in_progress.values():
+        assert len(inprogress_list) == 0
 
 
 @pytest.mark.asyncio()
@@ -406,7 +409,9 @@ async def test_workflow_task_raises():
             raise ValueError("The step raised an error!")
 
     workflow = DummyWorkflow()
-    with pytest.raises(ValueError, match="The step raised an error!"):
+    with pytest.raises(
+        WorkflowRuntimeError, match="Error in step 'step': The step raised an error!"
+    ):
         await workflow.run()
 
 
@@ -418,7 +423,9 @@ async def test_workflow_task_raises_step():
             raise ValueError("The step raised an error!")
 
     workflow = DummyWorkflow()
-    with pytest.raises(ValueError, match="The step raised an error!"):
+    with pytest.raises(
+        WorkflowRuntimeError, match="Error in step 'step': The step raised an error!"
+    ):
         handler = workflow.run(stepwise=True)
         await handler.run_step()
 

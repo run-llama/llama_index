@@ -8,9 +8,14 @@ from llama_index.core.workflow.errors import WorkflowDone
 
 class WorkflowHandler(asyncio.Future):
     def __init__(
-        self, *args: Any, ctx: Optional[Context] = None, **kwargs: Any
+        self,
+        *args: Any,
+        ctx: Optional[Context] = None,
+        run_id: Optional[str] = None,
+        **kwargs: Any
     ) -> None:
         super().__init__(*args, **kwargs)
+        self.run_id = run_id
         self.ctx = ctx
 
     def __str__(self) -> str:
@@ -89,7 +94,8 @@ class WorkflowHandler(asyncio.Future):
                     if exception_raised:
                         raise exception_raised
 
-                    self.set_result(self.ctx.get_result())
+                    if not self.done():
+                        self.set_result(self.ctx.get_result())
                 else:  # continue with running next step
                     # notify unblocked task that we're ready to accept next event
                     async with self.ctx._step_condition:

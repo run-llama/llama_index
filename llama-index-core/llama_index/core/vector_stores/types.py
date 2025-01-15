@@ -75,6 +75,9 @@ class FilterOperator(str, Enum):
     ANY = "any"  # Contains any (array of strings)
     ALL = "all"  # Contains all (array of strings)
     TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
+    TEXT_MATCH_INSENSITIVE = (
+        "text_match_insensitive"  # full text match (case insensitive)
+    )
     CONTAINS = "contains"  # metadata array contains value (string or number)
     IS_EMPTY = "is_empty"  # the field is not exist or empty (null or empty array)
 
@@ -85,6 +88,7 @@ class FilterCondition(str, Enum):
     # TODO add more conditions
     AND = "and"
     OR = "or"
+    NOT = "not"  # negates the filter condition
 
 
 class MetadataFilter(BaseModel):

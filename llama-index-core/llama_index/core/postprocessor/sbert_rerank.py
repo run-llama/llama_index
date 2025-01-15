@@ -20,6 +20,10 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         default=False,
         description="Whether to keep the retrieval score in metadata.",
     )
+    trust_remote_code: bool = Field(
+        default=False,
+        description="Whether to trust remote code.",
+    )
     _model: Any = PrivateAttr()
 
     def __init__(
@@ -28,6 +32,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         model: str = "cross-encoder/stsb-distilroberta-base",
         device: Optional[str] = None,
         keep_retrieval_score: Optional[bool] = False,
+        trust_remote_code: Optional[bool] = True,
     ):
         try:
             from sentence_transformers import CrossEncoder  # pants: no-infer-dep
@@ -44,7 +49,10 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
             keep_retrieval_score=keep_retrieval_score,
         )
         self._model = CrossEncoder(
-            model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH, device=device
+            model,
+            max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH,
+            device=device,
+            trust_remote_code=trust_remote_code,
         )
 
     @classmethod

@@ -104,7 +104,8 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
         from unstructured.partition.html import partition_html  # pants: no-infer-dep
 
         table_filters = table_filters or []
-        elements = partition_html(text=text, **self.partitioning_parameters)
+        partitioning_parameters = self.partitioning_parameters or {}
+        elements = partition_html(text=text, **partitioning_parameters)
         output_els = []
         for idx, element in enumerate(elements):
             if "unstructured.documents.elements.Table" in str(type(element)):

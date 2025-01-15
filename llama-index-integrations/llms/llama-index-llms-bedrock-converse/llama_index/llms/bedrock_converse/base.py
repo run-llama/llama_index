@@ -114,6 +114,21 @@ class BedrockConverse(FunctionCallingLLM):
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )
+    guardrail_identifier: Optional[str] = (
+        Field(
+            description="The unique identifier of the guardrail that you want to use. If you don’t provide a value, no guardrail is applied to the invocation."
+        ),
+    )
+    guardrail_version: Optional[str] = (
+        Field(
+            description="The version number for the guardrail. The value can also be DRAFT"
+        ),
+    )
+    trace: Optional[str] = (
+        Field(
+            description="Specifies whether to enable or disable the Bedrock trace. If enabled, you can see the full Bedrock trace."
+        ),
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional kwargs for the bedrock invokeModel request.",
@@ -145,6 +160,9 @@ class BedrockConverse(FunctionCallingLLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        guardrail_identifier: Optional[str] = None,
+        guardrail_version: Optional[str] = None,
+        trace: Optional[str] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -178,6 +196,9 @@ class BedrockConverse(FunctionCallingLLM):
             region_name=region_name,
             botocore_session=botocore_session,
             botocore_config=botocore_config,
+            guardrail_identifier=guardrail_identifier,
+            guardrail_version=guardrail_version,
+            trace=trace,
         )
 
         self._config = None
@@ -292,6 +313,9 @@ class BedrockConverse(FunctionCallingLLM):
             system_prompt=self.system_prompt,
             max_retries=self.max_retries,
             stream=False,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
         )
 
@@ -336,6 +360,9 @@ class BedrockConverse(FunctionCallingLLM):
             system_prompt=self.system_prompt,
             max_retries=self.max_retries,
             stream=True,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
         )
 
@@ -416,6 +443,9 @@ class BedrockConverse(FunctionCallingLLM):
             system_prompt=self.system_prompt,
             max_retries=self.max_retries,
             stream=False,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
         )
 
@@ -454,20 +484,23 @@ class BedrockConverse(FunctionCallingLLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
-        response = await converse_with_retry_async(
+        response_gen = await converse_with_retry_async(
             session=self._asession,
             config=self._config,
             messages=converse_messages,
             system_prompt=self.system_prompt,
             max_retries=self.max_retries,
             stream=True,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
         )
 
         async def gen() -> ChatResponseAsyncGen:
             content = {}
             role = MessageRole.ASSISTANT
-            async for chunk in response["stream"]:
+            async for chunk in response_gen:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
@@ -489,7 +522,7 @@ class BedrockConverse(FunctionCallingLLM):
                             },
                         ),
                         delta=content_delta.get("text", ""),
-                        raw=response,
+                        raw=chunk,
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
                     tool_use = content_block_start["toolUse"]
@@ -511,7 +544,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 "status": status,
                             },
                         ),
-                        raw=response,
+                        raw=chunk,
                     )
 
         return gen()
@@ -530,6 +563,7 @@ class BedrockConverse(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_choice: Optional[dict] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the arguments needed to let the LLM chat with tools."""
@@ -540,11 +574,15 @@ class BedrockConverse(FunctionCallingLLM):
             chat_history.append(user_msg)
 
         # convert Llama Index tools to AWS Bedrock Converse tools
-        tool_dicts = tools_to_converse_tools(tools)
+        tool_config = tools_to_converse_tools(tools)
+        if tool_choice:
+            # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
+            # e.g. { "auto": {} }
+            tool_config["toolChoice"] = tool_choice
 
         return {
             "messages": chat_history,
-            "tools": tool_dicts or None,
+            "tools": tool_config,
             **kwargs,
         }
 

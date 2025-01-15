@@ -1,35 +1,36 @@
+from __future__ import annotations
+
 import base64
-import requests
 from enum import Enum
 from io import BytesIO
 from typing import (
+    Annotated,
     Any,
     AsyncGenerator,
-    Dict,
     Generator,
+    List,
     Literal,
     Optional,
     Union,
-    List,
-    Any,
+    cast,
 )
+
+import filetype
+import requests
+from typing_extensions import Self
 
 from llama_index.core.bridge.pydantic import (
+    AnyUrl,
     BaseModel,
-    Field,
     ConfigDict,
+    Field,
+    FilePath,
     field_serializer,
+    field_validator,
+    model_validator,
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.core.schema import ImageType
-
-try:
-    from pydantic import BaseModel as V2BaseModel
-    from pydantic.v1 import BaseModel as V1BaseModel
-except ImportError:
-    from pydantic import BaseModel as V2BaseModel
-
-    V1BaseModel = V2BaseModel  # type: ignore
+from llama_index.core.schema import ImageDocument
 
 
 class MessageRole(str, Enum):
@@ -44,46 +45,147 @@ class MessageRole(str, Enum):
     MODEL = "model"
 
 
-# ===== Generic Model Input - Chat =====
-class ContentBlockTypes(str, Enum):
-    TEXT = "text"
-    IMAGE = "image"
-
-
 class TextBlock(BaseModel):
-    type: Literal[ContentBlockTypes.TEXT] = ContentBlockTypes.TEXT
-
+    block_type: Literal["text"] = "text"
     text: str
 
 
 class ImageBlock(BaseModel):
-    type: Literal[ContentBlockTypes.IMAGE] = ContentBlockTypes.IMAGE
+    block_type: Literal["image"] = "image"
+    image: bytes | None = None
+    path: FilePath | None = None
+    url: AnyUrl | str | None = None
+    image_mimetype: str | None = None
+    detail: str | None = None
 
-    image: Optional[str] = None
-    image_path: Optional[str] = None
-    image_url: Optional[str] = None
-    image_mimetype: Optional[str] = None
+    @field_validator("url", mode="after")
+    @classmethod
+    def urlstr_to_anyurl(cls, url: str | AnyUrl) -> AnyUrl:
+        """Store the url as Anyurl."""
+        if isinstance(url, AnyUrl):
+            return url
+        return AnyUrl(url=url)
 
-    def resolve_image(self) -> ImageType:
-        """Resolve an image such that PIL can read it."""
+    @model_validator(mode="after")
+    def image_to_base64(self) -> Self:
+        """Store the image as base64 and guess the mimetype when possible.
+
+        In case the model was built passing image data but without a mimetype,
+        we try to guess it using the filetype library. To avoid resource-intense
+        operations, we won't load the path or the URL to guess the mimetype.
+        """
+        if not self.image:
+            return self
+
+        try:
+            # Check if image is already base64 encoded
+            decoded_img = base64.b64decode(self.image)
+        except Exception:
+            decoded_img = self.image
+            # Not base64 - encode it
+            self.image = base64.b64encode(self.image)
+
+        if not self.image_mimetype:
+            guess = filetype.guess(decoded_img)
+            self.image_mimetype = guess.mime if guess else None
+
+        return self
+
+    def resolve_image(self, as_base64: bool = False) -> BytesIO:
+        """Resolve an image such that PIL can read it.
+
+        Args:
+            as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
+        """
         if self.image is not None:
+            if as_base64:
+                return BytesIO(self.image)
             return BytesIO(base64.b64decode(self.image))
-        elif self.image_path is not None:
-            return self.image_path
-        elif self.image_url is not None:
+        elif self.path is not None:
+            img_bytes = self.path.read_bytes()
+            if as_base64:
+                return BytesIO(base64.b64encode(img_bytes))
+            return BytesIO(img_bytes)
+        elif self.url is not None:
             # load image from URL
-            response = requests.get(self.image_url)
-            return BytesIO(response.content)
+            response = requests.get(str(self.url))
+            img_bytes = response.content
+            if as_base64:
+                return BytesIO(base64.b64encode(img_bytes))
+            return BytesIO(img_bytes)
         else:
             raise ValueError("No image found in the chat message!")
+
+
+ContentBlock = Annotated[
+    Union[TextBlock, ImageBlock], Field(discriminator="block_type")
+]
 
 
 class ChatMessage(BaseModel):
     """Chat message."""
 
     role: MessageRole = MessageRole.USER
-    content: Optional[Any] = ""
-    additional_kwargs: dict = Field(default_factory=dict)
+    additional_kwargs: dict[str, Any] = Field(default_factory=dict)
+    blocks: list[ContentBlock] = Field(default_factory=list)
+
+    def __init__(self, /, content: Any | None = None, **data: Any) -> None:
+        """Keeps backward compatibility with the old `content` field.
+
+        If content was passed and contained text, store a single TextBlock.
+        If content was passed and it was a list, assume it's a list of content blocks and store it.
+        """
+        if content is not None:
+            if isinstance(content, str):
+                data["blocks"] = [TextBlock(text=content)]
+            elif isinstance(content, list):
+                data["blocks"] = content
+
+        super().__init__(**data)
+
+    @model_validator(mode="after")
+    def legacy_additional_kwargs_image(self) -> Self:
+        """Provided for backward compatibility.
+
+        If `additional_kwargs` contains an `images` key, assume the value is a list
+        of ImageDocument and convert them into image blocks.
+        """
+        if documents := self.additional_kwargs.get("images"):
+            documents = cast(list[ImageDocument], documents)
+            for doc in documents:
+                img_base64_bytes = doc.resolve_image(as_base64=True).read()
+                self.blocks.append(ImageBlock(image=img_base64_bytes))
+        return self
+
+    @property
+    def content(self) -> str | None:
+        """Keeps backward compatibility with the old `content` field.
+
+        Returns:
+            The cumulative content of the TextBlock blocks, None if there are none.
+        """
+        content = ""
+        for block in self.blocks:
+            if isinstance(block, TextBlock):
+                content += block.text
+
+        return content or None
+
+    @content.setter
+    def content(self, content: str) -> None:
+        """Keeps backward compatibility with the old `content` field.
+
+        Raises:
+            ValueError: if blocks contains more than a block, or a block that's not TextBlock.
+        """
+        if not self.blocks:
+            self.blocks = [TextBlock(text=content)]
+        elif len(self.blocks) == 1 and isinstance(self.blocks[0], TextBlock):
+            self.blocks = [TextBlock(text=content)]
+        else:
+            raise ValueError(
+                "ChatMessage contains multiple blocks, use 'ChatMessage.blocks' instead."
+            )
 
     def __str__(self) -> str:
         return f"{self.role.value}: {self.content}"
@@ -94,13 +196,13 @@ class ChatMessage(BaseModel):
         content: str,
         role: Union[MessageRole, str] = MessageRole.USER,
         **kwargs: Any,
-    ) -> "ChatMessage":
+    ) -> Self:
         if isinstance(role, str):
             role = MessageRole(role)
-        return cls(role=role, content=content, **kwargs)
+        return cls(role=role, blocks=[TextBlock(text=content)], **kwargs)
 
     def _recursive_serialization(self, value: Any) -> Any:
-        if isinstance(value, V2BaseModel):
+        if isinstance(value, BaseModel):
             value.model_rebuild()  # ensures all fields are initialized and serializable
             return value.model_dump()  # type: ignore
         if isinstance(value, dict):
@@ -115,9 +217,6 @@ class ChatMessage(BaseModel):
     @field_serializer("additional_kwargs", check_fields=False)
     def serialize_additional_kwargs(self, value: Any, _info: Any) -> Any:
         return self._recursive_serialization(value)
-
-    def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        return self.model_dump(**kwargs)
 
 
 class LogProb(BaseModel):

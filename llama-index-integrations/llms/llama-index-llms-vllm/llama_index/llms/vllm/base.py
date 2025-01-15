@@ -106,10 +106,6 @@ class Vllm(LLM):
         description="Integer that controls the number of top tokens to consider.",
     )
 
-    use_beam_search: bool = Field(
-        default=False, description="Whether to use beam search instead of sampling."
-    )
-
     stop: Optional[List[str]] = Field(
         default=None,
         description="List of strings that stop the generation when they are generated.",
@@ -154,14 +150,13 @@ class Vllm(LLM):
         model: str = "facebook/opt-125m",
         temperature: float = 1.0,
         tensor_parallel_size: int = 1,
-        trust_remote_code: bool = True,
+        trust_remote_code: bool = False,
         n: int = 1,
         best_of: Optional[int] = None,
         presence_penalty: float = 0.0,
         frequency_penalty: float = 0.0,
         top_p: float = 1.0,
         top_k: int = -1,
-        use_beam_search: bool = False,
         stop: Optional[List[str]] = None,
         ignore_eos: bool = False,
         max_new_tokens: int = 512,
@@ -187,7 +182,6 @@ class Vllm(LLM):
             frequency_penalty=frequency_penalty,
             top_p=top_p,
             top_k=top_k,
-            use_beam_search=use_beam_search,
             stop=stop,
             ignore_eos=ignore_eos,
             max_new_tokens=max_new_tokens,
@@ -238,7 +232,6 @@ class Vllm(LLM):
             "n": self.n,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
-            "use_beam_search": self.use_beam_search,
             "best_of": self.best_of,
             "ignore_eos": self.ignore_eos,
             "stop": self.stop,
@@ -373,7 +366,6 @@ class VllmServer(Vllm):
         frequency_penalty: float = 0.0,
         top_p: float = 1.0,
         top_k: int = -1,
-        use_beam_search: bool = False,
         stop: Optional[List[str]] = None,
         ignore_eos: bool = False,
         max_new_tokens: int = 512,
@@ -399,7 +391,6 @@ class VllmServer(Vllm):
             frequency_penalty=frequency_penalty,
             top_p=top_p,
             top_k=top_k,
-            use_beam_search=use_beam_search,
             stop=stop,
             ignore_eos=ignore_eos,
             max_new_tokens=max_new_tokens,
