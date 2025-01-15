@@ -202,10 +202,10 @@ async for event in workflow.run(...).stream_events():
 
 ## Accessing Context in Tools
 
-The `FunctionToolWithContext` allows tools to access the workflow context:
+The `FunctionTool` allows tools to access the workflow context if the function has a `Context` type hint as the first parameter:
 
 ```python
-from llama_index.core.workflow import FunctionToolWithContext
+from llama_index.core.tools import FunctionTool
 
 
 async def get_counter(ctx: Context) -> int:
@@ -217,6 +217,9 @@ counter_tool = FunctionToolWithContext.from_defaults(
     async_fn=get_counter, description="Get the current counter value"
 )
 ```
+
+!!! tip
+    The `FunctionTool` requires the `ctx` parameter to be passed in explicitly when calling the tool. `AgentWorkflow` will automatically pass in the context for you.
 
 ## Human in the Loop
 

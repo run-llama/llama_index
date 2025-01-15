@@ -23,11 +23,15 @@ def create_schema_from_function(
     additional_fields: Optional[
         List[Union[Tuple[str, Type, Any], Tuple[str, Type]]]
     ] = None,
+    ignore_fields: Optional[List[str]] = None,
 ) -> Type[BaseModel]:
     """Create schema from function."""
     fields = {}
     params = signature(func).parameters
     for param_name in params:
+        if param_name in ignore_fields:
+            continue
+
         param_type = params[param_name].annotation
         param_default = params[param_name].default
         description = None

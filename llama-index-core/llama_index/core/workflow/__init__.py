@@ -16,7 +16,6 @@ from llama_index.core.workflow.events import (
     InputRequiredEvent,
     HumanResponseEvent,
 )
-from llama_index.core.workflow.tools import FunctionToolWithContext
 from llama_index.core.workflow.workflow import Workflow
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.context_serializers import (
@@ -47,5 +46,4 @@ __all__ = [
     "JsonSerializer",
     "WorkflowCheckpointer",
     "Checkpoint",
-    "FunctionToolWithContext",
 ]

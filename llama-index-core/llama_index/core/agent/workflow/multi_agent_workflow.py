@@ -15,12 +15,12 @@ from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.tools import (
     BaseTool,
     AsyncBaseTool,
+    FunctionTool,
     ToolOutput,
     adapt_to_async_tool,
 )
 from llama_index.core.workflow import (
     Context,
-    FunctionToolWithContext,
     StartEvent,
     StopEvent,
     Workflow,
@@ -132,7 +132,7 @@ class AgentWorkflow(Workflow):
             return None
 
         fn_tool_prompt = self.handoff_prompt.format(agent_info=str(agent_info))
-        return FunctionToolWithContext.from_defaults(
+        return FunctionTool.from_defaults(
             async_fn=handoff, description=fn_tool_prompt, return_direct=True
         )
 
@@ -159,7 +159,7 @@ class AgentWorkflow(Workflow):
     ) -> ToolOutput:
         """Call the given tool with the given input."""
         try:
-            if isinstance(tool, FunctionToolWithContext):
+            if isinstance(tool, FunctionTool) and tool.requires_context:
                 tool_output = await tool.acall(ctx=ctx, **tool_input)
             else:
                 tool_output = await tool.acall(**tool_input)
