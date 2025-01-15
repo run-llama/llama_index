@@ -226,28 +226,17 @@ counter_tool = FunctionToolWithContext.from_defaults(
 Using the context, you can implement a human in the loop pattern in your tools:
 
 ```python
-from llama_index.core.workflow import Event
-
-
-class AskForConfirmationEvent(Event):
-    """Ask for confirmation event."""
-
-    confirmation_id: str
-
-
-class ConfirmationEvent(Event):
-    """Confirmation event."""
-
-    confirmation: bool
-    confirmation_id: str
+from llama_index.core.workflow import InputRequiredEvent, HumanResponseEvent
 
 
 async def ask_for_confirmation(ctx: Context) -> bool:
     """Ask the user for confirmation."""
-    ctx.write_event_to_stream(AskForConfirmationEvent(confirmation_id="1234"))
+    ctx.write_event_to_stream(
+        InputRequiredEvent(prefix="Please confirm", confirmation_id="1234")
+    )
 
     result = await ctx.wait_for_event(
-        ConfirmationEvent, requirements={"confirmation_id": "1234"}
+        HumanResponseEvent, requirements={"confirmation_id": "1234"}
     )
     return result.confirmation
 ```
@@ -258,10 +247,10 @@ When this function is called (i.e, when an agent calls this tool), it will block
 handler = workflow.run(user_msg="Can you add 5 and 3?")
 
 async for event in handler.stream_events():
-    if isinstance(event, AskForConfirmationEvent):
+    if isinstance(event, InputRequiredEvent):
         print(event.confirmation_id)
         handler.ctx.send_event(
-            ConfirmationEvent(confirmation=True, confirmation_id="1234")
+            HumanResponseEvent(response="True", confirmation_id="1234")
         )
     ...
 ```
