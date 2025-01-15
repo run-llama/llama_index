@@ -69,3 +69,6 @@ include = "llama_index/"
 filterwarnings = [
     "ignore::DeprecationWarning:",
 ]
+markers = [
+    "noautousefixtures: marks tests that should not run fixtures with autouse",
+]

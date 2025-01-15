@@ -177,6 +177,17 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             self.connection_string, connect_args=self.connection_args, echo=self.debug
         )
 
+    def _validate_server_version(self) -> None:
+        """Validate that the MariaDB server version is supported."""
+        with self._engine.connect() as connection:
+            result = connection.execute(sqlalchemy.text("SELECT VERSION()"))
+            version = result.fetchone()[0]
+
+            if not _meets_min_server_version(version, "11.7.1"):
+                raise ValueError(
+                    f"MariaDB version 11.7.1 or later is required, found version: {version}."
+                )
+
     def _create_table_if_not_exists(self) -> None:
         with self._engine.connect() as connection:
             # Note that we define the vector index with DISTANCE=cosine, because we use VEC_DISTANCE_COSINE.
@@ -201,6 +212,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         if not self._is_initialized:
             self._connect()
             if self.perform_setup:
+                self._validate_server_version()
                 self._create_table_if_not_exists()
             self._is_initialized = True
 
@@ -431,3 +443,19 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             connection.execute(sqlalchemy.text(stmt))
 
             connection.commit()
+
+
+def _meets_min_server_version(version: str, min_version: str) -> bool:
+    """Check if a MariaDB server version meets minimum required version.
+
+    Args:
+        version: Version string from MariaDB server (e.g. "11.7.1-MariaDB-ubu2404")
+        min_version: Minimum required version string (e.g. "11.7.1")
+
+    Returns:
+        bool: True if version >= min_version, False otherwise
+    """
+    version = version.split("-")[0]
+    version_parts = [int(x) for x in version.split(".")]
+    min_version_parts = [int(x) for x in min_version.split(".")]
+    return version_parts >= min_version_parts
