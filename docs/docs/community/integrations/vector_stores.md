@@ -764,8 +764,10 @@ resource_owner_config = weaviate.AuthClientPassword(
     username="<username>",
     password="<password>",
 )
-client = weaviate.Client(
-    "https://<cluster-id>.semi.network/",
+client = weaviate.WeaviateClient(
+    connection_params=weaviate.connect.ConnectionParams.from_url(
+        url="https://<cluster-id>.semi.network/", grpc_port=50051
+    ),
     auth_client_secret=resource_owner_config,
 )
 
