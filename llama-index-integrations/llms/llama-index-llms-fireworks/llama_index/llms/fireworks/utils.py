@@ -34,11 +34,15 @@ FUNCTION_CALLING_MODELS = {
     "accounts/fireworks/models/firefunction-v2": 8192,
 }
 
+DEEPSEEK_MODELS = {
+    "accounts/fireworks/models/deepseek-v3": 131072,
+}
 
 ALL_AVAILABLE_MODELS = {
     **LLAMA_MODELS,
     **MISTRAL_MODELS,
     **FUNCTION_CALLING_MODELS,
+    **DEEPSEEK_MODELS,
 }
 
 DISCONTINUED_MODELS: Dict[str, int] = {}
