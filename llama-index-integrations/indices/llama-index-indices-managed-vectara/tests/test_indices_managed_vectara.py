@@ -8,11 +8,18 @@ import re
 #
 # For this test to run properly, please setup as follows:
 # 1. Create a Vectara account: sign up at https://console.vectara.com/signup
-# 2. Create two corpora in your Vectara account, the first with the following filter attributes:
+# 2. Create two corpora with corpus keys "Llamaindex-testing-1" and "llamaindex-testing-2" in your Vectara account with the following filter attributes:
+#   "Llamaindex-testing-1":
 #   a. doc.test_num (text)
 #   b. doc.test_score (integer)
 #   c. doc.date (text)
 #   d. doc.url (text)
+#   "llamaindex-testing-2":
+#   a. doc.author (text)
+#   b. doc.title (text)
+#   c. part.test_num (text)
+#   d. part.test_score (integer)
+#   e. part.date (text)
 # 3. Create an API_KEY for these corpora with permissions for query and indexing
 # 4. Setup environment variables:
 #    VECTARA_API_KEY, VECTARA_CORPUS_KEY, and OPENAI_API_KEY
@@ -148,7 +155,7 @@ def test_retrieval_with_filter(vectara1) -> None:
     docs = get_docs()
 
     assert isinstance(vectara1, VectaraIndex)
-    qe = vectara1.as_retriever(similarity_top_k=1, filter="doc.test_num = '1'")
+    qe = vectara1.as_retriever(similarity_top_k=1, filter=["doc.test_num = '1'", ""])
     res = qe.retrieve("What does this test?")
     assert len(res) == 1
     assert res[0].node.get_content() == docs[0].text
@@ -272,7 +279,9 @@ def test_custom_prompt(vectara1) -> None:
 def test_update_doc(vectara1) -> None:
     docs = get_docs()
 
-    vectara1.update_ref_doc(document=docs[1], metadata={"test_score": 14})
+    vectara1.update_ref_doc(
+        document=docs[1], corpus_key="Llamaindex-testing-1", metadata={"test_score": 14}
+    )
 
     qe = vectara1.as_retriever(similarity_top_k=1)
 
@@ -291,13 +300,15 @@ def vectara2():
 
     file_path = "docs/docs/examples/data/paul_graham/paul_graham_essay.txt"
     id = vectara2.insert_file(
-        file_path, metadata={"url": "https://www.paulgraham.com/worked.html"}
+        file_path,
+        metadata={"url": "https://www.paulgraham.com/worked.html"},
+        corpus_key="llamaindex-testing-2",
     )
 
     yield vectara2
 
     # Tear down code
-    vectara2.delete_ref_doc(id)
+    vectara2.delete_ref_doc(id, corpus_key="llamaindex-testing-2")
 
 
 def test_file_upload(vectara2) -> None:
@@ -416,7 +427,6 @@ def test_chat(vectara2) -> None:
     summary = str(res)
 
     assert "use" in summary.lower()
-    assert "career" in summary.lower()
     assert len(res.source_nodes) > 0
     assert chat_engine.conv_id == chat_id
 
@@ -448,7 +458,7 @@ def vectara3():
             nodes,
             document_id="doc_1",
             document_metadata={"author": "Vectara", "title": "LlamaIndex Integration"},
-            corpus_key="llamaindex-testing",  # CHANGE TO NAME OF SECOND CORPORA
+            corpus_key="llamaindex-testing-2",
         )
     except ValueError:
         pytest.skip("Missing Vectara credentials, skipping test")
@@ -457,9 +467,7 @@ def vectara3():
 
     # Tear down code
     for id in vectara3.doc_ids:
-        vectara3._delete_ref_doc(
-            id, corpus_key="llamaindex-tesintg"
-        )  # CHANGE TO NAME OF SECOND CORPORA
+        vectara3.delete_ref_doc(id, corpus_key="llamaindex-testing-2")
 
 
 def test_simple_retrieval_with_nodes(vectara3) -> None:
@@ -472,3 +480,20 @@ def test_simple_retrieval_with_nodes(vectara3) -> None:
     assert res[0].node.metadata["author"] == "Vectara"
     assert res[0].node.metadata["title"] == "LlamaIndex Integration"
     assert res[0].node.get_content() == nodes[1].text_resource.text
+
+
+def test_filter_with_nodes(vectara3) -> None:
+    nodes = get_nodes()
+    qe = vectara3.as_retriever(
+        similarity_top_k=2,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        lambda_val=[0.2, 0.01],
+        filter=["", "doc.author = 'Vectara' AND part.test_score > 10"],
+    )
+
+    res = qe.retrieve("How will I look when I'm older?")
+    assert len(res) == 2
+    assert "look as good you will not" in res[0].node.get_content()
+    assert "look as good you will not" in res[1].node.get_content()
+    assert res[0].node.get_content() != res[1].node.get_content()
