@@ -188,7 +188,7 @@ class PGVectorStore(BasePydanticVectorStore):
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
         create_engine_kwargs: Optional[Dict[str, Any]] = None,
         initialization_fail_on_error: bool = False,
-        use_halfvec: bool = False,  # Added for halfvec
+        use_halfvec: bool = False,
     ) -> None:
         """Constructor.
 
