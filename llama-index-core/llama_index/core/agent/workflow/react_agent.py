@@ -16,15 +16,17 @@ from llama_index.core.agent.react.types import (
     ObservationReasoningStep,
     ResponseReasoningStep,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.memory import BaseMemory
+from llama_index.core.prompts.base import PromptTemplate
+from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.tools import AsyncBaseTool
 from llama_index.core.workflow import Context
 
 
-class ReactAgent(BaseWorkflowAgent):
+class ReActAgent(BaseWorkflowAgent):
     """React agent implementation."""
 
     reasoning_key: str = "current_reasoning"
@@ -35,6 +37,19 @@ class ReactAgent(BaseWorkflowAgent):
         default=None,
         description="The react chat formatter to format the reasoning steps and chat history into an llm input.",
     )
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        # TODO: the ReAct formatter does not explicitly specify PromptTemplate
+        # objects, but wrap it in this to obey the interface
+        react_header = self.formatter.system_header
+        return {"react_header": PromptTemplate(react_header)}
+
+    def _update_prompts(self, prompts: PromptDictType) -> None:
+        """Update prompts."""
+        if "system_prompt" in prompts:
+            react_header = cast(PromptTemplate, prompts["react_header"])
+            self.formatter.system_header = react_header.template
 
     async def take_step(
         self,
@@ -72,12 +87,13 @@ class ReactAgent(BaseWorkflowAgent):
         # Initial LLM call
         response = await self.llm.astream_chat(input_chat)
         async for r in response:
+            raw = r.raw.model_dump() if isinstance(r.raw, BaseModel) else r.raw
             ctx.write_event_to_stream(
                 AgentStream(
                     delta=r.delta or "",
                     response=r.message.content or "",
                     tool_calls=[],
-                    raw=r.raw,
+                    raw=raw,
                     current_agent_name=self.name,
                 )
             )
@@ -94,24 +110,25 @@ class ReactAgent(BaseWorkflowAgent):
             await memory.aput(r.message)
             await memory.aput(ChatMessage(role="user", content=error_msg))
 
+            raw = r.raw.model_dump() if isinstance(r.raw, BaseModel) else r.raw
             return AgentOutput(
                 response=r.message,
                 tool_calls=[],
-                raw=r.raw,
+                raw=raw,
                 current_agent_name=self.name,
             )
 
         # add to reasoning if not a handoff
-        if hasattr(reasoning_step, "action") and reasoning_step.action != "handoff":
-            current_reasoning.append(reasoning_step)
-            await ctx.set(self.reasoning_key, current_reasoning)
+        current_reasoning.append(reasoning_step)
+        await ctx.set(self.reasoning_key, current_reasoning)
 
         # If response step, we're done
+        raw = r.raw.model_dump() if isinstance(r.raw, BaseModel) else r.raw
         if reasoning_step.is_done:
             return AgentOutput(
                 response=r.message,
                 tool_calls=[],
-                raw=r.raw,
+                raw=raw,
                 current_agent_name=self.name,
             )
 
@@ -128,10 +145,11 @@ class ReactAgent(BaseWorkflowAgent):
             )
         ]
 
+        raw = r.raw.model_dump() if isinstance(r.raw, BaseModel) else r.raw
         return AgentOutput(
             response=r.message,
             tool_calls=tool_calls,
-            raw=r.raw,
+            raw=raw,
             current_agent_name=self.name,
         )
 
@@ -143,10 +161,6 @@ class ReactAgent(BaseWorkflowAgent):
             self.reasoning_key, default=[]
         )
         for tool_call_result in results:
-            # don't add handoff tool calls to reasoning
-            if tool_call_result.tool_name == "handoff":
-                continue
-
             obs_step = ObservationReasoningStep(
                 observation=str(tool_call_result.tool_output.content),
                 return_direct=tool_call_result.return_direct,

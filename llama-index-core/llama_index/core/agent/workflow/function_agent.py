@@ -7,6 +7,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentStream,
     ToolCallResult,
 )
+from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import BaseMemory
 from llama_index.core.tools import AsyncBaseTool
@@ -43,12 +44,13 @@ class FunctionAgent(BaseWorkflowAgent):
             tool_calls = self.llm.get_tool_calls_from_response(  # type: ignore
                 r, error_on_no_tool_call=False
             )
+            raw = r.raw.model_dump() if isinstance(r.raw, BaseModel) else r.raw
             ctx.write_event_to_stream(
                 AgentStream(
                     delta=r.delta or "",
                     response=r.message.content or "",
                     tool_calls=tool_calls or [],
-                    raw=r.raw,
+                    raw=raw,
                     current_agent_name=self.name,
                 )
             )
@@ -58,14 +60,14 @@ class FunctionAgent(BaseWorkflowAgent):
         )
 
         # only add to scratchpad if we didn't select the handoff tool
-        if not any(tool_call.tool_name == "handoff" for tool_call in tool_calls):
-            scratchpad.append(r.message)
-            await ctx.set(self.scratchpad_key, scratchpad)
+        scratchpad.append(r.message)
+        await ctx.set(self.scratchpad_key, scratchpad)
 
+        raw = r.raw.model_dump() if isinstance(r.raw, BaseModel) else r.raw
         return AgentOutput(
             response=r.message,
             tool_calls=tool_calls or [],
-            raw=r.raw,
+            raw=raw,
             current_agent_name=self.name,
         )
 
@@ -76,10 +78,6 @@ class FunctionAgent(BaseWorkflowAgent):
         scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
 
         for tool_call_result in results:
-            # don't add handoff tool calls to memory
-            if tool_call_result.tool_name == "handoff":
-                continue
-
             scratchpad.append(
                 ChatMessage(
                     role="tool",

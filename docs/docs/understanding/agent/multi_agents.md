@@ -13,7 +13,7 @@ Here's a simple example of setting up a multi-agent workflow with a calculator a
 from llama_index.core.agent.workflow import (
     AgentWorkflow,
     FunctionAgent,
-    ReactAgent,
+    ReActAgent,
 )
 from llama_index.core.tools import FunctionTool
 
@@ -30,9 +30,9 @@ def subtract(a: int, b: int) -> int:
 
 
 # Create agent configs
-# NOTE: we can use FunctionAgent or ReactAgent here.
+# NOTE: we can use FunctionAgent or ReActAgent here.
 # FunctionAgent works for LLMs with a function calling API.
-# ReactAgent works for any LLM.
+# ReActAgent works for any LLM.
 calculator_agent = FunctionAgent(
     name="calculator",
     description="Performs basic arithmetic operations",
@@ -80,7 +80,7 @@ When a user message comes in, it's first routed to the root agent. Each agent ca
 
 ### Agent Workflow Config
 
-Each agent holds a certain set of configuration options. Whether you use `FunctionAgent` or `ReactAgent`, the core options are the same.
+Each agent holds a certain set of configuration options. Whether you use `FunctionAgent` or `ReActAgent`, the core options are the same.
 
 ```python
 FunctionAgent(
@@ -292,3 +292,10 @@ This cycle continues until either:
 - The current agent provides a response without tool calls
 - A tool marked as `return_direct=True` is called (except for handoffs)
 - The workflow times out (if a timeout was configured)
+
+## Examples
+
+We have a few notebook examples using the `AgentWorkflow` class:
+
+- [Agent Workflow Overview](../../examples/agent/agent_workflow_basic.ipynb)
+- [Multi-Agent Research Report Workflow](../../examples/agent/agent_workflow_multi.ipynb)

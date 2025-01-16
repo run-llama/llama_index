@@ -1,14 +1,20 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from llama_index.core.agent.workflow.workflow_events import (
     AgentOutput,
     ToolCallResult,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    ConfigDict,
+    field_validator,
+)
 from llama_index.core.llms import ChatMessage, LLM
 from llama_index.core.memory import BaseMemory
-from llama_index.core.tools import BaseTool, AsyncBaseTool
+from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType, PromptDictType
+from llama_index.core.tools import BaseTool, AsyncBaseTool, FunctionTool
 from llama_index.core.workflow import Context
 from llama_index.core.objects import ObjectRetriever
 from llama_index.core.settings import Settings
@@ -18,7 +24,7 @@ def get_default_llm() -> LLM:
     return Settings.llm
 
 
-class BaseWorkflowAgent(BaseModel, ABC):
+class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
     """Base class for all agents, combining config and logic."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -43,6 +49,37 @@ class BaseWorkflowAgent(BaseModel, ABC):
     llm: LLM = Field(
         default_factory=get_default_llm, description="The LLM that the agent uses"
     )
+
+    @field_validator("tools", mode="before")
+    def validate_tools(
+        cls, v: Optional[List[BaseTool | Callable]]
+    ) -> Optional[List[BaseTool]]:
+        """Validate tools.
+
+        If tools are not of type BaseTool, they will be converted to FunctionTools.
+        This assumes the inputs are tools or callable functions.
+        """
+        if v is None:
+            return None
+
+        validated_tools = []
+        for tool in v:
+            if not isinstance(tool, BaseTool):
+                validated_tools.append(FunctionTool.from_defaults(tool))
+            else:
+                validated_tools.append(tool)
+        return validated_tools
+
+    def _get_prompts(self) -> PromptDictType:
+        """Get prompts."""
+        return {}
+
+    def _get_prompt_modules(self) -> PromptMixinType:
+        """Get prompt sub-modules."""
+        return {}
+
+    def _update_prompts(self, prompts_dict: PromptDictType) -> None:
+        """Update prompts."""
 
     @abstractmethod
     async def take_step(

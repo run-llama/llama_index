@@ -4,7 +4,7 @@
         - AgentWorkflow
         - BaseWorkflowAgent
         - FunctionAgent
-        - ReactAgent
+        - ReActAgent
         - AgentInput
         - AgentStream
         - AgentOutput

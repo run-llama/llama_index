@@ -4,7 +4,7 @@ import pytest
 from llama_index.core.llms import MockLLM
 from llama_index.core.agent.workflow.multi_agent_workflow import AgentWorkflow
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
-from llama_index.core.agent.workflow.react_agent import ReactAgent
+from llama_index.core.agent.workflow.react_agent import ReActAgent
 from llama_index.core.llms import (
     ChatMessage,
     ChatResponse,
@@ -74,7 +74,7 @@ def subtract(a: int, b: int) -> int:
 
 @pytest.fixture()
 def calculator_agent():
-    return ReactAgent(
+    return ReActAgent(
         name="calculator",
         description="Performs basic arithmetic operations",
         system_prompt="You are a calculator assistant.",
@@ -155,7 +155,7 @@ async def test_workflow_requires_root_agent():
                         ]
                     ),
                 ),
-                ReactAgent(
+                ReActAgent(
                     name="agent2",
                     description="test",
                     llm=MockLLM(
