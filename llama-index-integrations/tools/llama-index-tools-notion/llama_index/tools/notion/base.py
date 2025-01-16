@@ -73,11 +73,12 @@ class NotionToolSpec(BaseToolSpec):
         value: Optional[str] = None,
         property: Optional[str] = None,
         page_size: int = 100,
-    ) -> str:
+    ) -> List[Dict[str, Any]]:
         """Search a list of relevant pages.
 
         Contains metadata for each page (but not the page content).
-
+        params:
+           query: the title of the page or database to search for, which is fuzzy matched.
         """
         payload: Dict[str, Any] = {
             "query": query,
