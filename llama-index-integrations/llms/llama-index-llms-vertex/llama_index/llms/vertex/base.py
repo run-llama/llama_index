@@ -477,8 +477,9 @@ class Vertex(FunctionCallingLLM):
         tool_dicts = []
         for tool in tools:
             if self._is_gemini:
+                ## Test without this
                 tool = GeminiToolWrapper(tool)
-                metadata = tool.metadata()
+                metadata = tool.metadata
             else:
                 metadata = tool.metadata
 
@@ -492,7 +493,7 @@ class Vertex(FunctionCallingLLM):
 
         return {
             "messages": chat_history,
-            "tools": tool_dicts or None,
+            "tools": tool_dicts,
             **kwargs,
         }
 

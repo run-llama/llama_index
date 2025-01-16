@@ -27,14 +27,14 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-vertex"
 readme = "README.md"
-
-version = "0.4.2+vai_fixes"
+version = "0.4.2.6+vai_fixes"
 
 [tool.poetry.dependencies]
 python = ">=3.9.0,<4.0"
 google-cloud-aiplatform = "^1.76.0"
 pyarrow = ">=15.0.2, <16.0.0"
 llama-index-core = "^0.12.1"
+jsonref = "^1.1.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

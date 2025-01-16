@@ -92,7 +92,7 @@ class LangChainLLM(LLM):
             return completion_response_to_chat_response(completion_response)
 
         lc_messages = to_lc_messages(messages)
-        lc_message = self._llm.predict_messages(messages=lc_messages, **kwargs)
+        lc_message = self._llm.predict(messages=lc_messages, **kwargs)
         message = from_lc_messages([lc_message])[0]
         return ChatResponse(message=message)
 
@@ -103,7 +103,7 @@ class LangChainLLM(LLM):
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
-        output_str = self._llm.predict(prompt, **kwargs)
+        output_str = self._llm.invoke(prompt, **kwargs)
         return CompletionResponse(text=output_str)
 
     @llm_chat_callback()

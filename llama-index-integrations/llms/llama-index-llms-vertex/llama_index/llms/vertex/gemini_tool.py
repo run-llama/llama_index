@@ -1,4 +1,5 @@
 import json
+import jsonref
 from typing import Optional, Type, Any
 
 from llama_index.core.tools import ToolMetadata
@@ -53,13 +54,7 @@ class GeminiToolMetadataWrapper:
                 "required": ["input"],
             }
         else:
-            parameters = remap_schema(
-                {
-                    k: v
-                    for k, v in self.fn_schema.model_json_schema()
-                    if k in ["type", "properties", "required", "definitions", "$defs"]
-                }
-            )
+            parameters = jsonref.replace_refs(self.fn_schema.model_json_schema())
 
         return parameters
 
