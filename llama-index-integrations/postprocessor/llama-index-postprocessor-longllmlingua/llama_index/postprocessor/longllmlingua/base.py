@@ -90,7 +90,9 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
         """Optimize a node text given the query by shortening the node text."""
         if query_bundle is None:
             raise ValueError("Query bundle is required.")
-        # context_texts = [n.get_content(metadata_mode=self.metadata_mode) for n in nodes]
+        
+        # The prompt compression for llmlingua2 works on raw texts, that's why it's better to just extract metadata texts.
+        # OLD CODE: context_texts = [n.get_content(metadata_mode=self.metadata_mode) for n in nodes]
         context_texts = [n.text for n in nodes]
         new_context_texts = "".join(context_texts)
         
