@@ -85,11 +85,13 @@ class ImageBlock(BaseModel):
             # Not base64 - encode it
             self.image = base64.b64encode(self.image)
 
-        if not self.image_mimetype:
-            guess = filetype.guess(decoded_img)
-            self.image_mimetype = guess.mime if guess else None
-
+        self._guess_mimetype(decoded_img)
         return self
+
+    def _guess_mimetype(self, img_data: bytes) -> None:
+        if not self.image_mimetype:
+            guess = filetype.guess(img_data)
+            self.image_mimetype = guess.mime if guess else None
 
     def resolve_image(self, as_base64: bool = False) -> BytesIO:
         """Resolve an image such that PIL can read it.
@@ -103,6 +105,7 @@ class ImageBlock(BaseModel):
             return BytesIO(base64.b64decode(self.image))
         elif self.path is not None:
             img_bytes = self.path.read_bytes()
+            self._guess_mimetype(img_bytes)
             if as_base64:
                 return BytesIO(base64.b64encode(img_bytes))
             return BytesIO(img_bytes)
@@ -110,6 +113,7 @@ class ImageBlock(BaseModel):
             # load image from URL
             response = requests.get(str(self.url))
             img_bytes = response.content
+            self._guess_mimetype(img_bytes)
             if as_base64:
                 return BytesIO(base64.b64encode(img_bytes))
             return BytesIO(img_bytes)
