@@ -8,14 +8,15 @@ import re
 #
 # For this test to run properly, please setup as follows:
 # 1. Create a Vectara account: sign up at https://console.vectara.com/signup
-# 2. Create a corpus in your Vectara account, with the following filter attributes:
+# 2. Create two corpora in your Vectara account, the first with the following filter attributes:
 #   a. doc.test_num (text)
 #   b. doc.test_score (integer)
 #   c. doc.date (text)
 #   d. doc.url (text)
-# 3. Create an API_KEY for this corpus with permissions for query and indexing
+# 3. Create an API_KEY for these corpora with permissions for query and indexing
 # 4. Setup environment variables:
 #    VECTARA_API_KEY, VECTARA_CORPUS_KEY, and OPENAI_API_KEY
+#    Separate the corpus keys for the two corpora with a ,
 #
 
 
@@ -99,7 +100,7 @@ def vectara1():
 
     # Tear down code
     for id in vectara1.doc_ids:
-        vectara1._delete_doc(id)
+        vectara1.delete_ref_doc(id)
 
 
 def test_simple_retrieval(vectara1) -> None:
@@ -268,6 +269,19 @@ def test_custom_prompt(vectara1) -> None:
     assert "result" in str(res).lower()
 
 
+def test_update_doc(vectara1) -> None:
+    docs = get_docs()
+
+    vectara1.update_ref_doc(document=docs[1], metadata={"test_score": 14})
+
+    qe = vectara1.as_retriever(similarity_top_k=1)
+
+    res = qe.retrieve("Find me something completely different.")
+    assert len(res) == 1
+    assert res[0].node.get_content() == docs[1].text
+    assert res[0].node.metadata["test_score"] == 14
+
+
 @pytest.fixture()
 def vectara2():
     try:
@@ -283,7 +297,7 @@ def vectara2():
     yield vectara2
 
     # Tear down code
-    vectara2._delete_doc(id)
+    vectara2.delete_ref_doc(id)
 
 
 def test_file_upload(vectara2) -> None:
@@ -434,6 +448,7 @@ def vectara3():
             nodes,
             document_id="doc_1",
             document_metadata={"author": "Vectara", "title": "LlamaIndex Integration"},
+            corpus_key="llamaindex-testing",  # CHANGE TO NAME OF SECOND CORPORA
         )
     except ValueError:
         pytest.skip("Missing Vectara credentials, skipping test")
@@ -442,7 +457,9 @@ def vectara3():
 
     # Tear down code
     for id in vectara3.doc_ids:
-        vectara3._delete_doc(id)
+        vectara3._delete_ref_doc(
+            id, corpus_key="llamaindex-tesintg"
+        )  # CHANGE TO NAME OF SECOND CORPORA
 
 
 def test_simple_retrieval_with_nodes(vectara3) -> None:

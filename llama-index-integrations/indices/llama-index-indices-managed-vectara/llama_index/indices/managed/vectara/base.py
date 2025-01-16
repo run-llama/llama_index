@@ -378,16 +378,58 @@ class VectaraIndex(BaseManagedIndex):
             return None
 
     def delete_ref_doc(
-        self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
+        self, ref_doc_id: str, delete_from_docstore: bool = True, **delete_kwargs: Any
     ) -> None:
-        raise NotImplementedError(
-            "Vectara does not support deleting a reference document"
-        )
+        """
+        Delete a document from a Vectara corpus.
+
+        Args:
+            ref_doc_id (str): ID of the document to delete
+            delete_from_docstore (bool): Whether to delete the document from the corpus.
+                If False, no change is made to the index or corpus.
+            corpus_key (str): corpus key to delete the document from.
+                This should be specified if there are multiple corpora in the index.
+        """
+        if delete_from_docstore:
+            if "corpus_key" in delete_kwargs:
+                self._delete_doc(
+                    doc_id=ref_doc_id, corpus_key=delete_kwargs["corpus_key"]
+                )
+            else:
+                self._delete_doc(doc_id=ref_doc_id)
 
     def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
-        raise NotImplementedError(
-            "Vectara does not support updating a reference document"
-        )
+        """
+        Update a document's metadata in a Vectara corpus.
+
+        Args:
+            document (Document): The document to update.
+                Make sure to include id_ argument for proper identification within the corpus.
+            corpus_key (str): corpus key to modify the document from.
+                This should be specified if there are multiple corpora in the index.
+            metadata (dict): dictionary specifying any modifications or additions to the document's metadata.
+        """
+        if "metadata" in update_kwargs:
+            if "corpus_key" in update_kwargs:
+                valid_corpus_key = self._get_corpus_key(update_kwargs["corpus_key"])
+            else:
+                valid_corpus_key = self._get_corpus_key(corpus_key=None)
+
+            doc_id = document.doc_id
+            body = {"metadata": update_kwargs["metadata"]}
+            response = self._session.patch(
+                f"https://api.vectara.io/v2/corpora/{valid_corpus_key}/documents/{doc_id}",
+                data=json.dumps(body),
+                verify=True,
+                headers=self._get_post_headers(),
+                timeout=self.vectara_api_timeout,
+            )
+
+            if response.status_code != 200:
+                _logger.error(
+                    f"Update request failed for doc_id = {doc_id} with status code "
+                    f"{response.status_code}, text {response.json()['messages'][0]}"
+                )
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
