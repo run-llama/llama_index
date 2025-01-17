@@ -50,6 +50,7 @@ nav:
           - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
           - Memory: ./understanding/agent/memory.md
           - Adding other tools: ./understanding/agent/tools.md
+          - Multi-agent workflows: ./understanding/agent/multi_agents.md
       - Building Workflows:
           - Introduction to workflows: ./understanding/workflows/index.md
           - A basic workflow: ./understanding/workflows/basic_flow.md
@@ -97,6 +98,8 @@ nav:
           - ./examples/agent/agent_runner/agent_runner.ipynb
           - ./examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
           - ./examples/agent/agent_runner/query_pipeline_agent.ipynb
+          - ./examples/agent/agent_workflow_basic.ipynb
+          - ./examples/agent/agent_workflow_multi.ipynb
           - ./examples/agent/agentic_rag_using_vertex_ai.ipynb
           - ./examples/agent/agentic_rag_with_llamaindex_and_vertexai_managed_index.ipynb
           - ./examples/agent/anthropic_agent.ipynb
@@ -853,6 +856,7 @@ nav:
           - ./api_reference/agent/openai.md
           - ./api_reference/agent/openai_legacy.md
           - ./api_reference/agent/react.md
+          - ./api_reference/agent/workflow.md
       - Callbacks:
           - ./api_reference/callbacks/agentops.md
           - ./api_reference/callbacks/aim.md
@@ -1061,6 +1065,7 @@ nav:
           - ./api_reference/llms/sambanovasystems.md
           - ./api_reference/llms/siliconflow.md
           - ./api_reference/llms/solar.md
+          - ./api_reference/llms/stepfun.md
           - ./api_reference/llms/text_generation_inference.md
           - ./api_reference/llms/together.md
           - ./api_reference/llms/unify.md
@@ -2331,6 +2336,7 @@ plugins:
             - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-tablestore
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-tablestore
             - ../llama-index-integrations/llms/llama-index-llms-opea
+            - ../llama-index-integrations/llms/llama-index-llms-stepfun
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
