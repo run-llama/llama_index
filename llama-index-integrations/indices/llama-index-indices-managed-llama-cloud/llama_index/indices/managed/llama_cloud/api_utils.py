@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 import urllib.parse
 from httpx import Request
 
@@ -104,7 +104,10 @@ def resolve_project_and_pipeline(
 
 
 def _build_get_page_screenshot_request(
-    client: LlamaCloud | AsyncLlamaCloud, file_id: str, page_index: int, project_id: str
+    client: Union[LlamaCloud, AsyncLlamaCloud],
+    file_id: str,
+    page_index: int,
+    project_id: str,
 ) -> Request:
     return client._client_wrapper.httpx_client.build_request(
         "GET",
