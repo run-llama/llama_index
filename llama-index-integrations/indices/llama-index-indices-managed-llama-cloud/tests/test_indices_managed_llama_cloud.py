@@ -4,7 +4,6 @@ from llama_cloud import (
     PipelineCreate,
     PipelineFileCreate,
     ProjectCreate,
-    RetrieverPipeline,
     CompositeRetrievalMode,
 )
 from llama_index.indices.managed.llama_cloud import (
@@ -331,20 +330,8 @@ def test_composite_retriever():
     )
 
     # Attach indices to the composite retriever
-    retriever.update_retriever_pipelines(
-        [
-            RetrieverPipeline(
-                pipeline_id=index1.id,
-                name="Index 1",
-                description="Information from index 1.",
-            ),
-            RetrieverPipeline(
-                pipeline_id=index2.id,
-                name="Index 2",
-                description="Information from index 2.",
-            ),
-        ]
-    )
+    retriever.add_index(index1, description="Information from index 1.")
+    retriever.add_index(index2, description="Information from index 2.")
 
     # Retrieve nodes using the composite retriever
     nodes = retriever.retrieve("Hello world.")

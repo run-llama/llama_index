@@ -84,3 +84,63 @@ A full list of retriever settings/kwargs is below:
 - `enable_reranking`: Optional[bool] -- Whether to enable reranking or not. Sacrifices some speed for accuracy
 - `rerank_top_n`: Optional[int] -- The number of nodes to return after reranking initial retrieval results
 - `alpha` Optional[float] -- The weighting between dense and sparse retrieval. 1 = Full dense retrieval, 0 = Full sparse retrieval.
+
+
+## Composite Retrieval Usage
+
+Once you've setup multiple indexes that are ingesting various forms of data, you may want to create an application that can query over the data across all of your indices.
+
+This is where you can use the `LlamaCloudCompositeRetriever` class. The following snippet shows you how to setup the composite retriever:
+
+```python
+import os
+from llama_cloud import CompositeRetrievalMode, RetrieverPipeline
+from llama_index.indices.managed.llama_cloud import (
+    LlamaCloudIndex,
+    LlamaCloudCompositeRetriever,
+)
+
+llama_cloud_api_key = os.environ["LLAMA_CLOUD_API_KEY"]
+project_name = "Essays"
+
+# Setup your indices
+pg_documents = SimpleDirectoryReader("./examples/data/paul_graham").load_data()
+pg_index = LlamaCloudIndex.from_documents(
+    documents=pg_documents,
+    name=f"PG Index",
+    project_name=project_name,
+    api_key=llama_cloud_api_key,
+)
+
+sama_documents = SimpleDirectoryReader(
+    "./examples/data/sam_altman"
+).load_data()
+sama_index = LlamaCloudIndex.from_documents(
+    documents=sama_documents,
+    name=f"Sam Index",
+    project_name=project_name,
+    api_key=llama_cloud_api_key,
+)
+
+retriever = LlamaCloudCompositeRetriever(
+    name="Essays Retriever",
+    project_name=project_name,
+    api_key=llama_cloud_api_key,
+    # If a Retriever named "Essays Retriever" doesn't already exist, one will be created
+    create_if_not_exists=True,
+    # CompositeRetrievalMode.FULL will query each index individually and globally rerank results at the end
+    mode=CompositeRetrievalMode.FULL,
+    rerank_top_n=5,
+)
+
+# Add the above indices to the composite retriever
+# Carefully craft the description as this is used internally to route a query to an attached sub-index when CompositeRetrievalMode.ROUTING is used
+retriever.add_index(pg_index, description="A collection of Paul Graham essays")
+retriever.add_index(
+    sama_index, description="A collection of Sam Altman essays"
+)
+
+# Start retrieving context for your queries
+# async .aretrieve() is also available
+nodes = retriever.retrieve("What does YC do?")
+```
