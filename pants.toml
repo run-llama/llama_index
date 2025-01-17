@@ -23,6 +23,9 @@ fail_under = 50
 global_report = false
 report = ["console", "html", "xml"]
 
+[python]
+interpreter_constraints = [">=3.9,<4.0"]
+
 [python-infer]
 ambiguity_resolution = "by_source_root"
 
