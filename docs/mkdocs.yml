@@ -98,6 +98,8 @@ nav:
           - ./examples/agent/agent_runner/agent_runner.ipynb
           - ./examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
           - ./examples/agent/agent_runner/query_pipeline_agent.ipynb
+          - ./examples/agent/agent_workflow_basic.ipynb
+          - ./examples/agent/agent_workflow_multi.ipynb
           - ./examples/agent/agentic_rag_using_vertex_ai.ipynb
           - ./examples/agent/agentic_rag_with_llamaindex_and_vertexai_managed_index.ipynb
           - ./examples/agent/anthropic_agent.ipynb
@@ -1063,6 +1065,7 @@ nav:
           - ./api_reference/llms/sambanovasystems.md
           - ./api_reference/llms/siliconflow.md
           - ./api_reference/llms/solar.md
+          - ./api_reference/llms/stepfun.md
           - ./api_reference/llms/text_generation_inference.md
           - ./api_reference/llms/together.md
           - ./api_reference/llms/unify.md
@@ -2333,6 +2336,7 @@ plugins:
             - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-tablestore
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-tablestore
             - ../llama-index-integrations/llms/llama-index-llms-opea
+            - ../llama-index-integrations/llms/llama-index-llms-stepfun
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
