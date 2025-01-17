@@ -481,6 +481,12 @@ class Workflow(metaclass=WorkflowMeta):
             ctx=ctx, checkpoint_callback=checkpoint_callback, **kwargs
         )
 
+        # only kick off the workflow if there are no in-progress events
+        # in-progress events are already started in self.run()
+        num_in_progress = sum(len(v) for v in ctx._in_progress.values())
+        if num_in_progress == 0:
+            handler.ctx.send_event(checkpoint.output_event)
+
         return handler
 
     def is_done(self) -> bool:

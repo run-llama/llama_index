@@ -121,6 +121,7 @@ class Context:
             },
             "accepted_events": self._accepted_events,
             "broker_log": [serializer.serialize(ev) for ev in self._broker_log],
+            "waiter_id": self._waiter_id,
             "is_running": self.is_running,
         }
 
@@ -145,6 +146,7 @@ class Context:
         if len(context._events_buffer) == 0:
             context._events_buffer = defaultdict(list)
         context._accepted_events = data["accepted_events"]
+        context._waiter_id = data.get("waiter_id", str(uuid.uuid4()))
         context._broker_log = [serializer.deserialize(ev) for ev in data["broker_log"]]
         context.is_running = data["is_running"]
         # load back up whatever was in the queue as well as the events whose steps
@@ -310,7 +312,7 @@ class Context:
             event = await asyncio.wait_for(
                 self._queues[self._waiter_id].get(), timeout=timeout
             )
-            if isinstance(event, event_type):
+            if type(event) == event_type:
                 if all(
                     event.get(k, default=None) == v for k, v in requirements.items()
                 ):
