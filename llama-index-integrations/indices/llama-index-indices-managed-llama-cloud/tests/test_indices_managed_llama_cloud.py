@@ -21,7 +21,7 @@ import tempfile
 
 base_url = os.environ.get("LLAMA_CLOUD_BASE_URL", None)
 api_key = os.environ.get("LLAMA_CLOUD_API_KEY", None)
-openai_api_key = os.environ.get("OPENAI_API_KEY", None)
+openai_api_key = os.environ.get("LLAMA_CLOUD_OPENAI_API_KEY", None)
 organization_id = os.environ.get("LLAMA_CLOUD_ORGANIZATION_ID", None)
 project_name = os.environ.get("LLAMA_CLOUD_PROJECT_NAME", "framework_integration_test")
 
