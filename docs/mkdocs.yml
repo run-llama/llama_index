@@ -224,6 +224,7 @@ nav:
           - ./examples/docstore/FirestoreDemo.ipynb
           - ./examples/docstore/MongoDocstoreDemo.ipynb
           - ./examples/docstore/RedisDocstoreIndexStoreDemo.ipynb
+          - ./examples/docstore/TablestoreDocstoreDemo.ipynb
       - Embeddings:
           - ./examples/embeddings/Anyscale.ipynb
           - ./examples/embeddings/Langchain.ipynb
@@ -922,6 +923,7 @@ nav:
           - ./api_reference/embeddings/oci_genai.md
           - ./api_reference/embeddings/octoai.md
           - ./api_reference/embeddings/ollama.md
+          - ./api_reference/embeddings/opea.md
           - ./api_reference/embeddings/openai.md
           - ./api_reference/embeddings/oracleai.md
           - ./api_reference/embeddings/premai.md
@@ -1037,6 +1039,7 @@ nav:
           - ./api_reference/llms/oci_genai.md
           - ./api_reference/llms/octoai.md
           - ./api_reference/llms/ollama.md
+          - ./api_reference/llms/opea.md
           - ./api_reference/llms/openai.md
           - ./api_reference/llms/openai_like.md
           - ./api_reference/llms/openllm.md
@@ -1157,6 +1160,7 @@ nav:
       - Multi-Modal LLMs:
           - ./api_reference/multi_modal_llms/anthropic.md
           - ./api_reference/multi_modal_llms/azure_openai.md
+          - ./api_reference/multi_modal_llms/bedrock.md
           - ./api_reference/multi_modal_llms/dashscope.md
           - ./api_reference/multi_modal_llms/gemini.md
           - ./api_reference/multi_modal_llms/huggingface.md
@@ -1489,6 +1493,7 @@ nav:
               - ./api_reference/storage/chat_store/postgres.md
               - ./api_reference/storage/chat_store/redis.md
               - ./api_reference/storage/chat_store/simple.md
+              - ./api_reference/storage/chat_store/tablestore.md
               - ./api_reference/storage/chat_store/upstash.md
           - Docstore:
               - ./api_reference/storage/docstore/azure.md
@@ -1502,6 +1507,7 @@ nav:
               - ./api_reference/storage/docstore/postgres.md
               - ./api_reference/storage/docstore/redis.md
               - ./api_reference/storage/docstore/simple.md
+              - ./api_reference/storage/docstore/tablestore.md
           - Graph Stores:
               - ./api_reference/storage/graph_stores/falkordb.md
               - ./api_reference/storage/graph_stores/index.md
@@ -1524,6 +1530,7 @@ nav:
               - ./api_reference/storage/index_store/postgres.md
               - ./api_reference/storage/index_store/redis.md
               - ./api_reference/storage/index_store/simple.md
+              - ./api_reference/storage/index_store/tablestore.md
           - Kvstore:
               - ./api_reference/storage/kvstore/azure.md
               - ./api_reference/storage/kvstore/azurecosmosnosql.md
@@ -1537,6 +1544,7 @@ nav:
               - ./api_reference/storage/kvstore/redis.md
               - ./api_reference/storage/kvstore/s3.md
               - ./api_reference/storage/kvstore/simple.md
+              - ./api_reference/storage/kvstore/tablestore.md
           - Storage:
               - ./api_reference/storage/storage_context.md
           - Vector Store:
@@ -2316,6 +2324,13 @@ plugins:
             - ../llama-index-integrations/tools/llama-index-tools-scrapegraph
             - ../llama-index-integrations/graph_rag/llama-index-graph-rag-cognee
             - ../llama-index-integrations/llms/llama-index-llms-keywordsai
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-opea
+            - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-bedrock
+            - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-tablestore
+            - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-tablestore
+            - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-tablestore
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-tablestore
+            - ../llama-index-integrations/llms/llama-index-llms-opea
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
