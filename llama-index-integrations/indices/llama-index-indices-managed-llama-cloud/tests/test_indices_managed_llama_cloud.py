@@ -287,8 +287,6 @@ def test_index_from_documents():
 @pytest.mark.integration()
 def test_composite_retriever():
     """Test the LlamaCloudCompositeRetriever with multiple indices."""
-    client = LlamaCloud(token=api_key, base_url=base_url)
-
     # Create first index with documents
     documents1 = [
         Document(
@@ -327,7 +325,6 @@ def test_composite_retriever():
         project_name=project_name,
         api_key=api_key,
         base_url=base_url,
-        httpx_client=client,
         create_if_not_exists=True,
         mode=CompositeRetrievalMode.FULL,
         rerank_top_n=5,
