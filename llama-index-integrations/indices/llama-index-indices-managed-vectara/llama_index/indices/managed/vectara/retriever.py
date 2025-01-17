@@ -87,6 +87,9 @@ class VectaraRetriever(BaseRetriever):
         summary_response_lang (str): language to use for summary generation.
         summary_num_results (int): number of results to use for summary generation.
         summary_prompt_name (str): name of the prompt to use for summary generation.
+            To use Vectara's Mockingbird LLM designed specifically for RAG, set to "mockingbird-1.0-2024-07-16".
+            If you are indexing documents with tables, we recommend "vectara-summary-table-query-ext-dec-2024-gpt-4o".
+            See (https://docs.vectara.com/docs/learn/grounded-generation/select-a-summarizer) for all available prompts.
         prompt_text (str): the custom prompt, using appropriate prompt variables and functions.
             See (https://docs.vectara.com/docs/1.0/prompts/custom-prompts-with-metadata)
             for more details.
@@ -127,7 +130,7 @@ class VectaraRetriever(BaseRetriever):
         summary_enabled: bool = False,
         summary_response_lang: str = "eng",
         summary_num_results: int = 7,
-        summary_prompt_name: str = "vectara-summary-ext-24-05-sml",
+        summary_prompt_name: str = "vectara-summary-ext-24-05-med-omni",
         prompt_text: Optional[str] = None,
         max_response_chars: Optional[int] = None,
         max_tokens: Optional[int] = None,

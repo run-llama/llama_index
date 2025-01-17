@@ -10,6 +10,7 @@ import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, List, Optional, Sequence, Type, Dict
+from functools import lru_cache
 
 import requests
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -103,6 +104,7 @@ class VectaraIndex(BaseManagedIndex):
         self.vectara_api_timeout = 90
         self.doc_ids: List[str] = []
 
+    @lru_cache(maxsize=None)
     def _get_corpus_key(self, corpus_key: str) -> str:
         """
         Get the corpus key to use for the index.
@@ -193,6 +195,9 @@ class VectaraIndex(BaseManagedIndex):
                 "sections": [{"text": document.text_resource.text}],
             }
 
+            if "title" in insert_kwargs and insert_kwargs["title"]:
+                doc["title"] = insert_kwargs["title"]
+
             if "description" in insert_kwargs and insert_kwargs["description"]:
                 doc["description"] = insert_kwargs["description"]
 
@@ -247,6 +252,7 @@ class VectaraIndex(BaseManagedIndex):
         self,
         doc: Document,
         corpus_key: Optional[str] = None,
+        title: Optional[str] = None,
         description: Optional[str] = None,
         max_chars_per_chunk: Optional[int] = None,
     ) -> None:
@@ -260,12 +266,14 @@ class VectaraIndex(BaseManagedIndex):
                 You should provide the value you want for the document id in the corpus as the id_ member of this object.
                 You should provide any document_metadata in the metadata member of this object.
             corpus_key (str): If multiple corpora are provided for this index, the corpus_key of the corpus you want to add the document to.
+            title (str): The title of the document.
             description (str): The description of the document.
             max_chars_per_chunk (int): The maximum number of characters per chunk.
         """
         self._insert(
             document=doc,
             corpus_key=corpus_key,
+            title=title,
             description=description,
             max_chars_per_chunk=max_chars_per_chunk,
         )
@@ -301,7 +309,7 @@ class VectaraIndex(BaseManagedIndex):
         file_path: str,
         metadata: Optional[dict] = None,
         chunking_strategy: Optional[dict] = None,
-        table_extraction_config: Optional[bool] = None,
+        enable_table_extraction: Optional[bool] = False,
         filename: Optional[str] = None,
         corpus_key: Optional[str] = None,
         **insert_kwargs: Any,
@@ -320,7 +328,7 @@ class VectaraIndex(BaseManagedIndex):
                 see API docs for full list
             metadata: Optional dict of metadata associated with the file
             chunking_strategy: Optional dict specifying max number of characters per chunk
-            table_extraction_config: Optional bool specifying whether or not to extract tables from document
+            enable_table_extraction: Optional bool specifying whether or not to extract tables from document
             filename: Optional string specifying the filename
 
 
@@ -347,10 +355,10 @@ class VectaraIndex(BaseManagedIndex):
                 "application/json",
             )
 
-        if table_extraction_config:
+        if enable_table_extraction:
             files["table_extraction_config"] = (
                 None,
-                json.dumps({"extract_tables": table_extraction_config}),
+                json.dumps({"extract_tables": enable_table_extraction}),
                 "application/json",
             )
 

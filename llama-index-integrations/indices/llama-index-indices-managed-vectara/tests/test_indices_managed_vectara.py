@@ -23,7 +23,7 @@ import re
 # 3. Create an API_KEY for these corpora with permissions for query and indexing
 # 4. Setup environment variables:
 #    VECTARA_API_KEY, VECTARA_CORPUS_KEY, and OPENAI_API_KEY
-#    Separate the corpus keys for the two corpora with a ,
+#    For VECTARA_CORPUS_KEY, separate the corpus keys for the corpora with a ',' for example: "Llamaindex-testing-1,llamaindex-testing-2".
 #
 
 

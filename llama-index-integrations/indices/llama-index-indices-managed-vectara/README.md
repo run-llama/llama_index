@@ -19,7 +19,9 @@ Finally, set up your Vectara corpus. If you don't have a Vectara account, you ca
 
 Please note that this usage example is for versions >= 0.4.0 and will not be the same as for earlier versions of Vectara ManagedIndex.
 
-First let's initialize the index with some sample documents. Make sure to always specify a unique `id_` for every document you add to your index.
+First let's initialize the index with some sample documents.
+Make sure to always specify a unique `id_` for every document you add to your index.
+If you don't specify this parameter, a random id will be generated and the document will be separately added to your corpus every time you run your code.
 
 ```python
 import os

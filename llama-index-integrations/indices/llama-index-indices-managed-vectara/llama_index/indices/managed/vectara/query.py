@@ -44,7 +44,7 @@ class VectaraQueryEngine(BaseQueryEngine):
         summary_enabled: bool = False,
         summary_response_lang: str = "eng",
         summary_num_results: int = 5,
-        summary_prompt_name: str = "vectara-summary-ext-24-05-sml",
+        summary_prompt_name: str = "vectara-summary-ext-24-05-med-omni",
         verbose: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -164,7 +164,7 @@ class VectaraChatEngine(BaseChatEngine):
         streaming: bool = False,
         summary_response_lang: str = "eng",
         summary_num_results: int = 5,
-        summary_prompt_name: str = "vectara-summary-ext-24-05-sml",
+        summary_prompt_name: str = "vectara-summary-ext-24-05-med-omni",
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
