@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, List, Sequence, Optional
+from typing import Callable, List, Sequence, Optional, Union
 
 from llama_index.core.agent.workflow.workflow_events import (
     AgentOutput,
@@ -52,7 +52,7 @@ class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
 
     @field_validator("tools", mode="before")
     def validate_tools(
-        cls, v: Optional[Sequence[BaseTool | Callable]]
+        cls, v: Optional[Sequence[Union[BaseTool, Callable]]]
     ) -> Optional[Sequence[BaseTool]]:
         """Validate tools.
 

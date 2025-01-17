@@ -451,7 +451,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
     @classmethod
     def from_tools_or_functions(
         cls,
-        tools_or_functions: list[BaseTool | Callable],
+        tools_or_functions: List[Union[BaseTool, Callable]],
         llm: Optional[LLM] = None,
         system_prompt: Optional[str] = None,
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
