@@ -7,6 +7,8 @@ Currently, LlamaCloud supports
 - Managed Ingestion API, handling parsing and document management
 - Managed Retrieval API, configuring optimal retrieval for your RAG system
 
+For additional documentation on LlamaCloud and this integration in particular, please reference our [official LlamaCloud docs](https://docs.cloud.llamaindex.ai/llamacloud/guides/framework_integration).
+
 ## Access
 
 We are opening up a private beta to a limited set of enterprise partners for the managed ingestion and retrieval API. If you’re interested in centralizing your data pipelines and spending more time working on your actual RAG use cases, come [talk to us.](https://www.llamaindex.ai/contact)
@@ -144,3 +146,10 @@ retriever.add_index(
 # async .aretrieve() is also available
 nodes = retriever.retrieve("What does YC do?")
 ```
+
+### Composite Retrieval related parameters
+There are a few parameters that are specific to tuning the composite retrieval parameters:
+- `mode`: `Optional[CompositeRetrievalMode]` -- Can either be `CompositeRetrievalMode.FULL` or `CompositeRetrievalMode.ROUTING`
+    - `full`: In this mode, all attached sub-indices will be queried and reranking will be executed across all nodes received from these sub-indices.
+    - `routing`: In this mode, an agent determines which sub-indices are most relevant to the provided query (based on the sub-index's `name` & `description` you've provided) and only queries those indices that are deemed relevant. Only the nodes from that chosen subset of indices are then reranked before being returned in the retrieval response.
+- `rerank_top_n`: `Optional[int]` -- Determines how many nodes to return after re-ranking across the nodes retrieved from all indices

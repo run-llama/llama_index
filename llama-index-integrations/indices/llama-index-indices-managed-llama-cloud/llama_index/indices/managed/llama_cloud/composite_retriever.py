@@ -95,26 +95,6 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
             verbose=kwargs.get("verbose", False),
         )
 
-    def refresh(self) -> Retriever:
-        """
-        Fetch the latest retriever information from the server.
-        State of the retriever object is updated in place and also returned.
-        """
-        self.retriever = self._client.retrievers.get_retriever(
-            self.retriever.id, project_id=self.project.id
-        )
-        return self.retriever
-
-    async def arefresh(self) -> Retriever:
-        """
-        Fetch the latest retriever information from the server (async).
-        State of the retriever object is updated in place and also returned.
-        """
-        self.retriever = await self._aclient.retrievers.get_retriever(
-            self.retriever.id, project_id=self.project.id
-        )
-        return self.retriever
-
     @property
     def retriever_pipelines(self) -> List[RetrieverPipeline]:
         return self.retriever.pipelines or []
