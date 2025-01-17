@@ -61,21 +61,23 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
             target_token=target_token,
             rank_method=rank_method,
             additional_compress_kwargs=additional_compress_kwargs,
-            use_llmlingua2=use_llmlingua2
+            use_llmlingua2=use_llmlingua2,
         )
-        
+
         open_api_config = open_api_config or {}
         additional_compress_kwargs = additional_compress_kwargs or {}
-        
+
         if self.use_llmlingua2 is True:
-            assert model_name == "microsoft/llmlingua-2-xlm-roberta-large-meetingbank", 'Must use "microsoft/llmlingua-2-xlm-roberta-large-meetingbank" as the model name for llmlingua2'
-            
+            assert (
+                model_name == "microsoft/llmlingua-2-xlm-roberta-large-meetingbank"
+            ), 'Must use "microsoft/llmlingua-2-xlm-roberta-large-meetingbank" as the model name for llmlingua2'
+
         self._llm_lingua = PromptCompressor(
             model_name=model_name,
             device_map=device_map,
             model_config=model_config,
             open_api_config=open_api_config,
-            use_llmlingua2 = self.use_llmlingua2,
+            use_llmlingua2=self.use_llmlingua2,
         )
 
     @classmethod
@@ -90,12 +92,12 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
         """Optimize a node text given the query by shortening the node text."""
         if query_bundle is None:
             raise ValueError("Query bundle is required.")
-        
+
         # The prompt compression for llmlingua2 works on raw texts, that's why it's better to just extract metadata texts.
         # OLD CODE: context_texts = [n.get_content(metadata_mode=self.metadata_mode) for n in nodes]
         context_texts = [n.text for n in nodes]
         new_context_texts = "".join(context_texts)
-        
+
         # You can use it this way, although the question-aware fine-grained compression hasn't been enabled.
         compressed_prompt = self._llm_lingua.compress_prompt(
             new_context_texts,  # ! Replace the previous context_list
@@ -108,10 +110,10 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
         )
 
         compressed_prompt_txt = compressed_prompt["compressed_prompt"]
-        
+
         # separate out the question and instruction (appended to top and bottom)
         compressed_prompt_txt_list = compressed_prompt_txt.split("\n\n")
-        
+
         if self.use_llmlingua2 is False:
             compressed_prompt_txt_list = compressed_prompt_txt_list[1:-1]
 
