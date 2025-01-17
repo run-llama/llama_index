@@ -5,7 +5,6 @@ Contains parser for md files.
 """
 
 import re
-from pathlib import Path
 from fsspec import AbstractFileSystem
 from fsspec.implementations.local import LocalFileSystem
 from typing import Any, Dict, List, Optional, Tuple
@@ -35,10 +34,8 @@ class MarkdownReader(BaseReader):
         self._remove_images = remove_images
         self._separator = separator
 
-
     def markdown_to_tups(self, markdown_text: str) -> List[Tuple[Optional[str], str]]:
         """Convert a markdown file to a list of tuples containing header and text."""
-
         markdown_tups: List[Tuple[Optional[str], str]] = []
         lines = markdown_text.split("\n")
 
@@ -59,19 +56,25 @@ class MarkdownReader(BaseReader):
                 if not line:
                     continue
 
-                if current_lines and not headers:
-                    # Add content before first header
-                    markdown_tups.append((None, "\n".join(current_lines)))
-                    current_lines.clear()
-
                 header_match = re.match(r"^(#+)\s+(.*)", line)
                 if header_match:
+                    if current_lines and not headers:
+                        # Add content before first header
+                        markdown_tups.append((None, "\n".join(current_lines)))
+                        current_lines.clear()
                     # Extract header level and text
-                    header_level = len(header_match.group(1))  # number of '#' indicates level
+                    header_level = len(
+                        header_match.group(1)
+                    )  # number of '#' indicates level
                     current_header = header_match.group(2)  # the header text
                     if headers.get(header_level):
                         # Add previous section to the list before switching header
-                        markdown_tups.append((self._separator.join(headers.values()), "\n".join(current_lines)))
+                        markdown_tups.append(
+                            (
+                                self._separator.join(headers.values()),
+                                "\n".join(current_lines),
+                            )
+                        )
                         # remove all headers with level greater than current header
                         headers = {k: v for k, v in headers.items() if k < header_level}
                         current_lines.clear()
@@ -82,7 +85,9 @@ class MarkdownReader(BaseReader):
 
         # Append the last section
         if current_lines or headers:
-            markdown_tups.append((self._separator.join(headers.values()), "\n".join(current_lines)))
+            markdown_tups.append(
+                (self._separator.join(headers.values()), "\n".join(current_lines))
+            )
 
         # Postprocess the tuples before returning
         return [
@@ -123,7 +128,6 @@ class MarkdownReader(BaseReader):
             content = self.remove_images(content)
         return self.markdown_to_tups(content)
 
-
     def load_data(
         self,
         file: str,
@@ -142,5 +146,3 @@ class MarkdownReader(BaseReader):
                     Document(text=f"\n\n{header}\n{text}", metadata=extra_info or {})
                 )
         return results
-
-
