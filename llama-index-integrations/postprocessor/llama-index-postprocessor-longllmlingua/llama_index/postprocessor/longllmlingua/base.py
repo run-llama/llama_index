@@ -13,6 +13,10 @@ logger = logging.getLogger(__name__)
 DEFAULT_INSTRUCTION_STR = "Given the context, please answer the final question"
 
 
+def format_metadata(nodes=List[NodeWithScore]):
+    return {node.node.id_: node.metadata for node in nodes}
+
+
 class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
     """Optimization of nodes.
 
@@ -96,6 +100,9 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
         # The prompt compression for llmlingua2 works on raw texts, that's why it's better to just extract metadata texts.
         # OLD CODE: context_texts = [n.get_content(metadata_mode=self.metadata_mode) for n in nodes]
         context_texts = [n.text for n in nodes]
+
+        # Preserve metadata for prompt compressed nodes
+        metadata = format_metadata(nodes)
         new_context_texts = "".join(context_texts)
 
         # You can use it this way, although the question-aware fine-grained compression hasn't been enabled.
@@ -119,5 +126,6 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
 
         # return nodes for each list
         return [
-            NodeWithScore(node=TextNode(text=t)) for t in compressed_prompt_txt_list
+            NodeWithScore(node=TextNode(text=t, metadata=metadata))
+            for t in compressed_prompt_txt_list
         ]
