@@ -848,6 +848,7 @@
   "BeautifulSoupWebReader": "llama_index.readers.web",
   "BrowserbaseWebReader": "llama_index.readers.web",
   "FireCrawlWebReader": "llama_index.readers.web",
+  "HyperbrowserWebReader": "llama_index.readers.web",
   "KnowledgeBaseWebReader": "llama_index.readers.web",
   "MainContentExtractorReader": "llama_index.readers.web",
   "NewsArticleReader": "llama_index.readers.web",
