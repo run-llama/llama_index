@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Literal
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle, TextNode
+from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +24,6 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
 
     """
 
-    metadata_mode: MetadataMode = Field(
-        default=MetadataMode.ALL, description="Metadata mode."
-    )
     instruction_str: str = Field(
         default=DEFAULT_INSTRUCTION_STR, description="Instruction string."
     )
@@ -49,7 +46,6 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
         device_map: Literal["cuda", "cpu", "mps"] = "cuda",
         model_config: Optional[dict] = {},
         open_api_config: Optional[dict] = {},
-        metadata_mode: MetadataMode = MetadataMode.ALL,
         instruction_str: str = DEFAULT_INSTRUCTION_STR,
         target_token: float = -1,
         rank_method: str = "longllmlingua",
@@ -60,7 +56,6 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
         from llmlingua import PromptCompressor
 
         super().__init__(
-            metadata_mode=metadata_mode,
             instruction_str=instruction_str,
             target_token=target_token,
             rank_method=rank_method,
@@ -98,7 +93,6 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
             raise ValueError("Query bundle is required.")
 
         # The prompt compression for llmlingua2 works on raw texts, that's why it's better to just extract metadata texts.
-        # OLD CODE: context_texts = [n.get_content(metadata_mode=self.metadata_mode) for n in nodes]
         context_texts = [n.text for n in nodes]
 
         # Preserve metadata for prompt compressed nodes
@@ -125,7 +119,15 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
             compressed_prompt_txt_list = compressed_prompt_txt_list[1:-1]
 
         # return nodes for each list
+        keys_to_exclude = list(metadata.keys())
         return [
-            NodeWithScore(node=TextNode(text=t, metadata=metadata))
+            NodeWithScore(
+                node=TextNode(
+                    text=t,
+                    metadata=metadata,
+                    excluded_llm_metadata_keys=keys_to_exclude,
+                    excluded_embed_metadata_keys=keys_to_exclude,
+                )
+            )
             for t in compressed_prompt_txt_list
         ]
