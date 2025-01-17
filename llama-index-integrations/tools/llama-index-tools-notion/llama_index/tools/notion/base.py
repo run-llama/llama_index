@@ -54,7 +54,9 @@ class NotionToolSpec(BaseToolSpec):
             raise ValueError(f"Invalid function name: {fn_name}")
 
     def load_data(
-        self, page_ids: Optional[List[str]] = None, database_ids: Optional[List[str]] = None,
+        self,
+        page_ids: Optional[List[str]] = None,
+        database_ids: Optional[List[str]] = None,
     ) -> str:
         """Loads content from a set of page ids or database ids.
 
