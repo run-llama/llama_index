@@ -13,7 +13,7 @@ from llama_index.core.agent.react.types import (
     ObservationReasoningStep,
 )
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict, Field
 from llama_index.core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
@@ -53,6 +53,14 @@ class ReActChatFormatter(BaseAgentChatFormatter):
 
     system_header: str = REACT_CHAT_SYSTEM_HEADER  # default
     context: str = ""  # not needed w/ default
+    observation_role: MessageRole = Field(
+        default=MessageRole.USER,
+        description=(
+            "Message role of tool outputs. If the LLM you use supports function/tool "
+            "calling, you may set it to `MessageRole.TOOL` to avoid the tool outputs "
+            "being misinterpreted as new user messages."
+        ),
+    )
 
     def format(
         self,
@@ -79,7 +87,7 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         for reasoning_step in current_reasoning:
             if isinstance(reasoning_step, ObservationReasoningStep):
                 message = ChatMessage(
-                    role=MessageRole.TOOL,
+                    role=self.observation_role,
                     content=reasoning_step.get_content(),
                 )
             else:
