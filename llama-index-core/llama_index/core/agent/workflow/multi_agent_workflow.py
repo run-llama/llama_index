@@ -1,3 +1,4 @@
+from abc import ABCMeta
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
@@ -63,8 +64,8 @@ async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
     return f"Handed off to {to_agent} because: {reason}"
 
 
-class AgentWorkflowMeta(WorkflowMeta, type(PromptMixin)):
-    pass
+class AgentWorkflowMeta(WorkflowMeta, ABCMeta):
+    """Metaclass for AgentWorkflow that inherits from WorkflowMeta."""
 
 
 class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
@@ -98,20 +99,22 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         self.root_agent = root_agent
         self.initial_state = initial_state or {}
 
-        self.handoff_prompt = handoff_prompt or DEFAULT_HANDOFF_PROMPT
-        if isinstance(self.handoff_prompt, str):
-            self.handoff_prompt = PromptTemplate(self.handoff_prompt)
-            if "{agent_info}" not in self.handoff_prompt.get_template():
+        handoff_prompt = handoff_prompt or DEFAULT_HANDOFF_PROMPT
+        if isinstance(handoff_prompt, str):
+            handoff_prompt = PromptTemplate(handoff_prompt)
+            if "{agent_info}" not in handoff_prompt.get_template():
                 raise ValueError("Handoff prompt must contain {agent_info}")
+        self.handoff_prompt = handoff_prompt
 
-        self.state_prompt = state_prompt or DEFAULT_STATE_PROMPT
-        if isinstance(self.state_prompt, str):
-            self.state_prompt = PromptTemplate(self.state_prompt)
+        state_prompt = state_prompt or DEFAULT_STATE_PROMPT
+        if isinstance(state_prompt, str):
+            state_prompt = PromptTemplate(state_prompt)
             if (
-                "{state}" not in self.state_prompt.get_template()
-                or "{msg}" not in self.state_prompt.get_template()
+                "{state}" not in state_prompt.get_template()
+                or "{msg}" not in state_prompt.get_template()
             ):
                 raise ValueError("State prompt must contain {state} and {msg}")
+        self.state_prompt = state_prompt
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -167,14 +170,13 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
     async def get_tools(
         self, agent_name: str, input_str: Optional[str] = None
-    ) -> list[AsyncBaseTool]:
+    ) -> Sequence[AsyncBaseTool]:
         """Get tools for the given agent."""
         agent_tools = self.agents[agent_name].tools or []
         tools = [*agent_tools]
-        if self.agents[agent_name].tool_retriever:
-            retrieved_tools = await self.agents[agent_name].tool_retriever.aretrieve(
-                input_str or ""
-            )
+        retriever = self.agents[agent_name].tool_retriever
+        if retriever is not None:
+            retrieved_tools = await retriever.aretrieve(input_str or "")
             tools.extend(retrieved_tools)
 
         if (
@@ -421,8 +423,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         input_messages = memory.get(input=user_msg_str)
 
         # get this again, in case it changed
-        agent_name: str = await ctx.get("current_agent_name")
-        agent: BaseWorkflowAgent = self.agents[agent_name]
+        agent_name = await ctx.get("current_agent_name")
+        agent = self.agents[agent_name]
 
         return AgentInput(input=input_messages, current_agent_name=agent.name)
 

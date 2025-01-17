@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, List, Optional
+from typing import Callable, List, Sequence, Optional
 
 from llama_index.core.agent.workflow.workflow_events import (
     AgentOutput,
@@ -52,8 +52,8 @@ class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
 
     @field_validator("tools", mode="before")
     def validate_tools(
-        cls, v: Optional[List[BaseTool | Callable]]
-    ) -> Optional[List[BaseTool]]:
+        cls, v: Optional[Sequence[BaseTool | Callable]]
+    ) -> Optional[Sequence[BaseTool]]:
         """Validate tools.
 
         If tools are not of type BaseTool, they will be converted to FunctionTools.
@@ -62,13 +62,13 @@ class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
         if v is None:
             return None
 
-        validated_tools = []
+        validated_tools: List[BaseTool] = []
         for tool in v:
             if not isinstance(tool, BaseTool):
                 validated_tools.append(FunctionTool.from_defaults(tool))
             else:
                 validated_tools.append(tool)
-        return validated_tools
+        return validated_tools  # type: ignore[return-value]
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -86,7 +86,7 @@ class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
         self,
         ctx: Context,
         llm_input: List[ChatMessage],
-        tools: List[AsyncBaseTool],
+        tools: Sequence[AsyncBaseTool],
         memory: BaseMemory,
     ) -> AgentOutput:
         """Take a single step with the agent."""

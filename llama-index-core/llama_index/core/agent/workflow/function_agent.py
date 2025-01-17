@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Sequence
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
@@ -23,7 +23,7 @@ class FunctionAgent(BaseWorkflowAgent):
         self,
         ctx: Context,
         llm_input: List[ChatMessage],
-        tools: List[AsyncBaseTool],
+        tools: Sequence[AsyncBaseTool],
         memory: BaseMemory,
     ) -> AgentOutput:
         """Take a single step with the function calling agent."""

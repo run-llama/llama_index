@@ -18,7 +18,7 @@ explicit_package_bases = true
 ignore_missing_imports = true
 namespace_packages = true
 plugins = "pydantic.mypy"
-python_version = "3.9"
+python_version = "3.10"
 
 [tool.poetry]
 authors = ["Jerry Liu <jerry@llamaindex.ai>"]

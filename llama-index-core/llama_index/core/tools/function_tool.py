@@ -130,7 +130,9 @@ class FunctionTool(AsyncBaseTool):
                     f"{name}",
                     fn_to_parse,
                     additional_fields=None,
-                    ignore_fields=[ctx_param_name],
+                    ignore_fields=[ctx_param_name]
+                    if ctx_param_name is not None
+                    else None,
                 )
             tool_metadata = ToolMetadata(
                 name=name,

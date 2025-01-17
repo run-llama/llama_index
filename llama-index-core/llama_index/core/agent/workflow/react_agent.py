@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Optional, cast
+from typing import List, Sequence, cast
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
@@ -26,15 +26,20 @@ from llama_index.core.tools import AsyncBaseTool
 from llama_index.core.workflow import Context
 
 
+def default_formatter() -> ReActChatFormatter:
+    """Sets up a default formatter so that the proper react header is set."""
+    return ReActChatFormatter.from_defaults(context="some context")
+
+
 class ReActAgent(BaseWorkflowAgent):
     """React agent implementation."""
 
     reasoning_key: str = "current_reasoning"
-    output_parser: Optional[ReActOutputParser] = Field(
-        default=None, description="The react output parser"
+    output_parser: ReActOutputParser = Field(
+        default_factory=ReActOutputParser, description="The react output parser"
     )
-    formatter: Optional[ReActChatFormatter] = Field(
-        default=None,
+    formatter: ReActChatFormatter = Field(
+        default_factory=default_formatter,
         description="The react chat formatter to format the reasoning steps and chat history into an llm input.",
     )
 
@@ -55,7 +60,7 @@ class ReActAgent(BaseWorkflowAgent):
         self,
         ctx: Context,
         llm_input: List[ChatMessage],
-        tools: List[AsyncBaseTool],
+        tools: Sequence[AsyncBaseTool],
         memory: BaseMemory,
     ) -> AgentOutput:
         """Take a single step with the React agent."""
@@ -66,10 +71,9 @@ class ReActAgent(BaseWorkflowAgent):
         else:
             system_prompt = ""
 
-        output_parser = self.output_parser or ReActOutputParser()
-        react_chat_formatter = self.formatter or ReActChatFormatter(
-            context=system_prompt
-        )
+        output_parser = self.output_parser
+        react_chat_formatter = self.formatter
+        react_chat_formatter.context = system_prompt
 
         # Format initial chat input
         current_reasoning: list[BaseReasoningStep] = await ctx.get(
@@ -195,9 +199,12 @@ class ReActAgent(BaseWorkflowAgent):
             await ctx.set(self.reasoning_key, [])
 
         # remove "Answer:" from the response
-        if output.response and "Answer:" in output.response:
-            start_idx = output.response.index("Answer:")
-            output.response = output.response[start_idx + len("Answer:") :].strip()
+        if output.response.content and "Answer:" in output.response.content:
+            start_idx = output.response.content.find("Answer:")
+            if start_idx != -1:
+                output.response.content = output.response.content[
+                    start_idx + len("Answer:") :
+                ].strip()
 
         # clear scratchpad
         await ctx.set(self.reasoning_key, [])
