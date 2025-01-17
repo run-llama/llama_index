@@ -108,6 +108,7 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         cls,
         system_header: Optional[str] = None,
         context: Optional[str] = None,
+        observation_role: MessageRole = MessageRole.USER,
     ) -> "ReActChatFormatter":
         """Create ReActChatFormatter from defaults."""
         if not system_header:
@@ -120,6 +121,7 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         return ReActChatFormatter(
             system_header=system_header,
             context=context or "",
+            observation_role=observation_role,
         )
 
     @classmethod
