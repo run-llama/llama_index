@@ -430,8 +430,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
     def run(
         self,
-        user_msg: str | ChatMessage | None = None,
-        chat_history: list[ChatMessage] | None = None,
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         ctx: Optional[Context] = None,
         stepwise: bool = False,
