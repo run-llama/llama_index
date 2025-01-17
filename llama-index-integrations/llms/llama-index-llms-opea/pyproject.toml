@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.mariadb"
+import_path = "llama_index.llms.opea"
 
 [tool.llamahub.class_authors]
-MariaDBVectorStore = "llama-index"
+OPEA = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,21 +21,18 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index vector_stores mariadb integration"
+authors = ["Logan Markewich <logan@runllama.ai>"]
+description = "llama-index llms opea integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-vector-stores-mariadb"
+name = "llama-index-llms-opea"
 readme = "README.md"
-version = "0.3.0"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-llama-index-core = "^0.12.0"
-pymysql = "^1.1.1"
-
-[tool.poetry.dependencies.sqlalchemy]
-version = "~2.0"
+python = ">=3.8.1,<4.0"
+llama-index-core = "^0.11.0"
+llama-index-llms-openai-like = "^0.2.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -64,11 +61,3 @@ version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
-
-[tool.pytest.ini_options]
-filterwarnings = [
-    "ignore::DeprecationWarning:",
-]
-markers = [
-    "noautousefixtures: marks tests that should not run fixtures with autouse",
-]
