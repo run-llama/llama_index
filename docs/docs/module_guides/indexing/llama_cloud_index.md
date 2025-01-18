@@ -109,7 +109,7 @@ project_name = "Essays"
 pg_documents = SimpleDirectoryReader("./examples/data/paul_graham").load_data()
 pg_index = LlamaCloudIndex.from_documents(
     documents=pg_documents,
-    name=f"PG Index",
+    name="PG Index",
     project_name=project_name,
     api_key=llama_cloud_api_key,
 )
@@ -119,7 +119,7 @@ sama_documents = SimpleDirectoryReader(
 ).load_data()
 sama_index = LlamaCloudIndex.from_documents(
     documents=sama_documents,
-    name=f"Sam Index",
+    name="Sam Index",
     project_name=project_name,
     api_key=llama_cloud_api_key,
 )
