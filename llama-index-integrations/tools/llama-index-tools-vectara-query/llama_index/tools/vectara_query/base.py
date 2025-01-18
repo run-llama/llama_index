@@ -1,4 +1,4 @@
-from typing import Any, List, Dict, Optional
+from typing import Any, Union, List, Dict, Optional
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.schema import QueryBundle
 from llama_index.core.callbacks.base import CallbackManager
@@ -19,12 +19,12 @@ class VectaraQueryToolSpec(BaseToolSpec):
         vectara_api_key: Optional[str] = None,
         num_results: int = 5,
         offset: int = 0,
-        lambda_val: List[float] | float = 0.005,
-        semantics: List[str] | str = "default",
-        custom_dimensions: List[Dict] | Dict = {},
+        lambda_val: Union[List[float], float] = 0.005,
+        semantics: Union[List[str], str] = "default",
+        custom_dimensions: Union[List[Dict], Dict] = {},
         n_sentences_before: int = 2,
         n_sentences_after: int = 2,
-        metadata_filter: List[str] | str = "",
+        metadata_filter: Union[List[str], str] = "",
         reranker: str = "mmr",
         rerank_k: int = 50,
         rerank_limit: Optional[int] = None,
@@ -57,9 +57,9 @@ class VectaraQueryToolSpec(BaseToolSpec):
             If not specified, reads for environment variable "VECTARA_API_KEY".
         - num_results (int): Number of search results to return with response.
         - offset (int): Number of results to skip.
-        - lambda_val (List[float] | float): Lambda value for the Vectara query.
+        - lambda_val (Union[List[float], float]): Lambda value for the Vectara query.
             Provide single value for one corpus or a list of values for each corpus.
-        - semantics (List[str] | str): Indicates whether the query is intended as a query or response.
+        - semantics (Union[List[str], str]): Indicates whether the query is intended as a query or response.
             Provide single value for one corpus or a list of values for each corpus.
         - custom_dimensions (Dict): Custom dimensions for the query.
             See (https://docs.vectara.com/docs/learn/semantic-search/add-custom-dimensions)
@@ -67,7 +67,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
             Provide single dict for one corpus or a list of dicts for each corpus.
         - n_sentences_before (int): Number of sentences before the summary.
         - n_sentences_after (int): Number of sentences after the summary.
-        - metadata_filter (List[str] | str): A string with expressions to filter the search documents for each corpus.
+        - metadata_filter (Union[List[str], str]): A string with expressions to filter the search documents for each corpus.
             Provide single string for one corpus or a list of strings for each corpus (if multiple corpora).
         - reranker (str): The reranker to use, either mmr, slingshot (i.e. multilingual_reranker_v1), userfn, or chain.
         - rerank_k (int): Number of top-k documents for reranking.

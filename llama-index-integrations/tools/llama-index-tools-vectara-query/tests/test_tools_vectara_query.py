@@ -11,14 +11,15 @@ import re
 #
 # For this test to run properly, please setup as follows:
 # 1. Create a Vectara account: sign up at https://console.vectara.com/signup
-# 2. Create a corpus in your Vectara account, with the following filter attributes:
+# 2. Create two corpora in your Vectara account with the following filter attributes in the first corpus:
 #   a. doc.test_num (text)
 #   b. doc.test_score (integer)
 #   c. doc.date (text)
 #   d. doc.url (text)
-# 3. Create an API_KEY for this corpus with permissions for query and indexing
+# 3. Create an API_KEY for these corpora with permissions for query and indexing
 # 4. Setup environment variables:
 #    VECTARA_API_KEY, VECTARA_CORPUS_KEY, and OPENAI_API_KEY
+#    For VECTARA_CORPUS_KEY, separate the corpus keys for the corpora with a ',' for example: "llamaindex-testing-1,llamaindex-testing-2".
 #
 
 
@@ -73,7 +74,7 @@ def vectara1():
 
     # Tear down code
     for id in vectara1.doc_ids:
-        vectara1._delete_doc(id)
+        vectara1.delete_ref_doc(id)
 
 
 def test_simple_retrieval(vectara1) -> None:
@@ -119,7 +120,7 @@ def test_retrieval_with_filter(vectara1) -> None:
     docs = get_docs()
 
     tool_spec = VectaraQueryToolSpec(
-        num_results=1, metadata_filter="doc.test_num = '1'"
+        num_results=1, metadata_filter=["doc.test_num = '1'", ""]
     )
     res = tool_spec.semantic_search("What does this test?")
     assert len(res) == 1
@@ -258,7 +259,7 @@ def vectara2():
     yield vectara2
 
     # Tear down code
-    vectara2._delete_doc(id)
+    vectara2.delete_ref_doc(id)
 
 
 def test_basic_rag_query(vectara2) -> None:
@@ -334,7 +335,7 @@ def test_agent_basic(vectara2) -> None:
 
 def test_agent_filter(vectara1) -> None:
     tool_spec = VectaraQueryToolSpec(
-        num_results=1, metadata_filter="doc.date > '2022-02-01'"
+        num_results=1, metadata_filter=["doc.date > '2022-02-01'", ""]
     )
 
     agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
