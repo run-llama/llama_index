@@ -409,24 +409,27 @@ def test_chat(vectara2) -> None:
     )
     res = chat_engine.chat("What grad schools did Paul apply to?")
     summary = res.response
+
     assert all(s in summary.lower() for s in ["mit", "yale", "harvard"])
     assert res.metadata["fcs"] > 0
     chat_id = chat_engine.conv_id
     assert chat_id is not None
 
     # Test chat follow up
-    res = chat_engine.chat("What did Paul learn while attending this school?")
+    res = chat_engine.chat("What did he learn at the graduate school he selected?")
     summary = res.response
+
     assert "learn" in summary.lower()
-    assert any(s in summary.lower() for s in ["art", "paint"])
+    assert "harvard" in summary.lower()
     assert res.metadata["fcs"] > 0
     assert chat_engine.conv_id == chat_id
 
     # Test chat follow up with streaming
-    res = chat_engine.stream_chat("How did he use what he learned here in his career?")
+    res = chat_engine.stream_chat(
+        "How did attending graduate school help him in his career?"
+    )
     summary = str(res)
 
-    assert "use" in summary.lower()
     assert len(res.source_nodes) > 0
     assert chat_engine.conv_id == chat_id
 

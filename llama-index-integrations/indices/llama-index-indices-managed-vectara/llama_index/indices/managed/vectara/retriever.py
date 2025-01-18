@@ -5,7 +5,7 @@ An index that is built on top of Vectara.
 
 import json
 import logging
-from typing import Any, List, Optional, Tuple, Dict, Callable
+from typing import Any, List, Optional, Tuple, Dict, Callable, Union
 from enum import Enum
 
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -49,12 +49,12 @@ class VectaraRetriever(BaseRetriever):
         index (VectaraIndex): the Vectara Index
         similarity_top_k (int): number of top k results to return, defaults to 5.
         offset (int): number of results to skip, defaults to 0.
-        lambda_val (List[float] | float): for hybrid search.
+        lambda_val (Union[List[float], float]): for hybrid search.
             0 = neural search only.
             1 = keyword match only.
             In between values are a linear interpolation.
             Provide single value for one corpus or a list of values for each corpus.
-        semantics (List[str] | str): Indicates whether the query is intended as a query or response.
+        semantics (Union[List[str], str]): Indicates whether the query is intended as a query or response.
             Provide single value for one corpus or a list of values for each corpus.
         custom_dimensions (Dict): Custom dimensions for the query.
             See (https://docs.vectara.com/docs/learn/semantic-search/add-custom-dimensions)
@@ -64,7 +64,7 @@ class VectaraRetriever(BaseRetriever):
             number of sentences before the matched sentence to return in the node
         n_sentences_after (int):
             number of sentences after the matched sentence to return in the node
-        filter (List[str] | str): metadata filter (if specified). Provide single string for one corpus
+        filter (Union[List[str], str]): metadata filter (if specified). Provide single string for one corpus
             or a list of strings to specify the filter for each corpus (if multiple corpora).
         reranker (str): reranker to use: none, mmr, slingshot/multilingual_reranker_v1, userfn, or chain.
         rerank_k (int): number of results to fetch for Reranking, defaults to 50.
@@ -114,12 +114,12 @@ class VectaraRetriever(BaseRetriever):
         index: VectaraIndex,
         similarity_top_k: int = 10,
         offset: int = 0,
-        lambda_val: List[float] | float = 0.005,
-        semantics: List[str] | str = "default",
-        custom_dimensions: List[Dict] | Dict = {},
+        lambda_val: Union[List[float], float] = 0.005,
+        semantics: Union[List[str], str] = "default",
+        custom_dimensions: Union[List[Dict], Dict] = {},
         n_sentences_before: int = 2,
         n_sentences_after: int = 2,
-        filter: List[str] | str = "",
+        filter: Union[List[str], str] = "",
         reranker: VectaraReranker = VectaraReranker.NONE,
         rerank_k: int = 50,
         rerank_limit: Optional[int] = None,
