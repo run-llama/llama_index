@@ -123,3 +123,40 @@ Under the hood, `CouchbaseIndexStore` connects to a Couchbase operational databa
 > Note: You can configure the `namespace`, `bucket` and `scope` when instantiating `CouchbaseIndexStore`. By default, the collection used is `index_store_data`. Apart from alphanumeric characters, `-`, `_` and `%` are only allowed as part of the collection name. The store will automatically convert other special characters to `_`.
 
 You can easily reconnect to your Couchbase client and reload the index by re-initializing a `CouchbaseIndexStore` with an existing `client`, `bucket_name`, `scope_name` and `namespace`.
+
+
+### Tablestore Index Store
+
+Similarly to document stores, we can also use `Tablestore` as the storage backend of the index store.
+
+```python
+from llama_index.storage.index_store.tablestore import TablestoreIndexStore
+from llama_index.core import StorageContext, VectorStoreIndex
+
+# create (or load) index store
+index_store = TablestoreIndexStore.from_config(
+    endpoint="<tablestore_end_point>",
+    instance_name="<tablestore_instance_name>",
+    access_key_id="<tablestore_access_key_id>",
+    access_key_secret="<tablestore_access_key_secret>",
+)
+
+# create storage context
+storage_context = StorageContext.from_defaults(index_store=index_store)
+
+# build index
+index = VectorStoreIndex(nodes, storage_context=storage_context)
+
+# or alternatively, load index
+from llama_index.core import load_index_from_storage
+
+index = load_index_from_storage(storage_context)
+```
+
+Under the hood, `TablestoreIndexStore` connects to a Tablestore database and adds your nodes to a table named under `{namespace}_data`.
+
+> Note: You can configure the `namespace` when instantiating `TablestoreIndexStore`.
+
+You can easily reconnect to your Tablestore database and reload the index by re-initializing a `TablestoreIndexStore` with an existing `endpoint`, `instance_name`, `access_key_id` and `access_key_secret`.
+
+A more complete example can be found [here](../../examples/docstore/TablestoreDocstoreDemo.ipynb)
