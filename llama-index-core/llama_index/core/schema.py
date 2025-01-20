@@ -1010,8 +1010,16 @@ class Document(Node):
         if "text" in data:
             text = data.pop("text")
             if "text_resource" in data:
-                msg = "'text' is deprecated and 'text_resource' will be used instead"
-                logging.warning(msg)
+                text_resource = (
+                    data["text_resource"]
+                    if isinstance(data["text_resource"], MediaResource)
+                    else MediaResource.model_validate(data["text_resource"])
+                )
+                if (text_resource.text or "").strip() != text.strip():
+                    msg = (
+                        "'text' is deprecated and 'text_resource' will be used instead"
+                    )
+                    logging.warning(msg)
             else:
                 data["text_resource"] = MediaResource(text=text)
 
