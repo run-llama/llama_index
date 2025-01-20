@@ -263,8 +263,6 @@ class SchemaLLMPathExtractor(TransformComponent):
 
     def _prune_invalid_triplets(self, kg_schema: Any) -> Sequence[Triplet]:
         """Prune invalid triplets."""
-        assert isinstance(kg_schema, self.kg_schema_cls)
-
         valid_triplets = []
         for triplet in kg_schema.triplets:
             subject = triplet.subject.name
@@ -341,8 +339,6 @@ class SchemaLLMPathExtractor(TransformComponent):
 
     async def _aextract(self, node: BaseNode) -> BaseNode:
         """Extract triplets from a node."""
-        assert hasattr(node, "text")
-
         text = node.get_content(metadata_mode=MetadataMode.LLM)
         try:
             kg_schema = await self.llm.astructured_predict(
@@ -352,7 +348,7 @@ class SchemaLLMPathExtractor(TransformComponent):
                 max_triplets_per_chunk=self.max_triplets_per_chunk,
             )
             triplets = self._prune_invalid_triplets(kg_schema)
-        except ValueError:
+        except (ValueError, TypeError, AttributeError):
             triplets = []
 
         existing_nodes = node.metadata.pop(KG_NODES_KEY, [])

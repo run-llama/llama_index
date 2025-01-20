@@ -14,6 +14,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
 )
 from llama_index.vector_stores.mariadb import MariaDBVectorStore
+from llama_index.vector_stores.mariadb.base import _meets_min_server_version
 
 TEST_NODES: List[TextNode] = [
     TextNode(
@@ -51,6 +52,7 @@ TEST_NODES: List[TextNode] = [
 vector_store = MariaDBVectorStore.from_params(
     database="test",
     table_name="vector_store_test",
+    embed_dim=3,
     host="127.0.0.1",
     user="root",
     password="test",
@@ -75,19 +77,43 @@ except Exception:
 
 
 @pytest.fixture(autouse=True)
-def teardown() -> Generator:
+def teardown(request: pytest.FixtureRequest) -> Generator:
     """Clear the store after a test completion."""
     yield
+
+    if "noautousefixtures" in request.keywords:
+        return
 
     vector_store.clear()
 
 
 @pytest.fixture(scope="session", autouse=True)
-def close_db_connection() -> Generator:
+def close_db_connection(request: pytest.FixtureRequest) -> Generator:
     """Close the DB connections after the last test."""
     yield
 
+    if "noautousefixtures" in request.keywords:
+        return
+
     vector_store.close()
+
+
+@pytest.mark.parametrize(
+    ("version", "supported"),
+    [
+        ("11.7.2-MariaDB-ubu2504", True),
+        ("11.7.1-MariaDB-ubu2404", True),
+        ("11.8.0", True),
+        ("12.0.0", True),
+        ("11.7.0", False),
+        ("11.6.0-MariaDB-ubu2404", False),
+        ("10.11.7-MariaDB-1:10.11.7+maria~ubu2204", False),
+        ("8.4.3", False),
+    ],
+)
+@pytest.mark.noautousefixtures()
+def test_meets_min_server_version(version: str, supported: bool) -> None:
+    assert _meets_min_server_version(version, "11.7.1") == supported
 
 
 @pytest.mark.skipif(

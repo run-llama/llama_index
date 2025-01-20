@@ -37,7 +37,7 @@ LlamaIndex.TS [(Typescript/Javascript)](https://github.com/run-llama/LlamaIndexT
 
 [Documentation](https://docs.llamaindex.ai/en/stable/)
 
-[Twitter](https://twitter.com/llama_index)
+[X (formerly Twitter)](https://x.com/llama_index)
 
 [Discord](https://discord.gg/dGcwcsnxhU)
 
@@ -74,6 +74,8 @@ to fit their needs.
 
 Interested in contributing? Contributions to LlamaIndex core as well as contributing
 integrations that build on the core are both accepted and highly encouraged! See our [Contribution Guide](CONTRIBUTING.md) for more details.
+
+New integrations should meaningfully integrate with existing LlamaIndex framework components. At the discretion of LlamaIndex maintainers, some integrations may be declined.
 
 ## 📄 Documentation
 

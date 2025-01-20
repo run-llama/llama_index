@@ -17,30 +17,39 @@ Finally, set up your Vectara corpus. If you don't have a Vectara account, you ca
 
 ## Usage
 
+Please note that this usage example is for versions >= 0.4.0 and will not be the same as for earlier versions of Vectara ManagedIndex.
+
 First let's initialize the index with some sample documents.
+Make sure to always specify a unique `id_` for every document you add to your index.
+If you don't specify this parameter, a random id will be generated and the document will be separately added to your corpus every time you run your code.
 
 ```python
 import os
 
 os.environ["VECTARA_API_KEY"] = "<YOUR_VECTARA_API_KEY>"
-os.environ["VECTARA_CORPUS_ID"] = "<YOUR_VECTARA_CORPUS_ID>"
-os.environ["VECTARA_CUSTOMER_ID"] = "<YOUR_VECTARA_CUSTOMER_ID>"
+os.environ["VECTARA_CORPUS_KEY"] = "<YOUR_VECTARA_CORPUS_KEY>"
 
 from llama_index.indices.managed.vectara import VectaraIndex
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, MediaResource
 
 docs = [
     Document(
-        text="""
-        This is test text for Vectara integration with LlamaIndex.
-        Users should love their experience with this integration
-        """,
+        id_="doc1",
+        text_resource=MediaResource(
+            text="""
+            This is test text for Vectara integration with LlamaIndex.
+            Users should love their experience with this integration
+            """,
+        ),
     ),
     Document(
-        text="""
-        The Vectara index integration with LlamaIndex implements Vectara's RAG pipeline.
-        It can be used both as a retriever and query engine.
-        """,
+        id_="doc2",
+        text_resource=MediaResource(
+            text="""
+            The Vectara index integration with LlamaIndex implements Vectara's RAG pipeline.
+            It can be used both as a retriever and query engine.
+            """,
+        ),
     ),
 ]
 
