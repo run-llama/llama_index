@@ -77,6 +77,7 @@ class BM25Retriever(BaseRetriever):
         self.stemmer = stemmer or Stemmer.Stemmer("english")
         self.similarity_top_k = similarity_top_k
         self.token_pattern = token_pattern
+        self.skip_stemming = skip_stemming
 
         if existing_bm25 is not None:
             self.bm25 = existing_bm25
