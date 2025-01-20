@@ -1015,7 +1015,7 @@ class Document(Node):
                     if isinstance(data["text_resource"], MediaResource)
                     else MediaResource.model_validate(data["text_resource"])
                 )
-                if text_resource.text.strip() != text.strip():
+                if (text_resource.text or "").strip() != text.strip():
                     msg = (
                         "'text' is deprecated and 'text_resource' will be used instead"
                     )
