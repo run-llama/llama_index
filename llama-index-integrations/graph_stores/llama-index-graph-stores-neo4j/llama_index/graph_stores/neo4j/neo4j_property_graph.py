@@ -148,31 +148,40 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
     def __init__(
         self,
-        username: str,
-        password: str,
-        url: str,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        url: Optional[str] = None,
         database: Optional[str] = "neo4j",
         refresh_schema: bool = True,
         sanitize_query_output: bool = True,
         enhanced_schema: bool = False,
         create_indexes: bool = True,
         timeout: Optional[float] = None,
+        neo4j_driver: Optional[neo4j.GraphDatabase.driver] = None,
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
         self.enhanced_schema = enhanced_schema
-        self._driver = neo4j.GraphDatabase.driver(
-            url,
-            auth=(username, password),
-            notifications_min_severity="OFF",
-            **neo4j_kwargs,
-        )
-        self._async_driver = neo4j.AsyncGraphDatabase.driver(
-            url,
-            auth=(username, password),
-            notifications_min_severity="OFF",
-            **neo4j_kwargs,
-        )
+        if neo4j_driver:
+            self._driver = neo4j_driver
+        else:
+            if not username or not password or not url:
+                raise ValueError(
+                    "`username`, `password`, and `url` parameters must be set"
+                )
+            self._driver = neo4j.GraphDatabase.driver(
+                url,
+                auth=(username, password),
+                notifications_min_severity="OFF",
+                **neo4j_kwargs,
+            )
+            # We don't do anything with async driver elsewhere
+            self._async_driver = neo4j.AsyncGraphDatabase.driver(
+                url,
+                auth=(username, password),
+                notifications_min_severity="OFF",
+                **neo4j_kwargs,
+            )
         self._database = database
         self._timeout = timeout
         self.structured_schema = {}
