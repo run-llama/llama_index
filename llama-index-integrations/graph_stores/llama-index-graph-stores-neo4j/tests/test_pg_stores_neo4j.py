@@ -15,6 +15,11 @@ if not neo4j_url or not neo4j_user or not neo4j_password:
 else:
     neo4j_available = True
 
+pytestmark = pytest.mark.skipif(
+    not neo4j_available,
+    reason="Requires NEO4J_URI, NEO4J_USERNAME and NEO4J_PASSWORD environment variables.",
+)
+
 
 @pytest.fixture()
 def neo4j_store() -> Neo4jPropertyGraphStore:
