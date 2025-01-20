@@ -794,7 +794,7 @@ class ImageNode(TextNode):
                 kwargs["image_mimetype"] = ir.get("mimetype", None)
 
         mimetype = kwargs.get("image_mimetype")
-        if not mimetype and "image_path" in kwargs and kwargs["image_path"] is not None:
+        if not mimetype and kwargs.get("image_path") is not None:
             # guess mimetype from image_path
             extension = Path(kwargs["image_path"]).suffix.replace(".", "")
             if ftype := filetype.get_type(ext=extension):
