@@ -6,10 +6,12 @@ from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 
 import logging
+
 logging.getLogger("root").setLevel(logging.INFO)
 
 QUERY_DATA_ENDPOINT = "https://api.agentql.com/v1/query-data"
 API_TIMEOUT_SECONDS = 900
+
 
 class AgentQLWebReader(BasePydanticReader):
     """
@@ -30,7 +32,8 @@ class AgentQLWebReader(BasePydanticReader):
     ) -> None:
         super().__init__(api_key=api_key, params=params)
 
-    def load_data(self, url: str, query: Optional[str] = None, prompt: Optional[str] = None
+    def load_data(
+        self, url: str, query: Optional[str] = None, prompt: Optional[str] = None
     ) -> List[Document]:
         """
         Load data from the input directory.
@@ -45,42 +48,37 @@ class AgentQLWebReader(BasePydanticReader):
         Returns:
             List[Document]: List of documents.
         """
-        payload = {
-            "url": url,
-            "query": query,
-            "prompt": prompt,
-            "params": self.params
-        }
+        payload = {"url": url, "query": query, "prompt": prompt, "params": self.params}
 
-        headers = {
-            "X-API-Key": f"{self.api_key}",
-            "Content-Type": "application/json"
-        }
+        headers = {"X-API-Key": f"{self.api_key}", "Content-Type": "application/json"}
 
         try:
             response = httpx.post(
-                QUERY_DATA_ENDPOINT, 
-                headers=headers, 
-                json=payload, 
-                timeout=API_TIMEOUT_SECONDS
+                QUERY_DATA_ENDPOINT,
+                headers=headers,
+                json=payload,
+                timeout=API_TIMEOUT_SECONDS,
             )
             response.raise_for_status()
 
         except httpx.HTTPStatusError as e:
             response = e.response
             if response.status_code in [401, 403]:
-                raise ValueError("Please, provide a valid API Key. You can create one at https://dev.agentql.com.") from e
+                raise ValueError(
+                    "Please, provide a valid API Key. You can create one at https://dev.agentql.com."
+                ) from e
             else:
                 try:
                     error_json = response.json()
-                    msg = error_json["error_info"] if "error_info" in error_json else error_json["detail"]
+                    msg = (
+                        error_json["error_info"]
+                        if "error_info" in error_json
+                        else error_json["detail"]
+                    )
                 except (ValueError, TypeError):
                     msg = f"HTTP {e}."
                 raise ValueError(msg) from e
         else:
             json = response.json()
 
-            return [Document(
-                text=str(json["data"]),
-                metadata=json["metadata"]
-            )]
+            return [Document(text=str(json["data"]), metadata=json["metadata"])]
