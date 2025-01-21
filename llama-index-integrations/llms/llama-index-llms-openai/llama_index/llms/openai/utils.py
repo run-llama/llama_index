@@ -21,7 +21,13 @@ from tenacity import (
 from tenacity.stop import stop_base
 
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
-from llama_index.core.base.llms.types import ChatMessage, ImageBlock, LogProb, TextBlock
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ImageBlock,
+    LogProb,
+    MessageRole,
+    TextBlock,
+)
 from llama_index.core.bridge.pydantic import BaseModel
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
@@ -286,6 +292,15 @@ def to_openai_message_dict(
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
+
+    # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
+    # It's only Allowed to send None if it's an Assistant Message
+    # Reference: https://platform.openai.com/docs/api-reference/chat/create
+    content_txt = (
+        None
+        if content_txt == "" and message.role == MessageRole.ASSISTANT
+        else content_txt
+    )
 
     # NOTE: Despite what the openai docs say, if the role is ASSISTANT, SYSTEM
     # or TOOL, 'content' cannot be a list and must be string instead.

@@ -67,7 +67,7 @@ def openai_message_dicts_with_function_calling() -> List[ChatCompletionMessagePa
         },
         {
             "role": "assistant",
-            "content": "",
+            "content": None,
             "function_call": {
                 "name": "get_current_weather",
                 "arguments": '{ "location": "Boston, MA"}',
