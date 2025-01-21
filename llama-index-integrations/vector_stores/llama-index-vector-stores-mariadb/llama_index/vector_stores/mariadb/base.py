@@ -102,6 +102,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             debug=debug,
         )
 
+        self._initialize()
+
     def close(self) -> None:
         if not self._is_initialized:
             return
