@@ -1,4 +1,7 @@
 """Init file."""
+from llama_index.readers.web.agentql_web.base import (
+    AgentQLWebReader,
+)
 from llama_index.readers.web.async_web.base import (
     AsyncWebPageReader,
 )
@@ -51,6 +54,7 @@ from llama_index.readers.web.zyte_web.base import (
 
 
 __all__ = [
+    "AgentQLWebReader",
     "AsyncWebPageReader",
     "BeautifulSoupWebReader",
     "BrowserbaseWebReader",
