@@ -1,4 +1,4 @@
-from typing import (Any, List, Dict, Optional, Tuple)
+from typing import Any, List, Dict, Optional, Tuple
 import logging
 import json
 import ast
@@ -175,39 +175,33 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                 properties = [
                     {
                         "property": prop.get("key"),
-                        "type": prop.get("types", [{}])[0].get("type")
+                        "type": prop.get("types", [{}])[0].get("type"),
                     }
                     for prop in node.get("properties", [])
                 ]
                 if node_label and properties:
-                    node_properties.append({
-                        "labels": node_label,
-                        "properties": properties
-                    })
+                    node_properties.append(
+                        {"labels": node_label, "properties": properties}
+                    )
             # Extract relationship properties, types & count
             for edge in schema.get("edges", []):
                 rel_type = edge.get("type")
                 properties = [
                     {
                         "property": prop.get("key"),
-                        "type": prop.get("types", [{}])[0].get("type")
+                        "type": prop.get("types", [{}])[0].get("type"),
                     }
                     for prop in edge.get("properties", [])
                 ]
                 if rel_type and properties:
-                    rel_properties.append({
-                        "properties": properties,
-                        "type": f":`{rel_type}`"
-                    })
+                    rel_properties.append(
+                        {"properties": properties, "type": f":`{rel_type}`"}
+                    )
 
                 start = edge.get("start_node_labels", [None])[0]
                 end = edge.get("end_node_labels", [None])[0]
                 if start and end and rel_type:
-                    relationships.append({
-                        "start": start,
-                        "end": end,
-                        "type": rel_type
-                    })
+                    relationships.append({"start": start, "end": end, "type": rel_type})
         self.structured_schema = {
             "node_props": {el["labels"]: el["properties"] for el in node_properties},
             "rel_props": {el["type"]: el["properties"] for el in rel_properties},
@@ -216,7 +210,6 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
 
     def refresh_schema(self) -> None:
         """Refresh the schema."""
-
         # Leave schema empty if db is empty
         if self.structured_query("MATCH (n) RETURN n LIMIT 1") == []:
             return
@@ -232,7 +225,9 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                     ]
                 },
             )
-            if node_query_results is not None and isinstance(node_query_results, (str, ast.AST)):
+            if node_query_results is not None and isinstance(
+                node_query_results, (str, ast.AST)
+            ):
                 schema_result = ast.literal_eval(node_query_results)
             else:
                 schema_result = node_query_results
@@ -288,7 +283,9 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             [
                 result["output"]
                 for result in rels_query_result
-                if any(prop["property"] for prop in result["output"].get("properties", []))
+                if any(
+                    prop["property"] for prop in result["output"].get("properties", [])
+                )
             ]
             if rels_query_result
             else []
@@ -306,10 +303,8 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             el["output"]
             for el in rel_objs_query_result
             if rel_objs_query_result
-            and el["output"]["start"]
-            not in [BASE_ENTITY_LABEL, BASE_NODE_LABEL]
-            and el["output"]["end"]
-            not in [BASE_ENTITY_LABEL, BASE_NODE_LABEL]
+            and el["output"]["start"] not in [BASE_ENTITY_LABEL, BASE_NODE_LABEL]
+            and el["output"]["end"] not in [BASE_ENTITY_LABEL, BASE_NODE_LABEL]
         ]
         self.structured_schema = {
             "node_props": {el["labels"]: el["properties"] for el in node_properties},
@@ -332,7 +327,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                 pass
         if chunk_dicts:
             for index in range(0, len(chunk_dicts), CHUNK_SIZE):
-                chunked_params = chunk_dicts[index: index + CHUNK_SIZE]
+                chunked_params = chunk_dicts[index : index + CHUNK_SIZE]
                 self.structured_query(
                     f"""
                     UNWIND $data AS row
@@ -350,7 +345,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
 
         if entity_dicts:
             for index in range(0, len(entity_dicts), CHUNK_SIZE):
-                chunked_params = entity_dicts[index: index + CHUNK_SIZE]
+                chunked_params = entity_dicts[index : index + CHUNK_SIZE]
                 self.structured_query(
                     f"""
                     UNWIND $data AS row
@@ -375,7 +370,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         """Add relations."""
         params = [r.dict() for r in relations]
         for index in range(0, len(params), CHUNK_SIZE):
-            chunked_params = params[index: index + CHUNK_SIZE]
+            chunked_params = params[index : index + CHUNK_SIZE]
             for param in chunked_params:
                 formatted_properties = ", ".join(
                     [f"{key}: {value!r}" for key, value in param["properties"].items()]
@@ -1048,10 +1043,10 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         supports vector indexing.
         """
         response = self.structured_query("SHOW VERSION;")
-        current_version = response[0]['version']
-        current_version = tuple(map(int, current_version.split('.')))
-        required_version = '2.22'
-        required_version = tuple(map(int, required_version.split('.')))
+        current_version = response[0]["version"]
+        current_version = tuple(map(int, current_version.split(".")))
+        required_version = "2.22"
+        required_version = tuple(map(int, required_version.split(".")))
 
         # Check if the version is equal to or larger than the required version
         if current_version >= required_version:
@@ -1065,7 +1060,8 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             except neo4j.exceptions.Neo4jError as decode_error:
                 self._supports_vector_index = False
                 if (
-                    decode_error.code == "Memgraph.ClientError.MemgraphError.MemgraphError"
+                    decode_error.code
+                    == "Memgraph.ClientError.MemgraphError.MemgraphError"
                     and "vector_search.show_index_info" in decode_error.message
                 ):
                     logger.info(
@@ -1080,5 +1076,5 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                 """Vector indexing is not supported by your current Memgraph
                 version (%s). Please upgrade to version 2.22.0 or newer to use
                 vector indices.""",
-                '.'.join(map(str, current_version))
+                ".".join(map(str, current_version)),
             )
