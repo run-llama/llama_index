@@ -794,7 +794,7 @@ class ImageNode(TextNode):
                 kwargs["image_mimetype"] = ir.get("mimetype", None)
 
         mimetype = kwargs.get("image_mimetype")
-        if not mimetype and "image_path" in kwargs:
+        if not mimetype and kwargs.get("image_path") is not None:
             # guess mimetype from image_path
             extension = Path(kwargs["image_path"]).suffix.replace(".", "")
             if ftype := filetype.get_type(ext=extension):
@@ -1010,8 +1010,16 @@ class Document(Node):
         if "text" in data:
             text = data.pop("text")
             if "text_resource" in data:
-                msg = "'text' is deprecated and 'text_resource' will be used instead"
-                logging.warning(msg)
+                text_resource = (
+                    data["text_resource"]
+                    if isinstance(data["text_resource"], MediaResource)
+                    else MediaResource.model_validate(data["text_resource"])
+                )
+                if (text_resource.text or "").strip() != text.strip():
+                    msg = (
+                        "'text' is deprecated and 'text_resource' will be used instead"
+                    )
+                    logging.warning(msg)
             else:
                 data["text_resource"] = MediaResource(text=text)
 
