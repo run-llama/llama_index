@@ -512,7 +512,7 @@ class Vertex(FunctionCallingLLM):
     def get_tool_calls_from_response(
         self,
         response: "ChatResponse",
-        error_on_no_tool_call: bool = True,
+        error_on_no_tool_call: bool = False,
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
