@@ -1,6 +1,6 @@
 import asyncio
 import inspect
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type, Union
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
@@ -16,24 +16,33 @@ AsyncCallable = Callable[..., Awaitable[Any]]
 
 def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     """Sync to async."""
+
     async def _async_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, lambda: fn(*args, **kwargs))
+
     return _async_wrapped_fn
 
 
 def async_to_sync(func_async: AsyncCallable) -> Callable:
     """Async to sync."""
+
     def _sync_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
         return asyncio_run(func_async(*args, **kwargs))  # type: ignore[arg-type]
+
     return _sync_wrapped_fn
+
+
+# The type that the callback can return: either a ToolOutput instance or a string to override the content.
+CallbackReturn = Optional[Union[ToolOutput, str]]
 
 
 class FunctionTool(AsyncBaseTool):
     """Function Tool.
-    
+
     A tool that takes in a function, optionally handles workflow context,
-    and allows the use of callbacks.
+    and allows the use of callbacks. The callback can return a new ToolOutput
+    to override the default one or a string that will be used as the final content.
     """
 
     def __init__(
@@ -85,16 +94,22 @@ class FunctionTool(AsyncBaseTool):
         elif self._callback is not None:
             self._async_callback = sync_to_async(self._callback)
 
-    def _run_sync_callback(self, result: Any) -> Any:
-        """Runs the sync callback, if provided."""
+    def _run_sync_callback(self, result: Any) -> CallbackReturn:
+        """Runs the sync callback, if provided, and returns either a ToolOutput
+        to override the default output or a string to override the content.
+        """
         if self._callback:
-            return self._callback(result)
+            ret: CallbackReturn = self._callback(result)
+            return ret
         return None
 
-    async def _run_async_callback(self, result: Any) -> Any:
-        """Runs the async callback, if provided."""
+    async def _run_async_callback(self, result: Any) -> CallbackReturn:
+        """Runs the async callback, if provided, and returns either a ToolOutput
+        to override the default output or a string to override the content.
+        """
         if self._async_callback:
-            return await self._async_callback(result)
+            ret: CallbackReturn = await self._async_callback(result)
+            return ret
         return None
 
     @classmethod
@@ -154,7 +169,9 @@ class FunctionTool(AsyncBaseTool):
                     f"{name}",
                     fn_to_parse,
                     additional_fields=None,
-                    ignore_fields=[ctx_param_name] if ctx_param_name is not None else None,
+                    ignore_fields=[ctx_param_name]
+                    if ctx_param_name is not None
+                    else None,
                 )
             tool_metadata = ToolMetadata(
                 name=name,
@@ -185,60 +202,92 @@ class FunctionTool(AsyncBaseTool):
         """Async function."""
         return self._async_fn
 
-    def call(self, *args: Any, ctx: Optional[Context] = None, **kwargs: Any) -> ToolOutput:
+    def call(
+        self, *args: Any, ctx: Optional[Context] = None, **kwargs: Any
+    ) -> ToolOutput:
         """Sync Call."""
         if self.requires_context:
             if ctx is None:
                 raise ValueError("Context is required for this tool")
-            tool_output = self._fn(ctx, *args, **kwargs)
+            raw_output = self._fn(ctx, *args, **kwargs)
         else:
-            tool_output = self._fn(*args, **kwargs)
-        final_output_content = str(tool_output)
-        # Execute sync callback, if available
-        callback_output = self._run_sync_callback(tool_output)
-        if callback_output:
-            final_output_content += f" Callback: {callback_output}"
-        return ToolOutput(
-            content=final_output_content,
+            raw_output = self._fn(*args, **kwargs)
+        # Default ToolOutput based on the raw output
+        default_output = ToolOutput(
+            content=str(raw_output),
             tool_name=self.metadata.name,
             raw_input={"args": args, "kwargs": kwargs},
-            raw_output=tool_output,
+            raw_output=raw_output,
         )
+        # Check for a sync callback override
+        callback_result = self._run_sync_callback(raw_output)
+        if callback_result is not None:
+            if isinstance(callback_result, ToolOutput):
+                return callback_result
+            else:
+                # Assume callback_result is a string to override the content.
+                return ToolOutput(
+                    content=str(callback_result),
+                    tool_name=self.metadata.name,
+                    raw_input={"args": args, "kwargs": kwargs},
+                    raw_output=raw_output,
+                )
+        return default_output
 
-    async def acall(self, *args: Any, ctx: Optional[Context] = None, **kwargs: Any) -> ToolOutput:
+    async def acall(
+        self, *args: Any, ctx: Optional[Context] = None, **kwargs: Any
+    ) -> ToolOutput:
         """Async Call."""
         if self.requires_context:
             if ctx is None:
                 raise ValueError("Context is required for this tool")
-            tool_output = await self._async_fn(ctx, *args, **kwargs)
+            raw_output = await self._async_fn(ctx, *args, **kwargs)
         else:
-            tool_output = await self._async_fn(*args, **kwargs)
-        final_output_content = str(tool_output)
-        # Execute async callback, if available
-        callback_output = await self._run_async_callback(tool_output)
-        if callback_output:
-            final_output_content += f" Callback: {callback_output}"
-        return ToolOutput(
-            content=final_output_content,
+            raw_output = await self._async_fn(*args, **kwargs)
+        # Default ToolOutput based on the raw output
+        default_output = ToolOutput(
+            content=str(raw_output),
             tool_name=self.metadata.name,
             raw_input={"args": args, "kwargs": kwargs},
-            raw_output=tool_output,
+            raw_output=raw_output,
         )
+        # Check for an async callback override
+        callback_result = await self._run_async_callback(raw_output)
+        if callback_result is not None:
+            if isinstance(callback_result, ToolOutput):
+                return callback_result
+            else:
+                # Assume callback_result is a string to override the content.
+                return ToolOutput(
+                    content=str(callback_result),
+                    tool_name=self.metadata.name,
+                    raw_input={"args": args, "kwargs": kwargs},
+                    raw_output=raw_output,
+                )
+        return default_output
 
     def to_langchain_tool(self, **langchain_tool_kwargs: Any) -> "Tool":
         """To langchain tool."""
         from llama_index.core.bridge.langchain import Tool
-        langchain_tool_kwargs = self._process_langchain_tool_kwargs(langchain_tool_kwargs)
+
+        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
+            langchain_tool_kwargs
+        )
         return Tool.from_function(
             func=self.fn,
             coroutine=self.async_fn,
             **langchain_tool_kwargs,
         )
 
-    def to_langchain_structured_tool(self, **langchain_tool_kwargs: Any) -> "StructuredTool":
+    def to_langchain_structured_tool(
+        self, **langchain_tool_kwargs: Any
+    ) -> "StructuredTool":
         """To langchain structured tool."""
         from llama_index.core.bridge.langchain import StructuredTool
-        langchain_tool_kwargs = self._process_langchain_tool_kwargs(langchain_tool_kwargs)
+
+        langchain_tool_kwargs = self._process_langchain_tool_kwargs(
+            langchain_tool_kwargs
+        )
         return StructuredTool.from_function(
             func=self.fn,
             coroutine=self.async_fn,
