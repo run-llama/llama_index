@@ -4,6 +4,8 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
+from functools import partial
+from inspect import iscoroutinefunction
 from queue import Queue, Empty
 from threading import Event
 from typing import AsyncGenerator, Callable, Generator, List, Optional, Union, Dict, Any
@@ -246,7 +248,7 @@ class StreamingAgentChatResponse:
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
                 chat.message.content = final_text.strip()  # final message
-                memory.put(chat.message)
+                await memory.aput(chat.message)
         except Exception as e:
             dispatcher.event(StreamChatErrorEvent(exception=e))
             self.exception = e
@@ -265,7 +267,14 @@ class StreamingAgentChatResponse:
         self.is_function_false_event.set()
         self.new_item_event.set()
         if on_stream_end_fn is not None and not self.is_function:
-            on_stream_end_fn()
+            if iscoroutinefunction(
+                on_stream_end_fn.func
+                if isinstance(on_stream_end_fn, partial)
+                else on_stream_end_fn
+            ):
+                await on_stream_end_fn()
+            else:
+                on_stream_end_fn()
 
     @property
     def response_gen(self) -> Generator[str, None, None]:

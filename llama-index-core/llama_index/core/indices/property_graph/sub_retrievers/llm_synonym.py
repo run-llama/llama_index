@@ -59,6 +59,7 @@ class LLMSynonymRetriever(BasePGRetriever):
         ] = DEFAULT_SYNONYM_EXPAND_TEMPLATE,
         max_keywords: int = 10,
         path_depth: int = 1,
+        limit: int = 30,
         output_parsing_fn: Optional[Callable] = None,
         llm: Optional[LLM] = None,
         **kwargs: Any,
@@ -70,6 +71,7 @@ class LLMSynonymRetriever(BasePGRetriever):
         self._output_parsing_fn = output_parsing_fn
         self._max_keywords = max_keywords
         self._path_depth = path_depth
+        self._limit = limit
         super().__init__(
             graph_store=graph_store,
             include_text=include_text,
@@ -86,27 +88,35 @@ class LLMSynonymRetriever(BasePGRetriever):
         # capitalize to normalize with ingestion
         return [x.strip().capitalize() for x in matches if x.strip()]
 
-    def _prepare_matches(self, matches: List[str]) -> List[NodeWithScore]:
+    def _prepare_matches(
+        self, matches: List[str], limit: Optional[int] = None
+    ) -> List[NodeWithScore]:
         kg_nodes = self._graph_store.get(ids=matches)
         triplets = self._graph_store.get_rel_map(
             kg_nodes,
             depth=self._path_depth,
+            limit=limit or self._limit,
             ignore_rels=[KG_SOURCE_REL],
         )
 
         return self._get_nodes_with_score(triplets)
 
-    async def _aprepare_matches(self, matches: List[str]) -> List[NodeWithScore]:
+    async def _aprepare_matches(
+        self, matches: List[str], limit: Optional[int] = None
+    ) -> List[NodeWithScore]:
         kg_nodes = await self._graph_store.aget(ids=matches)
         triplets = await self._graph_store.aget_rel_map(
             kg_nodes,
             depth=self._path_depth,
+            limit=limit or self._limit,
             ignore_rels=[KG_SOURCE_REL],
         )
 
         return self._get_nodes_with_score(triplets)
 
-    def retrieve_from_graph(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+    def retrieve_from_graph(
+        self, query_bundle: QueryBundle, limit: Optional[int] = None
+    ) -> List[NodeWithScore]:
         response = self._llm.predict(
             self._synonym_prompt,
             query_str=query_bundle.query_str,
@@ -114,10 +124,10 @@ class LLMSynonymRetriever(BasePGRetriever):
         )
         matches = self._parse_llm_output(response)
 
-        return self._prepare_matches(matches)
+        return self._prepare_matches(matches, limit=limit or self._limit)
 
     async def aretrieve_from_graph(
-        self, query_bundle: QueryBundle
+        self, query_bundle: QueryBundle, limit: Optional[int] = None
     ) -> List[NodeWithScore]:
         response = await self._llm.apredict(
             self._synonym_prompt,
@@ -126,4 +136,4 @@ class LLMSynonymRetriever(BasePGRetriever):
         )
         matches = self._parse_llm_output(response)
 
-        return await self._aprepare_matches(matches)
+        return await self._aprepare_matches(matches, limit=limit or self._limit)

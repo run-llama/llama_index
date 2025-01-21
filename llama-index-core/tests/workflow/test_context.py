@@ -1,3 +1,4 @@
+import asyncio
 from unittest import mock
 from typing import Union, Optional
 
@@ -120,3 +121,52 @@ async def test_deprecated_params(ctx):
         DeprecationWarning, match="`make_private` is deprecated and will be ignored"
     ):
         await ctx.set("foo", 42, make_private=True)
+
+
+@pytest.mark.asyncio()
+async def test_empty_inprogress_when_workflow_done(workflow):
+    h = workflow.run()
+    _ = await h
+
+    # there shouldn't be any in progress events
+    for inprogress_list in h.ctx._in_progress.values():
+        assert len(inprogress_list) == 0
+
+
+@pytest.mark.asyncio()
+async def test_wait_for_event(ctx):
+    wait_job = asyncio.create_task(ctx.wait_for_event(Event))
+    await asyncio.sleep(0.01)
+    ctx.send_event(Event(msg="foo"))
+    ev = await wait_job
+    assert ev.msg == "foo"
+
+
+@pytest.mark.asyncio()
+async def test_wait_for_event_with_requirements(ctx):
+    wait_job = asyncio.create_task(ctx.wait_for_event(Event, {"msg": "foo"}))
+    await asyncio.sleep(0.01)
+    ctx.send_event(Event(msg="bar"))
+    ctx.send_event(Event(msg="foo"))
+    ev = await wait_job
+    assert ev.msg == "foo"
+
+
+@pytest.mark.asyncio()
+async def test_wait_for_event_in_workflow():
+    class TestWorkflow(Workflow):
+        @step
+        async def step1(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            ctx.write_event_to_stream(Event(msg="foo"))
+            result = await ctx.wait_for_event(Event)
+            return StopEvent(result=result.msg)
+
+    workflow = TestWorkflow()
+    handler = workflow.run()
+    async for ev in handler.stream_events():
+        if isinstance(ev, Event) and ev.msg == "foo":
+            handler.ctx.send_event(Event(msg="bar"))
+            break
+
+    result = await handler
+    assert result == "bar"

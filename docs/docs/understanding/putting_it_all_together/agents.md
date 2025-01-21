@@ -84,9 +84,9 @@ LlamaIndex provides core modules capable of automated reasoning for different us
 
 - [Chat Engines How-To](../../module_guides/deploying/chat_engines/index.md)
 
-## Using LlamaIndex as as Tool within an Agent Framework
+## Using LlamaIndex as a Tool within an Agent Framework
 
-LlamaIndex can be used as as Tool within an agent framework - including LangChain, ChatGPT. These integrations are described below.
+LlamaIndex can be used as a Tool within an agent framework - including LangChain, ChatGPT. These integrations are described below.
 
 ### LangChain
 

@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from llama_index.readers.confluence import ConfluenceReader
 
@@ -29,6 +31,30 @@ def test_confluence_reader_with_api_token():
         api_token="example_api_token",
     )
     assert reader.confluence is not None
+
+
+def test_confluence_reader_with_cookies():
+    reader = ConfluenceReader(
+        base_url="https://example.atlassian.net/wiki",
+        cookies={"key": "value"},
+    )
+    assert reader.confluence is not None
+
+
+def test_confluence_reader_with_client_args():
+    with patch("atlassian.Confluence") as MockConstructor:
+        reader = ConfluenceReader(
+            base_url="https://example.atlassian.net/wiki",
+            api_token="example_api_token",
+            client_args={"backoff_and_retry": True},
+        )
+        assert reader.confluence is not None
+        MockConstructor.assert_called_once_with(
+            url="https://example.atlassian.net/wiki",
+            token="example_api_token",
+            cloud=True,
+            backoff_and_retry=True,
+        )
 
 
 def test_confluence_reader_with_basic_auth():

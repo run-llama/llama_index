@@ -1,9 +1,8 @@
 import json
 
-from llama_index.core.schema import Document as LIDocument
-
-from llama_index.node_parser.docling import DoclingNodeParser
 from llama_index.core.schema import BaseNode
+from llama_index.core.schema import Document as LIDocument
+from llama_index.node_parser.docling import DoclingNodeParser
 
 in_json_str = json.dumps(
     {
@@ -20,6 +19,7 @@ in_json_str = json.dumps(
         "text_template": "{metadata_str}\n\n{content}",
         "metadata_template": "{key}: {value}",
         "metadata_seperator": "\n",
+        "metadata_separator": "\n",
         "class_name": "Document",
     }
 )
@@ -64,7 +64,7 @@ out_get_nodes = {
                     "node_id": "123",
                     "node_type": "4",
                     "metadata": {},
-                    "hash": "95ee9366fededbecc38a68be8c58e87fb3cdf4e7fdfb83dbd00487489b941a4d",
+                    "hash": "097302ee643342cd2af2b9702175fc05d0d1d3648f8a60e6a7848fbcef9d7b62",
                     "class_name": "RelatedNodeInfo",
                 },
                 "3": {
@@ -92,13 +92,14 @@ out_get_nodes = {
                     "class_name": "RelatedNodeInfo",
                 },
             },
+            "metadata_template": "{key}: {value}",
+            "metadata_separator": "\n",
             "text": "Some text",
             "mimetype": "text/plain",
             "start_char_idx": 529,
             "end_char_idx": 538,
-            "text_template": "{metadata_str}\n\n{content}",
-            "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "text_template": "{metadata_str}\n\n{content}",
             "class_name": "TextNode",
         },
         {
@@ -139,7 +140,7 @@ out_get_nodes = {
                     "node_id": "123",
                     "node_type": "4",
                     "metadata": {},
-                    "hash": "95ee9366fededbecc38a68be8c58e87fb3cdf4e7fdfb83dbd00487489b941a4d",
+                    "hash": "097302ee643342cd2af2b9702175fc05d0d1d3648f8a60e6a7848fbcef9d7b62",
                     "class_name": "RelatedNodeInfo",
                 },
                 "2": {
@@ -167,13 +168,14 @@ out_get_nodes = {
                     "class_name": "RelatedNodeInfo",
                 },
             },
+            "metadata_template": "{key}: {value}",
+            "metadata_separator": "\n",
             "text": "Another paragraph",
             "mimetype": "text/plain",
             "start_char_idx": 678,
             "end_char_idx": 695,
-            "text_template": "{metadata_str}\n\n{content}",
-            "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "text_template": "{metadata_str}\n\n{content}",
             "class_name": "TextNode",
         },
     ]
@@ -220,17 +222,18 @@ out_parse_nodes = {
                     "node_id": "123",
                     "node_type": "4",
                     "metadata": {},
-                    "hash": "95ee9366fededbecc38a68be8c58e87fb3cdf4e7fdfb83dbd00487489b941a4d",
+                    "hash": "097302ee643342cd2af2b9702175fc05d0d1d3648f8a60e6a7848fbcef9d7b62",
                     "class_name": "RelatedNodeInfo",
                 }
             },
+            "metadata_template": "{key}: {value}",
+            "metadata_separator": "\n",
             "text": "Some text",
             "mimetype": "text/plain",
             "start_char_idx": None,
             "end_char_idx": None,
-            "text_template": "{metadata_str}\n\n{content}",
-            "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "text_template": "{metadata_str}\n\n{content}",
             "class_name": "TextNode",
         },
         {
@@ -271,17 +274,18 @@ out_parse_nodes = {
                     "node_id": "123",
                     "node_type": "4",
                     "metadata": {},
-                    "hash": "95ee9366fededbecc38a68be8c58e87fb3cdf4e7fdfb83dbd00487489b941a4d",
+                    "hash": "097302ee643342cd2af2b9702175fc05d0d1d3648f8a60e6a7848fbcef9d7b62",
                     "class_name": "RelatedNodeInfo",
                 }
             },
+            "metadata_template": "{key}: {value}",
+            "metadata_separator": "\n",
             "text": "Another paragraph",
             "mimetype": "text/plain",
             "start_char_idx": None,
             "end_char_idx": None,
-            "text_template": "{metadata_str}\n\n{content}",
-            "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "text_template": "{metadata_str}\n\n{content}",
             "class_name": "TextNode",
         },
     ]

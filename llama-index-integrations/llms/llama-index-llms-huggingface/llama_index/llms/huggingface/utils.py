@@ -24,10 +24,20 @@ def resolve_tgi_function_call(url: str) -> bool:
         )
 
 
-def get_max_input_length(url: str) -> Union[int, None]:
+def get_max_input_tokens(url: str) -> Union[int, None]:
     url = f"{url}/info"
     model_info = dict(requests.get(url).json())
-    return model_info.get("max_input_length", None)
+    tgi_version = model_info.get("version", None)
+    if version.parse(tgi_version) >= version.parse("2.1.0"):
+        return model_info.get("max_input_tokens", None)
+    else:
+        return model_info.get("max_input_length", None)
+
+
+def get_max_total_tokens(url: str) -> Union[int, None]:
+    url = f"{url}/info"
+    model_info = dict(requests.get(url).json())
+    return model_info.get("max_total_tokens", None)
 
 
 def to_tgi_messages(messages: Sequence[ChatMessage]) -> Sequence[Message]:

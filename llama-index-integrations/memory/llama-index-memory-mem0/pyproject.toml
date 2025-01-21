@@ -9,6 +9,13 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.memory.mem0"
+
+[tool.llamahub.class_authors]
+Mem0Memory = "llama-index"
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
@@ -23,11 +30,11 @@ license = "MIT"
 name = "llama-index-memory-mem0"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.1.0"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 python = "<4.0,>=3.9"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 mem0ai = "^0.1.19"
 
 [tool.poetry.group.dev.dependencies]

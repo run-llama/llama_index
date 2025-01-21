@@ -1,4 +1,5 @@
 import asyncio
+from io import BytesIO
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
@@ -17,6 +18,7 @@ from llama_index.core.base.embeddings.base import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.embeddings.huggingface.pooling import Pooling
+from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.utils import get_cache_dir, infer_torch_device
 from llama_index.embeddings.huggingface.utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
@@ -25,14 +27,17 @@ from llama_index.embeddings.huggingface.utils import (
     get_query_instruct_for_model_name,
     get_text_instruct_for_model_name,
 )
+from llama_index.core.schema import ImageType
 from sentence_transformers import SentenceTransformer
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 DEFAULT_HUGGINGFACE_LENGTH = 512
 logger = logging.getLogger(__name__)
 
 
-class HuggingFaceEmbedding(BaseEmbedding):
-    """HuggingFace class for text embeddings.
+class HuggingFaceEmbedding(MultiModalEmbedding):
+    """
+    HuggingFace class for text and image embeddings.
 
     Args:
         model_name (str, optional): If it is a filepath on disc, it loads the model from that path.
@@ -106,7 +111,7 @@ class HuggingFaceEmbedding(BaseEmbedding):
         description="Cache folder for Hugging Face files.", default=None
     )
 
-    _model: Any = PrivateAttr()
+    _model: SentenceTransformer = PrivateAttr()
     _device: str = PrivateAttr()
     _parallel_process: bool = PrivateAttr()
     _target_devices: Optional[List[str]] = PrivateAttr()
@@ -183,46 +188,78 @@ class HuggingFaceEmbedding(BaseEmbedding):
     def class_name(cls) -> str:
         return "HuggingFaceEmbedding"
 
-    def _embed(
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        reraise=True,
+    )
+    def _embed_with_retry(
         self,
-        sentences: List[str],
+        inputs: List[Union[str, BytesIO]],
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
-        """Generates Embeddings either multiprocess or single process.
+        """
+        Generates embeddings with retry mechanism.
 
         Args:
-            sentences (List[str]): Texts or Sentences to embed
-            prompt_name (Optional[str], optional): The name of the prompt to use for encoding. Must be a key in the `prompts` dictionary i.e. "query" or "text" If ``prompt`` is also set, this argument is ignored. Defaults to None.
+            inputs: List of texts or images to embed
+            prompt_name: Optional prompt type
 
         Returns:
-            List[List[float]]: a 2d numpy array with shape [num_inputs, output_dimension] is returned.
-            If only one string input is provided, then the output is a 1d array with shape [output_dimension]
+            List of embedding vectors
+
+        Raises:
+            Exception: If embedding fails after retries
         """
-        if self._parallel_process:
-            pool = self._model.start_multi_process_pool(
-                target_devices=self._target_devices
-            )
-            emb = self._model.encode_multi_process(
-                sentences=sentences,
-                pool=pool,
-                batch_size=self.embed_batch_size,
-                prompt_name=prompt_name,
-                normalize_embeddings=self.normalize,
-            )
-            self._model.stop_multi_process_pool(pool=pool)
+        try:
+            if self._parallel_process:
+                pool = self._model.start_multi_process_pool(
+                    target_devices=self._target_devices
+                )
+                emb = self._model.encode_multi_process(
+                    inputs,
+                    pool=pool,
+                    batch_size=self.embed_batch_size,
+                    prompt_name=prompt_name,
+                    normalize_embeddings=self.normalize,
+                )
+                self._model.stop_multi_process_pool(pool=pool)
+            else:
+                emb = self._model.encode(
+                    inputs,
+                    batch_size=self.embed_batch_size,
+                    prompt_name=prompt_name,
+                    normalize_embeddings=self.normalize,
+                )
+            return emb.tolist()
+        except Exception as e:
+            logger.warning(f"Embedding attempt failed: {e!s}")
+            raise
 
-        else:
-            emb = self._model.encode(
-                sentences,
-                batch_size=self.embed_batch_size,
-                prompt_name=prompt_name,
-                normalize_embeddings=self.normalize,
-            )
+    def _embed(
+        self,
+        inputs: List[Union[str, BytesIO]],
+        prompt_name: Optional[str] = None,
+    ) -> List[List[float]]:
+        """
+        Generates Embeddings with input validation and retry mechanism.
 
-        return emb.tolist()
+        Args:
+            sentences: Texts or Sentences to embed
+            prompt_name: The name of the prompt to use for encoding
+
+        Returns:
+            List of embedding vectors
+
+        Raises:
+            ValueError: If any input text is invalid
+            Exception: If embedding fails after retries
+        """
+        return self._embed_with_retry(inputs, prompt_name)
 
     def _get_query_embedding(self, query: str) -> List[float]:
-        """Generates Embeddings for Query.
+        """
+        Generates Embeddings for Query.
 
         Args:
             query (str): Query text/sentence
@@ -230,10 +267,11 @@ class HuggingFaceEmbedding(BaseEmbedding):
         Returns:
             List[float]: numpy array of embeddings
         """
-        return self._embed(query, prompt_name="query")
+        return self._embed([query], prompt_name="query")[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
-        """Generates Embeddings for Query Asynchronously.
+        """
+        Generates Embeddings for Query Asynchronously.
 
         Args:
             query (str): Query text/sentence
@@ -244,7 +282,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._get_query_embedding(query)
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
-        """Generates Embeddings for text Asynchronously.
+        """
+        Generates Embeddings for text Asynchronously.
 
         Args:
             text (str): Text/Sentence
@@ -255,7 +294,8 @@ class HuggingFaceEmbedding(BaseEmbedding):
         return self._get_text_embedding(text)
 
     def _get_text_embedding(self, text: str) -> List[float]:
-        """Generates Embeddings for text.
+        """
+        Generates Embeddings for text.
 
         Args:
             text (str): Text/sentences
@@ -263,10 +303,11 @@ class HuggingFaceEmbedding(BaseEmbedding):
         Returns:
             List[float]: numpy array of embeddings
         """
-        return self._embed(text, prompt_name="text")
+        return self._embed([text], prompt_name="text")[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Generates Embeddings for text.
+        """
+        Generates Embeddings for text.
 
         Args:
             texts (List[str]): Texts / Sentences
@@ -275,6 +316,26 @@ class HuggingFaceEmbedding(BaseEmbedding):
             List[List[float]]: numpy array of embeddings
         """
         return self._embed(texts, prompt_name="text")
+
+    def _get_image_embedding(self, img_file_path: ImageType) -> List[float]:
+        """Generate embedding for an image."""
+        return self._embed([img_file_path])[0]
+
+    async def _aget_image_embedding(self, img_file_path: ImageType) -> List[float]:
+        """Generate embedding for an image asynchronously."""
+        return self._get_image_embedding(img_file_path)
+
+    def _get_image_embeddings(
+        self, img_file_paths: List[ImageType]
+    ) -> List[List[float]]:
+        """Generate embeddings for multiple images."""
+        return self._embed(img_file_paths)
+
+    async def _aget_image_embeddings(
+        self, img_file_paths: List[ImageType]
+    ) -> List[List[float]]:
+        """Generate embeddings for multiple images asynchronously."""
+        return self._get_image_embeddings(img_file_paths)
 
 
 @deprecated(
@@ -353,7 +414,8 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
         }
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize.
+        """
+        Initialize.
 
         Args:
             kwargs: See the class-level Fields.

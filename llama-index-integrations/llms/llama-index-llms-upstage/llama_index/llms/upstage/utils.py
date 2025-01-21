@@ -6,20 +6,18 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 DEFAULT_UPSTAGE_API_BASE = "https://api.upstage.ai/v1/solar"
 DEFAULT_CONTEXT_WINDOW = 32768
 CHAT_MODELS = {
-    "solar-1-mini-chat": 32768,
+    "solar-mini": 32768,
     "solar-pro": 4096,
-    "solar-docvision": 65536,
 }
 
-FUNCTION_CALLING_MODELS = ["solar-1-mini-chat"]
+FUNCTION_CALLING_MODELS = ["solar-mini"]
 DOC_PARSING_MODELS = ["solar-pro"]
 
 ALL_AVAILABLE_MODELS = {**CHAT_MODELS}
 
 SOLAR_TOKENIZERS = {
-    "solar-pro": "upstage/solar-pro-preview-tokenizer",
-    "solar-1-mini-chat": "upstage/solar-1-mini-tokenizer",
-    "solar-docvision": "upstage/solar-docvision-preview-tokenizer",
+    "solar-pro": "upstage/solar-pro-tokenizer",
+    "solar-mini": "upstage/solar-1-mini-tokenizer",
 }
 
 logger = logging.getLogger(__name__)

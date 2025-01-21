@@ -31,12 +31,12 @@ license = "MIT"
 name = "llama-index-llms-oci-genai"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.0"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-oci = "^2.128.0"
-llama-index-core = "^0.11.0"
+oci = "^2.134.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

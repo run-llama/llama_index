@@ -25,11 +25,11 @@ class RagExamplePrediction(BaseLlamaExamplePrediction):
     """
 
     response: str = Field(
-        default_factory=str,
+        default="",
         description="The generated (predicted) response that can be compared to a reference (ground-truth) answer.",
     )
     contexts: Optional[List[str]] = Field(
-        default_factory=None,
+        default=None,
         description="The contexts in raw text form used to generate the response.",
     )
 
@@ -60,7 +60,7 @@ class LabelledRagDataExample(BaseLlamaDataExample):
         default=None, description="What generated the query."
     )
     reference_contexts: Optional[List[str]] = Field(
-        default_factory=None,
+        default=None,
         description="The contexts used to generate the reference answer.",
     )
     reference_answer: str = Field(

@@ -4,7 +4,7 @@ import enum
 import json
 import logging
 from enum import auto
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from azure.search.documents import SearchClient
 from azure.search.documents.aio import SearchClient as AsyncSearchClient
@@ -30,9 +30,9 @@ from llama_index.core.vector_stores.utils import (
 )
 from llama_index.vector_stores.azureaisearch.azureaisearch_utils import (
     create_node_from_result,
-    process_batch_results,
     create_search_request,
     handle_search_error,
+    process_batch_results,
 )
 
 logger = logging.getLogger(__name__)
@@ -104,6 +104,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         vector_store = AzureAISearchVectorStore(
             search_or_index_client=index_client,
             filterable_metadata_field_keys=metadata_fields,
+            hidden_field_keys=["embedding"],
             index_name=index_name,
             index_management=IndexManagement.CREATE_IF_NOT_EXISTS,
             id_field_key="id",
@@ -128,6 +129,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _async_search_client: AsyncSearchClient = PrivateAttr()
     _embedding_dimensionality: int = PrivateAttr()
     _language_analyzer: str = PrivateAttr()
+    _hidden_field_keys: List[str] = PrivateAttr()
     _field_mapping: Dict[str, str] = PrivateAttr()
     _index_management: IndexManagement = PrivateAttr()
     _index_mapping: Callable[
@@ -138,6 +140,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     ] = PrivateAttr()
     _vector_profile_name: str = PrivateAttr()
     _compression_type: str = PrivateAttr()
+    _user_agent: str = PrivateAttr()
 
     def _normalise_metadata_to_index_fields(
         self,
@@ -229,7 +232,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             elif field_type == MetadataIndexFieldType.COLLECTION:
                 index_field_type = "Collection(Edm.String)"
 
-            field = SimpleField(name=field_name, type=index_field_type, filterable=True)
+            field = SimpleField(
+                name=field_name,
+                type=index_field_type,
+                filterable=True,
+                hidden=field_name in self._hidden_field_keys,
+            )
             index_fields.append(field)
 
         return index_fields
@@ -284,11 +292,13 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 type="Edm.String",
                 key=True,
                 filterable=True,
+                hidden=self._field_mapping["id"] in self._hidden_field_keys,
             ),
             SearchableField(
                 name=self._field_mapping["chunk"],
                 type="Edm.String",
                 analyzer_name=self._language_analyzer,
+                hidden=self._field_mapping["chunk"] in self._hidden_field_keys,
             ),
             SearchField(
                 name=self._field_mapping["embedding"],
@@ -296,11 +306,18 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 searchable=True,
                 vector_search_dimensions=self._embedding_dimensionality,
                 vector_search_profile_name=self._vector_profile_name,
-                hidden=False,
+                hidden=self._field_mapping["embedding"] in self._hidden_field_keys,
             ),
-            SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
             SimpleField(
-                name=self._field_mapping["doc_id"], type="Edm.String", filterable=True
+                name=self._field_mapping["metadata"],
+                type="Edm.String",
+                hidden=self._field_mapping["metadata"] in self._hidden_field_keys,
+            ),
+            SimpleField(
+                name=self._field_mapping["doc_id"],
+                type="Edm.String",
+                filterable=True,
+                hidden=self._field_mapping["doc_id"] in self._hidden_field_keys,
             ),
         ]
         logger.info(f"Configuring {index_name} metadata fields")
@@ -381,10 +398,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             ExhaustiveKnnParameters,
             HnswAlgorithmConfiguration,
             HnswParameters,
+            SearchableField,
             SearchField,
             SearchFieldDataType,
             SearchIndex,
-            SearchableField,
             SemanticConfiguration,
             SemanticField,
             SemanticPrioritizedFields,
@@ -403,18 +420,26 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 name=self._field_mapping["chunk"],
                 type="Edm.String",
                 analyzer_name=self._language_analyzer,
+                hidden=self._field_mapping["chunk"] in self._hidden_field_keys,
             ),
             SearchField(
                 name=self._field_mapping["embedding"],
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                 searchable=True,
-                hidden=False,
                 vector_search_dimensions=self._embedding_dimensionality,
                 vector_search_profile_name=self._vector_profile_name,
+                hidden=self._field_mapping["embedding"] in self._hidden_field_keys,
             ),
-            SimpleField(name=self._field_mapping["metadata"], type="Edm.String"),
             SimpleField(
-                name=self._field_mapping["doc_id"], type="Edm.String", filterable=True
+                name=self._field_mapping["metadata"],
+                type="Edm.String",
+                hidden=self._field_mapping["metadata"] in self._hidden_field_keys,
+            ),
+            SimpleField(
+                name=self._field_mapping["doc_id"],
+                type="Edm.String",
+                filterable=True,
+                hidden=self._field_mapping["doc_id"] in self._hidden_field_keys,
             ),
         ]
         logger.info(f"Configuring {index_name} metadata fields")
@@ -498,12 +523,17 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
     def __init__(
         self,
-        search_or_index_client: Any,
+        search_or_index_client: Union[
+            SearchClient, SearchIndexClient, AsyncSearchClient, AsyncSearchIndexClient
+        ],
         id_field_key: str,
         chunk_field_key: str,
         embedding_field_key: str,
         metadata_string_field_key: str,
         doc_id_field_key: str,
+        async_search_or_index_client: Optional[
+            Union[AsyncSearchClient, AsyncSearchIndexClient]
+        ] = None,
         filterable_metadata_field_keys: Optional[
             Union[
                 List[str],
@@ -511,6 +541,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 Dict[str, Tuple[str, MetadataIndexFieldType]],
             ]
         ] = None,
+        hidden_field_keys: Optional[List[str]] = None,
         index_name: Optional[str] = None,
         index_mapping: Optional[
             Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]]
@@ -522,6 +553,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
         language_analyzer: str = "en.lucene",
         compression_type: str = "none",
+        user_agent: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         # ruff: noqa: E501
@@ -544,6 +576,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 as separate fields in the index, use filterable_metadata_field_keys
                 to specify the metadata values that should be stored in these filterable fields
             doc_id_field_key (str): Index field storing doc_id
+            hidden_field_keys (List[str]):
+                List of index fields that should be hidden from the client.
+                This is useful for fields that are not needed for retrieving,
+                but are used for similarity search, like the embedding field.
             index_mapping:
                 Optional function with definition
                 (enriched_doc: Dict[str, str], metadata: Dict[str, Any]): Dict[str,str]
@@ -582,13 +618,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             raise ImportError(import_err_msg)
 
         super().__init__()
-
-        self._index_client: SearchIndexClient = cast(SearchIndexClient, None)
-        self._async_index_client: AsyncSearchIndexClient = cast(
-            AsyncSearchIndexClient, None
+        base_user_agent = "llamaindex-python"
+        self._user_agent = (
+            f"{base_user_agent} {user_agent}" if user_agent else base_user_agent
         )
-        self._search_client: SearchClient = cast(SearchClient, None)
-        self._async_search_client: AsyncSearchClient = cast(AsyncSearchClient, None)
         self._embedding_dimensionality = embedding_dimensionality
         self._index_name = index_name
 
@@ -604,12 +637,25 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         self._language_analyzer = language_analyzer
         self._compression_type = compression_type.lower()
 
-        # Validate search_or_index_client
+        # Initialize clients to None
+        self._index_client = None
+        self._async_index_client = None
+        self._search_client = None
+        self._async_search_client = None
+
+        if search_or_index_client and async_search_or_index_client is None:
+            logger.warning(
+                "async_search_or_index_client is None. Depending on the client type passed "
+                "in, sync or async functions may not work."
+            )
+
+        # Validate sync search_or_index_client
         if search_or_index_client is not None:
             if isinstance(search_or_index_client, SearchIndexClient):
-                # If SearchIndexClient is supplied so must index_name
-                self._index_client = cast(SearchIndexClient, search_or_index_client)
-
+                self._index_client = search_or_index_client
+                self._index_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
                 if not index_name:
                     raise ValueError(
                         "index_name must be supplied if search_or_index_client is of "
@@ -619,70 +665,80 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._search_client = self._index_client.get_search_client(
                     index_name=index_name
                 )
+                self._search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
 
-            elif isinstance(search_or_index_client, AsyncSearchIndexClient):
-                # If SearchIndexClient is supplied so must index_name
-                self._async_index_client = cast(
-                    AsyncSearchIndexClient, search_or_index_client
+            elif isinstance(search_or_index_client, SearchClient):
+                self._search_client = search_or_index_client
+                self._search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
+                # Validate index_name
+                if index_name:
+                    raise ValueError(
+                        "index_name cannot be supplied if search_or_index_client "
+                        "is of type azure.search.documents.SearchClient"
+                    )
+
+        # Validate async search_or_index_client -- if not provided, assume the search_or_index_client could be async
+        async_search_or_index_client = (
+            async_search_or_index_client or search_or_index_client
+        )
+        if async_search_or_index_client is not None:
+            if isinstance(async_search_or_index_client, AsyncSearchIndexClient):
+                self._async_index_client = async_search_or_index_client
+                self._async_index_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
                 )
 
                 if not index_name:
                     raise ValueError(
-                        "index_name must be supplied if search_or_index_client is of "
+                        "index_name must be supplied if async_search_or_index_client is of "
                         "type azure.search.documents.aio.SearchIndexClient"
                     )
 
                 self._async_search_client = self._async_index_client.get_search_client(
                     index_name=index_name
                 )
+                self._async_search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
+                )
 
-            elif isinstance(search_or_index_client, SearchClient):
-                self._search_client = cast(SearchClient, search_or_index_client)
-
-                # Validate index_name
-                if index_name:
-                    raise ValueError(
-                        "index_name cannot be supplied if search_or_index_client "
-                        "is of type azure.search.documents.SearchClient"
-                    )
-
-            elif isinstance(search_or_index_client, AsyncSearchClient):
-                self._async_search_client = cast(
-                    AsyncSearchClient, search_or_index_client
+            elif isinstance(async_search_or_index_client, AsyncSearchClient):
+                self._async_search_client = async_search_or_index_client
+                self._async_search_client._client._config.user_agent_policy.add_user_agent(
+                    self._user_agent
                 )
 
                 # Validate index_name
                 if index_name:
                     raise ValueError(
-                        "index_name cannot be supplied if search_or_index_client "
-                        "is of type azure.search.documents.SearchClient"
+                        "index_name cannot be supplied if async_search_or_index_client "
+                        "is of type azure.search.documents.aio.SearchClient"
                     )
 
-            if isinstance(search_or_index_client, AsyncSearchIndexClient):
-                if not self._async_index_client and not self._async_search_client:
-                    raise ValueError(
-                        "search_or_index_client must be of type "
-                        "azure.search.documents.SearchIndexClient or "
-                        "azure.search.documents.SearchClient"
-                    )
+        # Validate that at least one client was provided
+        if not any(
+            [
+                self._search_client,
+                self._async_search_client,
+                self._index_client,
+                self._async_index_client,
+            ]
+        ):
+            raise ValueError(
+                "Either search_or_index_client or async_search_or_index_client must be provided"
+            )
 
-            if isinstance(search_or_index_client, SearchIndexClient):
-                if not self._index_client and not self._search_client:
-                    raise ValueError(
-                        "search_or_index_client must be of type "
-                        "azure.search.documents.SearchIndexClient or "
-                        "azure.search.documents.SearchClient"
-                    )
-        else:
-            raise ValueError("search_or_index_client not specified")
-
+        # Validate index management requirements
         if index_management == IndexManagement.CREATE_IF_NOT_EXISTS and not (
             self._index_client or self._async_index_client
         ):
             raise ValueError(
                 "index_management has value of IndexManagement.CREATE_IF_NOT_EXISTS "
-                "but search_or_index_client is not of type "
-                "azure.search.documents.SearchIndexClient or azure.search.documents.aio.SearchIndexClient "
+                "but neither search_or_index_client nor async_search_or_index_client is of type "
+                "azure.search.documents.SearchIndexClient or azure.search.documents.aio.SearchIndexClient"
             )
 
         self._index_management = index_management
@@ -697,6 +753,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         }
 
         self._field_mapping = field_mapping
+        self._hidden_field_keys = hidden_field_keys or []
 
         self._index_mapping = (
             self._default_index_mapping if index_mapping is None else index_mapping
@@ -1109,20 +1166,36 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             odata_filter = self._create_odata_filter(query.filters)
         azure_query_result_search: AzureQueryResultSearchBase = (
             AzureQueryResultSearchDefault(
-                query, self._field_mapping, odata_filter, self._search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         )
         if query.mode == VectorStoreQueryMode.SPARSE:
             azure_query_result_search = AzureQueryResultSearchSparse(
-                query, self._field_mapping, odata_filter, self._search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
-                query, self._field_mapping, odata_filter, self._search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
-                query, self._field_mapping, odata_filter, self._search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         return azure_query_result_search.search()
 
@@ -1141,20 +1214,36 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         azure_query_result_search: AzureQueryResultSearchBase = (
             AzureQueryResultSearchDefault(
-                query, self._field_mapping, odata_filter, self._async_search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         )
         if query.mode == VectorStoreQueryMode.SPARSE:
             azure_query_result_search = AzureQueryResultSearchSparse(
-                query, self._field_mapping, odata_filter, self._async_search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
-                query, self._field_mapping, odata_filter, self._async_search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
-                query, self._field_mapping, odata_filter, self._async_search_client
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
             )
         return await azure_query_result_search.asearch()
 
@@ -1287,12 +1376,14 @@ class AzureQueryResultSearchBase:
         query: VectorStoreQuery,
         field_mapping: Dict[str, str],
         odata_filter: Optional[str],
-        search_client: Any,
+        search_client: SearchClient,
+        async_search_client: AsyncSearchClient,
     ) -> None:
         self._query = query
         self._field_mapping = field_mapping
         self._odata_filter = odata_filter
         self._search_client = search_client
+        self._async_search_client = async_search_client
 
     @property
     def _select_fields(self) -> List[str]:
@@ -1365,7 +1456,7 @@ class AzureQueryResultSearchBase:
     async def _acreate_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-        results = await self._search_client.search(
+        results = await self._async_search_client.search(
             search_text=search_query,
             vector_queries=vectors,
             top=self._query.similarity_top_k,
@@ -1485,11 +1576,11 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
         return vector_queries
 
     def _create_query_result(
-        self, search_query: str, vector_queries: Optional[List[Any]]
+        self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
         results = self._search_client.search(
             search_text=search_query,
-            vector_queries=vector_queries,
+            vector_queries=vectors,
             top=self._query.similarity_top_k,
             select=self._select_fields,
             filter=self._odata_filter,
@@ -1501,6 +1592,62 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
         node_result = []
         score_result = []
         for result in results:
+            node_id = result[self._field_mapping["id"]]
+            metadata_str = result[self._field_mapping["metadata"]]
+            metadata = json.loads(metadata_str) if metadata_str else {}
+            # use reranker_score instead of score
+            score = result["@search.reranker_score"]
+            chunk = result[self._field_mapping["chunk"]]
+
+            try:
+                node = metadata_dict_to_node(metadata)
+                node.set_content(chunk)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    metadata
+                )
+
+                node = TextNode(
+                    text=chunk,
+                    id_=node_id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
+            logger.debug(f"Retrieved node id {node_id} with node data of {node}")
+
+            id_result.append(node_id)
+            node_result.append(node)
+            score_result.append(score)
+
+        logger.debug(
+            f"Search query '{search_query}' returned {len(id_result)} results."
+        )
+
+        return VectorStoreQueryResult(
+            nodes=node_result, similarities=score_result, ids=id_result
+        )
+
+    async def _acreate_query_result(
+        self, search_query: str, vectors: Optional[List[Any]]
+    ) -> VectorStoreQueryResult:
+        results = await self._async_search_client.search(
+            search_text=search_query,
+            vector_queries=vectors,
+            top=self._query.similarity_top_k,
+            select=self._select_fields,
+            filter=self._odata_filter,
+            query_type="semantic",
+            semantic_configuration_name="mySemanticConfig",
+        )
+
+        id_result = []
+        node_result = []
+        score_result = []
+        async for result in results:
             node_id = result[self._field_mapping["id"]]
             metadata_str = result[self._field_mapping["metadata"]]
             metadata = json.loads(metadata_str) if metadata_str else {}

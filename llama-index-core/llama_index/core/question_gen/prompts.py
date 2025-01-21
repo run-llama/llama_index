@@ -67,11 +67,7 @@ EXAMPLES = f"""\
 {example_output_str}
 ```
 
-""".replace(
-    "{", "{{"
-).replace(
-    "}", "}}"
-)
+"""
 
 SUFFIX = """\
 # Example 2

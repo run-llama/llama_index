@@ -6,10 +6,9 @@ An index that is built on top of an existing vector store.
 """
 
 import logging
-from collections import Counter
-from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
+from llama_index.core.base.embeddings.base_sparse import BaseSparseEmbedding
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -25,9 +24,11 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+import pinecone
 from llama_index.vector_stores.pinecone.utils import (
     _import_pinecone,
     _is_pinecone_v3,
+    DefaultPineconeSparseEmbedding,
 )
 
 ID_KEY = "id"
@@ -70,63 +71,6 @@ def _transform_pinecone_filter_operator(operator: str) -> str:
         return "$nin"
     else:
         raise ValueError(f"Filter operator {operator} not supported")
-
-
-def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
-    """
-    Build a list of sparse dictionaries from a batch of input_ids.
-
-    NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
-
-    """
-    # store a batch of sparse embeddings
-    sparse_emb = []
-    # iterate through input batch
-    for token_ids in input_batch:
-        indices = []
-        values = []
-        # convert the input_ids list to a dictionary of key to frequency values
-        d = dict(Counter(token_ids))
-        for idx in d:
-            indices.append(idx)
-            values.append(float(d[idx]))
-        sparse_emb.append({"indices": indices, "values": values})
-    # return sparse_emb list
-    return sparse_emb
-
-
-def generate_sparse_vectors(
-    context_batch: List[str], tokenizer: Callable
-) -> List[Dict[str, Any]]:
-    """
-    Generate sparse vectors from a batch of contexts.
-
-    NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
-
-    """
-    # create batch of input_ids
-    inputs = tokenizer(context_batch)["input_ids"]
-    # create sparse dictionaries
-    return build_dict(inputs)
-
-
-def get_default_tokenizer() -> Callable:
-    """
-    Get default tokenizer.
-
-    NOTE: taken from https://www.pinecone.io/learn/hybrid-search-intro/.
-
-    """
-    from transformers import BertTokenizerFast
-
-    orig_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
-    # set some default arguments, so input is just a list of strings
-    return partial(
-        orig_tokenizer,
-        padding=True,
-        truncation=True,
-        max_length=512,
-    )
 
 
 def _to_pinecone_filter(standard_filters: MetadataFilters) -> dict:
@@ -230,8 +174,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
     batch_size: int
     remove_text_from_metadata: bool
 
-    _pinecone_index: Any = PrivateAttr()
-    _tokenizer: Optional[Callable] = PrivateAttr()
+    _pinecone_index: pinecone.Index = PrivateAttr()
+    _sparse_embedding_model: Optional[BaseSparseEmbedding] = PrivateAttr()
 
     def __init__(
         self,
@@ -249,12 +193,22 @@ class PineconeVectorStore(BasePydanticVectorStore):
         batch_size: int = DEFAULT_BATCH_SIZE,
         remove_text_from_metadata: bool = False,
         default_empty_query_vector: Optional[List[float]] = None,
+        sparse_embedding_model: Optional[BaseSparseEmbedding] = None,
         **kwargs: Any,
     ) -> None:
         insert_kwargs = insert_kwargs or {}
 
-        if tokenizer is None and add_sparse_vector:
-            tokenizer = get_default_tokenizer()
+        if add_sparse_vector:
+            if sparse_embedding_model is not None:
+                sparse_embedding_model = sparse_embedding_model
+            elif tokenizer is not None:
+                sparse_embedding_model = DefaultPineconeSparseEmbedding(
+                    tokenizer=tokenizer
+                )
+            else:
+                sparse_embedding_model = DefaultPineconeSparseEmbedding()
+        else:
+            sparse_embedding_model = None
 
         super().__init__(
             index_name=index_name,
@@ -268,7 +222,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             remove_text_from_metadata=remove_text_from_metadata,
         )
 
-        self._tokenizer = tokenizer
+        self._sparse_embedding_model = sparse_embedding_model
 
         # TODO: Make following instance check stronger -- check if pinecone_index is not pinecone.Index, else raise
         #  ValueError
@@ -368,6 +322,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         """
         ids = []
         entries = []
+        sparse_inputs = []
         for node in nodes:
             node_id = node.node_id
 
@@ -377,20 +332,32 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 flat_metadata=self.flat_metadata,
             )
 
+            if self.add_sparse_vector and self._sparse_embedding_model is not None:
+                sparse_inputs.append(node.get_content(metadata_mode=MetadataMode.EMBED))
+
+            if node.ref_doc_id is not None:
+                node_id = f"{node.ref_doc_id}#{node_id}"
+
+            ids.append(node_id)
+
             entry = {
                 ID_KEY: node_id,
                 VECTOR_KEY: node.get_embedding(),
                 METADATA_KEY: metadata,
             }
-            if self.add_sparse_vector and self._tokenizer is not None:
-                sparse_vector = generate_sparse_vectors(
-                    [node.get_content(metadata_mode=MetadataMode.EMBED)],
-                    self._tokenizer,
-                )[0]
-                entry[SPARSE_VECTOR_KEY] = sparse_vector
-
-            ids.append(node_id)
             entries.append(entry)
+
+        # batch sparse embedding generation
+        if sparse_inputs:
+            sparse_vectors = self._sparse_embedding_model.get_text_embedding_batch(
+                sparse_inputs
+            )
+            for i, sparse_vector in enumerate(sparse_vectors):
+                entries[i][SPARSE_VECTOR_KEY] = {
+                    "indices": list(sparse_vector.keys()),
+                    "values": list(sparse_vector.values()),
+                }
+
         self._pinecone_index.upsert(
             entries,
             namespace=self.namespace,
@@ -398,6 +365,38 @@ class PineconeVectorStore(BasePydanticVectorStore):
             **self.insert_kwargs,
         )
         return ids
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[List[MetadataFilters]] = None,
+        limit: int = 100,
+    ) -> List[BaseNode]:
+        filter = None
+        if filters is not None:
+            filter = _to_pinecone_filter(filters)
+
+        if node_ids is not None:
+            raise ValueError(
+                "Getting nodes by node id not supported by Pinecone at the time of writing."
+            )
+
+        if node_ids is None and filters is None:
+            raise ValueError("Filters must be specified")
+
+        # Pinecone requires a query vector, so default to 0s if not provided
+        query_vector = [0.0] * self._pinecone_index.describe_index_stats()["dimension"]
+
+        response = self._pinecone_index.query(
+            top_k=limit,
+            vector=query_vector,
+            namespace=self.namespace,
+            filter=filter,
+            include_values=True,
+            include_metadata=True,
+        )
+
+        return [metadata_dict_to_node(match.metadata) for match in response.matches]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -407,12 +406,24 @@ class PineconeVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        # delete by filtering on the doc_id metadata
-        self._pinecone_index.delete(
-            filter={"doc_id": {"$eq": ref_doc_id}},
-            namespace=self.namespace,
-            **delete_kwargs,
-        )
+        try:
+            # delete by filtering on the doc_id metadata
+            self._pinecone_index.delete(
+                filter={"doc_id": {"$eq": ref_doc_id}},
+                namespace=self.namespace,
+                **delete_kwargs,
+            )
+        except Exception:
+            # fallback to deleting by prefix for serverless
+            # TODO: this is a bit of a hack, we should find a better way to handle this
+            id_gen = self._pinecone_index.list(
+                prefix=ref_doc_id, namespace=self.namespace
+            )
+            ids_to_delete = list(id_gen)
+            if ids_to_delete:
+                self._pinecone_index.delete(
+                    ids=ids_to_delete, namespace=self.namespace, **delete_kwargs
+                )
 
     def delete_nodes(
         self,
@@ -439,7 +450,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
     def clear(self) -> None:
         """Clears the index."""
-        self._pinecone_index.delete(namespace=self.namespace, deleteAll=True)
+        self._pinecone_index.delete(namespace=self.namespace, delete_all=True)
 
     @property
     def client(self) -> Any:
@@ -455,22 +466,27 @@ class PineconeVectorStore(BasePydanticVectorStore):
             similarity_top_k (int): top k most similar nodes
 
         """
-        sparse_vector = None
+        pinecone_sparse_vector = None
         if (
             query.mode in (VectorStoreQueryMode.SPARSE, VectorStoreQueryMode.HYBRID)
-            and self._tokenizer is not None
+            and self._sparse_embedding_model is not None
         ):
             if query.query_str is None:
                 raise ValueError(
                     "query_str must be specified if mode is SPARSE or HYBRID."
                 )
-            sparse_vector = generate_sparse_vectors([query.query_str], self._tokenizer)[
-                0
-            ]
+            sparse_vector = self._sparse_embedding_model.get_query_embedding(
+                query.query_str
+            )
             if query.alpha is not None:
-                sparse_vector = {
-                    "indices": sparse_vector["indices"],
-                    "values": [v * (1 - query.alpha) for v in sparse_vector["values"]],
+                pinecone_sparse_vector = {
+                    "indices": list(sparse_vector.keys()),
+                    "values": [v * (1 - query.alpha) for v in sparse_vector.values()],
+                }
+            else:
+                pinecone_sparse_vector = {
+                    "indices": list(sparse_vector.keys()),
+                    "values": list(sparse_vector.values()),
                 }
 
         # pinecone requires a query embedding, so default to 0s if not provided
@@ -500,7 +516,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
         response = self._pinecone_index.query(
             vector=query_embedding,
-            sparse_vector=sparse_vector,
+            sparse_vector=pinecone_sparse_vector,
             top_k=query.similarity_top_k,
             include_values=kwargs.pop("include_values", True),
             include_metadata=kwargs.pop("include_metadata", True),

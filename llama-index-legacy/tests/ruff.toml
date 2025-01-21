@@ -1,4 +1,0 @@
-extend = "../pyproject.toml"
-ignore = [
-    "S101",  # assert gets used in tests
-]

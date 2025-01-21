@@ -27,14 +27,14 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-postgres"
 readme = "README.md"
-version = "0.2.6"
+version = "0.4.1"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-pgvector = "^0.2.4"
-psycopg2-binary = "^2.9.9"
-asyncpg = "^0.29.0"
-llama-index-core = "^0.11.0"
+python = ">=3.9,<4.0"
+pgvector = ">=0.3.6,<1.0.0"
+psycopg2-binary = ">=2.9.9,<3.0.0"
+asyncpg = ">=0.29.0,<1.0.0"
+llama-index-core = "^0.12.6"
 
 [tool.poetry.dependencies.sqlalchemy]
 extras = ["asyncio"]
