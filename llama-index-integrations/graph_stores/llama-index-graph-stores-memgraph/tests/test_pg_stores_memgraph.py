@@ -81,14 +81,13 @@ def test_memgraph_pg_store(pg_store: MemgraphPropertyGraphStore) -> None:
         label="PERSON", name="Logan", properties={"age": 28, "location": "Canada"}
     )
     pg_store.upsert_nodes([new_node])
-    
+
     # Assert the node has been updated with the new property
     kg_nodes = pg_store.get(properties={"age": 28})
-    
+
     # Test deleting nodes from Memgraph.
     pg_store.delete(ids=[source_node.node_id])
     pg_store.delete(ids=[entity1.id, entity2.id])
 
     # Assert the nodes have been deleted
     pg_store.get(ids=[entity1.id, entity2.id])
-    
