@@ -156,6 +156,11 @@ class LlamaCloudIndex(BaseManagedIndex):
         self._service_context = None
         self._callback_manager = callback_manager or Settings.callback_manager
 
+    @property
+    def id(self) -> str:
+        """Return the pipeline (aka index) ID."""
+        return self.pipeline.id
+
     def wait_for_completion(
         self,
         verbose: bool = False,
