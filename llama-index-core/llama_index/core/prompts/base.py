@@ -47,7 +47,7 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.base.llms.generic_utils import (
     prompt_to_messages,
 )
-from llama_index.core.base.llms.types import TextBlock
+from llama_index.core.base.llms.types import ContentBlock, TextBlock
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.prompts.utils import get_template_vars, format_string
 from llama_index.core.types import BaseOutputParser
@@ -308,7 +308,7 @@ class ChatPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
         for message_template in self.message_templates:
             # Handle messages with multiple blocks
             if message_template.blocks:
-                formatted_blocks = []
+                formatted_blocks: List[ContentBlock] = []
                 for block in message_template.blocks:
                     if isinstance(block, TextBlock):
                         template_vars = get_template_vars(block.text)
