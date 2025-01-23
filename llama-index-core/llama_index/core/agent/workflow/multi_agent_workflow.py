@@ -472,7 +472,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
         tools = [
             FunctionTool.from_defaults(fn=tool)
-            if not isinstance(tool, FunctionTool)
+            if not isinstance(tool, BaseTool)
             else tool
             for tool in tools_or_functions
         ]
