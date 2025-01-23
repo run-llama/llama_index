@@ -6,6 +6,10 @@
 
 ### Quick Start:
 
+```bash
+pip install llama-index-tools-linkup-research
+```
+
 ```python
 import os
 from llama_index.core.agent import FunctionCallingAgent
