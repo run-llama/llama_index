@@ -348,7 +348,7 @@ async def test_instance_creation(db: None) -> None:
     await pg.close()
 
 
-@pytest.fixture
+@pytest.fixture()
 def pg_fixture(request):
     if request.param == "pg":
         return request.getfixturevalue("pg")
