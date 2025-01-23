@@ -22,6 +22,9 @@ MISTRALAI_FUNCTION_CALLING_MODELS = (
     "open-mixtral-8x22b",
     "ministral-8b-latest",
     "ministral-3b-latest",
+    "mistral-small-latest",
+    "codestral-latest",
+    "open-mistral-nemo-latest",
 )
 
 MISTRALAI_CODE_MODELS = "codestral-latest"

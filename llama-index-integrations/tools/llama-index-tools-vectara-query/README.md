@@ -4,12 +4,13 @@ This tool connects to a Vectara corpus and allows agents to make semantic search
 
 ## Usage
 
+Please note that this usage example relies on version >=0.3.0.
+
 This tool has a more extensive example usage documented in a Jupyter notebok [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-vectara-query/examples/vectara_query.ipynb)
 
-To use this tool, you'll need the following information in your environment:
+To use this tool, you'll need a Vectara account (If you don't have an account, you can create one [here](https://vectara.com/integrations/llamaindex)) and the following information in your environment:
 
-- `VECTARA_CUSTOMER_ID`: The customer id for your Vectara account. If you don't have an account, you can create one [here](https://vectara.com/integrations/llamaindex).
-- `VECTARA_CORPUS_ID`: The corpus id for the Vectara corpus that you want your tool to search for information. If you need help creating a corpus with your data, follow this [Quick Start](https://docs.vectara.com/docs/quickstart) guide.
+- `VECTARA_CORPUS_KEY`: The corpus key for the Vectara corpus that you want your tool to search for information. If you need help creating a corpus with your data, follow this [Quick Start](https://docs.vectara.com/docs/quickstart) guide.
 - `VECTARA_API_KEY`: An API key that can perform queries on this corpus.
 
 Here's an example usage of the VectaraQueryToolSpec.

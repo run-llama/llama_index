@@ -1,5 +1,128 @@
 # ChangeLog
 
+## [2025-01-20]
+
+### `llama-index-core` [0.12.12]
+
+- feat: add AgentWorkflow system to support single and multi-agent workflows (#17237)
+- Fix image-path validation in ImageNode (#17558)
+
+### `llama-index-indices-managed-vectara` [0.4.0]
+
+- (breaking change) API Migration (#17545)
+
+### `llama-index-llms-anthropic` [0.6.4]
+
+- feat: support direct PDF handling for Anthropic (#17506)
+
+### `llama-index-llms-fireworks` [0.3.1]
+
+- Deepseek-v3 is now supported by fireworks (#17518)
+
+### `llama-index-llms-stepfun` [1.0.0]
+
+- feat: add stepfun integrations (#17514)
+
+### `llama-index-multi-modal-llms-gemini` [0.5.0]
+
+- refact: make GeminiMultiModal a thin wrapper around Gemini (#17501)
+
+### `llama-index-postprocessor-longllmlingua` [0.4.0]
+
+- Add longllmlingua2 integration (#17531)
+
+### `llama-index-readers-web` [0.3.4]
+
+- feat: Hyperbrowser Web Reader (#17489)
+
+## [2025-01-15]
+
+### `llama-index-core` [0.12.11]
+
+- fix: bug in MediaResource validator (#17509)
+- handle pandas errors in md to df in MarkdownElementNodeParser (#17511)
+- bugfix: Duplicated citation nodes (#17440)
+- Fixed issue #17397 by updating the markdown format in MarkdownReader (#17429)
+- feat: support adding images to ChatMessage through additional_kwargs (#17477)
+- feat: async semantic splitter noder parser (#17449)
+- more exception handling in schema llm extractor (#17432)
+
+### `llama-index-agent-openai` [0.4.2]
+
+- Async memory management for OpenAIAgentWorker (#17375)
+
+### `llama-index-embeddings-huggingface` [0.5.0]
+
+- multimodal huggingface embeddings support (#17463)
+
+### `llama-index-embeddings-gemini` [0.3.1]
+
+- add request options to gemini (#17452)
+
+### `llama-index-embeddings-opea` [0.1.0]
+
+- Add support for OPEA LLMs in Llama-Index (#16666)
+
+### `llama-index-embeddings-upstage` [0.4.1]
+
+- bugfix: Fix upstage embedding available model mapping (#17460)
+
+### `llama-index-graph-stores-neo4j` [0.4.5]
+
+- Fix neo4j schema bug (#17448)
+
+### `llama-index-llms-gemini` [0.4.3]
+
+- add request options to gemini (#17452)
+
+### `llama-index-llms-opea` [0.1.0]
+
+- Add support for OPEA LLMs in Llama-Index (#16666)
+
+### `llama-index-llms-openai` [0.3.13]
+
+- adjust openai model temperature to accept values between 0 and 2 (#17453)
+
+### `llama-index-multi-modal-llms-bedrock` [0.1.0]
+
+- Add Multi Modal Bedrock Integration (#17451)
+
+### `llama-index-postprocessor-bedrock-rerank` [0.3.1]
+
+- Change `top_n` if number of input nodes are less (#17374)
+
+### `llama-index-readers-slack` [0.3.1]
+
+- Added support to allow only public slack channels (#17399)
+
+### `llama-index-storage-chat-store-tablestore` [0.1.0]
+
+- Tablestore Support ChatStore/KvStore/DocStore/IndexStore (#17473)
+
+### `llama-index-storage-docstore-tablestore` [0.1.0]
+
+- Tablestore Support ChatStore/KvStore/DocStore/IndexStore (#17473)
+
+### `llama-index-storage-index-store-tablestore` [0.1.0]
+
+- Tablestore Support ChatStore/KvStore/DocStore/IndexStore (#17473)
+
+### `llama-index-storage-kvstore-tablestore` [0.1.0]
+
+- Tablestore Support ChatStore/KvStore/DocStore/IndexStore (#17473)
+
+### `llama-index-vector-stores-mariadb` [0.3.0]
+
+- Support MariaDB 11.7 in the MariaDB vector store integration (#17497)
+
+### `llama-index-vector-stores-neptune` [0.3.1]
+
+- add test, fix missing method (#17485)
+
+### `llama-index-vector-stores-qdrant` [0.4.3]
+
+- Add new operator for Qdrant Vector store (#17490)
+
 ## [2024-12-31]
 
 ### `llama-index-core` [0.12.10]
