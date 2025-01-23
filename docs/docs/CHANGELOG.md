@@ -1,5 +1,64 @@
 # ChangeLog
 
+## [2025-01-23]
+
+### `llama-index-core` [0.12.13]
+
+- Fixing header_path bug re: markdown level vs. stack depth in MarkdownNodeParser (#17602)
+- Advanced text to sql sample rows, adding row retrieval for few-shot prompts (#17479)
+- Made the message role of ReAct observation configurable (#17521)
+- fix reconstructing a tool in AgentWorkflow (#17596)
+- support content blocks in chat templates (#17603)
+- Add contextual retrieval support with a new `DocumentContextExtractor` (#17367)
+
+### `llama-index-graph-stores-memgraph` [0.2.1]
+
+- Vector index support for Memgraph's integration (#17570)
+
+### `llama-index-graph-stores-neo4j` [0.4.6]
+
+- Improves connections for neo4j objects and adds some tests (#17562)
+
+### `llama-index-indices-managed-llama-cloud` [0.6.4]
+
+- Add framework integration for composite retrieval (#17536)
+
+### `llama-index-llms-langchain` [0.5.1]
+
+- get valid string when streaming (#17566)
+
+### `llama-index-llms-mistralai` [0.3.2]
+
+- update function calling models in mistral (#17604)
+
+### `llama-index-llms-openai` [0.3.14]
+
+- fix openai.BadRequestError: Invalid value for 'content': expected a string, got null for tool calls (#17556)
+
+### `llama-index-readers-file` [0.4.3]
+
+- Refactor markdown_to_tups method to better handle multi-level headers (#17508)
+
+### `llama-index-readers-web` [0.3.5]
+
+- feat: Agentql Web Loader (#17575)
+
+### `llama-index-tools-linkup-research` [0.3.0]
+
+- add linkup tool (#17541)
+
+### `llama-index-tools-notion` [0.3.1]
+
+- fix: correct the input params of "load_data" in NotionPageReader (#17529)
+
+### `llama-index-vector-stores-pinecone` [0.4.3]
+
+- build: 🆙 replace pinecone-client with pinecone package (#17587)
+
+### `llama-index-vector-stores-postgres` [0.4.2]
+
+- Add support for halfvec vector type (#17534)
+
 ## [2025-01-20]
 
 ### `llama-index-core` [0.12.12]
