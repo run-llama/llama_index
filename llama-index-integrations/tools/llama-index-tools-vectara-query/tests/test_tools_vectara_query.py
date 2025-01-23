@@ -1,5 +1,5 @@
 from typing import List
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, MediaResource
 from llama_index.indices.managed.vectara import VectaraIndex
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.vectara_query import VectaraQueryToolSpec
@@ -11,16 +11,15 @@ import re
 #
 # For this test to run properly, please setup as follows:
 # 1. Create a Vectara account: sign up at https://console.vectara.com/signup
-# 2. Create a corpus in your Vectara account, with the following filter attributes:
+# 2. Create two corpora in your Vectara account with the following filter attributes in the first corpus:
 #   a. doc.test_num (text)
 #   b. doc.test_score (integer)
 #   c. doc.date (text)
 #   d. doc.url (text)
-# 3. Create an API_KEY for this corpus with permissions for query and indexing
+# 3. Create an API_KEY for these corpora with permissions for query and indexing
 # 4. Setup environment variables:
-#    VECTARA_API_KEY, VECTARA_CORPUS_ID, VECTARA_CUSTOMER_ID, and OPENAI_API_KEY
-#
-# Note: In order to run test_citations, you will need a Scale account.
+#    VECTARA_API_KEY, VECTARA_CORPUS_KEY, and OPENAI_API_KEY
+#    For VECTARA_CORPUS_KEY, separate the corpus keys for the corpora with a ',' for example: "llamaindex-testing-1,llamaindex-testing-2".
 #
 
 
@@ -32,18 +31,22 @@ def test_class():
 def get_docs() -> List[Document]:
     inputs = [
         {
+            "id": "doc_1",
             "text": "This is test text for Vectara integration with LlamaIndex",
             "metadata": {"test_num": "1", "test_score": 10, "date": "2020-02-25"},
         },
         {
+            "id": "doc_2",
             "text": "And now for something completely different",
             "metadata": {"test_num": "2", "test_score": 2, "date": "2015-10-13"},
         },
         {
+            "id": "doc_3",
             "text": "when 900 years you will be, look as good you will not",
             "metadata": {"test_num": "3", "test_score": 20, "date": "2023-09-12"},
         },
         {
+            "id": "doc_4",
             "text": "when 850 years you will be, look as good you will not",
             "metadata": {"test_num": "4", "test_score": 50, "date": "2022-01-01"},
         },
@@ -51,7 +54,8 @@ def get_docs() -> List[Document]:
     docs: List[Document] = []
     for inp in inputs:
         doc = Document(
-            text=str(inp["text"]),
+            id_=inp["id"],
+            text_resource=MediaResource(text=inp["text"]),
             metadata=inp["metadata"],
         )
         docs.append(doc)
@@ -70,7 +74,7 @@ def vectara1():
 
     # Tear down code
     for id in vectara1.doc_ids:
-        vectara1._delete_doc(id)
+        vectara1.delete_ref_doc(id)
 
 
 def test_simple_retrieval(vectara1) -> None:
@@ -78,7 +82,7 @@ def test_simple_retrieval(vectara1) -> None:
     tool_spec = VectaraQueryToolSpec(num_results=1)
     res = tool_spec.semantic_search("Find me something different.")
     assert len(res) == 1
-    assert res[0]["text"] == docs[1].text
+    assert res[0]["text"] == docs[1].text_resource.text
 
 
 def test_mmr_retrieval(vectara1) -> None:
@@ -95,8 +99,8 @@ def test_mmr_retrieval(vectara1) -> None:
     )
     res = tool_spec.semantic_search("How will I look?")
     assert len(res) == 2
-    assert res[0]["text"] == docs[2].text
-    assert res[1]["text"] == docs[3].text
+    assert res[0]["text"] == docs[2].text_resource.text
+    assert res[1]["text"] == docs[3].text_resource.text
 
     # test with diversity bias = 1
     tool_spec = VectaraQueryToolSpec(
@@ -109,18 +113,18 @@ def test_mmr_retrieval(vectara1) -> None:
     )
     res = tool_spec.semantic_search("How will I look?")
     assert len(res) == 2
-    assert res[0]["text"] == docs[2].text
+    assert res[0]["text"] == docs[2].text_resource.text
 
 
 def test_retrieval_with_filter(vectara1) -> None:
     docs = get_docs()
 
     tool_spec = VectaraQueryToolSpec(
-        num_results=1, metadata_filter="doc.test_num = '1'"
+        num_results=1, metadata_filter=["doc.test_num = '1'", ""]
     )
     res = tool_spec.semantic_search("What does this test?")
     assert len(res) == 1
-    assert res[0]["text"] == docs[0].text
+    assert res[0]["text"] == docs[0].text_resource.text
 
 
 def test_udf_retrieval(vectara1) -> None:
@@ -131,28 +135,28 @@ def test_udf_retrieval(vectara1) -> None:
         num_results=2,
         n_sentences_before=0,
         n_sentences_after=0,
-        reranker="udf",
+        reranker="userfn",
         udf_expression="get('$.score') + get('$.document_metadata.test_score')",
     )
 
     res = tool_spec.semantic_search("What will the future look like?")
     assert len(res) == 2
-    assert res[0]["text"] == docs[3].text
-    assert res[1]["text"] == docs[2].text
+    assert res[0]["text"] == docs[3].text_resource.text
+    assert res[1]["text"] == docs[2].text_resource.text
 
     # test with dates: Weight of score subtracted by number of years from current date
     tool_spec = VectaraQueryToolSpec(
         num_results=2,
         n_sentences_before=0,
         n_sentences_after=0,
-        reranker="udf",
+        reranker="userfn",
         udf_expression="max(0, 5 * get('$.score') - (to_unix_timestamp(now()) - to_unix_timestamp(datetime_parse(get('$.document_metadata.date'), 'yyyy-MM-dd'))) / 31536000)",
     )
 
     res = tool_spec.semantic_search("What will the future look like?")
     assert len(res) == 2
-    assert res[0]["text"] == docs[2].text
-    assert res[1]["text"] == docs[3].text
+    assert res[0]["text"] == docs[2].text_resource.text
+    assert res[1]["text"] == docs[3].text_resource.text
 
 
 def test_chain_rerank_retrieval(vectara1) -> None:
@@ -169,7 +173,7 @@ def test_chain_rerank_retrieval(vectara1) -> None:
 
     res = tool_spec.semantic_search("What's this all about?")
     assert len(res) == 2
-    assert res[0]["text"] == docs[0].text
+    assert res[0]["text"] == docs[0].text_resource.text
 
     # Test chain with UDF and limit
     tool_spec = VectaraQueryToolSpec(
@@ -181,7 +185,7 @@ def test_chain_rerank_retrieval(vectara1) -> None:
             {"type": "slingshot"},
             {"type": "mmr"},
             {
-                "type": "udf",
+                "type": "userfn",
                 "user_function": "5 * get('$.score') + get('$.document_metadata.test_score') / 2",
                 "limit": 2,
             },
@@ -190,8 +194,8 @@ def test_chain_rerank_retrieval(vectara1) -> None:
 
     res = tool_spec.semantic_search("What's this all about?")
     assert len(res) == 2
-    assert res[0]["text"] == docs[3].text
-    assert res[1]["text"] == docs[2].text
+    assert res[0]["text"] == docs[3].text_resource.text
+    assert res[1]["text"] == docs[2].text_resource.text
 
     # Test chain with cutoff
     tool_spec = VectaraQueryToolSpec(
@@ -207,7 +211,37 @@ def test_chain_rerank_retrieval(vectara1) -> None:
 
     res = tool_spec.semantic_search("What's this all about?")
     assert len(res) == 1
-    assert res[0]["text"] == docs[0].text
+    assert res[0]["text"] == docs[0].text_resource.text
+
+    # Second query with same retriever to ensure rerank chain configuration remains the same
+    res = tool_spec.semantic_search("How will I look when I'm older?")
+    assert tool_spec.retriever._rerank_chain[0].get("type") == "customer_reranker"
+    assert (
+        tool_spec.retriever._rerank_chain[0].get("reranker_name")
+        == "Rerank_Multilingual_v1"
+    )
+    assert tool_spec.retriever._rerank_chain[1].get("type") == "mmr"
+    assert res[0]["text"] == docs[2].text_resource.text
+
+
+def test_custom_prompt(vectara1) -> None:
+    docs = get_docs()
+
+    tool_spec = VectaraQueryToolSpec(
+        num_results=3,
+        n_sentences_before=0,
+        n_sentences_after=0,
+        reranker="mmr",
+        mmr_diversity_bias=0.2,
+        prompt_text='[\n  {"role": "system", "content": "You are an expert in summarizing the future of Vectara\'s inegration with LlamaIndex. Your summaries are insightful, concise, and highlight key innovations and changes."},\n  #foreach ($result in $vectaraQueryResults)\n    {"role": "user", "content": "What are the key points in result number $vectaraIdxWord[$foreach.index] about Vectara\'s LlamaIndex integration?"},\n    {"role": "assistant", "content": "In result number $vectaraIdxWord[$foreach.index], the key points are: ${result.getText()}"},\n  #end\n  {"role": "user", "content": "Can you generate a comprehensive summary on \'Vectara\'s LlamaIndex Integration\' incorporating all the key points discussed?"}\n]\n',
+    )
+
+    res = tool_spec.rag_query("How will Vectara's integration look in the future?")
+    assert "integration" in res["summary"].lower()
+    assert "llamaindex" in res["summary"].lower()
+    assert "vectara" in res["summary"].lower()
+    assert "result" in res["summary"].lower()
+    assert res["factual_consistency_score"] > 0
 
 
 @pytest.fixture()
@@ -225,7 +259,7 @@ def vectara2():
     yield vectara2
 
     # Tear down code
-    vectara2._delete_doc(id)
+    vectara2.delete_ref_doc(id)
 
 
 def test_basic_rag_query(vectara2) -> None:
@@ -287,7 +321,7 @@ def test_agent_basic(vectara2) -> None:
 
     tool_spec = VectaraQueryToolSpec(num_results=10, reranker="mmr")
     agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
-    res = agent.chat("Please summarize Paul Graham's work").response
+    res = agent.chat("Please summarize Paul's thoughts about paintings?").response
     agent_tasks = agent.get_completed_tasks()
     tool_called = (
         agent_tasks[0]
@@ -296,12 +330,12 @@ def test_agent_basic(vectara2) -> None:
         .function.name
     )
     assert tool_called == "rag_query"
-    assert "bel" in res.lower() and "lisp" in res.lower()
+    assert "paint" in res.lower() and "paul" in res.lower()
 
 
 def test_agent_filter(vectara1) -> None:
     tool_spec = VectaraQueryToolSpec(
-        num_results=1, metadata_filter="doc.date > '2022-02-01'"
+        num_results=1, metadata_filter=["doc.date > '2022-02-01'", ""]
     )
 
     agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())

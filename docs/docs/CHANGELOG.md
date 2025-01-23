@@ -1,5 +1,40 @@
 # ChangeLog
 
+## [2025-01-20]
+
+### `llama-index-core` [0.12.12]
+
+- feat: add AgentWorkflow system to support single and multi-agent workflows (#17237)
+- Fix image-path validation in ImageNode (#17558)
+
+### `llama-index-indices-managed-vectara` [0.4.0]
+
+- (breaking change) API Migration (#17545)
+
+### `llama-index-llms-anthropic` [0.6.4]
+
+- feat: support direct PDF handling for Anthropic (#17506)
+
+### `llama-index-llms-fireworks` [0.3.1]
+
+- Deepseek-v3 is now supported by fireworks (#17518)
+
+### `llama-index-llms-stepfun` [1.0.0]
+
+- feat: add stepfun integrations (#17514)
+
+### `llama-index-multi-modal-llms-gemini` [0.5.0]
+
+- refact: make GeminiMultiModal a thin wrapper around Gemini (#17501)
+
+### `llama-index-postprocessor-longllmlingua` [0.4.0]
+
+- Add longllmlingua2 integration (#17531)
+
+### `llama-index-readers-web` [0.3.4]
+
+- feat: Hyperbrowser Web Reader (#17489)
+
 ## [2025-01-15]
 
 ### `llama-index-core` [0.12.11]

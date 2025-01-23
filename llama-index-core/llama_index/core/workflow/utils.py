@@ -16,7 +16,7 @@ from typing import (
 try:
     from types import UnionType  # type: ignore[attr-defined]
 except ImportError:  # pragma: no cover
-    from typing import Union as UnionType
+    from typing import Union as UnionType  # type: ignore[assignment]
 
 from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
