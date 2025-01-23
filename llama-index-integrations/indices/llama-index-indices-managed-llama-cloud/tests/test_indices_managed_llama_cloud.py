@@ -4,8 +4,12 @@ from llama_cloud import (
     PipelineCreate,
     PipelineFileCreate,
     ProjectCreate,
+    CompositeRetrievalMode,
 )
-from llama_index.indices.managed.llama_cloud import LlamaCloudIndex
+from llama_index.indices.managed.llama_cloud import (
+    LlamaCloudIndex,
+    LlamaCloudCompositeRetriever,
+)
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.schema import Document
 import os
@@ -17,7 +21,7 @@ import tempfile
 
 base_url = os.environ.get("LLAMA_CLOUD_BASE_URL", None)
 api_key = os.environ.get("LLAMA_CLOUD_API_KEY", None)
-openai_api_key = os.environ.get("OPENAI_API_KEY", None)
+openai_api_key = os.environ.get("LLAMA_CLOUD_OPENAI_API_KEY", None)
 organization_id = os.environ.get("LLAMA_CLOUD_ORGANIZATION_ID", None)
 project_name = os.environ.get("LLAMA_CLOUD_PROJECT_NAME", "framework_integration_test")
 
@@ -273,3 +277,66 @@ def test_index_from_documents():
     docs = index.ref_doc_info
     assert len(docs) == 2
     assert "3" not in docs
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+@pytest.mark.integration()
+def test_composite_retriever():
+    """Test the LlamaCloudCompositeRetriever with multiple indices."""
+    # Create first index with documents
+    documents1 = [
+        Document(
+            text="Hello world from index 1.", doc_id="1", metadata={"source": "index1"}
+        ),
+    ]
+    index1 = LlamaCloudIndex.from_documents(
+        documents=documents1,
+        name=f"test pipeline 1 {uuid4()}",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        organization_id=organization_id,
+        verbose=True,
+    )
+
+    # Create second index with documents
+    documents2 = [
+        Document(
+            text="Hello world from index 2.", doc_id="2", metadata={"source": "index2"}
+        ),
+    ]
+    index2 = LlamaCloudIndex.from_documents(
+        documents=documents2,
+        name=f"test pipeline 2 {uuid4()}",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        organization_id=organization_id,
+        verbose=True,
+    )
+
+    # Create a composite retriever
+    retriever = LlamaCloudCompositeRetriever(
+        name="composite_retriever_test",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        create_if_not_exists=True,
+        mode=CompositeRetrievalMode.FULL,
+        rerank_top_n=5,
+    )
+
+    # Attach indices to the composite retriever
+    retriever.add_index(index1, description="Information from index 1.")
+    retriever.add_index(index2, description="Information from index 2.")
+
+    # Retrieve nodes using the composite retriever
+    nodes = retriever.retrieve("Hello world.")
+
+    # Assertions to verify the retrieval
+    assert len(nodes) >= 2
+    assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
+    assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
