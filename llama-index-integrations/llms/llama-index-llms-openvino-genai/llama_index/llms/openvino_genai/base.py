@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class OpenVINOGenAILLM(CustomLLM):
-    r"""HuggingFace LLM.
+    r"""OpenVINO GenAI LLM.
 
     Examples:
         `pip install llama-index-llms-openvino-genai`
