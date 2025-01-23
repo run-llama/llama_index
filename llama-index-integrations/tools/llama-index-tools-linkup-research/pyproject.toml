@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.tools.notion"
+import_path = "llama_index.tools.linkup_research"
 
 [tool.llamahub.class_authors]
-NotionToolSpec = "jerryjliu"
+LinkupToolSpec = "juliette0704"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,17 +22,18 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index tools notion integration"
+description = "llama-index tools linkup_research integration"
 exclude = ["**/BUILD"]
+keywords = ["search"]
 license = "MIT"
-maintainers = ["jerryjliu"]
-name = "llama-index-tools-notion"
+maintainers = ["juliette0704"]
+name = "llama-index-tools-linkup-research"
 readme = "README.md"
-version = "0.3.1"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-index-readers-notion = "^0.3.0"
+linkup-sdk = ">=0.2.2"
 llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
