@@ -27,7 +27,7 @@ python_version = "3.8"
 authors = ["Pavlin Nikolay <afaneor@gmail.com>"]
 description = "llama-index llms gigachat integration"
 license = "MIT"
-name = "llama-index-llms-gigachat"
+name = "llama-index-llms-gigachat-ru"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.3.0"

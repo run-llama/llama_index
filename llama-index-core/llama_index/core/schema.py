@@ -43,9 +43,9 @@ from llama_index.core.bridge.pydantic import (
     SerializationInfo,
     SerializeAsAny,
     SerializerFunctionWrapHandler,
-    model_serializer,
-    field_validator,
     ValidationInfo,
+    field_validator,
+    model_serializer,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -512,6 +512,11 @@ class MediaResource(BaseModel):
         default=None, description="MIME type of this resource."
     )
 
+    model_config = {
+        # This ensures validation runs even for None values
+        "validate_default": True
+    }
+
     @field_validator("data", mode="after")
     @classmethod
     def validate_data(cls, v: bytes | None, info: ValidationInfo) -> bytes | None:
@@ -525,11 +530,19 @@ class MediaResource(BaseModel):
             return v
 
         try:
-            # Check if data is already base64 encoded
-            base64.b64decode(v)
+            # Check if data is already base64 encoded.
+            # b64decode() can succeed on random binary data, we make
+            # a full roundtrip to make sure it's not a false positive
+            decoded = base64.b64decode(v)
+            encoded = base64.b64encode(decoded)
+            if encoded != v:
+                # Roundtrip failed, this is a false positive, return encoded
+                return base64.b64encode(v)
         except Exception:
-            v = base64.b64encode(v)
+            # b64decode failed, return encoded
+            return base64.b64encode(v)
 
+        # Good as is, return unchanged
         return v
 
     @field_validator("mimetype", mode="after")
@@ -540,7 +553,7 @@ class MediaResource(BaseModel):
 
         # Since this field validator runs after the one for `data`
         # then the contents of `data` should be encoded already
-        b64_data = info.data["data"]
+        b64_data = info.data.get("data")
         if b64_data:  # encoded bytes
             decoded_data = base64.b64decode(b64_data)
             if guess := filetype.guess(decoded_data):
@@ -780,8 +793,8 @@ class ImageNode(TextNode):
                 kwargs["image_url"] = ir.get("url", None)
                 kwargs["image_mimetype"] = ir.get("mimetype", None)
 
-        mimetype = kwargs.get("image_mimetype", None)
-        if not mimetype and "image_path" in kwargs:
+        mimetype = kwargs.get("image_mimetype")
+        if not mimetype and kwargs.get("image_path") is not None:
             # guess mimetype from image_path
             extension = Path(kwargs["image_path"]).suffix.replace(".", "")
             if ftype := filetype.get_type(ext=extension):
@@ -997,8 +1010,16 @@ class Document(Node):
         if "text" in data:
             text = data.pop("text")
             if "text_resource" in data:
-                msg = "'text' is deprecated and 'text_resource' will be used instead"
-                logging.warning(msg)
+                text_resource = (
+                    data["text_resource"]
+                    if isinstance(data["text_resource"], MediaResource)
+                    else MediaResource.model_validate(data["text_resource"])
+                )
+                if (text_resource.text or "").strip() != text.strip():
+                    msg = (
+                        "'text' is deprecated and 'text_resource' will be used instead"
+                    )
+                    logging.warning(msg)
             else:
                 data["text_resource"] = MediaResource(text=text)
 
@@ -1178,11 +1199,17 @@ class ImageDocument(Document):
         text_embedding = kwargs.pop("text_embedding", None)
 
         if image:
-            kwargs["image_resource"] = MediaResource(data=image)
+            kwargs["image_resource"] = MediaResource(
+                data=image, mimetype=image_mimetype
+            )
         elif image_path:
-            kwargs["image_resource"] = MediaResource(path=image_path)
+            kwargs["image_resource"] = MediaResource(
+                path=image_path, mimetype=image_mimetype
+            )
         elif image_url:
-            kwargs["image_resource"] = MediaResource(url=image_url)
+            kwargs["image_resource"] = MediaResource(
+                url=image_url, mimetype=image_mimetype
+            )
 
         super().__init__(**kwargs)
 
