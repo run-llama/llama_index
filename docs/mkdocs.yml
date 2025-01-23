@@ -427,6 +427,7 @@ nav:
       - Memory:
           - ./examples/memory/Mem0Memory.ipynb
       - Metadata Extractors:
+          - ./examples/metadata_extraction/DocumentContextExtractor.ipynb
           - ./examples/metadata_extraction/EntityExtractionClimate.ipynb
           - ./examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb
           - ./examples/metadata_extraction/MetadataExtractionSEC.ipynb
@@ -1152,6 +1153,7 @@ nav:
           - ./api_reference/memory/simple_composable_memory.md
           - ./api_reference/memory/vector_memory.md
       - Metadata Extractors:
+          - ./api_reference/extractors/documentcontext.md
           - ./api_reference/extractors/entity.md
           - ./api_reference/extractors/index.md
           - ./api_reference/extractors/keyword.md
@@ -1649,6 +1651,7 @@ nav:
           - ./api_reference/tools/ionic_shopping.md
           - ./api_reference/tools/jina.md
           - ./api_reference/tools/load_and_search.md
+          - ./api_reference/tools/mcp.md
           - ./api_reference/tools/metaphor.md
           - ./api_reference/tools/multion.md
           - ./api_reference/tools/neo4j.md
