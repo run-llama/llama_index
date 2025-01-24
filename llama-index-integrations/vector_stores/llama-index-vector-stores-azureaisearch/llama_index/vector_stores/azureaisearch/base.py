@@ -12,6 +12,7 @@ from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.aio import (
     SearchIndexClient as AsyncSearchIndexClient,
 )
+
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -1544,7 +1545,8 @@ class AzureQueryResultSearchDefault(AzureQueryResultSearchBase):
 
         vectorized_query = VectorizedQuery(
             vector=self._query.query_embedding,
-            k_nearest_neighbors=self._query.similarity_top_k,
+            k_nearest_neighbors=self._query.hybrid_top_k
+            or self._query.similarity_top_k,
             fields=self._field_mapping["embedding"],
         )
         vector_queries = [vectorized_query]
