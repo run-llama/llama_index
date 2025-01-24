@@ -37,7 +37,7 @@ LlamaIndex.TS [(Typescript/Javascript)](https://github.com/run-llama/LlamaIndexT
 
 [Documentation](https://docs.llamaindex.ai/en/stable/)
 
-[Twitter](https://twitter.com/llama_index)
+[X (formerly Twitter)](https://x.com/llama_index)
 
 [Discord](https://discord.gg/dGcwcsnxhU)
 

@@ -50,6 +50,7 @@ nav:
           - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
           - Memory: ./understanding/agent/memory.md
           - Adding other tools: ./understanding/agent/tools.md
+          - Multi-agent workflows: ./understanding/agent/multi_agents.md
       - Building Workflows:
           - Introduction to workflows: ./understanding/workflows/index.md
           - A basic workflow: ./understanding/workflows/basic_flow.md
@@ -97,6 +98,8 @@ nav:
           - ./examples/agent/agent_runner/agent_runner.ipynb
           - ./examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
           - ./examples/agent/agent_runner/query_pipeline_agent.ipynb
+          - ./examples/agent/agent_workflow_basic.ipynb
+          - ./examples/agent/agent_workflow_multi.ipynb
           - ./examples/agent/agentic_rag_using_vertex_ai.ipynb
           - ./examples/agent/agentic_rag_with_llamaindex_and_vertexai_managed_index.ipynb
           - ./examples/agent/anthropic_agent.ipynb
@@ -424,6 +427,7 @@ nav:
       - Memory:
           - ./examples/memory/Mem0Memory.ipynb
       - Metadata Extractors:
+          - ./examples/metadata_extraction/DocumentContextExtractor.ipynb
           - ./examples/metadata_extraction/EntityExtractionClimate.ipynb
           - ./examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb
           - ./examples/metadata_extraction/MetadataExtractionSEC.ipynb
@@ -853,6 +857,7 @@ nav:
           - ./api_reference/agent/openai.md
           - ./api_reference/agent/openai_legacy.md
           - ./api_reference/agent/react.md
+          - ./api_reference/agent/workflow.md
       - Callbacks:
           - ./api_reference/callbacks/agentops.md
           - ./api_reference/callbacks/aim.md
@@ -1061,6 +1066,7 @@ nav:
           - ./api_reference/llms/sambanovasystems.md
           - ./api_reference/llms/siliconflow.md
           - ./api_reference/llms/solar.md
+          - ./api_reference/llms/stepfun.md
           - ./api_reference/llms/text_generation_inference.md
           - ./api_reference/llms/together.md
           - ./api_reference/llms/unify.md
@@ -1147,6 +1153,7 @@ nav:
           - ./api_reference/memory/simple_composable_memory.md
           - ./api_reference/memory/vector_memory.md
       - Metadata Extractors:
+          - ./api_reference/extractors/documentcontext.md
           - ./api_reference/extractors/entity.md
           - ./api_reference/extractors/index.md
           - ./api_reference/extractors/keyword.md
@@ -1644,6 +1651,7 @@ nav:
           - ./api_reference/tools/ionic_shopping.md
           - ./api_reference/tools/jina.md
           - ./api_reference/tools/load_and_search.md
+          - ./api_reference/tools/mcp.md
           - ./api_reference/tools/metaphor.md
           - ./api_reference/tools/multion.md
           - ./api_reference/tools/neo4j.md
@@ -2331,6 +2339,7 @@ plugins:
             - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-tablestore
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-tablestore
             - ../llama-index-integrations/llms/llama-index-llms-opea
+            - ../llama-index-integrations/llms/llama-index-llms-stepfun
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

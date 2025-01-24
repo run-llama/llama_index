@@ -1,8 +1,9 @@
 import asyncio
 import json
 import warnings
+import uuid
 from collections import defaultdict
-from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING, Set, Tuple
+from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING, Set, Tuple, TypeVar
 
 from .context_serializers import BaseSerializer, JsonSerializer
 from .decorators import StepConfig
@@ -11,6 +12,8 @@ from .errors import WorkflowRuntimeError
 
 if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
+
+T = TypeVar("T", bound=Event)
 
 
 class Context:
@@ -34,7 +37,8 @@ class Context:
 
         self._workflow = workflow
         # Broker machinery
-        self._queues: Dict[str, asyncio.Queue] = {}
+        self._waiter_id = str(uuid.uuid4())
+        self._queues: Dict[str, asyncio.Queue] = {self._waiter_id: asyncio.Queue()}
         self._tasks: Set[asyncio.Task] = set()
         self._broker_log: List[Event] = []
         self._cancel_flag: asyncio.Event = asyncio.Event()
@@ -117,6 +121,7 @@ class Context:
             },
             "accepted_events": self._accepted_events,
             "broker_log": [serializer.serialize(ev) for ev in self._broker_log],
+            "waiter_id": self._waiter_id,
             "is_running": self.is_running,
         }
 
@@ -141,6 +146,7 @@ class Context:
         if len(context._events_buffer) == 0:
             context._events_buffer = defaultdict(list)
         context._accepted_events = data["accepted_events"]
+        context._waiter_id = data.get("waiter_id", str(uuid.uuid4()))
         context._broker_log = [serializer.deserialize(ev) for ev in data["broker_log"]]
         context.is_running = data["is_running"]
         # load back up whatever was in the queue as well as the events whose steps
@@ -280,6 +286,39 @@ class Context:
                 )
 
         self._broker_log.append(message)
+
+    async def wait_for_event(
+        self,
+        event_type: Type[T],
+        requirements: Optional[Dict[str, Any]] = None,
+        timeout: Optional[float] = 2000,
+    ) -> T:
+        """Asynchronously wait for a specific event type to be received.
+
+        Args:
+            event_type: The type of event to wait for
+            requirements: Optional dict of requirements the event must match
+            timeout: Optional timeout in seconds. Defaults to 2000s.
+
+        Returns:
+            The event type that was requested.
+
+        Raises:
+            asyncio.TimeoutError: If the timeout is reached before receiving matching event
+        """
+        requirements = requirements or {}
+
+        while True:
+            event = await asyncio.wait_for(
+                self._queues[self._waiter_id].get(), timeout=timeout
+            )
+            if type(event) == event_type:
+                if all(
+                    event.get(k, default=None) == v for k, v in requirements.items()
+                ):
+                    return event
+                else:
+                    continue
 
     def write_event_to_stream(self, ev: Optional[Event]) -> None:
         self._streaming_queue.put_nowait(ev)
