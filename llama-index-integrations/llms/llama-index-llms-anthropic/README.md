@@ -19,14 +19,11 @@ Anthropic is an AI research company focused on developing advanced language mode
 ### Basic Usage
 
 ```py
+import os
+
 from llama_index.llms.anthropic import Anthropic
 from llama_index.core import Settings
 
-tokenizer = Anthropic().tokenizer
-Settings.tokenizer = tokenizer
-
-# Call complete with a prompt
-import os
 
 os.environ["ANTHROPIC_API_KEY"] = "YOUR ANTHROPIC API KEY"
 from llama_index.llms.anthropic import Anthropic
@@ -35,6 +32,8 @@ from llama_index.llms.anthropic import Anthropic
 # otherwise it will lookup ANTHROPIC_API_KEY from your env variable
 # llm = Anthropic(api_key="<api_key>")
 llm = Anthropic(model="claude-3-opus-20240229")
+
+Settings.tokenizer = llm.tokenizer
 
 resp = llm.complete("Paul Graham is ")
 print(resp)
