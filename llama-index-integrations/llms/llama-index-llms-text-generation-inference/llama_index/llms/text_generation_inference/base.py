@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
-from huggingface_hub import InferenceClient, AsyncInferenceClient
+from huggingface_hub import InferenceClient, AsyncInferenceClient, ChatCompletionInputMessage
 from llama_index.core.base.llms.generic_utils import (
     chat_to_completion_decorator,
     achat_to_completion_decorator,
@@ -46,8 +46,9 @@ from llama_index.llms.text_generation_inference.utils import (
 logger = logging.getLogger(__name__)
 
 
-def to_tgi_messages(messages: Sequence[ChatMessage]) -> List[Dict]:
-    return [{"role": message.role, "content": message.content} for message in messages]
+def to_tgi_messages(messages: Sequence[ChatMessage]) -> List[ChatCompletionInputMessage]:
+    return [ChatCompletionInputMessage(role=message.role, content=message.content) for message in messages]
+    # return [{"role": message.role, "content": message.content,  m.additional_kwargs.get("tool_calls")} for message in messages]
 
 
 class TextGenerationInference(FunctionCallingLLM):
@@ -234,6 +235,7 @@ class TextGenerationInference(FunctionCallingLLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         messages = to_tgi_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
+        messages = [ChatCompletionInputMessage()]
         response = self._sync_client.chat_completion(messages=messages, **all_kwargs)
         tool_calls = response.choices[0].message.tool_calls
 
