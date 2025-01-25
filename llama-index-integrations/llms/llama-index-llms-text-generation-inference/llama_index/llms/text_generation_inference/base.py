@@ -35,12 +35,11 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.tools.types import BaseTool
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from packaging import version
 
 from llama_index.llms.text_generation_inference.utils import (
     # to_tgi_messages,
     force_single_tool_call,
-    resolve_tgi_function_call,
-    get_max_total_tokens,
     resolve_tool_choice,
 )
 
@@ -154,13 +153,31 @@ class TextGenerationInference(FunctionCallingLLM):
         if token:
             headers.update({"Authorization": f"Bearer {token}"})
 
-        try:
-            is_function_calling_model = resolve_tgi_function_call(model_url)
-        except Exception as e:
-            logger.warning(f"TGI client has no function call support: {e}")
-            is_function_calling_model = False
+        self._sync_client = InferenceClient(
+            base_url=model_url,
+            headers=headers,
+            cookies=cookies,
+            timeout=timeout,
+        )
+        self._async_client = AsyncInferenceClient(
+            base_url=model_url,
+            headers=headers,
+            cookies=cookies,
+            timeout=timeout,
+        )
 
-        context_window = get_max_total_tokens(model_url) or DEFAULT_CONTEXT_WINDOW
+        endpoint_info = self._sync_client.get_endpoint_info()
+
+        context_window = endpoint_info.get("max_total_tokens") or DEFAULT_CONTEXT_WINDOW
+
+        is_function_calling_model = True
+        tgi_version = endpoint_info.get("version", None)
+        if version.parse(tgi_version) < version.parse("2.0.1"):
+            is_function_calling_model = False
+            logger.warning(
+                f"TGI client has no function call support: 'text-generation-inference' version "
+                f"incompatible with function call: {tgi_version}. Function call support was added in v2.0.1"
+            )
 
         super().__init__(
             context_window=context_window,
@@ -178,18 +195,6 @@ class TextGenerationInference(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
-        )
-        self._sync_client = InferenceClient(
-            base_url=model_url,
-            headers=headers,
-            cookies=cookies,
-            timeout=timeout,
-        )
-        self._async_client = AsyncInferenceClient(
-            base_url=model_url,
-            headers=headers,
-            cookies=cookies,
-            timeout=timeout,
         )
 
     @classmethod
