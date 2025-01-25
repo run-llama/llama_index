@@ -1,36 +1,34 @@
 import asyncio
 import time
-from unittest import mock
 from typing import Type
+from unittest import mock
 
 import pytest
-
 from llama_index.core import MockEmbedding
 from llama_index.core.llms.mock import MockLLM
+from llama_index.core.workflow.context_serializers import JsonPickleSerializer
 from llama_index.core.workflow.decorators import step
-from llama_index.core.workflow.events import StartEvent, StopEvent
-from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.events import (
     Event,
-    InputRequiredEvent,
     HumanResponseEvent,
+    InputRequiredEvent,
     StartEvent,
     StopEvent,
 )
+from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.workflow import (
     Context,
     Workflow,
+    WorkflowCancelledByUser,
+    WorkflowRuntimeError,
     WorkflowTimeoutError,
     WorkflowValidationError,
-    WorkflowRuntimeError,
-    WorkflowCancelledByUser,
 )
-from llama_index.core.workflow.context_serializers import JsonPickleSerializer
 
 from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
 
 
-class TestEvent(Event):
+class EventWithName(Event):
     name: str
 
 
@@ -93,7 +91,7 @@ async def test_workflow_cancelled_by_user(workflow):
     await handler.cancel_run()
     await asyncio.sleep(0.1)  # let workflow get cancelled
     assert handler.is_done()
-    assert type(handler.exception()) == WorkflowCancelledByUser
+    assert type(handler.exception()) is WorkflowCancelledByUser
 
 
 @pytest.mark.asyncio()
@@ -215,10 +213,10 @@ async def test_workflow_num_workers():
         async def original_step(
             self, ctx: Context, ev: StartEvent
         ) -> OneTestEvent | LastEvent:
-            ctx.data["num_to_collect"] = 3
-            ctx.session.send_event(OneTestEvent(test_param="test1"))
-            ctx.session.send_event(OneTestEvent(test_param="test2"))
-            ctx.session.send_event(OneTestEvent(test_param="test3"))
+            await ctx.set("num_to_collect", 3)
+            ctx.send_event(OneTestEvent(test_param="test1"))
+            ctx.send_event(OneTestEvent(test_param="test2"))
+            ctx.send_event(OneTestEvent(test_param="test3"))
 
             # send one extra event
             ctx.session.send_event(AnotherTestEvent(another_test_param="test4"))
@@ -234,9 +232,8 @@ async def test_workflow_num_workers():
         async def final_step(
             self, ctx: Context, ev: AnotherTestEvent | LastEvent
         ) -> StopEvent:
-            events = ctx.collect_events(
-                ev, [AnotherTestEvent] * ctx.data["num_to_collect"]
-            )
+            n = await ctx.get("num_to_collect")
+            events = ctx.collect_events(ev, [AnotherTestEvent] * n)
             if events is None:
                 return None  # type: ignore
             return StopEvent(result=[ev.another_test_param for ev in events])
@@ -272,7 +269,7 @@ async def test_workflow_step_send_event():
     class StepSendEventWorkflow(Workflow):
         @step
         async def step1(self, ctx: Context, ev: StartEvent) -> OneTestEvent:
-            ctx.session.send_event(OneTestEvent(), step="step2")
+            ctx.send_event(OneTestEvent(), step="step2")
             return None  # type: ignore
 
         @step
@@ -578,13 +575,17 @@ async def test_workflow_context_to_dict_mid_run(workflow):
     assert new_handler.is_done()
     assert result == "Workflow completed"
 
+    # Clean up
+    await handler.cancel_run()
+    await asyncio.sleep(1)
+
 
 @pytest.mark.asyncio()
 async def test_workflow_context_to_dict(workflow):
     handler = workflow.run()
     ctx = handler.ctx
 
-    ctx.send_event(TestEvent(name="test"))
+    ctx.send_event(EventWithName(name="test"))
 
     # get the context dict
     data = ctx.to_dict()

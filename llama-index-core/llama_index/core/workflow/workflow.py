@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import logging
 import time
 import uuid
 import warnings
@@ -13,6 +14,7 @@ from typing import (
     Tuple,
 )
 
+from llama_index.core.bridge.pydantic import ValidationError
 from llama_index.core.instrumentation import get_dispatcher
 
 from .checkpointer import Checkpoint, CheckpointCallback
@@ -36,6 +38,7 @@ from .utils import (
 )
 
 dispatcher = get_dispatcher(__name__)
+logger = logging.getLogger()
 
 
 class WorkflowMeta(type):
@@ -66,6 +69,7 @@ class Workflow(metaclass=WorkflowMeta):
         service_manager: Optional[ServiceManager] = None,
         num_concurrent_runs: Optional[int] = None,
         stop_event_class: type = StopEvent,
+        start_event_class: type = StartEvent,
     ) -> None:
         """Create an instance of the workflow.
 
@@ -85,6 +89,10 @@ class Workflow(metaclass=WorkflowMeta):
             num_concurrent_runs:
                 maximum number of .run() executions occurring simultaneously. If set to `None`, there
                 is no limit to this number.
+            stop_event_class:
+                custom type used instead of StopEvent
+            start_event_class:
+                custom type used instead of StartEvent
         """
         # Configuration
         self._timeout = timeout
@@ -94,6 +102,10 @@ class Workflow(metaclass=WorkflowMeta):
         self._stop_event_class = stop_event_class
         if not issubclass(self._stop_event_class, StopEvent):
             msg = f"Stop event class {stop_event_class} must derive from 'StopEvent'"
+            raise WorkflowConfigurationError(msg)
+        self._start_event_class = start_event_class
+        if not issubclass(self._start_event_class, StartEvent):
+            msg = f"Start event class {stop_event_class} must derive from 'StartEvent'"
             raise WorkflowConfigurationError(msg)
         self._sem = (
             asyncio.Semaphore(num_concurrent_runs) if num_concurrent_runs else None
@@ -386,7 +398,7 @@ class Workflow(metaclass=WorkflowMeta):
         **kwargs: Any,
     ) -> WorkflowHandler:
         """Runs the workflow until completion."""
-        # Validate the workflow if needed
+        # Validate the workflow and determine HITL usage
         uses_hitl = self._validate()
         if uses_hitl and stepwise:
             raise WorkflowRuntimeError(
@@ -406,7 +418,14 @@ class Workflow(metaclass=WorkflowMeta):
             try:
                 if not ctx.is_running:
                     # Send the first event
-                    ctx.send_event(StartEvent(**kwargs))
+                    try:
+                        ev = self._start_event_class(**kwargs)
+                    except ValidationError as e:
+                        msg = f"Failed creating a start event of type {self._start_event_class} with the keyword arguments {kwargs}"
+                        logger.debug(e)
+                        raise WorkflowRuntimeError(msg)
+
+                    ctx.send_event(ev)
 
                     # the context is now running
                     ctx.is_running = True
@@ -426,7 +445,7 @@ class Workflow(metaclass=WorkflowMeta):
                 exception_raised = None
                 for task in done:
                     e = task.exception()
-                    if type(e) == WorkflowDone:
+                    if type(e) is WorkflowDone:
                         we_done = True
                     elif e is not None:
                         exception_raised = e
@@ -514,7 +533,7 @@ class Workflow(metaclass=WorkflowMeta):
         if self._disable_validation:
             return False
 
-        produced_events: Set[type] = {StartEvent}
+        produced_events: Set[type] = {self._start_event_class}
         consumed_events: Set[type] = set()
         requested_services: Set[ServiceDefinition] = set()
 
@@ -527,7 +546,7 @@ class Workflow(metaclass=WorkflowMeta):
                 consumed_events.add(event_type)
 
             for event_type in step_config.return_types:
-                if event_type == type(None):
+                if event_type is type(None):
                     # some events may not trigger other events
                     continue
 
