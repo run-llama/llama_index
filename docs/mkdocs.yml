@@ -335,6 +335,7 @@ nav:
           - ./examples/llm/dashscope.ipynb
           - ./examples/llm/databricks.ipynb
           - ./examples/llm/deepinfra.ipynb
+          - ./examples/llm/deepseek.ipynb
           - ./examples/llm/everlyai.ipynb
           - ./examples/llm/fireworks.ipynb
           - ./examples/llm/fireworks_cookbook.ipynb
@@ -1007,6 +1008,7 @@ nav:
           - ./api_reference/llms/dashscope.md
           - ./api_reference/llms/databricks.md
           - ./api_reference/llms/deepinfra.md
+          - ./api_reference/llms/deepseek.md
           - ./api_reference/llms/everlyai.md
           - ./api_reference/llms/fireworks.md
           - ./api_reference/llms/friendli.md
@@ -1650,8 +1652,8 @@ nav:
           - ./api_reference/tools/index.md
           - ./api_reference/tools/ionic_shopping.md
           - ./api_reference/tools/jina.md
+          - ./api_reference/tools/linkup_research.md
           - ./api_reference/tools/load_and_search.md
-          - ./api_reference/tools/mcp.md
           - ./api_reference/tools/metaphor.md
           - ./api_reference/tools/multion.md
           - ./api_reference/tools/neo4j.md
@@ -2340,6 +2342,8 @@ plugins:
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-tablestore
             - ../llama-index-integrations/llms/llama-index-llms-opea
             - ../llama-index-integrations/llms/llama-index-llms-stepfun
+            - ../llama-index-integrations/tools/llama-index-tools-linkup-research
+            - ../llama-index-integrations/llms/llama-index-llms-deepseek
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
