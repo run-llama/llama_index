@@ -451,7 +451,7 @@ class GoogleDriveReader(
                 )
             else:
                 # we should have a file extension to allow the readers to work
-                _, download_extension = os.path.splitext(file.get("name",""))
+                _, download_extension = os.path.splitext(file.get("name", ""))
                 new_file_name = filename + download_extension
 
                 # Download file without conversion
