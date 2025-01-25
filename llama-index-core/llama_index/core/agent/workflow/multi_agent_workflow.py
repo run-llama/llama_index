@@ -61,7 +61,7 @@ async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
         return f"Agent {to_agent} not found. Please select a valid agent to hand off to. Valid agents: {valid_agents}"
 
     await ctx.set("next_agent", to_agent)
-    return f"Handed off to {to_agent} because: {reason}"
+    return f"Agent {to_agent} is now handling the request due to the following reason: {reason}.\nPlease continue."
 
 
 class AgentWorkflowMeta(WorkflowMeta, ABCMeta):
