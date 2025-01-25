@@ -1,5 +1,28 @@
 # ChangeLog
 
+## [2025-01-25]
+
+### `llama-index-core` [0.12.14]
+
+- Fix agentworkflow handoffs for non-openai llms (#17631)
+- small fixes to the multi-agent workflow demo notebook (#17628)
+
+### `llama-index-embeddings-bedrock` [0.5.0]
+
+- Implement async bedrock embeddings (#17610)
+
+### `llama-index-llms-bedrock-converse` [0.4.4]
+
+- Fix prompt stacking in bedrock converse (#17613)
+
+### `llama-index-llms-deepseek` [0.1.0]
+
+- DeepSeek official API LLM (#17625)
+
+### `llama-index-readers-google` [0.6.0]
+
+- GoogleDriveReader support file extensions (#17620)
+
 ## [2025-01-23]
 
 ### `llama-index-core` [0.12.13]
