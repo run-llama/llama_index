@@ -314,7 +314,6 @@ class TextGenerationInference(FunctionCallingLLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        # convert to TGI Message
         messages = to_tgi_messages(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = await self._async_client.chat_completion(
