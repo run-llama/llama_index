@@ -5,36 +5,35 @@ import uuid
 import warnings
 from typing import (
     Any,
+    AsyncGenerator,
     Callable,
     Dict,
     Optional,
-    AsyncGenerator,
     Set,
     Tuple,
 )
 
 from llama_index.core.instrumentation import get_dispatcher
 
-from .decorators import StepConfig, step
+from .checkpointer import Checkpoint, CheckpointCallback
 from .context import Context
+from .context_serializers import BaseSerializer, JsonSerializer
+from .decorators import StepConfig, step
+from .errors import *
 from .events import (
-    InputRequiredEvent,
-    HumanResponseEvent,
     Event,
+    HumanResponseEvent,
+    InputRequiredEvent,
     StartEvent,
     StopEvent,
 )
-from .errors import *
+from .handler import WorkflowHandler
 from .service import ServiceManager
 from .utils import (
+    ServiceDefinition,
     get_steps_from_class,
     get_steps_from_instance,
-    ServiceDefinition,
 )
-from .checkpointer import Checkpoint, CheckpointCallback
-from .handler import WorkflowHandler
-from .context_serializers import JsonSerializer, BaseSerializer
-
 
 dispatcher = get_dispatcher(__name__)
 
@@ -66,6 +65,7 @@ class Workflow(metaclass=WorkflowMeta):
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
         num_concurrent_runs: Optional[int] = None,
+        stop_event_class: type = StopEvent,
     ) -> None:
         """Create an instance of the workflow.
 
@@ -91,6 +91,10 @@ class Workflow(metaclass=WorkflowMeta):
         self._verbose = verbose
         self._disable_validation = disable_validation
         self._num_concurrent_runs = num_concurrent_runs
+        self._stop_event_class = stop_event_class
+        if not issubclass(self._stop_event_class, StopEvent):
+            msg = f"Stop event class {stop_event_class} must derive from 'StopEvent'"
+            raise WorkflowConfigurationError(msg)
         self._sem = (
             asyncio.Semaphore(num_concurrent_runs) if num_concurrent_runs else None
         )
@@ -131,7 +135,7 @@ class Workflow(metaclass=WorkflowMeta):
         ctx = next(iter(self._contexts))
         while True:
             ev = await ctx.streaming_queue.get()
-            if type(ev) is StopEvent:
+            if isinstance(ev, StopEvent):
                 break
 
             yield ev
@@ -440,13 +444,13 @@ class Workflow(metaclass=WorkflowMeta):
 
                 if exception_raised:
                     # cancel the stream
-                    ctx.write_event_to_stream(StopEvent())
+                    ctx.write_event_to_stream(self._stop_event_class())
 
                     raise exception_raised
 
                 if not we_done:
                     # cancel the stream
-                    ctx.write_event_to_stream(StopEvent())
+                    ctx.write_event_to_stream(self._stop_event_class())
 
                     msg = f"Operation timed out after {self._timeout} seconds"
                     raise WorkflowTimeoutError(msg)
