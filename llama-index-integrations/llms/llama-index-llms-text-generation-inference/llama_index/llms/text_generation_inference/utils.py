@@ -1,23 +1,8 @@
-from typing import Sequence, Union, List, Optional
+from typing import Union, List, Optional
 
 from llama_index.core.base.llms.types import (
-    ChatMessage,
     ChatResponse,
 )
-from text_generation.types import (
-    Message,
-)
-
-
-def to_tgi_messages(messages: Sequence[ChatMessage]) -> Sequence[Message]:
-    out_messages = []
-    for m in messages:
-        tool_calls = m.additional_kwargs.get("tool_calls")
-        out_messages.append(
-            Message(role=m.role.value, content=m.content, tool_calls=tool_calls)
-        )
-
-    return out_messages
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
