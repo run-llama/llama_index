@@ -127,7 +127,7 @@ async def test_workflow_validation_unproduced_events():
     workflow = InvalidWorkflow()
     with pytest.raises(
         WorkflowValidationError,
-        match="The following events are consumed but never produced: StopEvent",
+        match="No event of type StopEvent is produced.",
     ):
         await workflow.run()
 
@@ -714,5 +714,32 @@ async def test_workflow_run_num_concurrent(
         await poll_task
     e = poll_task.exception()
 
-    assert type(e) == expected_exception
+    assert type(e) is expected_exception
     assert results == [f"Run {ix}: Done" for ix in range(1, 5)]
+
+
+@pytest.mark.asyncio()
+async def test_custom_stop_event():
+    class MyStart(StartEvent):
+        query: str
+
+    class MyStop(StopEvent):
+        outcome: str
+
+    class CustomEventsWorkflow(Workflow):
+        @step
+        async def start_step(self, ev: MyStart) -> OneTestEvent:
+            return OneTestEvent()
+
+        @step
+        async def middle_step(self, ev: OneTestEvent) -> LastEvent:
+            return LastEvent()
+
+        @step
+        async def end_step(self, ev: LastEvent) -> MyStop:
+            return MyStop(outcome="Workflow completed")
+
+    wf = CustomEventsWorkflow(start_event_class=MyStart, stop_event_class=MyStop)
+    assert wf._start_event_class == MyStart
+    assert wf._stop_event_class == MyStop
+    result = await wf.run(query="foo")

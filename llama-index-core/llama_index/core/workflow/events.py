@@ -1,11 +1,11 @@
+from _collections_abc import dict_items, dict_keys, dict_values
 from typing import Any, Dict, Type
-from _collections_abc import dict_keys, dict_items, dict_values
 
 from llama_index.core.bridge.pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     PrivateAttr,
-    ConfigDict,
     model_serializer,
 )
 
@@ -142,9 +142,9 @@ class StopEvent(Event):
 
     result: Any = Field(default=None)
 
-    def __init__(self, result: Any = None) -> None:
+    def __init__(self, result: Any = None, **kwargs) -> None:
         # forces the user to provide a result
-        super().__init__(result=result)
+        super().__init__(result=result, **kwargs)
 
 
 class InputRequiredEvent(Event):

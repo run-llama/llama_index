@@ -216,6 +216,13 @@ class Workflow(metaclass=WorkflowMeta):
             # At this point, step_func is guaranteed to have the `__step_config` attribute
             step_config: StepConfig = getattr(step_func, "__step_config")
 
+            # Make the system step "_done" accept custom stop events
+            if (
+                name == "_done"
+                and self._stop_event_class not in step_config.accepted_events
+            ):
+                step_config.accepted_events.append(self._stop_event_class)
+
             async def _task(
                 name: str,
                 queue: asyncio.Queue,
@@ -463,13 +470,13 @@ class Workflow(metaclass=WorkflowMeta):
 
                 if exception_raised:
                     # cancel the stream
-                    ctx.write_event_to_stream(self._stop_event_class())
+                    ctx.write_event_to_stream(StopEvent())
 
                     raise exception_raised
 
                 if not we_done:
                     # cancel the stream
-                    ctx.write_event_to_stream(self._stop_event_class())
+                    ctx.write_event_to_stream(StopEvent())
 
                     msg = f"Operation timed out after {self._timeout} seconds"
                     raise WorkflowTimeoutError(msg)
@@ -554,12 +561,22 @@ class Workflow(metaclass=WorkflowMeta):
 
             requested_services.update(step_config.requested_services)
 
+        # Check if no StopEvent is produced
+        stop_ok = False
+        for ev in produced_events:
+            if issubclass(ev, StopEvent):
+                stop_ok = True
+                break
+        if not stop_ok:
+            msg = f"No event of type StopEvent is produced."
+            raise WorkflowValidationError(msg)
+
         # Check if all consumed events are produced (except specific built-in events)
         unconsumed_events = consumed_events - produced_events
         unconsumed_events = {
             x
             for x in unconsumed_events
-            if not issubclass(x, (InputRequiredEvent, HumanResponseEvent))
+            if not issubclass(x, (InputRequiredEvent, HumanResponseEvent, StopEvent))
         }
         if unconsumed_events:
             names = ", ".join(ev.__name__ for ev in unconsumed_events)
@@ -572,7 +589,9 @@ class Workflow(metaclass=WorkflowMeta):
         unused_events = {
             x
             for x in unused_events
-            if not issubclass(x, (InputRequiredEvent, HumanResponseEvent))
+            if not issubclass(
+                x, (InputRequiredEvent, HumanResponseEvent, self._stop_event_class)
+            )
         }
         if unused_events:
             names = ", ".join(ev.__name__ for ev in unused_events)
