@@ -203,7 +203,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
                 metadata JSON,
                 embedding VECTOR({self.embed_dim}) NOT NULL,
                 INDEX (`node_id`),
-                VECTOR INDEX (embedding) DISTANCE=cosine
+                VECTOR INDEX (embedding) M=30 DISTANCE=cosine
             )
             """
             connection.execute(sqlalchemy.text(stmt))
