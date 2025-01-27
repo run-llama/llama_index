@@ -27,7 +27,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-pinecone"
 readme = "README.md"
-version = "0.4.3"
+version = "0.4.4"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"
