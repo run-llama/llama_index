@@ -123,8 +123,6 @@ def create_search_request(
     filter_str: Optional[str],
     batch_size: int,
     offset: int,
-    semantic_config_name: str | None = None,
-    vector_search_profile: str | None = None,
 ) -> Dict[str, Any]:
     """Create a search request dictionary.
 
@@ -139,27 +137,13 @@ def create_search_request(
     Returns:
         Dict[str, Any]: Search request parameters
     """
-    request = {
+    return {
         "search_text": "*",
         "filter": filter_str,
         "top": batch_size,
         "skip": offset,
         "select": list(field_mapping.values()),
     }
-
-    if semantic_config_name:
-        request.update(
-            {
-                "query_type": "semantic",
-                "semantic_configuration_name": semantic_config_name,
-                "query_language": "en-us",
-            }
-        )
-
-    if vector_search_profile:
-        request["vector_search_configuration"] = vector_search_profile
-
-    return request
 
 
 def handle_search_error(e: Exception) -> None:
