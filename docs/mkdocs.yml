@@ -350,7 +350,7 @@ nav:
           - ./examples/llm/langchain.ipynb
           - ./examples/llm/litellm.ipynb
           - ./examples/llm/llama_2.ipynb
-          - ./examples/llm/llama_2_llama_cpp.ipynb
+          - ./examples/llm/llama_cpp.ipynb
           - ./examples/llm/llama_2_rap_battle.ipynb
           - ./examples/llm/llama_api.ipynb
           - ./examples/llm/llamafile.ipynb
@@ -2608,7 +2608,7 @@ plugins:
         ./examples/llm/langchain.html: https://docs.llamaindex.ai/en/stable/examples/llm/langchain/
         ./examples/llm/litellm.html: https://docs.llamaindex.ai/en/stable/examples/llm/litellm/
         ./examples/llm/llama_2.html: https://docs.llamaindex.ai/en/stable/examples/llm/llama_2/
-        ./examples/llm/llama_2_llama_cpp.html: https://docs.llamaindex.ai/en/stable/examples/llm/llama_2_llama_cpp/
+        ./examples/llm/llama_2_llama_cpp.html: https://docs.llamaindex.ai/en/stable/examples/llm/llama_cpp/
         ./examples/llm/llama_2_rap_battle.html: https://docs.llamaindex.ai/en/stable/examples/llm/llama_2_rap_battle/
         ./examples/llm/llama_api.html: https://docs.llamaindex.ai/en/stable/examples/llm/llama_api/
         ./examples/llm/llamafile.html: https://docs.llamaindex.ai/en/stable/examples/llm/llamafile/
