@@ -16,6 +16,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Vector Store             | Type                    | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async |
 |--------------------------|-------------------------| ------------------ | ------------- | ------ | --------------- | ----- |
 | Alibaba Cloud OpenSearch | cloud                   | ✓                  |               | ✓      | ✓               | ✓     |
+| AlloyDB                  | cloud                   | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Apache Cassandra®        | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Astra DB                 | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Azure AI Search          | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
@@ -69,6 +70,7 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 ## Example Notebooks
 
 - [Alibaba Cloud OpenSearch](../../examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb)
+- [AlloyDB](../../examples/vector_stores/AlloyDBVectorStoreDemo.ipynb)
 - [Astra DB](../../examples/vector_stores/AstraDBIndexDemo.ipynb)
 - [Async Index Creation](../../examples/vector_stores/AsyncIndexCreationDemo.ipynb)
 - [Azure AI Search](../../examples/vector_stores/AzureAISearchIndexDemo.ipynb)

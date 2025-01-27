@@ -202,3 +202,60 @@ Under the hood, `TablestoreDocumentStore` connects to a Tablestore database and 
 You can easily reconnect to your Tablestore database and reload the index by re-initializing a `TablestoreDocumentStore` with an existing `endpoint`, `instance_name`, `access_key_id` and `access_key_secret`.
 
 A more complete example can be found [here](../../examples/docstore/TablestoreDocstoreDemo.ipynb)
+
+
+### AlloyDB Document Store
+
+We support AlloyDB as an alternative document store backend that persists data as `Node` objects are ingested.
+All asynchronous methods have corresponding synchronous methods.
+
+```bash
+pip install llama-index
+pip install llama-index-alloydb-pg
+pip install llama-index-llms-vertex
+```
+
+```python
+from llama_index.core import SummaryIndex
+from llama_index_alloydb_pg import AlloyDBEngine, AlloyDBDocumentStore
+
+# create parser and parse document into nodes
+parser = SentenceSplitter()
+nodes = parser.get_nodes_from_documents(documents)
+
+# create an AlloyDB Engine for connection pool
+engine = await AlloyDBEngine.afrom_instance(
+    project_id=PROJECT_ID,
+    region=REGION,
+    cluster=CLUSTER,
+    instance=INSTANCE,
+    database=DATABASE,
+    user=USER,
+    password=PASSWORD,
+)
+
+# initalize a new table in AlloyDB
+await engine.ainit_doc_store_table(
+    table_name=TABLE_NAME,
+)
+
+doc_store = await AlloyDBDocumentStore.create(
+    engine=engine,
+    table_name=TABLE_NAME,
+)
+
+doc_store.add_documents(nodes)
+
+# create storage context
+storage_context = StorageContext.from_defaults(docstore=doc_store)
+
+# build index
+index = VectorStoreIndex(nodes, storage_context=storage_context)
+```
+> Note: You can configure the `schema_name` when initializing the new table and instantiating `AlloyDBDocumentStore`.
+
+Under the hood, `AlloyDBDocumentStore` connects to the alloydb database in Google Cloud and adds your nodes to a table under the `schema_name`.
+
+You can easily reconnect to your AlloyDB database and reload the index by re-initializing a `AlloyDBDocumentStore` with an `AlloyDBEngine` without initializing a new table.
+
+A more detailed guide can be found [here](../../examples/docstore/AlloyDBDocstoreDemo.ipynb)

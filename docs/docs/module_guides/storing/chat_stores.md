@@ -276,3 +276,65 @@ chat_memory = ChatMemoryBuffer.from_defaults(
     chat_store_key="user1",
 )
 ```
+
+## AlloyDBChatStore
+
+Using `AlloyDBChatStore`, you can store your chat history in AlloyDB, without having to worry about manually persisting and loading the chat history.
+
+This tutorial demonstrates the asynchronous interface. All asynchronous methods have corresponding synchronous methods.
+
+#### Installation
+
+```bash
+pip install llama-index
+pip install llama-index-alloydb-pg
+pip install llama-index-llms-vertex
+```
+
+#### Usage
+
+```python
+from llama_index.core.chat_engine import SimpleChatEngine
+from llama_index.core.memory import ChatMemoryBuffer
+from llama_index_alloydb_pg import AlloyDBChatStore, AlloyDBEngine
+from llama_index.llms.vertex import Vertex
+import asyncio
+
+
+async def main():
+    # Replace with your own AlloyDB info
+    engine = await AlloyDBEngine.afrom_instance(
+        project_id=PROJECT_ID,
+        region=REGION,
+        cluster=CLUSTER,
+        instance=INSTANCE,
+        database=DATABASE,
+        user=USER,
+        password=PASSWORD,
+    )
+
+    await engine.ainit_chat_store_table(table_name=TABLE_NAME)
+
+    chat_store = await AlloyDBChatStore.create(
+        engine=engine,
+        table_name=TABLE_NAME,
+    )
+
+    memory = ChatMemoryBuffer.from_defaults(
+        token_limit=3000,
+        chat_store=chat_store,
+        chat_store_key="user1",
+    )
+
+    llm = Vertex(model="gemini-1.5-flash-002", project=PROJECT_ID)
+
+    chat_engine = SimpleChatEngine(
+        memory=memory, llm=llm, prefix_messages=[]
+    )
+
+    response = chat_engine.chat("Hello.")
+
+    print(response)
+
+asyncio.run(main())
+```

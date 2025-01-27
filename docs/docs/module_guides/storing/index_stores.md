@@ -160,3 +160,59 @@ Under the hood, `TablestoreIndexStore` connects to a Tablestore database and add
 You can easily reconnect to your Tablestore database and reload the index by re-initializing a `TablestoreIndexStore` with an existing `endpoint`, `instance_name`, `access_key_id` and `access_key_secret`.
 
 A more complete example can be found [here](../../examples/docstore/TablestoreDocstoreDemo.ipynb)
+
+### AlloyDB Index Store
+
+Similarly to document stores, we can also use `AlloyDB` as the storage backend of the index store.
+All asynchronous methods have corresponding synchronous methods.
+
+```bash
+pip install llama-index
+pip install llama-index-alloydb-pg
+pip install llama-index-llms-vertex
+```
+
+```python
+from llama_index_alloydb_pg import AlloyDBEngine, AlloyDBIndexStore
+from llama_index.core import StorageContext, VectorStoreIndex
+
+# create an AlloyDB Engine for connection pool
+engine = await AlloyDBEngine.afrom_instance(
+    project_id=PROJECT_ID,
+    region=REGION,
+    cluster=CLUSTER,
+    instance=INSTANCE,
+    database=DATABASE,
+    user=USER,
+    password=PASSWORD,
+)
+
+# initalize a new table in AlloyDB
+await engine.ainit_index_store_table(
+    table_name=TABLE_NAME,
+)
+
+index_store = await AlloyDBIndexStore.create(
+    engine=engine,
+    table_name=TABLE_NAME,
+)
+
+# create storage context
+storage_context = StorageContext.from_defaults(index_store=index_store)
+
+# build index
+index = VectorStoreIndex(nodes, storage_context=storage_context)
+
+# or alternatively, load index
+from llama_index.core import load_index_from_storage
+
+index = load_index_from_storage(storage_context)
+```
+
+> Note: You can configure the `schema_name` when initializing the new table and instantiating `AlloyDBIndexStore`.
+
+Under the hood, `AlloyDBIndexStore` connects to the alloydb database in Google Cloud and adds your nodes to a table under the `schema_name`.
+
+You can easily reconnect to your AlloyDB database and reload the index by re-initializing a `AlloyDBIndexStore` with an `AlloyDBEngine` without initializing a new table.
+
+A more detailed guide can be found [here](../../examples/docstore/AlloyDBDocstoreDemo.ipynb)
