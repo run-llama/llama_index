@@ -700,8 +700,8 @@ class OpenAIAgentWorker(BaseAgentWorker):
             )
 
             # Process results
-            for return_direct in tool_results:
-                task.extra_state["sources"].append(latest_tool_outputs[-1])
+            for index, return_direct in enumerate(tool_results):
+                task.extra_state["sources"].append(latest_tool_outputs[index])
 
                 # change function call to the default value if a custom function was given
                 if tool_choice not in ("auto", "none"):
@@ -711,7 +711,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 # If any tool call requests direct return and it's the only call
                 if return_direct and len(latest_tool_calls) == 1:
                     is_done = True
-                    response_str = latest_tool_outputs[-1].content
+                    response_str = latest_tool_outputs[index].content
                     chat_response = ChatResponse(
                         message=ChatMessage(
                             role=MessageRole.ASSISTANT, content=response_str
