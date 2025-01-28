@@ -310,7 +310,6 @@ class PGVectorStore(BasePydanticVectorStore):
         async_conn_str = async_connection_string or (
             f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
         )
-        cls.vector_search_method = vector_search_method
         return cls(
             connection_string=conn_str,
             async_connection_string=async_conn_str,
@@ -325,6 +324,7 @@ class PGVectorStore(BasePydanticVectorStore):
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
             create_engine_kwargs=create_engine_kwargs,
+            vector_search_method=vector_search_method,
         )
 
     @property
