@@ -287,6 +287,8 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         )
 
     def is_empty_file(self, path: Path | PurePosixPath) -> bool:
+        if isinstance(path, PurePosixPath):
+            path = Path(path)
         return path.is_file() and len(path.read_bytes()) == 0
 
     def _add_files(self, input_dir: Path | PurePosixPath) -> list[Path | PurePosixPath]:
