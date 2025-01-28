@@ -80,7 +80,6 @@ In this tutorial, we show you how you can finetune Llama 2 on a text-to-SQL data
 
 The stack includes `sql-create-context` as the training dataset, OpenLLaMa as the base model, PEFT for finetuning, Modal for cloud compute, LlamaIndex for inference abstractions.
 
-- [Llama 2 Text-to-SQL Fine-tuning (w/ Gradient.AI)](../../examples/finetuning/gradient/gradient_fine_tuning.ipynb)
 - [Llama 2 Text-to-SQL Fine-tuning (w/ Modal, Repo)](https://github.com/run-llama/modal_finetune_sql)
 - [Llama 2 Text-to-SQL Fine-tuning (w/ Modal, Notebook)](https://github.com/run-llama/modal_finetune_sql/blob/main/tutorial.ipynb)
 
