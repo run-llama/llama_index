@@ -394,7 +394,7 @@ class BedrockConverse(FunctionCallingLLM):
                         raw=response,
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
-                    tool_use = content_block_start["toolUse"]
+                    tool_use = content_block_start["start"]["toolUse"]
                     content = join_two_dicts(content, tool_use)
                     (
                         _,
