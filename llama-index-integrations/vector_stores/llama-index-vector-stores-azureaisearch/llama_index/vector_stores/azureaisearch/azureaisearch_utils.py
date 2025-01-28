@@ -13,14 +13,12 @@ logger = logging.getLogger(__name__)
 def create_node_from_result(
     result: Dict[str, Any],
     field_mapping: Dict[str, str],
-    metadata_to_index_field_map: Optional[Dict[str, Any]] = None,
 ) -> BaseNode:
     """Create a node from a search result.
 
     Args:
         result (Dict[str, Any]): Search result dictionary
         field_mapping (Dict[str, str]): Field mapping dictionary
-        metadata_to_index_field_map (Optional[Dict[str, Any]]): Metadata field mapping
 
     Returns:
         BaseNode: Created node
@@ -37,23 +35,12 @@ def create_node_from_result(
                 metadata = json.loads(metadata_str)
             except json.JSONDecodeError:
                 logger.debug(
-                    "Could not parse metadata JSON, assuming Azure-indexed document"
+                    "Could not parse metadata JSON, if chunk is not empty, we'll use it anyways"
                 )
-
-    # If no valid LlamaIndex metadata found, treat as Azure-indexed document
-    if not metadata:
-        # Get all fields that aren't default LlamaIndex fields or Azure Search internal fields
-        metadata = {
-            k: v
-            for k, v in result.items()
-            if not k.startswith("@") and k not in field_mapping.values()
-        }
-    else:
-        # Add any additional metadata fields from the result for LlamaIndex documents
-        if metadata_to_index_field_map:
-            for meta_key, (field_name, _) in metadata_to_index_field_map.items():
-                if field_name in result:
-                    metadata[meta_key] = result[field_name]
+                if len(chunk) == 0:
+                    raise json.JSONDecodeError(
+                        "Could not parse metadata JSON, and chunk is empty"
+                    )
 
     try:
         # Try creating node using current metadata format

@@ -15,7 +15,9 @@ from azure.search.documents.indexes.aio import (
 from azure.search.documents.indexes.models import (
     SimpleField,
     SearchField,
+    SemanticSearch,
     SemanticConfiguration,
+    VectorSearch,
     VectorSearchProfile,
 )
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -126,8 +128,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             embedding_dimensionality=1536,
             metadata_string_field="metadata" | SimpleField(name="metadata", type="Edm.String", hidden=False),
             doc_id_field="doc_id" | SimpleField(name="doc_id", type="Edm.String", filterable=True, hidden=False),
-            semantic_config="mySemanticConfig" | SemanticConfiguration(name="mySemanticConfig"),
-            vector_search_profile="mySearchProfile" | VectorSearchProfile(name="mySearchProfile"),
+            semantic_search_config="mySemanticConfig" | SemanticSearch(configurations=[SemanticConfiguration(name="mySemanticConfig")]),
+            vector_search_config="mySearchProfile" | VectorSearch(profiles=[VectorSearchProfile(name="mySearchProfile")]),
         )
         ```
     """
@@ -146,20 +148,20 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _field_names: Dict[str, str] = PrivateAttr()
     _field_mapping: Dict[str, SearchField] = PrivateAttr()
     _index_management: IndexManagement = PrivateAttr()
-    _index_mapping: Callable[
-        [Dict[str, str], Dict[str, Any]], Dict[str, str]
-    ] = PrivateAttr()
-    _metadata_to_index_field_map: Dict[
-        str, Tuple[str, MetadataIndexFieldType]
-    ] = PrivateAttr()
+    _index_mapping: Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]] = (
+        PrivateAttr()
+    )
+    _metadata_to_index_field_map: Dict[str, Tuple[str, MetadataIndexFieldType]] = (
+        PrivateAttr()
+    )
     _vector_profile_name: str = PrivateAttr()
     _semantic_config_name: str = PrivateAttr()
     _compression_type: str = PrivateAttr()
-    _semantic_config: Optional[SemanticConfiguration | str | None] = PrivateAttr()
-    _vector_search_profile: Optional[VectorSearchProfile | str | None] = PrivateAttr()
-    _vector_search_algorithm: Optional[
-        Literal["hnsw", "exhaustiveKnn"] | None
-    ] = PrivateAttr()
+    _semantic_search_config: Optional[SemanticSearch | str | None] = PrivateAttr()
+    _vector_search_config: Optional[VectorSearch | str | None] = PrivateAttr()
+    _vector_search_algorithm: Optional[Literal["hnsw", "exhaustiveKnn"] | None] = (
+        PrivateAttr()
+    )
     _user_agent: str = PrivateAttr()
 
     def _normalise_metadata_to_index_fields(
@@ -203,9 +205,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 if isinstance(field, str):
                     index_field_spec[field] = (field, MetadataIndexFieldType.STRING)
                 elif hasattr(field, "name"):  # SearchField-like object
-                    index_field_spec[
-                        field.name
-                    ] = field  # Store the actual field object
+                    index_field_spec[field.name] = (
+                        field  # Store the actual field object
+                    )
 
         elif isinstance(filterable_metadata_field_keys, dict):
             for k, v in filterable_metadata_field_keys.items():
@@ -552,45 +554,49 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             else:
                 fields.append(self._get_default_field(internal_key, field_name))
 
-        # Rest of the method remains unchanged
         logger.info(f"Configuring {index_name} metadata fields")
         metadata_index_fields = self._create_metadata_index_fields()
         fields.extend(metadata_index_fields)
 
         logger.info(f"Configuring {index_name} vector search")
-        compressions = self._get_compressions()
 
-        logger.info(
-            f"Configuring {index_name} vector search with {self._compression_type} compression"
-        )
-
-        # Configure the vector search algorithms based on user preference
-        algorithms = []
-        if self._vector_search_algorithm == "hnsw":
-            algorithms.append(
-                HnswAlgorithmConfiguration(
-                    name="myHnsw",
-                    kind=VectorSearchAlgorithmKind.HNSW,
-                    parameters=HnswParameters(
-                        m=4,
-                        ef_construction=400,
-                        ef_search=500,
-                        metric=VectorSearchAlgorithmMetric.COSINE,
-                    ),
+        # Configure vector search
+        if self._vector_search_config is not None:
+            if isinstance(self._vector_search_config, str):
+                # Create default vector search with specified profile name
+                compressions = self._get_compressions()
+                algorithms = [
+                    HnswAlgorithmConfiguration(
+                        name="myHnsw",
+                        kind=VectorSearchAlgorithmKind.HNSW,
+                        parameters=HnswParameters(
+                            m=4,
+                            ef_construction=400,
+                            ef_search=500,
+                            metric=VectorSearchAlgorithmMetric.COSINE,
+                        ),
+                    )
+                ]
+                profiles = [
+                    VectorSearchProfile(
+                        name=self._vector_search_config,
+                        algorithm_configuration_name=algorithms[0].name,
+                        compression_name=(
+                            compressions[0].compression_name if compressions else None
+                        ),
+                    )
+                ]
+                vector_search = VectorSearch(
+                    algorithms=algorithms,
+                    compressions=compressions,
+                    profiles=profiles,
                 )
-            )
-        elif self._vector_search_algorithm == "exhaustiveKnn":
-            algorithms.append(
-                ExhaustiveKnnAlgorithmConfiguration(
-                    name="myExhaustiveKnn",
-                    kind=VectorSearchAlgorithmKind.EXHAUSTIVE_KNN,
-                    parameters=ExhaustiveKnnParameters(
-                        metric=VectorSearchAlgorithmMetric.COSINE,
-                    ),
-                )
-            )
+            else:
+                # Use provided VectorSearch configuration directly
+                vector_search = self._vector_search_config
         else:
-            # Default to both if not specified
+            # Create default vector search configuration
+            compressions = self._get_compressions()
             algorithms = [
                 HnswAlgorithmConfiguration(
                     name="myHnsw",
@@ -601,62 +607,30 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                         ef_search=500,
                         metric=VectorSearchAlgorithmMetric.COSINE,
                     ),
-                ),
-                ExhaustiveKnnAlgorithmConfiguration(
-                    name="myExhaustiveKnn",
-                    kind=VectorSearchAlgorithmKind.EXHAUSTIVE_KNN,
-                    parameters=ExhaustiveKnnParameters(
-                        metric=VectorSearchAlgorithmMetric.COSINE,
-                    ),
-                ),
+                )
             ]
-
-        # Configure profiles based on available algorithms
-        profiles = []
-        if self._vector_search_profile is not None:
-            if isinstance(self._vector_search_profile, str):
-                # Create default profile with specified name
-                profiles.append(
-                    VectorSearchProfile(
-                        name=self._vector_search_profile,
-                        algorithm_configuration_name=algorithms[0].name,
-                        compression_name=(
-                            compressions[0].compression_name if compressions else None
-                        ),
-                    )
+            profiles = [
+                VectorSearchProfile(
+                    name=self._vector_profile_name,
+                    algorithm_configuration_name=algorithms[0].name,
+                    compression_name=(
+                        compressions[0].compression_name if compressions else None
+                    ),
                 )
-            else:
-                # Use provided profile configuration
-                profiles.append(self._vector_search_profile)
-        else:
-            # Create default profiles
-            for algo in algorithms:
-                profile_name = f"my{algo.name.capitalize()}Profile"
-                compression_name = (
-                    compressions[0].compression_name
-                    if compressions and algo.kind == VectorSearchAlgorithmKind.HNSW
-                    else None
-                )
-                profiles.append(
-                    VectorSearchProfile(
-                        name=profile_name,
-                        algorithm_configuration_name=algo.name,
-                        compression_name=compression_name,
-                    )
-                )
-
-        vector_search = VectorSearch(
-            algorithms=algorithms,
-            compressions=compressions,
-            profiles=profiles,
-        )
+            ]
+            vector_search = VectorSearch(
+                algorithms=algorithms,
+                compressions=compressions,
+                profiles=profiles,
+            )
 
         logger.info(f"Configuring {index_name} semantic search")
         # Configure semantic search
-        if self._semantic_config is not None:
-            if isinstance(self._semantic_config, str):
+        if self._semantic_search_config is not None:
+            if isinstance(self._semantic_search_config, str):
+                # Create default semantic search with specified configuration name
                 semantic_config = SemanticConfiguration(
-                    name=self._semantic_config,
+                    name=self._semantic_search_config,
                     prioritized_fields=SemanticPrioritizedFields(
                         content_fields=[
                             SemanticField(field_name=self._field_names["chunk"])
@@ -665,10 +639,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 )
                 semantic_search = SemanticSearch(configurations=[semantic_config])
             else:
-                semantic_search = SemanticSearch(configurations=[self._semantic_config])
+                # Use provided SemanticSearch configuration directly
+                semantic_search = self._semantic_search_config
         else:
+            # Create default semantic search configuration
             semantic_config = SemanticConfiguration(
-                name=self._semantic_config_name or "mySemanticConfig",
+                name=self._semantic_config_name,
                 prioritized_fields=SemanticPrioritizedFields(
                     content_fields=[
                         SemanticField(field_name=self._field_names["chunk"])
@@ -730,45 +706,49 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             else:
                 fields.append(self._get_default_field(internal_key, field_name))
 
-        # Rest of the method remains unchanged
         logger.info(f"Configuring {index_name} metadata fields")
         metadata_index_fields = self._create_metadata_index_fields()
         fields.extend(metadata_index_fields)
 
         logger.info(f"Configuring {index_name} vector search")
-        compressions = self._get_compressions()
 
-        logger.info(
-            f"Configuring {index_name} vector search with {self._compression_type} compression"
-        )
-
-        # Configure the vector search algorithms based on user preference
-        algorithms = []
-        if self._vector_search_algorithm == "hnsw":
-            algorithms.append(
-                HnswAlgorithmConfiguration(
-                    name="myHnsw",
-                    kind=VectorSearchAlgorithmKind.HNSW,
-                    parameters=HnswParameters(
-                        m=4,
-                        ef_construction=400,
-                        ef_search=500,
-                        metric=VectorSearchAlgorithmMetric.COSINE,
-                    ),
+        # Configure vector search
+        if self._vector_search_config is not None:
+            if isinstance(self._vector_search_config, str):
+                # Create default vector search with specified profile name
+                compressions = self._get_compressions()
+                algorithms = [
+                    HnswAlgorithmConfiguration(
+                        name="myHnsw",
+                        kind=VectorSearchAlgorithmKind.HNSW,
+                        parameters=HnswParameters(
+                            m=4,
+                            ef_construction=400,
+                            ef_search=500,
+                            metric=VectorSearchAlgorithmMetric.COSINE,
+                        ),
+                    )
+                ]
+                profiles = [
+                    VectorSearchProfile(
+                        name=self._vector_search_config,
+                        algorithm_configuration_name=algorithms[0].name,
+                        compression_name=(
+                            compressions[0].compression_name if compressions else None
+                        ),
+                    )
+                ]
+                vector_search = VectorSearch(
+                    algorithms=algorithms,
+                    compressions=compressions,
+                    profiles=profiles,
                 )
-            )
-        elif self._vector_search_algorithm == "exhaustiveKnn":
-            algorithms.append(
-                ExhaustiveKnnAlgorithmConfiguration(
-                    name="myExhaustiveKnn",
-                    kind=VectorSearchAlgorithmKind.EXHAUSTIVE_KNN,
-                    parameters=ExhaustiveKnnParameters(
-                        metric=VectorSearchAlgorithmMetric.COSINE,
-                    ),
-                )
-            )
+            else:
+                # Use provided VectorSearch configuration directly
+                vector_search = self._vector_search_config
         else:
-            # Default to both if not specified
+            # Create default vector search configuration
+            compressions = self._get_compressions()
             algorithms = [
                 HnswAlgorithmConfiguration(
                     name="myHnsw",
@@ -779,62 +759,30 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                         ef_search=500,
                         metric=VectorSearchAlgorithmMetric.COSINE,
                     ),
-                ),
-                ExhaustiveKnnAlgorithmConfiguration(
-                    name="myExhaustiveKnn",
-                    kind=VectorSearchAlgorithmKind.EXHAUSTIVE_KNN,
-                    parameters=ExhaustiveKnnParameters(
-                        metric=VectorSearchAlgorithmMetric.COSINE,
-                    ),
-                ),
+                )
             ]
-
-        # Configure profiles based on available algorithms
-        profiles = []
-        if self._vector_search_profile is not None:
-            if isinstance(self._vector_search_profile, str):
-                # Create default profile with specified name
-                profiles.append(
-                    VectorSearchProfile(
-                        name=self._vector_search_profile,
-                        algorithm_configuration_name=algorithms[0].name,
-                        compression_name=(
-                            compressions[0].compression_name if compressions else None
-                        ),
-                    )
+            profiles = [
+                VectorSearchProfile(
+                    name=self._vector_profile_name,
+                    algorithm_configuration_name=algorithms[0].name,
+                    compression_name=(
+                        compressions[0].compression_name if compressions else None
+                    ),
                 )
-            else:
-                # Use provided profile configuration
-                profiles.append(self._vector_search_profile)
-        else:
-            # Create default profiles
-            for algo in algorithms:
-                profile_name = f"my{algo.name.capitalize()}Profile"
-                compression_name = (
-                    compressions[0].compression_name
-                    if compressions and algo.kind == VectorSearchAlgorithmKind.HNSW
-                    else None
-                )
-                profiles.append(
-                    VectorSearchProfile(
-                        name=profile_name,
-                        algorithm_configuration_name=algo.name,
-                        compression_name=compression_name,
-                    )
-                )
-
-        vector_search = VectorSearch(
-            algorithms=algorithms,
-            compressions=compressions,
-            profiles=profiles,
-        )
+            ]
+            vector_search = VectorSearch(
+                algorithms=algorithms,
+                compressions=compressions,
+                profiles=profiles,
+            )
 
         logger.info(f"Configuring {index_name} semantic search")
         # Configure semantic search
-        if self._semantic_config is not None:
-            if isinstance(self._semantic_config, str):
+        if self._semantic_search_config is not None:
+            if isinstance(self._semantic_search_config, str):
+                # Create default semantic search with specified configuration name
                 semantic_config = SemanticConfiguration(
-                    name=self._semantic_config,
+                    name=self._semantic_search_config,
                     prioritized_fields=SemanticPrioritizedFields(
                         content_fields=[
                             SemanticField(field_name=self._field_names["chunk"])
@@ -843,10 +791,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 )
                 semantic_search = SemanticSearch(configurations=[semantic_config])
             else:
-                semantic_search = SemanticSearch(configurations=[self._semantic_config])
+                # Use provided SemanticSearch configuration directly
+                semantic_search = self._semantic_search_config
         else:
+            # Create default semantic search configuration
             semantic_config = SemanticConfiguration(
-                name=self._semantic_config_name or "mySemanticConfig",
+                name=self._semantic_search_config_name,
                 prioritized_fields=SemanticPrioritizedFields(
                     content_fields=[
                         SemanticField(field_name=self._field_names["chunk"])
@@ -944,11 +894,11 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         vector_algorithm_type: str = "exhaustiveKnn",
         vector_search_profile_name: Optional[str] = None,
         semantic_config_name: Optional[str] = None,
-        semantic_config: Optional[
-            Union[SemanticConfiguration, str, None]
+        semantic_search_config: Optional[
+            Union[SemanticSearch, str, None]
         ] = "mySemanticConfig",
-        vector_search_profile: Optional[
-            Union[VectorSearchProfile, str, None]
+        vector_search_config: Optional[
+            Union[VectorSearch, str, None]
         ] = "myHnswProfile",
         language_analyzer: str = "en.lucene",
         compression_type: str = "none",
@@ -982,9 +932,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 Optional function to map document fields to the AI search index fields.
                 If none is specified a default mapping is provided.
             vector_search_profile_name (str | None): DEPRECATED use vector_search_profile instead
-            semantic_config_name (str | None): DEPRECATED use semantic_config instead
-            semantic_config (SemanticConfiguration | str | None): Semantic configuration to use
-            vector_search_profile (VectorSearchProfile | str | None): Vector search profile to use
+            semantic_search_config (SemanticSearch | str | None): Semantic configuration to use
+            vector_search_config (VectorSearch | str | None): Vector search profile to use
             language_analyzer (str): Language analyzer to use for text fields
             compression_type (str): Type of vector compression to use
             user_agent (str | None): Optional user agent string
@@ -1015,32 +964,28 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         )
 
         # Handle vector search profile configuration
-        if vector_search_profile is not None:
+        if vector_search_config is not None:
             self._vector_profile_name = (
-                vector_search_profile.name
-                if isinstance(vector_search_profile, VectorSearchProfile)
-                else vector_search_profile
+                vector_search_config.name
+                if isinstance(vector_search_config, VectorSearchProfile)
+                else vector_search_config
             )
-            self._vector_search_profile = vector_search_profile
+            self._vector_search_config = vector_search_config
         elif vector_search_profile_name is not None:
             logger.warning(
                 "vector_search_profile_name is deprecated, use vector_search_profile instead"
             )
             self._vector_profile_name = vector_search_profile_name
 
-        # Handle semantic configuration
-        if semantic_config is not None:
-            self._semantic_config_name = (
-                semantic_config.name
-                if isinstance(semantic_config, SemanticConfiguration)
-                else semantic_config
-            )
-            self._semantic_config = semantic_config
-        elif semantic_config_name is not None:
-            logger.warning(
-                "semantic_config_name is deprecated, use semantic_config instead"
-            )
-            self._semantic_config_name = semantic_config_name
+        # Handle semantic search configuration
+        self._semantic_config_name = (
+            semantic_search_config.name
+            if isinstance(semantic_search_config, SemanticSearch)
+            else semantic_search_config
+        )
+
+        if semantic_search_config is not None:
+            self._semantic_search_config = semantic_search_config
 
         # Set default vector profile based on algorithm type
         if vector_algorithm_type == "exhaustiveKnn":
@@ -1146,6 +1091,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 "Either search_or_index_client or async_search_or_index_client must be provided"
             )
 
+        search_client = self._search_client or self._async_search_client
+
         # Validate index management requirements
         if index_management == IndexManagement.CREATE_IF_NOT_EXISTS and not (
             self._index_client or self._async_index_client
@@ -1166,23 +1113,17 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         id_name = (
             id_field_key
             if id_field_key and len(id_field_key) > 0
-            else id_field.name
-            if id_field is not None
-            else "id"
+            else id_field.name if id_field is not None else "id"
         )
         chunk_name = (
             chunk_field_key
             if chunk_field_key and len(chunk_field_key) > 0
-            else chunk_field.name
-            if chunk_field is not None
-            else "chunk"
+            else chunk_field.name if chunk_field is not None else "chunk"
         )
         embedding_name = (
             embedding_field_key
             if embedding_field_key and len(embedding_field_key) > 0
-            else embedding_field.name
-            if embedding_field is not None
-            else "embedding"
+            else embedding_field.name if embedding_field is not None else "embedding"
         )
         metadata_name = (
             metadata_string_field_key
@@ -1196,9 +1137,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         doc_id_name = (
             doc_id_field_key
             if doc_id_field_key and len(doc_id_field_key) > 0
-            else doc_id_field.name
-            if doc_id_field is not None
-            else "doc_id"
+            else doc_id_field.name if doc_id_field is not None else "doc_id"
         )
 
         self._field_names = {
@@ -1653,6 +1592,16 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         odata_filter = None
         if query.filters is not None:
             odata_filter = self._create_odata_filter(query.filters)
+        semantic_config = (
+            self._semantic_search_config
+            or self._semantic_config_name
+            or "mySemanticConfig"
+        )
+        vector_profile = (
+            self._vector_search_config.profiles[0].name
+            if isinstance(self._vector_search_config, VectorSearch)
+            else self._vector_profile_name or "mySearchProfile"
+        )
         azure_query_result_search: AzureQueryResultSearchBase = (
             AzureQueryResultSearchDefault(
                 query=query,
@@ -1661,8 +1610,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter=odata_filter,
                 search_client=self._search_client,
                 async_search_client=self._async_search_client,
-                semantic_config_name=self._semantic_config_name,
-                vector_search_profile=self._vector_search_profile,
+                semantic_search_config=semantic_config,
+                vector_search_config=vector_profile,
             )
         )
         if query.mode == VectorStoreQueryMode.SPARSE:
@@ -1673,8 +1622,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter=odata_filter,
                 search_client=self._search_client,
                 async_search_client=self._async_search_client,
-                semantic_config_name=self._semantic_config_name,
-                vector_search_profile=self._vector_search_profile,
+                semantic_search_config=semantic_config,
+                vector_search_config=vector_profile,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
@@ -1684,8 +1633,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter=odata_filter,
                 search_client=self._search_client,
                 async_search_client=self._async_search_client,
-                semantic_config_name=self._semantic_config_name,
-                vector_search_profile=self._vector_search_profile,
+                semantic_search_config=semantic_config,
+                vector_search_config=vector_profile,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
@@ -1695,8 +1644,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter=odata_filter,
                 search_client=self._search_client,
                 async_search_client=self._async_search_client,
-                semantic_config_name=self._semantic_config_name,
-                vector_search_profile=self._vector_search_profile,
+                semantic_search_config=semantic_config,
+                vector_search_config=vector_profile,
             )
         return azure_query_result_search.search()
 
@@ -1713,6 +1662,16 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             if query.filters is not None:
                 odata_filter = self._create_odata_filter(query.filters)
 
+        semantic_config = (
+            self._semantic_search_config
+            or self._semantic_config_name
+            or "mySemanticConfig"
+        )
+        vector_profile = (
+            self._vector_search_config.profiles[0].name
+            if isinstance(self._vector_search_config, VectorSearch)
+            else self._vector_profile_name or "mySearchProfile"
+        )
         azure_query_result_search: AzureQueryResultSearchBase = (
             AzureQueryResultSearchDefault(
                 query=query,
@@ -1721,8 +1680,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter=odata_filter,
                 search_client=self._search_client,
                 async_search_client=self._async_search_client,
-                semantic_config_name=self._semantic_config_name,
-                vector_search_profile=self._vector_search_profile,
+                semantic_search_config=semantic_config,
+                vector_search_config=vector_profile,
             )
         )
         if query.mode == VectorStoreQueryMode.SPARSE:
@@ -1733,8 +1692,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter=odata_filter,
                 search_client=self._search_client,
                 async_search_client=self._async_search_client,
-                semantic_config_name=self._semantic_config_name,
-                vector_search_profile=self._vector_search_profile,
+                semantic_search_config=semantic_config,
+                vector_search_config=vector_profile,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
@@ -1744,8 +1703,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter=odata_filter,
                 search_client=self._search_client,
                 async_search_client=self._async_search_client,
-                semantic_config_name=self._semantic_config_name,
-                vector_search_profile=self._vector_search_profile,
+                semantic_search_config=semantic_config,
+                vector_search_config=vector_profile,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
@@ -1755,8 +1714,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter=odata_filter,
                 search_client=self._search_client,
                 async_search_client=self._async_search_client,
-                semantic_config_name=self._semantic_config_name,
-                vector_search_profile=self._vector_search_profile,
+                semantic_search_config=semantic_config,
+                vector_search_config=vector_profile,
             )
         return await azure_query_result_search.asearch()
 
@@ -1810,14 +1769,14 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         if not self._search_client:
             raise ValueError("Search client not initialized")
 
-        filter_str = self._build_filter_str(self._field_mapping, node_ids, filters)
+        filter_str = self._build_filter_str(self._field_names, node_ids, filters)
         nodes = []
         batch_size = 1000  # Azure Search batch size limit
 
         while True:
             try:
                 search_request = create_search_request(
-                    self._field_mapping, filter_str, batch_size, len(nodes)
+                    self._field_names, filter_str, batch_size, len(nodes)
                 )
                 results = self._search_client.search(**search_request)
             except Exception as e:
@@ -1825,8 +1784,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 break
 
             batch_nodes = [
-                create_node_from_result(result, self._field_mapping)
-                for result in results
+                create_node_from_result(result, self._field_names) for result in results
             ]
 
             nodes, continue_fetching = process_batch_results(
@@ -1856,14 +1814,14 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         if not self._async_search_client:
             raise ValueError("Async Search client not initialized")
 
-        filter_str = self._build_filter_str(self._field_mapping, node_ids, filters)
+        filter_str = self._build_filter_str(self._field_names, node_ids, filters)
         nodes = []
         batch_size = 1000  # Azure Search batch size limit
 
         while True:
             try:
                 search_request = create_search_request(
-                    self._field_mapping, filter_str, batch_size, len(nodes)
+                    self._field_names, filter_str, batch_size, len(nodes)
                 )
                 results = await self._async_search_client.search(**search_request)
             except Exception as e:
@@ -1872,7 +1830,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
             batch_nodes = []
             async for result in results:
-                batch_nodes.append(create_node_from_result(result, self._field_mapping))
+                batch_nodes.append(create_node_from_result(result, self._field_names))
 
             nodes, continue_fetching = process_batch_results(
                 batch_nodes, nodes, batch_size, limit
@@ -1892,8 +1850,12 @@ class AzureQueryResultSearchBase:
         odata_filter: Optional[str],
         search_client: SearchClient,
         async_search_client: AsyncSearchClient,
-        semantic_config_name: Optional[str] = "mySemanticConfig",
-        vector_search_profile: Optional[str] = "mySearchProfile",
+        semantic_search_config: Optional[
+            Union[SemanticSearch, str, None]
+        ] = "mySemanticConfig",
+        vector_search_config: Optional[
+            Union[VectorSearch, str, None]
+        ] = "myHnswProfile",
     ) -> None:
         self._query = query
         self._field_names = field_names
@@ -1901,8 +1863,22 @@ class AzureQueryResultSearchBase:
         self._odata_filter = odata_filter
         self._search_client = search_client
         self._async_search_client = async_search_client
-        self._semantic_config_name = semantic_config_name or "mySemanticConfig"
-        self._vector_search_profile = vector_search_profile or "mySearchProfile"
+
+        # Store the full config objects or names
+        self._semantic_search_config = semantic_search_config
+        self._vector_search_config = vector_search_config
+
+        # For backward compatibility, extract names if configs are objects
+        self._semantic_config_name = (
+            semantic_search_config.configurations[0].name
+            if isinstance(semantic_search_config, SemanticSearch)
+            else semantic_search_config or "mySemanticConfig"
+        )
+        self._vector_profile_name = (
+            vector_search_config.profiles[0].name
+            if isinstance(vector_search_config, VectorSearch)
+            else vector_search_config or "myHnswProfile"
+        )
 
     @property
     def _select_fields(self) -> list[str]:
@@ -1932,9 +1908,6 @@ class AzureQueryResultSearchBase:
         node_result = []
         score_result = []
 
-        # Get set of default field names for later filtering
-        default_fields = self._select_fields
-
         for result in results:
             node_id = result[self._field_names["id"]]
             chunk = result[self._field_names["chunk"]]
@@ -1949,29 +1922,15 @@ class AzureQueryResultSearchBase:
                         metadata = json.loads(metadata_str)
                     except json.JSONDecodeError:
                         logger.debug(
-                            "Could not parse metadata JSON, assuming Azure-indexed document"
+                            "Could not parse metadata JSON, if chunk is not empty, we'll use it anyways"
                         )
-
-            # If no valid LlamaIndex metadata found, treat as Azure-indexed document
-            if not metadata:
-                # Get all fields that aren't default LlamaIndex fields or Azure Search internal fields
-                metadata = {
-                    k: v
-                    for k, v in result.items()
-                    if not k.startswith("@") and k not in default_fields
-                }
-            else:
-                # Add any additional metadata fields from the result for LlamaIndex documents
-                for meta_key, (
-                    field_name,
-                    _,
-                ) in self._metadata_to_index_field_map.items():
-                    if field_name in result:
-                        metadata[meta_key] = result[field_name]
+                        if len(chunk) == 0:
+                            raise json.JSONDecodeError(
+                                "Could not parse metadata JSON, and chunk is empty"
+                            )
 
             try:
-                node = metadata_dict_to_node(metadata)
-                node.set_content(chunk)
+                node = metadata_dict_to_node(metadata, text=chunk)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 try:
@@ -2038,29 +1997,15 @@ class AzureQueryResultSearchBase:
                         metadata = json.loads(metadata_str)
                     except json.JSONDecodeError:
                         logger.debug(
-                            "Could not parse metadata JSON, assuming Azure-indexed document"
+                            "Could not parse metadata JSON, if chunk is not empty, we'll use it anyways"
                         )
-
-            # If no valid LlamaIndex metadata found, treat as Azure-indexed document
-            if not metadata:
-                # Get all fields that aren't default LlamaIndex fields or Azure Search internal fields
-                metadata = {
-                    k: v
-                    for k, v in result.items()
-                    if not k.startswith("@") and k not in default_fields
-                }
-            else:
-                # Add any additional metadata fields from the result for LlamaIndex documents
-                for meta_key, (
-                    field_name,
-                    _,
-                ) in self._metadata_to_index_field_map.items():
-                    if field_name in result:
-                        metadata[meta_key] = result[field_name]
+                        if len(chunk) == 0:
+                            raise json.JSONDecodeError(
+                                "Could not parse metadata JSON, and chunk is empty"
+                            )
 
             try:
-                node = metadata_dict_to_node(metadata)
-                node.set_content(chunk)
+                node = metadata_dict_to_node(metadata, text=chunk)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 try:
@@ -2194,7 +2139,6 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
             )
 
             # Try LlamaIndex metadata first
-            metadata = {}
             if self._field_names["metadata"] in result:
                 metadata_str = result[self._field_names["metadata"]]
                 if metadata_str:
@@ -2202,29 +2146,15 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
                         metadata = json.loads(metadata_str)
                     except json.JSONDecodeError:
                         logger.debug(
-                            "Could not parse metadata JSON, assuming Azure-indexed document"
+                            "Could not parse metadata JSON, if chunk is not empty, we'll use it anyways"
                         )
-
-            # If no valid LlamaIndex metadata found, treat as Azure-indexed document
-            if not metadata:
-                # Get all fields that aren't default LlamaIndex fields or Azure Search internal fields
-                metadata = {
-                    k: v
-                    for k, v in result.items()
-                    if not k.startswith("@") and k not in default_fields
-                }
-            else:
-                # Add any additional metadata fields from the result for LlamaIndex documents
-                for meta_key, (
-                    field_name,
-                    _,
-                ) in self._metadata_to_index_field_map.items():
-                    if field_name in result:
-                        metadata[meta_key] = result[field_name]
+                        if len(chunk) == 0:
+                            raise json.JSONDecodeError(
+                                "Could not parse metadata JSON, and chunk is empty"
+                            )
 
             try:
-                node = metadata_dict_to_node(metadata)
-                node.set_content(chunk)
+                node = metadata_dict_to_node(metadata, text=chunk)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 try:
@@ -2276,9 +2206,6 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
         node_result = []
         score_result = []
 
-        # Get set of default field names for later filtering
-        default_fields = self._select_fields
-
         async for result in results:
             node_id = result[self._field_names["id"]]
             chunk = result[self._field_names["chunk"]]
@@ -2298,29 +2225,15 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
                         metadata = json.loads(metadata_str)
                     except json.JSONDecodeError:
                         logger.debug(
-                            "Could not parse metadata JSON, assuming Azure-indexed document"
+                            "Could not parse metadata JSON, if chunk is not empty, we'll use it anyways"
                         )
-
-            # If no valid LlamaIndex metadata found, treat as Azure-indexed document
-            if not metadata:
-                # Get all fields that aren't default LlamaIndex fields or Azure Search internal fields
-                metadata = {
-                    k: v
-                    for k, v in result.items()
-                    if not k.startswith("@") and k not in default_fields
-                }
-            else:
-                # Add any additional metadata fields from the result for LlamaIndex documents
-                for meta_key, (
-                    field_name,
-                    _,
-                ) in self._metadata_to_index_field_map.items():
-                    if field_name in result:
-                        metadata[meta_key] = result[field_name]
+                        if len(chunk) == 0:
+                            raise json.JSONDecodeError(
+                                "Could not parse metadata JSON, and chunk is empty"
+                            )
 
             try:
-                node = metadata_dict_to_node(metadata)
-                node.set_content(chunk)
+                node = metadata_dict_to_node(metadata, text=chunk)
             except Exception:
                 # NOTE: deprecated legacy logic for backward compatibility
                 try:
