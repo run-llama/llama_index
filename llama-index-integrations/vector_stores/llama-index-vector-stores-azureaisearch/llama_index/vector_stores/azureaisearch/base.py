@@ -1901,8 +1901,8 @@ class AzureQueryResultSearchBase:
         self._odata_filter = odata_filter
         self._search_client = search_client
         self._async_search_client = async_search_client
-        self._semantic_config_name = semantic_config_name
-        self._vector_search_profile = vector_search_profile
+        self._semantic_config_name = semantic_config_name or "mySemanticConfig"
+        self._vector_search_profile = vector_search_profile or "mySearchProfile"
 
     @property
     def _select_fields(self) -> list[str]:
@@ -2189,7 +2189,7 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
             # Use reranker_score if available (semantic search), otherwise use regular score
             score = (
                 result.get("@search.reranker_score", result["@search.score"])
-                if self._semantic_config
+                if self._semantic_config_name and self._semantic_config_name != ""
                 else result["@search.score"]
             )
 
@@ -2285,7 +2285,7 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
             # Use reranker_score if available (semantic search), otherwise use regular score
             score = (
                 result.get("@search.reranker_score", result["@search.score"])
-                if self._semantic_config
+                if self._semantic_config_name and self._semantic_config_name != ""
                 else result["@search.score"]
             )
 
