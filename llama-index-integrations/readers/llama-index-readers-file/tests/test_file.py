@@ -592,19 +592,19 @@ def test_exclude_empty(tmp_dir_type: Type[Union[Path, str]]) -> None:
         documents_exclude = reader_exclude.load_data()
 
         assert len(documents_exclude) == 2
-        assert [doc.metadata["file_name"] for doc in documents_exclude] == {
+        assert [doc.metadata["file_name"] for doc in documents_exclude] == [
             "test1.txt",
             "test2.txt",
-        }
+        ]
 
         # Test with exclude_empty=False (default behavior)
         reader_include = SimpleDirectoryReader(tmp_dir, exclude_empty=False)
         documents_include = reader_include.load_data()
 
         assert len(documents_include) == 4
-        assert [doc.metadata["file_name"] for doc in documents_include] == {
+        assert [doc.metadata["file_name"] for doc in documents_include] == [
             "test1.txt",
             "test2.txt",
             "empty1.txt",
             "empty2.txt",
-        }
+        ]
