@@ -146,20 +146,20 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _field_names: Dict[str, str] = PrivateAttr()
     _field_mapping: Dict[str, SearchField] = PrivateAttr()
     _index_management: IndexManagement = PrivateAttr()
-    _index_mapping: Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]] = (
-        PrivateAttr()
-    )
-    _metadata_to_index_field_map: Dict[str, Tuple[str, MetadataIndexFieldType]] = (
-        PrivateAttr()
-    )
+    _index_mapping: Callable[
+        [Dict[str, str], Dict[str, Any]], Dict[str, str]
+    ] = PrivateAttr()
+    _metadata_to_index_field_map: Dict[
+        str, Tuple[str, MetadataIndexFieldType]
+    ] = PrivateAttr()
     _vector_profile_name: str = PrivateAttr()
     _semantic_config_name: str = PrivateAttr()
     _compression_type: str = PrivateAttr()
     _semantic_config: Optional[SemanticConfiguration | str | None] = PrivateAttr()
     _vector_search_profile: Optional[VectorSearchProfile | str | None] = PrivateAttr()
-    _vector_search_algorithm: Optional[Literal["hnsw", "exhaustiveKnn"] | None] = (
-        PrivateAttr()
-    )
+    _vector_search_algorithm: Optional[
+        Literal["hnsw", "exhaustiveKnn"] | None
+    ] = PrivateAttr()
     _user_agent: str = PrivateAttr()
 
     def _normalise_metadata_to_index_fields(
@@ -203,9 +203,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 if isinstance(field, str):
                     index_field_spec[field] = (field, MetadataIndexFieldType.STRING)
                 elif hasattr(field, "name"):  # SearchField-like object
-                    index_field_spec[field.name] = (
-                        field  # Store the actual field object
-                    )
+                    index_field_spec[
+                        field.name
+                    ] = field  # Store the actual field object
 
         elif isinstance(filterable_metadata_field_keys, dict):
             for k, v in filterable_metadata_field_keys.items():
@@ -434,7 +434,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         }
 
         # Check each required field
-        for field_key, (expected_type, field_config) in required_fields.items():
+        for expected_type, field_config in required_fields.values():
             if isinstance(field_config, str):
                 # If field_config is a string, just check field existence and type
                 field = next((f for f in index.fields if f.name == field_config), None)
@@ -520,15 +520,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             ExhaustiveKnnParameters,
             HnswAlgorithmConfiguration,
             HnswParameters,
-            SearchableField,
             SearchField,
-            SearchFieldDataType,
             SearchIndex,
             SemanticConfiguration,
             SemanticField,
             SemanticPrioritizedFields,
             SemanticSearch,
-            SimpleField,
             VectorSearch,
             VectorSearchAlgorithmKind,
             VectorSearchAlgorithmMetric,
@@ -701,15 +698,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             ExhaustiveKnnParameters,
             HnswAlgorithmConfiguration,
             HnswParameters,
-            SearchableField,
             SearchField,
-            SearchFieldDataType,
             SearchIndex,
             SemanticConfiguration,
             SemanticField,
             SemanticPrioritizedFields,
             SemanticSearch,
-            SimpleField,
             VectorSearch,
             VectorSearchAlgorithmKind,
             VectorSearchAlgorithmMetric,
@@ -1172,17 +1166,23 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         id_name = (
             id_field_key
             if id_field_key and len(id_field_key) > 0
-            else id_field.name if id_field is not None else "id"
+            else id_field.name
+            if id_field is not None
+            else "id"
         )
         chunk_name = (
             chunk_field_key
             if chunk_field_key and len(chunk_field_key) > 0
-            else chunk_field.name if chunk_field is not None else "chunk"
+            else chunk_field.name
+            if chunk_field is not None
+            else "chunk"
         )
         embedding_name = (
             embedding_field_key
             if embedding_field_key and len(embedding_field_key) > 0
-            else embedding_field.name if embedding_field is not None else "embedding"
+            else embedding_field.name
+            if embedding_field is not None
+            else "embedding"
         )
         metadata_name = (
             metadata_string_field_key
@@ -1196,7 +1196,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         doc_id_name = (
             doc_id_field_key
             if doc_id_field_key and len(doc_id_field_key) > 0
-            else doc_id_field.name if doc_id_field is not None else "doc_id"
+            else doc_id_field.name
+            if doc_id_field is not None
+            else "doc_id"
         )
 
         self._field_names = {
@@ -2164,7 +2166,6 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
     def _create_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-
         results = self._search_client.search(
             search_text=search_query,
             vector_queries=vectors,
@@ -2261,7 +2262,6 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
     async def _acreate_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-
         results = await self._async_search_client.search(
             search_text=search_query,
             vector_queries=vectors,
