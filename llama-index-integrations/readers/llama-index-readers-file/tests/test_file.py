@@ -603,8 +603,8 @@ def test_exclude_empty(tmp_dir_type: Type[Union[Path, str]]) -> None:
 
         assert len(documents_include) == 4
         assert [doc.metadata["file_name"] for doc in documents_include] == [
-            "test1.txt",
-            "test2.txt",
             "empty1.txt",
             "empty2.txt",
+            "test1.txt",
+            "test2.txt",
         ]
