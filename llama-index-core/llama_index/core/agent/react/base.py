@@ -72,7 +72,6 @@ class ReActAgent(AgentRunner):
             raise ValueError("Cannot provide both context and react_chat_formatter")
         if context:
             react_chat_formatter = ReActChatFormatter.from_context(context)
-
         step_engine = ReActAgentWorker.from_tools(
             tools=tools,
             tool_retriever=tool_retriever,
