@@ -9,19 +9,25 @@ Welcome to **LlamaIndex**! We’re excited that you want to contribute and becom
 If you're ready to dive in, here’s a quick setup guide to get you going:
 
 1. **Fork** the repo and clone your fork.
-2. Navigate to the project folder:
+2. Ensure you have poetry installed, if not follow the oficial [docs](https://python-poetry.org/docs/) for installation according to your system.
+3. Navigate to the project folder:
    ```bash
    cd llama_index
    ```
-3. Set up a new virtual environment with `Poetry`:
-   ```bash
-   poetry shell
-   ```
-4. Install development (and/or docs) dependencies:
+4. Depending on your poetry version you can set up a new virtual environment with `Poetry` using the following methods:
+   - Method 1 (for [poetry versions < 2.0.0](https://github.com/python-poetry/poetry/pull/9763))
+      ```bash
+      poetry shell
+      ```
+   - Method 2:
+      ```bash
+      eval $(poetry env activate)
+      ```
+5. Install development (and/or docs) dependencies:
    ```bash
    poetry install --only dev,docs --no-root
    ```
-5. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
+6. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
 
    ```bash
    pip install -e llama-index-core
