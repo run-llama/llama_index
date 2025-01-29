@@ -80,6 +80,8 @@ llm_retry_decorator = create_retry_decorator(
     max_seconds=20,
 )
 
+LOW_CONFIDENCE_RESPONSE = "I cannot find an answer I am confident in given the data. Could you please rephrase the question or consult a member of your data team to ensure the question can be answered based on your data?"
+CONFIDENCE_THRESHOLD = 98
 
 @runtime_checkable
 class Tokenizer(Protocol):
@@ -630,9 +632,11 @@ class OpenAI(LLM):
         linear_prob = np.round(np.exp(confidence_token.logprobs.content[0].logprob) * 100, 2)
         # Decide on response based on confidence and linear probability
         #TODO: may need to add linear_prob filtering to false statements
-        if (confidence_token.message.content.lower() == "true" and linear_prob < 98) or (confidence_token.message.content.lower() == "false"):
+        print('AI CONFIDENCE: ', confidence_token.message.content.lower())
+        print('CONFIDENCE PROBABILITY: ', linear_prob)
+        if (confidence_token.message.content.lower() == "true" and linear_prob < CONFIDENCE_THRESHOLD) or (confidence_token.message.content.lower() == "false"):
             return ChatResponse(
-                message=ChatMessage(role=MessageRole.ASSISTANT, content="I cannot find an answer I am confident in given the data. Could you please rephrase the question or consult a member of your data team to ensure the question can be answered based on your data?"),
+                message=ChatMessage(role=MessageRole.ASSISTANT, content=LOW_CONFIDENCE_RESPONSE),
             )
         else:
             if confidence_token.message.content.lower() not in ["false", "true"]:
