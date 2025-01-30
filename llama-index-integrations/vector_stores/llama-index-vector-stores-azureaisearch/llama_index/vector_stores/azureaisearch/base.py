@@ -555,6 +555,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
         language_analyzer: str = "en.lucene",
         compression_type: str = "none",
+        semantic_config_name : str = "mySemanticConfig",
         semantic_configuration_name : Optional[str] = None,
         user_agent: Optional[str] = None,
         **kwargs: Any,
@@ -1168,6 +1169,15 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         semantic_configuration_name = None
         if query.filters is not None:
             odata_filter = self._create_odata_filter(query.filters)
+        azure_query_result_search: AzureQueryResultSearchBase = (
+            AzureQueryResultSearchDefault(
+                query,
+                self._field_mapping,
+                odata_filter,
+                self._search_client,
+                self._async_search_client,
+            )
+        )
         if self._semantic_configuration_name is not None:
             semantic_configuration_name = self._semantic_configuration_name
         if query.mode == VectorStoreQueryMode.DEFAULT:
@@ -1207,6 +1217,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                self._semantic_config_name
                 self._semantic_configuration_name,
             )
         return azure_query_result_search.search()
