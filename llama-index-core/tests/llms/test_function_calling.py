@@ -104,7 +104,8 @@ def test_predict_and_call(
     person_tool: FunctionTool, person_tool_selection: ToolSelection
 ) -> None:
     llm = MockFunctionCallingLLM([person_tool_selection])
-    llm.predict_and_call(tools=[person_tool])
+    response = llm.predict_and_call(tools=[person_tool])
+    assert all(tool_output.is_error for tool_output in response.sources)
 
 
 def test_predict_and_call_throws_if_error_on_tool(
@@ -120,7 +121,8 @@ async def test_apredict_and_call(
     person_tool: FunctionTool, person_tool_selection: ToolSelection
 ) -> None:
     llm = MockFunctionCallingLLM([person_tool_selection])
-    await llm.apredict_and_call(tools=[person_tool])
+    response = await llm.apredict_and_call(tools=[person_tool])
+    assert all(tool_output.is_error for tool_output in response.sources)
 
 
 @pytest.mark.asyncio()
