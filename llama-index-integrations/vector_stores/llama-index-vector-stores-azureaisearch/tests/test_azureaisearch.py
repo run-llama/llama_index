@@ -54,7 +54,7 @@ def create_mock_vector_store(
         index_name=index_name,
         index_management=index_management,
         embedding_dimensionality=2,  # Assuming a dimensionality of 2 for simplicity
-        semantic_config_name="mySemanticConfig",
+        semantic_configuration_name=None,
     )
 
 
