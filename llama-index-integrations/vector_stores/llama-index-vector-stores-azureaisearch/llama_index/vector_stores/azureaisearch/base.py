@@ -115,7 +115,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             doc_id_field_key="doc_id",
             language_analyzer="en.lucene",
             vector_algorithm_type="exhaustiveKnn",
-            semantic_config_name="mySemanticConfig"
+            semantic_config_name="mySemanticConfig",
         )
         ```
     """
@@ -1198,6 +1198,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                self._semantic_config_name
             )
         return azure_query_result_search.search()
 
@@ -1246,6 +1247,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                self._semantic_config_name,
             )
         return await azure_query_result_search.asearch()
 
@@ -1587,7 +1589,7 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
             select=self._select_fields,
             filter=self._odata_filter,
             query_type="semantic",
-            semantic_configuration_name="mySemanticConfig",
+            semantic_configuration_name=self._semantic_config_name,
         )
 
         id_result = []
@@ -1643,7 +1645,7 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
             select=self._select_fields,
             filter=self._odata_filter,
             query_type="semantic",
-            semantic_configuration_name="mySemanticConfig",
+            semantic_configuration_name=self._semantic_config_name,
         )
 
         id_result = []

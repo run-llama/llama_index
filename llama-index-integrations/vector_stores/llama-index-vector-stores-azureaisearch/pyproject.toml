@@ -34,6 +34,7 @@ version = "0.3.2"
 python = ">=3.9,<4.0"
 azure-search-documents = "^11.5.1"
 llama-index-core = "^0.12.0"
+azure-identity = "^1.19.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
