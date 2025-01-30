@@ -1,21 +1,19 @@
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-import requests
-from trust_eval.config import EvaluationConfig, ResponseGeneratorConfig
-from trust_eval.data import construct_data
 from trust_eval.evaluator import Evaluator
 from trust_eval.response_generator import ResponseGenerator
-from trust_eval.retrieval import retrieve
 
 from llama_index.evaluation.trust_eval import TrustScoreEvaluator
 
 
-@pytest.fixture
+@pytest.fixture()
 def evaluator():
     """Fixture to initialize TrustScoreEvaluator."""
-    return TrustScoreEvaluator(generator_config="generator_config.yaml", eval_config="eval_config.yaml")
+    return TrustScoreEvaluator(
+        generator_config="generator_config.yaml", eval_config="eval_config.yaml"
+    )
 
 
 @patch("llama_index.evaluation.trust_eval.trust_score.subprocess.run")
@@ -41,7 +39,9 @@ def test_download_data(mock_requests_get, mock_subprocess_run, evaluator):
 def test_create_dataset(mock_construct_data, mock_retrieve, evaluator):
     """Test dataset creation with mock retrieval and data construction."""
     mock_retrieve.return_value = ["retrieved_doc1", "retrieved_doc2"]
-    mock_construct_data.return_value = [{"question": "What is AI?", "answer": "Artificial Intelligence"}]
+    mock_construct_data.return_value = [
+        {"question": "What is AI?", "answer": "Artificial Intelligence"}
+    ]
 
     questions = ["What is AI?"]
     answers = ["Artificial Intelligence"]
@@ -53,7 +53,11 @@ def test_create_dataset(mock_construct_data, mock_retrieve, evaluator):
     mock_construct_data.assert_called_once()
 
 
-@patch.object(ResponseGenerator, "generate_responses", return_value=[{"question": "What is AI?", "generated_response": "AI is ..."}])
+@patch.object(
+    ResponseGenerator,
+    "generate_responses",
+    return_value=[{"question": "What is AI?", "generated_response": "AI is ..."}],
+)
 @patch.object(ResponseGenerator, "save_responses")
 def test_run(mock_save_responses, mock_generate_responses, evaluator):
     """Test response generation and saving."""
@@ -61,7 +65,9 @@ def test_run(mock_save_responses, mock_generate_responses, evaluator):
 
     generated_data = evaluator.run(output_path="output/test_output.json")
 
-    assert generated_data == [{"question": "What is AI?", "generated_response": "AI is ..."}]
+    assert generated_data == [
+        {"question": "What is AI?", "generated_response": "AI is ..."}
+    ]
     mock_generate_responses.assert_called_once()
     mock_save_responses.assert_called_once_with(output_path="output/test_output.json")
 

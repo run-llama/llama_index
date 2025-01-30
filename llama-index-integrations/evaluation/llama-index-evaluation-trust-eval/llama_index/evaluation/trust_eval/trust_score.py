@@ -1,10 +1,9 @@
-"""LLM trustworthiness evaluation"""
+"""LLM trustworthiness evaluation."""
 
-import asyncio
 import os
 import subprocess
 import zipfile
-from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Dict, List, Optional
 
 import requests
 from trust_eval.config import EvaluationConfig, ResponseGeneratorConfig
@@ -16,7 +15,6 @@ from trust_eval.retrieval import retrieve
 
 
 class TrustScoreEvaluator:
-
     def __init__(
         self,
         generator_config: Optional[str] = "generator_config.yaml",

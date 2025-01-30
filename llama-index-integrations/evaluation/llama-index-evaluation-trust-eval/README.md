@@ -7,9 +7,9 @@ For more information, visit [Trust-Eval github](https://github.com/shanghongsim/
 ## Background
 
 ![Inline cited response](./assets/example_inline_cited_response.png)
-*Figure 1: An example of an inline cited response.*
+_Figure 1: An example of an inline cited response._
 
-In Trust-Eval, we define a trustworthy RAG response to be one that is *grounded* in the documents:
+In Trust-Eval, we define a trustworthy RAG response to be one that is _grounded_ in the documents:
 
 - **Correctly answers** question using in-context documents
 - **Refuse** to answer questions whose answer that cannot be verified
@@ -21,7 +21,7 @@ In Trust-Eval, we define a trustworthy RAG response to be one that is *grounded*
 
 We measure correctness of response by either using (1) exact match or (2) NLI-match (checking if the LLM response entails ground truth claims using a Natural Language Inference (NLI) model).
 
-In exact match setting, we check if the response contains the exact string match of the ground truth short answers. For example, to the question "Who has the highest goals in world football?" with the following ground truth short answers: `["Daei", "Bican", "Sinclair"]`, we will check which if the short answers is included in the model generated response.  
+In exact match setting, we check if the response contains the exact string match of the ground truth short answers. For example, to the question "Who has the highest goals in world football?" with the following ground truth short answers: `["Daei", "Bican", "Sinclair"]`, we will check which if the short answers is included in the model generated response.
 
 Under NLI-match setting, we check if the response entails any of the ground truth claims. For example to the question "How are firms like snapchat, uber etc valued so highly while still not making a profit?" with the following ground truth claims:
 
@@ -41,7 +41,7 @@ We measure refusal by checking if the model's response contains the notion refus
 
 **Quality of citations**
 
-We measure the quality of citations on two fronts - citation recall and citation precision. Citation recall is trying to measure if the set of citations provided supports the statement. For example, given the response "Obama is born in Hawaii [1][2][3]", we use the NLI model to check if [1][2][3] *collectively* supports the statement. Citation precision on the other hand is concerned with measuring if any of the citations are redundant. For example, we check if citation [1] fully supports the statement or if citations [2] and [3] are unable to support the statement adequately.
+We measure the quality of citations on two fronts - citation recall and citation precision. Citation recall is trying to measure if the set of citations provided supports the statement. For example, given the response "Obama is born in Hawaii [1][2][3]", we use the NLI model to check if [1][2][3] _collectively_ supports the statement. Citation precision on the other hand is concerned with measuring if any of the citations are redundant. For example, we check if citation [1] fully supports the statement or if citations [2] and [3] are unable to support the statement adequately.
 
 ## Installation
 
@@ -55,18 +55,22 @@ llama-index-evaluation-trust-eval
 from llama_index.evaluation.trust_score import TrustScoreEvaluator
 
 # Hand-define some question-answer pairs
-questions = ["Where do Asian elephants live?", 
-         "Can Orthodox Jewish people eat shellfish?", 
-         "How many species of sea urchin are there?", 
-         "How heavy is an adult golden jackal?",
-         "Who owns FX network?",
-         "How many letters are used in the French alphabet?"]
-answers = ["Asian elephants live in the forests and grasslands of South and Southeast Asia, including India, Sri Lanka, Thailand, and Indonesia.",
-          "No, Orthodox Jewish people do not eat shellfish because it is not kosher according to Jewish dietary laws.",
-          "There are about 950 species of sea urchins worldwide.",
-          "An adult golden jackal typically weighs between 6 and 14 kilograms (13 to 31 pounds).",
-          "FX network is owned by The Walt Disney Company.",
-          "The French alphabet uses 26 letters, the same as the English alphabet."]
+questions = [
+    "Where do Asian elephants live?",
+    "Can Orthodox Jewish people eat shellfish?",
+    "How many species of sea urchin are there?",
+    "How heavy is an adult golden jackal?",
+    "Who owns FX network?",
+    "How many letters are used in the French alphabet?",
+]
+answers = [
+    "Asian elephants live in the forests and grasslands of South and Southeast Asia, including India, Sri Lanka, Thailand, and Indonesia.",
+    "No, Orthodox Jewish people do not eat shellfish because it is not kosher according to Jewish dietary laws.",
+    "There are about 950 species of sea urchins worldwide.",
+    "An adult golden jackal typically weighs between 6 and 14 kilograms (13 to 31 pounds).",
+    "FX network is owned by The Walt Disney Company.",
+    "The French alphabet uses 26 letters, the same as the English alphabet.",
+]
 
 # Instantiate the evaluator object
 evaluator = TrustScoreEvaluator()
@@ -87,7 +91,7 @@ print(result)
 
 ```text
 { // refusal response: "I apologize, but I couldn't find an answer..."
-    
+
     // Basic statistics
     "num_samples": 6,
     "answered_ratio": 50.0, // Ratio of (# answered qns / total # qns)
@@ -96,7 +100,7 @@ print(result)
     "overlapped_num": 2, // # of qns that are both answered and answerable
     "regular_length": 87.0, // Average length of all responses
     "answered_length": 90.66666666666667, // Average length of non-refusal responses
-    
+
     // Refusal groundedness metrics
 
     // # qns where (model refused to respond & is ground truth unanswerable) / # qns is ground truth unanswerable
@@ -125,10 +129,10 @@ print(result)
 
     // Response correctness metrics
 
-    // Regardless of response type (refusal or answered), check if ground truth claim is in the response. 
+    // Regardless of response type (refusal or answered), check if ground truth claim is in the response.
     "regular_claims_nli": 33.33333333333333,
-    
-    // Only for qns with answered responses, check if ground truth claim is in the response. 
+
+    // Only for qns with answered responses, check if ground truth claim is in the response.
     "answered_claims_nli": 33.33333333333333,
 
     // Calculate EM for all qns that are answered and answerable, avg by # of answered questions (EM_alpha)
@@ -148,7 +152,7 @@ print(result)
     // (Avg across all qns) Does the set of citations support statement s_i? 
     "regular_citation_rec": 32.5,
 
-    // (Avg across all qns) Any redundant citations? (1) Does citation c_i,j fully support statement s_i? (2) Is the set of citations without c_i,j insufficient to support statement s_i? 
+    // (Avg across all qns) Any redundant citations? (1) Does citation c_i,j fully support statement s_i? (2) Is the set of citations without c_i,j insufficient to support statement s_i?
     "regular_citation_prec": 63.33333333333333,
 
     // F1 of regular_citation_rec and regular_citation_prec
