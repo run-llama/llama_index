@@ -6,6 +6,7 @@ from llama_index.core.base.llms.types import (
     ChatResponse,
     ChatResponseGen,
     CompletionResponse,
+    FunctionTool,
     LLMMetadata,
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM
@@ -90,12 +91,12 @@ class Person(BaseModel):
 
 
 @pytest.fixture()
-def person_tool():
+def person_tool() -> FunctionTool:
     return get_function_tool(Person)
 
 
 @pytest.fixture()
-def person_tool_selection(person_tool):
+def person_tool_selection(person_tool: FunctionTool) -> ToolSelection:
     return ToolSelection(
         tool_id="",
         tool_name=person_tool.metadata.name,
@@ -103,12 +104,16 @@ def person_tool_selection(person_tool):
     )
 
 
-def test_predict_and_call(person_tool, person_tool_selection):
+def test_predict_and_call(
+    person_tool: FunctionTool, person_tool_selection: ToolSelection
+) -> None:
     llm = MockFunctionCallingLLM([person_tool_selection])
     llm.predict_and_call(tools=[person_tool])
 
 
-def test_predict_and_call_throws_if_error_on_tool(person_tool, person_tool_selection):
+def test_predict_and_call_throws_if_error_on_tool(
+    person_tool: FunctionTool, person_tool_selection: ToolSelection
+) -> None:
     llm = MockFunctionCallingLLM([person_tool_selection])
     with pytest.raises(ValueError):
         llm.predict_and_call(tools=[person_tool], error_on_tool_error=True)
