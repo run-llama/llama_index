@@ -47,7 +47,7 @@ maintainers = [
 ]
 name = "llama-index-readers-google"
 readme = "README.md"
-version = "0.5.0"
+version = "0.6.0"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"

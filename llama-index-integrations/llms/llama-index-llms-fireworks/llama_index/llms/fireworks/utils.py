@@ -36,6 +36,7 @@ FUNCTION_CALLING_MODELS = {
 
 DEEPSEEK_MODELS = {
     "accounts/fireworks/models/deepseek-v3": 131072,
+    "accounts/fireworks/models/deepseek-r1": 163840,
 }
 
 ALL_AVAILABLE_MODELS = {

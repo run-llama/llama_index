@@ -534,6 +534,7 @@
   "AzureSpeechToolSpec": "llama_index.tools.azure_speech",
   "WolframAlphaToolSpec": "llama_index.tools.wolfram_alpha",
   "SlackToolSpec": "llama_index.tools.slack",
+  "LinkupToolSpec": "llama_index.tools.linkup_research",
   "TavilyToolSpec": "llama_index.tools.tavily_research",
   "ArxivToolSpec": "llama_index.tools.arxiv",
   "VectorDB": "llama_index.tools.vector_db",
