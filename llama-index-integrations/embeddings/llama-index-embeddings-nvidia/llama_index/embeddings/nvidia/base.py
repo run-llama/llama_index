@@ -2,6 +2,7 @@
 
 from typing import Any, List, Literal, Optional
 import warnings
+import os
 
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
@@ -12,24 +13,26 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 from openai import OpenAI, AsyncOpenAI
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 # integrate.api.nvidia.com is the default url for most models, any
 # bespoke endpoints will need to be added to the MODEL_ENDPOINT_MAP
-BASE_URL = "https://integrate.api.nvidia.com/v1/"
+BASE_URL = "https://integrate.api.nvidia.com/v1"
 DEFAULT_MODEL = "nvidia/nv-embedqa-e5-v5"
+_BASE_URL_VAR = "NVIDIA_BASE_URL"
+
 
 # because MODEL_ENDPOINT_MAP is used to construct KNOWN_URLS, we need to
-# include at least one model w/ https://integrate.api.nvidia.com/v1/
+# include at least one model w/ https://integrate.api.nvidia.com/v1
 MODEL_ENDPOINT_MAP = {
     "NV-Embed-QA": "https://ai.api.nvidia.com/v1/retrieval/nvidia/",
-    "snowflake/arctic-embed-l": "https://integrate.api.nvidia.com/v1/",
-    "nvidia/nv-embed-v1": "https://integrate.api.nvidia.com/v1/",
-    "nvidia/nv-embedqa-mistral-7b-v2": "https://integrate.api.nvidia.com/v1/",
-    "nvidia/nv-embedqa-e5-v5": "https://integrate.api.nvidia.com/v1/",
-    "baai/bge-m3": "https://integrate.api.nvidia.com/v1/",
-    "nvidia/llama-3.2-nv-embedqa-1b-v1": "https://integrate.api.nvidia.com/v1/",
-    "nvidia/llama-3.2-nv-embedqa-1b-v2": "https://integrate.api.nvidia.com/v1/",
+    "snowflake/arctic-embed-l": "https://integrate.api.nvidia.com/v1",
+    "nvidia/nv-embed-v1": "https://integrate.api.nvidia.com/v1",
+    "nvidia/nv-embedqa-mistral-7b-v2": "https://integrate.api.nvidia.com/v1",
+    "nvidia/nv-embedqa-e5-v5": "https://integrate.api.nvidia.com/v1",
+    "baai/bge-m3": "https://integrate.api.nvidia.com/v1",
+    "nvidia/llama-3.2-nv-embedqa-1b-v1": "https://integrate.api.nvidia.com/v1",
+    "nvidia/llama-3.2-nv-embedqa-1b-v2": "https://integrate.api.nvidia.com/v1",
 }
 
 KNOWN_URLS = list(MODEL_ENDPOINT_MAP.values())
@@ -44,6 +47,10 @@ class Model(BaseModel):
 class NVIDIAEmbedding(BaseEmbedding):
     """NVIDIA embeddings."""
 
+    base_url: str = Field(
+        default_factory=lambda: os.getenv(_BASE_URL_VAR, BASE_URL),
+        description="Base url for model listing an invocation",
+    )
     model: Optional[str] = Field(
         description="Name of the NVIDIA embedding model to use.\n"
     )
@@ -86,7 +93,6 @@ class NVIDIAEmbedding(BaseEmbedding):
         dimensions: Optional[int] = 0,
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,  # This could default to 50
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
@@ -133,19 +139,16 @@ class NVIDIAEmbedding(BaseEmbedding):
             "NO_API_KEY_PROVIDED",
         )
 
-        base_url = base_url or BASE_URL
-        self._is_hosted = base_url in KNOWN_URLS
+        self._is_hosted = self.base_url in KNOWN_URLS
         if self._is_hosted:  # hosted on API Catalog (build.nvidia.com)
             if api_key == "NO_API_KEY_PROVIDED":
                 raise ValueError("An API key is required for hosted NIM.")
-            # TODO: we should not assume unknown models are at the base url
-            base_url = MODEL_ENDPOINT_MAP.get(model, BASE_URL)
         else:  # not hosted
-            base_url = self._validate_url(base_url)
+            self.base_url = self._validate_url(self.base_url)
 
         self._client = OpenAI(
             api_key=api_key,
-            base_url=base_url,
+            base_url=self.base_url,
             timeout=timeout,
             max_retries=max_retries,
         )
@@ -153,7 +156,7 @@ class NVIDIAEmbedding(BaseEmbedding):
 
         self._aclient = AsyncOpenAI(
             api_key=api_key,
-            base_url=base_url,
+            base_url=self.base_url,
             timeout=timeout,
             max_retries=max_retries,
         )
@@ -192,22 +195,40 @@ class NVIDIAEmbedding(BaseEmbedding):
 
     def _validate_url(self, base_url):
         """
-        Base URL Validation.
-        ValueError : url which do not have valid scheme and netloc.
-        Warning : v1/embeddings routes.
-        ValueError : Any other routes other than above.
+        validate the base_url.
+        if the base_url is not a url, raise an error
+        if the base_url does not end in /v1, e.g. /embeddings, /completions, /rankings,
+        or /reranking, emit a warning. old documentation told users to pass in the full
+        inference url, which is incorrect and prevents model listing from working.
+        normalize base_url to end in /v1.
         """
-        expected_format = "Expected format is 'http://host:port'."
-        result = urlparse(base_url)
-        if not (result.scheme and result.netloc):
-            raise ValueError(f"Invalid base_url, {expected_format}")
-        if base_url.endswith("embeddings"):
-            warnings.warn(f"{expected_format} Rest is ignored")
-        return base_url.strip("/")
+        if base_url is not None:
+            parsed = urlparse(base_url)
+
+            # Ensure scheme and netloc (domain name) are present
+            if not (parsed.scheme and parsed.netloc):
+                expected_format = "Expected format is: http://host:port"
+                raise ValueError(
+                    f"Invalid base_url format. {expected_format} Got: {base_url}"
+                )
+
+            normalized_path = parsed.path.rstrip("/")
+            if not normalized_path.endswith("/v1"):
+                warnings.warn(
+                    f"{base_url} does not end in /v1, you may "
+                    "have inference and listing issues"
+                )
+                normalized_path += "/v1"
+
+                base_url = urlunparse(
+                    (parsed.scheme, parsed.netloc, normalized_path, None, None, None)
+                )
+        return base_url
 
     def _validate_model(self, model_name: str) -> None:
         """
         Validates compatibility of the hosted model with the client.
+        Skipping the client validation for non-catalogue requests.
 
         Args:
             model_name (str): The name of the model.
@@ -216,17 +237,11 @@ class NVIDIAEmbedding(BaseEmbedding):
             ValueError: If the model is incompatible with the client.
         """
         if self._is_hosted:
-            if model_name not in MODEL_ENDPOINT_MAP:
-                if model_name in [model.id for model in self._client.models.list()]:
-                    warnings.warn(f"Unable to determine validity of {model_name}")
-                else:
-                    raise ValueError(
-                        f"Model {model_name} is incompatible with client {self.class_name()}. "
-                        f"Please check `{self.class_name()}.available_models()`."
-                    )
-        else:
             if model_name not in [model.id for model in self.available_models]:
-                raise ValueError(f"No locally hosted {model_name} was found.")
+                raise ValueError(
+                    f"Model {model_name} is incompatible with client {self.class_name()}. "
+                    f"Please check `{self.class_name()}.available_models()`."
+                )
 
     @property
     def available_models(self) -> List[Model]:
