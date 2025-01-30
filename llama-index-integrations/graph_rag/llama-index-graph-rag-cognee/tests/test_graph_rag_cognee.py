@@ -30,7 +30,7 @@ async def test_graph_rag_cognee():
         graph_db_provider="networkx",
         vector_db_provider="lancedb",
         relational_db_provider="sqlite",
-        db_name="cognee_db",
+        relational_db_name="cognee_db",
     )
 
     # Add data to cognee
@@ -39,11 +39,20 @@ async def test_graph_rag_cognee():
     await cogneeRAG.process_data("test")
 
     # Answer prompt based on knowledge graph
-    search_results = await cogneeRAG.search("person")
+    search_results = await cogneeRAG.search("Tell me who are the people mentioned?")
 
     assert len(search_results) > 0, "No search results found"
 
-    print("\n\nExtracted sentences are:\n")
+    print("\n\nAnswer based on knowledge graph:\n")
+    for result in search_results:
+        print(f"{result}\n")
+
+    # Answer prompt based on RAG
+    search_results = await cogneeRAG.rag_search("Tell me who are the people mentioned?")
+
+    assert len(search_results) > 0, "No search results found"
+
+    print("\n\nAnswer based on RAG:\n")
     for result in search_results:
         print(f"{result}\n")
 

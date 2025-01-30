@@ -12,6 +12,7 @@ from typing import (
     Literal,
     Optional,
     Union,
+    cast,
 )
 
 import filetype
@@ -29,6 +30,7 @@ from llama_index.core.bridge.pydantic import (
     model_validator,
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
+from llama_index.core.schema import ImageDocument
 
 
 class MessageRole(str, Enum):
@@ -83,11 +85,13 @@ class ImageBlock(BaseModel):
             # Not base64 - encode it
             self.image = base64.b64encode(self.image)
 
-        if not self.image_mimetype:
-            guess = filetype.guess(decoded_img)
-            self.image_mimetype = guess.mime if guess else None
-
+        self._guess_mimetype(decoded_img)
         return self
+
+    def _guess_mimetype(self, img_data: bytes) -> None:
+        if not self.image_mimetype:
+            guess = filetype.guess(img_data)
+            self.image_mimetype = guess.mime if guess else None
 
     def resolve_image(self, as_base64: bool = False) -> BytesIO:
         """Resolve an image such that PIL can read it.
@@ -101,6 +105,7 @@ class ImageBlock(BaseModel):
             return BytesIO(base64.b64decode(self.image))
         elif self.path is not None:
             img_bytes = self.path.read_bytes()
+            self._guess_mimetype(img_bytes)
             if as_base64:
                 return BytesIO(base64.b64encode(img_bytes))
             return BytesIO(img_bytes)
@@ -108,6 +113,7 @@ class ImageBlock(BaseModel):
             # load image from URL
             response = requests.get(str(self.url))
             img_bytes = response.content
+            self._guess_mimetype(img_bytes)
             if as_base64:
                 return BytesIO(base64.b64encode(img_bytes))
             return BytesIO(img_bytes)
@@ -141,20 +147,33 @@ class ChatMessage(BaseModel):
 
         super().__init__(**data)
 
+    @model_validator(mode="after")
+    def legacy_additional_kwargs_image(self) -> Self:
+        """Provided for backward compatibility.
+
+        If `additional_kwargs` contains an `images` key, assume the value is a list
+        of ImageDocument and convert them into image blocks.
+        """
+        if documents := self.additional_kwargs.get("images"):
+            documents = cast(list[ImageDocument], documents)
+            for doc in documents:
+                img_base64_bytes = doc.resolve_image(as_base64=True).read()
+                self.blocks.append(ImageBlock(image=img_base64_bytes))
+        return self
+
     @property
     def content(self) -> str | None:
         """Keeps backward compatibility with the old `content` field.
 
         Returns:
-            The cumulative content of the blocks if they're all of type TextBlock, None otherwise.
+            The cumulative content of the TextBlock blocks, None if there are none.
         """
         content = ""
         for block in self.blocks:
-            if not isinstance(block, TextBlock):
-                return None
-            content += block.text
+            if isinstance(block, TextBlock):
+                content += block.text
 
-        return content
+        return content or None
 
     @content.setter
     def content(self, content: str) -> None:

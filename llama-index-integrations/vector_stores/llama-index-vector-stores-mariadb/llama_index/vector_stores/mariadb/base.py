@@ -177,17 +177,32 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             self.connection_string, connect_args=self.connection_args, echo=self.debug
         )
 
+    def _validate_server_version(self) -> None:
+        """Validate that the MariaDB server version is supported."""
+        with self._engine.connect() as connection:
+            result = connection.execute(sqlalchemy.text("SELECT VERSION()"))
+            version = result.fetchone()[0]
+
+            if not _meets_min_server_version(version, "11.7.1"):
+                raise ValueError(
+                    f"MariaDB version 11.7.1 or later is required, found version: {version}."
+                )
+
     def _create_table_if_not_exists(self) -> None:
         with self._engine.connect() as connection:
+            # Note that we define the vector index with DISTANCE=cosine, because we use VEC_DISTANCE_COSINE.
+            # This is because searches using a different distance function do not use the vector index.
+            # Reference: https://mariadb.com/kb/en/create-table-with-vectors/
             stmt = f"""
             CREATE TABLE IF NOT EXISTS `{self.table_name}` (
                 id SERIAL PRIMARY KEY,
                 node_id VARCHAR(255) NOT NULL,
                 text TEXT,
                 metadata JSON,
-                embedding BLOB NOT NULL,
-                VECTOR INDEX (embedding)
-            );
+                embedding VECTOR({self.embed_dim}) NOT NULL,
+                INDEX `{self.table_name}_node_id_idx` (`node_id`),
+                VECTOR INDEX (embedding) DISTANCE=cosine
+            )
             """
             connection.execute(sqlalchemy.text(stmt))
 
@@ -197,6 +212,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         if not self._is_initialized:
             self._connect()
             if self.perform_setup:
+                self._validate_server_version()
                 self._create_table_if_not_exists()
             self._is_initialized = True
 
@@ -251,7 +267,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
                 VALUES (
                     :node_id,
                     :text,
-                    vec_fromtext(:embedding),
+                    VEC_FromText(:embedding),
                     :metadata
                 )
                 """
@@ -367,33 +383,17 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             text,
             embedding,
             metadata,
-            vec_distance(embedding, vec_fromtext('{query.query_embedding}')) AS distance
-        FROM `{self.table_name}`
+            VEC_DISTANCE_COSINE(embedding, VEC_FromText('{query.query_embedding}')) AS distance
+        FROM `{self.table_name}`"""
+
+        if query.filters:
+            stmt += f"""
+        WHERE {self._filters_to_where_clause(query.filters)}"""
+
+        stmt += f"""
         ORDER BY distance
         LIMIT {query.similarity_top_k}
         """
-
-        if query.filters:
-            where = self._filters_to_where_clause(query.filters)
-
-            # We cannot use the query above when there is a WHERE clause,
-            # because of a bug in MariaDB: https://jira.mariadb.org/browse/MDEV-34774.
-            # The following query works around it.
-            stmt = f"""
-            SELECT * FROM (
-                SELECT
-                    node_id,
-                    text,
-                    embedding,
-                    metadata,
-                    vec_distance(embedding, vec_fromtext('{query.query_embedding}')) AS distance
-                FROM `{self.table_name}`
-                WHERE {where}
-                LIMIT 1000000
-            ) AS unordered
-            ORDER BY distance
-            LIMIT {query.similarity_top_k}
-            """
 
         with self._engine.connect() as connection:
             result = connection.execute(sqlalchemy.text(stmt))
@@ -443,3 +443,19 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             connection.execute(sqlalchemy.text(stmt))
 
             connection.commit()
+
+
+def _meets_min_server_version(version: str, min_version: str) -> bool:
+    """Check if a MariaDB server version meets minimum required version.
+
+    Args:
+        version: Version string from MariaDB server (e.g. "11.7.1-MariaDB-ubu2404")
+        min_version: Minimum required version string (e.g. "11.7.1")
+
+    Returns:
+        bool: True if version >= min_version, False otherwise
+    """
+    version = version.split("-")[0]
+    version_parts = [int(x) for x in version.split(".")]
+    min_version_parts = [int(x) for x in min_version.split(".")]
+    return version_parts >= min_version_parts

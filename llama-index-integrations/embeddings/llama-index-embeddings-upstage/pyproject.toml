@@ -30,7 +30,7 @@ license = "MIT"
 name = "llama-index-embeddings-upstage"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.3.0"
+version = "0.4.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
