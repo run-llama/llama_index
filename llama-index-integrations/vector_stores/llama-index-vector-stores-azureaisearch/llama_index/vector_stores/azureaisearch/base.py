@@ -554,7 +554,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
         language_analyzer: str = "en.lucene",
         compression_type: str = "none",
-        semantic_config_name : str = "mySemanticConfig",
+        semantic_config_name : Optional[str] = None,
         user_agent: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -1164,17 +1164,23 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         odata_filter = None
+        semantic_config_name = None
         if query.filters is not None:
             odata_filter = self._create_odata_filter(query.filters)
-        azure_query_result_search: AzureQueryResultSearchBase = (
-            AzureQueryResultSearchDefault(
-                query,
-                self._field_mapping,
-                odata_filter,
-                self._search_client,
-                self._async_search_client,
+        if self._semantic_config_name is not None:
+            semantic_config_name = self._semantic_config_name
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            azure_query_result_search: AzureQueryResultSearchBase = (
+                AzureQueryResultSearchDefault(
+                    query,
+                    self._field_mapping,
+                    odata_filter,
+                    self._search_client,
+                    self._async_search_client,
+                    semantic_config_name
+                    
+                )
             )
-        )
         if query.mode == VectorStoreQueryMode.SPARSE:
             azure_query_result_search = AzureQueryResultSearchSparse(
                 query,
@@ -1182,6 +1188,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                semantic_config_name
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
@@ -1190,6 +1197,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                semantic_config_name
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
@@ -1198,7 +1206,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                self._semantic_config_name
+                self._semantic_config_name,
             )
         return azure_query_result_search.search()
 
@@ -1382,12 +1390,14 @@ class AzureQueryResultSearchBase:
         odata_filter: Optional[str],
         search_client: SearchClient,
         async_search_client: AsyncSearchClient,
+        semantic_config_name : Optional[str],
     ) -> None:
         self._query = query
         self._field_mapping = field_mapping
         self._odata_filter = odata_filter
         self._search_client = search_client
         self._async_search_client = async_search_client
+        self._semantic_config_name = semantic_config_name
 
     @property
     def _select_fields(self) -> List[str]:
@@ -1413,6 +1423,7 @@ class AzureQueryResultSearchBase:
             top=self._query.similarity_top_k,
             select=self._select_fields,
             filter=self._odata_filter,
+            semantic_configuration_name=self._semantic_config_name,
         )
 
         id_result = []
@@ -1466,6 +1477,7 @@ class AzureQueryResultSearchBase:
             top=self._query.similarity_top_k,
             select=self._select_fields,
             filter=self._odata_filter,
+            semantic_configuration_name=self._semantic_config_name,
         )
 
         id_result = []
