@@ -615,7 +615,7 @@ class OpenAI(LLM):
         messages.append(ChatMessage(role="assistant", content=last_response.message.content))
 
         # Ask AI about confidence
-        confidence_prompt = f"Respond with only 'true' or 'false': Given the users request of '{task.input}' are you confident in your previous response?"
+        confidence_prompt = f"Respond with only 'true' or 'false': are you confident in your previous response?"
         messages.append(ChatMessage(role="user", content=confidence_prompt))
         message_dicts = to_openai_message_dicts(messages)
 
