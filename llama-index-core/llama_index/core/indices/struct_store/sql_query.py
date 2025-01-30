@@ -3,7 +3,7 @@
 import logging
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
-
+from llama_index.core.indices.base import BaseRetriever
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import (
     RESPONSE_TYPE,
@@ -590,6 +590,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         self,
         sql_database: SQLDatabase,
         table_retriever: ObjectRetriever[SQLTableSchema],
+        rows_retrievers: Optional[dict[str, BaseRetriever]] = None,
         llm: Optional[LLM] = None,
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
@@ -608,9 +609,11 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
             text_to_sql_prompt=text_to_sql_prompt,
             context_query_kwargs=context_query_kwargs,
             table_retriever=table_retriever,
+            rows_retrievers=rows_retrievers,
             context_str_prefix=context_str_prefix,
             sql_only=sql_only,
             callback_manager=callback_manager,
+            verbose=kwargs.get("verbose", False),
         )
         super().__init__(
             synthesize_response=synthesize_response,

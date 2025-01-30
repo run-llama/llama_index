@@ -171,7 +171,10 @@ class ReActAgent(BaseWorkflowAgent):
             )
             current_reasoning.append(obs_step)
 
-            if tool_call_result.return_direct:
+            if (
+                tool_call_result.return_direct
+                and tool_call_result.tool_name != "handoff"
+            ):
                 current_reasoning.append(
                     ResponseReasoningStep(
                         thought=obs_step.observation,
@@ -191,22 +194,25 @@ class ReActAgent(BaseWorkflowAgent):
             self.reasoning_key, default=[]
         )
 
-        reasoning_str = "\n".join([x.get_content() for x in current_reasoning])
+        if len(current_reasoning) > 0 and isinstance(
+            current_reasoning[-1], ResponseReasoningStep
+        ):
+            reasoning_str = "\n".join([x.get_content() for x in current_reasoning])
 
-        if reasoning_str:
-            reasoning_msg = ChatMessage(role="assistant", content=reasoning_str)
-            await memory.aput(reasoning_msg)
+            if reasoning_str:
+                reasoning_msg = ChatMessage(role="assistant", content=reasoning_str)
+                await memory.aput(reasoning_msg)
+                await ctx.set(self.reasoning_key, [])
+
+            # remove "Answer:" from the response
+            if output.response.content and "Answer:" in output.response.content:
+                start_idx = output.response.content.find("Answer:")
+                if start_idx != -1:
+                    output.response.content = output.response.content[
+                        start_idx + len("Answer:") :
+                    ].strip()
+
+            # clear scratchpad
             await ctx.set(self.reasoning_key, [])
-
-        # remove "Answer:" from the response
-        if output.response.content and "Answer:" in output.response.content:
-            start_idx = output.response.content.find("Answer:")
-            if start_idx != -1:
-                output.response.content = output.response.content[
-                    start_idx + len("Answer:") :
-                ].strip()
-
-        # clear scratchpad
-        await ctx.set(self.reasoning_key, [])
 
         return output

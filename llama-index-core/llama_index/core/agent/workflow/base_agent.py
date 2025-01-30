@@ -68,6 +68,13 @@ class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
                 validated_tools.append(FunctionTool.from_defaults(tool))
             else:
                 validated_tools.append(tool)
+
+        for tool in validated_tools:
+            if tool.metadata.name == "handoff":
+                raise ValueError(
+                    "'handoff' is a reserved tool name. Please use a different name."
+                )
+
         return validated_tools  # type: ignore[return-value]
 
     def _get_prompts(self) -> PromptDictType:

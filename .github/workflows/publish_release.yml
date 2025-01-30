@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: rm -rf llama-index-core/llama_index/core/_static/nltk_cache/corpora/stopwords.zip llama-index-core/llama_index/core/_static/nltk_cache/tokenizers/punkt.zip
       - name: Build and publish to pypi
-        uses: JRubics/poetry-publish@v2.0
+        uses: JRubics/poetry-publish@v2.1
         with:
           python_version: ${{ env.PYTHON_VERSION }}
           pypi_token: ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}

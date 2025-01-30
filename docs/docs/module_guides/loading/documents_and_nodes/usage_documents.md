@@ -110,7 +110,7 @@ print(document.get_content(metadata_mode=MetadataMode.LLM))
 
 #### Customizing Embedding Metadata Text
 
-Similar to customing the metadata visible to the LLM, we can also customize the metadata visible to embeddings. In this case, you can specifically exclude metadata visible to the embedding model, in case you DON'T want particular text to bias the embeddings.
+Similar to customizing the metadata visible to the LLM, we can also customize the metadata visible to embeddings. In this case, you can specifically exclude metadata visible to the embedding model, in case you DON'T want particular text to bias the embeddings.
 
 ```python
 document.excluded_embed_metadata_keys = ["file_name"]
