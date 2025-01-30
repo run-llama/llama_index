@@ -94,7 +94,7 @@ class VllmEmbedding(MultiModalEmbedding):
         return "VllmEmbedding"
 
     @atexit.register
-    def close(self):
+    def close():
         import torch
         import gc
 
