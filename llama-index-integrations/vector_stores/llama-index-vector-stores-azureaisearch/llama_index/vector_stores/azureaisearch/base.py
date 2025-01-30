@@ -115,6 +115,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             doc_id_field_key="doc_id",
             language_analyzer="en.lucene",
             vector_algorithm_type="exhaustiveKnn",
+            semantic_config_name="mySemanticConfig"
         )
         ```
     """
@@ -369,7 +370,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         )
         logger.info(f"Configuring {index_name} semantic search")
         semantic_config = SemanticConfiguration(
-            name="mySemanticConfig",
+            name=self._semantic_config_name,
             prioritized_fields=SemanticPrioritizedFields(
                 content_fields=[SemanticField(field_name=self._field_mapping["chunk"])],
             ),
@@ -491,7 +492,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         )
         logger.info(f"Configuring {index_name} semantic search")
         semantic_config = SemanticConfiguration(
-            name="mySemanticConfig",
+            name=self._semantic_config_name,
             prioritized_fields=SemanticPrioritizedFields(
                 content_fields=[SemanticField(field_name=self._field_mapping["chunk"])],
             ),
@@ -553,6 +554,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
         language_analyzer: str = "en.lucene",
         compression_type: str = "none",
+        semantic_config_name : str = "mySemanticConfig",
         user_agent: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -633,7 +635,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             raise ValueError(
                 "Only 'exhaustiveKnn' and 'hnsw' are supported for vector_algorithm_type"
             )
-
+        self._semantic_config_name = semantic_config_name
         self._language_analyzer = language_analyzer
         self._compression_type = compression_type.lower()
 
