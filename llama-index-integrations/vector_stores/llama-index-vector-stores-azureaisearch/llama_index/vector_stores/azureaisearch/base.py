@@ -555,7 +555,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
         language_analyzer: str = "en.lucene",
         compression_type: str = "none",
-        semantic_configuration_name : Optional[str] = None,
+        semantic_configuration_name: Optional[str] = None,
         user_agent: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -1178,8 +1178,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     odata_filter,
                     self._search_client,
                     self._async_search_client,
-                    semantic_configuration_name
-                    
+                    semantic_configuration_name,
                 )
             )
         if query.mode == VectorStoreQueryMode.SPARSE:
@@ -1189,7 +1188,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                semantic_configuration_name
+                semantic_configuration_name,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
@@ -1198,7 +1197,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                semantic_configuration_name
+                semantic_configuration_name,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
@@ -1391,7 +1390,7 @@ class AzureQueryResultSearchBase:
         odata_filter: Optional[str],
         search_client: SearchClient,
         async_search_client: AsyncSearchClient,
-        semantic_configuration_name : Optional[str],
+        semantic_configuration_name: Optional[str],
     ) -> None:
         self._query = query
         self._field_mapping = field_mapping
