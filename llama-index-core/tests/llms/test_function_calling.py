@@ -1,4 +1,4 @@
-from typing import Any, AsyncGenerator, Coroutine, List, Optional, Sequence, Union, Dict
+from typing import Any, AsyncGenerator, Coroutine, Dict, List, Optional, Sequence, Union
 
 import pytest
 from llama_index.core.base.llms.types import (
@@ -6,12 +6,11 @@ from llama_index.core.base.llms.types import (
     ChatResponse,
     ChatResponseGen,
     CompletionResponse,
-    FunctionTool,
     LLMMetadata,
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
-from llama_index.core.program.function_program import get_function_tool
+from llama_index.core.program.function_program import FunctionTool, get_function_tool
 from llama_index.core.tools.types import BaseTool
 from pydantic import BaseModel, Field
 
@@ -21,13 +20,10 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
         super().__init__()
         self._tool_selection = tool_selection
 
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        return ChatResponse(message=ChatMessage(role="user", content=""))
-
-    def achat(
+    async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> Coroutine[Any, Any, ChatResponse]:
-        pass
+        return ChatResponse(message=ChatMessage(role="user", content=""))
 
     def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -45,7 +41,7 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
         pass
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        pass
+        return ChatResponse(message=ChatMessage(role="user", content=""))
 
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -117,3 +113,20 @@ def test_predict_and_call_throws_if_error_on_tool(
     llm = MockFunctionCallingLLM([person_tool_selection])
     with pytest.raises(ValueError):
         llm.predict_and_call(tools=[person_tool], error_on_tool_error=True)
+
+
+@pytest.mark.asyncio()
+async def test_apredict_and_call(
+    person_tool: FunctionTool, person_tool_selection: ToolSelection
+) -> None:
+    llm = MockFunctionCallingLLM([person_tool_selection])
+    await llm.apredict_and_call(tools=[person_tool])
+
+
+@pytest.mark.asyncio()
+async def test_apredict_and_call_throws_if_error_on_tool(
+    person_tool: FunctionTool, person_tool_selection: ToolSelection
+) -> None:
+    llm = MockFunctionCallingLLM([person_tool_selection])
+    with pytest.raises(ValueError):
+        await llm.apredict_and_call(tools=[person_tool], error_on_tool_error=True)
