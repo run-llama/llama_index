@@ -14,19 +14,31 @@ def test_defaults():
 
 
 def test_mimetype():
-    png_1px = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
-    m = MediaResource(data=png_1px.encode("utf-8"), mimetype=None)
+    png_1px = b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    m = MediaResource(data=png_1px, mimetype=None)
     assert m.mimetype == "image/png"
 
 
+def test_mimetype_raw_data():
+    import requests
+
+    resp = requests.get(
+        "https://storage.googleapis.com/generativeai-downloads/data/scene.jpg"
+    )
+    m = MediaResource(data=resp.content)
+    assert m.mimetype == "image/jpeg"
+
+
 def test_mimetype_from_path():
-    m = MediaResource(path="my-image.jpg", mimetype=None)
+    m = MediaResource(path=Path("my-image.jpg"), mimetype=None)
     assert m.mimetype == "image/jpeg"
 
 
 def test_mimetype_prioritizes_data():
     png_1px = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
-    m = MediaResource(data=png_1px.encode("utf-8"), mimetype=None, path="my_image.jpg")
+    m = MediaResource(
+        data=png_1px.encode("utf-8"), mimetype=None, path=Path("my_image.jpg")
+    )
     assert m.mimetype == "image/png"
 
 

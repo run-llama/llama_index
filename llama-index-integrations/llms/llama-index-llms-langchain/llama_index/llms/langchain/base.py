@@ -127,7 +127,7 @@ class LangChainLLM(LLM):
                 response_str = ""
                 for message in self._llm.stream(lc_messages, **kwargs):
                     message = from_lc_messages([message])[0]
-                    delta = message.content
+                    delta = message.content or ""
                     response_str += delta
                     yield ChatResponse(
                         message=ChatMessage(role=message.role, content=response_str),

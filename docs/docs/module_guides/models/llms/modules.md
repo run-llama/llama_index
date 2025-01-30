@@ -24,7 +24,7 @@ We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 - [LangChain](../../../examples/llm/langchain.ipynb)
 - [LiteLLM](../../../examples/llm/litellm.ipynb)
 - [Llama API](../../../examples/llm/llama_api.ipynb)
-- [Llama CPP](../../../examples/llm/llama_2_llama_cpp.ipynb)
+- [Llama CPP](../../../examples/llm/llama_cpp.ipynb)
 - [LocalAI](../../../examples/llm/localai.ipynb)
 - [MariTalk](../../../examples/llm/maritalk.ipynb)
 - [MistralAI](../../../examples/llm/mistralai.ipynb)
