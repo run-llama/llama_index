@@ -65,6 +65,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
     table_name: str
     schema_name: str
     embed_dim: int
+    default_m: int
+    ef_search: int
     perform_setup: bool
     debug: bool
 
@@ -78,6 +80,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         table_name: str,
         schema_name: str,
         embed_dim: int = 1536,
+        default_m: int = 15,
+        ef_search: int = 50,
         perform_setup: bool = True,
         debug: bool = False,
     ) -> None:
@@ -98,6 +102,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             table_name=table_name,
             schema_name=schema_name,
             embed_dim=embed_dim,
+            default_m=default_m,
+            ef_search=ef_search,
             perform_setup=perform_setup,
             debug=debug,
         )
@@ -127,6 +133,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         connection_string: Optional[Union[str, sqlalchemy.engine.URL]] = None,
         connection_args: Optional[Dict[str, Any]] = None,
         embed_dim: int = 1536,
+        default_m: int = 15,
+        ef_search: int = 50,
         perform_setup: bool = True,
         debug: bool = False,
     ) -> "MariaDBVectorStore":
@@ -164,6 +172,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             table_name=table_name,
             schema_name=schema_name,
             embed_dim=embed_dim,
+            default_m=default_m,
+            ef_search=ef_search,
             perform_setup=perform_setup,
             debug=debug,
         )
@@ -204,7 +214,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
                 metadata JSON,
                 embedding VECTOR({self.embed_dim}) NOT NULL,
                 INDEX (`node_id`),
-                VECTOR INDEX (embedding) M=30 DISTANCE=cosine
+                VECTOR INDEX (embedding) M={self.default_m} DISTANCE=cosine
             )
             """
             connection.execute(sqlalchemy.text(stmt))
@@ -229,12 +239,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
 
         stmt = f"""SELECT text, metadata FROM `{self.table_name}` WHERE node_id IN :node_ids"""
 
-        if not node_ids or len(node_ids) == 0:
-            node_ids = None
-            stmt = f"""SELECT text, metadata FROM `{self.table_name}`"""
-
         with self._engine.connect() as connection:
-            connection.execute(sqlalchemy.text("SET @@mhnsw_ef_search=100"))
             result = connection.execute(sqlalchemy.text(stmt), {"node_ids": node_ids})
 
         nodes: List[BaseNode] = []
@@ -266,7 +271,6 @@ class MariaDBVectorStore(BasePydanticVectorStore):
 
         ids = []
         with self._engine.connect() as connection:
-            connection.execute(sqlalchemy.text("SET @@mhnsw_ef_search=100"))
             for node in nodes:
                 ids.append(node.node_id)
                 item = self._node_to_table_row(node)
@@ -387,6 +391,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         self._initialize()
 
         stmt = f"""
+        SET STATEMENT mhnsw_ef_search={self.ef_search} FOR
         SELECT
             node_id,
             text,
@@ -405,7 +410,6 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         """
 
         with self._engine.connect() as connection:
-            connection.execute(sqlalchemy.text("SET @@mhnsw_ef_search=100"))
             result = connection.execute(sqlalchemy.text(stmt))
 
         results = []
@@ -425,7 +429,6 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         self._initialize()
 
         with self._engine.connect() as connection:
-            connection.execute(sqlalchemy.text("SET @@mhnsw_ef_search=100"))
             # Should we create an index on ref_doc_id?
             stmt = f"""DELETE FROM `{self.table_name}` WHERE JSON_EXTRACT(metadata, '$.ref_doc_id') = :doc_id"""
             connection.execute(sqlalchemy.text(stmt), {"doc_id": ref_doc_id})
@@ -441,7 +444,6 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         self._initialize()
 
         with self._engine.connect() as connection:
-            connection.execute(sqlalchemy.text("SET @@mhnsw_ef_search=100"))
             stmt = f"""DELETE FROM `{self.table_name}` WHERE node_id IN :node_ids"""
             connection.execute(sqlalchemy.text(stmt), {"node_ids": node_ids})
 
@@ -451,7 +453,6 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         self._initialize()
 
         with self._engine.connect() as connection:
-            connection.execute(sqlalchemy.text("SET @@mhnsw_ef_search=100"))
             stmt = f"""DELETE FROM `{self.table_name}`"""
             connection.execute(sqlalchemy.text(stmt))
 
