@@ -37,7 +37,7 @@ class GeminiToolMetadataWrapper:
         self._base = base
         self._name = self._base.name
         self._description = self._base.description
-        self._fn_schema = self._base.fn_schema
+        self._fn_schema = jsonref.replace_refs(self._base.fn_schema)
         self._parameters = self.get_parameters_dict()
 
     fn_schema: Optional[Type[BaseModel]] = DefaultToolFnSchema

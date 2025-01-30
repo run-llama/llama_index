@@ -1,4 +1,5 @@
 # utils script
+import jsonref
 
 # generation with retry
 import logging
@@ -19,7 +20,6 @@ from vertexai.generative_models import FunctionDeclaration, Tool
 
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 
-from llama_index.llms.vertex.gemini_tool import GeminiToolWrapper
 
 CHAT_MODELS = ["chat-bison", "chat-bison-32k", "chat-bison@001"]
 TEXT_MODELS = [
@@ -34,6 +34,7 @@ CODE_CHAT_MODELS = ["codechat-bison", "codechat-bison-32k", "codechat-bison@001"
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
@@ -57,15 +58,15 @@ def _create_retry_decorator(max_retries: int) -> Callable[[Any], Any]:
 
 def to_gemini_tools(tools) -> Any:
     func_list = []
-    for i, tool in enumerate(tools):
-        _gemini_tools = GeminiToolWrapper(tool)
 
+    for i, tool in enumerate(tools):
         func_name = f"func_{i}"
         func_name = FunctionDeclaration(
             name=tool["name"],
             description=tool["description"],
-            parameters=tool["parameters"],
+            parameters=jsonref.replace_refs(tool["parameters"], merge_props=True),
         )
+        logger.info(f"Converted tool {i+1}: {func_name}")
         func_list.append(func_name)
     gemini_tools = Tool(
         function_declarations=func_list,

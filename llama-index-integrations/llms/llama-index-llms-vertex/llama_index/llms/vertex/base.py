@@ -1,3 +1,4 @@
+import jsonref
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -487,7 +488,9 @@ class Vertex(FunctionCallingLLM):
                 {
                     "name": metadata.name,
                     "description": metadata.description,
-                    "parameters": metadata.get_parameters_dict(),
+                    "parameters": jsonref.replace_refs(
+                        metadata.get_parameters_dict(), merge_props=True
+                    ),
                 }
             )
 
