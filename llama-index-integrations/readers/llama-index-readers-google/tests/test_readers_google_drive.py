@@ -2,7 +2,7 @@ import json
 import os
 import unittest
 from tempfile import TemporaryDirectory
-from unittest.mock import MagicMock
+from unittest.mock import patch, MagicMock, mock_open
 
 import pytest
 from google.oauth2.credentials import Credentials
@@ -157,3 +157,42 @@ class TestGoogleDriveReader(unittest.TestCase):
 
         # Verify API calls
         assert mock_service.files().get.call_count >= 1
+
+    def test_download_file(self):
+        mock_credentials = MagicMock()
+        mock_credentials.universe_domain = "googleapis.com"
+
+        mock_service = MagicMock()
+        mock_build = MagicMock(return_value=mock_service)
+
+        # setup a bunch of mocks to imitate calling Google Drive and downloading file
+        with patch("googleapiclient.discovery.build", mock_build), patch(
+            "builtins.open", mock_open()
+        ) as mock_file:
+            reader = GoogleDriveReader(
+                client_config={
+                    "client_id": "example_client_id",
+                    "client_secret": "example_client_secret",
+                },
+            )
+            reader._creds = mock_credentials
+
+            google_drive_id = "googledriveid"
+            mock_file_response = {
+                "name": "test_file.pdf",
+                "id": google_drive_id,
+                "mimeType": "application/pdf",
+            }
+            mock_service.files().get().execute.return_value = mock_file_response
+
+            mock_downloader = MagicMock()
+            mock_downloader.next_chunk.return_value = (None, True)
+
+            with patch(
+                "googleapiclient.http.MediaIoBaseDownload", return_value=mock_downloader
+            ):
+                filename = reader._download_file(google_drive_id, google_drive_id)
+
+            assert filename == google_drive_id + ".pdf"
+            # also should have tried to write the file
+            mock_file().write.assert_called_once()

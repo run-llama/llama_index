@@ -13,7 +13,7 @@ async def test_get_graph_url(monkeypatch):
         graph_db_provider="networkx",
         vector_db_provider="lancedb",
         relational_db_provider="sqlite",
-        db_name="cognee_db",
+        relational_db_name="cognee_db",
     )
 
     # Mock logging to graphistry

@@ -29,11 +29,11 @@ license = "MIT"
 maintainers = ["ofermend"]
 name = "llama-index-packs-vectara-rag"
 readme = "README.md"
-version = "0.3.0"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-index-indices-managed-vectara = "^0.3.0"
+llama-index-indices-managed-vectara = "^0.4.0"
 llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]

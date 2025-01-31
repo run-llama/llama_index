@@ -1,11 +1,12 @@
 """Global Gemini Utilities (shared between Gemini LLM and Vertex)."""
 
+from __future__ import annotations
+
 from collections.abc import Sequence
-from typing import Dict
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
-ROLES_TO_GEMINI: Dict[MessageRole, MessageRole] = {
+ROLES_TO_GEMINI: dict[MessageRole, MessageRole] = {
     MessageRole.USER: MessageRole.USER,
     MessageRole.ASSISTANT: MessageRole.MODEL,
     ## Gemini chat mode only has user and model roles. Put the rest in user role.
@@ -17,17 +18,21 @@ ROLES_TO_GEMINI: Dict[MessageRole, MessageRole] = {
     MessageRole.TOOL: MessageRole.USER,
     MessageRole.FUNCTION: MessageRole.USER,
 }
-ROLES_FROM_GEMINI: Dict[MessageRole, MessageRole] = {
+ROLES_FROM_GEMINI: dict[str, MessageRole] = {
     ## Gemini has user, model and function roles.
-    MessageRole.USER: MessageRole.USER,
-    MessageRole.MODEL: MessageRole.ASSISTANT,
-    MessageRole.FUNCTION: MessageRole.TOOL,
+    "user": MessageRole.USER,
+    "model": MessageRole.ASSISTANT,
+    "function": MessageRole.TOOL,
 }
 
 
 def merge_neighboring_same_role_messages(
     messages: Sequence[ChatMessage],
 ) -> Sequence[ChatMessage]:
+    if len(messages) < 2:
+        # Nothing to merge
+        return messages
+
     # Gemini does not support multiple messages of the same role in a row, so we merge them
     merged_messages = []
     i = 0

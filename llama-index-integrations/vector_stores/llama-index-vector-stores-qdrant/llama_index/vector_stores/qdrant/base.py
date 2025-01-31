@@ -1083,7 +1083,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         range=Range(lte=subfilter.value),
                     )
                 )
-            elif subfilter.operator == FilterOperator.TEXT_MATCH:
+            elif (
+                subfilter.operator == FilterOperator.TEXT_MATCH
+                or subfilter.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
+            ):
                 conditions.append(
                     FieldCondition(
                         key=subfilter.key,

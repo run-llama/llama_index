@@ -68,7 +68,6 @@ def _try_loading_included_file_formats() -> (
             HWPReader,
             ImageReader,
             IPYNBReader,
-            MarkdownReader,
             MboxReader,
             PandasCSVReader,
             PandasExcelReader,
@@ -95,7 +94,6 @@ def _try_loading_included_file_formats() -> (
         ".mp4": VideoAudioReader,
         ".csv": PandasCSVReader,
         ".epub": EpubReader,
-        ".md": MarkdownReader,
         ".mbox": MboxReader,
         ".ipynb": IPYNBReader,
         ".xls": PandasExcelReader,
@@ -201,6 +199,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             (Optional; overrides input_dir, exclude)
         exclude (List): glob of python file paths to exclude (Optional)
         exclude_hidden (bool): Whether to exclude hidden files (dotfiles).
+        exclude_empty (bool): Whether to exclude empty files (Optional).
         encoding (str): Encoding of the files.
             Default is utf-8.
         errors (str): how encoding and decoding errors are to be handled,
@@ -233,6 +232,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         input_files: list | None = None,
         exclude: list | None = None,
         exclude_hidden: bool = True,
+        exclude_empty: bool = False,
         errors: str = "ignore",
         recursive: bool = False,
         encoding: str = "utf-8",
@@ -257,6 +257,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         self.exclude = exclude
         self.recursive = recursive
         self.exclude_hidden = exclude_hidden
+        self.exclude_empty = exclude_empty
         self.required_exts = required_exts
         self.num_files_limit = num_files_limit
         self.raise_on_error = raise_on_error
@@ -284,6 +285,11 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         return any(
             part.startswith(".") and part not in [".", ".."] for part in path.parts
         )
+
+    def is_empty_file(self, path: Path | PurePosixPath) -> bool:
+        if isinstance(path, PurePosixPath):
+            path = Path(path)
+        return path.is_file() and len(path.read_bytes()) == 0
 
     def _add_files(self, input_dir: Path | PurePosixPath) -> list[Path | PurePosixPath]:
         """Add files."""
@@ -319,6 +325,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             ref = _Path(_ref)
             is_dir = self.fs.isdir(ref)
             skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
+            skip_because_empty = self.exclude_empty and self.is_empty_file(ref)
             skip_because_bad_ext = (
                 self.required_exts is not None and ref.suffix not in self.required_exts
             )
@@ -344,6 +351,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 or skip_because_hidden
                 or skip_because_bad_ext
                 or skip_because_excluded
+                or skip_because_empty
             ):
                 continue
             else:
