@@ -256,7 +256,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 )
             await memory.aput(user_msg)
             await ctx.set("user_msg_str", user_msg.content)
-        else:
+        elif chat_history:
             # If no user message, use the last message from chat history as user_msg_str
             last_msg = chat_history[-1].content or ""
             await ctx.set("user_msg_str", last_msg)
@@ -265,6 +265,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 chat_history[-1].content = self.state_prompt.format(
                     state=current_state, msg=chat_history[-1].content
                 )
+        else:
+            raise ValueError("Must provide either user_msg or chat_history")
 
         # Get all messages from memory
         input_messages = memory.get()
