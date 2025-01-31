@@ -12,8 +12,7 @@ contains_example = false
 import_path = "llama_index.embeddings.vllm"
 
 [tool.llamahub.class_authors]
-Vllm = "llama-index"
-VllmServer = "llama-index"
+VllmEmbedding = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
