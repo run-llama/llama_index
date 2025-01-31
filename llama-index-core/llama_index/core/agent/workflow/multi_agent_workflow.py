@@ -232,31 +232,42 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         """Sets up the workflow and validates inputs."""
         await self._init_context(ctx, ev)
 
-        user_msg = ev.get("user_msg")
-        chat_history = ev.get("chat_history")
-        if user_msg and chat_history:
-            raise ValueError("Cannot provide both user_msg and chat_history")
+        user_msg: Optional[Union[str, ChatMessage]] = ev.get("user_msg")
+        chat_history: Optional[List[ChatMessage]] = ev.get("chat_history", [])
 
+        # Convert string user_msg to ChatMessage
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role="user", content=user_msg)
 
-        await ctx.set("user_msg_str", user_msg.content)
-
         # Add messages to memory
         memory: BaseMemory = await ctx.get("memory")
+
+        # First set chat history if it exists
+        if chat_history:
+            memory.set(chat_history)
+
+        # Then add user message if it exists
+        current_state = await ctx.get("state")
         if user_msg:
-            # Add the state to the user message if it exists and if requested
-            current_state = await ctx.get("state")
+            # Add the state to the user message if it exists
             if current_state:
                 user_msg.content = self.state_prompt.format(
                     state=current_state, msg=user_msg.content
                 )
-
             await memory.aput(user_msg)
-            input_messages = memory.get(input=user_msg.content)
+            await ctx.set("user_msg_str", user_msg.content)
         else:
-            memory.set(chat_history)
-            input_messages = memory.get()
+            # If no user message, use the last message from chat history as user_msg_str
+            last_msg = chat_history[-1].content or ""
+            await ctx.set("user_msg_str", last_msg)
+
+            if current_state:
+                chat_history[-1].content = self.state_prompt.format(
+                    state=current_state, msg=chat_history[-1].content
+                )
+
+        # Get all messages from memory
+        input_messages = memory.get()
 
         # send to the current agent
         current_agent_name: str = await ctx.get("current_agent_name")
