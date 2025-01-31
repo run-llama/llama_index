@@ -526,10 +526,10 @@ DEFAULT_JSONALYZE_PROMPT = PromptTemplate(
 # REBEL MetaPrompt Template
 ###########################################
 
-DEFAULT_REBEL_RERANK_PROMPT_TMPL = (
-    '''You are a prompt generator. You will receive only a user’s query as input. Your task is to:
+DEFAULT_REBEL_META_PROMPT_TMPL = (
+    '''You are a prompt generator. You will receive only a user's query as input. Your task is to:
 
-Analyze the user’s query and identify additional properties beyond basic relevance that would be desirable for selecting and ranking context documents. These properties should be inferred from the query’s subject matter, without the user specifying them. Such properties may include:
+Analyze the user's query and identify additional properties beyond basic relevance that would be desirable for selecting and ranking context documents. These properties should be inferred from the query's subject matter, without the user specifying them. Such properties may include:
 
 Domain appropriateness (e.g., technical accuracy, authoritative sourcing, correctness of information)
 Perspective diversity (multiple viewpoints, ideological balance, different theoretical frameworks)
@@ -540,9 +540,9 @@ Reasoning depth or conceptual complexity
 Authoritativeness (recognition of reputable experts, institutions, or high-quality sources)
 After inferring these properties from the query, produce a final prompt that instructs a large-language model re-ranker on how to:
 
-Take the user’s query and a set of candidate documents.
-The documents and the query will appear after your instructions in this format: A list of documents is shown below. Each document has a number and a summary. The summaries may indicate the type of source, credibility level, publication date, or the nature of the information. After listing all documents, the user’s query will be presented on a single line labeled "Question:". For example: Document 1: <summary of document 1> Document 2: <summary of document 2> ... Document N: <summary of document N> Question: <user’s query>
-Assign each document a Relevance score (0–10) and scores for each inferred property (0–5).
+Take the user's query and a set of candidate documents.
+The documents and the query will appear after your instructions in this format: A list of documents is shown below. Each document has a number and a summary. The summaries may indicate the type of source, credibility level, publication date, or the nature of the information. After listing all documents, the user's query will be presented on a single line labeled "Question:". For example: Document 1: <summary of document 1> Document 2: <summary of document 2> ... Document N: <summary of document N> Question: <user's query>
+Assign each document a Relevance score (0-10) and scores for each inferred property (0-5).
 Compute a weighted composite score for each document. This composite score should not just be used to break ties, but to determine the final ordering. For instance, you may define a formula like: Final Score = Relevance + (Weight1 * Property1) + (Weight2 * Property2) + ... The weights should be specified by you. For example, if you have three properties, you might say: Final Score = Relevance + 0.5*(Property1) + 0.5*(Property2) + 0.5*(Property3) This ensures that documents which strongly exhibit the desired secondary properties can surpass documents with slightly higher relevance but weaker secondary property scores.
 Filter out irrelevant documents first. For example, discard any document with Relevance < 3.
 Rank all remaining documents by their Final Score (based on the chosen weights).
@@ -552,9 +552,9 @@ Produce only the final ranked list of chosen documents with their Final Score, i
 Include no commentary, explanation, or additional text beyond these lines.
 Your final prompt should:
 
-Include the user’s query verbatim.
+Include the user's query verbatim.
 Enumerate and define the inferred properties in detail, clearly stating their significance.
-Provide the exact scoring rubric for Relevance (0–10) and each inferred property (0–5), explaining what high and low scores mean.
+Provide the exact scoring rubric for Relevance (0-10) and each inferred property (0-5), explaining what high and low scores mean.
 Specify the weighted composite score formula and list the weights for each property.
 Give a step-by-step procedure: assign Relevance, assign property scores, discard low-relevance documents, compute Final Scores, sort by Final Score, handle ties if any, then output the final list.
 State what to do if no documents qualify (output nothing).
@@ -587,21 +587,21 @@ Defines a weighted composite scoring formula that incorporates Relevance and all
 Gives step-by-step instructions for scoring, filtering, ranking, and outputting results.
 Explains what to do if no suitable documents remain.
 Instructs that the final output should only be lines of the form "Doc: [number], Relevance: [score]" with no extra text.
-Example 1 User Query: "How do different countries’ tax policies affect income inequality, and what arguments exist from various economic schools of thought?"
+Example 1 User Query: "How do different countries' tax policies affect income inequality, and what arguments exist from various economic schools of thought?"
 
 Inferred Properties:
 
-Perspective diversity (0–5): Documents that mention or compare multiple economic theories or viewpoints score higher. A high score (5) means it covers several distinct schools of thought. A low score (0) means it is one-dimensional.
-Authoritativeness (0–5): Documents from credible economists, reputable research institutes, or peer-reviewed studies score higher. A 5 might be a well-cited academic paper; a 0 might be an anonymous blog post.
-Comparative breadth (0–5): Documents discussing tax policies in multiple countries score higher. A 5 means it covers several countries, a 0 means it focuses on just one or does not compare countries at all.
-Scoring Rubric: Relevance (0–10): A 10 means the document directly addresses how tax policies influence income inequality and references arguments from different economic viewpoints. A 0 means it is off-topic. Perspective diversity (0–5): Assign based on how many distinct economic perspectives are included. Authoritativeness (0–5): Assign based on credibility and source quality. Comparative breadth (0–5): Assign based on the number of countries or breadth of international comparison.
+Perspective diversity (0-5): Documents that mention or compare multiple economic theories or viewpoints score higher. A high score (5) means it covers several distinct schools of thought. A low score (0) means it is one-dimensional.
+Authoritativeness (0-5): Documents from credible economists, reputable research institutes, or peer-reviewed studies score higher. A 5 might be a well-cited academic paper; a 0 might be an anonymous blog post.
+Comparative breadth (0-5): Documents discussing tax policies in multiple countries score higher. A 5 means it covers several countries, a 0 means it focuses on just one or does not compare countries at all.
+Scoring Rubric: Relevance (0-10): A 10 means the document directly addresses how tax policies influence income inequality and references arguments from different economic viewpoints. A 0 means it is off-topic. Perspective diversity (0-5): Assign based on how many distinct economic perspectives are included. Authoritativeness (0-5): Assign based on credibility and source quality. Comparative breadth (0-5): Assign based on the number of countries or breadth of international comparison.
 
 Weighted Composite Score: Final Score = Relevance + 0.5*(Perspective diversity) + 0.5*(Authoritativeness) + 0.5*(Comparative breadth)
 
-Instructions: After this prompt, you will see: Document 1: <summary> Document 2: <summary> ... Document N: <summary> Question: "How do different countries’ tax policies affect income inequality, and what arguments exist from various economic schools of thought?"
+Instructions: After this prompt, you will see: Document 1: <summary> Document 2: <summary> ... Document N: <summary> Question: "How do different countries' tax policies affect income inequality, and what arguments exist from various economic schools of thought?"
 
-Assign Relevance to each document (0–10). Discard documents with Relevance < 3.
-For remaining documents, assign Perspective diversity, Authoritativeness, and Comparative breadth (each 0–5).
+Assign Relevance to each document (0-10). Discard documents with Relevance < 3.
+For remaining documents, assign Perspective diversity, Authoritativeness, and Comparative breadth (each 0-5).
 Compute Final Score as described above.
 Sort all remaining documents by Final Score (descending).
 If two documents have identical Final Scores, pick consistently, for example by preferring the one with higher Authoritativeness.
@@ -628,10 +628,10 @@ Example 2 User Query: "What are the latest recommended treatments for chronic lo
 
 Inferred Properties:
 
-Recency (0–5): Higher if the document references recent studies, new clinical guidelines, or up-to-date research (within the last few years). A 5 means it is very recent, a 0 means outdated or no mention of timeliness.
-Authoritativeness (0–5): Higher if sourced from reputable medical journals, recognized health organizations, or consensus guidelines.
-Specificity (0–5): Higher if it focuses specifically on chronic lower back pain treatments. A 5 means it precisely addresses chronic lower back pain, a 0 means it only vaguely mentions pain or general treatments without specificity.
-Scoring Rubric: Relevance (0–10): A 10 means the document explicitly discusses current recommended treatments for chronic lower back pain based on recent research. A 0 means off-topic. Recency (0–5) Authoritativeness (0–5) Specificity (0–5)
+Recency (0-5): Higher if the document references recent studies, new clinical guidelines, or up-to-date research (within the last few years). A 5 means it is very recent, a 0 means outdated or no mention of timeliness.
+Authoritativeness (0-5): Higher if sourced from reputable medical journals, recognized health organizations, or consensus guidelines.
+Specificity (0-5): Higher if it focuses specifically on chronic lower back pain treatments. A 5 means it precisely addresses chronic lower back pain, a 0 means it only vaguely mentions pain or general treatments without specificity.
+Scoring Rubric: Relevance (0-10): A 10 means the document explicitly discusses current recommended treatments for chronic lower back pain based on recent research. A 0 means off-topic. Recency (0-5) Authoritativeness (0-5) Specificity (0-5)
 
 Weighted Composite Score: Final Score = Relevance + 0.5*(Recency) + 0.5*(Authoritativeness) + 0.5*(Specificity)
 
@@ -665,10 +665,10 @@ Example 3 User Query: "How did the policies of Emperor Qin Shi Huang shape the p
 
 Inferred Properties:
 
-Historical depth (0–5): Higher if it provides detailed historical context, dates, and direct evidence. A 5 is richly detailed, a 0 is very superficial.
-Perspective range (0–5): Higher if it references multiple historians or scholarly opinions. A 5 means multiple perspectives, a 0 is one-sided.
-Cultural/political detail (0–5): Higher if it addresses both political structures and cultural changes. A 5 is comprehensive, a 0 is minimal detail.
-Scoring Rubric: Relevance (0–10): A 10 means it explicitly discusses Qin Shi Huang’s policies and their impact on both political and cultural aspects of ancient China. Historical depth (0–5) Perspective range (0–5) Cultural/political detail (0–5)
+Historical depth (0-5): Higher if it provides detailed historical context, dates, and direct evidence. A 5 is richly detailed, a 0 is very superficial.
+Perspective range (0-5): Higher if it references multiple historians or scholarly opinions. A 5 means multiple perspectives, a 0 is one-sided.
+Cultural/political detail (0-5): Higher if it addresses both political structures and cultural changes. A 5 is comprehensive, a 0 is minimal detail.
+Scoring Rubric: Relevance (0-10): A 10 means it explicitly discusses Qin Shi Huang's policies and their impact on both political and cultural aspects of ancient China. Historical depth (0-5) Perspective range (0-5) Cultural/political detail (0-5)
 
 Weighted Composite Score: Final Score = Relevance + 0.5*(Historical depth) + 0.5*(Perspective range) + 0.5*(Cultural/political detail)
 
@@ -702,10 +702,10 @@ Example 4 User Query: "What are the main differences between various machine lea
 
 Inferred Properties:
 
-Technical accuracy (0–5): Higher if the document correctly and specifically describes features, performance characteristics, or typical uses. A 5 means very accurate and specific.
-Comparative breadth (0–5): Higher if the document compares multiple frameworks directly, ideally all three. A 5 means it covers all three well, a 0 means it only mentions one.
-Authoritativeness (0–5): Higher if citing official documentation, known ML experts, or reputable evaluation sources.
-Scoring Rubric: Relevance (0–10): A 10 means the document explicitly compares these ML frameworks in detail. Technical accuracy (0–5) Comparative breadth (0–5) Authoritativeness (0–5)
+Technical accuracy (0-5): Higher if the document correctly and specifically describes features, performance characteristics, or typical uses. A 5 means very accurate and specific.
+Comparative breadth (0-5): Higher if the document compares multiple frameworks directly, ideally all three. A 5 means it covers all three well, a 0 means it only mentions one.
+Authoritativeness (0-5): Higher if citing official documentation, known ML experts, or reputable evaluation sources.
+Scoring Rubric: Relevance (0-10): A 10 means the document explicitly compares these ML frameworks in detail. Technical accuracy (0-5) Comparative breadth (0-5) Authoritativeness (0-5)
 
 Weighted Composite Score: Final Score = Relevance + 0.5*(Technical accuracy) + 0.5*(Comparative breadth) + 0.5*(Authoritativeness)
 
@@ -738,10 +738,10 @@ Example 5 User Query: "What are the arguments for and against universal basic in
 
 Inferred Properties:
 
-Balance of perspectives (0–5): Higher if the document presents both pro and con arguments. A 5 means thorough coverage of both sides.
-Reasoning depth (0–5): Higher if it explains the rationale behind arguments, providing logic or evidence.
-Authoritativeness (0–5): Higher if referencing economists, studies, or policy analyses from reputable sources.
-Scoring Rubric: Relevance (0–10): A 10 means it clearly discusses UBI arguments both for and against. Balance of perspectives (0–5) Reasoning depth (0–5) Authoritativeness (0–5)
+Balance of perspectives (0-5): Higher if the document presents both pro and con arguments. A 5 means thorough coverage of both sides.
+Reasoning depth (0-5): Higher if it explains the rationale behind arguments, providing logic or evidence.
+Authoritativeness (0-5): Higher if referencing economists, studies, or policy analyses from reputable sources.
+Scoring Rubric: Relevance (0-10): A 10 means it clearly discusses UBI arguments both for and against. Balance of perspectives (0-5) Reasoning depth (0-5) Authoritativeness (0-5)
 
 Weighted Composite Score: Final Score = Relevance + 0.5*(Balance of perspectives) + 0.5*(Reasoning depth) + 0.5*(Authoritativeness)
 
@@ -773,18 +773,18 @@ Output only: Doc: [number], Relevance: [score], where [score] is actually the fi
 
 Follow these examples as a template for your final prompt. For any new user query, do the following:
 
-Include the user’s query verbatim.
+Include the user's query verbatim.
 Infer the relevant secondary properties and define them clearly.
 Give a scoring rubric for Relevance and each property.
 Specify a weighted composite score formula that combines Relevance and the properties.
 Provide step-by-step instructions: assign scores, filter out irrelevant documents, compute Final Score, sort by Final Score, handle ties, and if none qualify, output nothing.
 Instruct the re-ranker to output only the final list of documents and their Relevance scores, with no extra commentary.
-Now, here is the user’s query:
+Now, here is the user's query:
 
 {user_query}
 '''
 )
 
-DEFAULT_REBEL_RERANK_PROMPT = PromptTemplate(
-    DEFAULT_REBEL_RERANK_PROMPT_TMPL, prompt_type=PromptType.REBEL_RERANK
+DEFAULT_REBEL_META_PROMPT = PromptTemplate(
+    DEFAULT_REBEL_META_PROMPT_TMPL, prompt_type=PromptType.REBEL_RERANK
 )
