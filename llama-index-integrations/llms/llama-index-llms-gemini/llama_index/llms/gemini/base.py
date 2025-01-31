@@ -192,6 +192,7 @@ class Gemini(CustomLLM):
         )
         return completion_from_gemini_response(result)
 
+    @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
@@ -201,6 +202,7 @@ class Gemini(CustomLLM):
         )
         return completion_from_gemini_response(result)
 
+    @llm_completion_callback()
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
@@ -223,6 +225,7 @@ class Gemini(CustomLLM):
         )
         return chat_from_gemini_response(response)
 
+    @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
@@ -268,6 +271,7 @@ class Gemini(CustomLLM):
 
         return gen()
 
+    @llm_chat_callback()
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
