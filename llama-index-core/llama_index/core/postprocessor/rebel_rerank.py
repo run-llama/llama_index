@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Callable
+from typing import List, Optional, Callable
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, SerializeAsAny
 from llama_index.core.llms import LLM
@@ -32,7 +32,9 @@ class REBELRerank(BaseNodePostprocessor):
         description="REBEL prompt that generates ranking instructions."
     )
     choice_batch_size: int = Field(description="Batch size for choice select.")
-    llm: LLM = Field(description="The LLM to rerank with.")
+    llm: LLM = Field(
+        default_factory=get_default_llm, 
+        description="The LLM to rerank with.")
     verbose: bool = Field(
         default=False, description="Whether to print intermediate steps."
     )
