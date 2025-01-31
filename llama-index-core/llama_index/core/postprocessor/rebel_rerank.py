@@ -1,16 +1,14 @@
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Callable, Union
-import re
+from typing import Any, Dict, List, Optional, Callable
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, SerializeAsAny
-from llama_index.core.llms import LLM, ChatMessage, ChatResponse
+from llama_index.core.llms import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.base import PromptTemplate, PromptType
 from llama_index.core.prompts.default_prompts import DEFAULT_REBEL_META_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import NodeWithScore, QueryBundle
-from llama_index.core.utils import print_text
 from llama_index.core.settings import Settings
 from llama_index.core.indices.utils import (
     default_format_node_batch_fn,
@@ -82,6 +80,7 @@ class REBELRerank(BaseNodePostprocessor):
         """Update prompts."""
         if "rebel_prompt" in prompts:
             self.rebel_prompt = prompts["rebel_prompt"]
+        # the choice_select_prompt is dynamically generated in the REBEL method, no need to update it here
 
     def _postprocess_nodes(
         self,
@@ -123,7 +122,6 @@ class REBELRerank(BaseNodePostprocessor):
 
             choice_idxs = [int(choice) - 1 for choice in raw_choices]
             choice_nodes = [nodes_batch[i] for i in choice_idxs]
-            # relevances = relevances or [1.0 for _ in choice_nodes]
             
             initial_results.extend(
                 [
@@ -139,11 +137,3 @@ class REBELRerank(BaseNodePostprocessor):
         )[:self.top_n]
 
         return final_results
-
-    # def run_llm(self, messages: Sequence[ChatMessage]) -> ChatResponse:
-    #     """Run the LLM with the given messages."""
-    #     return self.llm.chat(messages)
-
-    # async def arun_llm(self, messages: Sequence[ChatMessage]) -> ChatResponse:
-    #     """Run the LLM asynchronously with the given messages."""
-    #     return await self.llm.achat(messages)
