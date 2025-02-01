@@ -42,6 +42,9 @@ class OCIGenAIEmbeddings(BaseEmbedding):
     Make sure you have the required policies (profile/roles) to
     access the OCI Generative AI service. If a specific config profile is used,
     you must pass the name of the profile (~/.oci/config) through auth_profile.
+    If a specific config file location is used, you must pass
+    the file location where profile name configs present
+    through auth_file_location
 
     To use, you must provide the compartment id
     along with the endpoint url, and model id
@@ -93,6 +96,11 @@ class OCIGenAIEmbeddings(BaseEmbedding):
         default="DEFAULT",
     )
 
+    auth_file_location: Optional[str] = Field(
+        description="Path to the config file. If not specified, ~/.oci/config will be used",
+        default="~/.oci/config",
+    )
+
     _client: Any = PrivateAttr()
 
     def __init__(
@@ -104,6 +112,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
         compartment_id: Optional[str] = None,
         auth_type: Optional[str] = "API_KEY",
         auth_profile: Optional[str] = "DEFAULT",
+        auth_file_location: Optional[str] = "~/.oci/config",
         client: Optional[Any] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
@@ -125,10 +134,11 @@ class OCIGenAIEmbeddings(BaseEmbedding):
 
             compartment_id (str): OCID of the compartment.
 
-            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCEAL, RESOURCE_PRINCIPAL.
-                                    If not specified, API_KEY will be used
+            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCEAL, RESOURCE_PRINCIPAL. If not specified, API_KEY will be used
 
             auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
+
+            auth_file_location (Optional[str]): Path to the config file, If not specified, ~/.oci/config will be used.
 
             client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the
                                     provided service endpoint and authentifcation method.
@@ -141,6 +151,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
             compartment_id=compartment_id,
             auth_type=auth_type,
             auth_profile=auth_profile,
+            auth_file_location=auth_file_location,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
         )
@@ -163,7 +174,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
 
                 if auth_type == OCIAuthType(1).name:
                     client_kwargs["config"] = oci.config.from_file(
-                        profile_name=auth_profile
+                        file_location=auth_file_location, profile_name=auth_profile
                     )
                     client_kwargs.pop("signer", None)
                 elif auth_type == OCIAuthType(2).name:
@@ -179,7 +190,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                         return oci.auth.signers.SecurityTokenSigner(st_string, pk)
 
                     client_kwargs["config"] = oci.config.from_file(
-                        profile_name=auth_profile
+                        file_location=auth_file_location, profile_name=auth_profile
                     )
                     client_kwargs["signer"] = make_security_token_signer(
                         oci_config=client_kwargs["config"]
@@ -208,9 +219,9 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                 ) from ex
             except Exception as e:
                 raise ValueError(
-                    """Could not authenticate with OCI client. Please check if ~/.oci/config exists.
+                    """Could not authenticate with OCI client.
                     If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, please check the specified
-                    auth_profile and auth_type are valid.""",
+                    auth_profile, auth_file_location and auth_type are valid.""",
                     e,
                 ) from e
 
