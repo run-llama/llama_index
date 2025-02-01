@@ -1,6 +1,7 @@
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.vllm import VllmEmbedding
 
+
 def test_vllmembedding_class():
     names_of_base_classes = [b.__name__ for b in VllmEmbedding.__mro__]
     assert BaseEmbedding.__name__ in names_of_base_classes

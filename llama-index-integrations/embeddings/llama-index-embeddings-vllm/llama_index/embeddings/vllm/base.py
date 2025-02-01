@@ -76,16 +76,18 @@ class VllmEmbedding(MultiModalEmbedding):
             )
         self._client = VLLModel(
             model=model_name,
-            task='embed',
+            task="embed",
             max_num_seqs=embed_batch_size,
             tensor_parallel_size=tensor_parallel_size,
             trust_remote_code=trust_remote_code,
             dtype=dtype,
             download_dir=download_dir,
-            **vllm_kwargs
+            **vllm_kwargs,
         )
         try:
-            self._image_token_id = self._client.llm_engine.model_config.hf_config.image_token_id
+            self._image_token_id = (
+                self._client.llm_engine.model_config.hf_config.image_token_id
+            )
         except AttributeError:
             self._image_token_id = None
 
@@ -109,9 +111,7 @@ class VllmEmbedding(MultiModalEmbedding):
         reraise=True,
     )
     def _embed_with_retry(
-            self,
-            inputs: List[Union[str, BytesIO]],
-            embed_type: str = "text"
+        self, inputs: List[Union[str, BytesIO]], embed_type: str = "text"
     ) -> List[List[float]]:
         """
         Generates embeddings with retry mechanism.
@@ -127,8 +127,13 @@ class VllmEmbedding(MultiModalEmbedding):
         """
         try:
             if embed_type == "image":
-                inputs = [{"prompt_token_ids": [self._image_token_id],
-                           "multi_modal_data": {"image": x}} for x in inputs]
+                inputs = [
+                    {
+                        "prompt_token_ids": [self._image_token_id],
+                        "multi_modal_data": {"image": x},
+                    }
+                    for x in inputs
+                ]
             emb = self._client.embed(inputs)
             return [x.outputs.embedding for x in emb]
         except Exception as e:
@@ -136,9 +141,7 @@ class VllmEmbedding(MultiModalEmbedding):
             raise
 
     def _embed(
-            self,
-            inputs: List[Union[str, BytesIO]],
-            embed_type: str = "text"
+        self, inputs: List[Union[str, BytesIO]], embed_type: str = "text"
     ) -> List[List[float]]:
         """
         Generates Embeddings with input validation and retry mechanism.
@@ -228,14 +231,14 @@ class VllmEmbedding(MultiModalEmbedding):
         return self._get_image_embedding(img_file_path)
 
     def _get_image_embeddings(
-            self, img_file_paths: List[ImageType]
+        self, img_file_paths: List[ImageType]
     ) -> List[List[float]]:
         images = [Image.open(x) for x in img_file_paths]
         """Generate embeddings for multiple images."""
         return self._embed(images, "image")
 
     async def _aget_image_embeddings(
-            self, img_file_paths: List[ImageType]
+        self, img_file_paths: List[ImageType]
     ) -> List[List[float]]:
         """Generate embeddings for multiple images asynchronously."""
         return self._get_image_embeddings(img_file_paths)
