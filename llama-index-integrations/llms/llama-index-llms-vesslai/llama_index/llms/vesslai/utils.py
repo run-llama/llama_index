@@ -1,10 +1,11 @@
+import asyncio
 import time
 import yaml
 from typing import Any
 from vessl import vessl_api
 
 
-def wait_for_gateway_enabled(
+async def wait_for_gateway_enabled(
     gateway: Any, service_name: str, max_timeout_sec: int = 8 * 60
 ) -> bool:
     """Waits for the gateway of a service to be enabled.
@@ -146,7 +147,7 @@ def _get_recent_rollout(service_name: str) -> Any:
     return resp.rollouts[0] if resp.rollouts else None
 
 
-def abort_in_progress_rollout_by_name(service_name: str):
+async def abort_in_progress_rollout_by_name(service_name: str):
     """Aborts an ongoing rollout for a given service.
 
     Args:
@@ -157,7 +158,7 @@ def abort_in_progress_rollout_by_name(service_name: str):
         print(f"The service {service_name} is currently rolling out.")
         if _request_abort_rollout(service_name):
             print("Waiting for the existing rollout to be aborted...")
-            time.sleep(30)
+            await asyncio.sleep(30)
     else:
         print("No existing rollout found.")
 

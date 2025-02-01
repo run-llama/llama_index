@@ -1,6 +1,8 @@
 import os
 import vessl.serving
 import yaml
+import asyncio
+import nest_asyncio
 from typing import Any, Optional
 from pydantic import BaseModel
 
@@ -57,12 +59,14 @@ class VesslAILLM(OpenAILike, BaseModel):
     organization_name: str = None
     default_service_yaml: str = "vesslai_vllm.yaml"
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, force_update_access_token: bool = False, **kwargs: Any) -> None:
+        nest_asyncio.apply()
         super().__init__()
-        self._configure()
 
-    def _configure(self) -> None:
-        vessl.configure()
+        self._configure(force_update_access_token=force_update_access_token)
+
+    def _configure(self, force_update_access_token) -> None:
+        vessl.configure(force_update_access_token=force_update_access_token)
         if vessl.vessl_api.is_in_run_exec_context():
             vessl.vessl_api.set_access_token(no_prompt=True)
             user = vessl.vessl_api.user
@@ -102,6 +106,50 @@ class VesslAILLM(OpenAILike, BaseModel):
         force_relaunch: bool = False,
         **kwargs: Any,
     ) -> None:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            task = loop.create_task(
+                self._serve(
+                    service_name=service_name,
+                    model_name=model_name,
+                    yaml_path=yaml_path,
+                    is_chat_model=is_chat_model,
+                    serverless=serverless,
+                    api_key=api_key,
+                    service_auth_key=service_auth_key,
+                    force_relaunch=force_relaunch,
+                    **kwargs,
+                )
+            )
+            loop.run_until_complete(task)
+        else:
+            asyncio.run(
+                self._serve(
+                    service_name=service_name,
+                    model_name=model_name,
+                    yaml_path=yaml_path,
+                    is_chat_model=is_chat_model,
+                    serverless=serverless,
+                    api_key=api_key,
+                    service_auth_key=service_auth_key,
+                    force_relaunch=force_relaunch,
+                    **kwargs,
+                )
+            )
+
+    async def _serve(
+        self,
+        service_name: str,
+        model_name: Optional[str] = None,
+        yaml_path: Optional[str] = None,
+        is_chat_model: bool = True,
+        serverless: bool = False,
+        api_key: str = None,
+        service_auth_key: str = None,
+        force_relaunch: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        print("Launching VesslAI LLM Service")
         self.organization_name = kwargs.get("organization_name", self.organization_name)
         self._validate_openai_key(api_key=api_key)
 
@@ -159,7 +207,7 @@ class VesslAILLM(OpenAILike, BaseModel):
                 )
                 return
 
-        self.api_base = self._launch_service_revision_from_yaml(
+        self.api_base = await self._launch_service_revision_from_yaml(
             organization_name=self.organization_name,
             yaml_path=serve_yaml_path,
             service_name=service_name,
@@ -210,7 +258,7 @@ class VesslAILLM(OpenAILike, BaseModel):
         service_config["env"]["MODEL_NAME"] = model_name
         return service_config
 
-    def _launch_service_revision_from_yaml(
+    async def _launch_service_revision_from_yaml(
         self,
         organization_name: str,
         yaml_path: str,
@@ -244,7 +292,7 @@ class VesslAILLM(OpenAILike, BaseModel):
         print(f"Check your Service at: {service_url}")
 
         gateway = read_service(service_name=service_name).gateway_config
-        wait_for_gateway_enabled(
+        await wait_for_gateway_enabled(
             gateway=gateway, service_name=revision.model_service_name
         )
 
