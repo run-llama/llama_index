@@ -2,20 +2,30 @@
 
 import os
 import time
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Dict, Optional, Callable
 import requests  # type: ignore
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
-from typing import NewType, Iterable
-from notion_client.helpers import iterate_paginated_api, collect_paginated_api
+from typing import NewType, Iterable, Generator
+import datetime
+from itertools import chain
 
+
+# -------------------------------------------------
+
+IS_DEBUG: bool = True
 
 INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
 BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
 DATABASE_URL_TMPL = "https://api.notion.com/v1/databases/{database_id}/query"
 SEARCH_URL = "https://api.notion.com/v1/search"
 
-NOTION_READER_PRINT_PREFIX = "Notion reader : "
+PRINT_PREFIX = "Notion reader : "
+
+PAGE_SIZE = 100
+PAGE_PREVIEW_LENGTH = 150
+DATABASE_PREVIEW_LENGTH = 200
+PAGE_SIZE_DICTIONARY = {"page_size": PAGE_SIZE}
 
 json_t = dict[str, Any]
 format_json_f = Callable[[json_t], str]
@@ -28,6 +38,8 @@ notion_db_id_t = NewType("notion_db_id_t", str)
 # TODO page_id_t | str
 # TODO try to get rid of if start_cursor is not None:
 # TODO page titles???
+
+# TODO there is probably more logic in finding pages in databases and databases in pages and making that get every possible page
 
 # -------------------------------------------------
 # Notes
@@ -51,7 +63,30 @@ notion_db_id_t = NewType("notion_db_id_t", str)
 #   you should try not to have any custom code to handle pagination, just use library code
 #   you may get an error related to start_cursor if you have a previous request fail
 
+
+# Make sure to use iterators where possible
+# there can be quite a lot of data and you don't want to
+
 # -------------------------------------------------
+
+
+def iterate_paginated_api(
+    function: Callable[..., Any], **kwargs: Any
+) -> Generator[json_t, None, None]:
+    """Return an iterator over the results of any paginated Notion API."""
+    # copy function from ...
+    # from notion_client.helpers import iterate_paginated_api
+    # there was a bug in the original function, and it removes the dependency
+
+    next_cursor = kwargs.pop("start_cursor", None)
+
+    while True:
+        response = function(**kwargs, start_cursor=next_cursor)
+        yield from response.get("results", [])
+
+        next_cursor = response.get("next_cursor")
+        if not response.get("has_more") or not next_cursor:
+            return
 
 
 class NotionPageReader(BasePydanticReader):
@@ -97,24 +132,55 @@ class NotionPageReader(BasePydanticReader):
         """Get the name identifier of the class."""
         return "NotionPageReader"
 
+    def load_data(self, include_pages_in_databases: bool = False) -> list[Document]:
+        self._print("load_data")
+        return list(
+            self.lazy_load_data(include_pages_in_databases=include_pages_in_databases)
+        )
+
+    def lazy_load_data(
+        self, include_pages_in_databases: bool = False
+    ) -> Iterable[Document]:
+        self._print("lazy_load_data")
+        return self.get_all_pages_and_databases(
+            include_pages_in_databases=include_pages_in_databases
+        )
+
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    # META FUNCTIONS
+    # NETWORK API FUNCTIONS
 
     def _request_block(self, block_id: str, query_dict: json_t = {}) -> json_t:
         # AI: Helper function to get block data
         block_url = BLOCK_CHILD_URL_TMPL.format(block_id=block_id)
+
+        # Extract start_cursor if present and use it as a query parameter
+        params: json_t = {}
+        if "start_cursor" in query_dict:
+            params["start_cursor"] = query_dict.pop("start_cursor")
+
         res = self._request_with_retry(
             "GET",
             block_url,
             headers=self.headers,
+            params=params,
             json=query_dict,
         )
         return res.json()
 
     def _request_database(
-        self, database_id: notion_db_id_t, query_dict: json_t
+        self,
+        database_id: notion_db_id_t,
+        query_dict: json_t,
+        start_cursor: Optional[str] = None,
     ) -> json_t:
-        # AI: Helper function to query database
+        self._print("_request_database")
+
+        # start_cursor is ok in this function, you need to pass it into your custom request, DO NOT REMOVE
+        # for some reason it is not put into the query_dict by iterate_paginated_api but whatever
+        if start_cursor is not None:
+            query_dict = {**query_dict, "start_cursor": start_cursor}
+        # Don't remove this ^
+
         res = self._request_with_retry(
             "POST",
             DATABASE_URL_TMPL.format(database_id=database_id),
@@ -136,9 +202,11 @@ class NotionPageReader(BasePydanticReader):
 
         def get_block_next_page(start_cursor: Optional[str]) -> json_t:
             self._print("_read_block get page")
-            query_dict = {}
-            if start_cursor is not None:
-                query_dict["start_cursor"] = start_cursor
+            query_dict: json_t = {}
+            if start_cursor and start_cursor != block_id:
+                # Only add start_cursor to query_dict if it's a valid pagination cursor
+                if len(start_cursor) > 0 and start_cursor != block_id:
+                    query_dict["start_cursor"] = start_cursor
 
             return self._request_block(block_id, query_dict)
 
@@ -171,6 +239,7 @@ class NotionPageReader(BasePydanticReader):
         method: str,
         url: str,
         headers: Dict[str, str],
+        params: Optional[Dict[str, Any]] = None,
         json: Optional[Dict[str, Any]] = None,
     ) -> requests.Response:
         """Make a request with retry and rate limit handling."""
@@ -182,7 +251,7 @@ class NotionPageReader(BasePydanticReader):
         for attempt in range(max_retries):
             try:
                 response: requests.Response = requests.request(
-                    method, url, headers=headers, json=json
+                    method, url, headers=headers, params=params, json=json
                 )
                 response.raise_for_status()
                 return response
@@ -201,31 +270,39 @@ class NotionPageReader(BasePydanticReader):
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # OTHER FUNCTIONS
 
-    def get_all_pages_from_database(
-        self, database_id: notion_db_id_t, query_dict: Dict[str, Any]
-    ) -> list[json_t]:
+    def get_pages_from_database(
+        self, database_id: notion_db_id_t, query_dict: Dict[str, Any] = {}
+    ) -> Iterable[json_t]:
+        self._print("get_pages_from_database")
+
         """Get all pages from a database using pagination."""
-        return collect_paginated_api(self._request_database, database_id=database_id)
 
-    def get_all_page_ids_from_database(
+        # AI: Create a closure that captures database_id and query_dict for pagination
+        def get_database_page(start_cursor: Optional[str]) -> json_t:
+            self._print("get_pages_from_database -- getting new pages")
+            return self._request_database(database_id, query_dict, start_cursor)
+
+        # use an iterator to save memory
+        # There may be a type error here, but Iterable[json_t] is correct, may be a bug in iterate_paginated_api?
+        return iterate_paginated_api(get_database_page)
+
+    def get_page_ids_from_database(
         self,
         database_id: notion_db_id_t,
-        query_dict: Dict[str, Any] = {"page_size": 100},
-    ) -> list[page_id_t]:
+        query_dict: Dict[str, Any] = PAGE_SIZE_DICTIONARY,
+    ) -> Iterable[page_id_t]:
         """Get all page ids from a database using pagination."""
-        pages = self.get_all_pages_from_database(database_id, query_dict)
-        return [page["id"] for page in pages]
+        self._print("get_page_ids_from_database")
+        pages = self.get_pages_from_database(database_id, query_dict)
+        return (page["id"] for page in pages)
 
-    def query_database(  # bad function name
-        self,
-        database_id: notion_db_id_t,
-        query_dict: Dict[str, Any] = {"page_size": 100},
-    ) -> List[page_id_t]:
-        """Get all the pages from a Notion database."""
-        return self.get_all_page_ids_from_database(database_id, query_dict)
+    def _extract_ids_from_results(self, results: Iterable[json_t]) -> Iterable[str]:
+        """Helper function to extract IDs from search/query results."""
+        return (result["id"] for result in results)
 
-    def search(self, query: str) -> List[str]:
-        """Search Notion page given a text query."""
+    def search(self, query: str) -> Iterable[str]:
+        self._print("search")
+        """Search Notion page given a text query. Return ids"""
 
         def search_pages(start_cursor: Optional[str]) -> json_t:
             self._print("search_pages -- getting new data")
@@ -235,64 +312,37 @@ class NotionPageReader(BasePydanticReader):
                 query_dict["start_cursor"] = start_cursor
             return self._request_search(query_dict)
 
-        results = iterate_paginated_api(search_pages)
-        return [result["id"] for result in results]
+        results: Iterable[json_t] = iterate_paginated_api(search_pages)
+        return self._extract_ids_from_results(results)
 
     def get_page_ids_from_databases(
-        self, database_id_list: list[notion_db_id_t]
+        self, database_id_list: Iterable[notion_db_id_t]
     ) -> set[page_id_t]:
+        self._print("get_page_ids_from_databases")
+
         page_ids: set[page_id_t] = set()
         for database_id in database_id_list:
-            page_ids.update(self.get_all_page_ids_from_database(database_id))
+            page_ids.update(self.get_page_ids_from_database(database_id))
 
-        assert set(page_ids).issubset(self.get_all_pages())
         return page_ids
 
-    # TODO compare this to get_all_pages_and_databases
-    def load_data(
+    def get_pages_and_databases_from_ids(
         self,
-        page_ids: List[page_id_t] = [],
-        database_ids: List[notion_db_id_t] = [],
-        load_all_if_empty: bool = False,
-    ) -> List[Document]:
-        """Load data from the input directory.
-
-        Args:
-            page_ids (List[str]): List of page ids to load.
-            database_ids Optional (List[str]): List database ids from which to load page ids.
-            load_all_if_empty (bool): If True, load all pages and dbs if no page_ids or database_ids are provided.
-
-        Returns:
-            List[Document]: List of documents.
-
-        """
-        if not page_ids and not database_ids:
-            if not load_all_if_empty:
-                raise ValueError(
-                    "Must specify either `page_ids` or `database_ids` if "
-                    "`load_all_if_empty` is False."
-                )
-            else:
-                database_ids = self.list_database_ids()
-                page_ids = self.list_page_ids()
-
-        database_page_ids: set[page_id_t] = self.get_page_ids_from_databases(
-            database_ids
+        page_ids: Iterable[page_id_t] = [],
+        database_ids: Iterable[notion_db_id_t] = [],
+    ) -> Iterable[Document]:
+        """Load data from the input directory."""
+        self._print("get_pages_and_databases_from_ids")
+        return chain(
+            self.get_notion_databases(databases=database_ids),
+            filter(None, self.get_pages(pages=page_ids)),
         )
-        all_page_ids: set[page_id_t] = database_page_ids.union(set(page_ids))
-
-        docs: list[Document] = []
-        docs.extend(self.get_notion_databases(databases=database_ids))
-        docs.extend(self.get_pages(pages=all_page_ids))
-
-        return docs
 
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # META FUNCTIONS
 
-    def _list_ids(self, function_name: str, value: str) -> List[str]:
-        """List all databases in the Notion workspace."""
-        # TODO use search function? how does query differ from filter?
+    def _list_ids(self, function_name: str, value: str) -> Iterable[str]:
+        """Get all of one type of id, for example database or page ids."""
 
         def search_databases(start_cursor: Optional[str]) -> json_t:
             self._print(f"{function_name} -- getting new data")
@@ -303,9 +353,14 @@ class NotionPageReader(BasePydanticReader):
             return self._request_search(query_dict)
 
         results = iterate_paginated_api(search_databases)
-        ids: list[str] = [res["id"] for res in results]
-        assert len(ids) == len(set(ids))
-        self._print(f"found {len(ids)} databases")
+        ids: Iterable[str] = list(self._extract_ids_from_results(results))
+
+        self._print(f"_list_ids {function_name} -- found {len(ids)} {value}s")
+        ids = list(set(ids))
+        self._print(
+            f"_list_ids {function_name} -- found {len(ids)} {value}s which are unique"
+        )
+
         return ids
 
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -356,11 +411,13 @@ class NotionPageReader(BasePydanticReader):
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # NOTION DATABASES
 
-    def list_database_ids(self) -> List[notion_db_id_t]:
+    def get_all_notion_database_ids(self) -> Iterable[notion_db_id_t]:
         """List all databases in the Notion workspace."""
-        return [
-            notion_db_id_t(id) for id in self._list_ids("list_database_ids", "database")
-        ]
+        self._print("get_all_notion_database_ids")
+        return (
+            notion_db_id_t(id)
+            for id in self._list_ids("get_all_notion_database_ids", "database")
+        )
 
     def get_notion_database_text(
         self,
@@ -368,6 +425,7 @@ class NotionPageReader(BasePydanticReader):
         format_db_json: format_json_f = default_format_db_json,
     ) -> str:
         """Read a database."""
+        self._print("get_notion_database_text")
         self._print(f"reading database {database_id}")
         database_data = self._request_database(database_id, {})
 
@@ -379,30 +437,40 @@ class NotionPageReader(BasePydanticReader):
         format_db_json: format_json_f = default_format_db_json,
     ) -> Document:
         """Get a database in the Notion workspace."""
+        self._print(f"get_notion_database {database_id}")
+
         database_text = self.get_notion_database_text(
             database_id, format_db_json=format_db_json
         )
+
+        self._print(f"get_notion_database {database_id} -- len {len(database_text)}")
+        self._print(
+            f"get_notion_database {database_id} -- text {database_text[:DATABASE_PREVIEW_LENGTH]}"
+        )
+
         return Document(
             text=database_text, id_=database_id, extra_info={"database_id": database_id}
         )
 
     def get_notion_databases(
         self,
-        databases: List[notion_db_id_t],
+        databases: Iterable[notion_db_id_t],
         format_db_json: format_json_f = default_format_db_json,
-    ) -> List[Document]:
+    ) -> Iterable[Document]:
         """Get all databases in the Notion workspace."""
-        return [
+        self._print("get_notion_databases")
+        return (
             self.get_notion_database(database_id, format_db_json=format_db_json)
             for database_id in databases
-        ]
+        )
 
     def get_all_notion_databases(
         self,
         format_db_json: format_json_f = default_format_db_json,
-    ) -> List[Document]:
+    ) -> Iterable[Document]:
         """Get all databases in the Notion workspace."""
-        databases = self.list_database_ids()
+        self._print("get_all_notion_databases")
+        databases = self.get_all_notion_database_ids()
         return self.get_notion_databases(
             databases=databases, format_db_json=format_db_json
         )
@@ -410,30 +478,68 @@ class NotionPageReader(BasePydanticReader):
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # PAGES
 
-    def list_page_ids(self) -> List[page_id_t]:
+    def get_page_ids_not_in_databases(self) -> Iterable[page_id_t]:
         """List all pages in the Notion workspace."""
-        return [page_id_t(id) for id in self._list_ids("list_page_ids", "page")]
+        return (
+            page_id_t(id)
+            for id in self._list_ids("get_page_ids_not_in_databases", "page")
+        )
 
-    def read_page_text(self, page_id: page_id_t) -> str:
+    def get_all_page_ids(self) -> Iterable[page_id_t]:
+        """List all pages in the Notion workspace."""
+        return chain(
+            self.get_page_ids_not_in_databases(),
+            self.get_page_ids_from_databases(self.get_all_notion_database_ids()),
+        )
+
+    def read_page_text(self, page_id: page_id_t) -> Optional[str]:
         """Read a page."""
-        self._print(f"reading page {page_id}")
-        return self._read_block(page_id)
+        page_text = self._read_block(page_id)
+        self._print(
+            f"Reading page {page_id} of len {len(page_text)}: \n {page_text[:PAGE_PREVIEW_LENGTH]}... \n\n\n"
+        )
+        return page_text
 
-    def get_page(self, page_id: page_id_t) -> Document:
+    @staticmethod
+    def _is_page_text_empty(page_text: str | None) -> bool:
+        # empty pages don't return ""
+        return (
+            page_text is None
+            or page_text == ""
+            or page_text == "\n"
+            or page_text == " "
+        )
+
+    def get_page(self, page_id: page_id_t) -> Optional[Document]:
         """Get a page in the Notion workspace."""
         page_text = self.read_page_text(page_id)
+
+        if NotionPageReader._is_page_text_empty(page_text):
+            self._print(f"WARNING : page {page_id} is empty")
+            return None
+
         return Document(text=page_text, id_=page_id, extra_info={"page_id": page_id})
 
-    def get_pages(self, pages: Iterable[page_id_t]) -> List[Document]:
+    def get_pages(self, pages: Iterable[page_id_t]) -> Iterable[Document | None]:
         """Get all pages in the Notion workspace."""
-        return [self.get_page(page_id) for page_id in pages]
+        self._print("get_pages")
+        return (self.get_page(page_id) for page_id in pages)
 
-    def get_all_pages(
+    def get_pages_filter_empty(self, pages: Iterable[page_id_t]) -> Iterable[Document]:
+        return filter(None, self.get_pages(pages=pages))
+
+    def get_all_pages_ignore_databases(
         self,
-    ) -> List[Document]:
+        include_pages_in_databases: bool = False,
+    ) -> Iterable[Document]:
         """Get all pages in the Notion workspace."""
-        pages = self.list_page_ids()
-        return self.get_pages(pages=pages)
+        pages: set[page_id_t] = set(self.get_page_ids_not_in_databases())
+        if include_pages_in_databases:
+            pages.update(
+                self.get_page_ids_from_databases(self.get_all_notion_database_ids())
+            )
+
+        return filter(None, self.get_pages(pages=pages))
 
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # CONVENIENCE FUNCTIONS
@@ -441,11 +547,26 @@ class NotionPageReader(BasePydanticReader):
     def get_all_pages_and_databases(
         self,
         format_db_json: format_json_f = default_format_db_json,
-    ) -> List[Document]:
-        return (
-            self.get_all_notion_databases(format_db_json=format_db_json)
-            + self.get_all_pages()
+        include_pages_in_databases: bool = False,
+    ) -> Iterable[Document]:
+        # note :
+        # this logic is more complicated than it needs to be,
+        # so that you can avoid fetching database ids more than once
+        # as these are used in more than on function
+
+        db_ids = self.get_all_notion_database_ids()
+        page_ids: set[page_id_t] = set()
+        page_ids.update(self.get_page_ids_not_in_databases())
+
+        if include_pages_in_databases:  # there can be a lot of pages inside databases
+            page_ids.update(self.get_page_ids_from_databases(db_ids))
+
+        return chain(
+            self.get_notion_databases(db_ids), self.get_pages_filter_empty(page_ids)
         )
+
+    def get_all(self) -> Iterable[Document]:
+        return self.get_all_pages_and_databases(include_pages_in_databases=True)
 
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # HELPER FUNCTIONS
@@ -456,84 +577,43 @@ class NotionPageReader(BasePydanticReader):
         Args:
             message (str): The message to print
         """
+        total_message: str = (
+            PRINT_PREFIX + message + datetime.datetime.now().strftime(" %H:%M")
+        )
+
+        PRINT_TO_FILE: bool = IS_DEBUG
+        if PRINT_TO_FILE:
+            with open("notion_reader_output.txt", "a") as f:
+                f.write(total_message + "\n")
+
         if self.print_feedback:
-            print(NOTION_READER_PRINT_PREFIX + message)
+            print(total_message)
 
+    # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # TESTING
 
-if __name__ == "__main__":
-    reader = NotionPageReader()
-    print(reader.search("What I"))
+    def _INTERNAL_TEST(self) -> None:
+        """
+        Used to check that running all functions throws no errors.
+        This is a good example of how to use the library.
+        """
+        # Note : in this function list is used to call the generators
 
-    # get list of database from notion
-    databases = reader.list_database_ids()
+        # there can be a lot of pages in databases, so limiting this can save time
+        NUMBER_OF_DBS_TO_EXTRACT_PAGES: int = 1
 
+        # isolate pages with errors
+        PROBLEMATIC_PAGE_IDS: list[page_id_t] = [
+            page_id_t("149c2e93-a412-80eb-af36-f334f97f1b93"),
+            page_id_t("1fe2e39c-bd66-457d-aacb-e4aac3b91920"),
+        ]
 
-"""
+        list(self.get_pages(PROBLEMATIC_PAGE_IDS))  # call these early
+        list(self.get_all_pages_ignore_databases())
+        list(self.search(query=""))
+        list(self.load_data(include_pages_in_databases=True))
+        list(self.get_all_notion_databases())
 
- ERRORS
-
-
-
-
-
-why is this invalid: Traceback (most recent call last):
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 184, in _request_with_retry
-    response.raise_for_status()
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
-    raise HTTPError(http_error_msg, response=self)
-requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: https://api.notion.com/v1/blocks/149c2e93-a412-80eb-af36-f334f97f1b93/children
-
-This is because i do not have an integration to the execs notion,
-i need to figure out how to avoid what i don't have access to
-
-
-
-
-
-
-
-Traceback (most recent call last):
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 185, in _request_with_retry
-    response.raise_for_status()
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
-    raise HTTPError(http_error_msg, response=self)
-requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: https://api.notion.com/v1/blocks/149c2e93-a412-80eb-af36-f334f97f1b93/children
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/Users/henry/Documents/Documents - MacBook Pro (6)/Git.nosync/DatabaseAware/test.py", line 41, in <module>
-    test_notion_reader()
-  File "/Users/henry/Documents/Documents - MacBook Pro (6)/Git.nosync/DatabaseAware/test.py", line 22, in test_notion_reader
-    notion_reader.get_page(page_id=page_id_t("149c2e93-a412-80eb-af36-f334f97f1b93"))
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 422, in get_page
-    page_text = self.read_page_text(page_id)
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 418, in read_page_text
-    return self._read_block(page_id)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 144, in _read_block
-    for result in iterate_paginated_api(get_block_next_page):
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/notion_client/helpers.py", line 44, in iterate_paginated_api
-    response = function(**kwargs, start_cursor=next_cursor)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 141, in get_block_next_page
-    return self._request_block(block_id, query_dict)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 104, in _request_block
-    res = self._request_with_retry(
-          ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/llama_index/readers/notion/base.py", line 192, in _request_with_retry
-    raise requests.exceptions.HTTPError(
-requests.exceptions.HTTPError: Request failed: {"object":"error","status":400,"code":"validation_error","message":"body failed validation: body.start_cursor should be not present, instead was `\"149c2e93-a412-8069-b844-cf54d8844af9\"`.","request_id":"bf7126a0-befd-4c8a-922c-a57c4da292fd"}
-henry@MacBook-Pro-46 DatabaseAware %
-
-
-
-
-
-
-
-
-
-"""
+        database_ids: list[notion_db_id_t] = list(self.get_all_notion_database_ids())
+        for db_id in database_ids[:NUMBER_OF_DBS_TO_EXTRACT_PAGES]:
+            list(self.get_pages_from_database(database_id=db_id, query_dict={}))
