@@ -2,7 +2,7 @@ import os
 from typing import Any, Optional
 
 from llama_index.llms.openai_like import OpenAILike
-from llama_index.llms.deepseek.utils import get_context_window
+from llama_index.llms.deepseek.utils import get_context_window, FUNCTION_CALLING_MODELS
 
 
 class DeepSeek(OpenAILike):
@@ -42,7 +42,7 @@ class DeepSeek(OpenAILike):
             api_base=api_base,
             is_chat_model=openai_llm_kwargs.pop("is_chat_model", True),
             is_function_calling_model=openai_llm_kwargs.pop(
-                "is_function_calling_model", True
+                "is_function_calling_model", model in FUNCTION_CALLING_MODELS
             ),
             **openai_llm_kwargs,
         )

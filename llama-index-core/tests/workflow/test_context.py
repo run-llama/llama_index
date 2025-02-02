@@ -1,18 +1,18 @@
 import asyncio
+import json
+from typing import Optional, Union
 from unittest import mock
-from typing import Union, Optional
 
 import pytest
-from llama_index.core.workflow.workflow import (
-    Workflow,
-    Context,
-)
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.errors import WorkflowRuntimeError
-from llama_index.core.workflow.events import StartEvent, StopEvent, Event
-from llama_index.core.workflow.workflow import Workflow
+from llama_index.core.workflow.events import Event, StartEvent, StopEvent
+from llama_index.core.workflow.workflow import (
+    Context,
+    Workflow,
+)
 
-from .conftest import OneTestEvent, AnotherTestEvent
+from .conftest import AnotherTestEvent, OneTestEvent
 
 
 @pytest.mark.asyncio()
@@ -113,6 +113,11 @@ def test_send_event_to_step(ctx):
 def test_get_result(ctx):
     ctx._retval = 42
     assert ctx.get_result() == 42
+
+
+def test_to_dict_with_events_buffer(ctx):
+    ctx.collect_events(OneTestEvent(), [OneTestEvent, AnotherTestEvent])
+    assert json.dumps(ctx.to_dict())
 
 
 @pytest.mark.asyncio()
