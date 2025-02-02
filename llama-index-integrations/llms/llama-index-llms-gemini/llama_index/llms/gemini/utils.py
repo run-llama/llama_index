@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Dict, Any
 
 import google.ai.generativelanguage as glm
 import google.generativeai as genai
@@ -68,7 +68,30 @@ def chat_from_gemini_response(
             response.usage_metadata
         )
     role = ROLES_FROM_GEMINI[top_candidate.content.role]
-    return ChatResponse(message=ChatMessage(role=role, content=response.text), raw=raw)
+    try:
+        # When the response contains only a function call, the library
+        # raises an exception.
+        # The easiest way to detect this is to try access the text attribute and
+        # catch the exception.
+        # https://github.com/google-gemini/generative-ai-python/issues/670
+        text = response.text
+    except ValueError:
+        text = None
+
+    additional_kwargs: Dict[str, Any] = {}
+    for part in response.parts:
+        if fn := part.function_call:
+            if "tool_calls" not in additional_kwargs:
+                additional_kwargs["tool_calls"] = []
+            additional_kwargs["tool_calls"].append(fn)
+
+    return ChatResponse(
+        message=ChatMessage(
+            role=role, content=text, additional_kwargs=additional_kwargs
+        ),
+        raw=raw,
+        additional_kwargs=additional_kwargs,
+    )
 
 
 def chat_message_to_gemini(message: ChatMessage) -> "genai.types.ContentDict":

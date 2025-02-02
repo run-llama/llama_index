@@ -2,7 +2,7 @@
 
 import os
 import warnings
-from typing import Any, Dict, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Union, List, Any, Dict, Optional, Sequence, cast
 
 import google.generativeai as genai
 from google.generativeai.types import generation_types
@@ -13,16 +13,21 @@ from llama_index.core.base.llms.types import (
     ChatResponseGen,
     CompletionResponse,
     CompletionResponseGen,
+    CompletionResponseAsyncGen,
     LLMMetadata,
+    MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
-from llama_index.core.llms.custom import CustomLLM
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.utilities.gemini_utils import (
     ROLES_FROM_GEMINI,
     merge_neighboring_same_role_messages,
+)
+from llama_index.core.base.llms.generic_utils import (
+    astream_chat_to_completion_decorator,
 )
 
 from .utils import (
@@ -48,8 +53,11 @@ GEMINI_MODELS = (
     "gemini-1.0-pro",
 )
 
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
 
-class Gemini(CustomLLM):
+
+class Gemini(FunctionCallingLLM):
     """
     Gemini LLM.
 
@@ -277,7 +285,7 @@ class Gemini(CustomLLM):
     ) -> ChatResponseAsyncGen:
         request_options = self._request_options or kwargs.pop("request_options", None)
         merged_messages = merge_neighboring_same_role_messages(messages)
-        *history, next_msg = map(chat_message_to_gemini, messages)
+        *history, next_msg = map(chat_message_to_gemini, merged_messages)
         chat = self._model.start_chat(history=history)
         response = await chat.send_message_async(
             next_msg, stream=True, request_options=request_options, **kwargs
@@ -303,3 +311,70 @@ class Gemini(CustomLLM):
                 )
 
         return gen()
+
+    def chat_with_tools(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Chat with function calling."""
+        chat_kwargs = self._prepare_chat_with_tools(
+            tools,
+            user_msg=user_msg,
+            chat_history=chat_history,
+            verbose=verbose,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
+            **kwargs,
+        )
+
+        response = self.chat(**chat_kwargs)
+
+        return self._validate_chat_with_tools_response(
+            response,
+            tools,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
+            **kwargs,
+        )
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_choice: Union[str, dict] = "auto",
+        strict: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Predict and call the tool."""
+        tool_specs = [tool.fn for tool in tools]
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        return {
+            "messages": messages,
+            "tools": tool_specs or None,
+            **kwargs,
+        }
+
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        if self._use_chat_completions(kwargs):
+            astream_complete_fn = astream_chat_to_completion_decorator(
+                self._astream_chat
+            )
+        else:
+            astream_complete_fn = self._astream_complete
+        return await astream_complete_fn(prompt, **kwargs)
