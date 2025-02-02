@@ -350,9 +350,9 @@ nav:
           - ./examples/llm/langchain.ipynb
           - ./examples/llm/litellm.ipynb
           - ./examples/llm/llama_2.ipynb
-          - ./examples/llm/llama_cpp.ipynb
           - ./examples/llm/llama_2_rap_battle.ipynb
           - ./examples/llm/llama_api.ipynb
+          - ./examples/llm/llama_cpp.ipynb
           - ./examples/llm/llamafile.ipynb
           - ./examples/llm/llm_predictor.ipynb
           - ./examples/llm/lmstudio.ipynb
@@ -1004,6 +1004,7 @@ nav:
           - ./api_reference/llms/clarifai.md
           - ./api_reference/llms/cleanlab.md
           - ./api_reference/llms/cohere.md
+          - ./api_reference/llms/cortex.md
           - ./api_reference/llms/custom_llm.md
           - ./api_reference/llms/dashscope.md
           - ./api_reference/llms/databricks.md
@@ -2344,6 +2345,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-stepfun
             - ../llama-index-integrations/tools/llama-index-tools-linkup-research
             - ../llama-index-integrations/llms/llama-index-llms-deepseek
+            - ../llama-index-integrations/llms/llama-index-llms-cortex
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
