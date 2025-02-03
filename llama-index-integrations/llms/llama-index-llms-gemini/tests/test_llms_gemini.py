@@ -43,7 +43,7 @@ def test_generate_image_prompt() -> None:
             url="https://upload.wikimedia.org/wikipedia/commons/5/52/Ferrari_SP_FFX.jpg"
         )
     )
-    response = Gemini().chat(messages=[msg])
+    response = Gemini(model="models/gemini-1.5-flash").chat(messages=[msg])
     assert "ferrari" in str(response).lower()
 
 
@@ -52,7 +52,7 @@ def test_generate_image_prompt() -> None:
 )
 def test_chat_stream() -> None:
     msg = ChatMessage("List three types of software testing strategies")
-    response = list(Gemini().stream_chat(messages=[msg]))
+    response = list(Gemini(model="models/gemini-1.5-flash").stream_chat(messages=[msg]))
     assert response
 
 
@@ -66,7 +66,7 @@ def test_chat_with_tools() -> None:
 
     add_tool = FunctionTool.from_defaults(fn=add)
     msg = ChatMessage("What is the result of adding 2 and 3?")
-    model = Gemini()
+    model = Gemini(model="models/gemini-1.5-flash")
     response = model.chat_with_tools(
         user_msg=msg,
         tools=[add_tool],
