@@ -140,11 +140,19 @@ class StartEvent(Event):
 class StopEvent(Event):
     """EndEvent signals the workflow to stop."""
 
-    result: Any = Field(default=None)
+    _result: Any = PrivateAttr(default=None)
 
     def __init__(self, result: Any = None, **kwargs) -> None:
         # forces the user to provide a result
-        super().__init__(result=result, **kwargs)
+        super().__init__(_result=result, **kwargs)
+
+    def _get_result(self) -> Any:
+        """This can be overridden by subclasses to return the desired result."""
+        return self._result
+
+    @property
+    def result(self) -> Any:
+        return self._get_result()
 
 
 class InputRequiredEvent(Event):

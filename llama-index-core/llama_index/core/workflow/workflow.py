@@ -68,8 +68,8 @@ class Workflow(metaclass=WorkflowMeta):
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
         num_concurrent_runs: Optional[int] = None,
-        stop_event_class: type = StopEvent,
-        start_event_class: type = StartEvent,
+        stop_event_class: type[StopEvent] = StopEvent,
+        start_event_class: type[StartEvent] = StartEvent,
     ) -> None:
         """Create an instance of the workflow.
 
