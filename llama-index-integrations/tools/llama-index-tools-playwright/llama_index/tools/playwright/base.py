@@ -80,6 +80,9 @@ class PlaywrightToolSpec(BaseToolSpec):
     # Utils Methods #
     #################
     def _selector_effective(self, selector: str) -> str:
+        """
+        Get the effective selector.
+        """
         if not self.visible_only:
             return selector
         return f"{selector} >> visible=1"

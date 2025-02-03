@@ -33,6 +33,8 @@ packages = [{include = "llama_index/"}]
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 llama-index-core = "^0.10.0"
+playwright = "^1.49.1"
+beautifulsoup4 = "^4.12.2"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
