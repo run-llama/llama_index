@@ -1,5 +1,53 @@
 # ChangeLog
 
+## [2025-01-31]
+
+### `llama-index-core` [0.12.15]
+
+- Add error_on_tool_error param to FunctionCallingLLM.predict_and_call (#17663)
+- Get tool description from pydantic field (#17679)
+- fix: make ctx.\_events_buffer json-serializable (#17676)
+- feat: allow to exclude empty file simple directory reader (#17656)
+- improve markdown llm output parsing (#17577)
+- small typo fix in the default plan refine prompt (#17644)
+
+### `llama-index-agent-openai` [0.4.3]
+
+- fix repeated sources when doing parallel tool calling (#17645)
+
+### `llama-index-embeddings-text-embeddings-inference` [0.3.2]
+
+- Add endpoint parameter to TextEmbeddingsInference (#17598)
+
+### `llama-index-llms-bedrock-converse` [0.4.5]
+
+- fix bedrock function calling (#17658)
+
+### `llama-index-llms-cortex` [0.1.0]
+
+- Add Snowflake Cortex Integration (#17585)
+
+### `llama-index-llms-fireworks` [0.3.2]
+
+- Deepseek-r1 is now supported by fireworks (#17657)
+- Deepseek-v3 is now supported by fireworks (#17518)
+
+### `llama-index-llms-gemini` [0.4.5]
+
+- adding the chat decorators to async calls (#17678)
+
+### `llama-index-llms-llama-cpp` [0.4.0]
+
+- update llama-cpp integration + docs (#17647)
+
+### `llama-index-vector-stores-azureaisearch` [0.3.3]
+
+- Feat/fix Azure AI Search Hybrid Semantic Search Unusability due to hardcoded parameter (#17683)
+
+### `llama-index-vector-stores-pinecone` [0.4.4]
+
+- `get_nodes()` now accepts include_values param to return embeddings (#17635)
+
 ## [2025-01-25]
 
 ### `llama-index-core` [0.12.14]
