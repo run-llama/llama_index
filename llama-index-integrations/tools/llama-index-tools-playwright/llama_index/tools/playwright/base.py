@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Type, Any, List, Sequence, TYPE_CHECKING
+from typing import Optional, Any, List, Sequence, TYPE_CHECKING
 import json
 from urllib.parse import urlparse
 
@@ -7,8 +7,8 @@ if TYPE_CHECKING:
     from playwright.sync_api import Page as SyncPage
 else:
     try:
-      from playwright.sync_api import Browser as SyncBrowser
-      from playwright.sync_api import Page as SyncPage
+        from playwright.sync_api import Browser as SyncBrowser
+        from playwright.sync_api import Page as SyncPage
     except ImportError:
         raise ImportError(
             "The 'playwright' package is required to use this tool."
@@ -17,11 +17,11 @@ else:
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
+
 def lazy_import_playwright_browsers():
     """
     Lazy import playwright browsers.
     """
-    from playwright.sync_api import sync_playwright
 
 
 class PlaywrightToolSpec(BaseToolSpec):
@@ -47,8 +47,8 @@ class PlaywrightToolSpec(BaseToolSpec):
         playwright_timeout: float = 1_000,
         absolute_url: bool = False,
     ) -> None:
-        """ 
-        Initialize PlaywrightToolSpec
+        """
+        Initialize PlaywrightToolSpec.
 
         Args:
             sync_browser: Optional[SyncBrowser] = None. A browser instance to use for automation.
@@ -56,7 +56,7 @@ class PlaywrightToolSpec(BaseToolSpec):
             playwright_strict: bool = False. Whether to use strict mode for playwright.
             playwright_timeout: float = 1_000. Timeout for playwright operations.
             absolute_url: bool = False. Whether to return absolute urls.
-        
+
         """
         lazy_import_playwright_browsers()
         self.sync_browser = sync_browser
@@ -86,11 +86,10 @@ class PlaywrightToolSpec(BaseToolSpec):
         if not self.visible_only:
             return selector
         return f"{selector} >> visible=1"
-    
+
     @staticmethod
     def create_sync_playwright_browser(
-        headless: bool = True,
-        args: Optional[List[str]] = None
+        headless: bool = True, args: Optional[List[str]] = None
     ) -> SyncBrowser:
         """
         Create a playwright browser.
@@ -106,10 +105,11 @@ class PlaywrightToolSpec(BaseToolSpec):
 
         browser = sync_playwright().start()
         return browser.chromium.launch(headless=headless, args=args)
-    
+
     def _get_current_page(self, browser: SyncBrowser) -> SyncPage:
         """
         Get the current page of the browser.
+
         Args:
             browser: The browser to get the current page from.
 
@@ -119,12 +119,14 @@ class PlaywrightToolSpec(BaseToolSpec):
         if not browser.contexts:
             context = browser.new_context()
             return context.new_page()
-        context = browser.contexts[0]  # Assuming you're using the default browser context
+        context = browser.contexts[
+            0
+        ]  # Assuming you're using the default browser context
         if not context.pages:
             return context.new_page()
         # Assuming the last page in the list is the active one
         return context.pages[-1]
-    
+
     def _check_bs_import(self):
         """Check that the arguments are valid."""
         try:
@@ -148,7 +150,6 @@ class PlaywrightToolSpec(BaseToolSpec):
         Args:
             selector: The CSS selector to click on.
         """
-    
         if self.sync_browser is None:
             raise ValueError("Sync browser is not initialized")
 
@@ -166,7 +167,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         except PlaywrightTimeoutError:
             return f"Unable to click on element '{selector}'"
         return f"Clicked element '{selector}'"
-    
+
     #################
     # Fill #
     #################
@@ -182,7 +183,6 @@ class PlaywrightToolSpec(BaseToolSpec):
             selector: The CSS selector to fill.
             value: The value to fill in.
         """
-    
         if self.sync_browser is None:
             raise ValueError("Sync browser is not initialized")
 
@@ -201,7 +201,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         except PlaywrightTimeoutError:
             return f"Unable to fill element '{selector}'"
         return f"Filled element '{selector}'"
-    
+
     #################
     # Get Current Page #
     #################
@@ -236,7 +236,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         # Return the list of links as a JSON string. Duplicated link
         # only appears once in the list
         return json.dumps(list(set(links)))
-    
+
     def extract_hyperlinks(self) -> str:
         """
         Extract all hyperlinks from the current page.
@@ -269,7 +269,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         soup = BeautifulSoup(html_content, "lxml")
 
         return " ".join(text for text in soup.stripped_strings)
-    
+
     #################
     # Get Elements #
     #################
@@ -292,13 +292,9 @@ class PlaywrightToolSpec(BaseToolSpec):
                 results.append(result)
         return results
 
-    def get_elements(
-        self,
-        selector: str,
-        attributes: List[str] = ["innerText"]
-    ) -> str:
+    def get_elements(self, selector: str, attributes: List[str] = ["innerText"]) -> str:
         """
-        Retrieve elements in the current web page matching the given CSS selector
+        Retrieve elements in the current web page matching the given CSS selector.
 
         Args:
             selector: CSS selector, such as '*', 'div', 'p', 'a', #id, .classname
@@ -306,7 +302,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         """
         if self.sync_browser is None:
             raise ValueError("Sync browser is not initialized")
-        
+
         page = self._get_current_page(self.sync_browser)
         results = self._get_elements(page, selector, attributes)
         return json.dumps(results, ensure_ascii=False)
@@ -321,7 +317,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         parsed_url = urlparse(url)
         if parsed_url.scheme not in ("http", "https"):
             raise ValueError("URL scheme must be 'http' or 'https'")
-    
+
     def navigate_to(
         self,
         url: str,
@@ -337,7 +333,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         response = page.goto(url)
         status = response.status if response else "unknown"
         return f"Navigating to {url} returned status code {status}"
-    
+
     #################
     # Navigate Back #
     #################
@@ -349,7 +345,7 @@ class PlaywrightToolSpec(BaseToolSpec):
             raise ValueError("Sync browser is not initialized")
         page = self._get_current_page(self.sync_browser)
         response = page.go_back()
-        
+
         if response:
             return (
                 f"Navigated back to the previous page with URL '{response.url}'."

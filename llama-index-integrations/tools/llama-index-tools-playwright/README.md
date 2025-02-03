@@ -47,19 +47,18 @@ playwright_tool.extract_text()
 
 ```python
 element = playwright_tool.get_elements(
-    selector='ELEMENT_SELECTOR',
-    attributes=['innerText']
+    selector="ELEMENT_SELECTOR", attributes=["innerText"]
 )
 ```
 
 ### Click on an element
 
 ```python
-playwright_tool.click(selector='ELEMENT_SELECTOR')
+playwright_tool.click(selector="ELEMENT_SELECTOR")
 ```
 
 ### Fill in an input field
 
 ```python
-playwright_tool.fill(selector='ELEMENT_SELECTOR', value='Hello')
+playwright_tool.fill(selector="ELEMENT_SELECTOR", value="Hello")
 ```

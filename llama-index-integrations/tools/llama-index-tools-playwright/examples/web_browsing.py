@@ -26,15 +26,17 @@ print(playwright_tool.extract_text())
 # Get element attributes for navigating to the next page
 # You can retrieve the selector from google chrome dev tools
 element = playwright_tool.get_elements(
-    selector='#__docusaurus_skipToContent_fallback > div > div > main > div > div > div.col.docItemCol_VOVn > div > nav > a',
-    attributes=['innerText']
+    selector="#__docusaurus_skipToContent_fallback > div > div > main > div > div > div.col.docItemCol_VOVn > div > nav > a",
+    attributes=["innerText"],
 )
 print(element)
 
 # Click on the search bar
-playwright_tool.click(selector='#__docusaurus > nav > div.navbar__inner > div.navbar__items.navbar__items--right > div.navbarSearchContainer_Bca1 > button')
+playwright_tool.click(
+    selector="#__docusaurus > nav > div.navbar__inner > div.navbar__items.navbar__items--right > div.navbarSearchContainer_Bca1 > button"
+)
 time.sleep(1)
 
 # Fill in the search bar
-playwright_tool.fill(selector='#docsearch-input', value='Hello')
+playwright_tool.fill(selector="#docsearch-input", value="Hello")
 time.sleep(1)
