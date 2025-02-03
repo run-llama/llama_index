@@ -20,6 +20,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
+from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.utilities.gemini_utils import (
@@ -312,34 +313,6 @@ class Gemini(FunctionCallingLLM):
 
         return gen()
 
-    def chat_with_tools(
-        self,
-        tools: Sequence["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
-        **kwargs: Any,
-    ) -> ChatResponse:
-        """Chat with function calling."""
-        chat_kwargs = self._prepare_chat_with_tools(
-            tools,
-            user_msg=user_msg,
-            chat_history=chat_history,
-            verbose=verbose,
-            allow_parallel_tool_calls=allow_parallel_tool_calls,
-            **kwargs,
-        )
-
-        response = self.chat(**chat_kwargs)
-
-        return self._validate_chat_with_tools_response(
-            response,
-            tools,
-            allow_parallel_tool_calls=allow_parallel_tool_calls,
-            **kwargs,
-        )
-
     def _prepare_chat_with_tools(
         self,
         tools: Sequence["BaseTool"],
@@ -366,6 +339,38 @@ class Gemini(FunctionCallingLLM):
             "tools": tool_specs or None,
             **kwargs,
         }
+
+    def get_tool_calls_from_response(
+        self,
+        response: ChatResponse,
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        """Predict and call the tool."""
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            if not isinstance(tool_call, genai.protos.FunctionCall):
+                raise ValueError("Invalid tool_call object")
+
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call.id,
+                    tool_name=tool_call.name,
+                    tool_kwargs=dict(tool_call.args),
+                )
+            )
+
+        return tool_selections
 
     @llm_completion_callback()
     async def astream_complete(

@@ -66,7 +66,8 @@ def test_chat_with_tools() -> None:
 
     add_tool = FunctionTool.from_defaults(fn=add)
     msg = ChatMessage("What is the result of adding 2 and 3?")
-    response = Gemini().chat_with_tools(
+    model = Gemini()
+    response = model.chat_with_tools(
         user_msg=msg,
         tools=[add_tool],
         tool_config=ToolConfig(
@@ -75,5 +76,11 @@ def test_chat_with_tools() -> None:
             )
         ),
     )
+
+    tool_calls = model.get_tool_calls_from_response(response)
+    assert len(tool_calls) == 1
+    assert tool_calls[0].tool_id == "add"
+    assert tool_calls[0].tool_name == "add"
+    assert tool_calls[0].tool_kwargs == {"a": 2, "b": 3}
 
     assert len(response.additional_kwargs["tool_calls"]) >= 1

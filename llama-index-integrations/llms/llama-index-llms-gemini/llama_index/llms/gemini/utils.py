@@ -75,7 +75,7 @@ def chat_from_gemini_response(
         # catch the exception.
         # https://github.com/google-gemini/generative-ai-python/issues/670
         text = response.text
-    except ValueError:
+    except (ValueError, AttributeError):
         text = None
 
     additional_kwargs: Dict[str, Any] = {}
