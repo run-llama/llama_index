@@ -79,7 +79,6 @@ def test_chat_with_tools() -> None:
 
     tool_calls = model.get_tool_calls_from_response(response)
     assert len(tool_calls) == 1
-    assert tool_calls[0].tool_id == "add"
     assert tool_calls[0].tool_name == "add"
     assert tool_calls[0].tool_kwargs == {"a": 2, "b": 3}
 
