@@ -6,7 +6,7 @@ from llama_index.core.llms import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.base import PromptTemplate, PromptType
-from llama_index.core.prompts.default_prompts import DEFAULT_REBEL_META_PROMPT
+from llama_index.core.prompts.default_prompts import DEFAULT_REBEL_META_PROMPT, DEFAULT_REBEL_STATIC_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
@@ -28,8 +28,12 @@ class REBELRerank(BaseNodePostprocessor):
     """REBEL (Rerank Beyond Relevance) reranker."""
 
     top_n: int = Field(description="Top N nodes to return.")
+    static: bool = Field(description="Whether to use static reranking prompt")
     rebel_prompt: SerializeAsAny[BasePromptTemplate] = Field(
         description="REBEL prompt that generates ranking instructions."
+    )
+    static_prompt: SerializeAsAny[BasePromptTemplate] = Field(
+        description="REBEL static prompt that generates rankings."
     )
     choice_batch_size: int = Field(description="Batch size for choice select.")
     llm: LLM = Field(
@@ -49,20 +53,25 @@ class REBELRerank(BaseNodePostprocessor):
         self,
         llm: Optional[LLM] = None,
         rebel_prompt: Optional[BasePromptTemplate] = None,
+        static_prompt: Optional[BasePromptTemplate] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
         top_n: int = 10,
+        static: bool = False
     ) -> None:
         """Initialize params."""
         rebel_prompt = rebel_prompt or DEFAULT_REBEL_META_PROMPT
+        static_prompt = static_prompt or DEFAULT_REBEL_STATIC_PROMPT
         llm = llm or Settings.llm
 
         super().__init__(
             llm=llm,
             rebel_prompt=rebel_prompt,
+            static_prompt=static_prompt,
             choice_batch_size=choice_batch_size,
             top_n=top_n,
+            static=static
         )
         
         self._format_node_batch_fn = format_node_batch_fn or default_format_node_batch_fn
@@ -76,12 +85,14 @@ class REBELRerank(BaseNodePostprocessor):
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
-        return {"rebel_prompt": self.rebel_prompt, "choice_select_prompt": self.choice_select_prompt}
+        return {"rebel_prompt": self.rebel_prompt, "static_prompt": self.static_prompt, "choice_select_prompt": self.choice_select_prompt}
 
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
         if "rebel_prompt" in prompts:
             self.rebel_prompt = prompts["rebel_prompt"]
+        if "static_prompt" in prompts:
+            self.static_prompt = prompts["static_prompt"]
         # the choice_select_prompt is dynamically generated in the REBEL method, no need to update it here
 
     def _postprocess_nodes(
@@ -96,16 +107,22 @@ class REBELRerank(BaseNodePostprocessor):
             return []
 
         query_str = query_bundle.query_str
-        
-        ranking_prompt = self.llm.predict(
-            self.rebel_prompt,
-            user_query=query_str,
-        )
 
-        self.choice_select_prompt = PromptTemplate(
-            ranking_prompt,
-            prompt_type=PromptType.CHOICE_SELECT,
-        )
+        if self.static:
+            self.choice_select_prompt = PromptTemplate(
+                self.static_prompt,
+                prompt_type=PromptType.CHOICE_SELECT,
+            )
+        else:
+            ranking_prompt = self.llm.predict(
+                self.rebel_prompt,
+                user_query=query_str,
+            )
+
+            self.choice_select_prompt = PromptTemplate(
+                ranking_prompt,
+                prompt_type=PromptType.CHOICE_SELECT,
+            )
         
         initial_results: List[NodeWithScore] = []
         for idx in range(0, len(nodes), self.choice_batch_size):
