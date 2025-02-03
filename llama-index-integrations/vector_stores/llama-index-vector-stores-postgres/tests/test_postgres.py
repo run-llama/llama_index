@@ -273,6 +273,66 @@ def index_node_embeddings() -> List[TextNode]:
     ]
 
 
+@pytest.fixture()
+def pg_halfvec(db: None) -> Any:
+    pg = PGVectorStore.from_params(
+        **PARAMS,  # type: ignore
+        database=TEST_DB,
+        table_name=TEST_TABLE_NAME + "_halfvec",
+        schema_name=TEST_SCHEMA_NAME,
+        embed_dim=TEST_EMBED_DIM,
+        use_halfvec=True,
+    )
+    yield pg
+    asyncio.run(pg.close())
+
+
+@pytest.fixture()
+def pg_halfvec_hybrid(db: None) -> Any:
+    pg = PGVectorStore.from_params(
+        **PARAMS,  # type: ignore
+        database=TEST_DB,
+        table_name=TEST_TABLE_NAME + "_halfvec_hybrid",
+        schema_name=TEST_SCHEMA_NAME,
+        embed_dim=TEST_EMBED_DIM,
+        hybrid_search=True,
+        use_halfvec=True,
+    )
+    yield pg
+    asyncio.run(pg.close())
+
+
+@pytest.fixture()
+def pg_hnsw_halfvec(db_hnsw: None) -> Any:
+    pg = PGVectorStore.from_params(
+        **PARAMS,  # type: ignore
+        database=TEST_DB_HNSW,
+        table_name=TEST_TABLE_NAME + "_hnsw_halfvec",
+        schema_name=TEST_SCHEMA_NAME,
+        embed_dim=TEST_EMBED_DIM,
+        use_halfvec=True,
+        hnsw_kwargs={"hnsw_m": 16, "hnsw_ef_construction": 64, "hnsw_ef_search": 40},
+    )
+    yield pg
+    asyncio.run(pg.close())
+
+
+@pytest.fixture()
+def pg_hnsw_hybrid_halfvec(db_hnsw: None) -> Any:
+    pg = PGVectorStore.from_params(
+        **PARAMS,  # type: ignore
+        database=TEST_DB_HNSW,
+        table_name=TEST_TABLE_NAME + "_hnsw_halfvec_hybrid",
+        schema_name=TEST_SCHEMA_NAME,
+        embed_dim=TEST_EMBED_DIM,
+        hybrid_search=True,
+        use_halfvec=True,
+        hnsw_kwargs={"hnsw_m": 16, "hnsw_ef_construction": 64, "hnsw_ef_search": 40},
+    )
+    yield pg
+    asyncio.run(pg.close())
+
+
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
 async def test_instance_creation(db: None) -> None:
@@ -288,23 +348,34 @@ async def test_instance_creation(db: None) -> None:
     await pg.close()
 
 
+@pytest.fixture()
+def pg_fixture(request):
+    if request.param == "pg":
+        return request.getfixturevalue("pg")
+    elif request.param == "pg_halfvec":
+        return request.getfixturevalue("pg_halfvec")
+    else:
+        raise ValueError(f"Unknown param: {request.param}")
+
+
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add(node_embeddings)
+        await pg_fixture.async_add(node_embeddings)
     else:
-        pg.add(node_embeddings)
-    assert isinstance(pg, PGVectorStore)
-    assert hasattr(pg, "_engine")
+        pg_fixture.add(node_embeddings)
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
     q = VectorStoreQuery(query_embedding=_get_sample_vector(1.0), similarity_top_k=1)
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "aaa"
@@ -336,16 +407,17 @@ async def test_query_hnsw(
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add(node_embeddings)
+        await pg_fixture.async_add(node_embeddings)
     else:
-        pg.add(node_embeddings)
-    assert isinstance(pg, PGVectorStore)
-    assert hasattr(pg, "_engine")
+        pg_fixture.add(node_embeddings)
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
     filters = MetadataFilters(
         filters=[ExactMatchFilter(key="test_key", value="test_value")]
     )
@@ -353,9 +425,9 @@ async def test_add_to_db_and_query_with_metadata_filters(
         query_embedding=_get_sample_vector(0.5), similarity_top_k=10, filters=filters
     )
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "bbb"
@@ -363,16 +435,17 @@ async def test_add_to_db_and_query_with_metadata_filters(
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add(node_embeddings)
+        await pg_fixture.async_add(node_embeddings)
     else:
-        pg.add(node_embeddings)
-    assert isinstance(pg, PGVectorStore)
-    assert hasattr(pg, "_engine")
+        pg_fixture.add(node_embeddings)
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
     filters = MetadataFilters(
         filters=[
             MetadataFilter(
@@ -386,9 +459,9 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
         query_embedding=_get_sample_vector(0.5), similarity_top_k=10, filters=filters
     )
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "bbb"
@@ -396,16 +469,17 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_in_operator_and_single_element(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add(node_embeddings)
+        await pg_fixture.async_add(node_embeddings)
     else:
-        pg.add(node_embeddings)
-    assert isinstance(pg, PGVectorStore)
-    assert hasattr(pg, "_engine")
+        pg_fixture.add(node_embeddings)
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
     filters = MetadataFilters(
         filters=[
             MetadataFilter(
@@ -419,9 +493,9 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator_and_si
         query_embedding=_get_sample_vector(0.5), similarity_top_k=10, filters=filters
     )
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "bbb"
@@ -429,16 +503,17 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator_and_si
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_contains_operator(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add(node_embeddings)
+        await pg_fixture.async_add(node_embeddings)
     else:
-        pg.add(node_embeddings)
-    assert isinstance(pg, PGVectorStore)
-    assert hasattr(pg, "_engine")
+        pg_fixture.add(node_embeddings)
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
     filters = MetadataFilters(
         filters=[
             MetadataFilter(
@@ -452,9 +527,9 @@ async def test_add_to_db_and_query_with_metadata_filters_with_contains_operator(
         query_embedding=_get_sample_vector(0.5), similarity_top_k=10, filters=filters
     )
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "ccc"
@@ -462,23 +537,24 @@ async def test_add_to_db_and_query_with_metadata_filters_with_contains_operator(
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_query_and_delete(
-    pg: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add(node_embeddings)
+        await pg_fixture.async_add(node_embeddings)
     else:
-        pg.add(node_embeddings)
-    assert isinstance(pg, PGVectorStore)
-    assert hasattr(pg, "_engine")
+        pg_fixture.add(node_embeddings)
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
 
     q = VectorStoreQuery(query_embedding=_get_sample_vector(0.1), similarity_top_k=1)
 
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "bbb"
@@ -713,21 +789,22 @@ def test_hybrid_query_fails_if_no_query_str_provided(
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_index_nodes(
-    pg: PGVectorStore, index_node_embeddings: List[BaseNode], use_async: bool
+    pg_fixture: PGVectorStore, index_node_embeddings: List[BaseNode], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add(index_node_embeddings)
+        await pg_fixture.async_add(index_node_embeddings)
     else:
-        pg.add(index_node_embeddings)
-    assert isinstance(pg, PGVectorStore)
-    assert hasattr(pg, "_engine")
+        pg_fixture.add(index_node_embeddings)
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
     q = VectorStoreQuery(query_embedding=_get_sample_vector(5.0), similarity_top_k=2)
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert res.nodes
     assert len(res.nodes) == 2
     assert res.nodes[0].node_id == "aaa_ref"
@@ -739,68 +816,70 @@ async def test_add_to_db_and_query_index_nodes(
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_delete_nodes(
-    pg: PGVectorStore, node_embeddings: List[BaseNode], use_async: bool
+    pg_fixture: PGVectorStore, node_embeddings: List[BaseNode], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add(node_embeddings)
+        await pg_fixture.async_add(node_embeddings)
     else:
-        pg.add(node_embeddings)
+        pg_fixture.add(node_embeddings)
 
-    assert isinstance(pg, PGVectorStore)
-    assert hasattr(pg, "_engine")
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
 
     q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
 
     # test deleting nothing
     if use_async:
-        await pg.adelete_nodes()
+        await pg_fixture.adelete_nodes()
     else:
-        pg.delete_nodes()
+        pg_fixture.delete_nodes()
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert all(i in res.ids for i in ["aaa", "bbb", "ccc"])
 
     # test deleting element that doesn't exist
     if use_async:
-        await pg.adelete_nodes(["asdf"])
+        await pg_fixture.adelete_nodes(["asdf"])
     else:
-        pg.delete_nodes(["asdf"])
+        pg_fixture.delete_nodes(["asdf"])
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert all(i in res.ids for i in ["aaa", "bbb", "ccc"])
 
     # test deleting list
     if use_async:
-        await pg.adelete_nodes(["aaa", "bbb"])
+        await pg_fixture.adelete_nodes(["aaa", "bbb"])
     else:
-        pg.delete_nodes(["aaa", "bbb"])
+        pg_fixture.delete_nodes(["aaa", "bbb"])
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert all(i not in res.ids for i in ["aaa", "bbb"])
     assert "ccc" in res.ids
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_delete_nodes_metadata(
-    pg: PGVectorStore, node_embeddings: List[BaseNode], use_async: bool
+    pg_fixture: PGVectorStore, node_embeddings: List[BaseNode], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add(node_embeddings)
+        await pg_fixture.async_add(node_embeddings)
     else:
-        pg.add(node_embeddings)
+        pg_fixture.add(node_embeddings)
 
-    assert isinstance(pg, PGVectorStore)
-    assert hasattr(pg, "_engine")
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
 
     q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
 
@@ -815,13 +894,13 @@ async def test_delete_nodes_metadata(
         ]
     )
     if use_async:
-        await pg.adelete_nodes(["aaa", "bbb"], filters=filters)
+        await pg_fixture.adelete_nodes(["aaa", "bbb"], filters=filters)
     else:
-        pg.delete_nodes(["aaa", "bbb"], filters=filters)
+        pg_fixture.delete_nodes(["aaa", "bbb"], filters=filters)
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert all(i in res.ids for i in ["aaa", "ccc", "ddd"])
     assert "bbb" not in res.ids
 
@@ -836,13 +915,13 @@ async def test_delete_nodes_metadata(
         ]
     )
     if use_async:
-        await pg.adelete_nodes(["aaa"], filters=filters)
+        await pg_fixture.adelete_nodes(["aaa"], filters=filters)
     else:
-        pg.delete_nodes(["aaa"], filters=filters)
+        pg_fixture.delete_nodes(["aaa"], filters=filters)
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert all(i not in res.ids for i in ["bbb", "aaa"])
     assert all(i in res.ids for i in ["ccc", "ddd"])
 
@@ -857,13 +936,13 @@ async def test_delete_nodes_metadata(
         ]
     )
     if use_async:
-        await pg.adelete_nodes(["ccc"], filters=filters)
+        await pg_fixture.adelete_nodes(["ccc"], filters=filters)
     else:
-        pg.delete_nodes(["ccc"], filters=filters)
+        pg_fixture.delete_nodes(["ccc"], filters=filters)
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert all(i not in res.ids for i in ["bbb", "aaa"])
     assert all(i in res.ids for i in ["ccc", "ddd"])
 
@@ -878,13 +957,13 @@ async def test_delete_nodes_metadata(
         ]
     )
     if use_async:
-        await pg.adelete_nodes(filters=filters)
+        await pg_fixture.adelete_nodes(filters=filters)
     else:
-        pg.delete_nodes(filters=filters)
+        pg_fixture.delete_nodes(filters=filters)
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert all(i not in res.ids for i in ["bbb", "aaa", "ddd"])
     assert "ccc" in res.ids
 
@@ -926,35 +1005,36 @@ async def test_hnsw_index_creation(
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio()
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_clear(
-    pg: PGVectorStore, node_embeddings: List[BaseNode], use_async: bool
+    pg_fixture: PGVectorStore, node_embeddings: List[BaseNode], use_async: bool
 ) -> None:
     if use_async:
-        await pg.async_add(node_embeddings)
+        await pg_fixture.async_add(node_embeddings)
     else:
-        pg.add(node_embeddings)
+        pg_fixture.add(node_embeddings)
 
-    assert isinstance(pg, PGVectorStore)
-    assert hasattr(pg, "_engine")
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
 
     q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
 
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert all(i in res.ids for i in ["bbb", "aaa", "ddd", "ccc"])
 
     if use_async:
-        await pg.aclear()
+        await pg_fixture.aclear()
     else:
-        pg.clear()
+        pg_fixture.clear()
 
     if use_async:
-        res = await pg.aquery(q)
+        res = await pg_fixture.aquery(q)
     else:
-        res = pg.query(q)
+        res = pg_fixture.query(q)
     assert all(i not in res.ids for i in ["bbb", "aaa", "ddd", "ccc"])
     assert len(res.ids) == 0
 

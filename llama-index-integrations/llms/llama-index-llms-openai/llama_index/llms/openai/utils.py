@@ -2,7 +2,13 @@ import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
+import openai
 from deprecated import deprecated
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.completion_choice import Logprobs
 from tenacity import (
     before_sleep_log,
     retry,
@@ -14,20 +20,15 @@ from tenacity import (
 )
 from tenacity.stop import stop_base
 
-import openai
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ImageBlock,
     LogProb,
+    MessageRole,
     TextBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
-from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
-from openai.types.chat.chat_completion_message import ChatCompletionMessage
-from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
-from openai.types.completion_choice import Logprobs
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
@@ -40,6 +41,8 @@ O1_MODELS: Dict[str, int] = {
     "o1-preview-2024-09-12": 128000,
     "o1-mini": 128000,
     "o1-mini-2024-09-12": 128000,
+    "o3-mini": 200000,
+    "o3-mini-2025-01-31": 200000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
@@ -292,9 +295,14 @@ def to_openai_message_dict(
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
 
-    # NOTE: Sending a blank string to openai will cause an error.
-    # This will commonly happen with tool calls.
-    content_txt = None if content_txt == "" else content_txt
+    # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
+    # It's only Allowed to send None if it's an Assistant Message
+    # Reference: https://platform.openai.com/docs/api-reference/chat/create
+    content_txt = (
+        None
+        if content_txt == "" and message.role == MessageRole.ASSISTANT
+        else content_txt
+    )
 
     # NOTE: Despite what the openai docs say, if the role is ASSISTANT, SYSTEM
     # or TOOL, 'content' cannot be a list and must be string instead.
@@ -302,10 +310,12 @@ def to_openai_message_dict(
     # as the content. This will avoid breaking openai-like APIs.
     message_dict = {
         "role": message.role.value,
-        "content": content_txt
-        if message.role.value in ("assistant", "tool", "system")
-        or all(isinstance(block, TextBlock) for block in message.blocks)
-        else content,
+        "content": (
+            content_txt
+            if message.role.value in ("assistant", "tool", "system")
+            or all(isinstance(block, TextBlock) for block in message.blocks)
+            else content
+        ),
     }
 
     # TODO: O1 models do not support system prompts

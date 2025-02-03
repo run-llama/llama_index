@@ -1,14 +1,14 @@
 import asyncio
 import json
-import warnings
 import uuid
+import warnings
 from collections import defaultdict
-from typing import Dict, Any, Optional, List, Type, TYPE_CHECKING, Set, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Type, TypeVar
 
 from .context_serializers import BaseSerializer, JsonSerializer
 from .decorators import StepConfig
-from .events import Event
 from .errors import WorkflowRuntimeError
+from .events import Event
 
 if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
@@ -60,7 +60,7 @@ class Context:
         self._lock = asyncio.Lock()
         self._globals: Dict[str, Any] = {}
         # Step-specific instance
-        self._events_buffer: Dict[Type[Event], List[Event]] = defaultdict(list)
+        self._events_buffer: Dict[str, List[Event]] = defaultdict(list)
 
     def _serialize_queue(self, queue: asyncio.Queue, serializer: BaseSerializer) -> str:
         queue_items = list(queue._queue)  # type: ignore
@@ -240,14 +240,17 @@ class Context:
         warnings.warn(msg, DeprecationWarning)
         return self
 
+    def _get_full_path(self, ev_type: Type[Event]) -> str:
+        return f"{ev_type.__module__}.{ev_type.__name__}"
+
     def collect_events(
         self, ev: Event, expected: List[Type[Event]]
     ) -> Optional[List[Event]]:
-        self._events_buffer[type(ev)].append(ev)
+        self._events_buffer[self._get_full_path(type(ev))].append(ev)
 
         retval: List[Event] = []
         for e_type in expected:
-            e_instance_list = self._events_buffer.get(e_type)
+            e_instance_list = self._events_buffer.get(self._get_full_path(e_type))
             if e_instance_list:
                 retval.append(e_instance_list.pop(0))
 
@@ -256,7 +259,7 @@ class Context:
 
         # put back the events if unable to collect all
         for ev in retval:
-            self._events_buffer[type(ev)].append(ev)
+            self._events_buffer[self._get_full_path(type(ev))].append(ev)
 
         return None
 

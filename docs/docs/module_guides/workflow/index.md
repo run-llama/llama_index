@@ -274,7 +274,7 @@ class MyWorkflow(Workflow):
         self, ctx: Context, ev: GatherEvent | MyEventResult
     ) -> StopEvent | None:
         # wait for events to finish
-        events = ctx.collect_events([MyEventResult, MyEventResult])
+        events = ctx.collect_events(ev, [MyEventResult, MyEventResult])
         if not events:
             return None
 
