@@ -1,4 +1,4 @@
-from llama_index.tools.playwright.base import <FILL>
+from llama_index.tools.playwright.base import PlaywrightToolSpec
 
 
-__all__ = ["<FILL>"]
+__all__ = ["PlaywrightToolSpec"]

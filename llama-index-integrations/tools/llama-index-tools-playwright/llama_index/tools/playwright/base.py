@@ -1,9 +1,19 @@
-from typing import Optional, Tuple, Type, Any, List, Sequence
+from typing import Optional, Tuple, Type, Any, List, Sequence, TYPE_CHECKING
 import json
 from urllib.parse import urlparse
 
-from playwright.sync_api import Browser as SyncBrowser
-from playwright.sync_api import Page as SyncPage
+if TYPE_CHECKING:
+    from playwright.sync_api import Browser as SyncBrowser
+    from playwright.sync_api import Page as SyncPage
+else:
+    try:
+      from playwright.sync_api import Browser as SyncBrowser
+      from playwright.sync_api import Page as SyncPage
+    except ImportError:
+        raise ImportError(
+            "The 'playwright' package is required to use this tool."
+            " Please install it with 'pip install playwright'."
+        )
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -15,6 +25,19 @@ def lazy_import_playwright_browsers():
 
 
 class PlaywrightToolSpec(BaseToolSpec):
+    """
+    Playwright tool spec.
+    """
+
+    spec_functions = [
+        "click",
+        "get_current_page",
+        "extract_hyperlinks",
+        "extract_text",
+        "get_elements",
+        "navigate_to",
+        "navigate_back",
+    ]
 
     def __init__(
         self,
@@ -56,7 +79,32 @@ class PlaywrightToolSpec(BaseToolSpec):
     #################
     # Utils Methods #
     #################
-    def _get_current_page(browser: SyncBrowser) -> SyncPage:
+    def _selector_effective(self, selector: str) -> str:
+        if not self.visible_only:
+            return selector
+        return f"{selector} >> visible=1"
+    
+    @staticmethod
+    def create_sync_playwright_browser(
+        headless: bool = True,
+        args: Optional[List[str]] = None
+    ) -> SyncBrowser:
+        """
+        Create a playwright browser.
+
+        Args:
+            headless: Whether to run the browser in headless mode. Defaults to True.
+            args: arguments to pass to browser.chromium.launch
+
+        Returns:
+            SyncBrowser: The playwright browser.
+        """
+        from playwright.sync_api import sync_playwright
+
+        browser = sync_playwright().start()
+        return browser.chromium.launch(headless=headless, args=args)
+    
+    def _get_current_page(self, browser: SyncBrowser) -> SyncPage:
         """
         Get the current page of the browser.
         Args:
@@ -74,8 +122,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         # Assuming the last page in the list is the active one
         return context.pages[-1]
     
-    @classmethod
-    def _check_bs_import():
+    def _check_bs_import(self):
         """Check that the arguments are valid."""
         try:
             from bs4 import BeautifulSoup  # noqa: F401
@@ -98,17 +145,13 @@ class PlaywrightToolSpec(BaseToolSpec):
         Args:
             selector: The CSS selector to click on.
         """
-        def _selector_effective(self, selector: str) -> str:
-            if not self.visible_only:
-                return selector
-            return f"{selector} >> visible=1"
     
         if self.sync_browser is None:
             raise ValueError("Sync browser is not initialized")
 
         page = self._get_current_page(self.sync_browser)
         # Navigate to the desired webpage before using this tool
-        selector_effective = _selector_effective(selector=selector)
+        selector_effective = self._selector_effective(selector=selector)
         from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
         try:
@@ -120,6 +163,41 @@ class PlaywrightToolSpec(BaseToolSpec):
         except PlaywrightTimeoutError:
             return f"Unable to click on element '{selector}'"
         return f"Clicked element '{selector}'"
+    
+    #################
+    # Fill #
+    #################
+    def fill(
+        self,
+        selector: str,
+        value: str,
+    ) -> None:
+        """
+        Fill an input field with the given value.
+
+        Args:
+            selector: The CSS selector to fill.
+            value: The value to fill in.
+        """
+    
+        if self.sync_browser is None:
+            raise ValueError("Sync browser is not initialized")
+
+        page = self._get_current_page(self.sync_browser)
+        # Navigate to the desired webpage before using this tool
+        selector_effective = self._selector_effective(selector=selector)
+        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+        try:
+            page.fill(
+                selector_effective,
+                value,
+                strict=self.playwright_strict,
+                timeout=self.playwright_timeout,
+            )
+        except PlaywrightTimeoutError:
+            return f"Unable to fill element '{selector}'"
+        return f"Filled element '{selector}'"
     
     #################
     # Get Current Page #
@@ -179,6 +257,8 @@ class PlaywrightToolSpec(BaseToolSpec):
             raise ValueError("Sync browser is not initialized")
         self._check_bs_import()
 
+        from bs4 import BeautifulSoup
+
         page = self._get_current_page(self.sync_browser)
         html_content = page.content()
 
@@ -191,7 +271,7 @@ class PlaywrightToolSpec(BaseToolSpec):
     # Get Elements #
     #################
     def _get_elements(
-        page: SyncPage, selector: str, attributes: Sequence[str]
+        self, page: SyncPage, selector: str, attributes: Sequence[str]
     ) -> List[dict]:
         """Get elements matching the given CSS selector."""
         elements = page.query_selector_all(selector)
@@ -212,7 +292,7 @@ class PlaywrightToolSpec(BaseToolSpec):
     def get_elements(
         self,
         selector: str,
-        attributes: List[str] = lambda: ["innerText"]
+        attributes: List[str] = ["innerText"]
     ) -> str:
         """
         Retrieve elements in the current web page matching the given CSS selector
