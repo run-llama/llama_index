@@ -788,3 +788,90 @@ Now, here is the user's query:
 DEFAULT_REBEL_META_PROMPT = PromptTemplate(
     DEFAULT_REBEL_META_PROMPT_TMPL, prompt_type=PromptType.REBEL_RERANK
 )
+
+DEFAULT_REBEL_STATIC_PROMPT_TMPL = (
+"""You are a re-ranking system. Your task is to analyze a user's query and a set of candidate documents, assign scores based on specified properties, and output the final ranking of documents.
+
+**Inferred Properties**
+
+1. **Depth of Content (0-5):**
+- Higher scores indicate thorough detail and comprehensive coverage of the topic.
+- A "5" is exceptionally in-depth with multiple facets addressed; a "0" is very superficial.
+
+2. **Diversity of Perspectives (0-5):**
+- Higher scores indicate that multiple viewpoints or angles are represented.
+- A "5" means it engages with a variety of perspectives or sources; a "0" means it is entirely one-sided.
+
+3. **Clarity and Specificity (0-5):**
+- Higher scores indicate that the document presents information clearly and addresses the query with precise, unambiguous detail.
+- A "5" means it is highly specific and clear, while a "0" means it is vague or overly general.
+
+4. **Authoritativeness (0-5):**
+- Higher scores indicate reputable sources, expert authorship, or recognized credibility.
+- A "5" might be an extensively cited academic work or an official standard; a "0" would be an unknown or dubious source.
+
+5. **Recency (0-5):**
+- Higher scores indicate that the document references recent studies, data, or developments.
+- A "5" means it is very current and up-to-date; a "0" means it is outdated or does not reference any time-sensitive information.
+
+**Scoring Rubric**
+
+- **Relevance (0-10):**
+- A "10" means the document directly addresses the user's query, covering the key subject comprehensively.
+- A "0" means it is completely off-topic.
+
+- **Depth of Content (0-5):** Based on how detailed or thorough the document is.
+- **Diversity of Perspectives (0-5):** Based on how many viewpoints or angles are presented.
+- **Clarity and Specificity (0-5):** Based on how clear and precise the document is.
+- **Authoritativeness (0-5):** Based on source credibility or recognized expertise.
+- **Recency (0-5):** Based on how up-to-date the document is.
+
+**Weighted Composite Score**
+Final Score = Relevance + 0.5*(Depth of Content) + 0.5*(Diversity of Perspectives) + 0.5*(Clarity and Specificity) + 0.5*(Authoritativeness) + 0.5*(Recency)
+
+**Instructions**
+1. Assign Relevance to each document on a scale of 0-10. Discard any document with Relevance < 3.
+2. For the remaining documents, assign scores for:
+- Depth of Content (0-5)
+- Diversity of Perspectives (0-5)
+- Clarity and Specificity (0-5)
+- Authoritativeness (0-5)
+- Recency (0-5)
+3. Compute each document's Final Score using the formula above.
+4. Sort the documents by their Final Score in descending order.
+5. If two documents end up with the same Final Score, prefer the one with higher Authoritativeness (or apply another consistent tie-breaking rule).
+6. If no documents remain after filtering for Relevance, output nothing.
+7. Output only the list of theselected documents with their Relevance scores, in this format (no extra text or commentary), where [score] is actually the Final Score and NOT the relevance score.
+```
+Doc: [document number], Relevance: [score]
+```
+
+**Example format:**
+```
+Document 1:
+<summary of document 1>
+
+Document 2:
+<summary of document 2>
+
+...
+
+Document 10:
+<summary of document 10>
+
+Question: <question>
+Answer:
+Doc: 9, Relevance: 7
+Doc: 3, Relevance: 4
+Doc: 7, Relevance: 3
+
+Let's try this now:
+
+{context_str}
+Question: {query_str}
+Answer:
+```""")
+
+DEFAULT_REBEL_STATIC_PROMPT = PromptTemplate(
+    DEFAULT_REBEL_STATIC_PROMPT_TMPL, prompt_type=PromptType.REBEL_RERANK
+)
