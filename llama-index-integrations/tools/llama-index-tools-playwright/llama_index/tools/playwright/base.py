@@ -1,27 +1,12 @@
-from typing import Optional, Any, List, Sequence, TYPE_CHECKING
+from typing import Optional, Any, List, Sequence
 import json
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
+from bs4 import BeautifulSoup
 
-if TYPE_CHECKING:
-    from playwright.sync_api import Browser as SyncBrowser
-    from playwright.sync_api import Page as SyncPage
-else:
-    try:
-        from playwright.sync_api import Browser as SyncBrowser
-        from playwright.sync_api import Page as SyncPage
-    except ImportError:
-        raise ImportError(
-            "The 'playwright' package is required to use this tool."
-            " Please install it with 'pip install playwright'."
-        )
+from playwright.sync_api import Browser as SyncBrowser
+from playwright.sync_api import Page as SyncPage
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
-
-
-def lazy_import_playwright_browsers():
-    """
-    Lazy import playwright browsers.
-    """
 
 
 class PlaywrightToolSpec(BaseToolSpec):
@@ -58,7 +43,6 @@ class PlaywrightToolSpec(BaseToolSpec):
             absolute_url: bool = False. Whether to return absolute urls.
 
         """
-        lazy_import_playwright_browsers()
         self.sync_browser = sync_browser
 
         # for click tool
@@ -127,23 +111,13 @@ class PlaywrightToolSpec(BaseToolSpec):
         # Assuming the last page in the list is the active one
         return context.pages[-1]
 
-    def _check_bs_import(self):
-        """Check that the arguments are valid."""
-        try:
-            from bs4 import BeautifulSoup  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "The 'beautifulsoup4' package is required to use this tool."
-                " Please install it with 'pip install beautifulsoup4'."
-            )
-
     #################
     # Click #
     #################
     def click(
         self,
         selector: str,
-    ) -> None:
+    ) -> str:
         """
         Click on a en element based on a CSS selector.
 
@@ -175,7 +149,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         self,
         selector: str,
         value: str,
-    ) -> None:
+    ) -> str:
         """
         Fill an input field with the given value.
 
@@ -219,10 +193,6 @@ class PlaywrightToolSpec(BaseToolSpec):
     #################
     @staticmethod
     def scrape_page(page: Any, html_content: str, absolute_urls: bool) -> str:
-        from urllib.parse import urljoin
-
-        from bs4 import BeautifulSoup
-
         # Parse the HTML content with BeautifulSoup
         soup = BeautifulSoup(html_content, "lxml")
 
@@ -243,7 +213,6 @@ class PlaywrightToolSpec(BaseToolSpec):
         """
         if self.sync_browser is None:
             raise ValueError("Sync browser is not initialized")
-        self._check_bs_import()
 
         page = self._get_current_page(self.sync_browser)
         html_content = page.content()
@@ -258,9 +227,6 @@ class PlaywrightToolSpec(BaseToolSpec):
         """
         if self.sync_browser is None:
             raise ValueError("Sync browser is not initialized")
-        self._check_bs_import()
-
-        from bs4 import BeautifulSoup
 
         page = self._get_current_page(self.sync_browser)
         html_content = page.content()
