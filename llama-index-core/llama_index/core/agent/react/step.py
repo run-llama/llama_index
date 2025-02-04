@@ -510,19 +510,19 @@ class ReActAgentWorker(BaseAgentWorker):
             task.extra_state["current_reasoning"], task.extra_state["sources"]
         )
         if is_done:
-            if isinstance(self._llm, OpenAI):
-                final_response = await self._llm.check_confidence(messages=input_chat, task=task, last_response=chat_response, agent_response=agent_response)
-                task.extra_state["new_memory"].put(
-                    final_response
-                )
-                agent_response.response = final_response.message.content
-            else:
-                task.extra_state["new_memory"].put(
-                    ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
-                )
-            # task.extra_state["new_memory"].put(
-            #     ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
-            # )
+            # if isinstance(self._llm, OpenAI):
+            #     final_response = await self._llm.check_confidence(messages=input_chat, task=task, last_response=chat_response, agent_response=agent_response)
+            #     task.extra_state["new_memory"].put(
+            #         final_response
+            #     )
+            #     agent_response.response = final_response.message.content
+            # else:
+            #     task.extra_state["new_memory"].put(
+            #         ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
+            #     )
+            task.extra_state["new_memory"].put(
+                ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
+            )
         return self._get_task_step_response(agent_response, step, is_done)
 
 
