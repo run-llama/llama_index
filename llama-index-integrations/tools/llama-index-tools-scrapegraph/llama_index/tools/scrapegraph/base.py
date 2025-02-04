@@ -14,7 +14,7 @@ class ScrapegraphToolSpec(BaseToolSpec):
     spec_functions = [
         "scrapegraph_smartscraper",
         "scrapegraph_markdownify",
-        "scrapegraph_local_scrape",
+        "scrapegraph_search",
     ]
 
     def scrapegraph_smartscraper(
@@ -56,16 +56,15 @@ class ScrapegraphToolSpec(BaseToolSpec):
 
         return client.markdownify(website_url=url)
 
-    def scrapegraph_local_scrape(self, text: str, api_key: str) -> str:
-        """Extract structured data from raw text using scrapegraph.
+    def scrapegraph_search(self, query: str, api_key: str) -> str:
+        """Perform a search query using scrapegraph.
 
         Args:
-            text (str): Raw text to process and extract data from
+            query (str): Search query to execute
             api_key (str): scrapegraph API key
 
         Returns:
-            str: Structured data extracted from the input text
+            str: Search results from scrapegraph
         """
         client = Client(api_key=api_key)
-
-        return client.local_scrape(text=text)
+        return client.search(query=query)
