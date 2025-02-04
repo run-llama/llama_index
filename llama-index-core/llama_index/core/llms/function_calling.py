@@ -161,6 +161,7 @@ class FunctionCallingLLM(LLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         error_on_no_tool_call: bool = True,
+        error_on_tool_error: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
@@ -193,7 +194,15 @@ class FunctionCallingLLM(LLM):
             call_tool_with_selection(tool_call, tools, verbose=verbose)
             for tool_call in tool_calls
         ]
-        if allow_parallel_tool_calls:
+        tool_outputs_with_error = [
+            tool_output for tool_output in tool_outputs if tool_output.is_error
+        ]
+        if error_on_tool_error and len(tool_outputs_with_error) > 0:
+            error_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
+            )
+            raise ValueError(error_text)
+        elif allow_parallel_tool_calls:
             output_text = "\n\n".join(
                 [tool_output.content for tool_output in tool_outputs]
             )
@@ -218,6 +227,7 @@ class FunctionCallingLLM(LLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         error_on_no_tool_call: bool = True,
+        error_on_tool_error: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
@@ -252,7 +262,15 @@ class FunctionCallingLLM(LLM):
             for tool_call in tool_calls
         ]
         tool_outputs = await asyncio.gather(*tool_tasks)
-        if allow_parallel_tool_calls:
+        tool_outputs_with_error = [
+            tool_output for tool_output in tool_outputs if tool_output.is_error
+        ]
+        if error_on_tool_error and len(tool_outputs_with_error) > 0:
+            error_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
+            )
+            raise ValueError(error_text)
+        elif allow_parallel_tool_calls:
             output_text = "\n\n".join(
                 [tool_output.content for tool_output in tool_outputs]
             )
