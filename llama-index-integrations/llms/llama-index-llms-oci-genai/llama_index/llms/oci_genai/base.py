@@ -74,6 +74,11 @@ class OCIGenAI(FunctionCallingLLM):
         default="DEFAULT",
     )
 
+    auth_file_location: Optional[str] = Field(
+        description="Path to the config file. If not specified, ~/.oci/config will be used",
+        default="~/.oci/config",
+    )
+
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional kwargs for the OCI Generative AI request.",
@@ -95,6 +100,7 @@ class OCIGenAI(FunctionCallingLLM):
         compartment_id: Optional[str] = None,
         auth_type: Optional[str] = "API_KEY",
         auth_profile: Optional[str] = "DEFAULT",
+        auth_file_location: Optional[str] = "~/.oci/config",
         client: Optional[Any] = None,
         provider: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
@@ -121,10 +127,11 @@ class OCIGenAI(FunctionCallingLLM):
 
             compartment_id (str): OCID of the compartment.
 
-            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCEAL, RESOURCE_PRINCIPAL.
-                                    If not specified, API_KEY will be used
+            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCEAL, RESOURCE_PRINCIPAL. If not specified, API_KEY will be used
 
             auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
+
+            auth_file_location (Optional[str]): Path to the config file, If not specified, ~/.oci/config will be used.
 
             client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the
                                     provided service endpoint and authentifcation method.
@@ -147,6 +154,7 @@ class OCIGenAI(FunctionCallingLLM):
             compartment_id=compartment_id,
             auth_type=auth_type,
             auth_profile=auth_profile,
+            auth_file_location=auth_file_location,
             additional_kwargs=additional_kwargs,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
@@ -157,7 +165,7 @@ class OCIGenAI(FunctionCallingLLM):
         )
 
         self._client = client or create_client(
-            auth_type, auth_profile, service_endpoint
+            auth_type, auth_profile, auth_file_location, service_endpoint
         )
 
         self._provider = get_provider(model, provider)
