@@ -100,7 +100,7 @@ class TestToMessageDicts:
             ),
         ]
         expected_result = [
-            {"role": "user", "content": ""},
+            {"role": "user"},
             {"role": "assistant", "content": "Hi there!"},
         ]
         result = _to_message_dicts(messages, drop_none=True)
