@@ -42,6 +42,8 @@ def create_schema_from_function(
             param_type = args[0]
             if isinstance(args[1], str):
                 description = args[1]
+            elif isinstance(args[1], FieldInfo):
+                description = args[1].description
 
         if param_type is params[param_name].empty:
             param_type = Any
