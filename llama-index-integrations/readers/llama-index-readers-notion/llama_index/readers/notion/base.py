@@ -185,22 +185,11 @@ class NotionPageReader(BasePydanticReader):
         )
         return res.json()
 
-    def _read_block(self, block_id: str, num_tabs: int = 0) -> str:
-        """Read a block."""
+    def page_json_list_to_text(
+        self, page_json_iter: Iterable[json_t], num_tabs: int = 0
+    ) -> str:
         block_text: str = "\n"
-
-        def get_block_next_page(start_cursor: Optional[str]) -> json_t:
-            self._print("_read_block get page")
-            query_dict: json_t = {}
-            if start_cursor and start_cursor != block_id:
-                # Only add start_cursor to query_dict if it's a valid pagination cursor
-                if len(start_cursor) > 0 and start_cursor != block_id:
-                    query_dict["start_cursor"] = start_cursor
-
-            return self._request_block(block_id, query_dict)
-
-        # Iterate through all block results using the paginated API helper
-        for result in iterate_paginated_api(get_block_next_page):
+        for result in page_json_iter:
             result_type: str = result["type"]
             result_obj: json_t = result[result_type]
 
@@ -215,13 +204,33 @@ class NotionPageReader(BasePydanticReader):
             result_block_id: str = result["id"]
             has_children: bool = result["has_children"]
             if has_children:
-                children_text: str = self._read_block(
+                children_text: str = self._read_page_block(
                     result_block_id, num_tabs=num_tabs + 1
                 )
                 block_text += children_text + "\n"
             block_text += "\n"
 
         return block_text
+
+    def _read_page_block(self, block_id: str, num_tabs: int = 0) -> str:
+        """Read a block."""
+
+        def get_block_next_page(start_cursor: Optional[str]) -> json_t:
+            self._print("_read_page_block get page")
+            query_dict: json_t = {}
+
+            # TODO ideally this logic could be removed
+            if start_cursor and start_cursor != block_id:
+                # Only add start_cursor to query_dict if it's a valid pagination cursor
+                if len(start_cursor) > 0 and start_cursor != block_id:
+                    query_dict["start_cursor"] = start_cursor
+
+            return self._request_block(block_id, query_dict)
+
+        # Iterate through all block results using the paginated API helper
+        return self.page_json_list_to_text(
+            iterate_paginated_api(get_block_next_page), num_tabs=num_tabs
+        )
 
     def _request_with_retry(
         self,
@@ -483,7 +492,7 @@ class NotionPageReader(BasePydanticReader):
 
     def read_page_text(self, page_id: page_id_t) -> Optional[str]:
         """Read a page."""
-        page_text = self._read_block(page_id)
+        page_text = self._read_page_block(page_id)
         self._print(
             f"Reading page {page_id} of len {len(page_text)}: \n {page_text[:PAGE_PREVIEW_LENGTH]}... \n\n\n"
         )
