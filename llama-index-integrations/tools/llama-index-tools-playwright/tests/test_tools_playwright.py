@@ -1,9 +1,13 @@
 import pytest
 import json
 import time
+import os
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.playwright import PlaywrightToolSpec
+
+# install playwright
+os.system("playwright install")
 
 TEST_HYPERLINKS = {
     "/python/community/ambassadors",
