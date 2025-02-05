@@ -226,7 +226,7 @@ class Gemini(FunctionCallingLLM):
 
         return gen()
 
-    @llm_completion_callback
+    @llm_completion_callback()
     def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
