@@ -52,3 +52,21 @@ def test_sync_scraping(tool_spec: ScrapegraphToolSpec, mock_sync_client: Mock):
         website_url=url, user_prompt=prompt, output_schema=schema
     )
     assert response == expected_response
+
+
+def test_search(tool_spec: ScrapegraphToolSpec, mock_sync_client: Mock):
+    """Test search functionality."""
+    # Test data
+    query = "test search query"
+    api_key = "sgai-0000-0000-0000-0000-0000-0000-0000-0000"
+    expected_response = "Search results"
+
+    # Configure mock
+    mock_sync_client.search.return_value = expected_response
+
+    # Execute test
+    response = tool_spec.scrapegraph_search(query=query, api_key=api_key)
+
+    # Verify
+    mock_sync_client.search.assert_called_once_with(query=query)
+    assert response == expected_response
