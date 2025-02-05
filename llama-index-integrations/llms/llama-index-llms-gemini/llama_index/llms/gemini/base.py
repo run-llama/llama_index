@@ -33,6 +33,7 @@ from .utils import (
 
 GEMINI_MODELS = (
     "models/gemini-2.0-flash-exp",
+    "models/gemini-2.0-flash-001",
     # Gemini 1.0 Pro Vision has been deprecated on July 12, 2024.
     # According to official recommendations, switch the default model to gemini-1.5-flash
     "models/gemini-1.5-flash",
