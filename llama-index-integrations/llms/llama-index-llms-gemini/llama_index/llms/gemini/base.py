@@ -27,9 +27,6 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.utilities.gemini_utils import (
     merge_neighboring_same_role_messages,
 )
-from llama_index.core.base.llms.generic_utils import (
-    astream_chat_to_completion_decorator,
-)
 
 from .utils import (
     chat_from_gemini_response,
@@ -218,10 +215,30 @@ class Gemini(FunctionCallingLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
         request_options = self._request_options or kwargs.pop("request_options", None)
-        it = self._model.generate_content(
-            prompt, stream=True, request_options=request_options, **kwargs
-        )
-        yield from map(completion_from_gemini_response, it)
+
+        def gen():
+            it = self._model.generate_content(
+                prompt, stream=True, request_options=request_options, **kwargs
+            )
+            for r in it:
+                yield completion_from_gemini_response(r)
+
+        return gen()
+
+    @llm_completion_callback
+    def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        request_options = self._request_options or kwargs.pop("request_options", None)
+
+        async def gen():
+            it = await self._model.generate_content_async(
+                prompt, stream=True, request_options=request_options, **kwargs
+            )
+            async for r in it:
+                yield completion_from_gemini_response(r)
+
+        return gen()
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -374,15 +391,3 @@ class Gemini(FunctionCallingLLM):
             )
 
         return tool_selections
-
-    @llm_completion_callback()
-    async def astream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponseAsyncGen:
-        if self._use_chat_completions(kwargs):
-            astream_complete_fn = astream_chat_to_completion_decorator(
-                self._astream_chat
-            )
-        else:
-            astream_complete_fn = self._astream_complete
-        return await astream_complete_fn(prompt, **kwargs)
