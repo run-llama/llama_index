@@ -32,12 +32,6 @@ notion_db_id_t = NewType("notion_db_id_t", str)
 
 
 # TODO may be a good idea to use https://github.com/ramnes/notion-sdk-py
-# TODO get titles from databases
-# TODO page_id_t | str
-# TODO try to get rid of if start_cursor is not None:
-# TODO page titles???
-
-# TODO there is probably more logic in finding pages in databases and databases in pages and making that get every possible page
 
 # -------------------------------------------------
 # Notes
