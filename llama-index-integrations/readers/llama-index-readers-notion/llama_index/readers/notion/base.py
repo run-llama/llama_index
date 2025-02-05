@@ -56,9 +56,6 @@ notion_db_id_t = NewType("notion_db_id_t", str)
 #   you may get an error related to start_cursor if you have a previous request fail
 
 
-# Make sure to use iterators where possible
-# there can be quite a lot of data and you don't want to
-
 # -------------------------------------------------
 
 
