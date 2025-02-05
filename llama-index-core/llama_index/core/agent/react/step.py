@@ -486,7 +486,9 @@ class ReActAgentWorker(BaseAgentWorker):
         Returns:
             bool: Boolean on whether the chunk is the start of the final response
         """
-        latest_content = chunk.message.content
+        latest_content = (
+            None if chunk.message.content is None else chunk.message.content.strip()
+        )
         if latest_content:
             # doesn't follow thought-action format
             # keep first chunks
