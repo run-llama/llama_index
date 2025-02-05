@@ -17,6 +17,7 @@ llm = OpenAI(temperature=0)
 # Create an agent with the tools
 agent = ReActAgent.from_tools(tools, llm=llm, verbose=True)
 
+
 # Example queries to demonstrate usage
 def run_search_example():
     """Run an example search query using the scrapegraph tool."""
@@ -37,6 +38,7 @@ def run_search_example():
     print("\nSearch Results:")
     print(f"Query: {query}")
     print(f"Response: {response}")
+
 
 if __name__ == "__main__":
     # Make sure to set your API keys in environment variables
