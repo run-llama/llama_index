@@ -13,8 +13,6 @@ from itertools import chain
 
 # -------------------------------------------------
 
-IS_DEBUG: bool = True
-
 INTEGRATION_TOKEN_NAME = "NOTION_INTEGRATION_TOKEN"
 BLOCK_CHILD_URL_TMPL = "https://api.notion.com/v1/blocks/{block_id}/children"
 DATABASE_URL_TMPL = "https://api.notion.com/v1/databases/{database_id}/query"
@@ -580,11 +578,6 @@ class NotionPageReader(BasePydanticReader):
         total_message: str = (
             PRINT_PREFIX + message + datetime.datetime.now().strftime(" %H:%M")
         )
-
-        PRINT_TO_FILE: bool = IS_DEBUG
-        if PRINT_TO_FILE:
-            with open("notion_reader_output.txt", "a") as f:
-                f.write(total_message + "\n")
 
         if self.print_feedback:
             print(total_message)
