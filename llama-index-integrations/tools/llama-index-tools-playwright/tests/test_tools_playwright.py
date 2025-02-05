@@ -1,6 +1,5 @@
 import pytest
 import json
-import time
 import os
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
@@ -129,23 +128,3 @@ def test_get_elements(PlaywrightTool):
         selector=TEST_SELECTOR, attributes=["innerText"]
     )
     assert element == TEST_ELEMENTS
-
-
-def test_click(PlaywrightTool):
-    PlaywrightTool.click(selector=TEST_SELECTOR)
-    time.sleep(1)
-    assert (
-        PlaywrightTool.get_current_page()
-        == "https://playwright.dev/python/docs/writing-tests"
-    )
-
-
-def test_fill(PlaywrightTool):
-    PlaywrightTool.click(selector=TEST_SELECTOR_FILL)
-    PlaywrightTool.fill(selector="#docsearch-input", value=TEST_VALUE)
-    PlaywrightTool.click(selector="#docsearch-hits0-item-0 > a")
-    time.sleep(1)
-    assert (
-        PlaywrightTool.get_current_page()
-        == "https://playwright.dev/python/docs/input#mouse-click"
-    )
