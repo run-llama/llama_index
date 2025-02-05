@@ -424,7 +424,7 @@ class OpenAI(FunctionCallingLLM):
         all_kwargs = {**base_kwargs, **self.additional_kwargs}
         if "stream" not in all_kwargs and "stream_options" in all_kwargs:
             del all_kwargs["stream_options"]
-        if self.model in O1_MODELS and base_kwargs["max_tokens"] is not None:
+        if self.model in O1_MODELS and base_kwargs.get("max_tokens") is not None:
             # O1 models use max_completion_tokens instead of max_tokens
             all_kwargs["max_completion_tokens"] = all_kwargs.get(
                 "max_completion_tokens", all_kwargs["max_tokens"]

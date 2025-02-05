@@ -79,6 +79,37 @@ llama_index.core.set_global_handler(
 
 ![](../../_static/integrations/arize_phoenix.png)
 
+
+### MLflow
+
+[MLflow](https://mlflow.org/docs/latest/llms/tracing/index.html) is an open-source MLOps/LLMOps platform, focuses on the full lifecycle for machine learning projects, ensuring that each phase is manageable, traceable, and reproducible.
+**MLflow Tracing** is an OpenTelemetry-based tracing capability and supports one-click instrumentation for LlamaIndex applications.
+
+#### Usage Pattern
+
+Since MLflow is open-source, you can start using it without any account creation or API key setup. Jump straight into the code after installing the MLflow package!
+
+```python
+import mlflow
+
+mlflow.llama_index.autolog()  # Enable mlflow tracing
+```
+
+![](../../_static/integrations/mlflow/mlflow.gif)
+
+#### Guides
+
+MLflow LlamaIndex integration also provides experiment tracking, evaluation, dependency management, and more. Check out the [MLflow documentation](https://mlflow.org/docs/latest/llms/llama-index/index.html) for more details.
+
+#### Support Table
+
+MLflow Tracing support the full range of LlamaIndex features. Some new features like [AgentWorkflow](https://www.llamaindex.ai/blog/introducing-agentworkflow-a-powerful-system-for-building-ai-agent-systems) requires MLflow >= 2.18.0.
+
+| Streaming | Async | Engine | Agents | Workflow | AgentWorkflow |
+| --- | --- | --- | --- | --- | --- |
+| ✅ |  ✅ | ✅ | ✅ | ✅ (>= 2.18) | ✅  (>= 2.18) |
+
+
 ### OpenLLMetry
 
 [OpenLLMetry](https://github.com/traceloop/openllmetry) is an open-source project based on OpenTelemetry for tracing and monitoring
@@ -545,39 +576,6 @@ import llama_index.core
 
 llama_index.core.set_global_handler("simple")
 ```
-
-### MLflow
-
-[MLflow](https://mlflow.org/docs/latest/index.html) is an open-source platform, purpose-built to assist machine learning practitioners and teams in handling the complexities of the machine learning process. MLflow focuses on the full lifecycle for machine learning projects, ensuring that each phase is manageable, traceable, and reproducible.
-
-##### Install
-
-```shell
-pip install mlflow>=2.15 llama-index>=0.10.44
-```
-
-#### Usage Pattern
-
-```python
-import mlflow
-
-mlflow.llama_index.autolog()  # Enable mlflow tracing
-
-with mlflow.start_run() as run:
-    mlflow.llama_index.log_model(
-        index,
-        artifact_path="llama_index",
-        engine_type="query",  # Logged engine type for inference
-        input_example="hi",
-        registered_model_name="my_llama_index_vector_store",
-    )
-    model_uri = f"runs:/{run.info.run_id}/llama_index"
-
-predictions = mlflow.pyfunc.load_model(model_uri).predict("hi")
-print(f"Query engine prediction: {predictions}")
-```
-
-![](../../_static/integrations/mlflow.gif)
 
 #### Guides
 
