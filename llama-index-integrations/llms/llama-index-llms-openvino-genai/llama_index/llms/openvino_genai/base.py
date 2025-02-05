@@ -92,17 +92,17 @@ class OpenVINOGenAILLM(CustomLLM):
 
     def __init__(
         self,
+        model_path: str,
+        config: Optional[dict] = None,
         tokenizer: Optional[Any] = None,
-        model_path: Optional[str] = None,
         device: Optional[str] = "CPU",
-        draft_model_path: Optional[str] = None,
-        draft_model_device: Optional[str] = "CPU",
         query_wrapper_prompt: Union[str, PromptTemplate] = "{query_str}",
         is_chat_model: Optional[bool] = False,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: str = "",
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
+        **kwargs: Any,
     ) -> None:
         class IterableStreamer(openvino_genai.StreamerBase):
             """
@@ -244,15 +244,7 @@ class OpenVINOGenAILLM(CustomLLM):
                 return super().put(token_id)
 
         """Initialize params."""
-        if draft_model_path is not None:
-            draft_model = openvino_genai.draft_model(
-                draft_model_path, draft_model_device
-            )
-            pipe = openvino_genai.LLMPipeline(
-                model_path, device, draft_model=draft_model
-            )
-        else:
-            pipe = openvino_genai.LLMPipeline(model_path, device)
+        pipe = openvino_genai.LLMPipeline(model_path, device, config, **kwargs)
 
         config = pipe.get_generation_config()
 
@@ -268,8 +260,6 @@ class OpenVINOGenAILLM(CustomLLM):
             tokenizer=tokenizer,
             model_name=model_path,
             device=device,
-            draft_model_path=draft_model_path,
-            draft_model_device=draft_model_device,
             query_wrapper_prompt=query_wrapper_prompt,
             is_chat_model=is_chat_model,
             callback_manager=callback_manager,
@@ -338,7 +328,7 @@ class OpenVINOGenAILLM(CustomLLM):
                 ov.Tensor(input_ids), ov.Tensor(attention_mask)
             )
 
-        tokens = self._pipe.generate(full_prompt, self.config)
+        tokens = self._pipe.generate(full_prompt, self.config, **kwargs)
         if not isinstance(self._tokenizer, openvino_genai.Tokenizer):
             completion_tokens = tokens[0][inputs["input_ids"].size(1) :]
             completion = self._tokenizer.decode(
@@ -377,7 +367,7 @@ class OpenVINOGenAILLM(CustomLLM):
             generation function for single thread.
             """
             self._streamer.reset()
-            self._pipe.generate(full_prompt, self.config, self._streamer)
+            self._pipe.generate(full_prompt, self.config, self._streamer, **kwargs)
             stream_complete.set()
             self._streamer.end()
 
