@@ -575,11 +575,11 @@ class NotionPageReader(BasePydanticReader):
         Args:
             message (str): The message to print
         """
-        total_message: str = (
-            PRINT_PREFIX + message + datetime.datetime.now().strftime(" %H:%M")
-        )
-
         if self.print_feedback:
+            total_message: str = (
+                PRINT_PREFIX + message + datetime.datetime.now().strftime(" %H:%M")
+            )
+
             print(total_message)
 
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
