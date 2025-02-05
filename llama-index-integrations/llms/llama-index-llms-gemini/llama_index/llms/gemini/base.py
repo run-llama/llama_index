@@ -2,6 +2,7 @@
 
 import os
 import warnings
+import uuid
 from typing import TYPE_CHECKING, Union, List, Any, Dict, Optional, Sequence, cast
 
 import google.generativeai as genai
@@ -24,7 +25,6 @@ from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.utilities.gemini_utils import (
-    ROLES_FROM_GEMINI,
     merge_neighboring_same_role_messages,
 )
 from llama_index.core.base.llms.generic_utils import (
@@ -189,6 +189,8 @@ class Gemini(FunctionCallingLLM):
             num_output=self.max_tokens,
             model_name=self.model,
             is_chat_model=True,
+            # All gemini models support function calling
+            is_function_calling_model=True,
         )
 
     @llm_completion_callback()
@@ -264,19 +266,11 @@ class Gemini(FunctionCallingLLM):
             for r in response:
                 top_candidate = r.candidates[0]
                 content_delta = top_candidate.content.parts[0].text
-                role = ROLES_FROM_GEMINI[top_candidate.content.role]
-                raw = {
-                    **(type(top_candidate).to_dict(top_candidate)),  # type: ignore
-                    **(
-                        type(response.prompt_feedback).to_dict(response.prompt_feedback)  # type: ignore
-                    ),
-                }
                 content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(role=role, content=content),
-                    delta=content_delta,
-                    raw=raw,
-                )
+                llama_resp = chat_from_gemini_response(r)
+                llama_resp.delta = content_delta
+                llama_resp.message.content = content
+                yield llama_resp
 
         return gen()
 
@@ -297,19 +291,11 @@ class Gemini(FunctionCallingLLM):
             async for r in response:
                 top_candidate = r.candidates[0]
                 content_delta = top_candidate.content.parts[0].text
-                role = ROLES_FROM_GEMINI[top_candidate.content.role]
-                raw = {
-                    **(type(top_candidate).to_dict(top_candidate)),  # type: ignore
-                    **(
-                        type(response.prompt_feedback).to_dict(response.prompt_feedback)  # type: ignore
-                    ),
-                }
                 content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(role=role, content=content),
-                    delta=content_delta,
-                    raw=raw,
-                )
+                llama_resp = chat_from_gemini_response(r)
+                llama_resp.delta = content_delta
+                llama_resp.message.content = content
+                yield llama_resp
 
         return gen()
 
@@ -325,7 +311,22 @@ class Gemini(FunctionCallingLLM):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
-        tool_specs = [tool.fn for tool in tools]
+        from google.generativeai.types import FunctionDeclaration, ToolDict
+
+        tool_declarations = []
+        for tool in tools:
+            descriptions = {}
+            for param_name, param_schema in tool.metadata.get_parameters_dict()[
+                "properties"
+            ].items():
+                param_description = param_schema.get("description", None)
+                if param_description:
+                    descriptions[param_name] = param_description
+
+            tool.metadata.fn_schema.__doc__ = tool.metadata.description
+            tool_declarations.append(
+                FunctionDeclaration.from_function(tool.metadata.fn_schema, descriptions)
+            )
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
@@ -336,7 +337,9 @@ class Gemini(FunctionCallingLLM):
 
         return {
             "messages": messages,
-            "tools": tool_specs or None,
+            "tools": ToolDict(function_declarations=tool_declarations)
+            if tool_declarations
+            else None,
             **kwargs,
         }
 
@@ -364,7 +367,7 @@ class Gemini(FunctionCallingLLM):
 
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call.id,
+                    tool_id=str(uuid.uuid4()),
                     tool_name=tool_call.name,
                     tool_kwargs=dict(tool_call.args),
                 )

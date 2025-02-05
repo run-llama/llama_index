@@ -97,7 +97,6 @@ def chat_from_gemini_response(
 def chat_message_to_gemini(message: ChatMessage) -> "genai.types.ContentDict":
     """Convert ChatMessages to Gemini-specific history, including ImageDocuments."""
     parts = []
-    content_txt = ""
     for block in message.blocks:
         if isinstance(block, TextBlock):
             parts.append(block.text)
