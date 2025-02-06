@@ -6,7 +6,7 @@ from llama_index.core.llms import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.base import PromptTemplate, PromptType
-from llama_index.core.prompts.default_prompts import DEFAULT_REBEL_META_PROMPT, DEFAULT_REBEL_STATIC_PROMPT
+from llama_index.core.prompts.default_prompts import DEFAULT_REBEL_META_PROMPT, DEFAULT_REBEL_CHOICE_SELECT_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
@@ -28,12 +28,9 @@ class REBELRerank(BaseNodePostprocessor):
     """REBEL (Rerank Beyond Relevance) reranker."""
 
     top_n: int = Field(description="Top N nodes to return.")
-    static: bool = Field(description="Whether to use static reranking prompt")
-    rebel_prompt: SerializeAsAny[BasePromptTemplate] = Field(
-        description="REBEL prompt that generates ranking instructions."
-    )
-    static_prompt: SerializeAsAny[BasePromptTemplate] = Field(
-        description="REBEL static prompt that generates rankings."
+    one_turn: bool = Field(description="Whether to use a one_turn reranking prompt")
+    meta_prompt: SerializeAsAny[BasePromptTemplate] = Field(
+        description="REBEL prompt that generates the choice selection prompt."
     )
     choice_batch_size: int = Field(description="Batch size for choice select.")
     llm: LLM = Field(
@@ -52,26 +49,26 @@ class REBELRerank(BaseNodePostprocessor):
     def __init__(
         self,
         llm: Optional[LLM] = None,
-        rebel_prompt: Optional[BasePromptTemplate] = None,
-        static_prompt: Optional[BasePromptTemplate] = None,
+        meta_prompt: Optional[BasePromptTemplate] = None,
+        choice_select_prompt: Optional[BasePromptTemplate] = None,
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
         top_n: int = 10,
-        static: bool = False
+        one_turn: bool = False
     ) -> None:
         """Initialize params."""
-        rebel_prompt = rebel_prompt or DEFAULT_REBEL_META_PROMPT
-        static_prompt = static_prompt or DEFAULT_REBEL_STATIC_PROMPT
+        meta_prompt = meta_prompt or DEFAULT_REBEL_META_PROMPT
+        choice_select_prompt = choice_select_prompt or DEFAULT_REBEL_CHOICE_SELECT_PROMPT
         llm = llm or Settings.llm
 
         super().__init__(
             llm=llm,
-            rebel_prompt=rebel_prompt,
-            static_prompt=static_prompt,
+            meta_prompt=meta_prompt,
+            choice_select_prompt=choice_select_prompt,
             choice_batch_size=choice_batch_size,
             top_n=top_n,
-            static=static
+            one_turn=one_turn
         )
         
         self._format_node_batch_fn = format_node_batch_fn or default_format_node_batch_fn
@@ -85,15 +82,14 @@ class REBELRerank(BaseNodePostprocessor):
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
-        return {"rebel_prompt": self.rebel_prompt, "static_prompt": self.static_prompt, "choice_select_prompt": self.choice_select_prompt}
+        return {"meta_prompt": self.meta_prompt, "static_prompt": self.static_prompt, "choice_select_prompt": self.choice_select_prompt}
 
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
-        if "rebel_prompt" in prompts:
-            self.rebel_prompt = prompts["rebel_prompt"]
-        if "static_prompt" in prompts:
-            self.static_prompt = prompts["static_prompt"]
-        # the choice_select_prompt is dynamically generated in the REBEL method, no need to update it here
+        if "meta_prompt" in prompts:
+            self.meta_prompt = prompts["meta_prompt"]
+        if "choice_select_prompt" in prompts:
+            self.choice_select_prompt = prompts["choice_select_prompt"]
 
     def _postprocess_nodes(
         self,
@@ -108,19 +104,13 @@ class REBELRerank(BaseNodePostprocessor):
 
         query_str = query_bundle.query_str
 
-        if self.static:
+        # In two_turn REBEL, the choice_select_prompt is created per-query from the meta prompt
+        if not self.one_turn:
             self.choice_select_prompt = PromptTemplate(
-                self.static_prompt,
-                prompt_type=PromptType.CHOICE_SELECT,
-            )
-        else:
-            ranking_prompt = self.llm.predict(
-                self.rebel_prompt,
-                user_query=query_str,
-            )
-
-            self.choice_select_prompt = PromptTemplate(
-                ranking_prompt,
+                self.llm.predict(
+                    self.meta_prompt,
+                    user_query=query_str,
+                ),
                 prompt_type=PromptType.CHOICE_SELECT,
             )
         
