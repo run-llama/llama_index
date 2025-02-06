@@ -1,6 +1,6 @@
 # Starter Tutorial
 
-This tutorial will show you how to get started with LlamaIndex using our Agent capabilities. We'll start with a basic example and then show how to add RAG (Retrieval-Augmented Generation) capabilities.
+This tutorial will show you how to get started building agents with LlamaIndex. We'll start with a basic example and then show how to add RAG (Retrieval-Augmented Generation) capabilities.
 
 !!! tip
     Make sure you've followed the [installation](installation.md) steps first.
@@ -23,7 +23,7 @@ set OPENAI_API_KEY=XXXXX
 
 ## Basic Agent Example
 
-Let's start with a simple example using an agent that can perform basic multiplication. Create a file called `starter.py`:
+Let's start with a simple example using an agent that can perform basic multiplication by calling a tool. Create a file called `starter.py`:
 
 ```python
 import asyncio
@@ -56,7 +56,17 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-This will output something like: `The result of 123 * 456 is 56,088.`
+This will output something like: `The result of \( 1234 \times 4567 \) is \( 5,678,678 \).`
+
+What happened is:
+
+- The agent was given a question: `What is 1234 * 4567?`
+- Under the hood, this question, plus the schema of the tools (name, docstring, and arguments) were passed to the LLM
+- The agent selected the `multiply` tool and wrote the arguments to the tool
+- The agent received the result from the tool and interpolated it into the final response
+
+!!! tip
+    As you can see, we are using `async` python functions. Many LLMs and models support async calls, and using async code is recommended to improve performance of your application. To learn more about async code and python, we recommend this [short section on async + python](./async_python.md).
 
 ## Adding Chat History
 
@@ -77,22 +87,31 @@ response = await agent.run("What is my name?", ctx=ctx)
 
 ## Adding RAG Capabilities
 
-Now let's enhance our agent by adding the ability to search through documents. First, let's get some example data:
+Now let's enhance our agent by adding the ability to search through documents. First, let's get some example data using our terminal:
+
+```bash
+mkdir data
+wget https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt -O data/paul_graham_essay.txt
+```
+
+Your directory structure should look like this now:
+
+<pre>
+├── starter.py
+└── data
+    └── paul_graham_essay.txt
+</pre>
+
+Now we can create a tool for searching through documents using LlamaIndex. By default, our `VectorStoreIndex` will use a `text-embedding-ada-002` embeddings from OpenAI to embed and retrieve the text.
+
+Our modified `starter.py` should look like this:
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.llms.openai import OpenAI
+import asyncio
 import os
-
-# Download example data if it doesn't exist
-if not os.path.exists("data"):
-    os.makedirs("data")
-    # Download Paul Graham essay as an example
-    import requests
-
-    url = "https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt"
-    response = requests.get(url)
-    with open("data/paul_graham_essay.txt", "w") as f:
-        f.write(response.text)
 
 # Create a RAG tool using LlamaIndex
 documents = SimpleDirectoryReader("data").load_data()
@@ -100,14 +119,20 @@ index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine()
 
 
+def multiply(a: float, b: float) -> float:
+    """Useful for multiplying two numbers."""
+    return a * b
+
+
 async def search_documents(query: str) -> str:
-    """Search through documents to find relevant information."""
-    return str(query_engine.query(query))
+    """Useful for answering natural language questions about an personal essay written by Paul Graham."""
+    response = await query_engine.aquery(query)
+    return str(response)
 
 
 # Create an enhanced workflow with both tools
 agent = AgentWorkflow.from_tools_or_functions(
-    [calculate, search_documents],
+    [multiply, search_documents],
     llm=OpenAI(model="gpt-4o-mini"),
     system_prompt="""You are a helpful assistant that can perform calculations
     and search through documents to answer questions.""",
@@ -146,7 +171,7 @@ query_engine = index.as_query_engine()
 ```
 
 !!! tip
-    If you used a vector store integration besides the default, chances are you can just reload from the vector store:
+    If you used a [vector store integration](../module_guides/storing/vector_stores.md) besides the default, chances are you can just reload from the vector store:
 
     ```python
     index = VectorStoreIndex.from_vector_store(vector_store)
@@ -158,13 +183,14 @@ This is just the beginning of what you can do with LlamaIndex agents! You can:
 
 - Add more tools to your agent
 - Use different LLMs
-- Customize the agent's behavior
+- Customize the agent's behavior using system prompts
 - Add streaming capabilities
 - Implement human-in-the-loop workflows
 - Use multiple agents to collaborate on tasks
 
-!!! tip
-    - See more advanced agent examples in our [Agent documentation](../understanding/agent/multi_agents.md)
-    - Learn more about [high-level concepts](./concepts.md)
-    - Explore how to [customize things](./customization.md)
-    - Check out the [component guides](../module_guides/index.md)
+Some helpful next links:
+
+- See more advanced agent examples in our [Agent documentation](../understanding/agent/multi_agents.md)
+- Learn more about [high-level concepts](./concepts.md)
+- Explore how to [customize things](./customization.md)
+- Check out the [component guides](../module_guides/index.md)
