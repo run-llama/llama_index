@@ -261,6 +261,7 @@ nav:
           - ./examples/embeddings/nebius.ipynb
           - ./examples/embeddings/nomic.ipynb
           - ./examples/embeddings/nvidia.ipynb
+          - ./examples/embeddings/oci_data_science.ipynb
           - ./examples/embeddings/oci_genai.ipynb
           - ./examples/embeddings/ollama_embedding.ipynb
           - ./examples/embeddings/openvino.ipynb
@@ -350,9 +351,9 @@ nav:
           - ./examples/llm/langchain.ipynb
           - ./examples/llm/litellm.ipynb
           - ./examples/llm/llama_2.ipynb
-          - ./examples/llm/llama_2_llama_cpp.ipynb
           - ./examples/llm/llama_2_rap_battle.ipynb
           - ./examples/llm/llama_api.ipynb
+          - ./examples/llm/llama_cpp.ipynb
           - ./examples/llm/llamafile.ipynb
           - ./examples/llm/llm_predictor.ipynb
           - ./examples/llm/lmstudio.ipynb
@@ -370,6 +371,7 @@ nav:
           - ./examples/llm/nvidia_tensorrt.ipynb
           - ./examples/llm/nvidia_text_completion.ipynb
           - ./examples/llm/nvidia_triton.ipynb
+          - ./examples/llm/oci_data_science.ipynb
           - ./examples/llm/oci_genai.ipynb
           - ./examples/llm/octoai.ipynb
           - ./examples/llm/ollama.ipynb
@@ -926,6 +928,7 @@ nav:
           - ./api_reference/embeddings/nebius.md
           - ./api_reference/embeddings/nomic.md
           - ./api_reference/embeddings/nvidia.md
+          - ./api_reference/embeddings/oci_data_science.md
           - ./api_reference/embeddings/oci_genai.md
           - ./api_reference/embeddings/octoai.md
           - ./api_reference/embeddings/ollama.md
@@ -941,6 +944,7 @@ nav:
           - ./api_reference/embeddings/upstage.md
           - ./api_reference/embeddings/vertex.md
           - ./api_reference/embeddings/vertex_endpoint.md
+          - ./api_reference/embeddings/vllm.md
           - ./api_reference/embeddings/voyageai.md
           - ./api_reference/embeddings/xinference.md
           - ./api_reference/embeddings/yandexgpt.md
@@ -1004,6 +1008,7 @@ nav:
           - ./api_reference/llms/clarifai.md
           - ./api_reference/llms/cleanlab.md
           - ./api_reference/llms/cohere.md
+          - ./api_reference/llms/cortex.md
           - ./api_reference/llms/custom_llm.md
           - ./api_reference/llms/dashscope.md
           - ./api_reference/llms/databricks.md
@@ -1043,6 +1048,7 @@ nav:
           - ./api_reference/llms/nvidia.md
           - ./api_reference/llms/nvidia_tensorrt.md
           - ./api_reference/llms/nvidia_triton.md
+          - ./api_reference/llms/oci_data_science.md
           - ./api_reference/llms/oci_genai.md
           - ./api_reference/llms/octoai.md
           - ./api_reference/llms/ollama.md
@@ -2344,6 +2350,10 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-stepfun
             - ../llama-index-integrations/tools/llama-index-tools-linkup-research
             - ../llama-index-integrations/llms/llama-index-llms-deepseek
+            - ../llama-index-integrations/llms/llama-index-llms-cortex
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-vllm
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-oci-data-science
+            - ../llama-index-integrations/llms/llama-index-llms-oci-data-science
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2608,7 +2618,7 @@ plugins:
         ./examples/llm/langchain.html: https://docs.llamaindex.ai/en/stable/examples/llm/langchain/
         ./examples/llm/litellm.html: https://docs.llamaindex.ai/en/stable/examples/llm/litellm/
         ./examples/llm/llama_2.html: https://docs.llamaindex.ai/en/stable/examples/llm/llama_2/
-        ./examples/llm/llama_2_llama_cpp.html: https://docs.llamaindex.ai/en/stable/examples/llm/llama_2_llama_cpp/
+        ./examples/llm/llama_2_llama_cpp.html: https://docs.llamaindex.ai/en/stable/examples/llm/llama_cpp/
         ./examples/llm/llama_2_rap_battle.html: https://docs.llamaindex.ai/en/stable/examples/llm/llama_2_rap_battle/
         ./examples/llm/llama_api.html: https://docs.llamaindex.ai/en/stable/examples/llm/llama_api/
         ./examples/llm/llamafile.html: https://docs.llamaindex.ai/en/stable/examples/llm/llamafile/

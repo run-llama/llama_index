@@ -54,6 +54,7 @@ def create_mock_vector_store(
         index_name=index_name,
         index_management=index_management,
         embedding_dimensionality=2,  # Assuming a dimensionality of 2 for simplicity
+        semantic_configuration_name="default",
     )
 
 
@@ -243,6 +244,7 @@ def test_azureaisearch_query() -> None:
         top=2,
         select=["id", "content", "metadata", "doc_id"],
         filter=None,
+        semantic_configuration_name="default",
     )
 
     # Assert the result structure

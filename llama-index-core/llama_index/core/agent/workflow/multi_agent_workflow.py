@@ -51,6 +51,8 @@ Current message:
 {msg}
 """
 
+DEFAULT_HANDOFF_OUTPUT_PROMPT = "Agent {to_agent} is now handling the request due to the following reason: {reason}.\nPlease continue with the current request."
+
 
 async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
     """Handoff control of that chat to the given agent."""
@@ -61,7 +63,11 @@ async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
         return f"Agent {to_agent} not found. Please select a valid agent to hand off to. Valid agents: {valid_agents}"
 
     await ctx.set("next_agent", to_agent)
-    return f"Agent {to_agent} is now handling the request due to the following reason: {reason}.\nPlease continue."
+    handoff_output_prompt = await ctx.get(
+        "handoff_output_prompt", default=DEFAULT_HANDOFF_OUTPUT_PROMPT
+    )
+
+    return handoff_output_prompt.format(to_agent=to_agent, reason=reason)
 
 
 class AgentWorkflowMeta(WorkflowMeta, ABCMeta):
@@ -77,6 +83,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         initial_state: Optional[Dict] = None,
         root_agent: Optional[str] = None,
         handoff_prompt: Optional[Union[str, BasePromptTemplate]] = None,
+        handoff_output_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         timeout: Optional[float] = None,
         **workflow_kwargs: Any,
@@ -106,6 +113,18 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 raise ValueError("Handoff prompt must contain {agent_info}")
         self.handoff_prompt = handoff_prompt
 
+        handoff_output_prompt = handoff_output_prompt or DEFAULT_HANDOFF_OUTPUT_PROMPT
+        if isinstance(handoff_output_prompt, str):
+            handoff_output_prompt = PromptTemplate(handoff_output_prompt)
+            if (
+                "{to_agent}" not in handoff_output_prompt.get_template()
+                or "{reason}" not in handoff_output_prompt.get_template()
+            ):
+                raise ValueError(
+                    "Handoff output prompt must contain {to_agent} and {reason}"
+                )
+        self.handoff_output_prompt = handoff_output_prompt
+
         state_prompt = state_prompt or DEFAULT_STATE_PROMPT
         if isinstance(state_prompt, str):
             state_prompt = PromptTemplate(state_prompt)
@@ -120,6 +139,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         """Get prompts."""
         return {
             "handoff_prompt": self.handoff_prompt,
+            "handoff_output_prompt": self.handoff_output_prompt,
             "state_prompt": self.state_prompt,
         }
 
@@ -131,6 +151,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         """Update prompts."""
         if "handoff_prompt" in prompts_dict:
             self.handoff_prompt = prompts_dict["handoff_prompt"]
+        if "handoff_output_prompt" in prompts_dict:
+            self.handoff_output_prompt = prompts_dict["handoff_output_prompt"]
         if "state_prompt" in prompts_dict:
             self.state_prompt = prompts_dict["state_prompt"]
 
@@ -203,6 +225,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             await ctx.set("state", self.initial_state)
         if not await ctx.get("current_agent_name", default=None):
             await ctx.set("current_agent_name", self.root_agent)
+        if not await ctx.get("handoff_output_prompt", default=None):
+            await ctx.set(
+                "handoff_output_prompt", self.handoff_output_prompt.get_template()
+            )
 
     async def _call_tool(
         self,
@@ -232,31 +258,44 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         """Sets up the workflow and validates inputs."""
         await self._init_context(ctx, ev)
 
-        user_msg = ev.get("user_msg")
-        chat_history = ev.get("chat_history")
-        if user_msg and chat_history:
-            raise ValueError("Cannot provide both user_msg and chat_history")
+        user_msg: Optional[Union[str, ChatMessage]] = ev.get("user_msg")
+        chat_history: Optional[List[ChatMessage]] = ev.get("chat_history", [])
 
+        # Convert string user_msg to ChatMessage
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role="user", content=user_msg)
 
-        await ctx.set("user_msg_str", user_msg.content)
-
         # Add messages to memory
         memory: BaseMemory = await ctx.get("memory")
+
+        # First set chat history if it exists
+        if chat_history:
+            memory.set(chat_history)
+
+        # Then add user message if it exists
+        current_state = await ctx.get("state")
         if user_msg:
-            # Add the state to the user message if it exists and if requested
-            current_state = await ctx.get("state")
+            # Add the state to the user message if it exists
             if current_state:
                 user_msg.content = self.state_prompt.format(
                     state=current_state, msg=user_msg.content
                 )
-
             await memory.aput(user_msg)
-            input_messages = memory.get(input=user_msg.content)
+            await ctx.set("user_msg_str", user_msg.content)
+        elif chat_history:
+            # If no user message, use the last message from chat history as user_msg_str
+            last_msg = chat_history[-1].content or ""
+            await ctx.set("user_msg_str", last_msg)
+
+            if current_state:
+                chat_history[-1].content = self.state_prompt.format(
+                    state=current_state, msg=chat_history[-1].content
+                )
         else:
-            memory.set(chat_history)
-            input_messages = memory.get()
+            raise ValueError("Must provide either user_msg or chat_history")
+
+        # Get all messages from memory
+        input_messages = memory.get()
 
         # send to the current agent
         current_agent_name: str = await ctx.get("current_agent_name")

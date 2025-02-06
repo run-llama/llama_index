@@ -1,5 +1,103 @@
 # ChangeLog
 
+## [2025-01-05]
+
+### `llama-index-core` [0.12.16]
+
+- Be more lenient with leading whitespaces emitted by some models when doing ReAct (#17701)
+- Fix `user_msg` vs `chat_history` AgentWorkflow inputs (#17690)
+
+### `llama-index-embeddings-oci-data-science` [0.1.0]
+
+- Add OCI Data Science Model Deployment Embedding Integration (#17243)
+
+### `llama-index-embeddings-vllm` [0.1.0]
+
+- Add vLLM offline inference supports for embedding (#17675)
+
+### `llama-index-embeddings-voyageai` [0.3.5]
+
+- small async voyageai fix (#17698)
+
+### `llama-index-llms-gemini` [0.4.7]
+
+- gemini 2.0 support (#17720)
+- feat: support basic function call for gemini (google-generativeai) (#17696)
+
+### `llama-index-llms-oci-data-science` [0.1.0]
+
+- Add OCI Data Science Model Deployment LLM Integration (#17241)
+
+### `llama-index-llms-oci-genai` [0.3.1]
+
+- Option to pass auth_file_location, in-order to overwrite default config file location i.e. ~/.oci/config (#17695)
+
+### `llama-index-llms-ollama` [0.5.1]
+
+- fix: avoid missing tool calls while streaming
+
+### `llama-index-llms-openai` [0.3.17]
+
+- fix: max_tokens in O1 (#17703)
+- o3 mini support (#17689)
+- fix max_tokens, add reasoning_effort for openai reasoning models (#17694)
+
+### `llama-index-readers-obsidian` [0.5.0]
+
+- Improved Obsidian Reader (#17699)
+
+### `llama-index-tools-scrapegraph` [0.1.1]
+
+- feat: add new scrapegraph endpoint (#17709)
+
+## [2025-01-31]
+
+### `llama-index-core` [0.12.15]
+
+- Add error_on_tool_error param to FunctionCallingLLM.predict_and_call (#17663)
+- Get tool description from pydantic field (#17679)
+- fix: make ctx.\_events_buffer json-serializable (#17676)
+- feat: allow to exclude empty file simple directory reader (#17656)
+- improve markdown llm output parsing (#17577)
+- small typo fix in the default plan refine prompt (#17644)
+
+### `llama-index-agent-openai` [0.4.3]
+
+- fix repeated sources when doing parallel tool calling (#17645)
+
+### `llama-index-embeddings-text-embeddings-inference` [0.3.2]
+
+- Add endpoint parameter to TextEmbeddingsInference (#17598)
+
+### `llama-index-llms-bedrock-converse` [0.4.5]
+
+- fix bedrock function calling (#17658)
+
+### `llama-index-llms-cortex` [0.1.0]
+
+- Add Snowflake Cortex Integration (#17585)
+
+### `llama-index-llms-fireworks` [0.3.2]
+
+- Deepseek-r1 is now supported by fireworks (#17657)
+- Deepseek-v3 is now supported by fireworks (#17518)
+
+### `llama-index-llms-gemini` [0.4.5]
+
+- adding the chat decorators to async calls (#17678)
+
+### `llama-index-llms-llama-cpp` [0.4.0]
+
+- update llama-cpp integration + docs (#17647)
+
+### `llama-index-vector-stores-azureaisearch` [0.3.3]
+
+- Feat/fix Azure AI Search Hybrid Semantic Search Unusability due to hardcoded parameter (#17683)
+
+### `llama-index-vector-stores-pinecone` [0.4.4]
+
+- `get_nodes()` now accepts include_values param to return embeddings (#17635)
+
 ## [2025-01-25]
 
 ### `llama-index-core` [0.12.14]
