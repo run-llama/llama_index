@@ -9,7 +9,7 @@ import multiprocessing
 import os
 import warnings
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import reduce
 from itertools import repeat
 from pathlib import Path, PurePosixPath
@@ -106,7 +106,9 @@ def _format_file_timestamp(
     timestamp: float | None, include_time: bool = False
 ) -> str | None:
     """
-    Format file timestamp to a %Y-%m-%d string.
+    Format file timestamp to a string.
+    The format will be %Y-%m-%d if include_time is False or missing,
+    %Y-%m-%dT%H:%M:%SZ if include_time is True.
 
     Args:
         timestamp (float): timestamp in float
@@ -119,9 +121,10 @@ def _format_file_timestamp(
     if timestamp is None:
         return None
 
+    timestamp_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
     if include_time:
-        return datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%dT%H:%M:%SZ")
-    return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d")
+        return timestamp_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return timestamp_dt.strftime("%Y-%m-%d")
 
 
 def default_file_metadata_func(
