@@ -789,7 +789,7 @@ DEFAULT_REBEL_META_PROMPT = PromptTemplate(
     DEFAULT_REBEL_META_PROMPT_TMPL, prompt_type=PromptType.REBEL_RERANK
 )
 
-DEFAULT_REBEL_STATIC_PROMPT_TMPL = (
+DEFAULT_REBEL_CHOICE_SELECT_PROMPT_TMPL = (
 """You are a re-ranking system. Your task is to analyze a user's query and a set of candidate documents, assign scores based on specified properties, and output the final ranking of documents.
 
 **Inferred Properties**
@@ -872,6 +872,6 @@ Question: {query_str}
 Answer:
 ```""")
 
-DEFAULT_REBEL_STATIC_PROMPT = PromptTemplate(
-    DEFAULT_REBEL_STATIC_PROMPT_TMPL, prompt_type=PromptType.REBEL_RERANK
+DEFAULT_REBEL_CHOICE_SELECT_PROMPT = PromptTemplate(
+    DEFAULT_REBEL_CHOICE_SELECT_PROMPT_TMPL, prompt_type=PromptType.CHOICE_SELECT
 )
