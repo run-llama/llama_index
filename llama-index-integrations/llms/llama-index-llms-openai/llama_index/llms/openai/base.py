@@ -218,8 +218,8 @@ class OpenAI(FunctionCallingLLM):
         default=False,
         description="Whether to use strict mode for invoking tools/using schemas.",
     )
-    reasoning_effort: Literal["low", "medium", "high"] = Field(
-        default="medium",
+    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
+        default=None,
         description="The effort to use for reasoning models.",
     )
 
@@ -253,7 +253,7 @@ class OpenAI(FunctionCallingLLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
         strict: bool = False,
-        reasoning_effort: Literal["low", "medium", "high"] = "medium",
+        reasoning_effort: Optional[Literal["low", "medium", "high"]] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -430,7 +430,7 @@ class OpenAI(FunctionCallingLLM):
                 "max_completion_tokens", all_kwargs["max_tokens"]
             )
             all_kwargs.pop("max_tokens", None)
-        if self.model in O1_MODELS:
+        if self.model in O1_MODELS and self.reasoning_effort is not None:
             # O1 models support reasoning_effort of low, medium, high
             all_kwargs["reasoning_effort"] = self.reasoning_effort
 
