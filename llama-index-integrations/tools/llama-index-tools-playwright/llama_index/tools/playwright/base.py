@@ -31,6 +31,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         playwright_strict: bool = False,
         playwright_timeout: float = 1_000,
         absolute_url: bool = False,
+        html_parser: str = "html.parser",
     ) -> None:
         """
         Initialize PlaywrightToolSpec.
@@ -41,6 +42,7 @@ class PlaywrightToolSpec(BaseToolSpec):
             playwright_strict: bool = False. Whether to use strict mode for playwright.
             playwright_timeout: float = 1_000. Timeout for playwright operations.
             absolute_url: bool = False. Whether to return absolute urls.
+            html_parser: str = "html.parser". The html parser to use with BeautifulSoup
 
         """
         self.sync_browser = sync_browser
@@ -52,6 +54,7 @@ class PlaywrightToolSpec(BaseToolSpec):
 
         # for extractHyperlinks tool
         self.absolute_url = absolute_url
+        self.html_parser = html_parser
 
     @classmethod
     def from_sync_browser(cls, sync_browser: SyncBrowser) -> "PlaywrightToolSpec":
@@ -191,10 +194,9 @@ class PlaywrightToolSpec(BaseToolSpec):
     #################
     # Extract Hyperlinks #
     #################
-    @staticmethod
-    def scrape_page(page: Any, html_content: str, absolute_urls: bool) -> str:
+    def scrape_page(self, page: Any, html_content: str, absolute_urls: bool) -> str:
         # Parse the HTML content with BeautifulSoup
-        soup = BeautifulSoup(html_content, "lxml")
+        soup = BeautifulSoup(html_content, self.html_parser)
 
         # Find all the anchor elements and extract their href attributes
         anchors = soup.find_all("a")
@@ -232,7 +234,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         html_content = page.content()
 
         # Parse the HTML content with BeautifulSoup
-        soup = BeautifulSoup(html_content, "lxml")
+        soup = BeautifulSoup(html_content, self.html_parser)
 
         return " ".join(text for text in soup.stripped_strings)
 
