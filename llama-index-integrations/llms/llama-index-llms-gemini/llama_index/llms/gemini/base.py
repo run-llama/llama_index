@@ -3,10 +3,21 @@
 import os
 import warnings
 import uuid
-from typing import TYPE_CHECKING, Union, List, Any, Dict, Optional, Sequence, cast
+from typing import (
+    TYPE_CHECKING,
+    Union,
+    List,
+    Any,
+    Dict,
+    Generator,
+    Optional,
+    Sequence,
+    cast,
+)
 
 import google.generativeai as genai
 from google.generativeai.types import generation_types
+import llama_index.core.instrumentation as instrument
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -18,12 +29,13 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.types import Model
 from llama_index.core.utilities.gemini_utils import (
     merge_neighboring_same_role_messages,
 )
@@ -33,6 +45,8 @@ from .utils import (
     chat_message_to_gemini,
     completion_from_gemini_response,
 )
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 GEMINI_MODELS = (
     "models/gemini-2.0-flash-exp",
@@ -330,6 +344,37 @@ class Gemini(FunctionCallingLLM):
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
         from google.generativeai.types import FunctionDeclaration, ToolDict
+        from google.generativeai.types.content_types import FunctionCallingMode
+
+        if tool_choice == "auto":
+            tool_mode = FunctionCallingMode.AUTO
+        elif tool_choice == "none":
+            tool_mode = FunctionCallingMode.NONE
+        else:
+            tool_mode = FunctionCallingMode.ANY
+
+        tool_config = {
+            "function_calling_config": {
+                "mode": tool_mode,
+            }
+        }
+
+        if tool_choice not in ["auto", "none"]:
+            if isinstance(tool_choice, dict):
+                raise ValueError("Gemini does not support tool_choice as a dict")
+
+            # assume that the user wants a tool call to be made
+            # if the tool choice is not in the list of tools, then we will make a tool call to all tools
+            # otherwise, we will make a tool call to the tool choice
+            tool_names = [tool.metadata.name for tool in tools]
+            if tool_choice not in tool_names:
+                tool_config["function_calling_config"][
+                    "allowed_function_names"
+                ] = tool_names
+            else:
+                tool_config["function_calling_config"]["allowed_function_names"] = [
+                    tool_choice
+                ]
 
         tool_declarations = []
         for tool in tools:
@@ -358,6 +403,7 @@ class Gemini(FunctionCallingLLM):
             "tools": ToolDict(function_declarations=tool_declarations)
             if tool_declarations
             else None,
+            "tool_config": tool_config,
             **kwargs,
         }
 
@@ -392,3 +438,65 @@ class Gemini(FunctionCallingLLM):
             )
 
         return tool_selections
+
+    @dispatcher.span
+    def structured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> BaseModel:
+        """Structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        all_kwargs = {**llm_kwargs, **kwargs}
+
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return super().structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+
+    @dispatcher.span
+    async def astructured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> BaseModel:
+        """Structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        all_kwargs = {**llm_kwargs, **kwargs}
+
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return await super().astructured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+
+    @dispatcher.span
+    def stream_structured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> Generator[Union[Model, List[Model]], None, None]:
+        """Stream structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        all_kwargs = {**llm_kwargs, **kwargs}
+
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+
+    @dispatcher.span
+    async def astream_structured_predict(
+        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> Generator[Union[Model, List[Model]], None, None]:
+        """Stream structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        all_kwargs = {**llm_kwargs, **kwargs}
+
+        llm_kwargs["tool_choice"] = (
+            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
+        )
+        # by default structured prediction uses function calling to extract structured outputs
+        # here we force tool_choice to be required
+        return await super().astream_structured_predict(
+            *args, llm_kwargs=llm_kwargs, **kwargs
+        )
