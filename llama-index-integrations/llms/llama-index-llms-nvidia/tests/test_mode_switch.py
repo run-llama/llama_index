@@ -1,7 +1,7 @@
 import pytest
 
 from llama_index.llms.nvidia import NVIDIA as Interface
-from llama_index.llms.nvidia.base import BASE_URL, KNOWN_URLS
+from llama_index.llms.nvidia.base import BASE_URL
 from pytest_httpx import HTTPXMock
 
 UNKNOWN_URLS = [
@@ -94,13 +94,13 @@ def test_mode_switch_unknown_base_url_with_key(
     Interface(base_url=base_url, **{param: "test"})
 
 
-@pytest.mark.parametrize("base_url", KNOWN_URLS)
+@pytest.mark.parametrize("base_url", BASE_URL)
 def test_mode_switch_known_base_url_without_key(masked_env_var: str, base_url: str):
     with pytest.warns(UserWarning):
         Interface(base_url=base_url)
 
 
-@pytest.mark.parametrize("base_url", KNOWN_URLS)
+@pytest.mark.parametrize("base_url", BASE_URL)
 @pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
 def test_mode_switch_known_base_url_with_key(
     masked_env_var: str, base_url: str, param: str

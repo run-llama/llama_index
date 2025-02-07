@@ -8,7 +8,7 @@ from llama_index.core.program import FunctionCallingProgram
 import pytest
 from llama_index.llms.nvidia.utils import (
     NVIDIA_FUNTION_CALLING_MODELS,
-    API_CATALOG_MODELS,
+    MODEL_TABLE,
 )
 
 
@@ -93,9 +93,7 @@ def test_prompt_generation(model):
     assert len(output.songs) > 0, "Album should contain at least one song"
 
 
-@pytest.mark.parametrize(
-    "model", API_CATALOG_MODELS.keys() - NVIDIA_FUNTION_CALLING_MODELS
-)
+@pytest.mark.parametrize("model", MODEL_TABLE.keys() - NVIDIA_FUNTION_CALLING_MODELS)
 def test_unsupported_models(model: str):
     llm = Interface(api_key="BOGUS", model=model)
 

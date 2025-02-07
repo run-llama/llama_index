@@ -120,6 +120,13 @@ class NVIDIAEmbedding(BaseEmbedding):
         )
 
         self._is_hosted = self.base_url in KNOWN_URLS
+        if not is_hosted:
+            base_url = self._validate_url(base_url)
+
+        if is_hosted and api_key == "NO_API_KEY_PROVIDED":
+            warnings.warn(
+                "An API key is required for the hosted NIM. This will become an error in 0.2.0.",
+            )
         if self._is_hosted:  # hosted on API Catalog (build.nvidia.com)
             if api_key == "NO_API_KEY_PROVIDED":
                 raise ValueError("An API key is required for hosted NIM.")
@@ -177,8 +184,8 @@ class NVIDIAEmbedding(BaseEmbedding):
         """
         validate the base_url.
         if the base_url is not a url, raise an error
-        if the base_url does not end in /v1, e.g. /embeddings, /completions, /rankings,
-        or /reranking, emit a warning. old documentation told users to pass in the full
+        if the base_url does not end in /v1, e.g. /embeddings
+        emit a warning. old documentation told users to pass in the full
         inference url, which is incorrect and prevents model listing from working.
         normalize base_url to end in /v1.
         """
@@ -221,7 +228,7 @@ class NVIDIAEmbedding(BaseEmbedding):
             if model_name not in [model.id for model in self.available_models]:
                 raise ValueError(
                     f"Model {model_name} is incompatible with client {self.class_name()}. "
-                    f"Please check `{self.class_name()}.available_models()`."
+                    f"Please check `{self.class_name()}.available_models`."
                 )
             if model and model.endpoint:
                 self.base_url = model.endpoint
