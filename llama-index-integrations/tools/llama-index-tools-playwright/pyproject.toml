@@ -5,16 +5,14 @@ requires = ["poetry-core"]
 [tool.codespell]
 check-filenames = true
 check-hidden = true
-# Feel free to un-skip examples, and experimental, you will just need to
-# work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.cortex"
+import_path = "llama_index.tools.playwright"
 
 [tool.llamahub.class_authors]
-Cortex = "q-maze"
+PlaywrightToolSpec = "jisonZ"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -24,20 +22,19 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Quinton Mays <qmazedev@gmail.com>"]
-description = "llama-index llms cortex integration"
+authors = ["Your Name <you@example.com>"]
+description = "llama-index tools playwright integration"
 license = "MIT"
-name = "llama-index-llms-cortex"
+name = "llama-index-tools-playwright"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = ">3.9.1,<4.0"
+python = ">=3.9,<4.0"
 llama-index-core = "^0.12.0"
-pyjwt = "^2.10.1"
-aiohttp = "^3.11.11"
-cryptography = ">=44.0.0"
+playwright = "^1.49.1"
+beautifulsoup4 = "^4.12.2"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
