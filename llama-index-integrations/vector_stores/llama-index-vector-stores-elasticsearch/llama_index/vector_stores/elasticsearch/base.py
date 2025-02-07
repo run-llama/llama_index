@@ -399,7 +399,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             Exception: If AsyncElasticsearch delete_by_query fails.
         """
         await self._store.delete(
-            query={"term": {"metadata.ref_doc_id": ref_doc_id}}, **delete_kwargs
+            query={"term": {"metadata.ref_doc_id.keyword": ref_doc_id}}, **delete_kwargs
         )
 
     def query(
