@@ -791,10 +791,11 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
     async def afinalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
-        # add new messages to memory
-        await task.memory.aput_messages(task.extra_state["new_memory"].get_all())
-        # reset new memory
+        messages = task.extra_state["new_memory"].get_all()
+        # reset new memory before aputting messages for async race conditions
         task.extra_state["new_memory"].reset()
+        # add new messages to memory
+        await task.memory.aput_messages(messages)
 
     def undo_step(self, task: Task, **kwargs: Any) -> Optional[TaskStep]:
         """Undo step from task.
