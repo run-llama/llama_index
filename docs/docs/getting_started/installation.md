@@ -58,6 +58,10 @@ A full guide to using and configuring embedding models is available [here](../mo
 Git clone this repository: `git clone https://github.com/run-llama/llama_index.git`. Then do the following:
 
 - [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
+- If you need to run shell commands using Poetry but the shell plugin is not installed, add the plugin by running:
+  ```
+  poetry self add poetry-plugin-shell
+  ```
 - `poetry shell` - this command creates a virtual environment, which keeps installed packages contained to this project
 - `poetry install` - this will install the core starter package requirements
 - (Optional) `poetry install --with dev, docs` - this will install all dependencies needed for most local development
