@@ -1,49 +1,48 @@
 """Google's hosted Gemini API."""
 
 import os
-import warnings
 import uuid
+import warnings
 from typing import (
     TYPE_CHECKING,
-    Union,
-    List,
     Any,
     Dict,
     Generator,
+    List,
     Optional,
     Sequence,
+    Union,
     cast,
 )
 
 import google.generativeai as genai
-from google.generativeai.types import generation_types
 import llama_index.core.instrumentation as instrument
+from google.generativeai.types import generation_types
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
-    CompletionResponseGen,
     CompletionResponseAsyncGen,
+    CompletionResponseGen,
     LLMMetadata,
     MessageRole,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
-from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.types import Model
-from llama_index.core.utilities.gemini_utils import (
-    merge_neighboring_same_role_messages,
-)
+from llama_index.core.utilities.gemini_utils import merge_neighboring_same_role_messages
 
 from .utils import (
     chat_from_gemini_response,
     chat_message_to_gemini,
     completion_from_gemini_response,
+    is_function_calling_model,
 )
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -188,6 +187,7 @@ class Gemini(FunctionCallingLLM):
         self._model_meta = model_meta
         self._model = genai_model
         self._request_options = request_options
+        self._is_function_call_model = is_function_calling_model(model)
 
     @classmethod
     def class_name(cls) -> str:
@@ -202,7 +202,7 @@ class Gemini(FunctionCallingLLM):
             model_name=self.model,
             is_chat_model=True,
             # All gemini models support function calling
-            is_function_calling_model=True,
+            is_function_calling_model=self._is_function_call_model,
         )
 
     @llm_completion_callback()

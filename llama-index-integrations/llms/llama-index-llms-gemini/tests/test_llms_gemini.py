@@ -106,3 +106,25 @@ def test_structured_llm() -> None:
     assert direct_prediction_response.test is not None
     structured_llm_response = gemini_flash.as_structured_llm(Test).complete("test")
     assert structured_llm_response.raw.test is not None
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_is_function_calling_model() -> None:
+    assert Gemini(
+        model="models/gemini-2.0-flash-001"
+    ).metadata.is_function_calling_model
+
+    # this model is the only one that does not support function calling
+    assert not Gemini(
+        model="models/gemini-2.0-flash-thinking-exp-01-21"
+    ).metadata.is_function_calling_model
+
+    # in case of un-released models it should be possible to override the
+    # capabilities of the current model
+    manual_override = Gemini(model="models/gemini-2.0-flash-001")
+    assert manual_override.metadata.is_function_calling_model
+    manual_override._is_function_call_model = False
+    assert not manual_override._is_function_call_model
+    assert not manual_override.metadata.is_function_calling_model
