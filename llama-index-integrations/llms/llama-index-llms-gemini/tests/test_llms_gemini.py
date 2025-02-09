@@ -1,16 +1,17 @@
 import os
 
-from llama_index.core.tools.function_tool import FunctionTool
 import pytest
-from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole
-from llama_index.llms.gemini import Gemini
-from llama_index.llms.gemini.utils import chat_message_to_gemini
-
 from google.ai.generativelanguage_v1beta.types import (
     FunctionCallingConfig,
     ToolConfig,
 )
+from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole
+from llama_index.core.prompts.base import ChatPromptTemplate
+from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.llms.gemini import Gemini
+from llama_index.llms.gemini.utils import chat_message_to_gemini
+from pydantic import BaseModel
 
 
 def test_embedding_class() -> None:
@@ -83,3 +84,25 @@ def test_chat_with_tools() -> None:
     assert tool_calls[0].tool_kwargs == {"a": 2, "b": 3}
 
     assert len(response.additional_kwargs["tool_calls"]) >= 1
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_structured_llm() -> None:
+    class Test(BaseModel):
+        test: str
+
+    gemini_flash = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+        additional_kwargs={"seed": 4242},
+    )
+
+    chat_prompt = ChatPromptTemplate(message_templates=[ChatMessage(content="test")])
+    direct_prediction_response = gemini_flash.structured_predict(
+        output_cls=Test, prompt=chat_prompt
+    )
+    assert direct_prediction_response.test is not None
+    structured_llm_response = gemini_flash.as_structured_llm(Test).complete("test")
+    assert structured_llm_response.raw.test is not None
