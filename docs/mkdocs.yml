@@ -459,7 +459,6 @@ nav:
           - ./examples/multi_modal/multimodal_rag_guardrail_gemini_llmguard_llmguard.ipynb
           - ./examples/multi_modal/nebius_multi_modal.ipynb
           - ./examples/multi_modal/nvidia_multi_modal.ipynb
-          - ./examples/multi_modal/ollama_cookbook.ipynb
           - ./examples/multi_modal/openai_multi_modal.ipynb
           - ./examples/multi_modal/openvino_multimodal.ipynb
           - ./examples/multi_modal/replicate_multi_modal.ipynb
@@ -2685,7 +2684,6 @@ plugins:
         ./examples/multi_modal/multi_modal_retrieval.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/multi_modal_retrieval/
         ./examples/multi_modal/multi_modal_video_RAG.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/multi_modal_video_RAG/
         ./examples/multi_modal/nebius_multi_modal.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/nebius_multi_modal/
-        ./examples/multi_modal/ollama_cookbook.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/ollama_cookbook/
         ./examples/multi_modal/openai_multi_modal.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/openai_multi_modal/
         ./examples/multi_modal/replicate_multi_modal.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/replicate_multi_modal/
         ./examples/multi_modal/structured_image_retrieval.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/structured_image_retrieval/
