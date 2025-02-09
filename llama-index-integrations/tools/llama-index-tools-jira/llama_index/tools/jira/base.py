@@ -1,6 +1,7 @@
-import traceback
+"""Jira tool spec."""
 from typing import Optional, Union
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+
 
 class JiraToolSpec(BaseToolSpec):
     """Atlassian Jira Tool Spec."""
@@ -16,7 +17,7 @@ class JiraToolSpec(BaseToolSpec):
         self,
         email: Optional[str] = None,
         api_token: Optional[str] = None,
-        server_url: Optional[str] = None
+        server_url: Optional[str] = None,
     ) -> None:
         """Initialize the Atlassian Jira tool spec."""
 
@@ -28,8 +29,7 @@ class JiraToolSpec(BaseToolSpec):
                 server=server_url,
             )
         else:
-            raise Exception('Error: Please provide Jira api credentials to continue')
-
+            raise Exception("Error: Please provide Jira api credentials to continue")
 
     def jira_all_projects(self) -> dict:
         """
@@ -52,24 +52,21 @@ class JiraToolSpec(BaseToolSpec):
 
             if projects:
                 return {
-                    'error': False,
-                    'message': 'All Projects from the account',
-                    'projects': [
-                        {
-                            'id': project.id,
-                            'key': project.key,
-                            'name': project.name
-                        } for project in projects]
+                    "error": False,
+                    "message": "All Projects from the account",
+                    "projects": [
+                        {"id": project.id, "key": project.key, "name": project.name}
+                        for project in projects
+                    ],
                 }
         except Exception:
             pass
 
-        return {
-            'error': True,
-            'message': 'Unable to fetch projects'
-        }
+        return {"error": True, "message": "Unable to fetch projects"}
 
-    def jira_comments_query(self, issue_key: str, author_email: Optional[str] = None) -> dict:
+    def jira_comments_query(
+        self, issue_key: str, author_email: Optional[str] = None
+    ) -> dict:
         """
         Retrieve all comments for a given Jira issue, optionally filtering by the author's email.
 
@@ -79,7 +76,7 @@ class JiraToolSpec(BaseToolSpec):
 
         Args:
             issue_key (str): The Jira issue key for which to retrieve comments.
-            author_email (Optional[str], default=None): If provided, filters comments by the author's email.
+            author_email (str, Optional): filters comments by the author's email.
 
         Returns:
             dict: A dictionary containing:
@@ -103,35 +100,38 @@ class JiraToolSpec(BaseToolSpec):
             filtered_results = []
 
             for comment in all_comments:
-
-                if author_email is not None and author_email not in comment.author.emailAddress:
+                if (
+                    author_email is not None
+                    and author_email not in comment.author.emailAddress
+                ):
                     continue
 
-                filtered_results.append({
-                    'id': comment.id,
-                    'author': comment.author.displayName,
-                    'author_email': comment.author.emailAddress,
-                    'body': comment.body,
-                    'created_at': comment.created,
-                    'updated_at': comment.updated
-                })
+                filtered_results.append(
+                    {
+                        "id": comment.id,
+                        "author": comment.author.displayName,
+                        "author_email": comment.author.emailAddress,
+                        "body": comment.body,
+                        "created_at": comment.created,
+                        "updated_at": comment.updated,
+                    }
+                )
 
             message = f'All the comments in the issue key "{issue_key}"'
         except Exception:
             error = True
-            message = 'Unable to fetch comments due to some error'
+            message = "Unable to fetch comments due to some error"
 
-        response = {
-            'error': error,
-            'message': message
-        }
+        response = {"error": error, "message": message}
 
         if error is False:
-            response['comments'] = filtered_results
+            response["comments"] = filtered_results
 
         return response
 
-    def jira_issue_query(self, issue_key: str, just_payload: bool = False) -> Union[None, dict]:
+    def jira_issue_query(
+        self, issue_key: str, just_payload: bool = False
+    ) -> Union[None, dict]:
         """
         Retrieves detailed information about a specific Jira issue.
 
@@ -173,45 +173,47 @@ class JiraToolSpec(BaseToolSpec):
             issue = self.jira.issue(issue_key)
 
             payload = {
-                'key': issue.key,
-                'summary': issue.fields.summary,
-                'description': issue.fields.description,
-                'type': issue.fields.issuetype.name,
-                'project_name': issue.fields.project.name,
-                'priority': issue.fields.priority.name,
-                'status': issue.fields.status.name,
-                'reporter': issue.fields.reporter.displayName if issue.fields.reporter else None,
-                'reporter_email': issue.fields.reporter.emailAddress if issue.fields.reporter else None,
-                'labels': issue.fields.labels,
-                'created_at': issue.fields.created,
-                'updated_at': issue.fields.updated,
-                'assignee': issue.fields.assignee.displayName if issue.fields.assignee else None,
-                'assignee_email': issue.fields.assignee.emailAddress if issue.fields.assignee else None
+                "key": issue.key,
+                "summary": issue.fields.summary,
+                "description": issue.fields.description,
+                "type": issue.fields.issuetype.name,
+                "project_name": issue.fields.project.name,
+                "priority": issue.fields.priority.name,
+                "status": issue.fields.status.name,
+                "reporter": issue.fields.reporter.displayName
+                if issue.fields.reporter
+                else None,
+                "reporter_email": issue.fields.reporter.emailAddress
+                if issue.fields.reporter
+                else None,
+                "labels": issue.fields.labels,
+                "created_at": issue.fields.created,
+                "updated_at": issue.fields.updated,
+                "assignee": issue.fields.assignee.displayName
+                if issue.fields.assignee
+                else None,
+                "assignee_email": issue.fields.assignee.emailAddress
+                if issue.fields.assignee
+                else None,
             }
 
-            message = f'Details of the issue: {issue.key}'
+            message = f"Details of the issue: {issue.key}"
 
         except Exception:
             error = True
-            message = 'Unable to fetch issue due to some error'
+            message = "Unable to fetch issue due to some error"
 
         if error is False and just_payload:
             return payload
 
-        response = {
-            'error': error,
-            'message': message
-        }
+        response = {"error": error, "message": message}
 
         if error is False:
-            response['result'] = payload
+            response["result"] = payload
 
         return response
 
-    def jira_issues_query(self,
-        keyword: str,
-        max_results: int = 10
-    ) -> dict:
+    def jira_issues_query(self, keyword: str, max_results: int = 10) -> dict:
         """
         Search for Jira issues containing a specific keyword.
 
@@ -230,8 +232,8 @@ class JiraToolSpec(BaseToolSpec):
         """
 
         error = False
-        if max_results > 100:
-            max_results = 100
+
+        max_results = min(max_results, 100)
 
         # if custom_query is not None:
         #     jql = custom_query
@@ -239,22 +241,19 @@ class JiraToolSpec(BaseToolSpec):
         jql = f'summary ~ "{keyword}" or description ~ "{keyword}" or text ~ "{keyword}" order by created desc'
 
         try:
-            issues = [self.load_issue(issue.key) for issue in self.jira.search_issues(jql, maxResults=max_results)]
+            issues = [
+                self.jira_issue_query(issue.key, just_payload=True)
+                for issue in self.jira.search_issues(jql, maxResults=max_results)
+            ]
 
-            print(issues)
-            message = 'All the issues with specific matching conditions'
+            message = "All the issues with specific matching conditions"
         except Exception:
             error = True
-            message = 'Unable to fetch issue due to some error'
+            message = "Unable to fetch issue due to some error"
 
-
-        response = {
-            'error': error,
-            'message': message
-        }
+        response = {"error": error, "message": message}
 
         if error is False:
-            response['results'] = issues
+            response["results"] = issues
 
         return response
-

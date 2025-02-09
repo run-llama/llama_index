@@ -28,3 +28,9 @@ build-backend = "poetry.core.masonry.api"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
+
+
+
+[tool.poetry.group.dev.dependencies.black]
+extras = ["jupyter"]
+version = "<=23.9.1,>=23.7.0"
