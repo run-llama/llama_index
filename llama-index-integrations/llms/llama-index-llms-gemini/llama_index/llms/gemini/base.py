@@ -295,13 +295,18 @@ class Gemini(FunctionCallingLLM):
 
         def gen() -> ChatResponseGen:
             content = ""
+            existing_tool_calls = []
             for r in response:
                 top_candidate = r.candidates[0]
                 content_delta = top_candidate.content.parts[0].text
                 content += content_delta
                 llama_resp = chat_from_gemini_response(r)
+                existing_tool_calls.extend(
+                    llama_resp.message.additional_kwargs.get("tool_calls", [])
+                )
                 llama_resp.delta = content_delta
                 llama_resp.message.content = content
+                llama_resp.message.additional_kwargs["tool_calls"] = existing_tool_calls
                 yield llama_resp
 
         return gen()
@@ -320,13 +325,18 @@ class Gemini(FunctionCallingLLM):
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
+            existing_tool_calls = []
             async for r in response:
                 top_candidate = r.candidates[0]
                 content_delta = top_candidate.content.parts[0].text
                 content += content_delta
                 llama_resp = chat_from_gemini_response(r)
+                existing_tool_calls.extend(
+                    llama_resp.message.additional_kwargs.get("tool_calls", [])
+                )
                 llama_resp.delta = content_delta
                 llama_resp.message.content = content
+                llama_resp.message.additional_kwargs["tool_calls"] = existing_tool_calls
                 yield llama_resp
 
         return gen()
