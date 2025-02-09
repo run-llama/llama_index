@@ -63,7 +63,7 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
             if format_idx != -1:
                 # this should always be a text block
                 assert isinstance(message.blocks[format_idx], TextBlock)
-                message.blocks[format_idx].text = self.format(format_text)
+                message.blocks[format_idx].text = self.format(format_text)  # type: ignore
         else:
             message.blocks.append(TextBlock(text=self.format(format_text)))
 
