@@ -224,6 +224,8 @@ class OpenAIAssistantAgent(BaseAgent):
         verbose: bool = False,
         file_ids: Optional[List[str]] = None,
         api_key: Optional[str] = None,
+        top_p: Optional[float] = None,
+        temperature: Optional[float] = None,
     ) -> "OpenAIAssistantAgent":
         """From new assistant.
 
@@ -241,6 +243,8 @@ class OpenAIAssistantAgent(BaseAgent):
             verbose: verbose
             file_ids: list of file ids
             api_key: OpenAI API key
+            top_p: model considers the results of the tokens with top_p probability mass.
+            temperature: controls randomness of model
 
         """
         from openai import OpenAI
@@ -268,6 +272,8 @@ class OpenAIAssistantAgent(BaseAgent):
             instructions=instructions,
             tools=cast(List[Any], all_openai_tools),
             model=model,
+            top_p=top_p,
+            temperature=temperature,
         )
         return cls(
             client,
