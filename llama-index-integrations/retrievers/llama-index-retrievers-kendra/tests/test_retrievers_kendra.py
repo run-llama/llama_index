@@ -14,23 +14,22 @@ def test_retrieve_document_results(mock_get_aws_service_client):
                 "DocumentTitle": {"Text": "Test Document"},
                 "DocumentURI": "https://example.com/doc1",
                 "DocumentExcerpt": {"Text": "This is a test result."},
-                "ScoreAttributes": {"ScoreConfidence": "VERY_HIGH"}
+                "ScoreAttributes": {"ScoreConfidence": "VERY_HIGH"},
             },
             {
                 "Type": "DOCUMENT",
                 "DocumentId": "doc2",
                 "DocumentExcerpt": {"Text": "Another test result."},
-                "ScoreAttributes": {"ScoreConfidence": "MEDIUM"}
+                "ScoreAttributes": {"ScoreConfidence": "MEDIUM"},
             },
         ]
     }
     mock_get_aws_service_client.return_value = mock_client
-    
+
     from llama_index.retrievers.kendra import AmazonKendraRetriever
 
     retriever = AmazonKendraRetriever(
-        index_id="test-index-id",
-        query_config={"PageSize": 2}
+        index_id="test-index-id", query_config={"PageSize": 2}
     )
 
     # Call the method being tested
@@ -45,7 +44,7 @@ def test_retrieve_document_results(mock_get_aws_service_client):
                 metadata={
                     "document_id": "doc1",
                     "title": "Test Document",
-                    "source": "https://example.com/doc1"
+                    "source": "https://example.com/doc1",
                 },
             ),
             score=1.0,  # VERY_HIGH maps to 1.0
@@ -58,7 +57,7 @@ def test_retrieve_document_results(mock_get_aws_service_client):
             score=0.6,  # MEDIUM maps to 0.6
         ),
     ]
-    
+
     assert len(result) == len(expected_result)
     for actual, expected in zip(result, expected_result):
         assert actual.node.text == expected.node.text
@@ -67,8 +66,5 @@ def test_retrieve_document_results(mock_get_aws_service_client):
 
     # Verify Kendra API was called correctly
     mock_client.query.assert_called_once_with(
-        IndexId="test-index-id",
-        QueryText="Test query",
-        PageSize=2
+        IndexId="test-index-id", QueryText="Test query", PageSize=2
     )
-

@@ -5,6 +5,7 @@
 > [Amazon Kendra](https://aws.amazon.com/kendra/) is an intelligent search service powered by machine learning. Kendra reimagines enterprise search for your websites and applications by allowing users to search your unstructured and structured data using natural language.
 
 > Kendra supports a wide variety of data sources including:
+>
 > - Documents (PDF, Word, PowerPoint, HTML)
 > - FAQs
 > - Knowledge bases
@@ -32,9 +33,9 @@ retriever = AmazonKendraRetriever(
         "AttributeFilter": {
             "EqualsTo": {
                 "Key": "department",
-                "Value": {"StringValue": "engineering"}
+                "Value": {"StringValue": "engineering"},
             }
-        }
+        },
     },
 )
 
@@ -60,18 +61,18 @@ retriever = AmazonKendraRetriever(
                 {
                     "EqualsTo": {
                         "Key": "department",
-                        "Value": {"StringValue": "engineering"}
+                        "Value": {"StringValue": "engineering"},
                     }
                 },
                 {
                     "GreaterThan": {
                         "Key": "last_updated",
-                        "Value": {"StringValue": "2023-01-01"}
+                        "Value": {"StringValue": "2023-01-01"},
                     }
-                }
+                },
             ]
         },
-        "QueryResultTypeFilter": "DOCUMENT"  # Only return document results
+        "QueryResultTypeFilter": "DOCUMENT",  # Only return document results
     },
 )
 ```
@@ -79,6 +80,7 @@ retriever = AmazonKendraRetriever(
 ## Confidence Scores
 
 The retriever maps Kendra's confidence levels to float scores as follows:
+
 - VERY_HIGH: 1.0
 - HIGH: 0.8
 - MEDIUM: 0.6
@@ -102,10 +104,10 @@ The retriever supports various AWS authentication methods:
 retriever = AmazonKendraRetriever(
     index_id="<kendra-index-id>",
     profile_name="my-aws-profile",  # Use AWS profile
-    region_name="us-west-2",        # Specify AWS region
+    region_name="us-west-2",  # Specify AWS region
     # Or use explicit credentials
     aws_access_key_id="YOUR_ACCESS_KEY",
     aws_secret_access_key="YOUR_SECRET_KEY",
-    aws_session_token="YOUR_SESSION_TOKEN"  # Optional
+    aws_session_token="YOUR_SESSION_TOKEN",  # Optional
 )
 ```
