@@ -22,7 +22,7 @@ def test_chat_message_to_gemini() -> None:
     msg = ChatMessage("Some content")
     assert chat_message_to_gemini(msg) == {
         "role": MessageRole.USER,
-        "parts": ["Some content"],
+        "parts": [{"text": "Some content"}],
     }
 
     msg = ChatMessage("Some content")
