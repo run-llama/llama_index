@@ -11,6 +11,16 @@ python = ">=3.9,<4.0"
 jira = ">=3.8.0"
 llama-index-core = ">=0.12.0"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.jira"
+
+[tool.llamahub.class_authors]
+JiraToolSpec = "maliknaik16"
+
 
 [build-system]
 requires = ["poetry-core"]
