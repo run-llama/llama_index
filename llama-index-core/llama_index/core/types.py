@@ -48,7 +48,7 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
         return query
 
     def _format_message(self, message: ChatMessage) -> ChatMessage:
-        text_blocks = [
+        text_blocks: list[tuple[int, TextBlock]] = [
             (idx, block)
             for idx, block in enumerate(message.blocks)
             if isinstance(block, TextBlock)
@@ -61,6 +61,8 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
             format_text = text_blocks[-1][1].text
 
             if format_idx != -1:
+                # this should always be a text block
+                assert isinstance(message.blocks[format_idx], TextBlock)
                 message.blocks[format_idx].text = self.format(format_text)
         else:
             message.blocks.append(TextBlock(text=self.format(format_text)))
