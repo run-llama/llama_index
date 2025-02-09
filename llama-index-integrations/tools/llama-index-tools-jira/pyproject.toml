@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "llama-index-tools-jira"
+version = "0.1.0"
+description = ""
+exclude = ["**/BUILD"]
+authors = ["Malik Naik <maliknaik16@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+jira = ">=3.8.0"
+llama-index-core = ">=0.12.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[[tool.poetry.packages]]
+include = "llama_index/"
