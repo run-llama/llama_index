@@ -224,8 +224,8 @@ class OpenAIAssistantAgent(BaseAgent):
         verbose: bool = False,
         file_ids: Optional[List[str]] = None,
         api_key: Optional[str] = None,
-        top_p: float = 1.0,
-        temperature: float = 1.0,
+        top_p: Optional[float] = None,
+        temperature: Optional[float] = None,
     ) -> "OpenAIAssistantAgent":
         """From new assistant.
 
