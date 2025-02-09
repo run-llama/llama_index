@@ -18,7 +18,7 @@ from typing import (
     Union,
 )
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     GetCoreSchemaHandler,
@@ -47,17 +47,38 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
         """Format a query with structured output formatting instructions."""
         return query
 
+    def _format_message(self, message: ChatMessage) -> ChatMessage:
+        text_blocks: list[tuple[int, TextBlock]] = [
+            (idx, block)
+            for idx, block in enumerate(message.blocks)
+            if isinstance(block, TextBlock)
+        ]
+
+        # add text to the last text block, or add a new text block
+        format_text = ""
+        if text_blocks:
+            format_idx = text_blocks[-1][0]
+            format_text = text_blocks[-1][1].text
+
+            if format_idx != -1:
+                # this should always be a text block
+                assert isinstance(message.blocks[format_idx], TextBlock)
+                message.blocks[format_idx].text = self.format(format_text)  # type: ignore
+        else:
+            message.blocks.append(TextBlock(text=self.format(format_text)))
+
+        return message
+
     def format_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
         """Format a list of messages with structured output formatting instructions."""
         # NOTE: apply output parser to either the first message if it's a system message
         #       or the last message
         if messages:
             if messages[0].role == MessageRole.SYSTEM:
-                message_content = messages[0].content or ""
-                messages[0].content = self.format(message_content)
+                # get text from the last text blocks
+                messages[0] = self._format_message(messages[0])
             else:
-                message_content = messages[-1].content or ""
-                messages[-1].content = self.format(message_content)
+                messages[-1] = self._format_message(messages[-1])
 
         return messages
 
