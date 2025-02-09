@@ -6,6 +6,7 @@ from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.core.utilities.aws_utils import get_aws_service_client
+import aioboto3
 
 
 class AmazonKendraRetriever(BaseRetriever):
@@ -74,25 +75,21 @@ class AmazonKendraRetriever(BaseRetriever):
             aws_secret_access_key=aws_secret_access_key,
             aws_session_token=aws_session_token,
         )
+        # Create async session with the same credentials
+        self._async_session = aioboto3.Session(
+            profile_name=profile_name,
+            region_name=region_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+        )
         self.index_id = index_id
         self.query_config = query_config or {}
         super().__init__(callback_manager)
 
-    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        query = query_bundle.query_str
-
-        # Merge default config with any query-specific config
-        query_params = {
-            "IndexId": self.index_id,
-            "QueryText": query.strip(),
-            **self.query_config,
-        }
-
-        response = self._client.query(**query_params)
-
+    def _parse_response(self, response: Dict[str, Any]) -> List[NodeWithScore]:
+        """Parse Kendra response into NodeWithScore objects."""
         node_with_score = []
-
-        # Process both text results and document excerpt results
         result_items = response.get("ResultItems", [])
 
         for result in result_items:
@@ -137,3 +134,30 @@ class AmazonKendraRetriever(BaseRetriever):
                 )
 
         return node_with_score
+
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Synchronous retrieve method."""
+        query = query_bundle.query_str
+
+        query_params = {
+            "IndexId": self.index_id,
+            "QueryText": query.strip(),
+            **self.query_config,
+        }
+
+        response = self._client.query(**query_params)
+        return self._parse_response(response)
+
+    async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        """Asynchronous retrieve method."""
+        query = query_bundle.query_str
+
+        query_params = {
+            "IndexId": self.index_id,
+            "QueryText": query.strip(),
+            **self.query_config,
+        }
+
+        async with self._async_session.client("kendra") as client:
+            response = await client.query(**query_params)
+            return self._parse_response(response)
