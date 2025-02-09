@@ -32,6 +32,8 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 llama-index-core = "^0.12.0"
+boto3 = "*"
+aioboto3 = "*"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
