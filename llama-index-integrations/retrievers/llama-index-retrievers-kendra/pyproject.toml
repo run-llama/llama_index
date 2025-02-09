@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.retrievers.kendra"
 
 [tool.llamahub.class_authors]
-AmazonKnowledgeBasesRetriever = "llama-index"
+AmazonKendraRetriever = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -27,7 +27,7 @@ license = "MIT"
 name = "llama-index-retrievers-kendra"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.3.0"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
