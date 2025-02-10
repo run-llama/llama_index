@@ -15,7 +15,9 @@ tool_spec = JiraToolSpec(server_url=SERVER, email=EMAIL, api_token=API_KEY)
 agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
 
 # Fetch a specific Jira issue by key
-response = agent.chat("Fetch Jira issue with the key 'PROJ-5' and give me the details.")
+response = agent.chat(
+    "Fetch Jira issue with the key 'PROJ-5' and give me the details."
+)
 print(response)
 
 # Search for issues containing a specific keyword
@@ -29,3 +31,4 @@ print(response)
 # Fetch all comments for a specific issue
 response = agent.chat("Fetch comments for Jira issue 'PROJ-5'.")
 print(response)
+```

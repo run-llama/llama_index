@@ -20,7 +20,6 @@ class JiraToolSpec(BaseToolSpec):
         server_url: Optional[str] = None,
     ) -> None:
         """Initialize the Atlassian Jira tool spec."""
-
         from jira import JIRA
 
         if email and api_token and server_url:
@@ -46,7 +45,6 @@ class JiraToolSpec(BaseToolSpec):
                 - 'projects' (list, optional): A list of projects with their details
                   (ID, key, name) if retrieval is successful.
         """
-
         try:
             projects = self.jira.projects()
 
@@ -90,13 +88,12 @@ class JiraToolSpec(BaseToolSpec):
                     - 'created_at' (str): The timestamp when the comment was created.
                     - 'updated_at' (str): The timestamp when the comment was last updated.
         """
-
         error = False
 
         try:
             issue = self.jira.issue(issue_key)
 
-            all_comments = [comment for comment in issue.fields.comment.comments]
+            all_comments = list(issue.fields.comment.comments)
             filtered_results = []
 
             for comment in all_comments:
@@ -167,7 +164,6 @@ class JiraToolSpec(BaseToolSpec):
                 'assignee_email': 'jane.smith@example.com'
             }
         """
-
         error = False
         try:
             issue = self.jira.issue(issue_key)
@@ -230,7 +226,6 @@ class JiraToolSpec(BaseToolSpec):
                 - 'message' (str): Describes the outcome of the operation.
                 - 'results' (list, optional): A list of issues matching the search criteria, present only if no error occurred.
         """
-
         error = False
 
         max_results = min(max_results, 100)

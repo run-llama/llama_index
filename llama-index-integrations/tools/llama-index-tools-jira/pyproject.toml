@@ -1,10 +1,21 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.jira"
+
+[tool.llamahub.class_authors]
+JiraToolSpec = "maliknaik16"
+
 [tool.poetry]
-name = "llama-index-tools-jira"
-version = "0.1.0"
+authors = ["Malik Naik <maliknaik16@gmail.com>"]
 description = ""
 exclude = ["**/BUILD"]
-authors = ["Malik Naik <maliknaik16@gmail.com>"]
+name = "llama-index-tools-jira"
 readme = "README.md"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
@@ -14,23 +25,9 @@ llama-index-core = ">=0.12.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
 
-[tool.llamahub]
-contains_example = false
-import_path = "llama_index.tools.jira"
-
-[tool.llamahub.class_authors]
-JiraToolSpec = "maliknaik16"
-
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[[tool.poetry.packages]]
-include = "llama_index/"
-
-
-
 [tool.poetry.group.dev.dependencies.black]
 extras = ["jupyter"]
 version = "<=23.9.1,>=23.7.0"
+
+[[tool.poetry.packages]]
+include = "llama_index/"
