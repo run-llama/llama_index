@@ -141,19 +141,13 @@ def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         if max_retries <= 0:
             return f(self, *args, **kwargs)
 
-        retry_decorator = create_retry_decorator(
-            max_retries=max_retries,
-            random_exponential=True,
-            stop_after_delay_seconds=60,
-            min_seconds=1,
-            max_seconds=20,
+        retryer = tenacity.Retrying(
+            stop=tenacity.stop_after_attempt(max_retries),
+            wait=tenacity.wait_random_exponential(min=1, max=20),
+            retry=tenacity.retry_if_exception_type(Exception),
+            reraise=True,
         )
-
-        @retry_decorator
-        def _wrapped():
-            return f(self, *args, **kwargs)
-
-        return _wrapped()
+        return retryer(lambda: f(self, *args, **kwargs))
 
     @functools.wraps(f)
     async def async_wrapper(self, *args: Any, **kwargs: Any) -> Any:
@@ -161,19 +155,13 @@ def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         if max_retries <= 0:
             return await f(self, *args, **kwargs)
 
-        retry_decorator = create_retry_decorator(
-            max_retries=max_retries,
-            random_exponential=True,
-            stop_after_delay_seconds=60,
-            min_seconds=1,
-            max_seconds=20,
+        retryer = tenacity.Retrying(
+            stop=tenacity.stop_after_attempt(max_retries),
+            wait=tenacity.wait_random_exponential(min=1, max=20),
+            retry=tenacity.retry_if_exception_type(Exception),
+            reraise=True,
         )
-
-        @retry_decorator
-        async def _wrapped():
-            return await f(self, *args, **kwargs)
-
-        return await _wrapped()
+        return await retryer(lambda: f(self, *args, **kwargs))
 
     return async_wrapper if asyncio.iscoroutinefunction(f) else wrapper
 
