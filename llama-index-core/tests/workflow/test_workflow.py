@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from typing import Type
 from unittest import mock
@@ -769,14 +770,32 @@ def test_wrong_event_types():
         DummyWorkflow(stop_event_class=CustomEvent)  # type: ignore
 
 
-def test__get_start_event():
+def test__get_start_event(caplog):
     class CustomEvent(StartEvent):
         field: str
 
     e = CustomEvent(field="test")
     d = DummyWorkflow(start_event_class=CustomEvent)
-    assert d._get_start_event(e, this_will_be_ignored=True) == e
+
+    # Invoke run() with wrong start_event type
+    with pytest.raises(
+        ValueError,
+        match="The 'start_event' argument must be an instance of 'StartEvent'.",
+    ):
+        d._get_start_event(start_event="wrong type", arg="foo")  # type: ignore
+
+    # Invoke run() passing a legit start event but with additional kwargs
+    with caplog.at_level(logging.WARN):
+        assert d._get_start_event(e, this_will_be_ignored=True) == e
+        assert (
+            "Keyword arguments are not supported when 'run()' is invoked with the 'start_event' parameter."
+            in caplog.text
+        )
+
+    # Old style kwargs passed to the designed StartEvent
     assert type(d._get_start_event(None, field="test")) is CustomEvent
+
+    # Old style but wrong kwargs passed to the designed StartEvent
     err = "Failed creating a start event of type 'CustomEvent' with the keyword arguments: {'wrong_field': 'test'}"
     with pytest.raises(WorkflowRuntimeError, match=err):
         d._get_start_event(None, wrong_field="test")

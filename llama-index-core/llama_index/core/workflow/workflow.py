@@ -398,8 +398,21 @@ class Workflow(metaclass=WorkflowMeta):
 
     def _get_start_event(self, start_event: Optional[StartEvent], **kwargs):
         if start_event is not None:
+            # start_event was used wrong
+            if not isinstance(start_event, StartEvent):
+                msg = "The 'start_event' argument must be an instance of 'StartEvent'."
+                raise ValueError(msg)
+
+            # start_event is ok but point out that additional kwargs will be ignored in this case
+            if kwargs:
+                msg = (
+                    "Keyword arguments are not supported when 'run()' is invoked with the 'start_event' parameter.",
+                    f" These keyword arguments will be ignored: {kwargs}",
+                )
+                logger.warning(msg)
             return start_event
 
+        # Old style start event creation, with kwargs used to create an instance of self._start_event_class
         try:
             return self._start_event_class(**kwargs)
         except ValidationError as e:
