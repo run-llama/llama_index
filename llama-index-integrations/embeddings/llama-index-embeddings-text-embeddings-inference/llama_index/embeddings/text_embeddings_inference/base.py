@@ -10,6 +10,7 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.utils.huggingface import format_query, format_text
 
 DEFAULT_URL = "http://127.0.0.1:8080"
+DEFAULT_ENDPOINT = "/embed"
 
 
 class TextEmbeddingsInference(BaseEmbedding):
@@ -35,6 +36,10 @@ class TextEmbeddingsInference(BaseEmbedding):
         default=None,
         description="Authentication token or authentication token generating function for authenticated requests",
     )
+    endpoint: str = Field(
+        default=DEFAULT_ENDPOINT,
+        description="Endpoint for the text embeddings service.",
+    )
 
     def __init__(
         self,
@@ -47,6 +52,7 @@ class TextEmbeddingsInference(BaseEmbedding):
         truncate_text: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         auth_token: Optional[Union[str, Callable[[str], str]]] = None,
+        endpoint: str = DEFAULT_ENDPOINT,
     ):
         super().__init__(
             base_url=base_url,
@@ -58,6 +64,7 @@ class TextEmbeddingsInference(BaseEmbedding):
             truncate_text=truncate_text,
             callback_manager=callback_manager,
             auth_token=auth_token,
+            endpoint=endpoint,
         )
 
     @classmethod
@@ -79,7 +86,7 @@ class TextEmbeddingsInference(BaseEmbedding):
 
         with httpx.Client() as client:
             response = client.post(
-                f"{self.base_url}/embed",
+                f"{self.base_url}{self.endpoint}",
                 headers=headers,
                 json=json_data,
                 timeout=self.timeout,
@@ -100,7 +107,7 @@ class TextEmbeddingsInference(BaseEmbedding):
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{self.base_url}/embed",
+                f"{self.base_url}{self.endpoint}",
                 headers=headers,
                 json=json_data,
                 timeout=self.timeout,

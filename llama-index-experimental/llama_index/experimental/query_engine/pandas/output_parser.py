@@ -32,7 +32,9 @@ def default_output_processor(
     local_vars = {"df": df, "pd": pd}
     global_vars = {"np": np}
 
-    output = parse_code_markdown(output, only_last=True)[0]
+    output = parse_code_markdown(output, only_last=True)
+    if not isinstance(output, str):
+        output = output[0]
 
     # NOTE: inspired from langchain's tool
     # see langchain.tools.python.tool (PythonAstREPLTool)

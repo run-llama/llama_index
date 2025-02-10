@@ -84,14 +84,15 @@ def _format_oci_tool_calls(
     return formatted_tool_calls
 
 
-def create_client(auth_type, auth_profile, service_endpoint):
+def create_client(auth_type, auth_profile, auth_file_location, service_endpoint):
     """OCI Gen AI client.
 
     Args:
-        auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL.
-                                    If not specified, API_KEY will be used
+        auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL. If not specified, API_KEY will be used
 
         auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
+
+        auth_file_location (Optional[str]): Path to the config file. If not specified, ~/.oci/config will be used
 
         service_endpoint (str): service endpoint url, e.g., "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
     """
@@ -107,7 +108,9 @@ def create_client(auth_type, auth_profile, service_endpoint):
         }
 
         if auth_type == OCIAuthType(1).name:
-            client_kwargs["config"] = oci.config.from_file(profile_name=auth_profile)
+            client_kwargs["config"] = oci.config.from_file(
+                file_location=auth_file_location, profile_name=auth_profile
+            )
             client_kwargs.pop("signer", None)
         elif auth_type == OCIAuthType(2).name:
 
@@ -119,7 +122,9 @@ def create_client(auth_type, auth_profile, service_endpoint):
                     st_string = f.read()
                 return oci.auth.signers.SecurityTokenSigner(st_string, pk)
 
-            client_kwargs["config"] = oci.config.from_file(profile_name=auth_profile)
+            client_kwargs["config"] = oci.config.from_file(
+                file_location=auth_file_location, profile_name=auth_profile
+            )
             client_kwargs["signer"] = make_security_token_signer(
                 oci_config=client_kwargs["config"]
             )
@@ -143,9 +148,9 @@ def create_client(auth_type, auth_profile, service_endpoint):
         ) from ex
     except Exception as e:
         raise ValueError(
-            """Could not authenticate with OCI client. Please check if ~/.oci/config exists.
+            """Could not authenticate with OCI client.
             If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, please check the specified
-            auth_profile and auth_type are valid.""",
+            auth_profile, auth_file_location and auth_type are valid.""",
             e,
         ) from e
 
