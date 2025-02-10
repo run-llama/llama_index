@@ -103,7 +103,8 @@ def chat_message_to_gemini(message: ChatMessage) -> "genai.types.ContentDict":
     parts = []
     for block in message.blocks:
         if isinstance(block, TextBlock):
-            parts.append(block.text)
+            if block.text:
+                parts.append({"text": block.text})
         elif isinstance(block, ImageBlock):
             base64_bytes = block.resolve_image(as_base64=False).read()
             parts.append(
@@ -115,6 +116,9 @@ def chat_message_to_gemini(message: ChatMessage) -> "genai.types.ContentDict":
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
+
+    for tool_call in message.additional_kwargs.get("tool_calls", []):
+        parts.append(tool_call)
 
     return {
         "role": ROLES_TO_GEMINI[message.role],
