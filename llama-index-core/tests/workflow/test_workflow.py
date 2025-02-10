@@ -20,12 +20,13 @@ from llama_index.core.workflow.workflow import (
     Context,
     Workflow,
     WorkflowCancelledByUser,
+    WorkflowConfigurationError,
     WorkflowRuntimeError,
     WorkflowTimeoutError,
     WorkflowValidationError,
 )
 
-from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
+from .conftest import AnotherTestEvent, DummyWorkflow, LastEvent, OneTestEvent
 
 
 class EventWithName(Event):
@@ -743,3 +744,39 @@ async def test_custom_stop_event():
     assert wf._start_event_class == MyStart
     assert wf._stop_event_class == MyStop
     result = await wf.run(query="foo")
+
+
+def test_is_done(workflow):
+    assert workflow.is_done() is True
+    workflow._stepwise_context = mock.MagicMock()
+    assert workflow.is_done() is False
+
+
+def test_wrong_event_types():
+    class CustomEvent(Event):
+        pass
+
+    with pytest.raises(
+        WorkflowConfigurationError,
+        match="Start event class 'CustomEvent' must derive from 'StartEvent'",
+    ):
+        DummyWorkflow(start_event_class=CustomEvent)  # type: ignore
+
+    with pytest.raises(
+        WorkflowConfigurationError,
+        match="Stop event class 'CustomEvent' must derive from 'StopEvent'",
+    ):
+        DummyWorkflow(stop_event_class=CustomEvent)  # type: ignore
+
+
+def test__get_start_event():
+    class CustomEvent(StartEvent):
+        field: str
+
+    e = CustomEvent(field="test")
+    d = DummyWorkflow(start_event_class=CustomEvent)
+    assert d._get_start_event(e, this_will_be_ignored=True) == e
+    assert type(d._get_start_event(None, field="test")) is CustomEvent
+    err = "Failed creating a start event of type 'CustomEvent' with the keyword arguments: {'wrong_field': 'test'}"
+    with pytest.raises(WorkflowRuntimeError, match=err):
+        d._get_start_event(None, wrong_field="test")

@@ -101,11 +101,11 @@ class Workflow(metaclass=WorkflowMeta):
         self._num_concurrent_runs = num_concurrent_runs
         self._stop_event_class = stop_event_class
         if not issubclass(self._stop_event_class, StopEvent):
-            msg = f"Stop event class {stop_event_class} must derive from 'StopEvent'"
+            msg = f"Stop event class '{stop_event_class.__name__}' must derive from 'StopEvent'"
             raise WorkflowConfigurationError(msg)
         self._start_event_class = start_event_class
         if not issubclass(self._start_event_class, StartEvent):
-            msg = f"Start event class {stop_event_class} must derive from 'StartEvent'"
+            msg = f"Start event class '{start_event_class.__name__}' must derive from 'StartEvent'"
             raise WorkflowConfigurationError(msg)
         self._sem = (
             asyncio.Semaphore(num_concurrent_runs) if num_concurrent_runs else None
@@ -396,12 +396,25 @@ class Workflow(metaclass=WorkflowMeta):
         ctx = next(iter(self._contexts))
         ctx.send_event(message=message, step=step)
 
+    def _get_start_event(self, start_event: Optional[StartEvent], **kwargs):
+        if start_event is not None:
+            return start_event
+
+        try:
+            return self._start_event_class(**kwargs)
+        except ValidationError as e:
+            ev_name = self._start_event_class.__name__
+            msg = f"Failed creating a start event of type '{ev_name}' with the keyword arguments: {kwargs}"
+            logger.debug(e)
+            raise WorkflowRuntimeError(msg)
+
     @dispatcher.span
     def run(
         self,
         ctx: Optional[Context] = None,
         stepwise: bool = False,
         checkpoint_callback: Optional[CheckpointCallback] = None,
+        start_event: Optional[StartEvent] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
         """Runs the workflow until completion."""
@@ -425,13 +438,7 @@ class Workflow(metaclass=WorkflowMeta):
             try:
                 if not ctx.is_running:
                     # Send the first event
-                    try:
-                        ev = self._start_event_class(**kwargs)
-                    except ValidationError as e:
-                        msg = f"Failed creating a start event of type {self._start_event_class} with the keyword arguments {kwargs}"
-                        logger.debug(e)
-                        raise WorkflowRuntimeError(msg)
-
+                    ev = self._get_start_event(start_event, **kwargs)
                     ctx.send_event(ev)
 
                     # the context is now running
