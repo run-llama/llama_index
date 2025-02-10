@@ -12,6 +12,13 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.multi_modal_llms.base import ChatMessage
 from llama_index.core.utilities.gemini_utils import ROLES_FROM_GEMINI, ROLES_TO_GEMINI
 
+# These are the shortened model names
+# Any model that contains one of these names will not support function calling
+MODELS_WITHOUT_FUNCTION_CALLING_SUPPORT = [
+    "gemini-2.0-flash-thinking",
+    "gemini-2.0-flash-lite",
+]
+
 
 def _error_if_finished_early(candidate: "glm.Candidate") -> None:  # type: ignore[name-defined] # only until release
     if (finish_reason := candidate.finish_reason) > 1:  # 1=STOP (normally)
@@ -120,3 +127,10 @@ def chat_message_to_gemini(message: ChatMessage) -> "genai.types.ContentDict":
         "role": ROLES_TO_GEMINI[message.role],
         "parts": parts,
     }
+
+
+def is_function_calling_model(model: str) -> bool:
+    for model_name in MODELS_WITHOUT_FUNCTION_CALLING_SUPPORT:
+        if model_name in model:
+            return False
+    return True
