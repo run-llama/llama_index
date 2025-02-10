@@ -526,7 +526,9 @@ class WatsonxLLM(FunctionCallingLLM):
                         tools_available = True
 
                     if tools_available:
-                        tool_calls = update_tool_calls(tool_calls, wx_message["tool_calls"])
+                        tool_calls = update_tool_calls(
+                            tool_calls, wx_message["tool_calls"]
+                        )
                         if tool_calls:
                             additional_kwargs["tool_calls"] = tool_calls
 

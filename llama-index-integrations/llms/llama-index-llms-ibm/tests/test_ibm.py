@@ -94,7 +94,7 @@ def mock_stream_chat(*args: Any, **kwargs: Any) -> Generator[dict, None, None]:
             "model_id": "mistralai/mistral-large",
             "created_at": "2024-10-17T11:41:26.140Z",
             "choices": [],
-            'usage': {'completion_tokens': 6, 'prompt_tokens': 10, 'total_tokens': 16}
+            "usage": {"completion_tokens": 6, "prompt_tokens": 10, "total_tokens": 16},
         }
 
 
