@@ -396,7 +396,9 @@ class Workflow(metaclass=WorkflowMeta):
         ctx = next(iter(self._contexts))
         ctx.send_event(message=message, step=step)
 
-    def _get_start_event(self, start_event: Optional[StartEvent], **kwargs):
+    def _get_start_event(
+        self, start_event: Optional[StartEvent], **kwargs: Any
+    ) -> StartEvent:
         if start_event is not None:
             # start_event was used wrong
             if not isinstance(start_event, StartEvent):
@@ -406,8 +408,8 @@ class Workflow(metaclass=WorkflowMeta):
             # start_event is ok but point out that additional kwargs will be ignored in this case
             if kwargs:
                 msg = (
-                    "Keyword arguments are not supported when 'run()' is invoked with the 'start_event' parameter.",
-                    f" These keyword arguments will be ignored: {kwargs}",
+                    "Keyword arguments are not supported when 'run()' is invoked with the 'start_event' parameter."
+                    f" These keyword arguments will be ignored: {kwargs}"
                 )
                 logger.warning(msg)
             return start_event
@@ -451,8 +453,8 @@ class Workflow(metaclass=WorkflowMeta):
             try:
                 if not ctx.is_running:
                     # Send the first event
-                    ev = self._get_start_event(start_event, **kwargs)
-                    ctx.send_event(ev)
+                    start_event_instance = self._get_start_event(start_event, **kwargs)
+                    ctx.send_event(start_event_instance)
 
                     # the context is now running
                     ctx.is_running = True
