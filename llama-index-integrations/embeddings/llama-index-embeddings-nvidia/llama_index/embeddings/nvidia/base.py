@@ -123,10 +123,6 @@ class NVIDIAEmbedding(BaseEmbedding):
         if not is_hosted:
             base_url = self._validate_url(base_url)
 
-        if is_hosted and api_key == "NO_API_KEY_PROVIDED":
-            warnings.warn(
-                "An API key is required for the hosted NIM. This will become an error in 0.2.0.",
-            )
         if self._is_hosted:  # hosted on API Catalog (build.nvidia.com)
             if api_key == "NO_API_KEY_PROVIDED":
                 raise ValueError("An API key is required for hosted NIM.")
