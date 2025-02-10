@@ -161,10 +161,10 @@ You can easily reconnect to your Tablestore database and reload the index by re-
 
 A more complete example can be found [here](../../examples/docstore/TablestoreDocstoreDemo.ipynb)
 
-### AlloyDB Index Store
+### Google AlloyDB Index Store
 
-Similarly to document stores, we can also use `AlloyDB` as the storage backend of the index store.
-All asynchronous methods have corresponding synchronous methods.
+Similarly to document stores, we can also use [`AlloyDB`](https://cloud.google.com/products/alloydb) as the storage backend of the index store.
+This tutorial demonstrates the synchronous interface. All synchronous methods have corresponding asynchronous methods.
 
 ```bash
 pip install llama-index
@@ -177,7 +177,7 @@ from llama_index_alloydb_pg import AlloyDBEngine, AlloyDBIndexStore
 from llama_index.core import StorageContext, VectorStoreIndex
 
 # create an AlloyDB Engine for connection pool
-engine = await AlloyDBEngine.afrom_instance(
+engine = AlloyDBEngine.from_instance(
     project_id=PROJECT_ID,
     region=REGION,
     cluster=CLUSTER,
@@ -188,11 +188,11 @@ engine = await AlloyDBEngine.afrom_instance(
 )
 
 # initalize a new table in AlloyDB
-await engine.ainit_index_store_table(
+engine.init_index_store_table(
     table_name=TABLE_NAME,
 )
 
-index_store = await AlloyDBIndexStore.create(
+index_store = AlloyDBIndexStore.create_sync(
     engine=engine,
     table_name=TABLE_NAME,
 )

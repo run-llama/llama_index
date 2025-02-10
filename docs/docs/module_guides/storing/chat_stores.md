@@ -277,11 +277,11 @@ chat_memory = ChatMemoryBuffer.from_defaults(
 )
 ```
 
-## AlloyDBChatStore
+## Google AlloyDB ChatStore
 
 Using `AlloyDBChatStore`, you can store your chat history in AlloyDB, without having to worry about manually persisting and loading the chat history.
 
-This tutorial demonstrates the asynchronous interface. All asynchronous methods have corresponding synchronous methods.
+This tutorial demonstrates the synchronous interface. All synchronous methods have corresponding asynchronous methods.
 
 #### Installation
 
@@ -300,41 +300,38 @@ from llama_index_alloydb_pg import AlloyDBChatStore, AlloyDBEngine
 from llama_index.llms.vertex import Vertex
 import asyncio
 
+# Replace with your own AlloyDB info
+engine = AlloyDBEngine.from_instance(
+    project_id=PROJECT_ID,
+    region=REGION,
+    cluster=CLUSTER,
+    instance=INSTANCE,
+    database=DATABASE,
+    user=USER,
+    password=PASSWORD,
+)
 
-async def main():
-    # Replace with your own AlloyDB info
-    engine = await AlloyDBEngine.afrom_instance(
-        project_id=PROJECT_ID,
-        region=REGION,
-        cluster=CLUSTER,
-        instance=INSTANCE,
-        database=DATABASE,
-        user=USER,
-        password=PASSWORD,
-    )
+engine.init_chat_store_table(table_name=TABLE_NAME)
 
-    await engine.ainit_chat_store_table(table_name=TABLE_NAME)
+chat_store = AlloyDBChatStore.create_sync(
+    engine=engine,
+    table_name=TABLE_NAME,
+)
 
-    chat_store = await AlloyDBChatStore.create(
-        engine=engine,
-        table_name=TABLE_NAME,
-    )
+memory = ChatMemoryBuffer.from_defaults(
+    token_limit=3000,
+    chat_store=chat_store,
+    chat_store_key="user1",
+)
 
-    memory = ChatMemoryBuffer.from_defaults(
-        token_limit=3000,
-        chat_store=chat_store,
-        chat_store_key="user1",
-    )
+llm = Vertex(model="gemini-1.5-flash-002", project=PROJECT_ID)
 
-    llm = Vertex(model="gemini-1.5-flash-002", project=PROJECT_ID)
+chat_engine = SimpleChatEngine(
+    memory=memory, llm=llm, prefix_messages=[]
+)
 
-    chat_engine = SimpleChatEngine(
-        memory=memory, llm=llm, prefix_messages=[]
-    )
+response = chat_engine.chat("Hello.")
 
-    response = chat_engine.chat("Hello.")
+print(response)
 
-    print(response)
-
-asyncio.run(main())
 ```

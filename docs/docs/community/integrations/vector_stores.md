@@ -11,7 +11,6 @@ LlamaIndex also supports different vector stores
 as the storage backend for `VectorStoreIndex`.
 
 - Alibaba Cloud OpenSearch (`AlibabaCloudOpenSearchStore`). [QuickStart](https://help.aliyun.com/zh/open-search/vector-search-edition).
-- AlloyDB (`AlloyDBVectorStore`). [QuickStart](https://github.com/googleapis/llama-index-alloydb-pg-python/blob/main/samples/llama_index_vector_store.ipynb).
 - Amazon Neptune - Neptune Analytics (`NeptuneAnalyticsVectorStore`). [Working with vector similarity in Neptune Analytics](https://docs.aws.amazon.com/neptune-analytics/latest/userguide/vector-similarity.html).
 - Apache Cassandra® and Astra DB through CQL (`CassandraVectorStore`). [Installation](https://cassandra.apache.org/doc/stable/cassandra/getting_started/installing.html) [Quickstart](https://docs.datastax.com/en/astra-serverless/docs/vector-search/overview.html)
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
@@ -26,6 +25,7 @@ as the storage backend for `VectorStoreIndex`.
 - Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
 - Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- Google AlloyDB for PostgreSQL (`AlloyDBVectorStore`). [QuickStart](https://github.com/googleapis/llama-index-alloydb-pg-python/blob/main/samples/llama_index_vector_store.ipynb).
 - Hnswlib (`HnswlibVectorStore`). [Installation](https://github.com/nmslib/hnswlib?tab=readme-ov-file#bindings-installation).
 - txtai (`TxtaiVectorStore`). [Installation](https://neuml.github.io/txtai/install/).
 - Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
@@ -126,7 +126,7 @@ config = AlibabaCloudOpenSearchConfig(
 vector_store = AlibabaCloudOpenSearchStore(config)
 ```
 
-**AlloyDB**
+**Google AlloyDB for PostgreSQL**
 
 ```bash
 pip install llama-index
@@ -142,15 +142,8 @@ from llama_index.embeddings.vertex import VertexTextEmbedding
 from llama_index.llms.vertex import Vertex
 import google.auth
 
-credentials, project_id = google.auth.default()
-Settings.embed_model = VertexTextEmbedding(
-    model_name="textembedding-gecko@003", project=PROJECT_ID, credentials=credentials
-)
-
-Settings.llm = Vertex(model="gemini-1.5-flash-002", project=PROJECT_ID)
-
 # Replace with your own AlloyDB info
-engine = await AlloyDBEngine.afrom_instance(
+engine = AlloyDBEngine.from_instance(
     project_id=PROJECT_ID,
     region=REGION,
     cluster=CLUSTER,
@@ -160,12 +153,12 @@ engine = await AlloyDBEngine.afrom_instance(
     password=PASSWORD,
 )
 
-await engine.ainit_vector_store_table(
+engine.init_vector_store_table(
     table_name=TABLE_NAME,
     vector_size=768,  # Vector size for VertexAI model(textembedding-gecko@latest)
 )
 
-vector_store = await AlloyDBVectorStore.create(
+vector_store = AlloyDBVectorStore.create_sync(
     engine=engine,
     table_name=TABLE_NAME,
 )
@@ -870,7 +863,9 @@ vector_store = MilvusVectorStore(
 
 LlamaIndex supports loading data from a huge number of sources. See [Data Connectors](../../module_guides/loading/connector/modules.md) for more details and API documentation.
 
-AlloyDB stores both document and vectors. All asynchronous methods have corresponding synchronous methods. This is an example of how to use AlloyDB:
+AlloyDB stores both document and vectors.
+This tutorial demonstrates the synchronous interface. All synchronous methods have corresponding asynchronous methods.
+This is an example of how to use AlloyDB:
 
 ```bash
 pip install llama-index
@@ -881,7 +876,7 @@ pip install llama-index-alloydb-pg
 from llama_index.core import SummaryIndex
 from llama_index_alloydb_pg import AlloyDBEngine, AlloyDBReader
 
-engine = await AlloyDBEngine.afrom_instance(
+engine = AlloyDBEngine.from_instance(
     project_id=PROJECT_ID,
     region=REGION,
     cluster=CLUSTER,
@@ -890,11 +885,11 @@ engine = await AlloyDBEngine.afrom_instance(
     user=USER,
     password=PASSWORD,
 )
-reader = await AlloyDBReader.create(
+reader = AlloyDBReader.create_sync(
     engine,
     table_name=TABLE_NAME,
 )
-documents = await reader.aload_data()
+documents = reader.load_data()
 
 index = SummaryIndex.from_documents(documents)
 
@@ -1007,7 +1002,7 @@ documents = reader.load_data(
 ## Vector Store Examples
 
 - [Alibaba Cloud OpenSearch](../../examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb)
-- [AlloyDB](../../examples/vector_stores/AlloyDBVectorStoreDemo.ipynb)
+- [Google AlloyDB for PostgreSQL](../../examples/vector_stores/AlloyDBVectorStoreDemo.ipynb)
 - [Amazon Neptune - Neptune Analytics](../../examples/vector_stores/AmazonNeptuneVectorDemo.ipynb)
 - [Astra DB](../../examples/vector_stores/AstraDBIndexDemo.ipynb)
 - [Async Index Creation](../../examples/vector_stores/AsyncIndexCreationDemo.ipynb)
