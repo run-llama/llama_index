@@ -1,7 +1,10 @@
 import json
 import aiohttp
+import functools
 import requests
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+import tenacity
+import asyncio
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -106,6 +109,75 @@ def is_function_calling_llm(model: str):
     return model in FUNCTION_CALLING_OPTIONS
 
 
+def create_retry_decorator(
+    max_retries: int,
+    min_seconds: float = 1,
+    max_seconds: float = 20,
+    random_exponential: bool = True,
+    stop_after_delay_seconds: Optional[float] = None,
+) -> Callable[[Any], Any]:
+    """Create a retry decorator with custom parameters."""
+    retryer = tenacity.Retrying(
+        stop=tenacity.stop_after_attempt(max_retries)
+        if stop_after_delay_seconds is None
+        else tenacity.stop_any(
+            tenacity.stop_after_delay(stop_after_delay_seconds),
+            tenacity.stop_after_attempt(max_retries),
+        ),
+        wait=tenacity.wait_random_exponential(min=min_seconds, max=max_seconds)
+        if random_exponential
+        else tenacity.wait_random(min=min_seconds, max=max_seconds),
+        retry=tenacity.retry_if_exception_type(Exception),
+        reraise=True,
+    )
+    return retryer
+
+
+def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
+    """Retry decorator for LLM calls."""
+    @functools.wraps(f)
+    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+        max_retries = getattr(self, "max_retries", 0)
+        if max_retries <= 0:
+            return f(self, *args, **kwargs)
+
+        retry_decorator = create_retry_decorator(
+            max_retries=max_retries,
+            random_exponential=True,
+            stop_after_delay_seconds=60,
+            min_seconds=1,
+            max_seconds=20,
+        )
+
+        @retry_decorator
+        def _wrapped():
+            return f(self, *args, **kwargs)
+
+        return _wrapped()
+
+    @functools.wraps(f)
+    async def async_wrapper(self, *args: Any, **kwargs: Any) -> Any:
+        max_retries = getattr(self, "max_retries", 0)
+        if max_retries <= 0:
+            return await f(self, *args, **kwargs)
+
+        retry_decorator = create_retry_decorator(
+            max_retries=max_retries,
+            random_exponential=True,
+            stop_after_delay_seconds=60,
+            min_seconds=1,
+            max_seconds=20,
+        )
+
+        @retry_decorator
+        async def _wrapped():
+            return await f(self, *args, **kwargs)
+
+        return await _wrapped()
+
+    return async_wrapper if asyncio.iscoroutinefunction(f) else wrapper
+
+
 class SiliconFlow(FunctionCallingLLM):
     """SiliconFlow LLM.
 
@@ -155,6 +227,11 @@ class SiliconFlow(FunctionCallingLLM):
         default=None,
         description="Up to 4 sequences where the API will stop generating further tokens.",
     )
+    max_retries: int = Field(
+        default=3,
+        description="The maximum number of API retries.",
+        ge=0,
+    )
 
     _headers: Any = PrivateAttr()
 
@@ -168,6 +245,7 @@ class SiliconFlow(FunctionCallingLLM):
         frequency_penalty: float = 0.5,
         timeout: float = DEFAULT_REQUEST_TIMEOUT,
         stop: Optional[str] = None,
+        max_retries: int = 3,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -178,6 +256,7 @@ class SiliconFlow(FunctionCallingLLM):
             frequency_penalty=frequency_penalty,
             timeout=timeout,
             stop=stop,
+            max_retries=max_retries,
             **kwargs,
         )
 
@@ -287,6 +366,7 @@ class SiliconFlow(FunctionCallingLLM):
         return tool_selections
 
     @llm_chat_callback()
+    @llm_retry_decorator
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         messages_dict = self._convert_to_llm_messages(messages)
         response_format = kwargs.get("response_format", {"type": "text"})
@@ -319,6 +399,7 @@ class SiliconFlow(FunctionCallingLLM):
             )
 
     @llm_chat_callback()
+    @llm_retry_decorator
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
@@ -354,6 +435,7 @@ class SiliconFlow(FunctionCallingLLM):
                 )
 
     @llm_chat_callback()
+    @llm_retry_decorator
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -403,6 +485,7 @@ class SiliconFlow(FunctionCallingLLM):
         return gen()
 
     @llm_chat_callback()
+    @llm_retry_decorator
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
