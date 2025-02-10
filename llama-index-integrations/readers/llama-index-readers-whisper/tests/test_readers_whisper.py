@@ -17,14 +17,14 @@ def test_class():
 
 
 def test_get_file_or_bytes():
-    reader = WhisperReader(model="whisper-1")
+    reader = WhisperReader(model="whisper-1", api_key="test")
     audio_bytes = requests.get(AUDIO_URL).content
     file_path_or_bytes = reader._get_file_path_or_bytes(audio_bytes)
     assert isinstance(file_path_or_bytes, BytesIO)
 
 
 def test_get_file_or_bytes_file():
-    reader = WhisperReader(model="whisper-1")
+    reader = WhisperReader(model="whisper-1", api_key="test")
     audio_bytes = requests.get(AUDIO_URL).content
     # Create a temporary file-like object with a name
     audio_file = BytesIO(audio_bytes)
