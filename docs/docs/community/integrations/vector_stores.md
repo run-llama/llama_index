@@ -1002,7 +1002,6 @@ documents = reader.load_data(
 ## Vector Store Examples
 
 - [Alibaba Cloud OpenSearch](../../examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb)
-- [Google AlloyDB for PostgreSQL](../../examples/vector_stores/AlloyDBVectorStoreDemo.ipynb)
 - [Amazon Neptune - Neptune Analytics](../../examples/vector_stores/AmazonNeptuneVectorDemo.ipynb)
 - [Astra DB](../../examples/vector_stores/AstraDBIndexDemo.ipynb)
 - [Async Index Creation](../../examples/vector_stores/AsyncIndexCreationDemo.ipynb)
@@ -1016,6 +1015,7 @@ documents = reader.load_data(
 - [DocArray HNSW](../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb)
 - [DocArray in-Memory](../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb)
 - [Espilla](../../examples/vector_stores/EpsillaIndexDemo.ipynb)
+- [Google AlloyDB for PostgreSQL](../../examples/vector_stores/AlloyDBVectorStoreDemo.ipynb)
 - [LanceDB](../../examples/vector_stores/LanceDBIndexDemo.ipynb)
 - [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
 - [Metal](../../examples/vector_stores/MetalIndexDemo.ipynb)
