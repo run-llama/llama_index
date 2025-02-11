@@ -2,13 +2,15 @@
 
 import aiohttp
 import base64
+import functools
 import requests
 import struct
-from typing import Any, List, Optional
+import tenacity
+import asyncio
+from typing import Any, Callable, List, Optional
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.embeddings import BaseEmbedding
-
 
 DEFAULT_SILICONFLOW_API_URL = "https://api.siliconflow.cn/v1/embeddings"
 
@@ -21,6 +23,84 @@ AVAILABLE_OPTIONS = [
     ("BAAI/bge-large-en-v1.5", 1024),  ## 512 tokens
     ("netease-youdao/bce-embedding-base_v1", 768),  ## 512 tokens
 ]
+
+
+def create_retry_decorator(
+    max_retries: int,
+    min_seconds: float = 1,
+    max_seconds: float = 20,
+    random_exponential: bool = True,
+    stop_after_delay_seconds: Optional[float] = None,
+) -> Callable[[Any], Any]:
+    """Create a retry decorator with custom parameters."""
+    if random_exponential:
+        wait_strategy = tenacity.wait_random_exponential(
+            min=min_seconds, max=max_seconds
+        )
+    else:
+        wait_strategy = tenacity.wait_random(min=min_seconds, max=max_seconds)
+
+    stop_strategy = (
+        tenacity.stop_after_attempt(max_retries)
+        if stop_after_delay_seconds is None
+        else tenacity.stop_any(
+            tenacity.stop_after_delay(stop_after_delay_seconds),
+            tenacity.stop_after_attempt(max_retries),
+        )
+    )
+
+    return tenacity.retry(
+        stop=stop_strategy,
+        wait=wait_strategy,
+        retry=tenacity.retry_if_exception_type(Exception),
+        reraise=True,
+    )
+
+
+def embedding_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
+    """Retry decorator for embedding calls."""
+
+    @functools.wraps(f)
+    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+        max_retries = getattr(self, "max_retries", 0)
+        if max_retries <= 0:
+            return f(self, *args, **kwargs)
+
+        retry_decorator = create_retry_decorator(
+            max_retries=max_retries,
+            random_exponential=True,
+            stop_after_delay_seconds=60,
+            min_seconds=1,
+            max_seconds=20,
+        )
+
+        @retry_decorator
+        def _wrapped():
+            return f(self, *args, **kwargs)
+
+        return _wrapped()
+
+    @functools.wraps(f)
+    async def async_wrapper(self, *args: Any, **kwargs: Any) -> Any:
+        max_retries = getattr(self, "max_retries", 0)
+        if max_retries <= 0:
+            return await f(self, *args, **kwargs)
+
+        retry_decorator = create_retry_decorator(
+            max_retries=max_retries,
+            random_exponential=True,
+            stop_after_delay_seconds=60,
+            min_seconds=1,
+            max_seconds=20,
+        )
+
+        @retry_decorator
+        async def _wrapped():
+            return await f(self, *args, **kwargs)
+
+        return await _wrapped()
+
+    return async_wrapper if asyncio.iscoroutinefunction(f) else wrapper
 
 
 def base64_to_float_list(encoded_str: str) -> List[float]:
@@ -52,6 +132,11 @@ class SiliconFlowEmbedding(BaseEmbedding):
         default="float",
         description="The format to return the embeddings in. Can be either float or base64.",
     )  # TODO: Consider whether to fix the encoding format as float.
+    max_retries: int = Field(
+        default=3,
+        description="The maximum number of API retries.",
+        ge=0,
+    )
 
     _headers: Any = PrivateAttr()
 
@@ -61,6 +146,7 @@ class SiliconFlowEmbedding(BaseEmbedding):
         api_key: Optional[str] = None,
         base_url: str = DEFAULT_SILICONFLOW_API_URL,
         encoding_format: Optional[str] = "float",
+        max_retries: int = 3,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -69,6 +155,7 @@ class SiliconFlowEmbedding(BaseEmbedding):
             api_key=api_key,
             base_url=base_url,
             encoding_format=encoding_format,
+            max_retries=max_retries,
             callback_manager=callback_manager,
             **kwargs,
         )
@@ -113,6 +200,7 @@ class SiliconFlowEmbedding(BaseEmbedding):
         result = await self._aget_text_embeddings([text])
         return result[0]
 
+    @embedding_retry_decorator
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         with requests.Session() as session:
             input_json = {
@@ -127,6 +215,7 @@ class SiliconFlowEmbedding(BaseEmbedding):
                 raise RuntimeError(response)
             return self._data_formatting(response)
 
+    @embedding_retry_decorator
     async def _aget_text_embeddings(
         self,
         texts: List[str],
