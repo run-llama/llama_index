@@ -609,9 +609,9 @@ def resolve_binary(
 
     elif url is not None:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
         }
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
         response.raise_for_status()
         if as_base64:
             return BytesIO(base64.b64encode(response.content))
