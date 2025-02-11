@@ -25,6 +25,7 @@ as the storage backend for `VectorStoreIndex`.
 - Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
 - Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- Google AlloyDB for PostgreSQL (`AlloyDBVectorStore`). [QuickStart](https://github.com/googleapis/llama-index-alloydb-pg-python/blob/main/samples/llama_index_vector_store.ipynb).
 - Hnswlib (`HnswlibVectorStore`). [Installation](https://github.com/nmslib/hnswlib?tab=readme-ov-file#bindings-installation).
 - txtai (`TxtaiVectorStore`). [Installation](https://neuml.github.io/txtai/install/).
 - Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
@@ -123,6 +124,44 @@ config = AlibabaCloudOpenSearchConfig(
 )
 
 vector_store = AlibabaCloudOpenSearchStore(config)
+```
+
+**Google AlloyDB for PostgreSQL**
+
+```bash
+pip install llama-index
+pip install llama-index-alloydb-pg
+pip install llama-index-llms-vertex
+gcloud services enable aiplatform.googleapis.com
+```
+
+```python
+from llama_index_alloydb_pg import AlloyDBEngine, AlloyDBVectorStore
+from llama_index.core import Settings
+from llama_index.embeddings.vertex import VertexTextEmbedding
+from llama_index.llms.vertex import Vertex
+import google.auth
+
+# Replace with your own AlloyDB info
+engine = AlloyDBEngine.from_instance(
+    project_id=PROJECT_ID,
+    region=REGION,
+    cluster=CLUSTER,
+    instance=INSTANCE,
+    database=DATABASE,
+    user=USER,
+    password=PASSWORD,
+)
+
+engine.init_vector_store_table(
+    table_name=TABLE_NAME,
+    vector_size=768,  # Vector size for VertexAI model(textembedding-gecko@latest)
+)
+
+vector_store = AlloyDBVectorStore.create_sync(
+    engine=engine,
+    table_name=TABLE_NAME,
+)
 ```
 
 **Amazon Neptune - Neptune Analytics**
@@ -824,6 +863,41 @@ vector_store = MilvusVectorStore(
 
 LlamaIndex supports loading data from a huge number of sources. See [Data Connectors](../../module_guides/loading/connector/modules.md) for more details and API documentation.
 
+AlloyDB stores both document and vectors.
+This tutorial demonstrates the synchronous interface. All synchronous methods have corresponding asynchronous methods.
+This is an example of how to use AlloyDB:
+
+```bash
+pip install llama-index
+pip install llama-index-alloydb-pg
+```
+
+```python
+from llama_index.core import SummaryIndex
+from llama_index_alloydb_pg import AlloyDBEngine, AlloyDBReader
+
+engine = AlloyDBEngine.from_instance(
+    project_id=PROJECT_ID,
+    region=REGION,
+    cluster=CLUSTER,
+    instance=INSTANCE,
+    database=DATABASE,
+    user=USER,
+    password=PASSWORD,
+)
+reader = AlloyDBReader.create_sync(
+    engine,
+    table_name=TABLE_NAME,
+)
+documents = reader.load_data()
+
+index = SummaryIndex.from_documents(documents)
+
+query_engine = index.as_query_engine()
+response = query_engine.query("<query_text>")
+display(Markdown(f"<b>{response}</b>"))
+```
+
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 
 ```python
@@ -941,6 +1015,7 @@ documents = reader.load_data(
 - [DocArray HNSW](../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb)
 - [DocArray in-Memory](../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb)
 - [Espilla](../../examples/vector_stores/EpsillaIndexDemo.ipynb)
+- [Google AlloyDB for PostgreSQL](../../examples/vector_stores/AlloyDBVectorStoreDemo.ipynb)
 - [LanceDB](../../examples/vector_stores/LanceDBIndexDemo.ipynb)
 - [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
 - [Metal](../../examples/vector_stores/MetalIndexDemo.ipynb)
