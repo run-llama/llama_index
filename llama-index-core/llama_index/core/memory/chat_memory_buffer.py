@@ -61,7 +61,7 @@ class ChatMemoryBuffer(BaseMemory):
     ) -> "ChatMemoryBuffer":
         """Create a chat memory buffer from an LLM."""
         if llm is not None:
-            cls.get_llm_token_limit(llm=llm, token_limit=token_limit)
+            token_limit = cls.get_llm_token_limit(llm=llm, token_limit=token_limit)
         elif token_limit is None:
             token_limit = DEFAULT_TOKEN_LIMIT
 
