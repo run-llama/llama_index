@@ -1,5 +1,5 @@
 """HTML node parser."""
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
@@ -9,7 +9,7 @@ from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.utils import get_tqdm_iterable
 
 if TYPE_CHECKING:
-    from bs4 import Tag
+    from bs4 import Tag, PageElement, NavigableString
 
 DEFAULT_TAGS = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "b", "i", "u", "section"]
 
@@ -69,7 +69,7 @@ class HTMLNodeParser(NodeParser):
     def get_nodes_from_node(self, node: BaseNode) -> List[TextNode]:
         """Get nodes from document."""
         try:
-            from bs4 import BeautifulSoup, Tag
+            from bs4 import BeautifulSoup
         except ImportError:
             raise ImportError("bs4 is required to read HTML files.")
 
@@ -81,9 +81,6 @@ class HTMLNodeParser(NodeParser):
 
         tags = soup.find_all(self.tags)
         for tag in tags:
-            if not isinstance(tag, Tag):
-                continue
-
             tag_text = self._extract_text_from_tag(tag)
             if tag.name == last_tag or last_tag is None:
                 last_tag = tag.name
@@ -106,8 +103,10 @@ class HTMLNodeParser(NodeParser):
 
         return html_nodes
 
-    def _extract_text_from_tag(self, tag: "Tag") -> str:
-        from bs4 import NavigableString
+    def _extract_text_from_tag(
+        self, tag: Union[Tag, NavigableString, PageElement]
+    ) -> str:
+        from bs4 import NavigableString, Tag, PageElement
 
         texts = []
         for elem in tag.children:
@@ -119,6 +118,8 @@ class HTMLNodeParser(NodeParser):
                     continue
                 else:
                     texts.append(elem.get_text().strip())
+            elif isinstance(elem, PageElement):
+                texts.append(elem.get_text().strip())
         return "\n".join(texts)
 
     def _build_node_from_split(
