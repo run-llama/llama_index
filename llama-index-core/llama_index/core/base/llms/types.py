@@ -102,7 +102,7 @@ class ImageBlock(BaseModel):
         return resolve_binary(
             raw_bytes=self.image,
             path=self.path,
-            url=self.url,
+            url=str(self.url) if self.url else None,
             as_base64=as_base64,
         )
 
@@ -159,7 +159,7 @@ class AudioBlock(BaseModel):
         return resolve_binary(
             raw_bytes=self.audio,
             path=self.path,
-            url=self.url,
+            url=str(self.url) if self.url else None,
             as_base64=as_base64,
         )
 
