@@ -44,6 +44,12 @@ class ChatMemoryBuffer(BaseMemory):
         return values
 
     @classmethod
+    def get_llm_token_limit(cls, llm):
+        context_window = llm.metadata.context_window
+        token_limit = token_limit or int(context_window * DEFAULT_TOKEN_LIMIT_RATIO)
+        return token_limit
+
+    @classmethod
     def from_defaults(
         cls,
         chat_history: Optional[List[ChatMessage]] = None,
@@ -55,8 +61,7 @@ class ChatMemoryBuffer(BaseMemory):
     ) -> "ChatMemoryBuffer":
         """Create a chat memory buffer from an LLM."""
         if llm is not None:
-            context_window = llm.metadata.context_window
-            token_limit = token_limit or int(context_window * DEFAULT_TOKEN_LIMIT_RATIO)
+            cls.get_llm_token_limit(llm=llm)
         elif token_limit is None:
             token_limit = DEFAULT_TOKEN_LIMIT
 
