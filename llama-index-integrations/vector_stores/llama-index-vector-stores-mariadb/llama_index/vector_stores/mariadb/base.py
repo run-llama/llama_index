@@ -51,6 +51,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             password="password",
             database="vectordb",
             table_name="llama_index_vectorstore",
+            default_m=6,
+            ef_search=20,
             embed_dim=1536  # OpenAI embedding dimension
         )
         ```
@@ -92,6 +94,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             table_name (str): Table name.
             schema_name (str): Schema name.
             embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
+            default_m (int, optional): Default M value for the vector index. Defaults to 6.
+            ef_search (int, optional): EF search value for the vector index. Defaults to 20.
             perform_setup (bool, optional): If DB should be set up. Defaults to True.
             debug (bool, optional): Debug mode. Defaults to False.
         """
@@ -150,6 +154,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to MariaDB DB.
             connection_args (Dict[str, Any], optional): A dictionary of connection options.
             embed_dim (int, optional): Embedding dimensions. Defaults to 1536.
+            default_m (int, optional): Default M value for the vector index. Defaults to 6.
+            ef_search (int, optional): EF search value for the vector index. Defaults to 20.
             perform_setup (bool, optional): If DB should be set up. Defaults to True.
             debug (bool, optional): Debug mode. Defaults to False.
 
