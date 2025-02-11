@@ -253,7 +253,7 @@ storage_context = StorageContext.from_defaults(docstore=doc_store)
 # build index
 index = VectorStoreIndex(nodes, storage_context=storage_context)
 ```
-> Note: You can configure the `schema_name` when initializing the new table and instantiating `AlloyDBDocumentStore`.
+> Note: You can configure the `schema_name` along with the `table_name` when initializing a new table and instantiating `AlloyDBDocumentStore`. By default the `schema_name` is `public`.
 
 Under the hood, `AlloyDBDocumentStore` connects to the alloydb database in Google Cloud and adds your nodes to a table under the `schema_name`.
 

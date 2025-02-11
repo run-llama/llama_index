@@ -209,7 +209,7 @@ from llama_index.core import load_index_from_storage
 index = load_index_from_storage(storage_context)
 ```
 
-> Note: You can configure the `schema_name` when initializing the new table and instantiating `AlloyDBIndexStore`.
+> Note: You can configure the `schema_name` along with the `table_name` when initializing a new table and instantiating `AlloyDBIndexStore`. By default the `schema_name` is `public`.
 
 Under the hood, `AlloyDBIndexStore` connects to the alloydb database in Google Cloud and adds your nodes to a table under the `schema_name`.
 
