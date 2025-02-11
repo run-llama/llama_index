@@ -82,7 +82,7 @@ class HTMLNodeParser(NodeParser):
         tags = soup.find_all(self.tags)
         for tag in tags:
             tag_text = self._extract_text_from_tag(tag)
-            if isinstance(tag, Tag) and tag.name == last_tag or last_tag is None:
+            if isinstance(tag, Tag) and (tag.name == last_tag or last_tag is None):
                 last_tag = tag.name
                 current_section += f"{tag_text.strip()}\n"
             else:
