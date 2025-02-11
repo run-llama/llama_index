@@ -224,6 +224,16 @@ def test_count() -> None:
     run_integration_tests is False,
     reason="MariaDB instance required for integration tests",
 )
+def test_drop() -> None:
+    vector_store.add(TEST_NODES)
+    vector_store.drop()
+    assert vector_store.count() == 0
+
+
+@pytest.mark.skipif(
+    run_integration_tests is False,
+    reason="MariaDB instance required for integration tests",
+)
 def test_clear() -> None:
     vector_store.add(TEST_NODES)
     vector_store.clear()

@@ -118,6 +118,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             return
 
         self._engine.dispose()
+        self._is_initialized = False
 
     @classmethod
     def class_name(cls) -> str:
@@ -462,6 +463,17 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             count = result.scalar() or 0
 
         return count
+
+    def drop(self) -> None:
+        self._initialize()
+
+        with self._engine.connect() as connection:
+            stmt = f"""DROP TABLE IF EXISTS `{self.table_name}`"""
+            connection.execute(sqlalchemy.text(stmt))
+
+            connection.commit()
+
+        self.close()
 
     def clear(self) -> None:
         self._initialize()
