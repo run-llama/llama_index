@@ -91,7 +91,8 @@ class HTMLNodeParser(NodeParser):
                         current_section.strip(), node, {"tag": last_tag}
                     )
                 )
-                last_tag = tag.name
+                if isinstance(tag, Tag):
+                    last_tag = tag.name
                 current_section = f"{tag_text}\n"
 
         if current_section:
