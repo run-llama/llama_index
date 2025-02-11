@@ -114,10 +114,11 @@ class HTMLNodeParser(NodeParser):
             if isinstance(elem, NavigableString):
                 if elem.strip():
                     texts.append(elem.strip())
-            elif elem.name in self.tags:
-                continue
-            else:
-                texts.append(elem.get_text().strip())
+            elif isinstance(elem, Tag):
+                if elem.name in self.tags:
+                    continue
+                else:
+                    texts.append(elem.get_text().strip())
         return "\n".join(texts)
 
     def _build_node_from_split(
