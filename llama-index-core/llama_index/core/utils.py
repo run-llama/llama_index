@@ -596,9 +596,15 @@ def resolve_binary(
         ValueError: If no valid source is provided
     """
     if raw_bytes is not None:
+        # check if raw_bytes is base64 encoded
+        try:
+            decoded_bytes = base64.b64decode(raw_bytes)
+        except Exception:
+            decoded_bytes = raw_bytes
+
         if as_base64:
-            return BytesIO(base64.b64encode(raw_bytes))
-        return BytesIO(raw_bytes)
+            return BytesIO(base64.b64encode(decoded_bytes))
+        return BytesIO(decoded_bytes)
 
     elif path is not None:
         path = Path(path) if isinstance(path, str) else path
@@ -617,4 +623,4 @@ def resolve_binary(
             return BytesIO(base64.b64encode(response.content))
         return BytesIO(response.content)
 
-    raise ValueError("No valid source provided for binary data!")
+    raise ValueError("No valid source provided to resolve binary data!")
