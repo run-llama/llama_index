@@ -69,7 +69,7 @@ class HTMLNodeParser(NodeParser):
     def get_nodes_from_node(self, node: BaseNode) -> List[TextNode]:
         """Get nodes from document."""
         try:
-            from bs4 import BeautifulSoup
+            from bs4 import BeautifulSoup, Tag
         except ImportError:
             raise ImportError("bs4 is required to read HTML files.")
 
@@ -81,6 +81,9 @@ class HTMLNodeParser(NodeParser):
 
         tags = soup.find_all(self.tags)
         for tag in tags:
+            if not isinstance(tag, Tag):
+                continue
+
             tag_text = self._extract_text_from_tag(tag)
             if tag.name == last_tag or last_tag is None:
                 last_tag = tag.name
