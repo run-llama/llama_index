@@ -69,7 +69,7 @@ class HTMLNodeParser(NodeParser):
     def get_nodes_from_node(self, node: BaseNode) -> List[TextNode]:
         """Get nodes from document."""
         try:
-            from bs4 import BeautifulSoup
+            from bs4 import BeautifulSoup, Tag
         except ImportError:
             raise ImportError("bs4 is required to read HTML files.")
 
