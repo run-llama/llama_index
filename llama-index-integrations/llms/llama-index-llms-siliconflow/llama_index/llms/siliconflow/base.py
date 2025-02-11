@@ -117,7 +117,7 @@ def create_retry_decorator(
         stop_after_delay_seconds: Optional[float] = None,
 ) -> Callable[[Any], Any]:
     """Create a retry decorator with custom parameters."""
-    retryer = tenacity.Retrying(
+    return tenacity.Retrying(
         stop=tenacity.stop_after_attempt(max_retries)
         if stop_after_delay_seconds is None
         else tenacity.stop_any(
@@ -130,7 +130,6 @@ def create_retry_decorator(
         retry=tenacity.retry_if_exception_type(Exception),
         reraise=True,
     )
-    return retryer
 
 
 def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
