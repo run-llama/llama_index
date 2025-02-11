@@ -453,6 +453,16 @@ class MariaDBVectorStore(BasePydanticVectorStore):
 
             connection.commit()
 
+    def count(self) -> int:
+        self._initialize()
+
+        with self._engine.connect() as connection:
+            stmt = f"""SELECT COUNT(*) FROM `{self.table_name}`"""
+            result = connection.execute(sqlalchemy.text(stmt))
+            count = result.scalar() or 0
+
+        return count
+
     def clear(self) -> None:
         self._initialize()
 

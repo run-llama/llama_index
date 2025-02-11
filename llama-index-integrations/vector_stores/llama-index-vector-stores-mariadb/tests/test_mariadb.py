@@ -4,7 +4,6 @@ from typing import Generator, List
 
 import pytest
 import sqlalchemy
-
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import (
     FilterCondition,
@@ -13,6 +12,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
 )
+
 from llama_index.vector_stores.mariadb import MariaDBVectorStore
 from llama_index.vector_stores.mariadb.base import _meets_min_server_version
 
@@ -209,6 +209,15 @@ def test_delete_nodes() -> None:
     assert len(res) == 1
     assert res[0].get_content() == "consectetur adipiscing elit"
     assert res[0].id_ == "c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d"
+
+
+@pytest.mark.skipif(
+    run_integration_tests is False,
+    reason="MariaDB instance required for integration tests",
+)
+def test_count() -> None:
+    vector_store.add(TEST_NODES)
+    assert vector_store.count() == 3
 
 
 @pytest.mark.skipif(
