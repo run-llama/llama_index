@@ -187,7 +187,7 @@ engine = AlloyDBEngine.from_instance(
     password=PASSWORD,
 )
 
-# initalize a new table in AlloyDB
+# initialize a new table in AlloyDB
 engine.init_index_store_table(
     table_name=TABLE_NAME,
 )

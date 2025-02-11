@@ -326,12 +326,9 @@ memory = ChatMemoryBuffer.from_defaults(
 
 llm = Vertex(model="gemini-1.5-flash-002", project=PROJECT_ID)
 
-chat_engine = SimpleChatEngine(
-    memory=memory, llm=llm, prefix_messages=[]
-)
+chat_engine = SimpleChatEngine(memory=memory, llm=llm, prefix_messages=[])
 
 response = chat_engine.chat("Hello.")
 
 print(response)
-
 ```
