@@ -79,8 +79,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         table_name: str,
         schema_name: str,
         embed_dim: int = 1536,
-        default_m: int = 15,
-        ef_search: int = 50,
+        default_m: int = 6,
+        ef_search: int = 20,
         perform_setup: bool = True,
         debug: bool = False,
     ) -> None:
@@ -132,8 +132,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         connection_string: Optional[Union[str, sqlalchemy.engine.URL]] = None,
         connection_args: Optional[Dict[str, Any]] = None,
         embed_dim: int = 1536,
-        default_m: int = 15,
-        ef_search: int = 50,
+        default_m: int = 6,
+        ef_search: int = 20,
         perform_setup: bool = True,
         debug: bool = False,
     ) -> "MariaDBVectorStore":
