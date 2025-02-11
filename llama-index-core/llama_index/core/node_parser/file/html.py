@@ -82,7 +82,7 @@ class HTMLNodeParser(NodeParser):
         tags = soup.find_all(self.tags)
         for tag in tags:
             tag_text = self._extract_text_from_tag(tag)
-            if tag.name == last_tag or last_tag is None:
+            if isinstance(tag, Tag) and tag.name == last_tag or last_tag is None:
                 last_tag = tag.name
                 current_section += f"{tag_text.strip()}\n"
             else:
@@ -109,17 +109,20 @@ class HTMLNodeParser(NodeParser):
         from bs4 import NavigableString, Tag, PageElement
 
         texts = []
-        for elem in tag.children:
-            if isinstance(elem, NavigableString):
-                if elem.strip():
-                    texts.append(elem.strip())
-            elif isinstance(elem, Tag):
-                if elem.name in self.tags:
-                    continue
-                else:
+        if isinstance(tag, Tag):
+            for elem in tag.children:
+                if isinstance(elem, NavigableString):
+                    if elem.strip():
+                        texts.append(elem.strip())
+                elif isinstance(elem, Tag):
+                    if elem.name in self.tags:
+                        continue
+                    else:
+                        texts.append(elem.get_text().strip())
+                elif isinstance(elem, PageElement):
                     texts.append(elem.get_text().strip())
-            elif isinstance(elem, PageElement):
-                texts.append(elem.get_text().strip())
+        else:
+            texts.append(tag.get_text().strip())
         return "\n".join(texts)
 
     def _build_node_from_split(
