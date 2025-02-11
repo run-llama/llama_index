@@ -465,10 +465,10 @@ def from_openai_completion_logprobs(
 
 
 def from_openai_messages(
-    openai_messages: Sequence[ChatCompletionMessage],
+    openai_messages: Sequence[ChatCompletionMessage], modalities: List[str]
 ) -> List[ChatMessage]:
     """Convert openai message dicts to generic messages."""
-    return [from_openai_message(message) for message in openai_messages]
+    return [from_openai_message(message, modalities) for message in openai_messages]
 
 
 def from_openai_message_dict(message_dict: dict) -> ChatMessage:
