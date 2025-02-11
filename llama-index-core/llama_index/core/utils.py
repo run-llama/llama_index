@@ -1,8 +1,10 @@
 """General utils functions."""
 
 import asyncio
+import base64
 import os
 import random
+import requests
 import sys
 import time
 import traceback
@@ -10,6 +12,7 @@ import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial, wraps
+from io import BytesIO
 from itertools import islice
 from pathlib import Path
 from typing import (
@@ -570,3 +573,48 @@ async def async_unit_generator(x: Any) -> AsyncGenerator[Any, None]:
         Any: the single element
     """
     yield x
+
+
+def resolve_binary(
+    raw_bytes: Optional[bytes] = None,
+    path: Optional[Union[str, Path]] = None,
+    url: Optional[str] = None,
+    as_base64: bool = False,
+) -> BytesIO:
+    """Resolve binary data from various sources into a BytesIO object.
+
+    Args:
+        raw_bytes: Raw bytes data
+        path: File path to read bytes from
+        url: URL to fetch bytes from
+        as_base64: Whether to base64 encode the output bytes
+
+    Returns:
+        BytesIO object containing the binary data
+
+    Raises:
+        ValueError: If no valid source is provided
+    """
+    if raw_bytes is not None:
+        if as_base64:
+            return BytesIO(base64.b64encode(raw_bytes))
+        return BytesIO(raw_bytes)
+
+    elif path is not None:
+        path = Path(path) if isinstance(path, str) else path
+        data = path.read_bytes()
+        if as_base64:
+            return BytesIO(base64.b64encode(data))
+        return BytesIO(data)
+
+    elif url is not None:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        response = requests.get(url)
+        response.raise_for_status()
+        if as_base64:
+            return BytesIO(base64.b64encode(response.content))
+        return BytesIO(response.content)
+
+    raise ValueError("No valid source provided for binary data!")
