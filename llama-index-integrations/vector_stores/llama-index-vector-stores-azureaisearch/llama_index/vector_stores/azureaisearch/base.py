@@ -115,6 +115,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             doc_id_field_key="doc_id",
             language_analyzer="en.lucene",
             vector_algorithm_type="exhaustiveKnn",
+            semantic_configuration_name="mySemanticConfig",
         )
         ```
     """
@@ -141,6 +142,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _vector_profile_name: str = PrivateAttr()
     _compression_type: str = PrivateAttr()
     _user_agent: str = PrivateAttr()
+    _semantic_configuration_name: str = PrivateAttr()
 
     def _normalise_metadata_to_index_fields(
         self,
@@ -369,7 +371,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         )
         logger.info(f"Configuring {index_name} semantic search")
         semantic_config = SemanticConfiguration(
-            name="mySemanticConfig",
+            name=self._semantic_configuration_name,
             prioritized_fields=SemanticPrioritizedFields(
                 content_fields=[SemanticField(field_name=self._field_mapping["chunk"])],
             ),
@@ -491,7 +493,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         )
         logger.info(f"Configuring {index_name} semantic search")
         semantic_config = SemanticConfiguration(
-            name="mySemanticConfig",
+            name=self._semantic_configuration_name,
             prioritized_fields=SemanticPrioritizedFields(
                 content_fields=[SemanticField(field_name=self._field_mapping["chunk"])],
             ),
@@ -553,6 +555,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         # https://learn.microsoft.com/en-us/azure/search/index-add-language-analyzers
         language_analyzer: str = "en.lucene",
         compression_type: str = "none",
+        semantic_configuration_name: Optional[str] = None,
         user_agent: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -633,7 +636,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             raise ValueError(
                 "Only 'exhaustiveKnn' and 'hnsw' are supported for vector_algorithm_type"
             )
-
+        self._semantic_configuration_name = semantic_configuration_name
         self._language_analyzer = language_analyzer
         self._compression_type = compression_type.lower()
 
@@ -1162,17 +1165,22 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         odata_filter = None
+        semantic_configuration_name = None
         if query.filters is not None:
             odata_filter = self._create_odata_filter(query.filters)
-        azure_query_result_search: AzureQueryResultSearchBase = (
-            AzureQueryResultSearchDefault(
-                query,
-                self._field_mapping,
-                odata_filter,
-                self._search_client,
-                self._async_search_client,
+        if self._semantic_configuration_name is not None:
+            semantic_configuration_name = self._semantic_configuration_name
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            azure_query_result_search: AzureQueryResultSearchBase = (
+                AzureQueryResultSearchDefault(
+                    query,
+                    self._field_mapping,
+                    odata_filter,
+                    self._search_client,
+                    self._async_search_client,
+                    semantic_configuration_name,
+                )
             )
-        )
         if query.mode == VectorStoreQueryMode.SPARSE:
             azure_query_result_search = AzureQueryResultSearchSparse(
                 query,
@@ -1180,6 +1188,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                semantic_configuration_name,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
@@ -1188,6 +1197,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                semantic_configuration_name,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
@@ -1196,6 +1206,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                self._semantic_configuration_name,
             )
         return azure_query_result_search.search()
 
@@ -1244,6 +1255,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                self._semantic_configuration_name,
             )
         return await azure_query_result_search.asearch()
 
@@ -1378,12 +1390,14 @@ class AzureQueryResultSearchBase:
         odata_filter: Optional[str],
         search_client: SearchClient,
         async_search_client: AsyncSearchClient,
+        semantic_configuration_name: Optional[str],
     ) -> None:
         self._query = query
         self._field_mapping = field_mapping
         self._odata_filter = odata_filter
         self._search_client = search_client
         self._async_search_client = async_search_client
+        self._semantic_configuration_name = semantic_configuration_name
 
     @property
     def _select_fields(self) -> List[str]:
@@ -1409,6 +1423,7 @@ class AzureQueryResultSearchBase:
             top=self._query.similarity_top_k,
             select=self._select_fields,
             filter=self._odata_filter,
+            semantic_configuration_name=self._semantic_configuration_name,
         )
 
         id_result = []
@@ -1462,6 +1477,7 @@ class AzureQueryResultSearchBase:
             top=self._query.similarity_top_k,
             select=self._select_fields,
             filter=self._odata_filter,
+            semantic_configuration_name=self._semantic_configuration_name,
         )
 
         id_result = []
@@ -1585,7 +1601,7 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
             select=self._select_fields,
             filter=self._odata_filter,
             query_type="semantic",
-            semantic_configuration_name="mySemanticConfig",
+            semantic_configuration_name=self._semantic_configuration_name,
         )
 
         id_result = []
@@ -1641,7 +1657,7 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
             select=self._select_fields,
             filter=self._odata_filter,
             query_type="semantic",
-            semantic_configuration_name="mySemanticConfig",
+            semantic_configuration_name=self._semantic_configuration_name,
         )
 
         id_result = []

@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Generator,
     List,
+    Literal,
     Optional,
     Protocol,
     Sequence,
@@ -217,6 +218,10 @@ class OpenAI(FunctionCallingLLM):
         default=False,
         description="Whether to use strict mode for invoking tools/using schemas.",
     )
+    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
+        default=None,
+        description="The effort to use for reasoning models.",
+    )
 
     _client: Optional[SyncOpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
@@ -248,6 +253,7 @@ class OpenAI(FunctionCallingLLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
         strict: bool = False,
+        reasoning_effort: Optional[Literal["low", "medium", "high"]] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -281,6 +287,7 @@ class OpenAI(FunctionCallingLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
             strict=strict,
+            reasoning_effort=reasoning_effort,
             **kwargs,
         )
 
@@ -417,6 +424,15 @@ class OpenAI(FunctionCallingLLM):
         all_kwargs = {**base_kwargs, **self.additional_kwargs}
         if "stream" not in all_kwargs and "stream_options" in all_kwargs:
             del all_kwargs["stream_options"]
+        if self.model in O1_MODELS and base_kwargs.get("max_tokens") is not None:
+            # O1 models use max_completion_tokens instead of max_tokens
+            all_kwargs["max_completion_tokens"] = all_kwargs.get(
+                "max_completion_tokens", all_kwargs["max_tokens"]
+            )
+            all_kwargs.pop("max_tokens", None)
+        if self.model in O1_MODELS and self.reasoning_effort is not None:
+            # O1 models support reasoning_effort of low, medium, high
+            all_kwargs["reasoning_effort"] = self.reasoning_effort
 
         return all_kwargs
 

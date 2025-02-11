@@ -36,7 +36,7 @@ class GigaChatLLM(CustomLLM):
     GigaChat LLM Implementation.
 
     Examples:
-        `pip install llama-index-llms-gigachat`
+        `pip install llama-index-llms-gigachat-ru`
 
         ```python
         from llama_index.llms.gigachat import GigaChatLLM

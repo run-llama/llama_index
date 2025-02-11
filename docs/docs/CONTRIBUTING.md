@@ -13,15 +13,19 @@ If you're ready to dive in, here’s a quick setup guide to get you going:
    ```bash
    cd llama_index
    ```
-3. Set up a new virtual environment with `Poetry`:
+3. if the shell plugin is not installed, add the plugin by running:
+      ```bash
+      poetry self add poetry-plugin-shell
+      ```
+5. Set up a new virtual environment with `Poetry`:
    ```bash
    poetry shell
    ```
-4. Install development (and/or docs) dependencies:
+6. Install development (and/or docs) dependencies:
    ```bash
    poetry install --only dev,docs --no-root
    ```
-5. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
+7. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
 
    ```bash
    pip install -e llama-index-core
@@ -49,6 +53,8 @@ Help us extend LlamaIndex's functionality by contributing to any of our core mod
 - **Data Loaders**, **Vector Stores**, and more!
 
 Explore the different modules below to get inspired!
+
+New integrations should meaningfully integrate with existing LlamaIndex framework components. At the discretion of LlamaIndex maintainers, some integrations may be declined.
 
 ### 2. 📦 Contribute Tools, Readers, Packs, or Datasets
 
@@ -170,15 +176,19 @@ LlamaIndex is organized as a **monorepo**, meaning different packages live withi
    ```bash
    curl -sSL https://install.python-poetry.org | python3 -
    ```
-2. Activate the environment:
+2. Install the Poetry shell plugin (if you don't already have it):
+   ```bash
+   poetry self add poetry-plugin-shell
+   ```
+3. Activate the environment:
    ```bash
    poetry shell
    ```
-3. Install dependencies:
+4. Install dependencies:
    ```bash
    poetry install --only dev,docs --no-root
    ```
-4. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
+5. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
 
    ```bash
    pip install -e llama-index-core

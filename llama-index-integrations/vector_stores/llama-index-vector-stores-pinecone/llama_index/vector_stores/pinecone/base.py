@@ -371,6 +371,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[List[MetadataFilters]] = None,
         limit: int = 100,
+        include_values: bool = False,
     ) -> List[BaseNode]:
         filter = None
         if filters is not None:
@@ -392,11 +393,16 @@ class PineconeVectorStore(BasePydanticVectorStore):
             vector=query_vector,
             namespace=self.namespace,
             filter=filter,
-            include_values=True,
+            include_values=include_values,
             include_metadata=True,
         )
 
-        return [metadata_dict_to_node(match.metadata) for match in response.matches]
+        nodes = [metadata_dict_to_node(match.metadata) for match in response.matches]
+        if include_values:
+            for node, match in zip(nodes, response.matches):
+                node.embedding = match.values
+
+        return nodes
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """

@@ -29,6 +29,8 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    TextBlock,
+    ImageBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -199,18 +201,32 @@ class Ollama(FunctionCallingLLM):
         }
 
     def _convert_to_ollama_messages(self, messages: Sequence[ChatMessage]) -> Dict:
-        return [
-            {
+        ollama_messages = []
+        for message in messages:
+            cur_ollama_message = {
                 "role": message.role.value,
-                "content": message.content or "",
-                **(
-                    {"tool_calls": message.additional_kwargs["tool_calls"]}
-                    if "tool_calls" in message.additional_kwargs
-                    else {}
-                ),
+                "content": "",
             }
-            for message in messages
-        ]
+            for block in message.blocks:
+                if isinstance(block, TextBlock):
+                    cur_ollama_message["content"] += block.text
+                elif isinstance(block, ImageBlock):
+                    if "images" not in cur_ollama_message:
+                        cur_ollama_message["images"] = []
+                    cur_ollama_message["images"].append(
+                        block.resolve_image(as_base64=True).read().decode("utf-8")
+                    )
+                else:
+                    raise ValueError(f"Unsupported block type: {type(block)}")
+
+            if "tool_calls" in message.additional_kwargs:
+                cur_ollama_message["tool_calls"] = message.additional_kwargs[
+                    "tool_calls"
+                ]
+
+            ollama_messages.append(cur_ollama_message)
+
+        return ollama_messages
 
     def _get_response_token_counts(self, raw_response: dict) -> dict:
         """Get the token usage reported by the response."""
@@ -272,7 +288,6 @@ class Ollama(FunctionCallingLLM):
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
         tool_calls = response.message.additional_kwargs.get("tool_calls", [])
-
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
                 raise ValueError(
@@ -350,6 +365,8 @@ class Ollama(FunctionCallingLLM):
             )
 
             response_txt = ""
+            seen_tool_calls = set()
+            all_tool_calls = []
 
             for r in response:
                 if r["message"]["content"] is None:
@@ -359,7 +376,20 @@ class Ollama(FunctionCallingLLM):
 
                 response_txt += r["message"]["content"]
 
-                tool_calls = r["message"].get("tool_calls", [])
+                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls", [])]
+                for tool_call in new_tool_calls:
+                    if (
+                        str(tool_call["function"]["name"]),
+                        str(tool_call["function"]["arguments"]),
+                    ) in seen_tool_calls:
+                        continue
+                    seen_tool_calls.add(
+                        (
+                            str(tool_call["function"]["name"]),
+                            str(tool_call["function"]["arguments"]),
+                        )
+                    )
+                    all_tool_calls.append(tool_call)
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
                     r["usage"] = token_counts
@@ -368,7 +398,7 @@ class Ollama(FunctionCallingLLM):
                     message=ChatMessage(
                         content=response_txt,
                         role=r["message"]["role"],
-                        additional_kwargs={"tool_calls": tool_calls},
+                        additional_kwargs={"tool_calls": list(set(all_tool_calls))},
                     ),
                     delta=r["message"]["content"],
                     raw=r,
@@ -397,6 +427,8 @@ class Ollama(FunctionCallingLLM):
             )
 
             response_txt = ""
+            seen_tool_calls = set()
+            all_tool_calls = []
 
             async for r in response:
                 if r["message"]["content"] is None:
@@ -406,7 +438,20 @@ class Ollama(FunctionCallingLLM):
 
                 response_txt += r["message"]["content"]
 
-                tool_calls = r["message"].get("tool_calls", [])
+                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls", [])]
+                for tool_call in new_tool_calls:
+                    if (
+                        str(tool_call["function"]["name"]),
+                        str(tool_call["function"]["arguments"]),
+                    ) in seen_tool_calls:
+                        continue
+                    seen_tool_calls.add(
+                        (
+                            str(tool_call["function"]["name"]),
+                            str(tool_call["function"]["arguments"]),
+                        )
+                    )
+                    all_tool_calls.append(tool_call)
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
                     r["usage"] = token_counts
@@ -415,7 +460,7 @@ class Ollama(FunctionCallingLLM):
                     message=ChatMessage(
                         content=response_txt,
                         role=r["message"]["role"],
-                        additional_kwargs={"tool_calls": tool_calls},
+                        additional_kwargs={"tool_calls": all_tool_calls},
                     ),
                     delta=r["message"]["content"],
                     raw=r,
@@ -426,7 +471,7 @@ class Ollama(FunctionCallingLLM):
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
+    ) -> ChatResponse:
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)

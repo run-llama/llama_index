@@ -144,3 +144,25 @@ Content
     assert splits[1].metadata == {"header_path": "/Main Header/"}
     assert splits[2].metadata == {"header_path": "/Main Header/Sub-header/"}
     assert splits[3].metadata == {"header_path": "/"}
+
+
+def test_header_metadata_with_level_jump() -> None:
+    markdown_parser = MarkdownNodeParser()
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""# Main Header
+Content
+### Sub-header
+Content
+### Sub-sub header
+Content
+"""
+            )
+        ]
+    )
+    assert len(splits) == 3
+    assert splits[0].metadata == {"header_path": "/"}
+    assert splits[1].metadata == {"header_path": "/Main Header/"}
+    assert splits[2].metadata == {"header_path": "/Main Header/"}

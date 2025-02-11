@@ -1,36 +1,36 @@
 import asyncio
+import logging
 import time
-from unittest import mock
 from typing import Type
+from unittest import mock
 
 import pytest
-
 from llama_index.core import MockEmbedding
 from llama_index.core.llms.mock import MockLLM
+from llama_index.core.workflow.context_serializers import JsonPickleSerializer
 from llama_index.core.workflow.decorators import step
-from llama_index.core.workflow.events import StartEvent, StopEvent
-from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.events import (
     Event,
-    InputRequiredEvent,
     HumanResponseEvent,
+    InputRequiredEvent,
     StartEvent,
     StopEvent,
 )
+from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.workflow import (
     Context,
     Workflow,
+    WorkflowCancelledByUser,
+    WorkflowConfigurationError,
+    WorkflowRuntimeError,
     WorkflowTimeoutError,
     WorkflowValidationError,
-    WorkflowRuntimeError,
-    WorkflowCancelledByUser,
 )
-from llama_index.core.workflow.context_serializers import JsonPickleSerializer
 
-from .conftest import AnotherTestEvent, LastEvent, OneTestEvent
+from .conftest import AnotherTestEvent, DummyWorkflow, LastEvent, OneTestEvent
 
 
-class TestEvent(Event):
+class EventWithName(Event):
     name: str
 
 
@@ -93,7 +93,7 @@ async def test_workflow_cancelled_by_user(workflow):
     await handler.cancel_run()
     await asyncio.sleep(0.1)  # let workflow get cancelled
     assert handler.is_done()
-    assert type(handler.exception()) == WorkflowCancelledByUser
+    assert type(handler.exception()) is WorkflowCancelledByUser
 
 
 @pytest.mark.asyncio()
@@ -129,7 +129,7 @@ async def test_workflow_validation_unproduced_events():
     workflow = InvalidWorkflow()
     with pytest.raises(
         WorkflowValidationError,
-        match="The following events are consumed but never produced: StopEvent",
+        match="No event of type StopEvent is produced.",
     ):
         await workflow.run()
 
@@ -215,10 +215,13 @@ async def test_workflow_num_workers():
         async def original_step(
             self, ctx: Context, ev: StartEvent
         ) -> OneTestEvent | LastEvent:
-            ctx.data["num_to_collect"] = 3
-            ctx.session.send_event(OneTestEvent(test_param="test1"))
-            ctx.session.send_event(OneTestEvent(test_param="test2"))
-            ctx.session.send_event(OneTestEvent(test_param="test3"))
+            await ctx.set("num_to_collect", 3)
+            ctx.send_event(OneTestEvent(test_param="test1"))
+            ctx.send_event(OneTestEvent(test_param="test2"))
+            ctx.send_event(OneTestEvent(test_param="test3"))
+
+            # send one extra event
+            ctx.session.send_event(AnotherTestEvent(another_test_param="test4"))
 
             return LastEvent()
 
@@ -231,9 +234,8 @@ async def test_workflow_num_workers():
         async def final_step(
             self, ctx: Context, ev: AnotherTestEvent | LastEvent
         ) -> StopEvent:
-            events = ctx.collect_events(
-                ev, [AnotherTestEvent] * ctx.data["num_to_collect"]
-            )
+            n = await ctx.get("num_to_collect")
+            events = ctx.collect_events(ev, [AnotherTestEvent] * n)
             if events is None:
                 return None  # type: ignore
             return StopEvent(result=[ev.another_test_param for ev in events])
@@ -241,11 +243,21 @@ async def test_workflow_num_workers():
     workflow = NumWorkersWorkflow()
 
     start_time = time.time()
-    result = await workflow.run()
+    handler = workflow.run()
+    result = await handler
     end_time = time.time()
 
     assert workflow.is_done()
-    assert set(result) == {"test1", "test2", "test3"}
+    assert set(result) == {"test1", "test2", "test4"}
+
+    # ctx should have 1 extra event
+    assert (
+        len(handler.ctx._events_buffer["tests.workflow.conftest.AnotherTestEvent"]) == 1
+    )
+
+    # ensure ctx is serializable
+    ctx = handler.ctx
+    ctx.to_dict()
 
     # Check if the execution time is close to 1 second (with some tolerance)
     execution_time = end_time - start_time
@@ -259,7 +271,7 @@ async def test_workflow_step_send_event():
     class StepSendEventWorkflow(Workflow):
         @step
         async def step1(self, ctx: Context, ev: StartEvent) -> OneTestEvent:
-            ctx.session.send_event(OneTestEvent(), step="step2")
+            ctx.send_event(OneTestEvent(), step="step2")
             return None  # type: ignore
 
         @step
@@ -565,13 +577,17 @@ async def test_workflow_context_to_dict_mid_run(workflow):
     assert new_handler.is_done()
     assert result == "Workflow completed"
 
+    # Clean up
+    await handler.cancel_run()
+    await asyncio.sleep(1)
+
 
 @pytest.mark.asyncio()
 async def test_workflow_context_to_dict(workflow):
     handler = workflow.run()
     ctx = handler.ctx
 
-    ctx.send_event(TestEvent(name="test"))
+    ctx.send_event(EventWithName(name="test"))
 
     # get the context dict
     data = ctx.to_dict()
@@ -700,5 +716,86 @@ async def test_workflow_run_num_concurrent(
         await poll_task
     e = poll_task.exception()
 
-    assert type(e) == expected_exception
+    assert type(e) is expected_exception
     assert results == [f"Run {ix}: Done" for ix in range(1, 5)]
+
+
+@pytest.mark.asyncio()
+async def test_custom_stop_event():
+    class MyStart(StartEvent):
+        query: str
+
+    class MyStop(StopEvent):
+        outcome: str
+
+    class CustomEventsWorkflow(Workflow):
+        @step
+        async def start_step(self, ev: MyStart) -> OneTestEvent:
+            return OneTestEvent()
+
+        @step
+        async def middle_step(self, ev: OneTestEvent) -> LastEvent:
+            return LastEvent()
+
+        @step
+        async def end_step(self, ev: LastEvent) -> MyStop:
+            return MyStop(outcome="Workflow completed")
+
+    wf = CustomEventsWorkflow(start_event_class=MyStart, stop_event_class=MyStop)
+    assert wf._start_event_class == MyStart
+    assert wf._stop_event_class == MyStop
+    result = await wf.run(query="foo")
+
+
+def test_is_done(workflow):
+    assert workflow.is_done() is True
+    workflow._stepwise_context = mock.MagicMock()
+    assert workflow.is_done() is False
+
+
+def test_wrong_event_types():
+    class CustomEvent(Event):
+        pass
+
+    with pytest.raises(
+        WorkflowConfigurationError,
+        match="Start event class 'CustomEvent' must derive from 'StartEvent'",
+    ):
+        DummyWorkflow(start_event_class=CustomEvent)  # type: ignore
+
+    with pytest.raises(
+        WorkflowConfigurationError,
+        match="Stop event class 'CustomEvent' must derive from 'StopEvent'",
+    ):
+        DummyWorkflow(stop_event_class=CustomEvent)  # type: ignore
+
+
+def test__get_start_event(caplog):
+    class CustomEvent(StartEvent):
+        field: str
+
+    e = CustomEvent(field="test")
+    d = DummyWorkflow(start_event_class=CustomEvent)
+
+    # Invoke run() with wrong start_event type
+    with pytest.raises(
+        ValueError,
+        match="The 'start_event' argument must be an instance of 'StartEvent'.",
+    ):
+        d._get_start_event(start_event="wrong type", arg="foo")  # type: ignore
+
+    # Invoke run() passing a legit start event but with additional kwargs
+    with caplog.at_level(logging.WARN):
+        assert d._get_start_event(e, this_will_be_ignored=True) == e
+        assert (
+            "Keyword arguments are not supported when 'run()' is invoked with the 'start_event' parameter."
+            in caplog.text
+        )
+
+    # Old style kwargs passed to the designed StartEvent
+    assert type(d._get_start_event(None, field="test")) is CustomEvent
+
+    # Old style but wrong kwargs passed to the designed StartEvent
+    err = "Failed creating a start event of type 'CustomEvent' with the keyword arguments: {'wrong_field': 'test'}"
+    with pytest.raises(WorkflowRuntimeError, match=err):
+        d._get_start_event(None, wrong_field="test")
