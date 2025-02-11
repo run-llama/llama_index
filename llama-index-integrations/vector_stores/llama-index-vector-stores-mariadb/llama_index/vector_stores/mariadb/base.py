@@ -201,7 +201,6 @@ class MariaDBVectorStore(BasePydanticVectorStore):
 
     def _create_table_if_not_exists(self) -> None:
         with self._engine.connect() as connection:
-            connection.execute(sqlalchemy.text("SET @@mhnsw_ef_search=100"))
             # Note that we define the vector index with DISTANCE=cosine, because we use VEC_DISTANCE_COSINE.
             # This is because searches using a different distance function do not use the vector index.
             # Reference: https://mariadb.com/kb/en/create-table-with-vectors/
