@@ -4,7 +4,17 @@ import functools
 import requests
 import tenacity
 import asyncio
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -110,23 +120,27 @@ def is_function_calling_llm(model: str):
 
 
 def create_retry_decorator(
-        max_retries: int,
-        min_seconds: float = 1,
-        max_seconds: float = 20,
-        random_exponential: bool = True,
-        stop_after_delay_seconds: Optional[float] = None,
+    max_retries: int,
+    min_seconds: float = 1,
+    max_seconds: float = 20,
+    random_exponential: bool = True,
+    stop_after_delay_seconds: Optional[float] = None,
 ) -> Callable[[Any], Any]:
     """Create a retry decorator with custom parameters."""
     return tenacity.Retrying(
-        stop=tenacity.stop_after_attempt(max_retries)
-        if stop_after_delay_seconds is None
-        else tenacity.stop_any(
-            tenacity.stop_after_delay(stop_after_delay_seconds),
-            tenacity.stop_after_attempt(max_retries),
+        stop=(
+            tenacity.stop_after_attempt(max_retries)
+            if stop_after_delay_seconds is None
+            else tenacity.stop_any(
+                tenacity.stop_after_delay(stop_after_delay_seconds),
+                tenacity.stop_after_attempt(max_retries),
+            )
         ),
-        wait=tenacity.wait_random_exponential(min=min_seconds, max=max_seconds)
-        if random_exponential
-        else tenacity.wait_random(min=min_seconds, max=max_seconds),
+        wait=(
+            tenacity.wait_random_exponential(min=min_seconds, max=max_seconds)
+            if random_exponential
+            else tenacity.wait_random(min=min_seconds, max=max_seconds)
+        ),
         retry=tenacity.retry_if_exception_type(Exception),
         reraise=True,
     )
@@ -224,17 +238,17 @@ class SiliconFlow(FunctionCallingLLM):
     _headers: Any = PrivateAttr()
 
     def __init__(
-            self,
-            api_key: str,
-            model: str = "deepseek-ai/DeepSeek-V2.5",
-            base_url: str = DEFAULT_SILICONFLOW_API_URL,
-            temperature: float = 0.7,
-            max_tokens: int = 512,
-            frequency_penalty: float = 0.5,
-            timeout: float = DEFAULT_REQUEST_TIMEOUT,
-            stop: Optional[str] = None,
-            max_retries: int = 3,
-            **kwargs: Any,
+        self,
+        api_key: str,
+        model: str = "deepseek-ai/DeepSeek-V2.5",
+        base_url: str = DEFAULT_SILICONFLOW_API_URL,
+        temperature: float = 0.7,
+        max_tokens: int = 512,
+        frequency_penalty: float = 0.5,
+        timeout: float = DEFAULT_REQUEST_TIMEOUT,
+        stop: Optional[str] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             model=model,
@@ -287,13 +301,13 @@ class SiliconFlow(FunctionCallingLLM):
         ]
 
     def _prepare_chat_with_tools(
-            self,
-            tools: List["BaseTool"],
-            user_msg: Optional[Union[str, ChatMessage]] = None,
-            chat_history: Optional[List[ChatMessage]] = None,
-            verbose: bool = False,
-            allow_parallel_tool_calls: bool = False,
-            **kwargs: Any,
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [
             tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
@@ -312,11 +326,11 @@ class SiliconFlow(FunctionCallingLLM):
         }
 
     def _validate_chat_with_tools_response(
-            self,
-            response: ChatResponse,
-            tools: List["BaseTool"],
-            allow_parallel_tool_calls: bool = False,
-            **kwargs: Any,
+        self,
+        response: ChatResponse,
+        tools: List["BaseTool"],
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
     ) -> ChatResponse:
         """Validate the response from chat_with_tools."""
         if not allow_parallel_tool_calls:
@@ -324,10 +338,10 @@ class SiliconFlow(FunctionCallingLLM):
         return response
 
     def get_tool_calls_from_response(
-            self,
-            response: Union[ChatResponse, CompletionResponse],
-            error_on_no_tool_call: bool = True,
-            **kwargs: Any,
+        self,
+        response: Union[ChatResponse, CompletionResponse],
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
         if isinstance(response, ChatResponse):
@@ -390,7 +404,7 @@ class SiliconFlow(FunctionCallingLLM):
     @llm_chat_callback()
     @llm_retry_decorator
     async def achat(
-            self, messages: Sequence[ChatMessage], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         messages_dict = self._convert_to_llm_messages(messages)
         response_format = kwargs.get("response_format", {"type": "text"})
@@ -406,10 +420,10 @@ class SiliconFlow(FunctionCallingLLM):
             }
 
             async with session.post(
-                    self.base_url,
-                    json=input_json,
-                    headers=self._headers,
-                    timeout=self.timeout,
+                self.base_url,
+                json=input_json,
+                headers=self._headers,
+                timeout=self.timeout,
             ) as response:
                 response_json = await response.json()
                 message: dict = response_json["choices"][0]["message"]
@@ -426,7 +440,7 @@ class SiliconFlow(FunctionCallingLLM):
     @llm_chat_callback()
     @llm_retry_decorator
     def stream_chat(
-            self, messages: Sequence[ChatMessage], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         messages_dict = self._convert_to_llm_messages(messages)
         response_format = kwargs.get("response_format", {"type": "text"})
@@ -476,7 +490,7 @@ class SiliconFlow(FunctionCallingLLM):
     @llm_chat_callback()
     @llm_retry_decorator
     async def astream_chat(
-            self, messages: Sequence[ChatMessage], **kwargs: Any
+        self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         messages_dict = self._convert_to_llm_messages(messages)
         response_format = kwargs.get("response_format", {"type": "text"})
@@ -493,10 +507,10 @@ class SiliconFlow(FunctionCallingLLM):
                     **self.model_kwargs,
                 }
                 async with session.post(
-                        self.base_url,
-                        json=input_json,
-                        headers=self._headers,
-                        timeout=self.timeout,
+                    self.base_url,
+                    json=input_json,
+                    headers=self._headers,
+                    timeout=self.timeout,
                 ) as response:
                     response.raise_for_status()
                     response_txt = ""
@@ -526,29 +540,25 @@ class SiliconFlow(FunctionCallingLLM):
 
     @llm_completion_callback()
     def complete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         return chat_to_completion_decorator(self.chat)(prompt, **kwargs)
 
     @llm_completion_callback()
     async def acomplete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        return await achat_to_completion_decorator(self.achat)(
-            prompt, **kwargs
-        )
+        return await achat_to_completion_decorator(self.achat)(prompt, **kwargs)
 
     @llm_completion_callback()
     def stream_complete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        return stream_chat_to_completion_decorator(self.stream_chat)(
-            prompt, **kwargs
-        )
+        return stream_chat_to_completion_decorator(self.stream_chat)(prompt, **kwargs)
 
     @llm_completion_callback()
     async def astream_complete(
-            self, prompt: str, formatted: bool = False, **kwargs: Any
+        self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         return await astream_chat_to_completion_decorator(self.astream_chat)(
             prompt, **kwargs

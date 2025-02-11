@@ -26,15 +26,17 @@ AVAILABLE_OPTIONS = [
 
 
 def create_retry_decorator(
-        max_retries: int,
-        min_seconds: float = 1,
-        max_seconds: float = 20,
-        random_exponential: bool = True,
-        stop_after_delay_seconds: Optional[float] = None,
+    max_retries: int,
+    min_seconds: float = 1,
+    max_seconds: float = 20,
+    random_exponential: bool = True,
+    stop_after_delay_seconds: Optional[float] = None,
 ) -> Callable[[Any], Any]:
     """Create a retry decorator with custom parameters."""
     if random_exponential:
-        wait_strategy = tenacity.wait_random_exponential(min=min_seconds, max=max_seconds)
+        wait_strategy = tenacity.wait_random_exponential(
+            min=min_seconds, max=max_seconds
+        )
     else:
         wait_strategy = tenacity.wait_random(min=min_seconds, max=max_seconds)
 
@@ -139,14 +141,14 @@ class SiliconFlowEmbedding(BaseEmbedding):
     _headers: Any = PrivateAttr()
 
     def __init__(
-            self,
-            model: str = "BAAI/bge-m3",
-            api_key: Optional[str] = None,
-            base_url: str = DEFAULT_SILICONFLOW_API_URL,
-            encoding_format: Optional[str] = "float",
-            max_retries: int = 3,
-            callback_manager: Optional[CallbackManager] = None,
-            **kwargs: Any,
+        self,
+        model: str = "BAAI/bge-m3",
+        api_key: Optional[str] = None,
+        base_url: str = DEFAULT_SILICONFLOW_API_URL,
+        encoding_format: Optional[str] = "float",
+        max_retries: int = 3,
+        callback_manager: Optional[CallbackManager] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             model=model,
@@ -158,7 +160,7 @@ class SiliconFlowEmbedding(BaseEmbedding):
             **kwargs,
         )
         assert (
-                self.encoding_format in VALID_ENCODING
+            self.encoding_format in VALID_ENCODING
         ), f"""\
             Encoding_format parameter {self.encoding_format} not supported.
             Please choose one of {VALID_ENCODING}".
@@ -215,8 +217,8 @@ class SiliconFlowEmbedding(BaseEmbedding):
 
     @embedding_retry_decorator
     async def _aget_text_embeddings(
-            self,
-            texts: List[str],
+        self,
+        texts: List[str],
     ) -> List[List[float]]:
         async with aiohttp.ClientSession() as session:
             input_json = {
@@ -226,7 +228,7 @@ class SiliconFlowEmbedding(BaseEmbedding):
             }
 
             async with session.post(
-                    self.base_url, json=input_json, headers=self._headers
+                self.base_url, json=input_json, headers=self._headers
             ) as response:
                 response_json = await response.json()
                 response.raise_for_status()
