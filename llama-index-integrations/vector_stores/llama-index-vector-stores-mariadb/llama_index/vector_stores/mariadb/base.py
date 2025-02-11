@@ -6,7 +6,6 @@ from typing import Any, Dict, List, NamedTuple, Optional, Union
 from urllib.parse import quote_plus
 
 import sqlalchemy
-
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
