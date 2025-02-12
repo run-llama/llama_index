@@ -10,6 +10,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
     TextBlock,
+    AudioBlock,
 )
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.llms.llm import LLM
@@ -30,4 +31,5 @@ __all__ = [
     "MockLLM",
     "ImageBlock",
     "TextBlock",
+    "AudioBlock",
 ]

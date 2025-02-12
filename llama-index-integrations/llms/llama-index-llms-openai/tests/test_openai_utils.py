@@ -189,7 +189,8 @@ def test_from_openai_messages_function_calling_azure(
     azure_chat_messages_with_function_calling: List[ChatMessage],
 ) -> None:
     chat_messages = from_openai_messages(
-        azure_openai_message_dicts_with_function_calling
+        azure_openai_message_dicts_with_function_calling,
+        ["text"],
     )
     assert chat_messages == azure_chat_messages_with_function_calling
 

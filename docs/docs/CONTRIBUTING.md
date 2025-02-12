@@ -13,19 +13,15 @@ If you're ready to dive in, here’s a quick setup guide to get you going:
    ```bash
    cd llama_index
    ```
-3. if the shell plugin is not installed, add the plugin by running:
-      ```bash
-      poetry self add poetry-plugin-shell
-      ```
-5. Set up a new virtual environment with `Poetry`:
+3. Set up a new virtual environment with `Poetry`:
    ```bash
    poetry shell
    ```
-6. Install development (and/or docs) dependencies:
+4. Install development (and/or docs) dependencies:
    ```bash
    poetry install --only dev,docs --no-root
    ```
-7. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
+5. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
 
    ```bash
    pip install -e llama-index-core
