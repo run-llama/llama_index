@@ -120,8 +120,8 @@ class NVIDIAEmbedding(BaseEmbedding):
         )
 
         self._is_hosted = self.base_url in KNOWN_URLS
-        if not is_hosted:
-            base_url = self._validate_url(base_url)
+        if not self._is_hosted:
+            self.base_url = self._validate_url(self.base_url)
 
         if self._is_hosted:  # hosted on API Catalog (build.nvidia.com)
             if api_key == "NO_API_KEY_PROVIDED":

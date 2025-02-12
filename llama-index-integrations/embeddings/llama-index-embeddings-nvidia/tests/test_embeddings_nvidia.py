@@ -101,7 +101,7 @@ def test_model_incompatible_client_model() -> None:
     model_name = "x"
     err_msg = (
         f"Model {model_name} is incompatible with client NVIDIAEmbedding. "
-        f"Please check `NVIDIAEmbedding.available_models()`."
+        f"Please check `NVIDIAEmbedding.available_models`."
     )
     with pytest.raises(ValueError) as msg:
         NVIDIAEmbedding(api_key="BOGUS", model=model_name)
