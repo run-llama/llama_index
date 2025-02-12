@@ -2,7 +2,7 @@ from typing import Optional, Literal
 import warnings
 
 # from dataclasses import dataclass
-from pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, model_validator
 
 DEFAULT_MODEL = "meta/llama3-8b-instruct"
 BASE_URL = "https://integrate.api.nvidia.com/v1/"
@@ -21,7 +21,7 @@ class Model(BaseModel):
     """
 
     id: str
-    model_type: Literal["chat", "vlm"] = "chat"
+    model_type: Literal["chat", "vlm", "completions"] = "chat"
     client: str = "NVIDIA"
     endpoint: Optional[str] = None
     aliases: Optional[list] = None
@@ -32,17 +32,16 @@ class Model(BaseModel):
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def validate(self):
+    @model_validator(mode="after")
+    def validate_client(self) -> "Model":
         if self.client:
-            supported = {"NVIDIA": ("chat", "vlm")}
-            model_type = self.model_type
-            if model_type not in supported[self.client]:
-                err_msg = (
-                    f"Model type '{model_type}' not supported by client '{self.client}'"
+            supported = {"NVIDIA": ("chat", "vlm", "completions")}
+            if self.model_type not in supported.get(self.client, ()):
+                raise ValueError(
+                    f"Model type '{self.model_type}' not supported "
+                    f"by client '{self.client}'"
                 )
-                raise ValueError(err_msg)
-
-        return hash(self.id)
+        return self
 
 
 CHAT_MODEL_TABLE = {
@@ -503,42 +502,42 @@ CHAT_MODEL_TABLE = {
 VLM_MODEL_TABLE = {
     "adept/fuyu-8b": Model(
         id="adept/fuyu-8b",
-        model_type="nv-vlm",
+        model_type="vlm",
         client="NVIDIA",
         endpoint="https://ai.api.nvidia.com/v1/vlm/adept/fuyu-8b",
         aliases=["ai-fuyu-8b", "playground_fuyu_8b", "fuyu_8b"],
     ),
     "google/deplot": Model(
         id="google/deplot",
-        model_type="nv-vlm",
+        model_type="vlm",
         client="NVIDIA",
         endpoint="https://ai.api.nvidia.com/v1/vlm/google/deplot",
         aliases=["ai-google-deplot", "playground_deplot", "deplot"],
     ),
     "microsoft/kosmos-2": Model(
         id="microsoft/kosmos-2",
-        model_type="nv-vlm",
+        model_type="vlm",
         client="NVIDIA",
         endpoint="https://ai.api.nvidia.com/v1/vlm/microsoft/kosmos-2",
         aliases=["ai-microsoft-kosmos-2", "playground_kosmos_2", "kosmos_2"],
     ),
     "nvidia/neva-22b": Model(
         id="nvidia/neva-22b",
-        model_type="nv-vlm",
+        model_type="vlm",
         client="NVIDIA",
         endpoint="https://ai.api.nvidia.com/v1/vlm/nvidia/neva-22b",
         aliases=["ai-neva-22b", "playground_neva_22b", "neva_22b"],
     ),
     "google/paligemma": Model(
         id="google/paligemma",
-        model_type="nv-vlm",
+        model_type="vlm",
         client="NVIDIA",
         endpoint="https://ai.api.nvidia.com/v1/vlm/google/paligemma",
         aliases=["ai-google-paligemma"],
     ),
     "microsoft/phi-3-vision-128k-instruct": Model(
         id="microsoft/phi-3-vision-128k-instruct",
-        model_type="nv-vlm",
+        model_type="vlm",
         client="NVIDIA",
         endpoint="https://ai.api.nvidia.com/v1/vlm/microsoft/phi-3-vision-128k-instruct",
         aliases=["ai-phi-3-vision-128k-instruct"],
@@ -568,31 +567,25 @@ VLM_MODEL_TABLE = {
     ),
 }
 
+COMPLETION_MODEL_TABLE = {
+    "bigcode/starcoder2-7b": Model(
+        id="bigcode/starcoder2-7b",
+        model_type="completions",
+        client="NVIDIA",
+    ),
+    "bigcode/starcoder2-15b": Model(
+        id="bigcode/starcoder2-15b",
+        model_type="completions",
+        client="NVIDIA",
+    ),
+    "nvidia/mistral-nemo-minitron-8b-base": Model(
+        id="nvidia/mistral-nemo-minitron-8b-base",
+        model_type="completions",
+        client="NVIDIA",
+    ),
+}
 
-NVIDIA_FUNTION_CALLING_MODELS = (
-    "nv-mistralai/mistral-nemo-12b-instruct",
-    "meta/llama-3.1-8b-instruct",
-    "meta/llama-3.1-70b-instruct",
-    "meta/llama-3.1-405b-instruct",
-    "meta/llama-3.3-70b-instruct",
-    "mistralai/mistral-large-2-instruct",
-)
-
-COMPLETION_MODELS = (
-    "bigcode/starcoder2-7b",
-    "bigcode/starcoder2-15b",
-    "nvidia/mistral-nemo-minitron-8b-base",
-)
-
-MODEL_TABLE = {**CHAT_MODEL_TABLE, **VLM_MODEL_TABLE}
-
-
-def is_chat_model(modelname: str):
-    return modelname not in COMPLETION_MODELS
-
-
-def is_nvidia_function_calling_model(modelname: str) -> bool:
-    return modelname in NVIDIA_FUNTION_CALLING_MODELS
+MODEL_TABLE = {**CHAT_MODEL_TABLE, **VLM_MODEL_TABLE, **COMPLETION_MODEL_TABLE}
 
 
 def lookup_model(name: str) -> Optional[Model]:
