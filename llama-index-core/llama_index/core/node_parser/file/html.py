@@ -105,7 +105,7 @@ class HTMLNodeParser(NodeParser):
         return html_nodes
 
     def _extract_text_from_tag(
-        self, tag: Union[Tag, NavigableString, PageElement]
+        self, tag: Union["Tag", "NavigableString", "PageElement"]
     ) -> str:
         from bs4 import NavigableString, Tag, PageElement
 
