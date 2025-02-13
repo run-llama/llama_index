@@ -279,6 +279,7 @@ def test_azureaisearch_semantic_query() -> None:
             "metadata": json.dumps({"key": "value1"}),
             "doc_id": "doc1",
             "@search.score": 0.9,
+            "@search.reranker_score": 0.7,
         },
         {
             "id": "test_id_2",
@@ -287,6 +288,7 @@ def test_azureaisearch_semantic_query() -> None:
             "metadata": json.dumps({"key": "value2"}),
             "doc_id": "doc2",
             "@search.score": 0.8,
+            "@search.reranker_score": 0.7,
         },
     ]
     search_client.search.return_value = mock_search_results
