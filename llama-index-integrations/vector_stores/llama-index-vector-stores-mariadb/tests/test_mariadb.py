@@ -49,18 +49,18 @@ TEST_NODES: List[TextNode] = [
     ),
 ]
 
-vector_store = MariaDBVectorStore.from_params(
-    database="test",
-    table_name="vector_store_test",
-    embed_dim=3,
-    host="127.0.0.1",
-    user="root",
-    password="test",
-    port="3306",
-)
-
 
 try:
+    vector_store = MariaDBVectorStore.from_params(
+        database="test",
+        table_name="vector_store_test",
+        embed_dim=3,
+        host="127.0.0.1",
+        user="root",
+        password="test",
+        port="3306",
+    )
+
     # If you want to run the integration tests you need to do:
     # docker-compose up
 
