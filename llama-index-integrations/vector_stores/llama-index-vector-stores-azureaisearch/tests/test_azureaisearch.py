@@ -295,6 +295,7 @@ def test_azureaisearch_semantic_query() -> None:
 
     # Create a sample query
     query = VectorStoreQuery(
+        query_str="test query",
         query_embedding=[0.1, 0.2],
         similarity_top_k=2,
         mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
@@ -305,7 +306,7 @@ def test_azureaisearch_semantic_query() -> None:
 
     # Assert the search method was called with correct parameters
     search_client.search.assert_called_once_with(
-        search_text="*",
+        search_text="test query",
         vector_queries=[
             VectorizedQuery(
                 vector=[0.1, 0.2], k_nearest_neighbors=2, fields="embedding"
