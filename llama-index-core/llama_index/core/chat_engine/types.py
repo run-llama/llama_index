@@ -331,7 +331,7 @@ class StreamingAgentChatResponse:
         self.response = self.unformatted_response.strip()
         if self.awrite_response_to_history_task:
             # Make sure that the background task ran to completion, retrieve any exceptions
-            await asyncio.wait(self.awrite_response_to_history_task)
+            await self.awrite_response_to_history_task
             self.awrite_response_to_history_task = None  # No need to keep the reference to the finished task
 
 
