@@ -12,6 +12,7 @@ from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.aio import (
     SearchIndexClient as AsyncSearchIndexClient,
 )
+
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -1165,11 +1166,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         odata_filter = None
-        semantic_configuration_name = None
         if query.filters is not None:
             odata_filter = self._create_odata_filter(query.filters)
-        if self._semantic_configuration_name is not None:
-            semantic_configuration_name = self._semantic_configuration_name
+
         if query.mode == VectorStoreQueryMode.DEFAULT:
             azure_query_result_search: AzureQueryResultSearchBase = (
                 AzureQueryResultSearchDefault(
@@ -1178,7 +1177,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     odata_filter,
                     self._search_client,
                     self._async_search_client,
-                    semantic_configuration_name,
                 )
             )
         if query.mode == VectorStoreQueryMode.SPARSE:
@@ -1188,7 +1186,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                semantic_configuration_name,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
@@ -1197,7 +1194,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                semantic_configuration_name,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
@@ -1390,7 +1386,7 @@ class AzureQueryResultSearchBase:
         odata_filter: Optional[str],
         search_client: SearchClient,
         async_search_client: AsyncSearchClient,
-        semantic_configuration_name: Optional[str],
+        semantic_configuration_name: Optional[str] = None,
     ) -> None:
         self._query = query
         self._field_mapping = field_mapping
