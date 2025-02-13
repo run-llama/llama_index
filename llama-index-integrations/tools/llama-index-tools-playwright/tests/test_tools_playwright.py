@@ -1,6 +1,7 @@
 import pytest
 import json
 import os
+import asyncio
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.playwright import PlaywrightToolSpec
@@ -94,38 +95,46 @@ TEST_SELECTOR_FILL = "#__docusaurus > nav > div.navbar__inner > div.navbar__item
 TEST_VALUE = "click"
 
 
-def test_class():
+@pytest.fixture(scope="session")
+def PlaywrightTool():
+    browser = asyncio.get_event_loop().run_until_complete(
+        PlaywrightToolSpec.create_async_playwright_browser(headless=True)
+    )
+    playwright_tool = PlaywrightToolSpec.from_async_browser(browser)
+    yield playwright_tool
+    asyncio.get_event_loop().run_until_complete(browser.close())
+
+
+def test_class(PlaywrightTool):
     names_of_base_classes = [b.__name__ for b in PlaywrightToolSpec.__mro__]
     assert BaseToolSpec.__name__ in names_of_base_classes
 
 
-@pytest.fixture(scope="session")
-def PlaywrightTool():
-    browser = PlaywrightToolSpec.create_sync_playwright_browser(headless=True)
-    playwright_tool = PlaywrightToolSpec.from_sync_browser(browser)
-    yield playwright_tool
-    browser.close()
-
-
 def test_navigate_to(PlaywrightTool):
-    PlaywrightTool.navigate_to("https://playwright.dev/python/docs/intro")
-    assert (
-        PlaywrightTool.get_current_page() == "https://playwright.dev/python/docs/intro"
+    asyncio.get_event_loop().run_until_complete(
+        PlaywrightTool.navigate_to("https://playwright.dev/python/docs/intro")
     )
+    current_page = asyncio.get_event_loop().run_until_complete(
+        PlaywrightTool.get_current_page()
+    )
+    assert current_page == "https://playwright.dev/python/docs/intro"
 
 
 def test_extract_hyperlinks(PlaywrightTool):
-    assert set(json.loads(PlaywrightTool.extract_hyperlinks())) == TEST_HYPERLINKS
+    hyperlinks = asyncio.get_event_loop().run_until_complete(
+        PlaywrightTool.extract_hyperlinks()
+    )
+    assert set(json.loads(hyperlinks)) == TEST_HYPERLINKS
 
 
 def test_extract_text(PlaywrightTool):
-    print(PlaywrightTool.extract_text())
+    text = asyncio.get_event_loop().run_until_complete(PlaywrightTool.extract_text())
     # different systems may have different whitespace, so we allow for some leeway
-    assert abs(len(PlaywrightTool.extract_text()) - len(TEST_TEXT)) < 25
+    assert abs(len(text) - len(TEST_TEXT)) < 25
 
 
 def test_get_elements(PlaywrightTool):
-    element = PlaywrightTool.get_elements(
-        selector=TEST_SELECTOR, attributes=["innerText"]
+    element = asyncio.get_event_loop().run_until_complete(
+        PlaywrightTool.get_elements(selector=TEST_SELECTOR, attributes=["innerText"])
     )
     assert element == TEST_ELEMENTS
