@@ -97,7 +97,8 @@ def close_db_connection(request: pytest.FixtureRequest) -> Generator:
     if "noautousefixtures" in request.keywords:
         return
 
-    vector_store.close()
+    if vector_store is not None:
+        vector_store.close()
 
 
 @pytest.mark.parametrize(
