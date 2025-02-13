@@ -3,8 +3,8 @@ import json
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 
-from playwright.sync_api import Browser as SyncBrowser
-from playwright.sync_api import Page as SyncPage
+from playwright.async_api import Browser as AsyncBrowser
+from playwright.async_api import Page as AsyncPage
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -16,6 +16,7 @@ class PlaywrightToolSpec(BaseToolSpec):
 
     spec_functions = [
         "click",
+        "fill",
         "get_current_page",
         "extract_hyperlinks",
         "extract_text",
@@ -26,8 +27,8 @@ class PlaywrightToolSpec(BaseToolSpec):
 
     def __init__(
         self,
-        sync_browser: Optional[SyncBrowser] = None,
-        visible_only: bool = True,
+        async_browser: Optional[AsyncBrowser] = None,
+        visible_only: bool = False,
         playwright_strict: bool = False,
         playwright_timeout: float = 1_000,
         absolute_url: bool = False,
@@ -37,7 +38,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         Initialize PlaywrightToolSpec.
 
         Args:
-            sync_browser: Optional[SyncBrowser] = None. A browser instance to use for automation.
+            async_browser: Optional[AsyncBrowser] = None. A browser instance to use for automation.
             visible_only: bool = True. Whether to only click on visible elements.
             playwright_strict: bool = False. Whether to use strict mode for playwright.
             playwright_timeout: float = 1_000. Timeout for playwright operations.
@@ -45,7 +46,7 @@ class PlaywrightToolSpec(BaseToolSpec):
             html_parser: str = "html.parser". The html parser to use with BeautifulSoup
 
         """
-        self.sync_browser = sync_browser
+        self.async_browser = async_browser
 
         # for click tool
         self.visible_only = visible_only
@@ -57,11 +58,11 @@ class PlaywrightToolSpec(BaseToolSpec):
         self.html_parser = html_parser
 
     @classmethod
-    def from_sync_browser(cls, sync_browser: SyncBrowser) -> "PlaywrightToolSpec":
+    def from_async_browser(cls, async_browser: AsyncBrowser) -> "PlaywrightToolSpec":
         """
-        Initialize PlaywrightToolSpec from a sync browser instance.
+        Initialize PlaywrightToolSpec from an async browser instance.
         """
-        return cls(sync_browser=sync_browser)
+        return cls(async_browser=async_browser)
 
     #################
     # Utils Methods #
@@ -75,68 +76,68 @@ class PlaywrightToolSpec(BaseToolSpec):
         return f"{selector} >> visible=1"
 
     @staticmethod
-    def create_sync_playwright_browser(
+    async def create_async_playwright_browser(
         headless: bool = True, args: Optional[List[str]] = None
-    ) -> SyncBrowser:
+    ) -> AsyncBrowser:
         """
-        Create a playwright browser.
+        Create an async playwright browser.
 
         Args:
             headless: Whether to run the browser in headless mode. Defaults to True.
             args: arguments to pass to browser.chromium.launch
 
         Returns:
-            SyncBrowser: The playwright browser.
+            AsyncBrowser: The playwright browser.
         """
-        from playwright.sync_api import sync_playwright
+        from playwright.async_api import async_playwright
 
-        browser = sync_playwright().start()
-        return browser.chromium.launch(headless=headless, args=args)
+        browser = await async_playwright().start()
+        return await browser.chromium.launch(headless=headless, args=args)
 
-    def _get_current_page(self, browser: SyncBrowser) -> SyncPage:
+    async def _aget_current_page(self, browser: AsyncBrowser) -> AsyncPage:
         """
-        Get the current page of the browser.
+        Get the current page of the async browser.
 
         Args:
             browser: The browser to get the current page from.
 
         Returns:
-            SyncPage: The current page.
+            AsyncPage: The current page.
         """
         if not browser.contexts:
-            context = browser.new_context()
-            return context.new_page()
+            context = await browser.new_context()
+            return await context.new_page()
         context = browser.contexts[
             0
         ]  # Assuming you're using the default browser context
         if not context.pages:
-            return context.new_page()
+            return await context.new_page()
         # Assuming the last page in the list is the active one
         return context.pages[-1]
 
     #################
     # Click #
     #################
-    def click(
+    async def click(
         self,
         selector: str,
     ) -> str:
         """
-        Click on a en element based on a CSS selector.
+        Click on a web element based on a CSS selector.
 
         Args:
-            selector: The CSS selector to click on.
+            selector: The CSS selector for the web element to click on.
         """
-        if self.sync_browser is None:
-            raise ValueError("Sync browser is not initialized")
+        if self.async_browser is None:
+            raise ValueError("Async browser is not initialized")
 
-        page = self._get_current_page(self.sync_browser)
+        page = await self._aget_current_page(self.async_browser)
         # Navigate to the desired webpage before using this tool
         selector_effective = self._selector_effective(selector=selector)
-        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
         try:
-            page.click(
+            await page.click(
                 selector_effective,
                 strict=self.playwright_strict,
                 timeout=self.playwright_timeout,
@@ -148,28 +149,28 @@ class PlaywrightToolSpec(BaseToolSpec):
     #################
     # Fill #
     #################
-    def fill(
+    async def fill(
         self,
         selector: str,
         value: str,
     ) -> str:
         """
-        Fill an input field with the given value.
+        Fill an web input field specified by the given CSS selector with the given value.
 
         Args:
-            selector: The CSS selector to fill.
+            selector: The CSS selector for the web input field to fill.
             value: The value to fill in.
         """
-        if self.sync_browser is None:
-            raise ValueError("Sync browser is not initialized")
+        if self.async_browser is None:
+            raise ValueError("Async browser is not initialized")
 
-        page = self._get_current_page(self.sync_browser)
+        page = await self._aget_current_page(self.async_browser)
         # Navigate to the desired webpage before using this tool
         selector_effective = self._selector_effective(selector=selector)
-        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
         try:
-            page.fill(
+            await page.fill(
                 selector_effective,
                 value,
                 strict=self.playwright_strict,
@@ -182,13 +183,13 @@ class PlaywrightToolSpec(BaseToolSpec):
     #################
     # Get Current Page #
     #################
-    def get_current_page(self) -> str:
+    async def get_current_page(self) -> str:
         """
-        Get the url of the current page.
+        Get the url of the current web page.
         """
-        if self.sync_browser is None:
-            raise ValueError("Sync browser is not initialized")
-        page = self._get_current_page(self.sync_browser)
+        if self.async_browser is None:
+            raise ValueError("Async browser is not initialized")
+        page = await self._aget_current_page(self.async_browser)
         return page.url
 
     #################
@@ -209,29 +210,29 @@ class PlaywrightToolSpec(BaseToolSpec):
         # only appears once in the list
         return json.dumps(list(set(links)))
 
-    def extract_hyperlinks(self) -> str:
+    async def extract_hyperlinks(self) -> str:
         """
-        Extract all hyperlinks from the current page.
+        Extract all hyperlinks from the current web page.
         """
-        if self.sync_browser is None:
-            raise ValueError("Sync browser is not initialized")
+        if self.async_browser is None:
+            raise ValueError("Async browser is not initialized")
 
-        page = self._get_current_page(self.sync_browser)
-        html_content = page.content()
+        page = await self._aget_current_page(self.async_browser)
+        html_content = await page.content()
         return self.scrape_page(page, html_content, self.absolute_url)
 
     #################
     # Extract Text #
     #################
-    def extract_text(self) -> str:
+    async def extract_text(self) -> str:
         """
-        Extract all text from the current page.
+        Extract all text from the current web page.
         """
-        if self.sync_browser is None:
-            raise ValueError("Sync browser is not initialized")
+        if self.async_browser is None:
+            raise ValueError("Async browser is not initialized")
 
-        page = self._get_current_page(self.sync_browser)
-        html_content = page.content()
+        page = await self._aget_current_page(self.async_browser)
+        html_content = await page.content()
 
         # Parse the HTML content with BeautifulSoup
         soup = BeautifulSoup(html_content, self.html_parser)
@@ -241,26 +242,28 @@ class PlaywrightToolSpec(BaseToolSpec):
     #################
     # Get Elements #
     #################
-    def _get_elements(
-        self, page: SyncPage, selector: str, attributes: Sequence[str]
+    async def _aget_elements(
+        self, page: AsyncPage, selector: str, attributes: Sequence[str]
     ) -> List[dict]:
         """Get elements matching the given CSS selector."""
-        elements = page.query_selector_all(selector)
+        elements = await page.query_selector_all(selector)
         results = []
         for element in elements:
             result = {}
             for attribute in attributes:
                 if attribute == "innerText":
-                    val: Optional[str] = element.inner_text()
+                    val: Optional[str] = await element.inner_text()
                 else:
-                    val = element.get_attribute(attribute)
+                    val = await element.get_attribute(attribute)
                 if val is not None and val.strip() != "":
                     result[attribute] = val
             if result:
                 results.append(result)
         return results
 
-    def get_elements(self, selector: str, attributes: List[str] = ["innerText"]) -> str:
+    async def get_elements(
+        self, selector: str, attributes: List[str] = ["innerText"]
+    ) -> str:
         """
         Retrieve elements in the current web page matching the given CSS selector.
 
@@ -268,11 +271,11 @@ class PlaywrightToolSpec(BaseToolSpec):
             selector: CSS selector, such as '*', 'div', 'p', 'a', #id, .classname
             attribute: Set of attributes to retrieve for each element
         """
-        if self.sync_browser is None:
-            raise ValueError("Sync browser is not initialized")
+        if self.async_browser is None:
+            raise ValueError("Async browser is not initialized")
 
-        page = self._get_current_page(self.sync_browser)
-        results = self._get_elements(page, selector, attributes)
+        page = await self._aget_current_page(self.async_browser)
+        results = await self._aget_elements(page, selector, attributes)
         return json.dumps(results, ensure_ascii=False)
 
     #################
@@ -286,33 +289,36 @@ class PlaywrightToolSpec(BaseToolSpec):
         if parsed_url.scheme not in ("http", "https"):
             raise ValueError("URL scheme must be 'http' or 'https'")
 
-    def navigate_to(
+    async def navigate_to(
         self,
         url: str,
     ) -> str:
         """
         Navigate to the given url.
+
+        Args:
+            url: The url to navigate to.
         """
-        if self.sync_browser is None:
-            raise ValueError("Sync browser is not initialized")
+        if self.async_browser is None:
+            raise ValueError("Async browser is not initialized")
         self.validate_url(url)
 
-        page = self._get_current_page(self.sync_browser)
-        response = page.goto(url)
+        page = await self._aget_current_page(self.async_browser)
+        response = await page.goto(url)
         status = response.status if response else "unknown"
         return f"Navigating to {url} returned status code {status}"
 
     #################
     # Navigate Back #
     #################
-    def navigate_back(self) -> str:
+    async def navigate_back(self) -> str:
         """
-        Navigate back to the previous page.
+        Navigate back to the previous web page.
         """
-        if self.sync_browser is None:
-            raise ValueError("Sync browser is not initialized")
-        page = self._get_current_page(self.sync_browser)
-        response = page.go_back()
+        if self.async_browser is None:
+            raise ValueError("Async browser is not initialized")
+        page = await self._aget_current_page(self.async_browser)
+        response = await page.go_back()
 
         if response:
             return (
