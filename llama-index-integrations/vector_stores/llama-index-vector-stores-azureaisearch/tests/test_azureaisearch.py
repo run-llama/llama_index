@@ -317,6 +317,7 @@ def test_azureaisearch_semantic_query() -> None:
         top=2,
         select=["id", "content", "metadata", "doc_id"],
         filter=None,
+        query_type="semantic",
         semantic_configuration_name="default",
     )
 
