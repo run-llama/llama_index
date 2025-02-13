@@ -124,6 +124,7 @@ class StreamingAgentChatResponse:
     is_writing_to_memory: bool = True
     # Track if an exception occurred
     exception: Optional[Exception] = None
+    awrite_response_to_history_task: Optional[asyncio.Task] = None
 
     def set_source_nodes(self) -> None:
         if self.sources and not self.source_nodes:
@@ -328,6 +329,11 @@ class StreamingAgentChatResponse:
                 self.unformatted_response += chat_response.delta or ""
                 yield chat_response.delta or ""
         self.response = self.unformatted_response.strip()
+        if self.awrite_response_to_history_task:
+            # Make sure that the background task ran to completion, retrieve any exceptions
+            await asyncio.wait(self.awrite_response_to_history_task)
+            self.awrite_response_to_history_task = None  # No need to keep the reference to the finished task
+
 
     def print_response_stream(self) -> None:
         for token in self.response_gen:
