@@ -1202,7 +1202,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                self._semantic_configuration_name,
+                self._semantic_configuration_name or "mySemanticConfig",
             )
         return azure_query_result_search.search()
 
@@ -1251,7 +1251,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                self._semantic_configuration_name,
+                self._semantic_configuration_name or "mySemanticConfig",
             )
         return await azure_query_result_search.asearch()
 
