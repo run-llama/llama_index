@@ -50,6 +50,7 @@ TEST_NODES: List[TextNode] = [
 ]
 
 
+vector_store = None
 try:
     vector_store = MariaDBVectorStore.from_params(
         database="test",
@@ -84,7 +85,8 @@ def teardown(request: pytest.FixtureRequest) -> Generator:
     if "noautousefixtures" in request.keywords:
         return
 
-    vector_store.clear()
+    if vector_store is not None:
+        vector_store.clear()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -117,7 +119,7 @@ def test_meets_min_server_version(version: str, supported: bool) -> None:
 
 
 @pytest.mark.skipif(
-    run_integration_tests is False,
+    not run_integration_tests,
     reason="MariaDB instance required for integration tests",
 )
 def test_query() -> None:
@@ -131,7 +133,7 @@ def test_query() -> None:
 
 
 @pytest.mark.skipif(
-    run_integration_tests is False,
+    not run_integration_tests,
     reason="MariaDB instance required for integration tests",
 )
 def test_query_with_metadatafilters() -> None:
@@ -168,7 +170,7 @@ def test_query_with_metadatafilters() -> None:
 
 
 @pytest.mark.skipif(
-    run_integration_tests is False,
+    not run_integration_tests,
     reason="MariaDB instance required for integration tests",
 )
 def test_delete() -> None:
@@ -188,7 +190,7 @@ def test_delete() -> None:
 
 
 @pytest.mark.skipif(
-    run_integration_tests is False,
+    not run_integration_tests,
     reason="MariaDB instance required for integration tests",
 )
 def test_delete_nodes() -> None:
@@ -212,7 +214,7 @@ def test_delete_nodes() -> None:
 
 
 @pytest.mark.skipif(
-    run_integration_tests is False,
+    not run_integration_tests,
     reason="MariaDB instance required for integration tests",
 )
 def test_count() -> None:
@@ -221,7 +223,7 @@ def test_count() -> None:
 
 
 @pytest.mark.skipif(
-    run_integration_tests is False,
+    not run_integration_tests,
     reason="MariaDB instance required for integration tests",
 )
 def test_drop() -> None:
@@ -231,7 +233,7 @@ def test_drop() -> None:
 
 
 @pytest.mark.skipif(
-    run_integration_tests is False,
+    not run_integration_tests,
     reason="MariaDB instance required for integration tests",
 )
 def test_clear() -> None:
