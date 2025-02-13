@@ -270,7 +270,6 @@ This tutorial demonstrates the synchronous interface. All synchronous methods ha
 ```bash
 pip install llama-index
 pip install llama-index-cloud-sql-pg
-pip install llama-index-llms-vertex
 ```
 
 ```python

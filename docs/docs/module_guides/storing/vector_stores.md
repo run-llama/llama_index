@@ -32,8 +32,8 @@ We are actively adding more integrations and improving feature coverage for each
 | DynamoDB                 | cloud                   |                    |               | ✓      |                 |       |
 | Elasticsearch            | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | FAISS                    | in-memory               |                    |               |        |                 |       |
-| Google AlloyDB           | cloud                   | ✓                  | ✓             | ✓      | ✓               | ✓     |
-| Google Cloud SQL Postgres| cloud                   | ✓                  | ✓             | ✓      | ✓               | ✓     |
+| Google AlloyDB           | cloud                   | ✓                  |               | ✓      | ✓               | ✓     |
+| Google Cloud SQL Postgres| cloud                   | ✓                  |               | ✓      | ✓               | ✓     |
 | Hnswlib                  | in-memory               |                    |               |        |                 |       |
 | txtai                    | in-memory               |                    |               |        |                 |       |
 | Jaguar                   | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
