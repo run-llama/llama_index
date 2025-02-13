@@ -3,6 +3,7 @@ from typing import Any, List, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
 from llama_index.vector_stores.azureaisearch import (
@@ -244,7 +245,7 @@ def test_azureaisearch_query() -> None:
         top=2,
         select=["id", "content", "metadata", "doc_id"],
         filter=None,
-        semantic_configuration_name="default",
+        semantic_configuration_name=None,
     )
 
     # Assert the result structure
@@ -261,3 +262,62 @@ def test_azureaisearch_query() -> None:
     # Assert the metadata
     assert result.nodes[0].metadata == {"key": "value1"}
     assert result.nodes[1].metadata == {"key": "value2"}
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_azureaisearch_semantic_query() -> None:
+    search_client = mock_client_with_user_agent("search")
+
+    # Mock the search method of the search client
+    mock_search_results = [
+        {
+            "id": "test_id_1",
+            "chunk": "test chunk 1",
+            "content": "test chunk 1",
+            "metadata": json.dumps({"key": "value1"}),
+            "doc_id": "doc1",
+            "@search.score": 0.9,
+        },
+        {
+            "id": "test_id_2",
+            "chunk": "test chunk 2",
+            "content": "test chunk 2",
+            "metadata": json.dumps({"key": "value2"}),
+            "doc_id": "doc2",
+            "@search.score": 0.8,
+        },
+    ]
+    search_client.search.return_value = mock_search_results
+
+    vector_store = create_mock_vector_store(search_client)
+
+    # Create a sample query
+    query = VectorStoreQuery(
+        query_embedding=[0.1, 0.2],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+    )
+
+    # Execute the query
+    result = vector_store.query(query)
+
+    # Assert the search method was called with correct parameters
+    search_client.search.assert_called_once_with(
+        search_text="*",
+        vector_queries=[
+            VectorizedQuery(
+                vector=[0.1, 0.2], k_nearest_neighbors=2, fields="embedding"
+            )
+        ],
+        top=2,
+        select=["id", "content", "metadata", "doc_id"],
+        filter=None,
+        semantic_configuration_name="default",
+    )
+
+    # Assert the result structure
+    assert len(result.nodes) == 2
+    assert len(result.ids) == 2
+    assert len(result.similarities) == 2
