@@ -34,8 +34,8 @@ def get_api_key(instance: Any) -> str:
     return instance.api_key
 
 
-def test_create_default_url_without_api_key(masked_env_var: str) -> None:
-    NVIDIA(api_key="BOGUS")
+def test_create_default_url_without_api_key() -> None:
+    NVIDIA()
 
 
 @pytest.mark.usefixtures("mock_local_models")
