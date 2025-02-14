@@ -171,8 +171,13 @@ def image_nodes_to_node_with_score(
             project_id=project_id,
         )
         image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+        image_node_metadata: Dict[str, Any] = {
+            "file_id": raw_image_node.node.file_id,
+            "page_index": raw_image_node.node.page_index,
+        }
         image_node_with_score = NodeWithScore(
-            node=ImageNode(image=image_base64), score=raw_image_node.score
+            node=ImageNode(image=image_base64, metadata=image_node_metadata),
+            score=raw_image_node.score,
         )
         image_nodes.append(image_node_with_score)
     return image_nodes

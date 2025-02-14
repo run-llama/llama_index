@@ -5,13 +5,14 @@ from llama_cloud import (
     PipelineFileCreate,
     ProjectCreate,
     CompositeRetrievalMode,
+    LlamaParseParameters,
 )
 from llama_index.indices.managed.llama_cloud import (
     LlamaCloudIndex,
     LlamaCloudCompositeRetriever,
 )
 from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, ImageNode
 import os
 import pytest
 from uuid import uuid4
@@ -35,6 +36,7 @@ def remote_file() -> Tuple[str, str]:
 
 def _setup_empty_index(
     client: LlamaCloud,
+    multi_modal_index: bool = False,
 ) -> LlamaCloudIndex:
     # create project if it doesn't exist
     project_create = ProjectCreate(name=project_name)
@@ -47,6 +49,7 @@ def _setup_empty_index(
         name="test_empty_index_" + str(uuid4()),
         embedding_config={"type": "OPENAI_EMBEDDING", "component": OpenAIEmbedding()},
         transform_config=AutoTransformConfig(),
+        llama_parse_parameters=LlamaParseParameters(take_screenshot=multi_modal_index),
     )
     return client.pipelines.upsert_pipeline(
         project_id=project.id, request=pipeline_create
@@ -277,6 +280,36 @@ def test_index_from_documents():
     docs = index.ref_doc_info
     assert len(docs) == 2
     assert "3" not in docs
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+@pytest.mark.integration()
+def test_image_retrieval() -> None:
+    pipeline = _setup_empty_index(
+        LlamaCloud(token=api_key, base_url=base_url), multi_modal_index=True
+    )
+
+    index = LlamaCloudIndex(
+        name=pipeline.name,
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+    )
+
+    file_path = "llama-index-integrations/indices/llama-index-indices-managed-llama-cloud/tests/data/Simple PDF Slides.pdf"
+    file_id = index.upload_file(file_path, wait_for_ingestion=True)
+
+    retriever = index.as_retriever(retrieve_image_nodes=True)
+    nodes = retriever.retrieve("1")
+    assert len(nodes) > 0
+
+    image_nodes = [n.node for n in nodes if isinstance(n.node, ImageNode)]
+    assert len(image_nodes) > 0
+    assert all(n.metadata["file_id"] == file_id for n in image_nodes)
+    assert all(n.metadata["page_index"] >= 0 for n in image_nodes)
 
 
 @pytest.mark.skipif(
