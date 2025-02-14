@@ -219,15 +219,13 @@ class NVIDIAEmbedding(BaseEmbedding):
         Raises:
             ValueError: If the model is incompatible with the client.
         """
+        model = determine_model(model_name)
         if self._is_hosted:
-            model = determine_model(model_name)
-            if model_name not in [model.id for model in self.available_models]:
-                raise ValueError(
-                    f"Model {model_name} is incompatible with client {self.class_name()}. "
-                    f"Please check `{self.class_name()}.available_models`."
-                )
+            if not model:
+                warnings.warn(f"Unable to determine validity of {model_name}")
             if model and model.endpoint:
                 self.base_url = model.endpoint
+        # TODO: handle locally hosted models
 
     @property
     def available_models(self) -> List[str]:
