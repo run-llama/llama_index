@@ -4,7 +4,6 @@ from typing import Generator, List
 
 import pytest
 import sqlalchemy
-
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import (
     FilterCondition,
@@ -13,6 +12,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
 )
+
 from llama_index.vector_stores.mariadb import MariaDBVectorStore
 from llama_index.vector_stores.mariadb.base import _meets_min_server_version
 
@@ -49,18 +49,19 @@ TEST_NODES: List[TextNode] = [
     ),
 ]
 
-vector_store = MariaDBVectorStore.from_params(
-    database="test",
-    table_name="vector_store_test",
-    embed_dim=3,
-    host="127.0.0.1",
-    user="root",
-    password="test",
-    port="3306",
-)
 
-
+vector_store = None
 try:
+    vector_store = MariaDBVectorStore.from_params(
+        database="test",
+        table_name="vector_store_test",
+        embed_dim=3,
+        host="127.0.0.1",
+        user="root",
+        password="test",
+        port="3306",
+    )
+
     # If you want to run the integration tests you need to do:
     # docker-compose up
 
@@ -84,7 +85,8 @@ def teardown(request: pytest.FixtureRequest) -> Generator:
     if "noautousefixtures" in request.keywords:
         return
 
-    vector_store.clear()
+    if vector_store is not None:
+        vector_store.clear()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -95,7 +97,8 @@ def close_db_connection(request: pytest.FixtureRequest) -> Generator:
     if "noautousefixtures" in request.keywords:
         return
 
-    vector_store.close()
+    if vector_store is not None:
+        vector_store.close()
 
 
 @pytest.mark.parametrize(
@@ -117,7 +120,7 @@ def test_meets_min_server_version(version: str, supported: bool) -> None:
 
 
 @pytest.mark.skipif(
-    run_integration_tests is False,
+    not run_integration_tests,
     reason="MariaDB instance required for integration tests",
 )
 def test_query() -> None:
@@ -131,7 +134,7 @@ def test_query() -> None:
 
 
 @pytest.mark.skipif(
-    run_integration_tests is False,
+    not run_integration_tests,
     reason="MariaDB instance required for integration tests",
 )
 def test_query_with_metadatafilters() -> None:
@@ -168,7 +171,7 @@ def test_query_with_metadatafilters() -> None:
 
 
 @pytest.mark.skipif(
-    run_integration_tests is False,
+    not run_integration_tests,
     reason="MariaDB instance required for integration tests",
 )
 def test_delete() -> None:
@@ -188,7 +191,7 @@ def test_delete() -> None:
 
 
 @pytest.mark.skipif(
-    run_integration_tests is False,
+    not run_integration_tests,
     reason="MariaDB instance required for integration tests",
 )
 def test_delete_nodes() -> None:
@@ -212,7 +215,26 @@ def test_delete_nodes() -> None:
 
 
 @pytest.mark.skipif(
-    run_integration_tests is False,
+    not run_integration_tests,
+    reason="MariaDB instance required for integration tests",
+)
+def test_count() -> None:
+    vector_store.add(TEST_NODES)
+    assert vector_store.count() == 3
+
+
+@pytest.mark.skipif(
+    not run_integration_tests,
+    reason="MariaDB instance required for integration tests",
+)
+def test_drop() -> None:
+    vector_store.add(TEST_NODES)
+    vector_store.drop()
+    assert vector_store.count() == 0
+
+
+@pytest.mark.skipif(
+    not run_integration_tests,
     reason="MariaDB instance required for integration tests",
 )
 def test_clear() -> None:

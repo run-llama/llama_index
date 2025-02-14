@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.mariadb"
+import_path = "llama_index.tools.mcp"
 
 [tool.llamahub.class_authors]
-MariaDBVectorStore = "llama-index"
+McpToolSpec = "psiace"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,32 +21,33 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Kalin Arsov <kalin@skysql.com>", "Vishal Rao <vishal@skysql.com>"]
-description = "llama-index vector_stores mariadb integration"
+authors = ["Chojan Shang <psiace@outlook.com>"]
+description = "llama-index tools mcp integration"
 exclude = ["**/BUILD"]
+keywords = ["mcp", "tools"]
 license = "MIT"
-name = "llama-index-vector-stores-mariadb"
+maintainers = ["psiace"]
+name = "llama-index-tools-mcp"
 readme = "README.md"
-version = "0.3.1"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.10,<4.0"
+mcp = "^1.2.0"
 llama-index-core = "^0.12.0"
-pymysql = "^1.1.1"
-
-[tool.poetry.dependencies.sqlalchemy]
-version = "~2.0"
+pydantic = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
+ipinfo = "^1.0.0"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"
+nest-asyncio = "^1.5.9"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
-tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
 types-protobuf = "^4.24.0.4"
@@ -64,11 +65,3 @@ version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
-
-[tool.pytest.ini_options]
-filterwarnings = [
-    "ignore::DeprecationWarning:",
-]
-markers = [
-    "noautousefixtures: marks tests that should not run fixtures with autouse",
-]
