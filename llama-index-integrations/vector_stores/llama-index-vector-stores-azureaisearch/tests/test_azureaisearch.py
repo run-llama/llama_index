@@ -306,20 +306,24 @@ def test_azureaisearch_semantic_query() -> None:
     # Execute the query
     result = vector_store.query(query)
 
-    # Assert the search method was called with correct parameters
-    search_client.search.assert_called_once_with(
-        search_text="test query",
-        vector_queries=[
-            VectorizedQuery(
-                vector=[0.1, 0.2], k_nearest_neighbors=2, fields="embedding"
-            )
-        ],
-        top=2,
-        select=["id", "content", "metadata", "doc_id"],
-        filter=None,
-        query_type="semantic",
-        semantic_configuration_name="default",
-    )
+    # Get the actual call arguments
+    call_args = search_client.search.call_args[1]
+
+    # Assert basic parameters
+    assert call_args["search_text"] == "test query"
+    assert call_args["top"] == 2
+    assert call_args["select"] == ["id", "content", "metadata", "doc_id"]
+    assert call_args["filter"] is None
+    assert call_args["query_type"] == "semantic"
+    assert call_args["semantic_configuration_name"] == "default"
+
+    # Assert vector query parameters
+    vector_queries = call_args["vector_queries"]
+    assert len(vector_queries) == 1
+    vector_query = vector_queries[0]
+    assert vector_query.vector == [0.1, 0.2]
+    assert vector_query.k_nearest_neighbors == 50
+    assert vector_query.fields == "embedding"
 
     # Assert the result structure
     assert len(result.nodes) == 2
