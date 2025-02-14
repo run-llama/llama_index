@@ -65,12 +65,14 @@ class NeptuneBaseGraphStore(GraphStore):
         """
 
         prepared_statement = query % (
-            self.node_label,
-            self.node_label,
-            rel.replace(" ", "_").upper(),
+            self.node_label.replace("`", ""),
+            rel.replace(" ", "_").replace("`", "").upper(),
         )
 
-        self.query(prepared_statement, {"subj": subj, "obj": obj})
+        self.query(
+            prepared_statement,
+            {"subj": subj.replace("`", ""), "obj": obj.replace("`", "")},
+        )
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet from the graph."""

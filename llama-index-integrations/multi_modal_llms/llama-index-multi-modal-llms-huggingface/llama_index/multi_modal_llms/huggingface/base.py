@@ -1,4 +1,4 @@
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Sequence, Union
 from typing_extensions import override
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -48,6 +48,10 @@ class HuggingFaceMultiModal(MultiModalLLM):
     device: str = Field(
         default="cuda" if torch.cuda.is_available() else "cpu",
         description="The device to run the model on.",
+    )
+    device_map: Union[Dict[str, Any], str] = Field(
+        default="auto",
+        description="Tell HF accelerate where to put each layer of the model. In auto mode, HF accelerate determines this on it's own",
     )
     torch_dtype: Any = Field(
         default=torch.float16 if torch.cuda.is_available() else torch.float32,
@@ -101,7 +105,7 @@ class HuggingFaceMultiModal(MultiModalLLM):
             # Load the model based on the architecture
             self._model = AutoModelClass.from_pretrained(
                 self.model_name,
-                device_map=self.device,
+                device_map=self.device_map,
                 torch_dtype=self.torch_dtype,
                 trust_remote_code=self.trust_remote_code,
                 **self.additional_kwargs,
@@ -553,7 +557,7 @@ class LlamaMultiModal(HuggingFaceMultiModal):
 
         # Apply a chat template to format the message with the processor
         input_text = self._processor.tokenizer.apply_chat_template(
-            messages, add_generation_prompt=True
+            messages, add_generation_prompt=True, tokenize=False
         )
 
         # Prepare the model inputs (text + images) and convert to tensor

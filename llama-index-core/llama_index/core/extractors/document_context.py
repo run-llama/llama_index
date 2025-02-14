@@ -19,7 +19,14 @@ from typing_extensions import TypeGuard
 from llama_index.core import Settings
 from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.core.extractors import BaseExtractor
-from llama_index.core.llms import ChatMessage, ChatResponse, ImageBlock, LLM, TextBlock
+from llama_index.core.llms import (
+    AudioBlock,
+    ChatMessage,
+    ChatResponse,
+    ImageBlock,
+    LLM,
+    TextBlock,
+)
 from llama_index.core.schema import BaseNode, Node, TextNode
 from llama_index.core.storage.docstore.simple_docstore import DocumentStore
 
@@ -196,7 +203,9 @@ class DocumentContextExtractor(BaseExtractor):
                     messages, max_tokens=self.max_output_tokens, extra_headers=headers
                 )
 
-                first_block: Union[TextBlock, ImageBlock] = response.message.blocks[0]
+                first_block: Union[
+                    TextBlock, ImageBlock, AudioBlock
+                ] = response.message.blocks[0]
                 if isinstance(first_block, TextBlock):
                     metadata[key] = first_block.text
                 else:

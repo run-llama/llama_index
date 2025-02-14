@@ -170,7 +170,9 @@ class CogneeGraphRAG(GraphRAG):
         """
         user = await cognee.modules.users.methods.get_default_user()
         return await cognee.search(
-            cognee.api.v1.search.SearchType.COMPLETION, query, user
+            query_type=cognee.api.v1.search.SearchType.COMPLETION,
+            query_text=query,
+            user=user,
         )
 
     async def search(self, query: str) -> list:
@@ -181,7 +183,9 @@ class CogneeGraphRAG(GraphRAG):
         """
         user = await cognee.modules.users.methods.get_default_user()
         return await cognee.search(
-            cognee.api.v1.search.SearchType.GRAPH_COMPLETION, query, user
+            query_type=cognee.api.v1.search.SearchType.GRAPH_COMPLETION,
+            query_text=query,
+            user=user,
         )
 
     async def get_related_nodes(self, node_id: str) -> list:
@@ -192,5 +196,7 @@ class CogneeGraphRAG(GraphRAG):
         """
         user = await cognee.modules.users.methods.get_default_user()
         return await cognee.search(
-            cognee.api.v1.search.SearchType.INSIGHTS, node_id, user
+            query_type=cognee.api.v1.search.SearchType.INSIGHTS,
+            query_text=node_id,
+            user=user,
         )

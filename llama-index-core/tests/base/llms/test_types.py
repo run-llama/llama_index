@@ -147,7 +147,7 @@ def test_image_block_resolve_image_path(
 
 
 def test_image_block_resolve_image_url(png_1px_b64: bytes, png_1px: bytes):
-    with mock.patch("llama_index.core.base.llms.types.requests") as mocked_req:
+    with mock.patch("llama_index.core.utils.requests") as mocked_req:
         url_str = "http://example.com"
         mocked_req.get.return_value = mock.MagicMock(content=png_1px)
         b = ImageBlock(url=AnyUrl(url=url_str))
@@ -161,7 +161,9 @@ def test_image_block_resolve_image_url(png_1px_b64: bytes, png_1px: bytes):
 
 
 def test_image_block_resolve_error():
-    with pytest.raises(ValueError, match="No image found in the chat message!"):
+    with pytest.raises(
+        ValueError, match="No valid source provided to resolve binary data!"
+    ):
         b = ImageBlock()
         b.resolve_image()
 

@@ -1,11 +1,11 @@
 import asyncio
-import pytest
 
+import pytest
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.decorators import step
+from llama_index.core.workflow.errors import WorkflowRuntimeError, WorkflowTimeoutError
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
-from llama_index.core.workflow.errors import WorkflowRuntimeError, WorkflowTimeoutError
 
 from .conftest import OneTestEvent
 
@@ -124,6 +124,8 @@ async def test_multiple_ongoing_streams():
     async for ev in stream_2.stream_events():
         if not isinstance(ev, StopEvent):
             assert "msg" in ev
+
+    await asyncio.gather(stream_1, stream_2)
 
 
 @pytest.mark.asyncio()

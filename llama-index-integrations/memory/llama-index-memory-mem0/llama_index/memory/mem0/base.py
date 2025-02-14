@@ -144,12 +144,7 @@ class Mem0Memory(BaseMem0):
 
         search_results = self.search(query=input, **self.context.get_context())
 
-        version = (
-            self._client.api_version
-            if hasattr(self._client, "api_version")
-            else self._client.version
-        )
-        if isinstance(self._client, Memory) and version == "v1.1":
+        if isinstance(self._client, Memory) and self._client.api_version == "v1.1":
             search_results = search_results["results"]
 
         system_message = convert_memory_to_system_message(search_results)

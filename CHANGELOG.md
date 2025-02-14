@@ -1,5 +1,133 @@
 # ChangeLog
 
+## [2025-02-11]
+
+### `llama-index-core` [0.12.17]
+
+- Added support for AudioBlocks in chat messages (OpenAI only for now) (#17780)
+- Fix: SimpleDirectoryReader metadata handles timezones inconsistently (#17724)
+
+### `llama-index-agent-openai` [0.4.4]
+
+- added additional parameters in openai assistant agent (#17729)
+- Avoid async race conditions in `aput_messages` (#17754)
+
+### `llama-index-embeddings-siliconflow` [0.2.1]
+
+- Add retry logic to siliconflow llm and embeddings (#17771)
+
+### `llama-index-graph-rag-cognee` [0.1.3]
+
+- Cognee integration version update (#17769)
+
+### `llama-index-graph-stores-neptune` [0.3.1]
+
+- fix: update the upsert_triplet method in neptune integration (#17727)
+
+### `llama-index-llms-gemini` [0.4.9]
+
+- fix gemini tool choice (#17747)
+- fix gemini multi-turn tool calling (#17764)
+- chore: add tests for latest gemini structured gen (#17762)
+
+### `llama-index-llms-ibm` [0.3.2]
+
+- fix: Update `WatsonxLLM.stream_chat()` to adapt to upcoming `ibm-watsonx-ai 1.2.7` and avoid error. (#17772)
+
+### `llama-index-llms-langchain` [0.6.0]
+
+- Update the llama-index-llms-langchain to latest langchain API - removes the deprecation warning (#17770)
+
+### `llama-index-llms-ollama` [0.5.2]
+
+- Ollama Native Multimodal support with ImageBlocks (#17759)
+
+### `llama-index-llms-openai` [0.3.19]
+
+- add audio support to openai (#17780)
+
+### `llama-index-llms-openvino-genai` [0.1.0]
+
+- Add llama-index-llms-openvino-genai package (#17714)
+
+### `llama-index-llms-siliconflow` [0.2.1]
+
+- Add retry logic to siliconflow llm and embeddings (#17771)
+
+### `llama-index-readers-whisper` [0.1.0]
+
+- Add OpenAI Whisper Reader (#17778)
+
+### `llama-index-retrievers-bm25` [0.5.2]
+
+- BM25Retriever: UnicodeError Handling and Encoding Flexibility Improvement (#17643)
+
+### `llama-index-retrievers-kendra` [0.1.0]
+
+- Add kendra retriever (#17760)
+
+### `llama-index-tools-jira` [0.1.0]
+
+- Jira tools integration (#17763)
+
+### `llama-index-tools-playwright` [0.1.0]
+
+- feat: playwright browser tool (#17706)
+
+### `llama-index-vector-stores-elasticsearch` [0.4.1]
+
+- missed keyword suffix for delete query (#17750)
+
+## [2025-01-05]
+
+### `llama-index-core` [0.12.16]
+
+- Be more lenient with leading whitespaces emitted by some models when doing ReAct (#17701)
+- Fix `user_msg` vs `chat_history` AgentWorkflow inputs (#17690)
+
+### `llama-index-embeddings-oci-data-science` [0.1.0]
+
+- Add OCI Data Science Model Deployment Embedding Integration (#17243)
+
+### `llama-index-embeddings-vllm` [0.1.0]
+
+- Add vLLM offline inference supports for embedding (#17675)
+
+### `llama-index-embeddings-voyageai` [0.3.5]
+
+- small async voyageai fix (#17698)
+
+### `llama-index-llms-gemini` [0.4.7]
+
+- gemini 2.0 support (#17720)
+- feat: support basic function call for gemini (google-generativeai) (#17696)
+
+### `llama-index-llms-oci-data-science` [0.1.0]
+
+- Add OCI Data Science Model Deployment LLM Integration (#17241)
+
+### `llama-index-llms-oci-genai` [0.3.1]
+
+- Option to pass auth_file_location, in-order to overwrite default config file location i.e. ~/.oci/config (#17695)
+
+### `llama-index-llms-ollama` [0.5.1]
+
+- fix: avoid missing tool calls while streaming
+
+### `llama-index-llms-openai` [0.3.17]
+
+- fix: max_tokens in O1 (#17703)
+- o3 mini support (#17689)
+- fix max_tokens, add reasoning_effort for openai reasoning models (#17694)
+
+### `llama-index-readers-obsidian` [0.5.0]
+
+- Improved Obsidian Reader (#17699)
+
+### `llama-index-tools-scrapegraph` [0.1.1]
+
+- feat: add new scrapegraph endpoint (#17709)
+
 ## [2025-01-31]
 
 ### `llama-index-core` [0.12.15]
