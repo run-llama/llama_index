@@ -31,13 +31,13 @@ def mock_local_models(httpx_mock: HTTPXMock, base_url: str):
 
 def test_create_without_base_url(public_class: type, monkeypatch) -> None:
     monkeypatch.setenv("NVIDIA_API_KEY", "valid_api_key")
-    with no_env_var("NVIDIA_BASE_URL"):
-        x = public_class()
-        assert x.base_url == "https://integrate.api.nvidia.com/v1"
-        # _client is OpenAI, so base_url is https.URL obj
-        assert (
-            str(x._client.base_url) == "https://integrate.api.nvidia.com/v1/"
-        )  # https.Url
+    monkeypatch.delenv("NVIDIA_BASE_URL", raising=False)
+    x = public_class()
+    assert x.base_url == "https://integrate.api.nvidia.com/v1"
+    assert str(x._client.base_url) == "https://integrate.api.nvidia.com/v1/"
+
+
+# https.Url
 
 
 def test_base_url_priority(public_class: type, monkeypatch) -> None:
@@ -69,10 +69,10 @@ def test_param_base_url_negative(
     public_class: type, base_url: str, monkeypatch
 ) -> None:
     monkeypatch.setenv("NVIDIA_API_KEY", "valid_api_key")
-    with no_env_var("NVIDIA_BASE_URL"):
-        with pytest.raises(ValueError) as e:
-            public_class(model="model1", base_url=base_url)
-        assert "Invalid base_url" in str(e.value)
+    monkeypatch.delenv("NVIDIA_BASE_URL", raising=False)
+    with pytest.raises(ValueError) as e:
+        public_class(model="model1", base_url=base_url)
+    assert "Invalid base_url" in str(e.value)
 
 
 @pytest.mark.parametrize(

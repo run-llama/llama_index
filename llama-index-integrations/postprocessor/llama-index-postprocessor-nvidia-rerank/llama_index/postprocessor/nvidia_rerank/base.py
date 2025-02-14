@@ -109,7 +109,10 @@ class NVIDIARerank(BaseNodePostprocessor):
             else:
                 self.__get_default_model()
 
-        self._validate_model(self.model)  ## validate model
+        if not self.model.startswith("nvdev/"):
+            # allow internal models
+            # TODO: add test case for this
+            self._validate_model(self.model)  ## validate model
         self.base_url = base_url
 
     def __get_default_model(self):
@@ -167,6 +170,7 @@ class NVIDIARerank(BaseNodePostprocessor):
         ), "Response 'rankings' is not a list of dictionaries with 'id'"
 
         # TODO: hosted now has a model listing, need to merge known and listed models
+        # TODO: parse model config for local models
         if not self._is_hosted:
             return [
                 Model(
@@ -176,7 +180,7 @@ class NVIDIARerank(BaseNodePostprocessor):
                 for model in response.json()["data"]
             ]
         else:
-            return [Model(id=id) for id in RANKING_MODEL_TABLE]
+            return RANKING_MODEL_TABLE
 
     def _validate_url(self, base_url):
         """
@@ -222,14 +226,15 @@ class NVIDIARerank(BaseNodePostprocessor):
             ValueError: If the model is incompatible with the client.
         """
         model = determine_model(model_name)
-        if model_name not in [model.id for model in self.available_models]:
+        available_model_ids = [model.id for model in self.available_models]
+
+        if not model:
             if self._is_hosted:
-                raise ValueError(
-                    f"Model {model_name} is incompatible with client {self.class_name()}. "
-                    f"Please check `{self.class_name()}.available_models`."
-                )
+                warnings.warn(f"Unable to determine validity of {model_name}")
             else:
-                raise ValueError("No locally hosted lora3 was found.")
+                if model_name not in available_model_ids:
+                    raise ValueError(f"No locally hosted {model_name} was found.")
+
         if model and model.endpoint:
             self.base_url = model.endpoint
 
