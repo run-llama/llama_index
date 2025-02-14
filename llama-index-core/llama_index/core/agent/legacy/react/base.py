@@ -518,10 +518,10 @@ class ReActAgent(BaseAgent):
             achat_stream=response_stream, sources=self.sources
         )
         # create task to write chat response to history
-        asyncio.create_task(
+        chat_stream_response.awrite_response_to_history_task = asyncio.create_task(
             chat_stream_response.awrite_response_to_history(self._memory)
         )
-        # thread.start()
+
         return chat_stream_response
 
     def get_tools(self, message: str) -> List[AsyncBaseTool]:
