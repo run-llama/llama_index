@@ -34,6 +34,7 @@ out_get_nodes = {
                 "version": "1.0.0",
                 "doc_items": [
                     {
+                        "content_layer": "body",
                         "self_ref": "#/texts/0",
                         "parent": {"$ref": "#/body"},
                         "children": [],
@@ -75,6 +76,7 @@ out_get_nodes = {
                         "version": "1.0.0",
                         "doc_items": [
                             {
+                                "content_layer": "body",
                                 "self_ref": "#/texts/1",
                                 "parent": {"$ref": "#/body"},
                                 "children": [],
@@ -88,7 +90,7 @@ out_get_nodes = {
                             "filename": "sample.html",
                         },
                     },
-                    "hash": "0a8df027ead9e42831f12f8aa680afe5138436ecd58c32a6289212bc4d0a644a",
+                    "hash": "a6c3f2701d8f99dfe60b8fcfa3602c83412e92a234c747ea9b9554bf1894d484",
                     "class_name": "RelatedNodeInfo",
                 },
             },
@@ -110,6 +112,7 @@ out_get_nodes = {
                 "version": "1.0.0",
                 "doc_items": [
                     {
+                        "content_layer": "body",
                         "self_ref": "#/texts/1",
                         "parent": {"$ref": "#/body"},
                         "children": [],
@@ -151,6 +154,7 @@ out_get_nodes = {
                         "version": "1.0.0",
                         "doc_items": [
                             {
+                                "content_layer": "body",
                                 "self_ref": "#/texts/0",
                                 "parent": {"$ref": "#/body"},
                                 "children": [],
@@ -164,7 +168,7 @@ out_get_nodes = {
                             "filename": "sample.html",
                         },
                     },
-                    "hash": "fbfaa945f53349cff0ee00b81a8d3926ca76874fdaf3eac7888f41c5f6a74f0c",
+                    "hash": "0cc445f97c4273fde805655dea71ac576eca74a8210b8589d43fd96a8f79100a",
                     "class_name": "RelatedNodeInfo",
                 },
             },
@@ -192,6 +196,7 @@ out_parse_nodes = {
                 "version": "1.0.0",
                 "doc_items": [
                     {
+                        "content_layer": "body",
                         "self_ref": "#/texts/0",
                         "parent": {"$ref": "#/body"},
                         "children": [],
@@ -244,6 +249,7 @@ out_parse_nodes = {
                 "version": "1.0.0",
                 "doc_items": [
                     {
+                        "content_layer": "body",
                         "self_ref": "#/texts/1",
                         "parent": {"$ref": "#/body"},
                         "children": [],
