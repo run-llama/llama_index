@@ -38,6 +38,16 @@ from llama_index.vector_stores.azureaisearch.azureaisearch_utils import (
 
 logger = logging.getLogger(__name__)
 
+# Odata supports basic filters: eq, ne, gt, lt, ge, le
+BASIC_ODATA_FILTER_MAP = {
+    FilterOperator.EQ: "eq",
+    FilterOperator.NE: "ne",
+    FilterOperator.GT: "gt",
+    FilterOperator.LT: "lt",
+    FilterOperator.GTE: "ge",
+    FilterOperator.LTE: "le",
+}
+
 
 class MetadataIndexFieldType(int, enum.Enum):
     """
@@ -1139,14 +1149,20 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 )
                 odata_filter.append(f"{index_field}/any(t: {value_str})")
 
-            elif subfilter.operator == FilterOperator.EQ:
+            # odata filters support eq, ne, gt, lt, ge, le
+            elif subfilter.operator in BASIC_ODATA_FILTER_MAP:
+                operator_str = BASIC_ODATA_FILTER_MAP[subfilter.operator]
                 if isinstance(subfilter.value, str):
                     escaped_value = "".join(
                         [("''" if s == "'" else s) for s in subfilter.value]
                     )
-                    odata_filter.append(f"{index_field} eq '{escaped_value}'")
+                    odata_filter.append(
+                        f"{index_field} {operator_str} '{escaped_value}'"
+                    )
                 else:
-                    odata_filter.append(f"{index_field} eq {subfilter.value}")
+                    odata_filter.append(
+                        f"{index_field} {operator_str} {subfilter.value}"
+                    )
 
             else:
                 raise ValueError(f"Unsupported filter operator {subfilter.operator}")
@@ -1155,6 +1171,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             odata_expr = " and ".join(odata_filter)
         elif metadata_filters.condition == FilterCondition.OR:
             odata_expr = " or ".join(odata_filter)
+        elif metadata_filters.condition == FilterCondition.NOT:
+            odata_expr = f"not ({odata_filter})"
         else:
             raise ValueError(
                 f"Unsupported filter condition {metadata_filters.condition}"
@@ -1167,10 +1185,17 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         odata_filter = None
         semantic_configuration_name = None
-        if query.filters is not None:
+
+        # NOTE: users can provide odata_filters directly to the query
+        odata_filters = kwargs.get("odata_filters", None)
+        if odata_filters is not None:
+            odata_filter = odata_filters
+        elif query.filters is not None:
             odata_filter = self._create_odata_filter(query.filters)
+
         if self._semantic_configuration_name is not None:
             semantic_configuration_name = self._semantic_configuration_name
+
         if query.mode == VectorStoreQueryMode.DEFAULT:
             azure_query_result_search: AzureQueryResultSearchBase = (
                 AzureQueryResultSearchDefault(
@@ -1179,7 +1204,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     odata_filter,
                     self._search_client,
                     self._async_search_client,
-                    semantic_configuration_name,
                 )
             )
         if query.mode == VectorStoreQueryMode.SPARSE:
@@ -1189,7 +1213,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                semantic_configuration_name,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
@@ -1198,7 +1221,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                semantic_configuration_name,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
@@ -1207,7 +1229,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                self._semantic_configuration_name,
+                self._semantic_configuration_name or "mySemanticConfig",
             )
         return azure_query_result_search.search()
 
@@ -1256,7 +1278,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                self._semantic_configuration_name,
+                self._semantic_configuration_name or "mySemanticConfig",
             )
         return await azure_query_result_search.asearch()
 
@@ -1391,7 +1413,7 @@ class AzureQueryResultSearchBase:
         odata_filter: Optional[str],
         search_client: SearchClient,
         async_search_client: AsyncSearchClient,
-        semantic_configuration_name: Optional[str],
+        semantic_configuration_name: Optional[str] = None,
     ) -> None:
         self._query = query
         self._field_mapping = field_mapping

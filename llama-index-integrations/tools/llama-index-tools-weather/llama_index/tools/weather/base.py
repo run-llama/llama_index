@@ -9,7 +9,7 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 class OpenWeatherMapToolSpec(BaseToolSpec):
     """Open Weather tool spec."""
 
-    spec_functions = ["weather_at_location", "forecast_tommorrow_at_location"]
+    spec_functions = ["weather_at_location", "forecast_tomorrow_at_location"]
 
     def __init__(self, key: str, temp_units: str = "celsius") -> None:
         """Initialize with parameters."""
@@ -87,7 +87,7 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
 
         return [Document(text=weather_text, metadata={"weather from": location})]
 
-    def forecast_tommorrow_at_location(self, location: str) -> List[Document]:
+    def forecast_tomorrow_at_location(self, location: str) -> List[Document]:
         """
         Finds the weather forecast for tomorrow at a location.
 

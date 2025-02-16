@@ -1,57 +1,112 @@
-# Starter Tutorial (Local Models)
+# Starter Tutorial
+
+This tutorial will show you how to get started building agents with LlamaIndex. We'll start with a basic example and then show how to add RAG (Retrieval-Augmented Generation) capabilities.
+
+
+We will use [`BAAI/bge-base-en-v1.5`](https://huggingface.co/BAAI/bge-base-en-v1.5) as our embedding model and `llama3.1 8B` served through `Ollama`.
 
 !!! tip
-    Make sure you've followed the [custom installation](installation.md) steps first.
-
-This is our famous "5 lines of code" starter example with local LLM and embedding models. We will use [`BAAI/bge-base-en-v1.5`](https://huggingface.co/BAAI/bge-base-en-v1.5) as our embedding model and `Llama3` served through `Ollama`.
-
-## Download data
-
-This example uses the text of Paul Graham's essay, ["What I Worked On"](http://paulgraham.com/worked.html). This and many other examples can be found in the `examples` folder of our repo.
-
-The easiest way to get it is to [download it via this link](https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt) and save it in a folder called `data`.
+    Make sure you've followed the [installation](installation.md) steps first.
 
 ## Setup
 
-Ollama is a tool to help you get set up with LLMs locally (currently supported on OSX and Linux. You can install Ollama on Windows through WSL 2).
+Ollama is a tool to help you get set up with LLMs locally with minimal setup.
 
 Follow the [README](https://github.com/jmorganca/ollama) to learn how to install it.
 
-To download the Llama3 model just do `ollama pull llama3`.
+To download the Llama3 model just do `ollama pull llama3.1`.
 
-**NOTE**: You will need a machine with at least 32GB of RAM.
+**NOTE**: You will need a machine with at least ~32GB of RAM.
 
-To import `llama_index.llms.ollama`, you should run `pip install llama-index-llms-ollama`.
+As explained in our [installation guide](installation.md), `llama-index` is actually a collection of packages. To run Ollama and Huggingface, we will need to install those integrations:
 
-To import `llama_index.embeddings.huggingface`, you should run `pip install llama-index-embeddings-huggingface`.
+```bash
+pip install llama-index-llms-ollama llama-index-embeddings-huggingface
+```
+
+The package names spell out the imports, which is very helpful for remembering how to import them or install them!
+
+```python
+from llama_index.llms.ollama import Ollama
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+```
 
 More integrations are all listed on [https://llamahub.ai](https://llamahub.ai).
 
-## Load data and build an index
+## Basic Agent Example
 
-In the same folder where you created the `data` folder, create a file called `starter.py` file with the following:
+Let's start with a simple example using an agent that can perform basic multiplication by calling a tool. Create a file called `starter.py`:
 
 ```python
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+import asyncio
+from llama_index.core.agent.workflow import AgentWorkflow
 from llama_index.llms.ollama import Ollama
 
-documents = SimpleDirectoryReader("data").load_data()
 
-# bge-base embedding model
-Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
+# Define a simple calculator tool
+def multiply(a: float, b: float) -> float:
+    """Useful for multiplying two numbers."""
+    return a * b
 
-# ollama
-Settings.llm = Ollama(model="llama3", request_timeout=360.0)
 
-index = VectorStoreIndex.from_documents(
-    documents,
+# Create an agent workflow with our calculator tool
+agent = AgentWorkflow.from_tools_or_functions(
+    [multiply],
+    llm=Ollama(model="llama3.1", request_timeout=360.0),
+    system_prompt="You are a helpful assistant that can multiply two numbers.",
 )
+
+
+async def main():
+    # Run the agent
+    response = await agent.run("What is 1234 * 4567?")
+    print(str(response))
+
+
+# Run the agent
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-This builds an index over the documents in the `data` folder (which in this case just consists of the essay text, but could contain many documents).
+This will output something like: `The answer to 1234 * 4567 is: 5,618,916.`
 
-Your directory structure should look like this:
+What happened is:
+
+- The agent was given a question: `What is 1234 * 4567?`
+- Under the hood, this question, plus the schema of the tools (name, docstring, and arguments) were passed to the LLM
+- The agent selected the `multiply` tool and wrote the arguments to the tool
+- The agent received the result from the tool and interpolated it into the final response
+
+!!! tip
+    As you can see, we are using `async` python functions. Many LLMs and models support async calls, and using async code is recommended to improve performance of your application. To learn more about async code and python, we recommend this [short section on async + python](./async_python.md).
+
+## Adding Chat History
+
+The `AgentWorkflow` is also able to remember previous messages. This is contained inside the `Context` of the `AgentWorkflow`.
+
+If the `Context` is passed in, the agent will use it to continue the conversation.
+
+```python
+from llama_index.core.context import Context
+
+# create context
+ctx = Context(agent)
+
+# run agent with context
+response = await agent.run("My name is Logan", ctx=ctx)
+response = await agent.run("What is my name?", ctx=ctx)
+```
+
+## Adding RAG Capabilities
+
+Now let's enhance our agent by adding the ability to search through documents. First, let's get some example data using our terminal:
+
+```bash
+mkdir data
+wget https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt -O data/paul_graham_essay.txt
+```
+
+Your directory structure should look like this now:
 
 <pre>
 ├── starter.py
@@ -59,23 +114,119 @@ Your directory structure should look like this:
     └── paul_graham_essay.txt
 </pre>
 
-We use the `BAAI/bge-base-en-v1.5` model through our [`HuggingFaceEmbedding`](../api_reference/embeddings/huggingface.md#llama_index.embeddings.huggingface.HuggingFaceEmbedding) class and our `Ollama` LLM wrapper to load in the Llama3 model. Learn more in the [Local Embedding Models](../module_guides/models/embeddings.md#local-embedding-models) page.
+Now we can create a tool for searching through documents using LlamaIndex. By default, our `VectorStoreIndex` will use a `text-embedding-ada-002` embeddings from OpenAI to embed and retrieve the text.
 
-## Query your data
-
-Add the following lines to `starter.py`
+Our modified `starter.py` should look like this:
 
 ```python
-query_engine = index.as_query_engine()
-response = query_engine.query("What did the author do growing up?")
-print(response)
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.llms.ollama import Ollama
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+import asyncio
+import os
+
+# Settings control global defaults
+Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
+Settings.llm = Ollama(model="llama3.1", request_timeout=360.0)
+
+# Create a RAG tool using LlamaIndex
+documents = SimpleDirectoryReader("data").load_data()
+index = VectorStoreIndex.from_documents(
+    documents,
+    # we can optionally override the embed_model here
+    # embed_model=Settings.embed_model,
+)
+query_engine = index.as_query_engine(
+    # we can optionally override the llm here
+    # llm=Settings.llm,
+)
+
+
+def multiply(a: float, b: float) -> float:
+    """Useful for multiplying two numbers."""
+    return a * b
+
+
+async def search_documents(query: str) -> str:
+    """Useful for answering natural language questions about an personal essay written by Paul Graham."""
+    response = await query_engine.aquery(query)
+    return str(response)
+
+
+# Create an enhanced workflow with both tools
+agent = AgentWorkflow.from_tools_or_functions(
+    [multiply, search_documents],
+    llm=Settings.llm,
+    system_prompt="""You are a helpful assistant that can perform calculations
+    and search through documents to answer questions.""",
+)
+
+
+# Now we can ask questions about the documents or do calculations
+async def main():
+    response = await agent.run(
+        "What did the author do in college? Also, what's 7 * 8?"
+    )
+    print(response)
+
+
+# Run the agent
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-This creates an engine for Q&A over your index and asks a simple question. You should get back a response similar to the following: `The author wrote short stories and tried to program on an IBM 1401.`
+The agent can now seamlessly switch between using the calculator and searching through documents to answer questions.
 
-You can view logs, persist/load the index similar to our [starter example](starter_example.md).
+## Storing the RAG Index
+
+To avoid reprocessing documents every time, you can persist the index to disk:
+
+```python
+# Save the index
+index.storage_context.persist("storage")
+
+# Later, load the index
+from llama_index.core import StorageContext, load_index_from_storage
+
+storage_context = StorageContext.from_defaults(persist_dir="storage")
+index = load_index_from_storage(
+    storage_context,
+    # we can optionally override the embed_model here
+    # it's important to use the same embed_model as the one used to build the index
+    # embed_model=Settings.embed_model,
+)
+query_engine = index.as_query_engine(
+    # we can optionally override the llm here
+    # llm=Settings.llm,
+)
+```
 
 !!! tip
-    - learn more about the [high-level concepts](./concepts.md).
-    - tell me how to [customize things](./customization.md).
-    - curious about a specific module? check out the [component guides](../module_guides/index.md).
+    If you used a [vector store integration](../module_guides/storing/vector_stores.md) besides the default, chances are you can just reload from the vector store:
+
+    ```python
+    index = VectorStoreIndex.from_vector_store(
+        vector_store,
+        # it's important to use the same embed_model as the one used to build the index
+        # embed_model=Settings.embed_model,
+    )
+    ```
+
+## What's Next?
+
+This is just the beginning of what you can do with LlamaIndex agents! You can:
+
+- Add more tools to your agent
+- Use different LLMs
+- Customize the agent's behavior using system prompts
+- Add streaming capabilities
+- Implement human-in-the-loop workflows
+- Use multiple agents to collaborate on tasks
+
+Some helpful next links:
+
+- See more advanced agent examples in our [Agent documentation](../understanding/agent/multi_agents.md)
+- Learn more about [high-level concepts](./concepts.md)
+- Explore how to [customize things](./customization.md)
+- Check out the [component guides](../module_guides/index.md)

@@ -29,6 +29,8 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    TextBlock,
+    ImageBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -199,18 +201,32 @@ class Ollama(FunctionCallingLLM):
         }
 
     def _convert_to_ollama_messages(self, messages: Sequence[ChatMessage]) -> Dict:
-        return [
-            {
+        ollama_messages = []
+        for message in messages:
+            cur_ollama_message = {
                 "role": message.role.value,
-                "content": message.content or "",
-                **(
-                    {"tool_calls": message.additional_kwargs["tool_calls"]}
-                    if "tool_calls" in message.additional_kwargs
-                    else {}
-                ),
+                "content": "",
             }
-            for message in messages
-        ]
+            for block in message.blocks:
+                if isinstance(block, TextBlock):
+                    cur_ollama_message["content"] += block.text
+                elif isinstance(block, ImageBlock):
+                    if "images" not in cur_ollama_message:
+                        cur_ollama_message["images"] = []
+                    cur_ollama_message["images"].append(
+                        block.resolve_image(as_base64=True).read().decode("utf-8")
+                    )
+                else:
+                    raise ValueError(f"Unsupported block type: {type(block)}")
+
+            if "tool_calls" in message.additional_kwargs:
+                cur_ollama_message["tool_calls"] = message.additional_kwargs[
+                    "tool_calls"
+                ]
+
+            ollama_messages.append(cur_ollama_message)
+
+        return ollama_messages
 
     def _get_response_token_counts(self, raw_response: dict) -> dict:
         """Get the token usage reported by the response."""
@@ -455,7 +471,7 @@ class Ollama(FunctionCallingLLM):
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
+    ) -> ChatResponse:
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)

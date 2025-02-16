@@ -797,7 +797,7 @@ class ReActAgentWorker(BaseAgentWorker):
                 sources=task.extra_state["sources"],
             )
             # create task to write chat response to history
-            asyncio.create_task(
+            agent_response_stream.awrite_response_to_history_task = asyncio.create_task(
                 agent_response_stream.awrite_response_to_history(
                     task.extra_state["new_memory"],
                     on_stream_end_fn=partial(self.finalize_task, task),

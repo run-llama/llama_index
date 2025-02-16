@@ -89,6 +89,13 @@ def mock_stream_chat(*args: Any, **kwargs: Any) -> Generator[dict, None, None]:
                 {"index": 0, "finish_reason": "stop", "delta": {"content": content}}
             ],
         }
+    else:
+        yield {
+            "model_id": "mistralai/mistral-large",
+            "created_at": "2024-10-17T11:41:26.140Z",
+            "choices": [],
+            "usage": {"completion_tokens": 6, "prompt_tokens": 10, "total_tokens": 16},
+        }
 
 
 def mock_completion_stream(*args: Any, **kwargs: Any) -> Generator[dict, None, None]:
@@ -237,6 +244,10 @@ class TestWasonxLLMInference:
         chat_response_stream = llm.stream_chat([message])
         chat_responses = list(chat_response_stream)
         assert chat_responses[-1].message.content == "I like it"
+        assert chat_responses[-1].delta == ""
+        assert chat_responses[-1].additional_kwargs["prompt_tokens"] == 10
+        assert chat_responses[-1].additional_kwargs["completion_tokens"] == 6
+        assert chat_responses[-1].additional_kwargs["total_tokens"] == 16
 
     @patch("llama_index.llms.ibm.base.ModelInference")
     def test_completion_model_streaming(self, MockModelInference: MagicMock) -> None:
@@ -263,6 +274,10 @@ class TestWasonxLLMInference:
         chat_response_stream = llm.stream_chat([message], raw_response=True)
         chat_responses = list(chat_response_stream)
         assert chat_responses[-1].message.content == "I like it"
+        assert chat_responses[-1].delta == ""
+        assert chat_responses[-1].additional_kwargs["prompt_tokens"] == 10
+        assert chat_responses[-1].additional_kwargs["completion_tokens"] == 6
+        assert chat_responses[-1].additional_kwargs["total_tokens"] == 16
 
     @pytest.mark.asyncio()
     @patch("llama_index.llms.ibm.base.ModelInference")
@@ -313,3 +328,7 @@ class TestWasonxLLMInference:
         chat_response_stream = await llm.astream_chat([message], raw_response=True)
         chat_responses = [el async for el in chat_response_stream]
         assert chat_responses[-1].message.content == "I like it"
+        assert chat_responses[-1].delta == ""
+        assert chat_responses[-1].additional_kwargs["prompt_tokens"] == 10
+        assert chat_responses[-1].additional_kwargs["completion_tokens"] == 6
+        assert chat_responses[-1].additional_kwargs["total_tokens"] == 16

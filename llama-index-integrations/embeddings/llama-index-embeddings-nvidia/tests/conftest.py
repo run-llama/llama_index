@@ -22,6 +22,11 @@ def masked_env_var() -> Generator[str, None, None]:
             os.environ[var] = val
 
 
+@pytest.fixture(params=[Interface])
+def public_class(request: pytest.FixtureRequest) -> type:
+    return request.param
+
+
 def pytest_collection_modifyitems(config, items):
     if "NVIDIA_API_KEY" not in os.environ:
         skip_marker = pytest.mark.skip(
