@@ -29,7 +29,7 @@ class OutlookEmailReader(BasePydanticReader):
     folder: Optional[str] = "Inbox"
     num_mails: int = 10
 
-    _authorization_headers = PrivateAttr()
+    _authorization_headers: Optional[dict] = PrivateAttr(default=None)
 
     def __init__(
         self,
@@ -48,9 +48,12 @@ class OutlookEmailReader(BasePydanticReader):
             folder=folder,
             num_mails=num_mails,
         )
-        self._authorization_headers = {
-            "Authorization": f"Bearer {self._get_access_token()}"
-        }
+
+    def _ensure_token(self):
+        """Ensures we have a valid access token."""
+        if self._authorization_headers is None:
+            token = self._get_access_token()
+            self._authorization_headers = {"Authorization": f"Bearer {token}"}
 
     def _get_access_token(self) -> str:
         """Fetches the OAuth token from Microsoft."""
@@ -67,6 +70,7 @@ class OutlookEmailReader(BasePydanticReader):
 
     def _fetch_emails(self) -> List[dict]:
         """Fetches emails from the specified folder."""
+        self._ensure_token()
         url = f"https://graph.microsoft.com/v1.0/users/{self.user_email}/mailFolders/{self.folder}/messages?$top={self.num_mails}"
         response = requests.get(url, headers=self._authorization_headers)
         response.raise_for_status()
