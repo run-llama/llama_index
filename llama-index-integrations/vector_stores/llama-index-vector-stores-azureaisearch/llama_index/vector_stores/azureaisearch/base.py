@@ -12,6 +12,7 @@ from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.aio import (
     SearchIndexClient as AsyncSearchIndexClient,
 )
+
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -1194,6 +1195,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         if self._semantic_configuration_name is not None:
             semantic_configuration_name = self._semantic_configuration_name
+
         if query.mode == VectorStoreQueryMode.DEFAULT:
             azure_query_result_search: AzureQueryResultSearchBase = (
                 AzureQueryResultSearchDefault(
@@ -1202,7 +1204,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     odata_filter,
                     self._search_client,
                     self._async_search_client,
-                    semantic_configuration_name,
                 )
             )
         if query.mode == VectorStoreQueryMode.SPARSE:
@@ -1212,7 +1213,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                semantic_configuration_name,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
@@ -1221,7 +1221,6 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                semantic_configuration_name,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
@@ -1230,7 +1229,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                self._semantic_configuration_name,
+                self._semantic_configuration_name or "mySemanticConfig",
             )
         return azure_query_result_search.search()
 
@@ -1279,7 +1278,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                self._semantic_configuration_name,
+                self._semantic_configuration_name or "mySemanticConfig",
             )
         return await azure_query_result_search.asearch()
 
@@ -1414,7 +1413,7 @@ class AzureQueryResultSearchBase:
         odata_filter: Optional[str],
         search_client: SearchClient,
         async_search_client: AsyncSearchClient,
-        semantic_configuration_name: Optional[str],
+        semantic_configuration_name: Optional[str] = None,
     ) -> None:
         self._query = query
         self._field_mapping = field_mapping
@@ -1568,7 +1567,8 @@ class AzureQueryResultSearchDefault(AzureQueryResultSearchBase):
 
         vectorized_query = VectorizedQuery(
             vector=self._query.query_embedding,
-            k_nearest_neighbors=self._query.similarity_top_k,
+            k_nearest_neighbors=self._query.hybrid_top_k
+            or self._query.similarity_top_k,
             fields=self._field_mapping["embedding"],
         )
         vector_queries = [vectorized_query]

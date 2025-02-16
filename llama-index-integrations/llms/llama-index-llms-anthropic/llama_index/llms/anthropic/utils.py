@@ -65,6 +65,7 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-3-5-sonnet-latest": 200000,
     "claude-3-5-sonnet-20240620": 200000,
     "claude-3-5-sonnet-20241022": 200000,
+    "claude-3-5-haiku-latest": 200000,
     "claude-3-5-haiku-20241022": 200000,
 }
 
