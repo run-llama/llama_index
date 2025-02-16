@@ -1,6 +1,7 @@
 from typing import Any, List, Optional, Generator, Literal
 import os
 from urllib.parse import urlparse, urlunparse
+import httpx
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, ConfigDict
 from llama_index.core.callbacks import CBEventType, EventPayload
@@ -11,7 +12,6 @@ from llama_index.core.instrumentation.events.rerank import (
 )
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
-import requests
 import warnings
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
@@ -56,6 +56,7 @@ class NVIDIARerank(BaseNodePostprocessor):
     _mode: str = PrivateAttr("nvidia")
     _is_hosted: bool = PrivateAttr(True)
     base_url: Optional[str] = None
+    _http_client: Optional[httpx.Client] = PrivateAttr(None)
 
     def __init__(
         self,
@@ -63,6 +64,7 @@ class NVIDIARerank(BaseNodePostprocessor):
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
         base_url: Optional[str] = os.getenv("NVIDIA_BASE_URL", BASE_URL),
+        http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ):
         """
@@ -75,6 +77,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             nvidia_api_key (str, optional): The NVIDIA API key. Defaults to None.
             api_key (str, optional): The API key. Defaults to None.
             base_url (str, optional): The base URL of the on-premises NIM. Defaults to None.
+            http_client (httpx.Client, optional): Custom HTTP client for making requests.
             truncate (str): "NONE", "END", truncate input text if it exceeds
                             the model's context length. Default is model dependent and
                             is likely to raise an error if an input is too long.
@@ -95,12 +98,11 @@ class NVIDIARerank(BaseNodePostprocessor):
             "NVIDIA_API_KEY",
             "NO_API_KEY_PROVIDED",
         )
-
         if self._is_hosted:  # hosted on API Catalog (build.nvidia.com)
             if (not self._api_key) or (self._api_key == "NO_API_KEY_PROVIDED"):
                 raise ValueError("An API key is required for hosted NIM.")
         else:  # not hosted
-            self.base_url = self._validate_url(base_url)
+            self.base_url = self._validate_url(self.base_url)
 
         self.model = model
         if not self.model:
@@ -110,10 +112,9 @@ class NVIDIARerank(BaseNodePostprocessor):
                 self.__get_default_model()
 
         if not self.model.startswith("nvdev/"):
-            # allow internal models
-            # TODO: add test case for this
             self._validate_model(self.model)  ## validate model
-        self.base_url = base_url
+
+        self._http_client = http_client
 
     def __get_default_model(self):
         """Set default model."""
@@ -136,24 +137,30 @@ class NVIDIARerank(BaseNodePostprocessor):
         else:
             self.model = DEFAULT_MODEL
 
+    @property
+    def normalized_base_url(self) -> str:
+        """Return the normalized base URL (without trailing slashes)."""
+        return self.base_url.rstrip("/")
+
+    def _get_headers(self, auth_required: bool = False) -> dict:
+        """Return default headers for HTTP requests.
+
+        If auth_required is True or the client is hosted, includes an Authorization header.
+        """
+        headers = {"Accept": "application/json"}
+        if auth_required or self._is_hosted:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+        return headers
+
     def _get_models(self) -> List[Model]:
-        session = requests.Session()
-        self.base_url = self.base_url.rstrip("/") + "/"
-        if self._is_hosted:
-            _headers = {
-                "Authorization": f"Bearer {self._api_key}",
-                "Accept": "application/json",
-            }
-        else:
-            _headers = {
-                "Accept": "application/json",
-            }
+        client = self.client
+        _headers = self._get_headers(auth_required=self._is_hosted)
         url = (
             "https://integrate.api.nvidia.com/v1/models"
             if self._is_hosted
-            else self.base_url.rstrip("/") + "/models"
+            else self.normalized_base_url + "/models"
         )
-        response = session.get(url, headers=_headers)
+        response = client.get(url, headers=_headers)
         response.raise_for_status()
 
         assert (
@@ -248,6 +255,15 @@ class NVIDIARerank(BaseNodePostprocessor):
         else:
             return [Model(id=id) for id in ids]
 
+    @property
+    def client(self) -> httpx.Client:
+        """
+        Lazy initialization of the HTTP client.
+        """
+        if self._http_client is None:
+            self._http_client = httpx.Client()
+        return self._http_client
+
     @classmethod
     def class_name(cls) -> str:
         return "NVIDIARerank"
@@ -273,12 +289,8 @@ class NVIDIARerank(BaseNodePostprocessor):
         if len(nodes) == 0:
             return []
 
-        session = requests.Session()
-
-        _headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Accept": "application/json",
-        }
+        client = self.client
+        _headers = self._get_headers(auth_required=True)
 
         # TODO: replace with itertools.batched in python 3.12
         def batched(ls: list, size: int) -> Generator[List[NodeWithScore], None, None]:
@@ -305,7 +317,7 @@ class NVIDIARerank(BaseNodePostprocessor):
                         for n in batch
                     ],
                 }
-                response = session.post(self.base_url, headers=_headers, json=payloads)
+                response = client.post(self.base_url, headers=_headers, json=payloads)
                 response.raise_for_status()
                 # expected response format:
                 # {
