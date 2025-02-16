@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 from llama_index.core.readers.base import BaseReader
-from outlook_email_reader import OutlookEmailReader
+from llama_index.readers.outlook_emails import OutlookEmailReader
 
 
 def test_class():
