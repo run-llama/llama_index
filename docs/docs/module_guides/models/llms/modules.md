@@ -32,6 +32,7 @@ We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 - [MonsterAPI](../../../examples/llm/monsterapi.ipynb)
 - [MyMagic](../../../examples/llm/mymagic.ipynb)
 - [NeutrinoAI](../../../examples/llm/neutrino.ipynb)
+- [Nebius AI](../../../examples/llm/nebius.ipynb)
 - [Nvidia TensorRT-LLM](../../../examples/llm/nvidia_tensorrt.ipynb)
 - [Nvidia Triton](../../../examples/llm/nvidia_triton.ipynb)
 - [Ollama](../../../examples/llm/ollama.ipynb)
