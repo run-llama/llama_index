@@ -165,27 +165,32 @@ class LlamaCloudIndex(BaseManagedIndex):
         self,
         verbose: bool = False,
         raise_on_partial_success: bool = False,
+        sleep_interval: float = 0.1,
     ) -> None:
         if verbose:
-            print("Syncing pipeline: ", end="")
+            print(f"Syncing pipeline {self.pipeline.id}: ", end="")
 
         is_done = False
         while not is_done:
-            status = self._client.pipelines.get_pipeline_status(
+            status_response = self._client.pipelines.get_pipeline_status(
                 pipeline_id=self.pipeline.id
-            ).status
+            )
+            status = status_response.status
             if status == ManagedIngestionStatus.ERROR or (
                 raise_on_partial_success
                 and status == ManagedIngestionStatus.PARTIAL_SUCCESS
             ):
-                raise ValueError(f"Pipeline ingestion failed for {self.pipeline.id}")
+                error_details = status_response.json()
+                raise ValueError(
+                    f"Pipeline ingestion failed for {self.pipeline.id}. Error details: {error_details}"
+                )
             elif status in [
                 ManagedIngestionStatus.NOT_STARTED,
                 ManagedIngestionStatus.IN_PROGRESS,
             ]:
                 if verbose:
                     print(".", end="")
-                time.sleep(0.5)
+                time.sleep(sleep_interval)
             else:
                 is_done = True
                 if verbose:
