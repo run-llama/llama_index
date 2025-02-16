@@ -166,8 +166,11 @@ class LlamaCloudIndex(BaseManagedIndex):
         self,
         verbose: bool = False,
         raise_on_partial_success: bool = False,
-        sleep_interval: float = 0.1,
+        sleep_interval: float = 0.5,
     ) -> Optional[ManagedIngestionStatusResponse]:
+        if sleep_interval < 0.5:
+            # minimum sleep interval at 0.5 seconds to prevent rate-limiting
+            sleep_interval = 0.5
         if verbose:
             print(f"Syncing pipeline {self.pipeline.id}: ", end="")
 
