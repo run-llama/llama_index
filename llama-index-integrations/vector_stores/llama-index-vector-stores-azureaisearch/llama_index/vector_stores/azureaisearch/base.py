@@ -1567,7 +1567,8 @@ class AzureQueryResultSearchDefault(AzureQueryResultSearchBase):
 
         vectorized_query = VectorizedQuery(
             vector=self._query.query_embedding,
-            k_nearest_neighbors=self._query.similarity_top_k,
+            k_nearest_neighbors=self._query.hybrid_top_k
+            or self._query.similarity_top_k,
             fields=self._field_mapping["embedding"],
         )
         vector_queries = [vectorized_query]
