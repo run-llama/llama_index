@@ -12,6 +12,7 @@ from typing import Any, List, Optional, Sequence, Type
 from urllib.parse import quote_plus
 
 from llama_cloud import (
+    ManagedIngestionStatusResponse,
     PipelineCreate,
     PipelineCreateEmbeddingConfig,
     PipelineCreateTransformConfig,
@@ -166,11 +167,12 @@ class LlamaCloudIndex(BaseManagedIndex):
         verbose: bool = False,
         raise_on_partial_success: bool = False,
         sleep_interval: float = 0.1,
-    ) -> None:
+    ) -> Optional[ManagedIngestionStatusResponse]:
         if verbose:
             print(f"Syncing pipeline {self.pipeline.id}: ", end="")
 
         is_done = False
+        status_response: Optional[ManagedIngestionStatusResponse] = None
         while not is_done:
             status_response = self._client.pipelines.get_pipeline_status(
                 pipeline_id=self.pipeline.id
@@ -195,6 +197,7 @@ class LlamaCloudIndex(BaseManagedIndex):
                 is_done = True
                 if verbose:
                     print("Done!")
+        return status_response
 
     def _wait_for_file_ingestion(
         self,
