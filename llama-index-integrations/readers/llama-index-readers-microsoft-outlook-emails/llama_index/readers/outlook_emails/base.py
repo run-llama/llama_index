@@ -2,7 +2,6 @@ import logging
 import requests
 from typing import List, Optional
 from llama_index.core.readers.base import BasePydanticReader
-from llama_index.core.schema import Document
 from llama_index.core.bridge.pydantic import PrivateAttr
 
 logger = logging.getLogger(__name__)
@@ -11,9 +10,9 @@ logger = logging.getLogger(__name__)
 class OutlookEmailReader(BasePydanticReader):
     """
     Outlook Emails Reader using Microsoft Graph API.
-    
+
     Reads emails from a given Outlook mailbox and indexes the subject and body.
-    
+
     Args:
         client_id (str): The Application ID for the app registered in Microsoft Azure.
         client_secret (str): The application secret for the app registered in Azure.
@@ -22,7 +21,7 @@ class OutlookEmailReader(BasePydanticReader):
         folder (Optional[str]): The email folder to fetch emails from. Defaults to "Inbox".
         num_mails (int): Number of emails to retrieve. Defaults to 10.
     """
-    
+
     client_id: str
     client_secret: str
     tenant_id: str
@@ -32,7 +31,15 @@ class OutlookEmailReader(BasePydanticReader):
 
     _authorization_headers = PrivateAttr()
 
-    def __init__(self, client_id: str, client_secret: str, tenant_id: str, user_email: str, folder: Optional[str] = "Inbox", num_mails: int = 10):
+    def __init__(
+        self,
+        client_id: str,
+        client_secret: str,
+        tenant_id: str,
+        user_email: str,
+        folder: Optional[str] = "Inbox",
+        num_mails: int = 10,
+    ):
         super().__init__(
             client_id=client_id,
             client_secret=client_secret,
@@ -41,7 +48,9 @@ class OutlookEmailReader(BasePydanticReader):
             folder=folder,
             num_mails=num_mails,
         )
-        self._authorization_headers = {"Authorization": f"Bearer {self._get_access_token()}"}
+        self._authorization_headers = {
+            "Authorization": f"Bearer {self._get_access_token()}"
+        }
 
     def _get_access_token(self) -> str:
         """Fetches the OAuth token from Microsoft."""

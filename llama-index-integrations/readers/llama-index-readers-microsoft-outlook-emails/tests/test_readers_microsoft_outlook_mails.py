@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from llama_index.core.readers.base import BaseReader
 from outlook_email_reader import OutlookEmailReader
 
@@ -33,7 +33,7 @@ def test_serialize():
     assert new_reader.user_email == reader.user_email
 
 
-@pytest.fixture
+@pytest.fixture()
 def outlook_reader():
     return OutlookEmailReader(
         client_id="dummy_client_id",
