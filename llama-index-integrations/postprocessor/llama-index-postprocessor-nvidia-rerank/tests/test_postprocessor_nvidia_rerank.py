@@ -6,8 +6,7 @@ from llama_index.core.schema import NodeWithScore, Document
 from llama_index.core.node_parser import SentenceSplitter
 
 import faker
-
-from requests_mock import Mocker
+import respx
 
 
 @pytest.fixture()
@@ -16,16 +15,9 @@ def known_unknown() -> str:
 
 
 @pytest.fixture()
-def mock_local_models(requests_mock: Mocker, known_unknown) -> None:
-    requests_mock.get(
-        "http://localhost:8000/v1/models",
-        json={
-            "data": [
-                {
-                    "id": known_unknown,
-                },
-            ]
-        },
+def mock_local_models(respx_mock: respx.MockRouter, known_unknown: str) -> None:
+    respx_mock.get("http://localhost:8000/v1/models").respond(
+        json={"data": [{"id": known_unknown}]}
     )
 
 

@@ -9,42 +9,35 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.indices.managed.llama_cloud"
+import_path = "llama_index.readers.microsoft_outlook_emails"
 
 [tool.llamahub.class_authors]
-LlamaCloudIndex = "llama-index"
-
-[tool.llamahub.secondary_class_authors]
-LlamaCloudRetriever = "llama-index"
+OutlookEmailReader = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
-# Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
-explicit_package_bases = true
 ignore_missing_imports = true
-namespace_packages = true
-plugins = "pydantic.mypy"
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Logan Markewich <logan@llamaindex.ai>"]
-description = "llama-index indices llama-cloud integration"
+authors = ["Your Name <you@example.com>"]
+description = "llama-index readers microsoft_outlook_emails integration"
 exclude = ["**/BUILD"]
+keywords = ["emails", "microsoft 365", "microsoft365", "outlook"]
 license = "MIT"
-name = "llama-index-indices-managed-llama-cloud"
+maintainers = ["llama-index"]
+name = "llama-index-readers-microsoft-outlook-emails"
 readme = "README.md"
-version = "0.6.7"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-cloud = "^0.1.8"
 llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
 jupyter = "^1.0.0"
-llama-index-embeddings-openai = "^0.3.1"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"

@@ -2,15 +2,15 @@ from typing import Any, Literal, Optional
 
 import pytest
 import re
-from requests_mock import Mocker
+import respx
+import json
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
 from llama_index.core.schema import NodeWithScore, Document
 
 
 @pytest.fixture()
-def mock_v1_models(requests_mock: Mocker) -> None:
-    requests_mock.get(
-        "https://integrate.api.nvidia.com/v1/models",
+def mock_v1_models(respx_mock: respx.MockRouter) -> None:
+    respx_mock.get("https://integrate.api.nvidia.com/v1/models").respond(
         json={
             "data": [
                 {
@@ -20,19 +20,20 @@ def mock_v1_models(requests_mock: Mocker) -> None:
                     "owned_by": "OWNER",
                 }
             ]
-        },
+        }
     )
 
 
 @pytest.fixture()
-def mock_v1_ranking(requests_mock: Mocker) -> None:
-    requests_mock.post(
-        re.compile(r"https://ai\.api\.nvidia\.com/v1/.*/reranking"),
+def mock_v1_ranking(respx_mock: respx.MockRouter) -> None:
+    respx_mock.post(
+        re.compile(r"https://ai\.api\.nvidia\.com/v1/.*/reranking")
+    ).respond(
         json={
             "rankings": [
                 {"index": 0, "logit": 4.2},
             ]
-        },
+        }
     )
 
 
@@ -51,7 +52,7 @@ def mock(mock_v1_models: None, mock_v1_ranking: None) -> None:
 )
 def test_truncate_passed(
     mock: None,
-    requests_mock: Mocker,
+    respx_mock: respx.MockRouter,
     truncate: Optional[Literal["END", "NONE"]],
 ) -> None:
     client = NVIDIARerank(
@@ -65,8 +66,9 @@ def test_truncate_passed(
 
     assert len(response) == 1
 
-    assert requests_mock.last_request is not None
-    request_payload = requests_mock.last_request.json()
+    assert len(respx.calls) > 0
+    last_call = list(respx.calls)[-1]
+    request_payload = json.loads(last_call.request.content.decode("utf-8"))
     if truncate is None:
         assert "truncate" not in request_payload
     else:
