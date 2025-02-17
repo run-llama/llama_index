@@ -58,7 +58,7 @@ types-setuptools = "67.1.0.0"
 
 [tool.poetry.group.test-integration.dependencies]
 responses = "^0.25.6"
-respx = "^0.22.0"
+respx = {extras = ["pytest"], version = "^0.22.0"}
 
 [tool.poetry.group.test_integration.dependencies]
 pytest-httpx = "*"
