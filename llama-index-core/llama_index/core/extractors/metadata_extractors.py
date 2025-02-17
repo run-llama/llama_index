@@ -500,6 +500,7 @@ class PydanticProgramExtractor(BaseExtractor, Generic[Model]):
         )
 
         ret_object = await self.program.acall(**{self.input_key: extract_str})
+        assert not isinstance(ret_object, list)
 
         return ret_object.model_dump()
 

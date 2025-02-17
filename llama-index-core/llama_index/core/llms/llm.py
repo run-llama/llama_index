@@ -373,6 +373,7 @@ class LLM(BaseLLM):
         )
 
         result = program(llm_kwargs=llm_kwargs, **prompt_args)
+        assert not isinstance(result, list)
 
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
@@ -431,6 +432,7 @@ class LLM(BaseLLM):
         )
 
         result = await program.acall(llm_kwargs=llm_kwargs, **prompt_args)
+        assert not isinstance(result, list)
 
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
@@ -492,6 +494,7 @@ class LLM(BaseLLM):
         result = program.stream_call(llm_kwargs=llm_kwargs, **prompt_args)
         for r in result:
             dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+            assert not isinstance(r, list)
             yield r
 
         dispatcher.event(LLMStructuredPredictEndEvent(output=r))
@@ -557,6 +560,7 @@ class LLM(BaseLLM):
             result = await program.astream_call(llm_kwargs=llm_kwargs, **prompt_args)
             async for r in result:
                 dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+                assert not isinstance(r, list)
                 yield r
 
             dispatcher.event(LLMStructuredPredictEndEvent(output=r))
