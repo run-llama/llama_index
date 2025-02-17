@@ -27,6 +27,7 @@ from llama_index.core.base.llms.types import (
     LogProb,
     MessageRole,
     TextBlock,
+    AudioBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 
@@ -68,6 +69,11 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4-turbo-2024-04-09": 128000,
     "gpt-4-turbo": 128000,
     "gpt-4o": 128000,
+    "gpt-4o-audio-preview": 128000,
+    "gpt-4o-audio-preview-2024-12-17": 128000,
+    "gpt-4o-audio-preview-2024-10-01": 128000,
+    "gpt-4o-mini-audio-preview": 128000,
+    "gpt-4o-mini-audio-preview-2024-12-17": 128000,
     "gpt-4o-2024-05-13": 128000,
     "gpt-4o-2024-08-06": 128000,
     "gpt-4o-2024-11-20": 128000,
@@ -270,7 +276,16 @@ def to_openai_message_dict(
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
     content_txt = ""
+    reference_audio_id = None
     for block in message.blocks:
+        if message.role == MessageRole.ASSISTANT:
+            reference_audio_id = message.additional_kwargs.get(
+                "reference_audio_id", None
+            )
+            # if reference audio id is provided, we don't need to send the audio
+            if reference_audio_id:
+                continue
+
         if isinstance(block, TextBlock):
             content.append({"type": "text", "text": block.text})
             content_txt += block.text
@@ -291,6 +306,18 @@ def to_openai_message_dict(
                         },
                     }
                 )
+        elif isinstance(block, AudioBlock):
+            audio_bytes = block.resolve_audio(as_base64=True).read()
+            audio_str = audio_bytes.decode("utf-8")
+            content.append(
+                {
+                    "type": "input_audio",
+                    "input_audio": {
+                        "data": audio_str,
+                        "format": block.format,
+                    },
+                }
+            )
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
@@ -304,22 +331,34 @@ def to_openai_message_dict(
         else content_txt
     )
 
-    # NOTE: Despite what the openai docs say, if the role is ASSISTANT, SYSTEM
-    # or TOOL, 'content' cannot be a list and must be string instead.
-    # Furthermore, if all blocks are text blocks, we can use the content_txt
-    # as the content. This will avoid breaking openai-like APIs.
-    message_dict = {
-        "role": message.role.value,
-        "content": (
-            content_txt
-            if message.role.value in ("assistant", "tool", "system")
-            or all(isinstance(block, TextBlock) for block in message.blocks)
-            else content
-        ),
-    }
+    # If reference audio id is provided, we don't need to send the audio
+    # NOTE: this is only a thing for assistant messages
+    if reference_audio_id:
+        message_dict = {
+            "role": message.role.value,
+            "audio": {"id": reference_audio_id},
+        }
+    else:
+        # NOTE: Despite what the openai docs say, if the role is ASSISTANT, SYSTEM
+        # or TOOL, 'content' cannot be a list and must be string instead.
+        # Furthermore, if all blocks are text blocks, we can use the content_txt
+        # as the content. This will avoid breaking openai-like APIs.
+        message_dict = {
+            "role": message.role.value,
+            "content": (
+                content_txt
+                if message.role.value in ("assistant", "tool", "system")
+                or all(isinstance(block, TextBlock) for block in message.blocks)
+                else content
+            ),
+        }
 
     # TODO: O1 models do not support system prompts
-    if model is not None and model in O1_MODELS:
+    if (
+        model is not None
+        and model in O1_MODELS
+        and model not in O1_MODELS_WITHOUT_FUNCTION_CALLING
+    ):
         if message_dict["role"] == "system":
             message_dict["role"] = "developer"
 
@@ -353,20 +392,29 @@ def to_openai_message_dicts(
     ]
 
 
-def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
+def from_openai_message(
+    openai_message: ChatCompletionMessage, modalities: List[str]
+) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = openai_message.role
     # NOTE: Azure OpenAI returns function calling messages without a content key
-    content = openai_message.content
-
-    # function_call = None  # deprecated in OpenAI v 1.1.0
+    if "text" in modalities and openai_message.content:
+        blocks = [TextBlock(text=openai_message.content or "")]
+    else:
+        blocks = []
 
     additional_kwargs: Dict[str, Any] = {}
     if openai_message.tool_calls:
         tool_calls: List[ChatCompletionMessageToolCall] = openai_message.tool_calls
         additional_kwargs.update(tool_calls=tool_calls)
 
-    return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
+    if openai_message.audio and "audio" in modalities:
+        reference_audio_id = openai_message.audio.id
+        audio_data = openai_message.audio.data
+        additional_kwargs["reference_audio_id"] = reference_audio_id
+        blocks.append(AudioBlock(audio=audio_data, format="mp3"))
+
+    return ChatMessage(role=role, blocks=blocks, additional_kwargs=additional_kwargs)
 
 
 def from_openai_token_logprob(
@@ -421,10 +469,10 @@ def from_openai_completion_logprobs(
 
 
 def from_openai_messages(
-    openai_messages: Sequence[ChatCompletionMessage],
+    openai_messages: Sequence[ChatCompletionMessage], modalities: List[str]
 ) -> List[ChatMessage]:
     """Convert openai message dicts to generic messages."""
-    return [from_openai_message(message) for message in openai_messages]
+    return [from_openai_message(message, modalities) for message in openai_messages]
 
 
 def from_openai_message_dict(message_dict: dict) -> ChatMessage:

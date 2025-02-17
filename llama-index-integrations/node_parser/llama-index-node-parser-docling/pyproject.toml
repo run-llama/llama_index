@@ -30,12 +30,12 @@ license = "MIT"
 name = "llama-index-node-parser-docling"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = "^3.10"
 llama-index-core = "^0.12.0"
-docling-core = "^2.2.0"
+docling-core = "^2.18.0"
 
 [tool.poetry.group.dev]
 

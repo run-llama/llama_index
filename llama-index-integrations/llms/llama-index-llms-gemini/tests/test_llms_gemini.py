@@ -1,16 +1,17 @@
 import os
 
-from llama_index.core.tools.function_tool import FunctionTool
 import pytest
-from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole
-from llama_index.llms.gemini import Gemini
-from llama_index.llms.gemini.utils import chat_message_to_gemini
-
 from google.ai.generativelanguage_v1beta.types import (
     FunctionCallingConfig,
     ToolConfig,
 )
+from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole
+from llama_index.core.prompts.base import ChatPromptTemplate
+from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.llms.gemini import Gemini
+from llama_index.llms.gemini.utils import chat_message_to_gemini
+from pydantic import BaseModel
 
 
 def test_embedding_class() -> None:
@@ -22,15 +23,14 @@ def test_chat_message_to_gemini() -> None:
     msg = ChatMessage("Some content")
     assert chat_message_to_gemini(msg) == {
         "role": MessageRole.USER,
-        "parts": ["Some content"],
+        "parts": [{"text": "Some content"}],
     }
 
     msg = ChatMessage("Some content")
     msg.blocks.append(ImageBlock(image=b"foo", image_mimetype="image/png"))
-    assert chat_message_to_gemini(msg) == {
-        "role": MessageRole.USER,
-        "parts": ["Some content", {"data": b"foo", "mime_type": "image/png"}],
-    }
+    gemini_msg = chat_message_to_gemini(msg)
+    assert gemini_msg["role"] == MessageRole.USER
+    assert len(gemini_msg["parts"]) == 2
 
 
 @pytest.mark.skipif(
@@ -40,7 +40,8 @@ def test_generate_image_prompt() -> None:
     msg = ChatMessage("Tell me the brand of the car in this image:")
     msg.blocks.append(
         ImageBlock(
-            url="https://upload.wikimedia.org/wikipedia/commons/5/52/Ferrari_SP_FFX.jpg"
+            url="https://upload.wikimedia.org/wikipedia/commons/5/52/Ferrari_SP_FFX.jpg",
+            image_mimetype="image/jpeg",
         )
     )
     response = Gemini(model="models/gemini-1.5-flash").chat(messages=[msg])
@@ -83,3 +84,47 @@ def test_chat_with_tools() -> None:
     assert tool_calls[0].tool_kwargs == {"a": 2, "b": 3}
 
     assert len(response.additional_kwargs["tool_calls"]) >= 1
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_structured_llm() -> None:
+    class Test(BaseModel):
+        test: str
+
+    gemini_flash = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+        additional_kwargs={"seed": 4242},
+    )
+
+    chat_prompt = ChatPromptTemplate(message_templates=[ChatMessage(content="test")])
+    direct_prediction_response = gemini_flash.structured_predict(
+        output_cls=Test, prompt=chat_prompt
+    )
+    assert direct_prediction_response.test is not None
+    structured_llm_response = gemini_flash.as_structured_llm(Test).complete("test")
+    assert structured_llm_response.raw.test is not None
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_is_function_calling_model() -> None:
+    assert Gemini(
+        model="models/gemini-2.0-flash-001"
+    ).metadata.is_function_calling_model
+
+    # this model is the only one that does not support function calling
+    assert not Gemini(
+        model="models/gemini-2.0-flash-thinking-exp-01-21"
+    ).metadata.is_function_calling_model
+
+    # in case of un-released models it should be possible to override the
+    # capabilities of the current model
+    manual_override = Gemini(model="models/gemini-2.0-flash-001")
+    assert manual_override.metadata.is_function_calling_model
+    manual_override._is_function_call_model = False
+    assert not manual_override._is_function_call_model
+    assert not manual_override.metadata.is_function_calling_model

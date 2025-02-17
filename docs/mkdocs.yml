@@ -380,6 +380,7 @@ nav:
           - ./examples/llm/openai_json_vs_function_calling.ipynb
           - ./examples/llm/openllm.ipynb
           - ./examples/llm/openrouter.ipynb
+          - ./examples/llm/openvino-genai.ipynb
           - ./examples/llm/openvino.ipynb
           - ./examples/llm/optimum_intel.ipynb
           - ./examples/llm/paieas.ipynb
@@ -459,7 +460,6 @@ nav:
           - ./examples/multi_modal/multimodal_rag_guardrail_gemini_llmguard_llmguard.ipynb
           - ./examples/multi_modal/nebius_multi_modal.ipynb
           - ./examples/multi_modal/nvidia_multi_modal.ipynb
-          - ./examples/multi_modal/ollama_cookbook.ipynb
           - ./examples/multi_modal/openai_multi_modal.ipynb
           - ./examples/multi_modal/openvino_multimodal.ipynb
           - ./examples/multi_modal/replicate_multi_modal.ipynb
@@ -1058,6 +1058,7 @@ nav:
           - ./api_reference/llms/openllm.md
           - ./api_reference/llms/openrouter.md
           - ./api_reference/llms/openvino.md
+          - ./api_reference/llms/openvino_genai.md
           - ./api_reference/llms/optimum_intel.md
           - ./api_reference/llms/paieas.md
           - ./api_reference/llms/palm.md
@@ -1453,6 +1454,7 @@ nav:
           - ./api_reference/readers/weaviate.md
           - ./api_reference/readers/web.md
           - ./api_reference/readers/whatsapp.md
+          - ./api_reference/readers/whisper.md
           - ./api_reference/readers/wikipedia.md
           - ./api_reference/readers/wordlift.md
           - ./api_reference/readers/wordpress.md
@@ -1477,6 +1479,7 @@ nav:
           - ./api_reference/retrievers/bm25.md
           - ./api_reference/retrievers/duckdb_retriever.md
           - ./api_reference/retrievers/index.md
+          - ./api_reference/retrievers/kendra.md
           - ./api_reference/retrievers/keyword.md
           - ./api_reference/retrievers/knowledge_graph.md
           - ./api_reference/retrievers/mongodb_atlas_bm25_retriever.md
@@ -1658,6 +1661,7 @@ nav:
           - ./api_reference/tools/index.md
           - ./api_reference/tools/ionic_shopping.md
           - ./api_reference/tools/jina.md
+          - ./api_reference/tools/jira.md
           - ./api_reference/tools/linkup_research.md
           - ./api_reference/tools/load_and_search.md
           - ./api_reference/tools/metaphor.md
@@ -1669,6 +1673,7 @@ nav:
           - ./api_reference/tools/openapi.md
           - ./api_reference/tools/oracleai.md
           - ./api_reference/tools/playgrounds.md
+          - ./api_reference/tools/playwright.md
           - ./api_reference/tools/python_file.md
           - ./api_reference/tools/query_engine.md
           - ./api_reference/tools/query_plan.md
@@ -2354,6 +2359,11 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-vllm
             - ../llama-index-integrations/embeddings/llama-index-embeddings-oci-data-science
             - ../llama-index-integrations/llms/llama-index-llms-oci-data-science
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-kendra
+            - ../llama-index-integrations/tools/llama-index-tools-jira
+            - ../llama-index-integrations/tools/llama-index-tools-playwright
+            - ../llama-index-integrations/readers/llama-index-readers-whisper
+            - ../llama-index-integrations/llms/llama-index-llms-openvino-genai
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2685,7 +2695,6 @@ plugins:
         ./examples/multi_modal/multi_modal_retrieval.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/multi_modal_retrieval/
         ./examples/multi_modal/multi_modal_video_RAG.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/multi_modal_video_RAG/
         ./examples/multi_modal/nebius_multi_modal.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/nebius_multi_modal/
-        ./examples/multi_modal/ollama_cookbook.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/ollama_cookbook/
         ./examples/multi_modal/openai_multi_modal.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/openai_multi_modal/
         ./examples/multi_modal/replicate_multi_modal.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/replicate_multi_modal/
         ./examples/multi_modal/structured_image_retrieval.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/structured_image_retrieval/

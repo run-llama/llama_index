@@ -12,6 +12,7 @@ from typing import Any, List, Optional, Sequence, Type
 from urllib.parse import quote_plus
 
 from llama_cloud import (
+    ManagedIngestionStatusResponse,
     PipelineCreate,
     PipelineCreateEmbeddingConfig,
     PipelineCreateTransformConfig,
@@ -165,31 +166,41 @@ class LlamaCloudIndex(BaseManagedIndex):
         self,
         verbose: bool = False,
         raise_on_partial_success: bool = False,
-    ) -> None:
+        sleep_interval: float = 0.5,
+    ) -> Optional[ManagedIngestionStatusResponse]:
+        if sleep_interval < 0.5:
+            # minimum sleep interval at 0.5 seconds to prevent rate-limiting
+            sleep_interval = 0.5
         if verbose:
-            print("Syncing pipeline: ", end="")
+            print(f"Syncing pipeline {self.pipeline.id}: ", end="")
 
         is_done = False
+        status_response: Optional[ManagedIngestionStatusResponse] = None
         while not is_done:
-            status = self._client.pipelines.get_pipeline_status(
+            status_response = self._client.pipelines.get_pipeline_status(
                 pipeline_id=self.pipeline.id
-            ).status
+            )
+            status = status_response.status
             if status == ManagedIngestionStatus.ERROR or (
                 raise_on_partial_success
                 and status == ManagedIngestionStatus.PARTIAL_SUCCESS
             ):
-                raise ValueError(f"Pipeline ingestion failed for {self.pipeline.id}")
+                error_details = status_response.json()
+                raise ValueError(
+                    f"Pipeline ingestion failed for {self.pipeline.id}. Error details: {error_details}"
+                )
             elif status in [
                 ManagedIngestionStatus.NOT_STARTED,
                 ManagedIngestionStatus.IN_PROGRESS,
             ]:
                 if verbose:
                     print(".", end="")
-                time.sleep(0.5)
+                time.sleep(sleep_interval)
             else:
                 is_done = True
                 if verbose:
                     print("Done!")
+        return status_response
 
     def _wait_for_file_ingestion(
         self,

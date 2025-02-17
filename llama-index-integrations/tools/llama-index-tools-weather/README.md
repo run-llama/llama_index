@@ -25,4 +25,4 @@ agent.chat("What is the wind like in Budapest tomorrow?")
 
 `weather_at_location`: Use pyowm to get current weather details at a location
 
-`forecast_tommorrow_at_location`: Use pyowm to get the forecast for tomorrow at a location.
+`forecast_tomorrow_at_location`: Use pyowm to get the forecast for tomorrow at a location.

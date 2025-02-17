@@ -1,69 +1,62 @@
 """Google's hosted Gemini API."""
 
 import os
-import warnings
 import uuid
+import warnings
 from typing import (
     TYPE_CHECKING,
-    Union,
-    List,
     Any,
     Dict,
     Generator,
+    List,
     Optional,
     Sequence,
+    Union,
     cast,
 )
 
 import google.generativeai as genai
-from google.generativeai.types import generation_types
 import llama_index.core.instrumentation as instrument
+from google.generativeai.types import generation_types
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ChatResponseAsyncGen,
     ChatResponseGen,
     CompletionResponse,
-    CompletionResponseGen,
     CompletionResponseAsyncGen,
+    CompletionResponseGen,
     LLMMetadata,
     MessageRole,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
-from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.types import Model
-from llama_index.core.utilities.gemini_utils import (
-    merge_neighboring_same_role_messages,
-)
+from llama_index.core.utilities.gemini_utils import merge_neighboring_same_role_messages
 
 from .utils import (
     chat_from_gemini_response,
     chat_message_to_gemini,
     completion_from_gemini_response,
+    is_function_calling_model,
 )
 
 dispatcher = instrument.get_dispatcher(__name__)
 
 GEMINI_MODELS = (
-    "models/gemini-2.0-flash-exp",
-    "models/gemini-2.0-flash-001",
-    # Gemini 1.0 Pro Vision has been deprecated on July 12, 2024.
-    # According to official recommendations, switch the default model to gemini-1.5-flash
+    "models/gemini-2.0-flash",
+    "models/gemini-2.0-flash-thinking",
+    "models/gemini-2.0-flash-thinking-exp-01-21",
+    "models/gemini-2.0-flash-lite",
+    "models/gemini-2.0-flash-lite-preview-02-05",
+    "models/gemini-2.0-pro-exp-02-05",
     "models/gemini-1.5-flash",
-    "models/gemini-1.5-flash-latest",
-    "models/gemini-pro",
-    "models/gemini-pro-latest",
-    "models/gemini-1.5-pro",
-    "models/gemini-1.5-pro-latest",
+    "models/gemini-1.5-flash-8b",
     "models/gemini-1.0-pro",
-    # for some reason, google lists this without the models prefix
-    "gemini-1.5-flash",
-    "gemini-1.5-flash-latest",
-    "gemini-1.0-pro",
 )
 
 if TYPE_CHECKING:
@@ -188,6 +181,7 @@ class Gemini(FunctionCallingLLM):
         self._model_meta = model_meta
         self._model = genai_model
         self._request_options = request_options
+        self._is_function_call_model = is_function_calling_model(model)
 
     @classmethod
     def class_name(cls) -> str:
@@ -202,7 +196,7 @@ class Gemini(FunctionCallingLLM):
             model_name=self.model,
             is_chat_model=True,
             # All gemini models support function calling
-            is_function_calling_model=True,
+            is_function_calling_model=self._is_function_call_model,
         )
 
     @llm_completion_callback()
@@ -295,13 +289,18 @@ class Gemini(FunctionCallingLLM):
 
         def gen() -> ChatResponseGen:
             content = ""
+            existing_tool_calls = []
             for r in response:
                 top_candidate = r.candidates[0]
                 content_delta = top_candidate.content.parts[0].text
                 content += content_delta
                 llama_resp = chat_from_gemini_response(r)
+                existing_tool_calls.extend(
+                    llama_resp.message.additional_kwargs.get("tool_calls", [])
+                )
                 llama_resp.delta = content_delta
                 llama_resp.message.content = content
+                llama_resp.message.additional_kwargs["tool_calls"] = existing_tool_calls
                 yield llama_resp
 
         return gen()
@@ -320,13 +319,18 @@ class Gemini(FunctionCallingLLM):
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
+            existing_tool_calls = []
             async for r in response:
                 top_candidate = r.candidates[0]
                 content_delta = top_candidate.content.parts[0].text
                 content += content_delta
                 llama_resp = chat_from_gemini_response(r)
+                existing_tool_calls.extend(
+                    llama_resp.message.additional_kwargs.get("tool_calls", [])
+                )
                 llama_resp.delta = content_delta
                 llama_resp.message.content = content
+                llama_resp.message.additional_kwargs["tool_calls"] = existing_tool_calls
                 yield llama_resp
 
         return gen()
