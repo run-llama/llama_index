@@ -291,10 +291,13 @@ class WatsonxLLM(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         if self.model_id:
+            context_window = self.model_info.get("model_limits", {}).get(
+                "max_sequence_length"
+            )
             return LLMMetadata(
-                context_window=(
-                    self.model_info.get("model_limits", {}).get("max_sequence_length")
-                ),
+                context_window=context_window
+                or self._context_window
+                or DEFAULT_CONTEXT_WINDOW,
                 num_output=(self.max_new_tokens or DEFAULT_MAX_TOKENS),
                 model_name=self.model_id,
             )
