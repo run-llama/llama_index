@@ -5,43 +5,37 @@ requires = ["poetry-core"]
 [tool.codespell]
 check-filenames = true
 check-hidden = true
-# Feel free to un-skip examples, and experimental, you will just need to
-# work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.node_parser.docling"
+import_path = "llama_index.readers.microsoft_outlook_emails"
 
 [tool.llamahub.class_authors]
-DoclingNodeParser = "vagenas"
+OutlookEmailReader = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
-# Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.10"
+python_version = "3.8"
 
 [tool.poetry]
-authors = ["Panos Vagenas <pva@zurich.ibm.com>"]
-description = "llama-index node_parser docling integration"
+authors = ["Your Name <you@example.com>"]
+description = "llama-index readers microsoft_outlook_emails integration"
+exclude = ["**/BUILD"]
+keywords = ["emails", "microsoft 365", "microsoft365", "outlook"]
 license = "MIT"
-name = "llama-index-node-parser-docling"
-packages = [{include = "llama_index/"}]
+maintainers = ["llama-index"]
+name = "llama-index-readers-microsoft-outlook-emails"
 readme = "README.md"
-version = "0.3.1"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.9,<4.0"
 llama-index-core = "^0.12.0"
-docling-core = "^2.18.0"
-
-[tool.poetry.group.dev]
 
 [tool.poetry.group.dev.dependencies]
-black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
-codespell = {extras = ["toml"], version = ">=v2.2.6"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"
@@ -55,5 +49,16 @@ types-Deprecated = ">=0.1.0"
 types-PyYAML = "^6.0.12.12"
 types-protobuf = "^4.24.0.4"
 types-redis = "4.5.5.0"
-types-requests = "2.28.11.8"  # TODO: unpin when mypy>0.991
+types-requests = "2.28.11.8"
 types-setuptools = "67.1.0.0"
+
+[tool.poetry.group.dev.dependencies.black]
+extras = ["jupyter"]
+version = "<=23.9.1,>=23.7.0"
+
+[tool.poetry.group.dev.dependencies.codespell]
+extras = ["toml"]
+version = ">=v2.2.6"
+
+[[tool.poetry.packages]]
+include = "llama_index/"

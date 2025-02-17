@@ -354,7 +354,11 @@ def to_openai_message_dict(
         }
 
     # TODO: O1 models do not support system prompts
-    if model is not None and model in O1_MODELS:
+    if (
+        model is not None
+        and model in O1_MODELS
+        and model not in O1_MODELS_WITHOUT_FUNCTION_CALLING
+    ):
         if message_dict["role"] == "system":
             message_dict["role"] = "developer"
 

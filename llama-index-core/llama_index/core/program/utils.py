@@ -13,7 +13,7 @@ from llama_index.core.llms.llm import LLM, ToolSelection
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.prompts.base import BasePromptTemplate
-from llama_index.core.types import BasePydanticProgram, PydanticProgramMode
+from llama_index.core.types import BasePydanticProgram, Model, PydanticProgramMode
 from llama_index.core.base.llms.types import ChatResponse
 
 _logger = logging.getLogger(__name__)
@@ -55,12 +55,12 @@ def create_list_model(base_cls: Type[BaseModel]) -> Type[BaseModel]:
 
 
 def get_program_for_llm(
-    output_cls: Type[BaseModel],
+    output_cls: Type[Model],
     prompt: BasePromptTemplate,
     llm: LLM,
     pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
     **kwargs: Any,
-) -> BasePydanticProgram:
+) -> BasePydanticProgram[Model]:
     """Get a program based on the compatible LLM."""
     if pydantic_program_mode == PydanticProgramMode.DEFAULT:
         if llm.metadata.is_function_calling_model:
@@ -161,12 +161,12 @@ def _repair_incomplete_json(json_str: str) -> str:
 
 def process_streaming_objects(
     chat_response: ChatResponse,
-    output_cls: Type[BaseModel],
-    cur_objects: Optional[Sequence[BaseModel]] = None,
+    output_cls: Type[Model],
+    cur_objects: Optional[Sequence[Model]] = None,
     allow_parallel_tool_calls: bool = False,
     flexible_mode: bool = True,
     llm: Optional[FunctionCallingLLM] = None,
-) -> Union[BaseModel, List[BaseModel]]:
+) -> Union[Model, List[Model], FlexibleModel, List[FlexibleModel]]:
     """Process streaming response into structured objects.
 
     Args:
