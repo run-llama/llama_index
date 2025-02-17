@@ -1,5 +1,53 @@
 # ChangeLog
 
+## [2025-02-16]
+
+### `llama-index-core` [0.12.18]
+
+- improve prompt helper multimodal support (#17831)
+- Retain return type from `@dispatcher.span` (#17817)
+- Silence nltk downloader (#17816)
+- Keep a reference to asyncio tasks in `astream_chat()` (#17812)
+
+### `llama-index-indices-managed-llama-cloud` [0.6.6]
+
+- include file & page metadata when returning image node from llamacloud retriever (#17823)
+- Improve error logs for llamacloud indices (#17827)
+
+### `llama-index-indices-managed-vertexai` [0.2.1]
+
+- Add textnode metadata (#17814)
+
+### `llama-index-llms-anthropic` [0.6.5]
+
+- feat: ✨ add support to anthropic claude-3-5-haiku-latest model name (#17818)
+
+### `llama-index-llms-openai` [0.3.20]
+
+- openai developer message fix for older o1 models (#17833)
+
+### `llama-index-readers-microsoft-outlook-emails` [0.1.0]
+
+- feat: add Microsoft Outlook Email Reader integration (#17829)
+
+### `llama-index-tools-mcp` [0.1.0]
+
+- feat: add mcp tool spec (#17795)
+
+### `llama-index-tools-playwright` [0.1.1]
+
+- Fix: Change Playwright browser tool from sync to async (#17808)
+
+### `llama-index-vector-stores-azureaisearch` [0.3.5]
+
+- Expand AzureAISearchVectorStore filter options (#17811)
+- azureaisearch: prefer using hybrid_top_k over similarity_top_k for hybrid search (#17612)
+- azureaisearch: add default to None for semantic configuration name (#17807)
+
+### `llama-index-vector-stores-mariadb` [0.3.1]
+
+- MariaDB Vector Store Integration: Add tuning parameters and utility functions (#17791)
+
 ## [2025-02-11]
 
 ### `llama-index-core` [0.12.17]

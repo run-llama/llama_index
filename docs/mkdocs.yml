@@ -183,7 +183,9 @@ nav:
           - ./examples/customization/streaming/SimpleIndexDemo-streaming.ipynb
           - ./examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb
       - Data Connectors:
+          - ./examples/data_connectors/AlloyDBReaderDemo.ipynb
           - ./examples/data_connectors/ChromaDemo.ipynb
+          - ./examples/data_connectors/CloudSQLPgReaderDemo.ipynb
           - ./examples/data_connectors/DashvectorReaderDemo.ipynb
           - ./examples/data_connectors/DatabaseReaderDemo.ipynb
           - ./examples/data_connectors/DeepLakeReader.ipynb
@@ -221,7 +223,9 @@ nav:
       - Discover LlamaIndex:
           - ./examples/discover_llamaindex/document_management/Discord_Thread_Management.ipynb
       - Docstores:
+          - ./examples/docstore/AlloyDBDocstoreDemo.ipynb
           - ./examples/docstore/AzureDocstoreDemo.ipynb
+          - ./examples/docstore/CloudSQLPgDocstoreDemo.ipynb
           - ./examples/docstore/DocstoreDemo.ipynb
           - ./examples/docstore/DynamoDBDocstoreDemo.ipynb
           - ./examples/docstore/FirestoreDemo.ipynb
@@ -277,6 +281,7 @@ nav:
           - ./examples/embeddings/voyageai.ipynb
           - ./examples/embeddings/yandexgpt.ipynb
       - Evaluation:
+          - ./examples/evaluation/AIMon.ipynb
           - ./examples/evaluation/BeirEvaluation.ipynb
           - ./examples/evaluation/Deepeval.ipynb
           - ./examples/evaluation/HotpotQADistractor.ipynb
@@ -616,6 +621,7 @@ nav:
       - Vector Stores:
           - ./examples/vector_stores/AWSDocDBDemo.ipynb
           - ./examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb
+          - ./examples/vector_stores/AlloyDBVectorStoreDemo.ipynb
           - ./examples/vector_stores/AmazonNeptuneVectorDemo.ipynb
           - ./examples/vector_stores/AnalyticDBDemo.ipynb
           - ./examples/vector_stores/AstraDBIndexDemo.ipynb
@@ -631,6 +637,7 @@ nav:
           - ./examples/vector_stores/ChromaFireworksNomic.ipynb
           - ./examples/vector_stores/ChromaIndexDemo.ipynb
           - ./examples/vector_stores/ClickHouseIndexDemo.ipynb
+          - ./examples/vector_stores/CloudSQLPgVectorStoreDemo.ipynb
           - ./examples/vector_stores/CouchbaseVectorStoreDemo.ipynb
           - ./examples/vector_stores/DashvectorIndexDemo.ipynb
           - ./examples/vector_stores/DatabricksVectorSearchDemo.ipynb
@@ -1397,6 +1404,7 @@ nav:
           - ./api_reference/readers/metal.md
           - ./api_reference/readers/microsoft_onedrive.md
           - ./api_reference/readers/microsoft_outlook.md
+          - ./api_reference/readers/microsoft_outlook_emails.md
           - ./api_reference/readers/microsoft_sharepoint.md
           - ./api_reference/readers/milvus.md
           - ./api_reference/readers/minio.md
@@ -1664,6 +1672,7 @@ nav:
           - ./api_reference/tools/jira.md
           - ./api_reference/tools/linkup_research.md
           - ./api_reference/tools/load_and_search.md
+          - ./api_reference/tools/mcp.md
           - ./api_reference/tools/metaphor.md
           - ./api_reference/tools/multion.md
           - ./api_reference/tools/neo4j.md
@@ -2364,6 +2373,8 @@ plugins:
             - ../llama-index-integrations/tools/llama-index-tools-playwright
             - ../llama-index-integrations/readers/llama-index-readers-whisper
             - ../llama-index-integrations/llms/llama-index-llms-openvino-genai
+            - ../llama-index-integrations/tools/llama-index-tools-mcp
+            - ../llama-index-integrations/readers/llama-index-readers-microsoft-outlook-emails
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
