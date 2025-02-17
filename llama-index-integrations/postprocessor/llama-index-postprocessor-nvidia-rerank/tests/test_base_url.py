@@ -3,10 +3,11 @@ from urllib.parse import urlparse, urlunparse
 import pytest
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank as Interface
 from llama_index.postprocessor.nvidia_rerank.utils import BASE_URL
+import respx
 
 
 @pytest.fixture()
-def mock_v1_local_models2(respx_mock, base_url: str) -> None:
+def mock_v1_local_models2(respx_mock: respx.MockRouter, base_url: str) -> None:
     parsed = urlparse(base_url)
     normalized_path = parsed.path.rstrip("/")
     if not normalized_path.endswith("/v1"):

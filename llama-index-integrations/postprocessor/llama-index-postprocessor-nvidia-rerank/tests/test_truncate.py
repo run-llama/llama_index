@@ -9,7 +9,7 @@ from llama_index.core.schema import NodeWithScore, Document
 
 
 @pytest.fixture()
-def mock_v1_models(respx_mock) -> None:
+def mock_v1_models(respx_mock: respx.MockRouter) -> None:
     respx_mock.get("https://integrate.api.nvidia.com/v1/models").respond(
         json={
             "data": [
@@ -25,7 +25,7 @@ def mock_v1_models(respx_mock) -> None:
 
 
 @pytest.fixture()
-def mock_v1_ranking(respx_mock) -> None:
+def mock_v1_ranking(respx_mock: respx.MockRouter) -> None:
     respx_mock.post(
         re.compile(r"https://ai\.api\.nvidia\.com/v1/.*/reranking")
     ).respond(
@@ -52,7 +52,7 @@ def mock(mock_v1_models: None, mock_v1_ranking: None) -> None:
 )
 def test_truncate_passed(
     mock: None,
-    respx_mock,
+    respx_mock: respx.MockRouter,
     truncate: Optional[Literal["END", "NONE"]],
 ) -> None:
     client = NVIDIARerank(
