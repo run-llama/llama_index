@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.readers.microsoft_sharepoint"
+import_path = "llama_index.readers.microsoft_outlook_emails"
 
 [tool.llamahub.class_authors]
-SharePointReader = "arun-soliton"
+OutlookEmailReader = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,19 +22,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index readers microsoft_sharepoint integration"
+description = "llama-index readers microsoft_outlook_emails integration"
 exclude = ["**/BUILD"]
-keywords = ["microsoft 365", "microsoft365", "sharepoint"]
+keywords = ["emails", "microsoft 365", "microsoft365", "outlook"]
 license = "MIT"
-maintainers = ["arun-soliton"]
-name = "llama-index-readers-microsoft-sharepoint"
+maintainers = ["llama-index"]
+name = "llama-index-readers-microsoft-outlook-emails"
 readme = "README.md"
-version = "0.5.0"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-requests = "^2.31.0"
-llama-index-readers-file = "^0.4.0"
 llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
