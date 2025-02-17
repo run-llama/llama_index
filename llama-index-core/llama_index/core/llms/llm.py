@@ -373,7 +373,7 @@ class LLM(BaseLLM):
         )
 
         result = program(llm_kwargs=llm_kwargs, **prompt_args)
-        assert isinstance(result, output_cls)
+
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
@@ -431,7 +431,7 @@ class LLM(BaseLLM):
         )
 
         result = await program.acall(llm_kwargs=llm_kwargs, **prompt_args)
-        assert isinstance(result, output_cls)
+
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
@@ -475,7 +475,7 @@ class LLM(BaseLLM):
                 print(partial_output.name)
             ```
         """
-        from llama_index.core.program.utils import FlexibleModel, get_program_for_llm
+        from llama_index.core.program.utils import get_program_for_llm
 
         dispatcher.event(
             LLMStructuredPredictStartEvent(
@@ -491,7 +491,6 @@ class LLM(BaseLLM):
 
         result = program.stream_call(llm_kwargs=llm_kwargs, **prompt_args)
         for r in result:
-            assert isinstance(r, (FlexibleModel, output_cls))
             dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
             yield r
 
@@ -540,7 +539,6 @@ class LLM(BaseLLM):
 
         async def gen() -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
             from llama_index.core.program.utils import (
-                FlexibleModel,
                 get_program_for_llm,
             )
 
@@ -558,7 +556,6 @@ class LLM(BaseLLM):
 
             result = await program.astream_call(llm_kwargs=llm_kwargs, **prompt_args)
             async for r in result:
-                assert isinstance(r, (FlexibleModel, output_cls))
                 dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
                 yield r
 
