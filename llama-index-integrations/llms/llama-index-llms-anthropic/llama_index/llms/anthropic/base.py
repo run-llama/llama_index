@@ -8,6 +8,7 @@ from anthropic.types import (
     ContentBlockStopEvent,
 )
 from anthropic.types.tool_use_block import ToolUseBlock
+
 from typing import (
     Any,
     Callable,
@@ -61,6 +62,19 @@ if TYPE_CHECKING:
 
 DEFAULT_ANTHROPIC_MODEL = "claude-2.1"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
+
+
+class AnthropicTokenizer:
+    def __init__(self, client, model) -> None:
+        self._client = client
+        self.model = model
+
+    def encode(self, text: str, *args: Any, **kwargs: Any) -> List[int]:
+        count = self._client.beta.messages.count_tokens(
+            messages=[{"role": "user", "content": text}],
+            model=self.model,
+        ).input_tokens
+        return [1] * count
 
 
 class Anthropic(FunctionCallingLLM):
@@ -210,7 +224,7 @@ class Anthropic(FunctionCallingLLM):
 
     @property
     def tokenizer(self) -> Tokenizer:
-        return self._client.get_tokenizer()
+        return AnthropicTokenizer(self._client, self.model)
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:

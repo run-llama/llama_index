@@ -30,15 +30,15 @@ license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-packs-recursive-retriever"
 readme = "README.md"
-version = "0.3.0"
+version = "0.6.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-index-readers-file = "^0.2.0"
+python = ">=3.9,<4.0"
+llama-index-readers-file = "^0.4.0"
 lxml = "^5.1.0"
-unstructured = "0.10.18"
-llama-index-llms-openai = "^0.2.0"
-llama-index-core = "^0.11.0"
+unstructured = "^0.14.3"
+llama-index-llms-openai = "^0.3.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

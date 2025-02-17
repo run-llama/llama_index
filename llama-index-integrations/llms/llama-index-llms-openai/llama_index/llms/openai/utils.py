@@ -2,10 +2,13 @@ import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
+import openai
 from deprecated import deprecated
-from llama_index.core.base.llms.types import ChatMessage, LogProb, CompletionResponse
-from llama_index.core.bridge.pydantic import BaseModel
-from llama_index.core.base.llms.generic_utils import get_from_param_or_env
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
+from openai.types.completion_choice import Logprobs
 from tenacity import (
     before_sleep_log,
     retry,
@@ -17,23 +20,37 @@ from tenacity import (
 )
 from tenacity.stop import stop_base
 
-import openai
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
-from openai.types.chat.chat_completion_chunk import ChoiceDeltaToolCall
-from openai.types.chat.chat_completion_message import ChatCompletionMessage
-from openai.types.chat.chat_completion_token_logprob import ChatCompletionTokenLogprob
-from openai.types.completion_choice import Logprobs
-from openai.types.completion import Completion
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ImageBlock,
+    LogProb,
+    MessageRole,
+    TextBlock,
+    AudioBlock,
+)
+from llama_index.core.bridge.pydantic import BaseModel
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
 DEFAULT_OPENAI_API_BASE = "https://api.openai.com/v1"
 DEFAULT_OPENAI_API_VERSION = ""
 
 O1_MODELS: Dict[str, int] = {
+    "o1": 200000,
+    "o1-2024-12-17": 200000,
     "o1-preview": 128000,
     "o1-preview-2024-09-12": 128000,
     "o1-mini": 128000,
     "o1-mini-2024-09-12": 128000,
+    "o3-mini": 200000,
+    "o3-mini-2025-01-31": 200000,
+}
+
+O1_MODELS_WITHOUT_FUNCTION_CALLING = {
+    "o1-preview",
+    "o1-preview-2024-09-12",
+    "o1-mini",
+    "o1-mini-2024-09-12",
 }
 
 GPT4_MODELS: Dict[str, int] = {
@@ -52,8 +69,14 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4-turbo-2024-04-09": 128000,
     "gpt-4-turbo": 128000,
     "gpt-4o": 128000,
+    "gpt-4o-audio-preview": 128000,
+    "gpt-4o-audio-preview-2024-12-17": 128000,
+    "gpt-4o-audio-preview-2024-10-01": 128000,
+    "gpt-4o-mini-audio-preview": 128000,
+    "gpt-4o-mini-audio-preview-2024-12-17": 128000,
     "gpt-4o-2024-05-13": 128000,
     "gpt-4o-2024-08-06": 128000,
+    "gpt-4o-2024-11-20": 128000,
     # Intended for research and evaluation
     "chatgpt-4o-latest": 128000,
     "gpt-4o-mini": 128000,
@@ -189,7 +212,8 @@ def create_retry_decorator(
 
 
 def openai_modelname_to_contextsize(modelname: str) -> int:
-    """Calculate the maximum number of tokens possible to generate for a model.
+    """
+    Calculate the maximum number of tokens possible to generate for a model.
 
     Args:
         modelname: The modelname we want to know the context size for.
@@ -229,28 +253,114 @@ def is_chat_model(model: str) -> bool:
 
 
 def is_function_calling_model(model: str) -> bool:
+    # checking whether the model is fine-tuned or not.
+    # fine-tuned model names these days look like:
+    # ft:gpt-3.5-turbo:acemeco:suffix:abc123
+    if model.startswith("ft-"):  # legacy fine-tuning
+        model = model.split(":")[0]
+    elif model.startswith("ft:"):
+        model = model.split(":")[1]
+
     is_chat_model_ = is_chat_model(model)
     is_old = "0314" in model or "0301" in model
-
-    # TODO: This is temporary for openai's beta
-    is_o1_beta = "o1" in model
+    is_o1_beta = model in O1_MODELS_WITHOUT_FUNCTION_CALLING
 
     return is_chat_model_ and not is_old and not is_o1_beta
 
 
 def to_openai_message_dict(
-    message: ChatMessage, drop_none: bool = False, model: Optional[str] = None
+    message: ChatMessage,
+    drop_none: bool = False,
+    model: Optional[str] = None,
 ) -> ChatCompletionMessageParam:
-    """Convert generic message to OpenAI message dict."""
-    message_dict = {
-        "role": message.role.value,
-        "content": message.content,
-    }
+    """Convert a ChatMessage to an OpenAI message dict."""
+    content = []
+    content_txt = ""
+    reference_audio_id = None
+    for block in message.blocks:
+        if message.role == MessageRole.ASSISTANT:
+            reference_audio_id = message.additional_kwargs.get(
+                "reference_audio_id", None
+            )
+            # if reference audio id is provided, we don't need to send the audio
+            if reference_audio_id:
+                continue
+
+        if isinstance(block, TextBlock):
+            content.append({"type": "text", "text": block.text})
+            content_txt += block.text
+        elif isinstance(block, ImageBlock):
+            if block.url:
+                content.append(
+                    {"type": "image_url", "image_url": {"url": str(block.url)}}
+                )
+            else:
+                img_bytes = block.resolve_image(as_base64=True).read()
+                img_str = img_bytes.decode("utf-8")
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{block.image_mimetype};base64,{img_str}",
+                            "detail": block.detail or "low",
+                        },
+                    }
+                )
+        elif isinstance(block, AudioBlock):
+            audio_bytes = block.resolve_audio(as_base64=True).read()
+            audio_str = audio_bytes.decode("utf-8")
+            content.append(
+                {
+                    "type": "input_audio",
+                    "input_audio": {
+                        "data": audio_str,
+                        "format": block.format,
+                    },
+                }
+            )
+        else:
+            msg = f"Unsupported content block type: {type(block).__name__}"
+            raise ValueError(msg)
+
+    # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
+    # It's only Allowed to send None if it's an Assistant Message
+    # Reference: https://platform.openai.com/docs/api-reference/chat/create
+    content_txt = (
+        None
+        if content_txt == "" and message.role == MessageRole.ASSISTANT
+        else content_txt
+    )
+
+    # If reference audio id is provided, we don't need to send the audio
+    # NOTE: this is only a thing for assistant messages
+    if reference_audio_id:
+        message_dict = {
+            "role": message.role.value,
+            "audio": {"id": reference_audio_id},
+        }
+    else:
+        # NOTE: Despite what the openai docs say, if the role is ASSISTANT, SYSTEM
+        # or TOOL, 'content' cannot be a list and must be string instead.
+        # Furthermore, if all blocks are text blocks, we can use the content_txt
+        # as the content. This will avoid breaking openai-like APIs.
+        message_dict = {
+            "role": message.role.value,
+            "content": (
+                content_txt
+                if message.role.value in ("assistant", "tool", "system")
+                or all(isinstance(block, TextBlock) for block in message.blocks)
+                else content
+            ),
+        }
 
     # TODO: O1 models do not support system prompts
-    if model is not None and model in O1_MODELS:
+    if (
+        model is not None
+        and model in O1_MODELS
+        and model not in O1_MODELS_WITHOUT_FUNCTION_CALLING
+    ):
         if message_dict["role"] == "system":
-            message_dict["role"] = "user"
+            message_dict["role"] = "developer"
 
     # NOTE: openai messages have additional arguments:
     # - function messages have `name`
@@ -273,25 +383,38 @@ def to_openai_message_dicts(
 ) -> List[ChatCompletionMessageParam]:
     """Convert generic messages to OpenAI message dicts."""
     return [
-        to_openai_message_dict(message, drop_none=drop_none, model=model)
+        to_openai_message_dict(
+            message,
+            drop_none=drop_none,
+            model=model,
+        )
         for message in messages
     ]
 
 
-def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
+def from_openai_message(
+    openai_message: ChatCompletionMessage, modalities: List[str]
+) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = openai_message.role
     # NOTE: Azure OpenAI returns function calling messages without a content key
-    content = openai_message.content
-
-    # function_call = None  # deprecated in OpenAI v 1.1.0
+    if "text" in modalities and openai_message.content:
+        blocks = [TextBlock(text=openai_message.content or "")]
+    else:
+        blocks = []
 
     additional_kwargs: Dict[str, Any] = {}
     if openai_message.tool_calls:
         tool_calls: List[ChatCompletionMessageToolCall] = openai_message.tool_calls
         additional_kwargs.update(tool_calls=tool_calls)
 
-    return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
+    if openai_message.audio and "audio" in modalities:
+        reference_audio_id = openai_message.audio.id
+        audio_data = openai_message.audio.data
+        additional_kwargs["reference_audio_id"] = reference_audio_id
+        blocks.append(AudioBlock(audio=audio_data, format="mp3"))
+
+    return ChatMessage(role=role, blocks=blocks, additional_kwargs=additional_kwargs)
 
 
 def from_openai_token_logprob(
@@ -305,7 +428,7 @@ def from_openai_token_logprob(
                 LogProb(token=el.token, logprob=el.logprob, bytes=el.bytes or [])
                 for el in openai_token_logprob.top_logprobs
             ]
-        except Exception as e:
+        except Exception:
             print(openai_token_logprob)
             raise
     return result
@@ -323,7 +446,7 @@ def from_openai_token_logprobs(
 
 
 def from_openai_completion_logprob(
-    openai_completion_logprob: Dict[str, float]
+    openai_completion_logprob: Dict[str, float],
 ) -> List[LogProb]:
     """Convert openai completion logprobs to generic list of LogProb."""
     return [
@@ -345,29 +468,43 @@ def from_openai_completion_logprobs(
     return result
 
 
-def from_openai_completion(openai_completion: Completion) -> CompletionResponse:
-    """Convert openai completion to CompletionResponse."""
-    text = openai_completion.choices[0].text
-
-
 def from_openai_messages(
-    openai_messages: Sequence[ChatCompletionMessage],
+    openai_messages: Sequence[ChatCompletionMessage], modalities: List[str]
 ) -> List[ChatMessage]:
     """Convert openai message dicts to generic messages."""
-    return [from_openai_message(message) for message in openai_messages]
+    return [from_openai_message(message, modalities) for message in openai_messages]
 
 
 def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = message_dict["role"]
     # NOTE: Azure OpenAI returns function calling messages without a content key
-    content = message_dict.get("content", None)
+    content = message_dict.get("content")
+    blocks = []
+    if isinstance(content, list):
+        for elem in content:
+            t = elem.get("type")
+            if t == "text":
+                blocks.append(TextBlock(text=elem.get("text")))
+            elif t == "image_url":
+                img = elem["image_url"]["url"]
+                detail = elem["image_url"]["detail"]
+                if img.startswith("data:"):
+                    blocks.append(ImageBlock(image=img, detail=detail))
+                else:
+                    blocks.append(ImageBlock(url=img, detail=detail))
+            else:
+                msg = f"Unsupported message type: {t}"
+                raise ValueError(msg)
+        content = None
 
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")
     additional_kwargs.pop("content", None)
 
-    return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
+    return ChatMessage(
+        role=role, content=content, additional_kwargs=additional_kwargs, blocks=blocks
+    )
 
 
 def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage]:
@@ -377,7 +514,8 @@ def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage
 
 @deprecated("Deprecated in favor of `to_openai_tool`, which should be used instead.")
 def to_openai_function(pydantic_class: Type[BaseModel]) -> Dict[str, Any]:
-    """Deprecated in favor of `to_openai_tool`.
+    """
+    Deprecated in favor of `to_openai_tool`.
 
     Convert pydantic class to OpenAI function.
     """
@@ -403,7 +541,8 @@ def resolve_openai_credentials(
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[Optional[str], str, str]:
-    """ "Resolve OpenAI credentials.
+    """
+    "Resolve OpenAI credentials.
 
     The order of precedence is:
     1. param
@@ -434,7 +573,8 @@ def validate_openai_api_key(api_key: Optional[str] = None) -> None:
 
 
 def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
-    """Resolve tool choice.
+    """
+    Resolve tool choice.
 
     If tool_choice is a function name string, return the appropriate dict.
     """

@@ -60,7 +60,7 @@ def sharepoint_reader():
     return sharepoint_reader
 
 
-def mock_requests_get(url, headers):
+def mock_send_get_with_retry(url):
     mock_response = MagicMock()
     mock_response.status_code = 200
 
@@ -145,8 +145,8 @@ def mock_sharepoint_api_calls():
         SharePointReader, "_get_sharepoint_folder_id", return_value="dummy_folder_id"
     ), patch.object(
         SharePointReader, "_get_drive_id", return_value="dummy_drive_id"
-    ), patch(
-        "requests.get", side_effect=mock_requests_get
+    ), patch.object(
+        SharePointReader, "_send_get_with_retry", side_effect=mock_send_get_with_retry
     ):
         yield
 

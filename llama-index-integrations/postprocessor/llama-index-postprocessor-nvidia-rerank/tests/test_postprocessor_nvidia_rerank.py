@@ -6,8 +6,7 @@ from llama_index.core.schema import NodeWithScore, Document
 from llama_index.core.node_parser import SentenceSplitter
 
 import faker
-
-from requests_mock import Mocker
+import respx
 
 
 @pytest.fixture()
@@ -16,16 +15,9 @@ def known_unknown() -> str:
 
 
 @pytest.fixture()
-def mock_local_models(requests_mock: Mocker, known_unknown) -> None:
-    requests_mock.get(
-        "http://localhost:8000/v1/models",
-        json={
-            "data": [
-                {
-                    "id": known_unknown,
-                },
-            ]
-        },
+def mock_local_models(respx_mock: respx.MockRouter, known_unknown: str) -> None:
+    respx_mock.get("http://localhost:8000/v1/models").respond(
+        json={"data": [{"id": known_unknown}]}
     )
 
 
@@ -213,11 +205,13 @@ def test_local_model_not_found(mock_local_models) -> None:
     assert err_msg == str(msg.value)
 
 
+# marking this as xfail as we do not return invalid error anymore
+@pytest.mark.xfail(reason="value error is not raised anymore")
 def test_model_incompatible_client() -> None:
     model_name = "x"
     err_msg = (
         f"Model {model_name} is incompatible with client NVIDIARerank. "
-        f"Please check `NVIDIARerank.available_models()`."
+        f"Please check `NVIDIARerank.available_models`."
     )
     with pytest.raises(ValueError) as msg:
         NVIDIARerank(api_key="BOGUS", model=model_name)
@@ -226,8 +220,6 @@ def test_model_incompatible_client() -> None:
 
 def test_model_incompatible_client_known_model() -> None:
     model_name = "google/deplot"
-    warn_msg = f"Unable to determine validity"
-    with pytest.warns(UserWarning) as msg:
-        NVIDIARerank(api_key="BOGUS", model=model_name)
-    assert len(msg) == 1
-    assert warn_msg in str(msg[0].message)
+    with pytest.warns(UserWarning) as warning:
+        model = NVIDIARerank(api_key="BOGUS", model=model_name)
+    assert "Unable to determine validity" in str(warning[0].message)

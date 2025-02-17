@@ -122,6 +122,8 @@ def test_from_new():
         name=name,
         instructions=instructions,
         tools=openai_tools,
+        top_p=None,
+        temperature=None,
     )
 
 

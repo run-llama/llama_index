@@ -274,7 +274,7 @@ class MyWorkflow(Workflow):
         self, ctx: Context, ev: GatherEvent | MyEventResult
     ) -> StopEvent | None:
         # wait for events to finish
-        events = ctx.collect_events([MyEventResult, MyEventResult])
+        events = ctx.collect_events(ev, [MyEventResult, MyEventResult])
         if not events:
             return None
 
@@ -283,7 +283,21 @@ class MyWorkflow(Workflow):
 
 ## Streaming Events
 
-You can also iterate over events as they come in. This is useful for streaming purposes, showing progress, or for debugging.
+You can also iterate over events as they come in. This is useful for streaming purposes, showing progress, or for debugging. The handler object will emit events that are explicitly written to the stream using `ctx.write_event_to_stream()`:
+
+```python
+class ProgressEvent(Event):
+    msg: str
+
+
+class MyWorkflow(Workflow):
+    @step
+    async def step_one(self, ctx: Context, ev: StartEvent) -> FirstEvent:
+        ctx.write_event_to_stream(ProgressEvent(msg="Step one is happening"))
+        return FirstEvent(first_output="First step complete.")
+```
+
+You can then pick up the events like this:
 
 ```python
 w = MyWorkflow(...)
@@ -360,6 +374,9 @@ Since workflows are so flexible, there are many possible ways to implement human
 The easiest way to implement a human-in-the-loop is to use the `InputRequiredEvent` and `HumanResponseEvent` events during event streaming.
 
 ```python
+from llama_index.core.workflow import InputRequiredEvent, HumanResponseEvent
+
+
 class HumanInTheLoopWorkflow(Workflow):
     @step
     async def step1(self, ev: StartEvent) -> InputRequiredEvent:
@@ -487,9 +504,32 @@ handler = w.run(ctx=handler.ctx)
 result = await handler
 ```
 
+## Checkpointing Workflows
+
+Workflow runs can also be made to create and store checkpoints upon every step completion via the `WorfklowCheckpointer` object. These checkpoints can be then be used as the starting points for future runs, which can be a helpful feature during the development (and debugging) of your Workflow.
+
+```python
+from llama_index.core.workflow import WorkflowCheckpointer
+
+w = JokeFlow(...)
+w_cptr = WorkflowCheckpointer(workflow=w)
+
+# to checkpoint a run, use the `run` method from w_cptr
+handler = w_cptr.run(topic="Pirates")
+await handler
+
+# to view the stored checkpoints of this run
+w_cptr.checkpoints[handler.run_id]
+
+# to run from one of the checkpoints, use `run_from` method
+ckpt = w_cptr.checkpoints[handler.run_id][0]
+handler = w_cptr.run_from(topic="Ships")
+await handler
+```
+
 ## Deploying a Workflow
 
-You can deploy a workflow as a multi-agent service with [llama_deploy](../../module_guides/workflow/deployment.md) ([repo](https://github.com/run-llama/llama_deploy)). Each agent service is orchestrated via a control plane and communicates via a message queue. Deploy locally or on Kubernetes.
+You can deploy a workflow as a multi-agent service with [llama_deploy](../../module_guides/workflow/llama_deploy) ([repo](https://github.com/run-llama/llama_deploy)). Each agent service is orchestrated via a control plane and communicates via a message queue. Deploy locally or on Kubernetes.
 
 ## Examples
 
@@ -521,6 +561,10 @@ calling.
 example showing how workflow runs can be interactive and stateful. In this case, to collect input from a human.
 - [Reliable Structured Generation](../../examples/workflow/reflection.ipynb) shows how to implement loops in a
 workflow, in this case to improve structured output through reflection.
+- [Query Planning with Workflows](../../examples/workflow/planning_workflow.ipynb) is an example of a workflow
+that plans a query by breaking it down into smaller items, and executing those smaller items. It highlights how
+to stream events from a workflow, execute steps in parallel, and looping until a condition is met.
+- [Checkpointing Workflows](../../examples/workflow/checkpointing_workflows.ipynb) is a more exhaustive demonstration of how to make full use of `WorkflowCheckpointer` to checkpoint Workflow runs.
 
 Last but not least, a few more advanced use cases that demonstrate how workflows can be extremely handy if you need
 to quickly implement prototypes, for example from literature:

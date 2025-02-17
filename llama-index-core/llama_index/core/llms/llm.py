@@ -12,6 +12,7 @@ from typing import (
     get_args,
     runtime_checkable,
     TYPE_CHECKING,
+    Type,
 )
 from typing_extensions import Annotated
 
@@ -72,6 +73,7 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
+    from llama_index.core.program.utils import FlexibleModel
     from llama_index.core.tools.types import BaseTool
     from llama_index.core.llms.structured_llm import StructuredLLM
 
@@ -321,11 +323,11 @@ class LLM(BaseLLM):
     @dispatcher.span
     def structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> BaseModel:
+    ) -> Model:
         r"""Structured predict.
 
         Args:
@@ -333,6 +335,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -369,16 +373,19 @@ class LLM(BaseLLM):
         )
 
         result = program(llm_kwargs=llm_kwargs, **prompt_args)
+        assert not isinstance(result, list)
+
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
     @dispatcher.span
     async def astructured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[Model],
         prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> BaseModel:
+    ) -> Model:
         r"""Async Structured predict.
 
         Args:
@@ -386,6 +393,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -422,18 +431,20 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        result = await program.acall(**prompt_args)
+        result = await program.acall(llm_kwargs=llm_kwargs, **prompt_args)
+        assert not isinstance(result, list)
+
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
     @dispatcher.span
     def stream_structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+    ) -> Generator[Union[Model, "FlexibleModel"], None, None]:
         r"""Stream Structured predict.
 
         Args:
@@ -441,6 +452,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -481,6 +494,7 @@ class LLM(BaseLLM):
         result = program.stream_call(llm_kwargs=llm_kwargs, **prompt_args)
         for r in result:
             dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+            assert not isinstance(r, list)
             yield r
 
         dispatcher.event(LLMStructuredPredictEndEvent(output=r))
@@ -488,11 +502,11 @@ class LLM(BaseLLM):
     @dispatcher.span
     async def astream_structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> AsyncGenerator[Union[Model, List[Model]], None]:
+    ) -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
         r"""Async Stream Structured predict.
 
         Args:
@@ -500,6 +514,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -524,8 +540,10 @@ class LLM(BaseLLM):
             ```
         """
 
-        async def gen() -> AsyncGenerator[Union[Model, List[Model]], None]:
-            from llama_index.core.program.utils import get_program_for_llm
+        async def gen() -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
+            from llama_index.core.program.utils import (
+                get_program_for_llm,
+            )
 
             dispatcher.event(
                 LLMStructuredPredictStartEvent(
@@ -542,6 +560,7 @@ class LLM(BaseLLM):
             result = await program.astream_call(llm_kwargs=llm_kwargs, **prompt_args)
             async for r in result:
                 dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+                assert not isinstance(r, list)
                 yield r
 
             dispatcher.event(LLMStructuredPredictEndEvent(output=r))
@@ -864,7 +883,7 @@ class LLM(BaseLLM):
 
     def as_structured_llm(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[BaseModel],
         **kwargs: Any,
     ) -> "StructuredLLM":
         """Return a structured LLM around a given object."""

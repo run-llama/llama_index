@@ -21,17 +21,17 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
+authors = ["Kalin Arsov <kalin@skysql.com>", "Vishal Rao <vishal@skysql.com>"]
 description = "llama-index vector_stores mariadb integration"
 exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-mariadb"
 readme = "README.md"
-version = "0.1.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-index-core = "^0.11.0"
+python = ">=3.9,<4.0"
+llama-index-core = "^0.12.0"
 pymysql = "^1.1.1"
 
 [tool.poetry.dependencies.sqlalchemy]
@@ -68,4 +68,7 @@ include = "llama_index/"
 [tool.pytest.ini_options]
 filterwarnings = [
     "ignore::DeprecationWarning:",
+]
+markers = [
+    "noautousefixtures: marks tests that should not run fixtures with autouse",
 ]

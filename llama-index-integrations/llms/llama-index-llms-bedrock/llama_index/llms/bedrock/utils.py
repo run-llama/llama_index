@@ -48,6 +48,8 @@ CHAT_ONLY_MODELS = {
     "anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "anthropic.claude-3-opus-20240229-v1:0": 200000,
     "anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
+    "anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
     "cohere.command-r-plus-v1:0": 128000,
     "meta.llama2-13b-chat-v1": 2048,
     "meta.llama2-70b-chat-v1": 4096,
@@ -56,6 +58,33 @@ CHAT_ONLY_MODELS = {
     "mistral.mistral-7b-instruct-v0:2": 32000,
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
     "mistral.mistral-large-2402-v1:0": 32000,
+    "mistral.mistral-large-2407-v1:0": 32000,
+    "ai21.jamba-1-5-mini-v1:0": 256000,
+    "ai21.jamba-1-5-large-v1:0": 256000,
+    "us.anthropic.claude-3-haiku-20240307-v1:0": 200000,
+    "us.anthropic.claude-3-opus-20240229-v1:0": 200000,
+    "us.anthropic.claude-3-sonnet-20240229-v1:0": 200000,
+    "us.anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
+    "us.anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
+    "us.anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "us.meta.llama3-1-70b-instruct-v1:0": 8192,
+    "us.meta.llama3-1-8b-instruct-v1:0": 8192,
+    "us.meta.llama3-2-11b-instruct-v1:0": 8192,
+    "us.meta.llama3-2-1b-instruct-v1:0": 8192,
+    "us.meta.llama3-2-3b-instruct-v1:0": 8192,
+    "us.meta.llama3-2-90b-instruct-v1:0": 8192,
+    "eu.anthropic.claude-3-haiku-20240307-v1:0": 200000,
+    "eu.anthropic.claude-3-opus-20240229-v1:0": 200000,
+    "eu.anthropic.claude-3-sonnet-20240229-v1:0": 200000,
+    "eu.anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
+    "eu.anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
+    "eu.anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "eu.meta.llama3-1-70b-instruct-v1:0": 8192,
+    "eu.meta.llama3-1-8b-instruct-v1:0": 8192,
+    "eu.meta.llama3-2-11b-instruct-v1:0": 8192,
+    "eu.meta.llama3-2-1b-instruct-v1:0": 8192,
+    "eu.meta.llama3-2-3b-instruct-v1:0": 8192,
+    "eu.meta.llama3-2-90b-instruct-v1:0": 8192,
 }
 BEDROCK_FOUNDATION_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}
 
@@ -73,10 +102,25 @@ STREAMING_MODELS = {
     "anthropic.claude-3-5-sonnet-20240620-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
+    "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "anthropic.claude-3-5-haiku-20241022-v1:0",
     "meta.llama2-13b-chat-v1",
     "mistral.mistral-7b-instruct-v0:2",
     "mistral.mixtral-8x7b-instruct-v0:1",
     "mistral.mistral-large-2402-v1:0",
+    "mistral.mistral-large-2407-v1:0",
+    "us.anthropic.claude-3-haiku-20240307-v1:0",
+    "us.anthropic.claude-3-opus-20240229-v1:0",
+    "us.anthropic.claude-3-sonnet-20240229-v1:0",
+    "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+    "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "eu.anthropic.claude-3-haiku-20240307-v1:0",
+    "eu.anthropic.claude-3-opus-20240229-v1:0",
+    "eu.anthropic.claude-3-sonnet-20240229-v1:0",
+    "eu.anthropic.claude-3-5-haiku-20241022-v1:0",
+    "eu.anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "eu.anthropic.claude-3-5-sonnet-20241022-v2:0",
 }
 
 
@@ -215,7 +259,10 @@ PROVIDERS = {
 
 
 def get_provider(model: str) -> Provider:
-    provider_name = model.split(".")[0]
+    model_split = model.split(".")
+    provider_name = model_split[0]
+    if len(model_split) == 3:
+        provider_name = model_split[1]
     if provider_name not in PROVIDERS:
         raise ValueError(f"Provider {provider_name} for model {model} is not supported")
     return PROVIDERS[provider_name]
@@ -252,6 +299,9 @@ def completion_with_retry(
     request_body: str,
     max_retries: int,
     stream: bool = False,
+    guardrail_identifier: Optional[str] = None,
+    guardrail_version: Optional[str] = None,
+    trace: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -260,9 +310,29 @@ def completion_with_retry(
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
         if stream:
-            return client.invoke_model_with_response_stream(
-                modelId=model, body=request_body
-            )
-        return client.invoke_model(modelId=model, body=request_body)
+            if guardrail_identifier is None or guardrail_version is None:
+                return client.invoke_model_with_response_stream(
+                    modelId=model,
+                    body=request_body,
+                )
+            else:
+                return client.invoke_model_with_response_stream(
+                    modelId=model,
+                    body=request_body,
+                    guardrailIdentifier=guardrail_identifier,
+                    guardrailVersion=guardrail_version,
+                    trace=trace,
+                )
+        else:
+            if guardrail_identifier is None or guardrail_version is None:
+                return client.invoke_model(modelId=model, body=request_body)
+            else:
+                return client.invoke_model(
+                    modelId=model,
+                    body=request_body,
+                    guardrailIdentifier=guardrail_identifier,
+                    guardrailVersion=guardrail_version,
+                    trace=trace,
+                )
 
     return _completion_with_retry(**kwargs)

@@ -2,7 +2,7 @@ import asyncio
 from functools import partial
 from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
-from typing import Any, Callable, Generator, List, Optional, Dict, Protocol
+from typing import Any, Callable, Generator, List, Optional, Dict, Protocol, TypeVar
 import inspect
 import logging
 import uuid
@@ -26,6 +26,7 @@ _logger = logging.getLogger(__name__)
 active_instrument_tags: ContextVar[Dict[str, Any]] = ContextVar(
     "instrument_tags", default={}
 )
+_R = TypeVar("_R")
 
 
 @contextmanager
@@ -78,7 +79,7 @@ class Dispatcher(BaseModel):
         description="Whether to propagate the event to parent dispatchers and their handlers",
     )
     current_span_ids: Optional[Dict[Any, str]] = Field(
-        default_factory=dict,
+        default_factory=dict,  # type: ignore
         description="Id of current enclosing span. Used for creating `dispatch_event` partials.",
     )
 
@@ -239,7 +240,7 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
-    def span(self, func: Callable) -> Any:
+    def span(self, func: Callable[..., _R]) -> Callable[..., _R]:
         # The `span` decorator should be idempotent.
         try:
             if hasattr(func, DISPATCHER_SPAN_DECORATED_ATTR):
@@ -277,7 +278,13 @@ class Dispatcher(BaseModel):
                 instance: Any,
                 context: Context,
             ) -> None:
+                from llama_index.core.workflow.errors import WorkflowCancelledByUser
+
                 try:
+                    exception = future.exception()
+                    if exception is not None:
+                        raise exception
+
                     result = future.result()
                     self.span_exit(
                         id_=span_id,
@@ -286,6 +293,14 @@ class Dispatcher(BaseModel):
                         result=result,
                     )
                     return result
+                except WorkflowCancelledByUser:
+                    self.span_exit(
+                        id_=span_id,
+                        bound_args=bound_args,
+                        instance=instance,
+                        result=None,
+                    )
+                    return None
                 except BaseException as e:
                     self.event(SpanDropEvent(span_id=span_id, err_str=str(e)))
                     self.span_drop(

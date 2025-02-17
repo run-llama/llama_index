@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence, List, Union, TYPE_CHECKING
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -12,6 +12,10 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
+from llama_index.core.base.llms.generic_utils import (
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+)
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 
@@ -22,8 +26,7 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-
-from llama_index.core.llms.llm import LLM
+from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 from llama_index.llms.oci_genai.utils import (
@@ -34,40 +37,17 @@ from llama_index.llms.oci_genai.utils import (
     get_completion_generator,
     get_chat_generator,
     get_context_size,
+    _format_oci_tool_calls,
+    force_single_tool_call,
+    validate_tool_call,
 )
 
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
 
-# TODO:
-# (1) placeholder for future LLMs in utils.py e.g., llama3, command R+
-class OCIGenAI(LLM):
-    """OCI large language models.
 
-    To authenticate, the OCI client uses the methods described in
-    https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
-
-    The authentifcation method is passed through auth_type and should be one of:
-    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL
-
-    Make sure you have the required policies (profile/roles) to
-    access the OCI Generative AI service.
-    If a specific config profile is used, you must pass
-    the name of the profile (from ~/.oci/config) through auth_profile.
-
-    To use, you must provide the compartment id
-    along with the endpoint url, and model id
-    as named parameters to the constructor.
-
-    Example:
-        .. code-block:: python
-
-            from llama_index.llms.oci_genai import OCIGenAI
-
-            llm = OCIGenAI(
-                    model="MY_MODEL_ID",
-                    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
-                    compartment_id="MY_OCID"
-                )
-    """
+class OCIGenAI(FunctionCallingLLM):
+    """OCI large language models with function calling support."""
 
     model: str = Field(description="Id of the OCI Generative AI model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
@@ -94,6 +74,11 @@ class OCIGenAI(LLM):
         default="DEFAULT",
     )
 
+    auth_file_location: Optional[str] = Field(
+        description="Path to the config file. If not specified, ~/.oci/config will be used",
+        default="~/.oci/config",
+    )
+
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional kwargs for the OCI Generative AI request.",
@@ -115,6 +100,7 @@ class OCIGenAI(LLM):
         compartment_id: Optional[str] = None,
         auth_type: Optional[str] = "API_KEY",
         auth_profile: Optional[str] = "DEFAULT",
+        auth_file_location: Optional[str] = "~/.oci/config",
         client: Optional[Any] = None,
         provider: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
@@ -141,10 +127,11 @@ class OCIGenAI(LLM):
 
             compartment_id (str): OCID of the compartment.
 
-            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCEAL, RESOURCE_PRINCIPAL.
-                                    If not specified, API_KEY will be used
+            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCEAL, RESOURCE_PRINCIPAL. If not specified, API_KEY will be used
 
             auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
+
+            auth_file_location (Optional[str]): Path to the config file, If not specified, ~/.oci/config will be used.
 
             client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the
                                     provided service endpoint and authentifcation method.
@@ -167,6 +154,7 @@ class OCIGenAI(LLM):
             compartment_id=compartment_id,
             auth_type=auth_type,
             auth_profile=auth_profile,
+            auth_file_location=auth_file_location,
             additional_kwargs=additional_kwargs,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
@@ -177,7 +165,7 @@ class OCIGenAI(LLM):
         )
 
         self._client = client or create_client(
-            auth_type, auth_profile, service_endpoint
+            auth_type, auth_profile, auth_file_location, service_endpoint
         )
 
         self._provider = get_provider(model, provider)
@@ -190,7 +178,6 @@ class OCIGenAI(LLM):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get class name."""
         return "OCIGenAI_LLM"
 
     @property
@@ -223,57 +210,27 @@ class OCIGenAI(LLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        inference_params = self._get_all_kwargs(**kwargs)
-        inference_params["is_stream"] = False
-        inference_params["prompt"] = prompt
-
-        request = self._completion_generator(
-            compartment_id=self.compartment_id,
-            serving_mode=self._serving_mode,
-            inference_request=self._provider.oci_completion_request(**inference_params),
-        )
-
-        response = self._client.generate_text(request)
-        return CompletionResponse(
-            text=self._provider.completion_response_to_text(response),
-            raw=response.__dict__,
-        )
+        complete_fn = chat_to_completion_decorator(self.chat)
+        return complete_fn(prompt, **kwargs)
 
     @llm_completion_callback()
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        inference_params = self._get_all_kwargs(**kwargs)
-        inference_params["is_stream"] = True
-        inference_params["prompt"] = prompt
-
-        request = self._completion_generator(
-            compartment_id=self.compartment_id,
-            serving_mode=self._serving_mode,
-            inference_request=self._provider.oci_completion_request(**inference_params),
-        )
-
-        response = self._client.generate_text(request)
-
-        def gen() -> CompletionResponseGen:
-            content = ""
-            for event in response.data.events():
-                content_delta = self._provider.completion_stream_to_text(
-                    json.loads(event.data)
-                )
-                content += content_delta
-                yield CompletionResponse(
-                    text=content, delta=content_delta, raw=event.__dict__
-                )
-
-        return gen()
+        stream_complete_fn = stream_chat_to_completion_decorator(self.stream_chat)
+        return stream_complete_fn(prompt, **kwargs)
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = False
+        tools = kwargs.pop("tools", None)
         all_kwargs = self._get_all_kwargs(**kwargs)
         chat_params = {**all_kwargs, **oci_params}
+        if tools:
+            chat_params["tools"] = [
+                self._provider.convert_to_oci_tool(tool) for tool in tools
+            ]
 
         request = self._chat_generator(
             compartment_id=self.compartment_id,
@@ -283,10 +240,20 @@ class OCIGenAI(LLM):
 
         response = self._client.chat(request)
 
+        generation_info = self._provider.chat_generation_info(response)
+
+        llm_output = {
+            "model_id": response.data.model_id,
+            "model_version": response.data.model_version,
+            "request_id": response.request_id,
+            "content-length": response.headers["content-length"],
+        }
+
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 content=self._provider.chat_response_to_text(response),
+                additional_kwargs=generation_info,
             ),
             raw=response.__dict__,
         )
@@ -296,8 +263,13 @@ class OCIGenAI(LLM):
     ) -> ChatResponseGen:
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = True
+        tools = kwargs.pop("tools", None)
         all_kwargs = self._get_all_kwargs(**kwargs)
         chat_params = {**all_kwargs, **oci_params}
+        if tools:
+            chat_params["tools"] = [
+                self._provider.convert_to_oci_tool(tool) for tool in tools
+            ]
 
         request = self._chat_generator(
             compartment_id=self.compartment_id,
@@ -309,39 +281,169 @@ class OCIGenAI(LLM):
 
         def gen() -> ChatResponseGen:
             content = ""
+            tool_calls_accumulated = []
+
             for event in response.data.events():
                 content_delta = self._provider.chat_stream_to_text(
                     json.loads(event.data)
                 )
                 content += content_delta
-                yield ChatResponse(
-                    message=ChatMessage(role=MessageRole.ASSISTANT, content=content),
-                    delta=content_delta,
-                    raw=event.__dict__,
-                )
+
+                try:
+                    event_data = json.loads(event.data)
+
+                    tool_calls_data = None
+                    for key in ["toolCalls", "tool_calls", "functionCalls"]:
+                        if key in event_data:
+                            tool_calls_data = event_data[key]
+                            break
+
+                    if tool_calls_data:
+                        new_tool_calls = _format_oci_tool_calls(tool_calls_data)
+                        for tool_call in new_tool_calls:
+                            existing = next(
+                                (
+                                    t
+                                    for t in tool_calls_accumulated
+                                    if t["name"] == tool_call["name"]
+                                ),
+                                None,
+                            )
+                            if existing:
+                                existing.update(tool_call)
+                            else:
+                                tool_calls_accumulated.append(tool_call)
+
+                    generation_info = self._provider.chat_stream_generation_info(
+                        event_data
+                    )
+                    if tool_calls_accumulated:
+                        generation_info["tool_calls"] = tool_calls_accumulated
+
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT,
+                            content=content,
+                            additional_kwargs=generation_info,
+                        ),
+                        delta=content_delta,
+                        raw=event.__dict__,
+                    )
+
+                except json.JSONDecodeError:
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT, content=content
+                        ),
+                        delta=content_delta,
+                        raw=event.__dict__,
+                    )
+
+                except Exception as e:
+                    print(f"Error processing stream chunk: {e}")
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT, content=content
+                        ),
+                        delta=content_delta,
+                        raw=event.__dict__,
+                    )
 
         return gen()
-
-    async def acomplete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
-        # do synchronous complete for now
-        return self.complete(prompt, formatted=formatted, **kwargs)
 
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        # do synchronous chat for now
-        return self.chat(messages, **kwargs)
+        raise NotImplementedError("Async chat is not implemented yet.")
+
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        raise NotImplementedError("Async complete is not implemented yet.")
 
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        # do synchronous stream chat for now
-        return self.stream_chat(messages, **kwargs)
+        raise NotImplementedError("Async stream chat is not implemented yet.")
 
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        # do synchronous stream complete for now
-        return self.stream_complete(prompt, formatted, **kwargs)
+        raise NotImplementedError("Async stream complete is not implemented yet.")
+
+    # Function tooling integration methods
+    def _prepare_chat_with_tools(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        tool_specs = [self._provider.convert_to_oci_tool(tool) for tool in tools]
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        oci_params = self._provider.messages_to_oci_params(messages)
+        chat_params = self._get_all_kwargs(**kwargs)
+
+        return {
+            "messages": messages,
+            "tools": tool_specs,
+            **oci_params,
+            **chat_params,
+        }
+
+    def _validate_chat_with_tools_response(
+        self,
+        response: ChatResponse,
+        tools: List["BaseTool"],
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Validate the response from chat_with_tools."""
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
+
+    def get_tool_calls_from_response(
+        self,
+        response: "ChatResponse",
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        """Predict and call the tool."""
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            validate_tool_call(tool_call)
+            argument_dict = (
+                json.loads(tool_call["input"])
+                if isinstance(tool_call["input"], str)
+                else tool_call["input"]
+            )
+
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call["toolUseId"],
+                    tool_name=tool_call["name"],
+                    tool_kwargs=argument_dict,
+                )
+            )
+
+        return tool_selections

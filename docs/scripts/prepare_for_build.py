@@ -72,6 +72,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "embeddings": "Embeddings",
     "evaluation": "Evaluation",
     "extractors": "Metadata Extractors",
+    "graph_rag": "Graph RAG",
     "indices": "Indexes",
     "ingestion": "Ingestion",
     "instrumentation": "Instrumentation",
@@ -171,7 +172,6 @@ def main():
                                     label_idx
                                 ][label]
                             ):
-                                print(toc_path_name)
                                 mkdocs["nav"][examples_idx]["Examples"][
                                     label_idx
                                 ][label].append(toc_path_name)

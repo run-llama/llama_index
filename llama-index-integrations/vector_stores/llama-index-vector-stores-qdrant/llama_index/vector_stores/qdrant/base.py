@@ -9,6 +9,7 @@ import logging
 from typing import Any, List, Optional, Tuple, cast
 
 import qdrant_client
+from qdrant_client import QdrantClient, AsyncQdrantClient
 from grpc import RpcError
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -74,8 +75,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     Args:
         collection_name: (str): name of the Qdrant collection
-        client (Optional[Any]): QdrantClient instance from `qdrant-client` package
-        aclient (Optional[Any]): AsyncQdrantClient instance from `qdrant-client` package
+        client (Optional[QdrantClient]): QdrantClient instance from `qdrant-client` package
+        aclient (Optional[AsyncQdrantClient]): AsyncQdrantClient instance from `qdrant-client` package
         url (Optional[str]): url of the Qdrant instance
         api_key (Optional[str]): API key for authenticating with Qdrant
         batch_size (int): number of points to upload in a single request to Qdrant. Defaults to 64
@@ -88,6 +89,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_query_fn (Optional[SparseEncoderCallable]): function to encode sparse queries
         hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
         index_doc_id (bool): whether to create a payload index for the document ID. Defaults to True
+        text_key (str): Name of the field holding the text information, Defaults to 'text'
 
     Examples:
         `pip install llama-index-vector-stores-qdrant`
@@ -117,9 +119,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
     enable_hybrid: bool
     index_doc_id: bool
     fastembed_sparse_model: Optional[str]
+    text_key: Optional[str]
 
-    _client: qdrant_client.QdrantClient = PrivateAttr()
-    _aclient: qdrant_client.AsyncQdrantClient = PrivateAttr()
+    _client: QdrantClient = PrivateAttr()
+    _aclient: AsyncQdrantClient = PrivateAttr()
     _collection_initialized: bool = PrivateAttr()
     _sparse_doc_fn: Optional[SparseEncoderCallable] = PrivateAttr()
     _sparse_query_fn: Optional[SparseEncoderCallable] = PrivateAttr()
@@ -131,8 +134,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def __init__(
         self,
         collection_name: str,
-        client: Optional[Any] = None,
-        aclient: Optional[Any] = None,
+        client: Optional[QdrantClient] = None,
+        aclient: Optional[AsyncQdrantClient] = None,
         url: Optional[str] = None,
         api_key: Optional[str] = None,
         batch_size: int = 64,
@@ -148,6 +151,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         sparse_query_fn: Optional[SparseEncoderCallable] = None,
         hybrid_fusion_fn: Optional[HybridFusionCallable] = None,
         index_doc_id: bool = True,
+        text_key: Optional[str] = "text",
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -162,6 +166,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             enable_hybrid=enable_hybrid,
             index_doc_id=index_doc_id,
             fastembed_sparse_model=fastembed_sparse_model,
+            text_key=text_key,
         )
 
         if (
@@ -347,6 +352,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             collection_name=self.collection_name,
             limit=limit or 9999,
             scroll_filter=filter,
+            with_vectors=True,
         )
 
         return self.parse_to_query_result(response[0]).nodes
@@ -392,6 +398,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             collection_name=self.collection_name,
             limit=limit or 9999,
             scroll_filter=filter,
+            with_vectors=True,
         )
 
         return self.parse_to_query_result(response[0]).nodes
@@ -987,8 +994,19 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         for point in response:
             payload = cast(Payload, point.payload)
+            vector = point.vector
+            embedding = None
+
+            if isinstance(vector, dict):
+                embedding = vector.get(DENSE_VECTOR_NAME, vector.get("", None))
+            elif isinstance(vector, list):
+                embedding = vector
+
             try:
                 node = metadata_dict_to_node(payload)
+
+                if embedding and node.embedding is None:
+                    node.embedding = embedding
             except Exception:
                 metadata, node_info, relationships = legacy_metadata_dict_to_node(
                     payload
@@ -996,11 +1014,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
                 node = TextNode(
                     id_=str(point.id),
-                    text=payload.get("text"),
+                    text=payload.get(self.text_key),
                     metadata=metadata,
                     start_char_idx=node_info.get("start", None),
                     end_char_idx=node_info.get("end", None),
                     relationships=relationships,
+                    embedding=embedding,
                 )
             nodes.append(node)
             ids.append(str(point.id))
@@ -1064,7 +1083,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         range=Range(lte=subfilter.value),
                     )
                 )
-            elif subfilter.operator == FilterOperator.TEXT_MATCH:
+            elif (
+                subfilter.operator == FilterOperator.TEXT_MATCH
+                or subfilter.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
+            ):
                 conditions.append(
                     FieldCondition(
                         key=subfilter.key,
@@ -1117,12 +1139,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
             filter.must = conditions
         elif filters.condition == FilterCondition.OR:
             filter.should = conditions
+        elif filters.condition == FilterCondition.NOT:
+            filter.must_not = conditions
         return filter
 
     def _build_query_filter(self, query: VectorStoreQuery) -> Optional[Any]:
-        if not query.doc_ids and not query.query_str:
-            return None
-
         must_conditions = []
 
         if query.doc_ids:
@@ -1146,6 +1167,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         if query.filters and query.filters.filters:
             must_conditions.append(self._build_subfilter(query.filters))
+
+        if len(must_conditions) == 0:
+            return None
 
         return Filter(must=must_conditions)
 

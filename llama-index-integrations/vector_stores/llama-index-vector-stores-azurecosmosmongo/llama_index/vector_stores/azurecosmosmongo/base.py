@@ -7,7 +7,6 @@ An index that is built on top of an existing vector store.
 import logging
 import os
 from typing import Any, Dict, List, Optional, cast
-from datetime import date
 
 import pymongo
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -136,6 +135,8 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
             create_index_commands = self._get_vector_index_ivf(kind)
         elif kind == "vector-hnsw":
             create_index_commands = self._get_vector_index_hnsw(kind)
+        elif kind == "vector-diskann":
+            create_index_commands = self._get_vector_index_diskann(kind)
         db.command(create_index_commands)
 
     def _get_vector_index_ivf(
@@ -178,6 +179,31 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
                         "efConstruction": self._cosmos_search_kwargs.get(
                             "efConstruction", 64
                         ),
+                        "similarity": self._cosmos_search_kwargs.get(
+                            "similarity", "COS"
+                        ),
+                        "dimensions": self._cosmos_search_kwargs.get(
+                            "dimensions", 1536
+                        ),
+                    },
+                }
+            ],
+        }
+
+    def _get_vector_index_diskann(
+        self,
+        kind: str,
+    ) -> Dict[str, Any]:
+        return {
+            "createIndexes": self._collection_name,
+            "indexes": [
+                {
+                    "name": self._index_name,
+                    "key": {self._embedding_key: "cosmosSearch"},
+                    "cosmosSearchOptions": {
+                        "kind": kind,
+                        "maxDegree": self._cosmos_search_kwargs.get("maxDegree", 32),
+                        "lBuild": self._cosmos_search_kwargs.get("lBuild", 50),
                         "similarity": self._cosmos_search_kwargs.get(
                             "similarity", "COS"
                         ),
@@ -234,7 +260,6 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
                 self._embedding_key: node.get_embedding(),
                 self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
-                "timeStamp": date.today(),
             }
             data_to_insert.append(entry)
             ids.append(node.node_id)
@@ -273,6 +298,10 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         elif kind == "vector-hnsw":
             pipeline = self._get_pipeline_vector_hnsw(
                 query, kwargs.get("ef_search", 40), kwargs.get("pre_filter", {})
+            )
+        elif kind == "vector-diskann":
+            pipeline = self._get_pipeline_vector_diskann(
+                query, kwargs.get("lSearch", 40), kwargs.get("pre_filter", {})
             )
 
         logger.debug("Running query pipeline: %s", pipeline)
@@ -348,6 +377,33 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
             "path": self._embedding_key,
             "k": query.similarity_top_k,
             "efSearch": ef_search,
+        }
+        if pre_filter:
+            params["filter"] = pre_filter
+
+        pipeline: List[dict[str, Any]] = [
+            {
+                "$search": {
+                    "cosmosSearch": params,
+                }
+            },
+            {
+                "$project": {
+                    "similarityScore": {"$meta": "searchScore"},
+                    "document": "$$ROOT",
+                }
+            },
+        ]
+        return pipeline
+
+    def _get_pipeline_vector_diskann(
+        self, query: VectorStoreQuery, l_search: int, pre_filter: Optional[Dict]
+    ) -> List[dict[str, Any]]:
+        params = {
+            "vector": query.query_embedding,
+            "path": self._embedding_key,
+            "k": query.similarity_top_k,
+            "lSearch": l_search,
         }
         if pre_filter:
             params["filter"] = pre_filter

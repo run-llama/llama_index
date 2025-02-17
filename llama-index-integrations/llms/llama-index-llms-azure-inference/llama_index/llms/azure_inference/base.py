@@ -214,6 +214,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
         model_name: Optional[str] = None,
+        api_version: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
@@ -250,6 +251,9 @@ class AzureAICompletionsModel(FunctionCallingLLM):
                 "You must provide an credential to use the Azure AI model inference LLM."
                 "Pass the credential as a parameter or set the AZURE_INFERENCE_CREDENTIAL"
             )
+
+        if api_version:
+            client_kwargs["api_version"] = api_version
 
         super().__init__(
             model_name=model_name,
@@ -415,7 +419,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         messages = to_inference_message(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._async_client.complete(
+        response = await self._async_client.complete(
             messages=messages, stream=True, **all_kwargs
         )
 
