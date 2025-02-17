@@ -50,8 +50,12 @@ dispatcher = instrument.get_dispatcher(__name__)
 GEMINI_MODELS = (
     "models/gemini-2.0-flash",
     "models/gemini-2.0-flash-thinking",
+    "models/gemini-2.0-flash-thinking-exp-01-21",
     "models/gemini-2.0-flash-lite",
+    "models/gemini-2.0-flash-lite-preview-02-05",
+    "models/gemini-2.0-pro-exp-02-05",
     "models/gemini-1.5-flash",
+    "models/gemini-1.5-flash-8b",
     "models/gemini-1.0-pro",
 )
 
