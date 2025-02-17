@@ -32,10 +32,22 @@ class VertexAIRetriever(BaseRetriever):
                 vector_distance_threshold=self._vector_distance_threshold,
             )
 
-        return [
-            NodeWithScore(node=TextNode(text=context.text), score=context.distance)
-            for context in response.rag_contexts.contexts
-        ]
+        if response.contexts:
+            return [
+                NodeWithScore(
+                    node=TextNode(
+                        text=context.text,
+                        metadata={
+                            "source_uri": context.source_uri,
+                            "source_display_name": context.source_display_name,
+                        },
+                    ),
+                    score=context.distance,
+                )
+                for context in response.contexts.contexts
+            ]
+        else:
+            return []
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Asynchronously retrieve from the platform."""

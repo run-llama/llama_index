@@ -29,6 +29,8 @@ from llama_index.llms.llama_cpp.llama_utils import (
 )
 from llama_index.llms.sagemaker_endpoint.utils import BaseIOHandler, IOHandler
 
+import warnings
+
 DEFAULT_IO_HANDLER = IOHandler()
 LLAMA_MESSAGES_TO_PROMPT = messages_to_prompt
 LLAMA_COMPLETION_TO_PROMPT = completion_to_prompt
@@ -104,18 +106,18 @@ class SageMakerLLM(LLM):
         description="AWS Secret Access Key to use"
     )
     aws_session_token: Optional[str] = Field(description="AWS Session Token to use")
-    aws_region_name: Optional[str] = Field(
+    region_name: Optional[str] = Field(
         description="AWS region name to use. Uses region configured in AWS CLI if not passed"
     )
     max_retries: Optional[int] = Field(
         default=3,
         description="The maximum number of API retries.",
-        gte=0,
+        ge=0,
     )
     timeout: Optional[float] = Field(
         default=60.0,
         description="The timeout, in seconds, for API requests.",
-        gte=0,
+        ge=0,
     )
     _client: Any = PrivateAttr()
     _completion_to_prompt: Callable[[str, Optional[str]], str] = PrivateAttr()
@@ -130,7 +132,7 @@ class SageMakerLLM(LLM):
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
-        region_name: Optional[str] = None,
+        aws_region_name: Optional[str] = None,
         max_retries: Optional[int] = 3,
         timeout: Optional[float] = 60.0,
         temperature: Optional[float] = 0.5,
@@ -155,17 +157,6 @@ class SageMakerLLM(LLM):
         model_kwargs = model_kwargs or {}
         model_kwargs["temperature"] = temperature
         content_handler = content_handler
-        self._completion_to_prompt = completion_to_prompt
-        self._client = get_aws_service_client(
-            service_name="sagemaker-runtime",
-            profile_name=profile_name,
-            region_name=region_name,
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
-            aws_session_token=aws_session_token,
-            max_retries=max_retries,
-            timeout=timeout,
-        )
         callback_manager = callback_manager or CallbackManager([])
 
         super().__init__(
@@ -174,6 +165,10 @@ class SageMakerLLM(LLM):
             model_kwargs=model_kwargs,
             content_handler=content_handler,
             profile_name=profile_name,
+            region_name=region_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
             timeout=timeout,
             max_retries=max_retries,
             callback_manager=callback_manager,
@@ -181,6 +176,28 @@ class SageMakerLLM(LLM):
             messages_to_prompt=messages_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+        )
+        self._completion_to_prompt = completion_to_prompt
+
+        region_name = kwargs.pop("region_name", None)
+        if region_name is not None:
+            warnings.warn(
+                "Kwarg `region_name` is deprecated and will be removed in a future version. "
+                "Please use `aws_region_name` instead.",
+                DeprecationWarning,
+            )
+            if not aws_region_name:
+                aws_region_name = region_name
+
+        self._client = get_aws_service_client(
+            service_name="sagemaker-runtime",
+            profile_name=profile_name,
+            region_name=aws_region_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+            max_retries=max_retries,
+            timeout=timeout,
         )
 
     @llm_completion_callback()

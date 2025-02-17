@@ -42,6 +42,7 @@ from llama_index.core.vector_stores.simple import (
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
 )
+from llama_index.core.bridge.pydantic import SerializeAsAny
 
 DEFAULT_PERSIST_DIR = "./storage"
 IMAGE_STORE_FNAME = "image_store.json"
@@ -64,7 +65,7 @@ class StorageContext:
 
     docstore: BaseDocumentStore
     index_store: BaseIndexStore
-    vector_stores: Dict[str, BasePydanticVectorStore]
+    vector_stores: Dict[str, SerializeAsAny[BasePydanticVectorStore]]
     graph_store: GraphStore
     property_graph_store: Optional[PropertyGraphStore] = None
 
@@ -229,9 +230,11 @@ class StorageContext:
             DOC_STORE_KEY: self.docstore.to_dict(),
             INDEX_STORE_KEY: self.index_store.to_dict(),
             GRAPH_STORE_KEY: self.graph_store.to_dict(),
-            PG_STORE_KEY: self.property_graph_store.to_dict()
-            if self.property_graph_store
-            else None,
+            PG_STORE_KEY: (
+                self.property_graph_store.to_dict()
+                if self.property_graph_store
+                else None
+            ),
         }
 
     @classmethod

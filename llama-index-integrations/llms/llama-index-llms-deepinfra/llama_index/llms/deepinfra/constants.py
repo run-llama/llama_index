@@ -12,3 +12,5 @@ DEFAULT_MODEL_NAME = "mistralai/Mixtral-8x22B-Instruct-v0.1"
 DEFAULT_MAX_TOKENS = 512
 """Tool choice is auto."""
 TOOL_CHOICE = "auto"
+"""User agent"""
+USER_AGENT = "llama-index-llms-deepinfra"

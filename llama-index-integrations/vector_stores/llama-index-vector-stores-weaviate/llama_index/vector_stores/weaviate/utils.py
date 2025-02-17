@@ -5,10 +5,7 @@ Contain conversion to and from dataclasses that LlamaIndex uses.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
-
-if TYPE_CHECKING:
-    from weaviate import WeaviateClient
+from typing import Any, Dict, List, cast
 
 
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
@@ -18,6 +15,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+import weaviate.classes as wvc
 
 _logger = logging.getLogger(__name__)
 
@@ -59,6 +57,20 @@ def validate_client(client: Any) -> None:
     cast(weaviate.WeaviateClient, client)
 
 
+def validate_async_client(client: Any) -> None:
+    """Validate client and import weaviate library."""
+    try:
+        import weaviate
+
+        client = cast(weaviate.WeaviateAsyncClient, client)
+    except ImportError:
+        raise ImportError(
+            "Weaviate is not installed. "
+            "Please install it with `pip install weaviate-client`."
+        )
+    cast(weaviate.WeaviateAsyncClient, client)
+
+
 def parse_get_response(response: Dict) -> Dict:
     """Parse get response from Weaviate."""
     if "errors" in response:
@@ -76,6 +88,13 @@ def class_schema_exists(client: Any, class_name: str) -> bool:
     return client.collections.exists(class_name)
 
 
+async def aclass_schema_exists(client: Any, class_name: str) -> bool:
+    """Check if class schema exists."""
+    validate_async_client(client)
+    collection = client.collections.get(class_name)
+    return await collection.exists()
+
+
 def create_default_schema(client: Any, class_name: str) -> None:
     """Create default schema."""
     validate_client(client)
@@ -87,25 +106,26 @@ def create_default_schema(client: Any, class_name: str) -> None:
     client.collections.create_from_dict(class_schema)
 
 
-def get_all_properties(client: Any, class_name: str) -> List[str]:
-    """Get all properties of a class."""
-    validate_client(client)
-    if not client.collections.exists(class_name):
-        raise ValueError(f"{class_name} schema does not exist.")
+async def acreate_default_schema(client: Any, class_name: str) -> None:
+    """Create default schema."""
+    validate_async_client(client)
+    class_schema = {
+        "class": class_name,
+        "description": f"Class for {class_name}",
+        "properties": NODE_SCHEMA,
+    }
+    await client.collections.create_from_dict(class_schema)
 
-    properties = client.collections.get(class_name).config.get().properties
-    return [p.name for p in properties]
 
-
-def get_node_similarity(entry: Dict, similarity_key: str = "distance") -> float:
+def get_node_similarity(entry: Dict, similarity_key: str = "score") -> float:
     """Get converted node similarity from distance."""
-    distance = getattr(entry["metadata"], similarity_key)
+    score = getattr(entry["metadata"], similarity_key)
 
-    if distance is None:
-        return 1.0
+    if score is None:
+        return 0.0
 
-    # convert distance https://forum.weaviate.io/t/distance-vs-certainty-scores/258
-    return 1.0 - float(distance)
+    # The hybrid search in Weaviate returns similarity score: https://weaviate.io/developers/weaviate/search/hybrid#explain-the-search-results
+    return float(score)
 
 
 def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
@@ -125,7 +145,7 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
 
         node = TextNode(
             text=text,
-            id_=additional["id"],
+            id_=additional.get("id", str(metadata.get("uuid"))),
             metadata=metadata,
             start_char_idx=node_info.get("start", None),
             end_char_idx=node_info.get("end", None),
@@ -135,13 +155,10 @@ def to_node(entry: Dict, text_key: str = DEFAULT_TEXT_KEY) -> TextNode:
     return node
 
 
-def add_node(
-    client: "WeaviateClient",
+def get_data_object(
     node: BaseNode,
-    class_name: str,
-    batch: Optional[Any] = None,
     text_key: str = DEFAULT_TEXT_KEY,
-) -> None:
+) -> dict:
     """Add node."""
     metadata = {}
     metadata[text_key] = node.get_content(metadata_mode=MetadataMode.NONE) or ""
@@ -154,12 +171,4 @@ def add_node(
     vector = node.get_embedding()
     id = node.node_id
 
-    # if batch object is provided (via a context manager), use that instead
-    if batch is not None:
-        batch.add_object(
-            properties=metadata, collection=class_name, uuid=id, vector=vector
-        )
-    else:
-        client.collections.get(class_name).data.insert(
-            properties=metadata, uuid=id, vector=vector
-        )
+    return wvc.data.DataObject(properties=metadata, uuid=id, vector=vector)

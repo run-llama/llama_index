@@ -12,28 +12,17 @@ from pathlib import Path
 from typing import Any, Generator, List, Optional, Sequence, Union
 
 from fsspec import AbstractFileSystem
-from llama_cloud import (
-    ConfigurableDataSourceNames,
-    ConfigurableTransformationNames,
-)
 
 from llama_index.core.constants import (
     DEFAULT_PIPELINE_NAME,
     DEFAULT_PROJECT_NAME,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.ingestion.cache import DEFAULT_CACHE_NAME, IngestionCache
-from llama_index.core.ingestion.data_sources import (
-    ConfigurableDataSources,
-)
-from llama_index.core.ingestion.transformations import (
-    ConfigurableTransformations,
-)
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.readers.base import ReaderConfig
 from llama_index.core.schema import (
-    BaseComponent,
     BaseNode,
     Document,
     MetadataMode,
@@ -51,20 +40,6 @@ from llama_index.core.vector_stores.types import BasePydanticVectorStore
 dispatcher = get_dispatcher(__name__)
 
 
-def deserialize_transformation_component(
-    component_dict: dict, component_type: ConfigurableTransformationNames
-) -> BaseComponent:
-    component_cls = ConfigurableTransformations[component_type].value.component_type
-    return component_cls.from_dict(component_dict)
-
-
-def deserialize_source_component(
-    component_dict: dict, component_type: ConfigurableDataSourceNames
-) -> BaseComponent:
-    component_cls = ConfigurableDataSources[component_type].value.component_type
-    return component_cls.from_dict(component_dict)
-
-
 def remove_unstable_values(s: str) -> str:
     """
     Remove unstable key/value pairs.
@@ -78,7 +53,7 @@ def remove_unstable_values(s: str) -> str:
 
 
 def get_transformation_hash(
-    nodes: List[BaseNode], transformation: TransformComponent
+    nodes: Sequence[BaseNode], transformation: TransformComponent
 ) -> str:
     """Get the hash of a transformation."""
     nodes_str = "".join(
@@ -92,13 +67,13 @@ def get_transformation_hash(
 
 
 def run_transformations(
-    nodes: List[BaseNode],
+    nodes: Sequence[BaseNode],
     transformations: Sequence[TransformComponent],
     in_place: bool = True,
     cache: Optional[IngestionCache] = None,
     cache_collection: Optional[str] = None,
     **kwargs: Any,
-) -> List[BaseNode]:
+) -> Sequence[BaseNode]:
     """
     Run a series of transformations on a set of nodes.
 
@@ -128,13 +103,13 @@ def run_transformations(
 
 
 async def arun_transformations(
-    nodes: List[BaseNode],
+    nodes: Sequence[BaseNode],
     transformations: Sequence[TransformComponent],
     in_place: bool = True,
     cache: Optional[IngestionCache] = None,
     cache_collection: Optional[str] = None,
     **kwargs: Any,
-) -> List[BaseNode]:
+) -> Sequence[BaseNode]:
     """
     Run a series of transformations on a set of nodes.
 
@@ -165,13 +140,13 @@ async def arun_transformations(
 
 
 def arun_transformations_wrapper(
-    nodes: List[BaseNode],
+    nodes: Sequence[BaseNode],
     transformations: Sequence[TransformComponent],
     in_place: bool = True,
     cache: Optional[IngestionCache] = None,
     cache_collection: Optional[str] = None,
     **kwargs: Any,
-) -> List[BaseNode]:
+) -> Sequence[BaseNode]:
     """
     Wrapper for async run_transformation. To be used in loop.run_in_executor
     within a ProcessPoolExecutor.
@@ -259,6 +234,7 @@ class IngestionPipeline(BaseModel):
         ```
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str = Field(
         default=DEFAULT_PIPELINE_NAME,
         description="Unique name of the ingestion pipeline",
@@ -290,9 +266,6 @@ class IngestionPipeline(BaseModel):
         default=DocstoreStrategy.UPSERTS, description="Document de-dup strategy."
     )
     disable_cache: bool = Field(default=False, description="Disable the cache")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(
         self,
@@ -379,29 +352,32 @@ class IngestionPipeline(BaseModel):
         ]
 
     def _prepare_inputs(
-        self, documents: Optional[List[Document]], nodes: Optional[List[BaseNode]]
-    ) -> List[Document]:
-        input_nodes: List[BaseNode] = []
+        self,
+        documents: Optional[Sequence[Document]],
+        nodes: Optional[Sequence[BaseNode]],
+    ) -> Sequence[BaseNode]:
+        input_nodes: Sequence[BaseNode] = []
+
         if documents is not None:
-            input_nodes += documents
+            input_nodes += documents  # type: ignore
 
         if nodes is not None:
-            input_nodes += nodes
+            input_nodes += nodes  # type: ignore
 
         if self.documents is not None:
-            input_nodes += self.documents
+            input_nodes += self.documents  # type: ignore
 
         if self.readers is not None:
             for reader in self.readers:
-                input_nodes += reader.read()
+                input_nodes += reader.read()  # type: ignore
 
         return input_nodes
 
     def _handle_duplicates(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         store_doc_text: bool = True,
-    ) -> List[BaseNode]:
+    ) -> Sequence[BaseNode]:
         """Handle docstore duplicates by checking all hashes."""
         assert self.docstore is not None
 
@@ -420,13 +396,12 @@ class IngestionPipeline(BaseModel):
 
     def _handle_upserts(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         store_doc_text: bool = True,
-    ) -> List[BaseNode]:
+    ) -> Sequence[BaseNode]:
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
 
-        existing_doc_ids_before = set(self.docstore.get_all_document_hashes().values())
         doc_ids_from_nodes = set()
         deduped_nodes_to_run = {}
         for node in nodes:
@@ -435,7 +410,6 @@ class IngestionPipeline(BaseModel):
             existing_hash = self.docstore.get_document_hash(ref_doc_id)
             if not existing_hash:
                 # document doesn't exist, so add it
-                self.docstore.set_document_hash(ref_doc_id, node.hash)
                 deduped_nodes_to_run[ref_doc_id] = node
             elif existing_hash and existing_hash != node.hash:
                 self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
@@ -443,14 +417,15 @@ class IngestionPipeline(BaseModel):
                 if self.vector_store is not None:
                     self.vector_store.delete(ref_doc_id)
 
-                self.docstore.set_document_hash(ref_doc_id, node.hash)
-
                 deduped_nodes_to_run[ref_doc_id] = node
             else:
                 continue  # document exists and is unchanged, so skip it
 
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
             # Identify missing docs and delete them from docstore and vector store
+            existing_doc_ids_before = set(
+                self.docstore.get_all_document_hashes().values()
+            )
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
             for ref_doc_id in doc_ids_to_delete:
                 self.docstore.delete_document(ref_doc_id)
@@ -459,14 +434,15 @@ class IngestionPipeline(BaseModel):
                     self.vector_store.delete(ref_doc_id)
 
         nodes_to_run = list(deduped_nodes_to_run.values())
+        self.docstore.set_document_hashes({n.id_: n.hash for n in nodes_to_run})
         self.docstore.add_documents(nodes_to_run, store_text=store_doc_text)
 
         return nodes_to_run
 
     @staticmethod
     def _node_batcher(
-        num_batches: int, nodes: Union[List[BaseNode], List[Document]]
-    ) -> Generator[Union[List[BaseNode], List[Document]], Any, Any]:
+        num_batches: int, nodes: Union[Sequence[BaseNode], List[Document]]
+    ) -> Generator[Union[Sequence[BaseNode], List[Document]], Any, Any]:
         """Yield successive n-sized chunks from lst."""
         batch_size = max(1, int(len(nodes) / num_batches))
         for i in range(0, len(nodes), batch_size):
@@ -477,7 +453,7 @@ class IngestionPipeline(BaseModel):
         self,
         show_progress: bool = False,
         documents: Optional[List[Document]] = None,
-        nodes: Optional[List[BaseNode]] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
         cache_collection: Optional[str] = None,
         in_place: bool = True,
         store_doc_text: bool = True,
@@ -494,7 +470,7 @@ class IngestionPipeline(BaseModel):
         Args:
             show_progress (bool, optional): Shows execution progress bar(s). Defaults to False.
             documents (Optional[List[Document]], optional): Set of documents to be transformed. Defaults to None.
-            nodes (Optional[List[BaseNode]], optional): Set of nodes to be transformed. Defaults to None.
+            nodes (Optional[Sequence[BaseNode]], optional): Set of nodes to be transformed. Defaults to None.
             cache_collection (Optional[str], optional): Cache for transformations. Defaults to None.
             in_place (bool, optional): Whether transformations creates a new list for transformed nodes or modifies the
                 array passed to `run_transformations`. Defaults to True.
@@ -542,11 +518,13 @@ class IngestionPipeline(BaseModel):
             nodes_to_run = input_nodes
 
         if num_workers and num_workers > 1:
-            if num_workers > multiprocessing.cpu_count():
+            num_cpus = multiprocessing.cpu_count()
+            if num_workers > num_cpus:
                 warnings.warn(
                     "Specified num_workers exceed number of CPUs in the system. "
                     "Setting `num_workers` down to the maximum CPU count."
                 )
+                num_workers = num_cpus
 
             with multiprocessing.get_context("spawn").Pool(num_workers) as p:
                 node_batches = self._node_batcher(
@@ -562,7 +540,7 @@ class IngestionPipeline(BaseModel):
                         repeat(cache_collection),
                     ),
                 )
-                nodes = reduce(lambda x, y: x + y, nodes_parallel, [])
+                nodes = reduce(lambda x, y: x + y, nodes_parallel, [])  # type: ignore
         else:
             nodes = run_transformations(
                 nodes_to_run,
@@ -574,18 +552,21 @@ class IngestionPipeline(BaseModel):
                 **kwargs,
             )
 
+        nodes = nodes or []
+
         if self.vector_store is not None:
-            self.vector_store.add([n for n in nodes if n.embedding is not None])
+            nodes_with_embeddings = [n for n in nodes if n.embedding is not None]
+            if nodes_with_embeddings:
+                self.vector_store.add(nodes_with_embeddings)
 
         return nodes
 
     # ------ async methods ------
-
     async def _ahandle_duplicates(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         store_doc_text: bool = True,
-    ) -> List[BaseNode]:
+    ) -> Sequence[BaseNode]:
         """Handle docstore duplicates by checking all hashes."""
         assert self.docstore is not None
 
@@ -604,15 +585,12 @@ class IngestionPipeline(BaseModel):
 
     async def _ahandle_upserts(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         store_doc_text: bool = True,
-    ) -> List[BaseNode]:
+    ) -> Sequence[BaseNode]:
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
 
-        existing_doc_ids_before = set(
-            (await self.docstore.aget_all_document_hashes()).values()
-        )
         doc_ids_from_nodes = set()
         deduped_nodes_to_run = {}
         for node in nodes:
@@ -621,7 +599,6 @@ class IngestionPipeline(BaseModel):
             existing_hash = await self.docstore.aget_document_hash(ref_doc_id)
             if not existing_hash:
                 # document doesn't exist, so add it
-                await self.docstore.aset_document_hash(ref_doc_id, node.hash)
                 deduped_nodes_to_run[ref_doc_id] = node
             elif existing_hash and existing_hash != node.hash:
                 await self.docstore.adelete_ref_doc(ref_doc_id, raise_error=False)
@@ -629,14 +606,15 @@ class IngestionPipeline(BaseModel):
                 if self.vector_store is not None:
                     await self.vector_store.adelete(ref_doc_id)
 
-                await self.docstore.aset_document_hash(ref_doc_id, node.hash)
-
                 deduped_nodes_to_run[ref_doc_id] = node
             else:
                 continue  # document exists and is unchanged, so skip it
 
         if self.docstore_strategy == DocstoreStrategy.UPSERTS_AND_DELETE:
             # Identify missing docs and delete them from docstore and vector store
+            existing_doc_ids_before = set(
+                (await self.docstore.aget_all_document_hashes()).values()
+            )
             doc_ids_to_delete = existing_doc_ids_before - doc_ids_from_nodes
             for ref_doc_id in doc_ids_to_delete:
                 await self.docstore.adelete_document(ref_doc_id)
@@ -646,6 +624,7 @@ class IngestionPipeline(BaseModel):
 
         nodes_to_run = list(deduped_nodes_to_run.values())
         await self.docstore.async_add_documents(nodes_to_run, store_text=store_doc_text)
+        await self.docstore.aset_document_hashes({n.id_: n.hash for n in nodes_to_run})
 
         return nodes_to_run
 
@@ -654,7 +633,7 @@ class IngestionPipeline(BaseModel):
         self,
         show_progress: bool = False,
         documents: Optional[List[Document]] = None,
-        nodes: Optional[List[BaseNode]] = None,
+        nodes: Optional[Sequence[BaseNode]] = None,
         cache_collection: Optional[str] = None,
         in_place: bool = True,
         store_doc_text: bool = True,
@@ -671,7 +650,7 @@ class IngestionPipeline(BaseModel):
         Args:
             show_progress (bool, optional): Shows execution progress bar(s). Defaults to False.
             documents (Optional[List[Document]], optional): Set of documents to be transformed. Defaults to None.
-            nodes (Optional[List[BaseNode]], optional): Set of nodes to be transformed. Defaults to None.
+            nodes (Optional[Sequence[BaseNode]], optional): Set of nodes to be transformed. Defaults to None.
             cache_collection (Optional[str], optional): Cache for transformations. Defaults to None.
             in_place (bool, optional): Whether transformations creates a new list for transformed nodes or modifies the
                 array passed to `run_transformations`. Defaults to True.
@@ -719,11 +698,13 @@ class IngestionPipeline(BaseModel):
             nodes_to_run = input_nodes
 
         if num_workers and num_workers > 1:
-            if num_workers > multiprocessing.cpu_count():
+            num_cpus = multiprocessing.cpu_count()
+            if num_workers > num_cpus:
                 warnings.warn(
                     "Specified num_workers exceed number of CPUs in the system. "
                     "Setting `num_workers` down to the maximum CPU count."
                 )
+                num_workers = num_cpus
 
             loop = asyncio.get_event_loop()
             with ProcessPoolExecutor(max_workers=num_workers) as p:
@@ -744,10 +725,10 @@ class IngestionPipeline(BaseModel):
                     )
                     for batch in node_batches
                 ]
-                result: List[List[BaseNode]] = await asyncio.gather(*tasks)
-                nodes = reduce(lambda x, y: x + y, result, [])
+                result: Sequence[Sequence[BaseNode]] = await asyncio.gather(*tasks)
+                nodes: Sequence[BaseNode] = reduce(lambda x, y: x + y, result, [])  # type: ignore
         else:
-            nodes = await arun_transformations(
+            nodes = await arun_transformations(  # type: ignore
                 nodes_to_run,
                 self.transformations,
                 show_progress=show_progress,
@@ -756,10 +737,13 @@ class IngestionPipeline(BaseModel):
                 in_place=in_place,
                 **kwargs,
             )
+            nodes = nodes
+
+        nodes = nodes or []
 
         if self.vector_store is not None:
-            await self.vector_store.async_add(
-                [n for n in nodes if n.embedding is not None]
-            )
+            nodes_with_embeddings = [n for n in nodes if n.embedding is not None]
+            if nodes_with_embeddings:
+                await self.vector_store.async_add(nodes_with_embeddings)
 
         return nodes

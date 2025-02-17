@@ -1,6 +1,5 @@
 """Router components."""
 
-
 from typing import Any, Dict, List
 
 from llama_index.core.base.base_selector import BaseSelector
@@ -12,7 +11,12 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import (
+    Field,
+    PrivateAttr,
+    SerializeAsAny,
+    ConfigDict,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.utils import print_text
 
@@ -20,10 +24,8 @@ from llama_index.core.utils import print_text
 class SelectorComponent(QueryComponent):
     """Selector component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     selector: BaseSelector = Field(..., description="Selector")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -76,19 +78,17 @@ class RouterComponent(QueryComponent):
 
     """
 
-    selector: BaseSelector = Field(..., description="Selector")
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    selector: SerializeAsAny[BaseSelector] = Field(..., description="Selector")
     choices: List[str] = Field(
         ..., description="Choices (must correspond to components)"
     )
-    components: List[QueryComponent] = Field(
+    components: List[SerializeAsAny[QueryComponent]] = Field(
         ..., description="Components (must correspond to choices)"
     )
     verbose: bool = Field(default=False, description="Verbose")
 
     _query_keys: List[str] = PrivateAttr()
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(
         self,
@@ -111,15 +111,13 @@ class RouterComponent(QueryComponent):
                 raise ValueError("Expected one required input key")
             query_keys.append(next(iter(new_component.free_req_input_keys)))
             new_components.append(new_component)
-
-        self._query_keys = query_keys
-
         super().__init__(
             selector=selector,
             choices=choices,
             components=new_components,
             verbose=verbose,
         )
+        self._query_keys = query_keys
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

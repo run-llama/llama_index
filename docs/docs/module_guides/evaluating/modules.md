@@ -15,6 +15,7 @@ Notebooks with usage of these components can be found below.
 - [Batch Eval](../../examples/evaluation/batch_eval.ipynb)
 - [Multi-Modal RAG eval](../../examples/evaluation/multi_modal/multi_modal_rag_evaluation.ipynb)
 - [Uptrain Integration](../../examples/evaluation/UpTrain.ipynb)
+- [RAGChecker Integration](../../examples/evaluation/RAGChecker.ipynb)
 
 ## Retrieval Evaluation
 

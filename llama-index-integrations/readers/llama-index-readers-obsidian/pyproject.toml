@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.obsidian"
 
 [tool.llamahub.class_authors]
-ObsidianReader = "hursh-desai"
+ObsidianReader = ["bitsofchris", "hursh-desai"]
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -25,15 +25,15 @@ authors = ["Your Name <you@example.com>"]
 description = "llama-index readers obsidian integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-maintainers = ["hursh-desai"]
+maintainers = ["bitsofchris", "hursh-desai"]
 name = "llama-index-readers-obsidian"
 readme = "README.md"
-version = "0.1.4"
+version = "0.5.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
-llama-index-readers-file = "^0.1.1"
+python = ">=3.9,<4.0"
+llama-index-readers-file = "^0.4.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

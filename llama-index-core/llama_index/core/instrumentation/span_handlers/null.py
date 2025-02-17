@@ -1,5 +1,5 @@
 import inspect
-from typing import Optional, Any
+from typing import Dict, Optional, Any
 from llama_index.core.instrumentation.span_handlers.base import BaseSpanHandler
 from llama_index.core.instrumentation.span.base import BaseSpan
 
@@ -15,7 +15,9 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
         id_: str,
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
-        **kwargs: Any
+        parent_id: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> None:
         """Logic for entering a span."""
         return
@@ -26,7 +28,7 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         result: Optional[Any] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Logic for exiting a span."""
         return
@@ -37,7 +39,8 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         parent_span_id: Optional[str] = None,
-        **kwargs: Any
+        tags: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> None:
         """Create a span."""
         return
@@ -48,7 +51,7 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         result: Optional[Any] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Logic for exiting a span."""
         return
@@ -59,7 +62,7 @@ class NullSpanHandler(BaseSpanHandler[BaseSpan]):
         bound_args: inspect.BoundArguments,
         instance: Optional[Any] = None,
         err: Optional[BaseException] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Logic for droppping a span."""
         return

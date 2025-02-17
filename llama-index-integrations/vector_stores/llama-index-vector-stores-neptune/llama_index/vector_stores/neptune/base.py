@@ -40,7 +40,7 @@ class NeptuneVectorQueryException(Exception):
 
 class NeptuneAnalyticsVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
-    flat_metadata = True
+    flat_metadata: bool = True
 
     node_label: str
     graph_identifier: str
@@ -136,6 +136,10 @@ class NeptuneAnalyticsVectorStore(BasePydanticVectorStore):
     @classmethod
     def class_name(cls) -> str:
         return "NeptuneAnalyticsVectorStore"
+
+    @property
+    def client(self) -> Any:
+        return self._client
 
     def database_query(
         self, query: str, params: Optional[dict] = None

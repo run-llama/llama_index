@@ -1,8 +1,9 @@
 from typing import Any, Callable, List, Optional, Sequence, TypedDict
+from typing_extensions import Annotated
 
 import numpy as np
 from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, SerializeAsAny, WithJsonSchema
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser import NodeParser
 from llama_index.core.node_parser.interface import NodeParser
@@ -24,6 +25,13 @@ class SentenceCombination(TypedDict):
     combined_sentence_embedding: List[float]
 
 
+SentenceSplitterCallable = Annotated[
+    Callable[[str], List[str]],
+    WithJsonSchema({"type": "string"}, mode="serialization"),
+    WithJsonSchema({"type": "string"}, mode="validation"),
+]
+
+
 class SemanticSplitterNodeParser(NodeParser):
     """Semantic node parser.
 
@@ -37,13 +45,13 @@ class SemanticSplitterNodeParser(NodeParser):
         include_prev_next_rel (bool): whether to include prev/next relationships
     """
 
-    sentence_splitter: Callable[[str], List[str]] = Field(
+    sentence_splitter: SentenceSplitterCallable = Field(
         default_factory=split_by_sentence_tokenizer,
         description="The text splitter to use when splitting documents.",
         exclude=True,
     )
 
-    embed_model: BaseEmbedding = Field(
+    embed_model: SerializeAsAny[BaseEmbedding] = Field(
         description="The embedding model to use to for semantic comparison",
     )
 
@@ -128,6 +136,24 @@ class SemanticSplitterNodeParser(NodeParser):
 
         return all_nodes
 
+    async def _aparse_nodes(
+        self,
+        nodes: Sequence[BaseNode],
+        show_progress: bool = False,
+        **kwargs: Any,
+    ) -> List[BaseNode]:
+        """Asynchronously parse document into nodes."""
+        all_nodes: List[BaseNode] = []
+        nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
+
+        for node in nodes_with_progress:
+            nodes = await self.abuild_semantic_nodes_from_documents(
+                [node], show_progress
+            )
+            all_nodes.extend(nodes)
+
+        return all_nodes
+
     def build_semantic_nodes_from_documents(
         self,
         documents: Sequence[Document],
@@ -144,6 +170,43 @@ class SemanticSplitterNodeParser(NodeParser):
             combined_sentence_embeddings = self.embed_model.get_text_embedding_batch(
                 [s["combined_sentence"] for s in sentences],
                 show_progress=show_progress,
+            )
+
+            for i, embedding in enumerate(combined_sentence_embeddings):
+                sentences[i]["combined_sentence_embedding"] = embedding
+
+            distances = self._calculate_distances_between_sentence_groups(sentences)
+
+            chunks = self._build_node_chunks(sentences, distances)
+
+            nodes = build_nodes_from_splits(
+                chunks,
+                doc,
+                id_func=self.id_func,
+            )
+
+            all_nodes.extend(nodes)
+
+        return all_nodes
+
+    async def abuild_semantic_nodes_from_documents(
+        self,
+        documents: Sequence[Document],
+        show_progress: bool = False,
+    ) -> List[BaseNode]:
+        """Asynchronously build window nodes from documents."""
+        all_nodes: List[BaseNode] = []
+        for doc in documents:
+            text = doc.text
+            text_splits = self.sentence_splitter(text)
+
+            sentences = self._build_sentence_groups(text_splits)
+
+            combined_sentence_embeddings = (
+                await self.embed_model.aget_text_embedding_batch(
+                    [s["combined_sentence"] for s in sentences],
+                    show_progress=show_progress,
+                )
             )
 
             for i, embedding in enumerate(combined_sentence_embeddings):

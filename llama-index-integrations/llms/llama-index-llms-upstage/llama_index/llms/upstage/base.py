@@ -1,10 +1,26 @@
-from typing import Optional, Dict, Any, Sequence, Callable
+import os
+from pathlib import Path
+from typing import List, Optional, Dict, Any, Sequence, Callable, Union
+import warnings
 
 import httpx
-from llama_index.core.base.llms.types import LLMMetadata, ChatMessage
+from llama_index.readers.upstage import UpstageDocumentParseReader
+from llama_index.llms.openai.utils import (
+    create_retry_decorator,
+)
+from llama_index.core.base.llms.types import (
+    LLMMetadata,
+    ChatMessage,
+    ChatResponseGen,
+    ChatResponse,
+    ChatResponseAsyncGen,
+)
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai.base import to_openai_message_dicts
 
 from llama_index.llms.upstage.utils import (
+    SOLAR_TOKENIZERS,
+    is_doc_parsing_model,
     resolve_upstage_credentials,
     is_chat_model,
     upstage_modelname_to_contextsize,
@@ -13,15 +29,25 @@ from llama_index.llms.upstage.utils import (
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
-from pydantic import Field, PrivateAttr
+from tokenizers import Tokenizer
+from pydantic import ConfigDict, Field, PrivateAttr
 from openai import OpenAI as SyncOpenAI
 from openai import AsyncOpenAI
 
-DEFAULT_UPSTAGE_MODEL = "solar-1-mini-chat"
+DEFAULT_UPSTAGE_MODEL = "solar-mini"
+
+llm_retry_decorator = create_retry_decorator(
+    max_retries=6,
+    random_exponential=True,
+    stop_after_delay_seconds=60,
+    min_seconds=1,
+    max_seconds=20,
+)
 
 
 class Upstage(OpenAI):
-    """Upstage LLM.
+    """
+    Upstage LLM.
 
     Examples:
         `pip install llama-index-llms-upstage`
@@ -41,6 +67,7 @@ class Upstage(OpenAI):
         ```
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
     model: str = Field(
         default=DEFAULT_UPSTAGE_MODEL, description="The Upstage model to use."
     )
@@ -78,6 +105,13 @@ class Upstage(OpenAI):
         ),
         default=True,
     )
+    tokenizer_name: str = Field(
+        description=(
+            "Huggingface pretrained tokenizer name "
+            "upstage opened solar tokenizer in Huggingface. https://huggingface.co/upstage/solar-1-mini-tokenizer"
+        ),
+        default=SOLAR_TOKENIZERS[DEFAULT_UPSTAGE_MODEL],
+    )
 
     api_key: str = Field(
         default=None, alias="upstage_api_key", description="The Upstage API key."
@@ -102,6 +136,7 @@ class Upstage(OpenAI):
         max_retries: int = 3,
         timeout: float = 60.0,
         reuse_client: bool = True,
+        tokenizer_name: str = "upstage/solar-1-mini-tokenizer",
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -112,7 +147,7 @@ class Upstage(OpenAI):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         if "upstage_api_key" in kwargs:
             api_key = kwargs.pop("upstage_api_key")
@@ -141,9 +176,10 @@ class Upstage(OpenAI):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
-            **kwargs
+            **kwargs,
         )
 
+        self.tokenizer_name = tokenizer_name
         self._client = None
         self._aclient = None
         self._http_client = http_client
@@ -168,3 +204,85 @@ class Upstage(OpenAI):
             ),
             model_name=self.model,
         )
+
+    @property
+    def _tokenizer(self) -> Optional[Tokenizer]:
+        """
+        Get a Huggingface tokenizer for solar models.
+        """
+        if SOLAR_TOKENIZERS.get(self.model) != self.tokenizer_name:
+            warnings.warn(
+                f"You are using a different tokenizer than the one specified in the model. This may cause issues with token counting. Please use {SOLAR_TOKENIZERS[self.model]} as the tokenizer name."
+            )
+        return Tokenizer.from_pretrained(self.tokenizer_name)
+
+    def get_num_tokens_from_message(self, messages: Sequence[ChatMessage]) -> int:
+        tokens_per_message = 5  # <|im_start|>{role}\n{message}<|im_end|>
+        tokens_prefix = 1  # <|startoftext|>
+        tokens_suffix = 3  # <|im_start|>assistant\n
+
+        num_tokens = 0
+
+        num_tokens += tokens_prefix
+
+        message_dicts = to_openai_message_dicts(messages)
+        for message in message_dicts:
+            num_tokens += tokens_per_message
+            for value in message.values():
+                num_tokens += len(
+                    self._tokenizer.encode(str(value), add_special_tokens=False)
+                )
+        num_tokens += tokens_suffix
+        return num_tokens
+
+    @llm_retry_decorator
+    def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        if is_doc_parsing_model(self.model, kwargs):
+            document_contents = self._parse_documents(kwargs.pop("file_path"))
+            messages.append(ChatMessage(role="user", content=document_contents))
+        return super()._chat(messages, **kwargs)
+
+    @llm_retry_decorator
+    def _achat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        if is_doc_parsing_model(self.model, kwargs):
+            document_contents = self._parse_documents(kwargs.pop("file_path"))
+            messages.append(ChatMessage(role="user", content=document_contents))
+        return super()._achat(messages, **kwargs)
+
+    @llm_retry_decorator
+    def _stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        if is_doc_parsing_model(self.model, kwargs):
+            document_contents = self._parse_documents(kwargs.pop("file_path"))
+            messages.append(ChatMessage(role="user", content=document_contents))
+        return super()._stream_chat(messages, **kwargs)
+
+    @llm_retry_decorator
+    def _astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        if is_doc_parsing_model(self.model, kwargs):
+            document_contents = self._parse_documents(kwargs.pop("file_path"))
+            messages.append(ChatMessage(role="user", content=document_contents))
+        return super()._astream_chat(messages, **kwargs)
+
+    def _parse_documents(
+        self, file_path: Union[str, Path, List[str], List[Path]]
+    ) -> str:
+        document_contents = "Documents:\n"
+
+        loader = UpstageDocumentParseReader(
+            api_key=self.api_key, output_format="text", coordinates=False
+        )
+        docs = loader.load_data(file_path)
+
+        if isinstance(file_path, list):
+            file_titles = [os.path.basename(path) for path in file_path]
+        else:
+            file_titles = [os.path.basename(file_path)]
+
+        for i, doc in enumerate(docs):
+            file_title = file_titles[min(i, len(file_titles) - 1)]
+            document_contents += f"{file_title}:\n{doc.text}\n\n"
+        return document_contents

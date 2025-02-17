@@ -1,16 +1,36 @@
+from __future__ import annotations
+
+import base64
 from enum import Enum
-from typing import Any, AsyncGenerator, Generator, Optional, Union, List
+from io import BytesIO
+from typing import (
+    Annotated,
+    Any,
+    AsyncGenerator,
+    Generator,
+    List,
+    Literal,
+    Optional,
+    Union,
+    cast,
+)
 
-from llama_index.core.bridge.pydantic import BaseModel, Field
+import filetype
+from typing_extensions import Self
+
+from llama_index.core.bridge.pydantic import (
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    FilePath,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-
-try:
-    from pydantic import BaseModel as V2BaseModel
-    from pydantic.v1 import BaseModel as V1BaseModel
-except ImportError:
-    from pydantic import BaseModel as V2BaseModel
-
-    V1BaseModel = V2BaseModel
+from llama_index.core.schema import ImageDocument
+from llama_index.core.utils import resolve_binary
 
 
 class MessageRole(str, Enum):
@@ -25,13 +45,194 @@ class MessageRole(str, Enum):
     MODEL = "model"
 
 
-# ===== Generic Model Input - Chat =====
+class TextBlock(BaseModel):
+    block_type: Literal["text"] = "text"
+    text: str
+
+
+class ImageBlock(BaseModel):
+    block_type: Literal["image"] = "image"
+    image: bytes | None = None
+    path: FilePath | None = None
+    url: AnyUrl | str | None = None
+    image_mimetype: str | None = None
+    detail: str | None = None
+
+    @field_validator("url", mode="after")
+    @classmethod
+    def urlstr_to_anyurl(cls, url: str | AnyUrl) -> AnyUrl:
+        """Store the url as Anyurl."""
+        if isinstance(url, AnyUrl):
+            return url
+        return AnyUrl(url=url)
+
+    @model_validator(mode="after")
+    def image_to_base64(self) -> Self:
+        """Store the image as base64 and guess the mimetype when possible.
+
+        In case the model was built passing image data but without a mimetype,
+        we try to guess it using the filetype library. To avoid resource-intense
+        operations, we won't load the path or the URL to guess the mimetype.
+        """
+        if not self.image:
+            return self
+
+        try:
+            # Check if image is already base64 encoded
+            decoded_img = base64.b64decode(self.image)
+        except Exception:
+            decoded_img = self.image
+            # Not base64 - encode it
+            self.image = base64.b64encode(self.image)
+
+        self._guess_mimetype(decoded_img)
+        return self
+
+    def _guess_mimetype(self, img_data: bytes) -> None:
+        if not self.image_mimetype:
+            guess = filetype.guess(img_data)
+            self.image_mimetype = guess.mime if guess else None
+
+    def resolve_image(self, as_base64: bool = False) -> BytesIO:
+        """Resolve an image such that PIL can read it.
+
+        Args:
+            as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
+        """
+        return resolve_binary(
+            raw_bytes=self.image,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=as_base64,
+        )
+
+
+class AudioBlock(BaseModel):
+    block_type: Literal["audio"] = "audio"
+    audio: bytes | None = None
+    path: FilePath | None = None
+    url: AnyUrl | str | None = None
+    format: str | None = None
+
+    @field_validator("url", mode="after")
+    @classmethod
+    def urlstr_to_anyurl(cls, url: str | AnyUrl) -> AnyUrl:
+        """Store the url as Anyurl."""
+        if isinstance(url, AnyUrl):
+            return url
+        return AnyUrl(url=url)
+
+    @model_validator(mode="after")
+    def audio_to_base64(self) -> Self:
+        """Store the audio as base64 and guess the mimetype when possible.
+
+        In case the model was built passing audio data but without a mimetype,
+        we try to guess it using the filetype library. To avoid resource-intense
+        operations, we won't load the path or the URL to guess the mimetype.
+        """
+        if not self.audio:
+            return self
+
+        try:
+            # Check if audio is already base64 encoded
+            decoded_audio = base64.b64decode(self.audio)
+        except Exception:
+            decoded_audio = self.audio
+            # Not base64 - encode it
+            self.audio = base64.b64encode(self.audio)
+
+        self._guess_format(decoded_audio)
+
+        return self
+
+    def _guess_format(self, audio_data: bytes) -> None:
+        if not self.format:
+            guess = filetype.guess(audio_data)
+            self.format = guess.extension if guess else None
+
+    def resolve_audio(self, as_base64: bool = False) -> BytesIO:
+        """Resolve an audio such that PIL can read it.
+
+        Args:
+            as_base64 (bool): whether the resolved audio should be returned as base64-encoded bytes
+        """
+        return resolve_binary(
+            raw_bytes=self.audio,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=as_base64,
+        )
+
+
+ContentBlock = Annotated[
+    Union[TextBlock, ImageBlock, AudioBlock], Field(discriminator="block_type")
+]
+
+
 class ChatMessage(BaseModel):
     """Chat message."""
 
     role: MessageRole = MessageRole.USER
-    content: Optional[Any] = ""
-    additional_kwargs: dict = Field(default_factory=dict)
+    additional_kwargs: dict[str, Any] = Field(default_factory=dict)
+    blocks: list[ContentBlock] = Field(default_factory=list)
+
+    def __init__(self, /, content: Any | None = None, **data: Any) -> None:
+        """Keeps backward compatibility with the old `content` field.
+
+        If content was passed and contained text, store a single TextBlock.
+        If content was passed and it was a list, assume it's a list of content blocks and store it.
+        """
+        if content is not None:
+            if isinstance(content, str):
+                data["blocks"] = [TextBlock(text=content)]
+            elif isinstance(content, list):
+                data["blocks"] = content
+
+        super().__init__(**data)
+
+    @model_validator(mode="after")
+    def legacy_additional_kwargs_image(self) -> Self:
+        """Provided for backward compatibility.
+
+        If `additional_kwargs` contains an `images` key, assume the value is a list
+        of ImageDocument and convert them into image blocks.
+        """
+        if documents := self.additional_kwargs.get("images"):
+            documents = cast(list[ImageDocument], documents)
+            for doc in documents:
+                img_base64_bytes = doc.resolve_image(as_base64=True).read()
+                self.blocks.append(ImageBlock(image=img_base64_bytes))
+        return self
+
+    @property
+    def content(self) -> str | None:
+        """Keeps backward compatibility with the old `content` field.
+
+        Returns:
+            The cumulative content of the TextBlock blocks, None if there are none.
+        """
+        content = ""
+        for block in self.blocks:
+            if isinstance(block, TextBlock):
+                content += block.text
+
+        return content or None
+
+    @content.setter
+    def content(self, content: str) -> None:
+        """Keeps backward compatibility with the old `content` field.
+
+        Raises:
+            ValueError: if blocks contains more than a block, or a block that's not TextBlock.
+        """
+        if not self.blocks:
+            self.blocks = [TextBlock(text=content)]
+        elif len(self.blocks) == 1 and isinstance(self.blocks[0], TextBlock):
+            self.blocks = [TextBlock(text=content)]
+        else:
+            raise ValueError(
+                "ChatMessage contains multiple blocks, use 'ChatMessage.blocks' instead."
+            )
 
     def __str__(self) -> str:
         return f"{self.role.value}: {self.content}"
@@ -42,14 +243,15 @@ class ChatMessage(BaseModel):
         content: str,
         role: Union[MessageRole, str] = MessageRole.USER,
         **kwargs: Any,
-    ) -> "ChatMessage":
+    ) -> Self:
         if isinstance(role, str):
             role = MessageRole(role)
-        return cls(role=role, content=content, **kwargs)
+        return cls(role=role, blocks=[TextBlock(text=content)], **kwargs)
 
     def _recursive_serialization(self, value: Any) -> Any:
-        if isinstance(value, (V1BaseModel, V2BaseModel)):
-            return value.dict()
+        if isinstance(value, BaseModel):
+            value.model_rebuild()  # ensures all fields are initialized and serializable
+            return value.model_dump()  # type: ignore
         if isinstance(value, dict):
             return {
                 key: self._recursive_serialization(value)
@@ -59,19 +261,9 @@ class ChatMessage(BaseModel):
             return [self._recursive_serialization(item) for item in value]
         return value
 
-    def dict(self, **kwargs: Any) -> dict:
-        # ensure all additional_kwargs are serializable
-        msg = super().dict(**kwargs)
-
-        for key, value in msg.get("additional_kwargs", {}).items():
-            value = self._recursive_serialization(value)
-            if not isinstance(value, (str, int, float, bool, dict, list, type(None))):
-                raise ValueError(
-                    f"Failed to serialize additional_kwargs value: {value}"
-                )
-            msg["additional_kwargs"][key] = value
-
-        return msg
+    @field_serializer("additional_kwargs", check_fields=False)
+    def serialize_additional_kwargs(self, value: Any, _info: Any) -> Any:
+        return self._recursive_serialization(value)
 
 
 class LogProb(BaseModel):
@@ -87,7 +279,7 @@ class ChatResponse(BaseModel):
     """Chat response."""
 
     message: ChatMessage
-    raw: Optional[dict] = None
+    raw: Optional[Any] = None
     delta: Optional[str] = None
     logprobs: Optional[List[List[LogProb]]] = None
     additional_kwargs: dict = Field(default_factory=dict)
@@ -116,7 +308,7 @@ class CompletionResponse(BaseModel):
 
     text: str
     additional_kwargs: dict = Field(default_factory=dict)
-    raw: Optional[dict] = None
+    raw: Optional[Any] = None
     logprobs: Optional[List[List[LogProb]]] = None
     delta: Optional[str] = None
 
@@ -129,6 +321,9 @@ CompletionResponseAsyncGen = AsyncGenerator[CompletionResponse, None]
 
 
 class LLMMetadata(BaseModel):
+    model_config = ConfigDict(
+        protected_namespaces=("pydantic_model_",), arbitrary_types_allowed=True
+    )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description=(

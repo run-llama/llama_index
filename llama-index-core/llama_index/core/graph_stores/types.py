@@ -1,8 +1,18 @@
 import fsspec
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Set, Protocol, runtime_checkable
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Set,
+    Sequence,
+    Protocol,
+    runtime_checkable,
+)
 
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, SerializeAsAny
 from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import BaseNode, MetadataMode
@@ -53,6 +63,8 @@ class EntityNode(LabelledNode):
 
     def __str__(self) -> str:
         """Return the string representation of the node."""
+        if self.properties:
+            return f"{self.name} ({self.properties})"
         return self.name
 
     @property
@@ -91,6 +103,8 @@ class Relation(BaseModel):
 
     def __str__(self) -> str:
         """Return the string representation of the relation."""
+        if self.properties:
+            return f"{self.label} ({self.properties})"
         return self.label
 
     @property
@@ -105,8 +119,8 @@ Triplet = Tuple[LabelledNode, Relation, LabelledNode]
 class LabelledPropertyGraph(BaseModel):
     """In memory labelled property graph containing entities and relations."""
 
-    nodes: Dict[str, LabelledNode] = Field(default_factory=dict)
-    relations: Dict[str, Relation] = Field(default_factory=dict)
+    nodes: SerializeAsAny[Dict[str, LabelledNode]] = Field(default_factory=dict)
+    relations: SerializeAsAny[Dict[str, Relation]] = Field(default_factory=dict)
     triplets: Set[Tuple[str, str, str]] = Field(
         default_factory=set, description="List of triplets (subject, relation, object)."
     )
@@ -321,14 +335,14 @@ class PropertyGraphStore(ABC):
         for node in nodes:
             try:
                 converted_nodes.append(metadata_dict_to_node(node.properties))
-                converted_nodes[-1].set_content(node.text)
+                converted_nodes[-1].set_content(node.text)  # type: ignore
             except Exception:
                 continue
 
         return converted_nodes
 
     @abstractmethod
-    def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
+    def upsert_nodes(self, nodes: Sequence[LabelledNode]) -> None:
         """Upsert nodes."""
         ...
 
@@ -456,7 +470,7 @@ class PropertyGraphStore(ABC):
         for node in nodes:
             try:
                 converted_nodes.append(metadata_dict_to_node(node.properties))
-                converted_nodes[-1].set_content(node.text)
+                converted_nodes[-1].set_content(node.text)  # type: ignore
             except Exception:
                 continue
 

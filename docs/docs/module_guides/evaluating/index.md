@@ -32,7 +32,7 @@ These evaluation modules are in the following forms:
 
 #### Question Generation
 
-In addition to evaluating queries, LlamaIndex can also use your data to generate questions to evaluate on. This means that you can automatically generate questions, and then run an evaluation pipeline to test if the LLM can actually answer questions accurately using your data.
+In addition to evaluating queries, LlamaIndex can also use your data to generate questions to evaluate on. This means that you can automatically generate questions, and then run an evaluation flow to test if the LLM can actually answer questions accurately using your data.
 
 ### Retrieval Evaluation
 
@@ -53,6 +53,7 @@ We also integrate with community evaluation tools.
 - [Tonic Validate](../../community/integrations/tonicvalidate.md)(Includes Web UI for visualizing results)
 - [DeepEval](https://github.com/confident-ai/deepeval)
 - [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
+- [RAGChecker](https://github.com/amazon-science/RAGChecker)
 
 ## Usage Pattern
 

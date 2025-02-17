@@ -142,7 +142,7 @@ obj = IndexNode(
 )
 
 index = VectorStoreIndex(nodes=nodes, objects=[obj])
-retriever = index.as_retreiver(verbose=True)
+retriever = index.as_retriever(verbose=True)
 ```
 
 If the index node containing the query engine is retrieved, the query engine will be ran and the resulting response returned as a node.

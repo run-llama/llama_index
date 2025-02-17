@@ -1,18 +1,15 @@
 # Vectara RAG Pack
 
 This LlamaPack provides an end-to-end Retrieval Augmented Generation flow using Vectara.
+Please note that this guide is only relevant for versions >= 0.4.0
 
-Before you start, if you have not done so already, you would need to follow these steps:
+To use the Vectara RAG Pack, you will need a Vectara account. If you don't have one already, you can [sign up](https://vectara.com/integrations/llamaindex)
+and follow our [Quick Start](https://docs.vectara.com/docs/quickstart) guide to create a corpus and an API key (make sure it has both indexing and query permissions).
 
-- Create a [free Vectara account](https://vectara.com/integrations/llamaindex).
-- Create a [corpus](https://docs.vectara.com/docs/console-ui/creating-a-corpus) to store your data
-- Create an [API key](https://docs.vectara.com/docs/common-use-cases/app-authn-authz/api-keys) with QueryService and IndexService access so you can access this corpus
-
-You can configure your `.env` file or provide these arguments directly when creating your VectaraIndex:
+You can then configure your environment or provide the following arguments directly when initializing your VectaraIndex:
 
 ```
-VECTARA_CUSTOMER_ID=your_customer_id
-VECTARA_CORPUS_ID=your_corpus_id
+VECTARA_CORPUS_KEY=your_corpus_key
 VECTARA_API_KEY=your-vectara-api-key
 ```
 
@@ -54,29 +51,30 @@ vectara = VectaraRAG()
 Additional optional arguments to VectaraRAG:
 
 - `similarity_top_k`: determines the number of results to return. Defaults to 5.
+- `lambda_val`: a value between 0 and 1 to specify hybrid search,
+  determines the balance between pure neural search (0) and keyword matching (1).
 - `n_sentences_before` and `n_sentences_after`: determine the number of sentences before/after the
   matching fact to use with the summarization LLM. defaults to 2.
-- `reranker`: 'none' or 'mmr' or 'multilingual_reranker_v1' (multilingual_reranker_v1 is Scale only)
+- `reranker`: 'none', 'mmr', 'multilingual_reranker_v1', 'userfn', or 'chain'
   The reranker name 'slingshot' is the same as 'multilingual_reranker_v1' (backwards compatible)
+- `rerank_k`: the number of results to use for reranking, defaults to 50.
+- `mmr_diversity_bias`: when using the mmr reranker, determines the degree
+  of diversity among the results with 0 corresponding
+  to minimum diversity and 1 to maximum diversity. Defaults to 0.3.
+- `udf_expression`: when using the udf reranker, specifies the user expression for reranking results.
+- `rerank_chain`: when using the chain reranker, specifies a list of rerankers to be applied
+  in a sequence and their associated parameters.
 - `summary_enabled`: whether to generate summaries or not. Defaults to True.
 - When summary_enabled is True, you can set the following:
   - `summary_response_lang`: language to use (ISO 639-2 code) for summary generation. defaults to "eng".
   - `summary_num_results`: number of results to use for summary generation. Defaults to 7.
   - `summary_prompt_name`: name of the prompt to use for summary generation.
-    Defaults to 'vectara-summary-ext-v1.2.0'.
-    Scale customers can use 'vectara-summary-ext-v1.3.0
-- when `vectara_query_mode` is "mmr", you can set the following to control MMR:
-  - `mmr_k`: number of results to fetch for MMR, defaults to 50
-  - `mmr_diversity_bias`: number between 0 and 1 that determines the degree
-    of diversity among the results with 0 corresponding
-    to minimum diversity and 1 to maximum diversity. Defaults to 0.3.
+    Defaults to 'vectara-summary-ext-24-05-sml'.
 
 For example to use maximal diversity with MMR:
 
 ```python
-vectara = VectaraRAG(
-    vectara_query_mode="mmr", mmr_k=50, mmr_diversity_bias=1.0
-)
+vectara = VectaraRAG(reranker="mmr", rerank_k=50, mmr_diversity_bias=1.0)
 ```
 
 Or if you want to include more results in the Vectara generated summarization you can try:

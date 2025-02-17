@@ -52,9 +52,9 @@ Finetuning gives you a 5-10% increase in retrieval evaluation metrics. You can t
 
 We have multiple guides showing how to use OpenAI's finetuning endpoints to fine-tune gpt-3.5-turbo to output GPT-4 responses for RAG/agents.
 
-We use GPT-4 to automatically generate questions from any unstructured context, and use a GPT-4 query engine pipeline to generate "ground-truth" answers. Our `OpenAIFineTuningHandler` callback automatically logs questions/answers to a dataset.
+We use GPT-4 to automatically generate questions from any unstructured context, and use a GPT-4 query engine flow to generate "ground-truth" answers. Our `OpenAIFineTuningHandler` callback automatically logs questions/answers to a dataset.
 
-We then launch a finetuning job, and get back a distilled model. We can evaluate this model with [Ragas](https://github.com/explodinggradients/ragas) to benchmark against a naive GPT-3.5 pipeline.
+We then launch a finetuning job, and get back a distilled model. We can evaluate this model with [Ragas](https://github.com/explodinggradients/ragas) to benchmark against a naive GPT-3.5 workflow.
 
 - [GPT-3.5 Fine-tuning Notebook (Colab)](https://colab.research.google.com/drive/1NgyCJVyrC2xcZ5lxt2frTU862v6eJHlc?usp=sharing)
 - [GPT-3.5 Fine-tuning Notebook (Notebook link)](../../examples/finetuning/openai_fine_tuning.ipynb)
@@ -80,7 +80,6 @@ In this tutorial, we show you how you can finetune Llama 2 on a text-to-SQL data
 
 The stack includes `sql-create-context` as the training dataset, OpenLLaMa as the base model, PEFT for finetuning, Modal for cloud compute, LlamaIndex for inference abstractions.
 
-- [Llama 2 Text-to-SQL Fine-tuning (w/ Gradient.AI)](../../examples/finetuning/gradient/gradient_fine_tuning.ipynb)
 - [Llama 2 Text-to-SQL Fine-tuning (w/ Modal, Repo)](https://github.com/run-llama/modal_finetune_sql)
 - [Llama 2 Text-to-SQL Fine-tuning (w/ Modal, Notebook)](https://github.com/run-llama/modal_finetune_sql/blob/main/tutorial.ipynb)
 

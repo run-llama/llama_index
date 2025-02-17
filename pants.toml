@@ -5,7 +5,7 @@ backend_packages = [
     "pants.backend.python.mixed_interpreter_constraints",
     "pants.backend.python.typecheck.mypy",
 ]
-pants_version = "2.19.0"
+pants_version = "2.23.0"
 remote_cache_read = true
 remote_cache_rpc_timeout_millis = 60000
 remote_cache_write = true
@@ -18,8 +18,13 @@ unmatched_build_file_globs = "error"
 [black]
 config = "./pyproject.toml"
 
+[coverage-py]
+fail_under = 50
+global_report = false
+report = ["console", "html", "xml"]
+
 [python]
-interpreter_constraints = ["==3.10.*", "==3.8.*", "==3.9.*"]
+interpreter_constraints = [">=3.9,<4.0"]
 
 [python-infer]
 ambiguity_resolution = "by_source_root"
@@ -27,3 +32,6 @@ ambiguity_resolution = "by_source_root"
 [source]
 marker_filenames = ["pyproject.toml"]
 root_patterns = ["*tests", "/"]
+
+[test]
+use_coverage = true

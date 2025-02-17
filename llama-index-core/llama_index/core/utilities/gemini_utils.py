@@ -1,11 +1,12 @@
 """Global Gemini Utilities (shared between Gemini LLM and Vertex)."""
 
+from __future__ import annotations
+
 from collections.abc import Sequence
-from typing import Dict
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
-ROLES_TO_GEMINI: Dict[MessageRole, MessageRole] = {
+ROLES_TO_GEMINI: dict[MessageRole, MessageRole] = {
     MessageRole.USER: MessageRole.USER,
     MessageRole.ASSISTANT: MessageRole.MODEL,
     ## Gemini chat mode only has user and model roles. Put the rest in user role.
@@ -17,17 +18,21 @@ ROLES_TO_GEMINI: Dict[MessageRole, MessageRole] = {
     MessageRole.TOOL: MessageRole.USER,
     MessageRole.FUNCTION: MessageRole.USER,
 }
-ROLES_FROM_GEMINI: Dict[MessageRole, MessageRole] = {
+ROLES_FROM_GEMINI: dict[str, MessageRole] = {
     ## Gemini has user, model and function roles.
-    MessageRole.USER: MessageRole.USER,
-    MessageRole.MODEL: MessageRole.ASSISTANT,
-    MessageRole.FUNCTION: MessageRole.TOOL,
+    "user": MessageRole.USER,
+    "model": MessageRole.ASSISTANT,
+    "function": MessageRole.TOOL,
 }
 
 
 def merge_neighboring_same_role_messages(
     messages: Sequence[ChatMessage],
 ) -> Sequence[ChatMessage]:
+    if len(messages) < 2:
+        # Nothing to merge
+        return messages
+
     # Gemini does not support multiple messages of the same role in a row, so we merge them
     merged_messages = []
     i = 0
@@ -53,13 +58,6 @@ def merge_neighboring_same_role_messages(
             content="\n".join([str(msg_content) for msg_content in merged_content]),
             additional_kwargs=current_message.additional_kwargs,
         )
-        # When making function calling, 'assistant->model' response does not contain text.
-        # Gemini chat takes 'user', 'model' message alternately.
-        # https://github.com/GoogleCloudPlatform/generative-ai/blob/main/gemini/getting-started/intro_gemini_chat.ipynb
-        # It cannot skip empty 'model' content.
-        # It will cause "empty text parameter" issue, the following code can avoid it.
-        if merged_message.content == "" and merged_message.role == MessageRole.MODEL:
-            merged_message.content = "Function Calling"
 
         merged_messages.append(merged_message)
         i += 1

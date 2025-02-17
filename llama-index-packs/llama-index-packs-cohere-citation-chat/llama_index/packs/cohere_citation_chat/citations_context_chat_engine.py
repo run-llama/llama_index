@@ -250,20 +250,11 @@ class VectorStoreIndexWithCitationsChat(VectorStoreIndex):
         if chat_mode not in [ChatModeCitations.COHERE_CITATIONS_CONTEXT]:
             return super().as_chat_engine(chat_mode=chat_mode, llm=llm, **kwargs)
         else:
-            service_context = kwargs.get("service_context", self.service_context)
-
-            if service_context is not None:
-                llm = (
-                    resolve_llm(llm, callback_manager=self._callback_manager)
-                    if llm
-                    else service_context.llm
-                )
-            else:
-                llm = (
-                    resolve_llm(llm, callback_manager=self._callback_manager)
-                    if llm
-                    else Settings.llm
-                )
+            llm = (
+                resolve_llm(llm, callback_manager=self._callback_manager)
+                if llm
+                else Settings.llm
+            )
 
             return CitationsContextChatEngine.from_defaults(
                 retriever=self.as_retriever(**kwargs),

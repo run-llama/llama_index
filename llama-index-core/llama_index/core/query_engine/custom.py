@@ -5,7 +5,7 @@ from typing import Union
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.core.schema import QueryBundle, QueryType
@@ -24,6 +24,7 @@ class CustomQueryEngine(BaseModel, BaseQueryEngine):
 
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: CallbackManager = Field(
         default_factory=lambda: CallbackManager([]), exclude=True
     )
@@ -31,9 +32,6 @@ class CustomQueryEngine(BaseModel, BaseQueryEngine):
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
         return {}
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def query(self, str_or_query_bundle: QueryType) -> RESPONSE_TYPE:
         with self.callback_manager.as_trace("query"):

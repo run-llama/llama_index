@@ -119,7 +119,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         enhanced_schema: bool = False,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
-        self.enhcnaced_schema = enhanced_schema
+        self.enhanced_schema = enhanced_schema
 
         self._space = space
         if client:
@@ -623,7 +623,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         formatted_node_props = []
         formatted_rel_props = []
 
-        if self.enhcnaced_schema:
+        if self.enhanced_schema:
             # Enhanced formatting for nodes
             for node_type, properties in schema["node_props"].items():
                 formatted_node_props.append(f"- **{node_type}**")

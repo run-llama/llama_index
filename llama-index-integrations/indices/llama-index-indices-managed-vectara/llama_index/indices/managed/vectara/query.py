@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Dict, Optional
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -7,20 +7,18 @@ from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.schema import NodeWithScore, QueryBundle
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import (
     Settings,
-    callback_manager_from_settings_or_context,
 )
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
     BaseChatEngine,
     StreamingAgentChatResponse,
 )
+
 from llama_index.core.base.response.schema import (
     RESPONSE_TYPE,
     Response,
-    StreamingResponse,
 )
 from llama_index.indices.managed.vectara.retriever import VectaraRetriever
 
@@ -46,7 +44,8 @@ class VectaraQueryEngine(BaseQueryEngine):
         summary_enabled: bool = False,
         summary_response_lang: str = "eng",
         summary_num_results: int = 5,
-        summary_prompt_name: str = "vectara-summary-ext-24-05-sml",
+        summary_prompt_name: str = "vectara-summary-ext-24-05-med-omni",
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         self._retriever = retriever
@@ -56,6 +55,7 @@ class VectaraQueryEngine(BaseQueryEngine):
         self._summary_num_results = summary_num_results
         self._summary_prompt_name = summary_prompt_name
         self._node_postprocessors = node_postprocessors or []
+        self._verbose = verbose
         super().__init__(callback_manager=callback_manager)
 
     @classmethod
@@ -105,30 +105,34 @@ class VectaraQueryEngine(BaseQueryEngine):
             summary_response_lang=self._summary_response_lang,
             summary_num_results=self._summary_num_results,
             summary_prompt_name=self._summary_prompt_name,
+            verbose=self._verbose,
         )
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         kwargs = (
             {
-                "summary_response_lang": self._summary_response_lang,
-                "summary_num_results": self._summary_num_results,
-                "summary_prompt_name": self._summary_prompt_name,
+                "response_language": self._summary_response_lang,
+                "max_used_search_results": self._summary_num_results,
+                "generation_preset_name": self._summary_prompt_name,
             }
             if self._summary_enabled
             else {}
         )
 
         if self._streaming:
-            nodes = self.retrieve(query_bundle)
-
-            query_response = StreamingResponse(
-                response_gen=self._retriever._vectara_stream(query_bundle, chat=False),
-                source_nodes=nodes,
+            query_response = self._retriever._vectara_stream(
+                query_bundle, chat=False, verbose=self._verbose
             )
         else:
-            nodes, response, _ = self._retriever._vectara_query(query_bundle, **kwargs)
-            query_response = Response(response=response["text"], source_nodes=nodes)
+            nodes, response, _ = self._retriever._vectara_query(
+                query_bundle, verbose=self._verbose, **kwargs
+            )
+            query_response = Response(
+                response=response["text"],
+                source_nodes=nodes,
+                metadata={"fcs": response.get("fcs", None)},
+            )
 
         return query_response
 
@@ -160,9 +164,10 @@ class VectaraChatEngine(BaseChatEngine):
         streaming: bool = False,
         summary_response_lang: str = "eng",
         summary_num_results: int = 5,
-        summary_prompt_name: str = "vectara-summary-ext-24-05-sml",
+        summary_prompt_name: str = "vectara-summary-ext-24-05-med-omni",
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         callback_manager: Optional[CallbackManager] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> None:
         self._retriever = retriever
@@ -172,6 +177,7 @@ class VectaraChatEngine(BaseChatEngine):
         self._summary_num_results = summary_num_results
         self._summary_prompt_name = summary_prompt_name
         self._node_postprocessors = node_postprocessors or []
+        self._verbose = verbose
 
         self.callback_manager = callback_manager or CallbackManager([])
         for node_postprocessor in self._node_postprocessors:
@@ -184,7 +190,6 @@ class VectaraChatEngine(BaseChatEngine):
         cls,
         retriever: VectaraRetriever,
         streaming: bool = False,
-        service_context: Optional[ServiceContext] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         **kwargs: Any,
     ) -> "VectaraChatEngine":
@@ -194,9 +199,7 @@ class VectaraChatEngine(BaseChatEngine):
             retriever,
             streaming,
             node_postprocessors=node_postprocessors,
-            callback_manager=callback_manager_from_settings_or_context(
-                Settings, service_context
-            ),
+            callback_manager=Settings.callback_manager,
             **kwargs,
         )
 
@@ -207,35 +210,43 @@ class VectaraChatEngine(BaseChatEngine):
         ) as query_event:
             kwargs = (
                 {
-                    "summary_response_lang": self._summary_response_lang,
-                    "summary_num_results": self._summary_num_results,
-                    "summary_prompt_name": self._summary_prompt_name,
+                    "response_language": self._summary_response_lang,
+                    "max_used_search_results": self._summary_num_results,
+                    "generation_preset_name": self._summary_prompt_name,
                 }
                 if self._summary_enabled
                 else {}
             )
             nodes, summary, self.conv_id = self._retriever._vectara_query(
-                QueryBundle(message), chat=True, conv_id=self.conv_id, **kwargs
+                QueryBundle(message),
+                chat=True,
+                conv_id=self.conv_id,
+                verbose=self._verbose,
+                **kwargs,
             )
             query_event.on_end(payload={EventPayload.RESPONSE: summary["text"]})
             return AgentChatResponse(
                 response=summary["text"],
                 source_nodes=nodes,
+                metadata={"fcs": summary.get("fcs", None)},
             )
 
     async def achat(self, message: str) -> AgentChatResponse:
         """Chat with the agent asynchronously."""
         return await self.chat(message)
 
+    def set_chat_id(self, source_nodes: List, metadata: Dict) -> None:
+        """Callback function for setting the conv_id."""
+        self.conv_id = metadata.get("chat_id", self.conv_id)
+
     def stream_chat(self, message: str) -> StreamingAgentChatResponse:
         query_bundle = QueryBundle(message)
-        nodes = self._retriever.retrieve(query_bundle)
 
-        return StreamingAgentChatResponse(
-            chat_stream=self._retriever._vectara_stream(
-                query_bundle, chat=True, conv_id=self.conv_id
-            ),
-            source_nodes=nodes,
+        return self._retriever._vectara_stream(
+            query_bundle,
+            chat=True,
+            conv_id=self.conv_id,
+            callback_func=self.set_chat_id,
         )
 
     async def astream_chat(self, message: str) -> StreamingAgentChatResponse:

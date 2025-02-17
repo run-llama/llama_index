@@ -81,9 +81,9 @@ class MyScaleVectorStore(BasePydanticVectorStore):
 
     stores_text: bool = True
     metadata_column: str = "metadata"
-    AMPLIFY_RATIO_LE5 = 100
-    AMPLIFY_RATIO_GT5 = 20
-    AMPLIFY_RATIO_GT50 = 10
+    AMPLIFY_RATIO_LE5: int = 100
+    AMPLIFY_RATIO_GT5: int = 20
+    AMPLIFY_RATIO_GT50: int = 10
 
     _index_existed: bool = PrivateAttr(False)
     _client: Any = PrivateAttr()

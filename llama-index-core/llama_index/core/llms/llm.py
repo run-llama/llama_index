@@ -1,9 +1,10 @@
 from collections import ChainMap
 from typing import (
     Any,
-    Callable,
     Dict,
     List,
+    Generator,
+    AsyncGenerator,
     Optional,
     Protocol,
     Sequence,
@@ -11,7 +12,9 @@ from typing import (
     get_args,
     runtime_checkable,
     TYPE_CHECKING,
+    Type,
 )
+from typing_extensions import Annotated
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -30,9 +33,12 @@ from llama_index.core.base.query_pipeline.query import (
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
+    WithJsonSchema,
     Field,
-    root_validator,
-    validator,
+    field_validator,
+    model_validator,
+    ConfigDict,
+    ValidationError,
 )
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.base.llms.base import BaseLLM
@@ -48,10 +54,12 @@ from llama_index.core.types import (
     PydanticProgramMode,
     TokenAsyncGen,
     TokenGen,
+    Model,
 )
 from llama_index.core.instrumentation.events.llm import (
     LLMPredictEndEvent,
     LLMPredictStartEvent,
+    LLMStructuredPredictInProgressEvent,
     LLMStructuredPredictEndEvent,
     LLMStructuredPredictStartEvent,
 )
@@ -65,7 +73,9 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
+    from llama_index.core.program.utils import FlexibleModel
     from llama_index.core.tools.types import BaseTool
+    from llama_index.core.llms.structured_llm import StructuredLLM
 
 
 class ToolSelection(BaseModel):
@@ -74,7 +84,14 @@ class ToolSelection(BaseModel):
     tool_id: str = Field(description="Tool ID to select.")
     tool_name: str = Field(description="Tool name to select.")
     tool_kwargs: Dict[str, Any] = Field(description="Keyword arguments for the tool.")
-    # NOTE: no args for now
+
+    @field_validator("tool_kwargs", mode="wrap")
+    @classmethod
+    def ignore_non_dict_arguments(cls, v: Any, handler: Any) -> Dict[str, Any]:
+        try:
+            return handler(v)
+        except ValidationError:
+            return handler({})
 
 
 # NOTE: These two protocols are needed to appease mypy
@@ -142,6 +159,18 @@ def default_completion_to_prompt(prompt: str) -> str:
     return prompt
 
 
+MessagesToPromptCallable = Annotated[
+    Optional[MessagesToPromptType],
+    WithJsonSchema({"type": "string"}),
+]
+
+
+CompletionToPromptCallable = Annotated[
+    Optional[CompletionToPromptType],
+    WithJsonSchema({"type": "string"}),
+]
+
+
 class LLM(BaseLLM):
     """
     The LLM class is the main class for interacting with language models.
@@ -162,12 +191,12 @@ class LLM(BaseLLM):
     system_prompt: Optional[str] = Field(
         default=None, description="System prompt for LLM calls."
     )
-    messages_to_prompt: Callable = Field(
+    messages_to_prompt: MessagesToPromptCallable = Field(
         description="Function to convert a list of messages to an LLM prompt.",
         default=None,
         exclude=True,
     )
-    completion_to_prompt: Callable = Field(
+    completion_to_prompt: CompletionToPromptCallable = Field(
         description="Function to convert a completion to an LLM prompt.",
         default=None,
         exclude=True,
@@ -188,25 +217,27 @@ class LLM(BaseLLM):
 
     # -- Pydantic Configs --
 
-    @validator("messages_to_prompt", pre=True)
+    @field_validator("messages_to_prompt")
+    @classmethod
     def set_messages_to_prompt(
         cls, messages_to_prompt: Optional[MessagesToPromptType]
     ) -> MessagesToPromptType:
         return messages_to_prompt or generic_messages_to_prompt
 
-    @validator("completion_to_prompt", pre=True)
+    @field_validator("completion_to_prompt")
+    @classmethod
     def set_completion_to_prompt(
         cls, completion_to_prompt: Optional[CompletionToPromptType]
     ) -> CompletionToPromptType:
         return completion_to_prompt or default_completion_to_prompt
 
-    @root_validator
-    def check_prompts(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if values.get("completion_to_prompt") is None:
-            values["completion_to_prompt"] = default_completion_to_prompt
-        if values.get("messages_to_prompt") is None:
-            values["messages_to_prompt"] = generic_messages_to_prompt
-        return values
+    @model_validator(mode="after")
+    def check_prompts(self) -> "LLM":
+        if self.completion_to_prompt is None:
+            self.completion_to_prompt = default_completion_to_prompt
+        if self.messages_to_prompt is None:
+            self.messages_to_prompt = generic_messages_to_prompt
+        return self
 
     # -- Utils --
 
@@ -292,10 +323,11 @@ class LLM(BaseLLM):
     @dispatcher.span
     def structured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[Model],
         prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> BaseModel:
+    ) -> Model:
         r"""Structured predict.
 
         Args:
@@ -303,6 +335,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -311,7 +345,7 @@ class LLM(BaseLLM):
 
         Examples:
             ```python
-            from pydantic.v1 import BaseModel
+            from pydantic import BaseModel
 
             class Test(BaseModel):
                 \"\"\"My test class.\"\"\"
@@ -338,17 +372,20 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        result = program(**prompt_args)
+        result = program(llm_kwargs=llm_kwargs, **prompt_args)
+        assert not isinstance(result, list)
+
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
     @dispatcher.span
     async def astructured_predict(
         self,
-        output_cls: BaseModel,
+        output_cls: Type[Model],
         prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> BaseModel:
+    ) -> Model:
         r"""Async Structured predict.
 
         Args:
@@ -356,6 +393,8 @@ class LLM(BaseLLM):
                 Output class to use for structured prediction.
             prompt (PromptTemplate):
                 Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
             prompt_args (Any):
                 Additional arguments to format the prompt with.
 
@@ -364,7 +403,7 @@ class LLM(BaseLLM):
 
         Examples:
             ```python
-            from pydantic.v1 import BaseModel
+            from pydantic import BaseModel
 
             class Test(BaseModel):
                 \"\"\"My test class.\"\"\"
@@ -392,9 +431,141 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        result = await program.acall(**prompt_args)
+        result = await program.acall(llm_kwargs=llm_kwargs, **prompt_args)
+        assert not isinstance(result, list)
+
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
+
+    @dispatcher.span
+    def stream_structured_predict(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Generator[Union[Model, "FlexibleModel"], None, None]:
+        r"""Stream Structured predict.
+
+        Args:
+            output_cls (BaseModel):
+                Output class to use for structured prediction.
+            prompt (PromptTemplate):
+                Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            Generator: A generator returning partial copies of the model or list of models.
+
+        Examples:
+            ```python
+            from pydantic import BaseModel
+
+            class Test(BaseModel):
+                \"\"\"My test class.\"\"\"
+                name: str
+
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please predict a Test with a random name related to {topic}.")
+            stream_output = llm.stream_structured_predict(Test, prompt, topic="cats")
+            for partial_output in stream_output:
+                # stream partial outputs until completion
+                print(partial_output.name)
+            ```
+        """
+        from llama_index.core.program.utils import get_program_for_llm
+
+        dispatcher.event(
+            LLMStructuredPredictStartEvent(
+                output_cls=output_cls, template=prompt, template_args=prompt_args
+            )
+        )
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
+
+        result = program.stream_call(llm_kwargs=llm_kwargs, **prompt_args)
+        for r in result:
+            dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+            assert not isinstance(r, list)
+            yield r
+
+        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+
+    @dispatcher.span
+    async def astream_structured_predict(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
+        r"""Async Stream Structured predict.
+
+        Args:
+            output_cls (BaseModel):
+                Output class to use for structured prediction.
+            prompt (PromptTemplate):
+                Prompt template to use for structured prediction.
+            llm_kwargs (Optional[Dict[str, Any]]):
+                Arguments that are passed down to the LLM invoked by the program.
+            prompt_args (Any):
+                Additional arguments to format the prompt with.
+
+        Returns:
+            Generator: A generator returning partial copies of the model or list of models.
+
+        Examples:
+            ```python
+            from pydantic import BaseModel
+
+            class Test(BaseModel):
+                \"\"\"My test class.\"\"\"
+                name: str
+
+            from llama_index.core.prompts import PromptTemplate
+
+            prompt = PromptTemplate("Please predict a Test with a random name related to {topic}.")
+            stream_output = await llm.astream_structured_predict(Test, prompt, topic="cats")
+            async for partial_output in stream_output:
+                # stream partial outputs until completion
+                print(partial_output.name)
+            ```
+        """
+
+        async def gen() -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
+            from llama_index.core.program.utils import (
+                get_program_for_llm,
+            )
+
+            dispatcher.event(
+                LLMStructuredPredictStartEvent(
+                    output_cls=output_cls, template=prompt, template_args=prompt_args
+                )
+            )
+            program = get_program_for_llm(
+                output_cls,
+                prompt,
+                self,
+                pydantic_program_mode=self.pydantic_program_mode,
+            )
+
+            result = await program.astream_call(llm_kwargs=llm_kwargs, **prompt_args)
+            async for r in result:
+                dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+                assert not isinstance(r, list)
+                yield r
+
+            dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+
+        return gen()
 
     # -- Prompt Chaining --
 
@@ -604,11 +775,26 @@ class LLM(BaseLLM):
             llm=self,
             callback_manager=self.callback_manager,
             verbose=verbose,
-            **kwargs,
+            max_iterations=kwargs.get("max_iterations", 10),
+            react_chat_formatter=kwargs.get("react_chat_formatter", None),
+            output_parser=kwargs.get("output_parser", None),
+            tool_retriever=kwargs.get("tool_retriever", None),
+            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
-        if isinstance(user_msg, ChatMessage):
+        if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
             user_msg = user_msg.content
+        elif isinstance(user_msg, str):
+            pass
+        elif (
+            not user_msg
+            and chat_history is not None
+            and len(chat_history) > 0
+            and isinstance(chat_history[-1].content, str)
+        ):
+            user_msg = chat_history[-1].content
+        else:
+            raise ValueError("No user message provided or found in chat history.")
 
         task = Task(
             input=user_msg,
@@ -652,11 +838,26 @@ class LLM(BaseLLM):
             llm=self,
             callback_manager=self.callback_manager,
             verbose=verbose,
-            **kwargs,
+            max_iterations=kwargs.get("max_iterations", 10),
+            react_chat_formatter=kwargs.get("react_chat_formatter", None),
+            output_parser=kwargs.get("output_parser", None),
+            tool_retriever=kwargs.get("tool_retriever", None),
+            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
         )
 
-        if isinstance(user_msg, ChatMessage):
+        if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
             user_msg = user_msg.content
+        elif isinstance(user_msg, str):
+            pass
+        elif (
+            not user_msg
+            and chat_history is not None
+            and len(chat_history) > 0
+            and isinstance(chat_history[-1].content, str)
+        ):
+            user_msg = chat_history[-1].content
+        else:
+            raise ValueError("No user message provided or found in chat history.")
 
         task = Task(
             input=user_msg,
@@ -667,7 +868,7 @@ class LLM(BaseLLM):
         step = worker.initialize_step(task)
 
         try:
-            output = await worker.arun_step(step, task).output
+            output = (await worker.arun_step(step, task)).output
 
             # react agent worker inserts a "Observation: " prefix to the response
             if output.response and output.response.startswith("Observation: "):
@@ -680,15 +881,23 @@ class LLM(BaseLLM):
 
         return output
 
+    def as_structured_llm(
+        self,
+        output_cls: Type[BaseModel],
+        **kwargs: Any,
+    ) -> "StructuredLLM":
+        """Return a structured LLM around a given object."""
+        from llama_index.core.llms.structured_llm import StructuredLLM
+
+        return StructuredLLM(llm=self, output_cls=output_cls, **kwargs)
+
 
 class BaseLLMComponent(QueryComponent):
     """Base LLM component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     llm: LLM = Field(..., description="LLM")
     streaming: bool = Field(default=False, description="Streaming mode")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""
@@ -705,11 +914,13 @@ class LLMCompleteComponent(BaseLLMComponent):
 
         # do special check to see if prompt is a list of chat messages
         if isinstance(input["prompt"], get_args(List[ChatMessage])):
-            input["prompt"] = self.llm.messages_to_prompt(input["prompt"])
+            if self.llm.messages_to_prompt:
+                input["prompt"] = self.llm.messages_to_prompt(input["prompt"])
             input["prompt"] = validate_and_convert_stringable(input["prompt"])
         else:
             input["prompt"] = validate_and_convert_stringable(input["prompt"])
-            input["prompt"] = self.llm.completion_to_prompt(input["prompt"])
+            if self.llm.completion_to_prompt:
+                input["prompt"] = self.llm.completion_to_prompt(input["prompt"])
 
         return input
 
@@ -719,6 +930,8 @@ class LLMCompleteComponent(BaseLLMComponent):
         # non-trivial to figure how to support chat/complete/etc.
         prompt = kwargs["prompt"]
         # ignore all other kwargs for now
+
+        response: Any
         if self.streaming:
             response = self.llm.stream_complete(prompt, formatted=True)
         else:
@@ -769,6 +982,8 @@ class LLMChatComponent(BaseLLMComponent):
         # TODO: support only complete for now
         # non-trivial to figure how to support chat/complete/etc.
         messages = kwargs["messages"]
+
+        response: Any
         if self.streaming:
             response = self.llm.stream_chat(messages)
         else:
@@ -780,6 +995,8 @@ class LLMChatComponent(BaseLLMComponent):
         # TODO: support only complete for now
         # non-trivial to figure how to support chat/complete/etc.
         messages = kwargs["messages"]
+
+        response: Any
         if self.streaming:
             response = await self.llm.astream_chat(messages)
         else:

@@ -1,4 +1,5 @@
 import asyncio
+from io import BytesIO
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
@@ -17,6 +18,7 @@ from llama_index.core.base.embeddings.base import (
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.embeddings.huggingface.pooling import Pooling
+from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
 from llama_index.core.utils import get_cache_dir, infer_torch_device
 from llama_index.embeddings.huggingface.utils import (
     DEFAULT_HUGGINGFACE_EMBEDDING_MODEL,
@@ -25,29 +27,94 @@ from llama_index.embeddings.huggingface.utils import (
     get_query_instruct_for_model_name,
     get_text_instruct_for_model_name,
 )
+from llama_index.core.schema import ImageType
 from sentence_transformers import SentenceTransformer
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 DEFAULT_HUGGINGFACE_LENGTH = 512
 logger = logging.getLogger(__name__)
 
 
-class HuggingFaceEmbedding(BaseEmbedding):
+class HuggingFaceEmbedding(MultiModalEmbedding):
+    """
+    HuggingFace class for text and image embeddings.
+
+    Args:
+        model_name (str, optional): If it is a filepath on disc, it loads the model from that path.
+            If it is not a path, it first tries to download a pre-trained SentenceTransformer model.
+            If that fails, tries to construct a model from the Hugging Face Hub with that name.
+            Defaults to DEFAULT_HUGGINGFACE_EMBEDDING_MODEL.
+        max_length (Optional[int], optional): Max sequence length to set in Model's config. If None,
+            it will use the Model's default max_seq_length. Defaults to None.
+        query_instruction (Optional[str], optional): Instruction to prepend to query text.
+            Defaults to None.
+        text_instruction (Optional[str], optional): Instruction to prepend to text.
+            Defaults to None.
+        normalize (bool, optional): Whether to normalize returned vectors.
+            Defaults to True.
+        embed_batch_size (int, optional): The batch size used for the computation.
+            Defaults to DEFAULT_EMBED_BATCH_SIZE.
+        cache_folder (Optional[str], optional): Path to store models. Defaults to None.
+        trust_remote_code (bool, optional): Whether or not to allow for custom models defined on the
+            Hub in their own modeling files. This option should only be set to True for repositories
+            you trust and in which you have read the code, as it will execute code present on the Hub
+            on your local machine. Defaults to False.
+        device (Optional[str], optional): Device (like "cuda", "cpu", "mps", "npu", ...) that should
+            be used for computation. If None, checks if a GPU can be used. Defaults to None.
+        callback_manager (Optional[CallbackManager], optional): Callback Manager. Defaults to None.
+        parallel_process (bool, optional): If True it will start a multi-process pool to process the
+            encoding with several independent processes. Great for vast amount of texts.
+            Defaults to False.
+        target_devices (Optional[List[str]], optional): PyTorch target devices, e.g.
+            ["cuda:0", "cuda:1", ...], ["npu:0", "npu:1", ...], or ["cpu", "cpu", "cpu", "cpu"].
+            If target_devices is None and CUDA/NPU is available, then all available CUDA/NPU devices
+            will be used. If target_devices is None and CUDA/NPU is not available, then 4 CPU devices
+            will be used. This parameter will only be used if `parallel_process = True`.
+            Defaults to None.
+        num_workers (int, optional): The number of workers to use for async embedding calls.
+            Defaults to None.
+        **model_kwargs: Other model kwargs to use
+        tokenizer_name (Optional[str], optional): "Deprecated"
+        pooling (str, optional): "Deprecated"
+        model (Optional[Any], optional): "Deprecated"
+        tokenizer (Optional[Any], optional): "Deprecated"
+
+    Examples:
+        `pip install llama-index-embeddings-huggingface`
+
+        ```python
+        from llama_index.core import Settings
+        from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+        # Set up the HuggingFaceEmbedding class with the required model to use with llamaindex core.
+        embed_model  = HuggingFaceEmbedding(model_name = "BAAI/bge-small-en")
+        Settings.embed_model = embed_model
+
+        # Or if you want to Embed some text separately
+        embeddings = embed_model.get_text_embedding("I want to Embed this text!")
+
+        ```
+
+    """
+
     max_length: int = Field(
         default=DEFAULT_HUGGINGFACE_LENGTH, description="Maximum length of input.", gt=0
     )
     normalize: bool = Field(default=True, description="Normalize embeddings or not.")
     query_instruction: Optional[str] = Field(
-        description="Instruction to prepend to query text."
+        description="Instruction to prepend to query text.", default=None
     )
     text_instruction: Optional[str] = Field(
-        description="Instruction to prepend to text."
+        description="Instruction to prepend to text.", default=None
     )
     cache_folder: Optional[str] = Field(
-        description="Cache folder for Hugging Face files."
+        description="Cache folder for Hugging Face files.", default=None
     )
 
-    _model: Any = PrivateAttr()
+    _model: SentenceTransformer = PrivateAttr()
     _device: str = PrivateAttr()
+    _parallel_process: bool = PrivateAttr()
+    _target_devices: Optional[List[str]] = PrivateAttr()
 
     def __init__(
         self,
@@ -65,10 +132,11 @@ class HuggingFaceEmbedding(BaseEmbedding):
         trust_remote_code: bool = False,
         device: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        parallel_process: bool = False,
+        target_devices: Optional[List[str]] = None,
         **model_kwargs,
     ):
-        self._device = device or infer_torch_device()
-
+        device = device or infer_torch_device()
         cache_folder = cache_folder or get_cache_dir()
 
         for variable, value in [
@@ -84,9 +152,9 @@ class HuggingFaceEmbedding(BaseEmbedding):
         if model_name is None:
             raise ValueError("The `model_name` argument must be provided.")
 
-        self._model = SentenceTransformer(
+        model = SentenceTransformer(
             model_name,
-            device=self._device,
+            device=device,
             cache_folder=cache_folder,
             trust_remote_code=trust_remote_code,
             prompts={
@@ -98,9 +166,9 @@ class HuggingFaceEmbedding(BaseEmbedding):
             **model_kwargs,
         )
         if max_length:
-            self._model.max_seq_length = max_length
+            model.max_seq_length = max_length
         else:
-            max_length = self._model.max_seq_length
+            max_length = model.max_seq_length
 
         super().__init__(
             embed_batch_size=embed_batch_size,
@@ -111,43 +179,163 @@ class HuggingFaceEmbedding(BaseEmbedding):
             query_instruction=query_instruction,
             text_instruction=text_instruction,
         )
+        self._device = device
+        self._model = model
+        self._parallel_process = parallel_process
+        self._target_devices = target_devices
 
     @classmethod
     def class_name(cls) -> str:
         return "HuggingFaceEmbedding"
 
-    def _embed(
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        reraise=True,
+    )
+    def _embed_with_retry(
         self,
-        sentences: List[str],
+        inputs: List[Union[str, BytesIO]],
         prompt_name: Optional[str] = None,
     ) -> List[List[float]]:
-        """Embed sentences."""
-        return self._model.encode(
-            sentences,
-            batch_size=self.embed_batch_size,
-            prompt_name=prompt_name,
-            normalize_embeddings=self.normalize,
-        ).tolist()
+        """
+        Generates embeddings with retry mechanism.
+
+        Args:
+            inputs: List of texts or images to embed
+            prompt_name: Optional prompt type
+
+        Returns:
+            List of embedding vectors
+
+        Raises:
+            Exception: If embedding fails after retries
+        """
+        try:
+            if self._parallel_process:
+                pool = self._model.start_multi_process_pool(
+                    target_devices=self._target_devices
+                )
+                emb = self._model.encode_multi_process(
+                    inputs,
+                    pool=pool,
+                    batch_size=self.embed_batch_size,
+                    prompt_name=prompt_name,
+                    normalize_embeddings=self.normalize,
+                )
+                self._model.stop_multi_process_pool(pool=pool)
+            else:
+                emb = self._model.encode(
+                    inputs,
+                    batch_size=self.embed_batch_size,
+                    prompt_name=prompt_name,
+                    normalize_embeddings=self.normalize,
+                )
+            return emb.tolist()
+        except Exception as e:
+            logger.warning(f"Embedding attempt failed: {e!s}")
+            raise
+
+    def _embed(
+        self,
+        inputs: List[Union[str, BytesIO]],
+        prompt_name: Optional[str] = None,
+    ) -> List[List[float]]:
+        """
+        Generates Embeddings with input validation and retry mechanism.
+
+        Args:
+            sentences: Texts or Sentences to embed
+            prompt_name: The name of the prompt to use for encoding
+
+        Returns:
+            List of embedding vectors
+
+        Raises:
+            ValueError: If any input text is invalid
+            Exception: If embedding fails after retries
+        """
+        return self._embed_with_retry(inputs, prompt_name)
 
     def _get_query_embedding(self, query: str) -> List[float]:
-        """Get query embedding."""
-        return self._embed(query, prompt_name="query")
+        """
+        Generates Embeddings for Query.
+
+        Args:
+            query (str): Query text/sentence
+
+        Returns:
+            List[float]: numpy array of embeddings
+        """
+        return self._embed([query], prompt_name="query")[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
-        """Get query embedding async."""
+        """
+        Generates Embeddings for Query Asynchronously.
+
+        Args:
+            query (str): Query text/sentence
+
+        Returns:
+            List[float]: numpy array of embeddings
+        """
         return self._get_query_embedding(query)
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
-        """Get text embedding async."""
+        """
+        Generates Embeddings for text Asynchronously.
+
+        Args:
+            text (str): Text/Sentence
+
+        Returns:
+            List[float]: numpy array of embeddings
+        """
         return self._get_text_embedding(text)
 
     def _get_text_embedding(self, text: str) -> List[float]:
-        """Get text embedding."""
-        return self._embed(text, prompt_name="text")
+        """
+        Generates Embeddings for text.
+
+        Args:
+            text (str): Text/sentences
+
+        Returns:
+            List[float]: numpy array of embeddings
+        """
+        return self._embed([text], prompt_name="text")[0]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Get text embeddings."""
+        """
+        Generates Embeddings for text.
+
+        Args:
+            texts (List[str]): Texts / Sentences
+
+        Returns:
+            List[List[float]]: numpy array of embeddings
+        """
         return self._embed(texts, prompt_name="text")
+
+    def _get_image_embedding(self, img_file_path: ImageType) -> List[float]:
+        """Generate embedding for an image."""
+        return self._embed([img_file_path])[0]
+
+    async def _aget_image_embedding(self, img_file_path: ImageType) -> List[float]:
+        """Generate embedding for an image asynchronously."""
+        return self._get_image_embedding(img_file_path)
+
+    def _get_image_embeddings(
+        self, img_file_paths: List[ImageType]
+    ) -> List[List[float]]:
+        """Generate embeddings for multiple images."""
+        return self._embed(img_file_paths)
+
+    async def _aget_image_embeddings(
+        self, img_file_paths: List[ImageType]
+    ) -> List[List[float]]:
+        """Generate embeddings for multiple images asynchronously."""
+        return self._get_image_embeddings(img_file_paths)
 
 
 @deprecated(
@@ -226,7 +414,8 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
         }
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize.
+        """
+        Initialize.
 
         Args:
             kwargs: See the class-level Fields.

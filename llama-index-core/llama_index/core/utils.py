@@ -1,8 +1,10 @@
 """General utils functions."""
 
 import asyncio
+import base64
 import os
 import random
+import requests
 import sys
 import time
 import traceback
@@ -10,6 +12,7 @@ import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial, wraps
+from io import BytesIO
 from itertools import islice
 from pathlib import Path
 from typing import (
@@ -59,12 +62,12 @@ class GlobalsHelper:
         try:
             nltk.data.find("corpora/stopwords")
         except LookupError:
-            nltk.download("stopwords", download_dir=self._nltk_data_dir)
+            nltk.download("stopwords", download_dir=self._nltk_data_dir, quiet=True)
 
         try:
-            nltk.data.find("tokenizers/punkt")
+            nltk.data.find("tokenizers/punkt_tab")
         except LookupError:
-            nltk.download("punkt", download_dir=self._nltk_data_dir)
+            nltk.download("punkt_tab", download_dir=self._nltk_data_dir, quiet=True)
 
     @property
     def stopwords(self) -> List[str]:
@@ -81,7 +84,7 @@ class GlobalsHelper:
             try:
                 nltk.data.find("corpora/stopwords", paths=[self._nltk_data_dir])
             except LookupError:
-                nltk.download("stopwords", download_dir=self._nltk_data_dir)
+                nltk.download("stopwords", download_dir=self._nltk_data_dir, quiet=True)
             self._stopwords = stopwords.words("english")
         return self._stopwords
 
@@ -234,6 +237,79 @@ def retry_on_exceptions_with_backoff(
                 raise
             time.sleep(backoff_secs)
             backoff_secs = min(backoff_secs * 2, max_backoff_secs)
+
+
+async def aretry_on_exceptions_with_backoff(
+    async_fn: Callable,
+    errors_to_retry: List[ErrorToRetry],
+    max_tries: int = 10,
+    min_backoff_secs: float = 0.5,
+    max_backoff_secs: float = 60.0,
+) -> Any:
+    """Execute lambda function with retries and exponential backoff.
+
+    Args:
+        async_fn (Callable): Async Function to be called and output we want.
+        errors_to_retry (List[ErrorToRetry]): List of errors to retry.
+            At least one needs to be provided.
+        max_tries (int): Maximum number of tries, including the first. Defaults to 10.
+        min_backoff_secs (float): Minimum amount of backoff time between attempts.
+            Defaults to 0.5.
+        max_backoff_secs (float): Maximum amount of backoff time between attempts.
+            Defaults to 60.
+
+    """
+    if not errors_to_retry:
+        raise ValueError("At least one error to retry needs to be provided")
+
+    error_checks = {
+        error_to_retry.exception_cls: error_to_retry.check_fn
+        for error_to_retry in errors_to_retry
+    }
+    exception_class_tuples = tuple(error_checks.keys())
+
+    backoff_secs = min_backoff_secs
+    tries = 0
+
+    while True:
+        try:
+            return await async_fn()
+        except exception_class_tuples as e:
+            traceback.print_exc()
+            tries += 1
+            if tries >= max_tries:
+                raise
+            check_fn = error_checks.get(e.__class__)
+            if check_fn and not check_fn(e):
+                raise
+            time.sleep(backoff_secs)
+            backoff_secs = min(backoff_secs * 2, max_backoff_secs)
+
+
+def get_retry_on_exceptions_with_backoff_decorator(
+    *retry_args: Any, **retry_kwargs: Any
+) -> Callable:
+    """Return a decorator that retries with exponential backoff on provided exceptions."""
+
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*func_args: Any, **func_kwargs: Any) -> Any:
+            return retry_on_exceptions_with_backoff(
+                lambda: func(*func_args, **func_kwargs), *retry_args, **retry_kwargs
+            )
+
+        @wraps(func)
+        async def awrapper(*func_args: Any, **func_kwargs: Any) -> Any:
+            async def foo() -> Any:
+                return await func(*func_args, **func_kwargs)
+
+            return await aretry_on_exceptions_with_backoff(
+                foo, *retry_args, **retry_kwargs
+            )
+
+        return awrapper if asyncio.iscoroutinefunction(func) else wrapper
+
+    return decorator
 
 
 def truncate_text(text: str, max_length: int) -> str:
@@ -497,3 +573,54 @@ async def async_unit_generator(x: Any) -> AsyncGenerator[Any, None]:
         Any: the single element
     """
     yield x
+
+
+def resolve_binary(
+    raw_bytes: Optional[bytes] = None,
+    path: Optional[Union[str, Path]] = None,
+    url: Optional[str] = None,
+    as_base64: bool = False,
+) -> BytesIO:
+    """Resolve binary data from various sources into a BytesIO object.
+
+    Args:
+        raw_bytes: Raw bytes data
+        path: File path to read bytes from
+        url: URL to fetch bytes from
+        as_base64: Whether to base64 encode the output bytes
+
+    Returns:
+        BytesIO object containing the binary data
+
+    Raises:
+        ValueError: If no valid source is provided
+    """
+    if raw_bytes is not None:
+        # check if raw_bytes is base64 encoded
+        try:
+            decoded_bytes = base64.b64decode(raw_bytes)
+        except Exception:
+            decoded_bytes = raw_bytes
+
+        if as_base64:
+            return BytesIO(base64.b64encode(decoded_bytes))
+        return BytesIO(decoded_bytes)
+
+    elif path is not None:
+        path = Path(path) if isinstance(path, str) else path
+        data = path.read_bytes()
+        if as_base64:
+            return BytesIO(base64.b64encode(data))
+        return BytesIO(data)
+
+    elif url is not None:
+        headers = {
+            "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
+        }
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        if as_base64:
+            return BytesIO(base64.b64encode(response.content))
+        return BytesIO(response.content)
+
+    raise ValueError("No valid source provided to resolve binary data!")

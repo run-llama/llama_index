@@ -2,6 +2,7 @@
 
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+from pydantic import ConfigDict
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -65,6 +66,8 @@ DASHSCOPE_MODEL_META = {
     },
 }
 
+DEFAULT_CONTEXT_WINDOW = 1024 * 8
+
 
 def call_with_messages(
     model: str,
@@ -85,6 +88,25 @@ def call_with_messages(
     )
 
 
+async def acall_with_messages(
+    model: str,
+    messages: List[Dict],
+    parameters: Optional[Dict] = None,
+    api_key: Optional[str] = None,
+    **kwargs: Any,
+) -> Dict:
+    try:
+        from dashscope import AioGeneration
+    except ImportError:
+        raise ValueError(
+            "DashScope is not installed. Please install it with "
+            "`pip install dashscope`."
+        )
+    return await AioGeneration.call(
+        model=model, messages=messages, api_key=api_key, **parameters
+    )
+
+
 class DashScope(CustomLLM):
     """DashScope LLM.
 
@@ -99,6 +121,11 @@ class DashScope(CustomLLM):
         print(response.text)
         ```
     """
+
+    """ In Pydantic V2, protected_namespaces is a configuration option used to prevent certain namespace keywords
+      (such as model_, etc.) from being used as field names. so we need to disable it here.
+    """
+    model_config = ConfigDict(protected_namespaces=())
 
     model_name: str = Field(
         default=DashScopeGenerationModels.QWEN_MAX,
@@ -131,8 +158,8 @@ class DashScope(CustomLLM):
     temperature: Optional[float] = Field(
         description="The temperature to use during generation.",
         default=DEFAULT_TEMPERATURE,
-        gte=0.0,
-        lte=2.0,
+        ge=0.0,
+        le=2.0,
     )
     top_k: Optional[int] = Field(
         description="Sample counter when generate.", default=None
@@ -141,7 +168,7 @@ class DashScope(CustomLLM):
         description="Sample probability threshold when generate."
     )
     seed: Optional[int] = Field(
-        description="Random seed when generate.", default=1234, gte=0
+        description="Random seed when generate.", default=1234, ge=0
     )
     repetition_penalty: Optional[float] = Field(
         description="Penalty for repeated words in generated text; \
@@ -151,6 +178,15 @@ class DashScope(CustomLLM):
     )
     api_key: str = Field(
         default=None, description="The DashScope API key.", exclude=True
+    )
+    context_window: int = Field(
+        default=DEFAULT_CONTEXT_WINDOW,
+        description="The maximum number of context tokens for the model.",
+        gt=0,
+    )
+    is_function_calling_model: bool = Field(
+        default=True,
+        description="Whether the model is a function calling model.",
     )
 
     def __init__(
@@ -166,6 +202,8 @@ class DashScope(CustomLLM):
         seed: Optional[int] = 1234,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
+        is_function_calling_model: Optional[bool] = True,
+        context_window: Optional[int] = DEFAULT_CONTEXT_WINDOW,
         **kwargs: Any,
     ):
         super().__init__(
@@ -180,6 +218,8 @@ class DashScope(CustomLLM):
             seed=seed,
             api_key=api_key,
             callback_manager=callback_manager,
+            is_function_calling_model=is_function_calling_model,
+            context_window=context_window,
             kwargs=kwargs,
         )
 
@@ -189,11 +229,13 @@ class DashScope(CustomLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        DASHSCOPE_MODEL_META[self.model_name]["num_output"] = (
-            self.max_tokens or DASHSCOPE_MODEL_META[self.model_name]["num_output"]
-        )
+        """LLM metadata."""
         return LLMMetadata(
-            model_name=self.model_name, **DASHSCOPE_MODEL_META[self.model_name]
+            context_window=self.context_window,
+            num_output=self.max_tokens,
+            model_name=self.model_name,
+            is_chat_model=True,
+            is_function_calling_model=self.is_function_calling_model,
         )
 
     def _get_default_parameters(self) -> Dict:
@@ -232,7 +274,9 @@ class DashScope(CustomLLM):
         return message, parameters
 
     @llm_completion_callback()
-    def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         message, parameters = self._get_input_parameters(prompt=prompt, **kwargs)
         parameters.pop("incremental_output", None)
         parameters.pop("stream", None)
@@ -246,7 +290,25 @@ class DashScope(CustomLLM):
         return dashscope_response_to_completion_response(response)
 
     @llm_completion_callback()
-    def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
+    async def acomplete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
+        message, parameters = self._get_input_parameters(prompt=prompt, **kwargs)
+        parameters.pop("incremental_output", None)
+        parameters.pop("stream", None)
+        messages = chat_message_to_dashscope_messages([message])
+        response = await acall_with_messages(
+            model=self.model_name,
+            messages=messages,
+            api_key=self.api_key,
+            parameters=parameters,
+        )
+        return dashscope_response_to_completion_response(response)
+
+    @llm_completion_callback()
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         message, parameters = self._get_input_parameters(prompt=prompt, kwargs=kwargs)
         parameters["incremental_output"] = True
         parameters["stream"] = True
@@ -284,6 +346,23 @@ class DashScope(CustomLLM):
         parameters.pop("incremental_output", None)
         parameters["result_format"] = "message"  # only use message format.
         response = call_with_messages(
+            model=self.model_name,
+            messages=chat_message_to_dashscope_messages(messages),
+            api_key=self.api_key,
+            parameters=parameters,
+        )
+        return dashscope_response_to_chat_response(response)
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        parameters = self._get_default_parameters()
+        parameters.update({**kwargs})
+        parameters.pop("stream", None)
+        parameters.pop("incremental_output", None)
+        parameters["result_format"] = "message"  # only use message format.
+        response = await acall_with_messages(
             model=self.model_name,
             messages=chat_message_to_dashscope_messages(messages),
             api_key=self.api_key,

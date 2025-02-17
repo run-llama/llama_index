@@ -1,6 +1,6 @@
 # Configuring Settings
 
-The `Settings` is a bundle of commonly used resources used during the indexing and querying stage in a LlamaIndex pipeline/application.
+The `Settings` is a bundle of commonly used resources used during the indexing and querying stage in a LlamaIndex workflow/application.
 
 You can use it to set the [global configuration](#setting-global-configuration). Local configurations (transformations, LLMs, embedding models) can be passed directly into the interfaces that make use of them.
 
@@ -21,7 +21,7 @@ Settings.llm = OpenAI(model="gpt-3.5-turbo", temperature=0.1)
 
 ## Embed Model
 
-The embedding model is used to convert text to numerical representationss, used for calculating similarity and top-k retrieval.
+The embedding model is used to convert text to numerical representations, used for calculating similarity and top-k retrieval.
 
 ```python
 from llama_index.embeddings.openai import OpenAIEmbedding

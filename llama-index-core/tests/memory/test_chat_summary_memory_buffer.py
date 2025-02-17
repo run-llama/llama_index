@@ -20,21 +20,47 @@ def _get_role_alternating_order(i: int):
     return MessageRole.ASSISTANT
 
 
-USER_CHAT_MESSAGE = ChatMessage(role=MessageRole.USER, content="first message")
-ASSISTANT_CHAT_MESSAGE = ChatMessage(role=MessageRole.ASSISTANT, content="first answer")
-TOOL_CHAT_MESSAGE = ChatMessage(role=MessageRole.TOOL, content="first tool")
-USER_CHAT_MESSAGE_TOKENS = len(tokenizer(str(USER_CHAT_MESSAGE.content)))
-LONG_USER_CHAT_MESSAGE = ChatMessage(
-    role=MessageRole.USER,
-    content="".join(
-        ["This is a message that is longer than the proposed token length"] * 10
-    ),
-)
-LONG_RUNNING_CONVERSATION = [
-    ChatMessage(role=_get_role_alternating_order(i), content=f"Message {i}")
-    for i in range(6)
-]
-LONG_USER_CHAT_MESSAGE_TOKENS = len(tokenizer(str(LONG_USER_CHAT_MESSAGE.content)))
+try:
+    from openai.types.chat.chat_completion_message_tool_call import (
+        ChatCompletionMessageToolCall,
+        Function,
+    )
+
+    openai_installed = True
+except ImportError:
+    openai_installed = False
+
+if openai_installed:
+    USER_CHAT_MESSAGE = ChatMessage(role=MessageRole.USER, content="first message")
+    ASSISTANT_CHAT_MESSAGE = ChatMessage(
+        role=MessageRole.ASSISTANT, content="first answer"
+    )
+    ASSISTANT_TOOL_CALLING_MESSAGE = ChatMessage(
+        role=MessageRole.ASSISTANT,
+        content=None,
+        additional_kwargs={
+            "tool_calls": [
+                ChatCompletionMessageToolCall(
+                    id="call_Opq33YZVi0usHbNcrvEYN9QO",
+                    function=Function(arguments='{"a":363,"b":42}', name="add"),
+                    type="function",
+                )
+            ]
+        },
+    )
+    TOOL_CHAT_MESSAGE = ChatMessage(role=MessageRole.TOOL, content="first tool")
+    USER_CHAT_MESSAGE_TOKENS = len(tokenizer(str(USER_CHAT_MESSAGE.content)))
+    LONG_USER_CHAT_MESSAGE = ChatMessage(
+        role=MessageRole.USER,
+        content="".join(
+            ["This is a message that is longer than the proposed token length"] * 10
+        ),
+    )
+    LONG_RUNNING_CONVERSATION = [
+        ChatMessage(role=_get_role_alternating_order(i), content=f"Message {i}")
+        for i in range(6)
+    ]
+    LONG_USER_CHAT_MESSAGE_TOKENS = len(tokenizer(str(LONG_USER_CHAT_MESSAGE.content)))
 
 
 class MockSummarizerLLM(MockLLM):
@@ -97,6 +123,7 @@ def summarizer_llm():
     )
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_put_get(summarizer_llm) -> None:
     # Given one message with fewer tokens than token_limit
     memory = ChatSummaryMemoryBuffer.from_defaults(
@@ -111,6 +138,7 @@ def test_put_get(summarizer_llm) -> None:
     assert history[0].content == USER_CHAT_MESSAGE.content
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_put_get_summarize_long_message(summarizer_llm) -> None:
     # Given one message with more tokens than token_limit
     memory = ChatSummaryMemoryBuffer.from_defaults(
@@ -127,6 +155,34 @@ def test_put_get_summarize_long_message(summarizer_llm) -> None:
     assert history[0].content == FIRST_SUMMARY_RESPONSE
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
+def test_put_get_summarize_message_with_tool_call(summarizer_llm) -> None:
+    # Given one message with more tokens than token_limit and tool calls
+    # This case test 2 things:
+    #   1. It can summarize the ASSISTANT_TOOL_CALLING_MESSAGE with content=None (Issue #14014).
+    #   2. In `_handle_assistant_and_tool_messages`, when chat_history_full_text only
+    #      contains tool calls or assistant messages, it could add them all into
+    #      `chat_history_to_be_summarized`, without triggering the IndexError.
+    memory = ChatSummaryMemoryBuffer.from_defaults(
+        chat_history=[
+            LONG_USER_CHAT_MESSAGE,
+            ASSISTANT_TOOL_CALLING_MESSAGE,
+            TOOL_CHAT_MESSAGE,
+            ASSISTANT_CHAT_MESSAGE,
+        ],
+        token_limit=LONG_USER_CHAT_MESSAGE_TOKENS,
+        llm=summarizer_llm,
+    )
+
+    # When I get the chat history from the memory
+    history = memory.get()
+
+    # Then the history should contain the summarized message
+    assert len(history) == 1
+    assert history[0].content == FIRST_SUMMARY_RESPONSE
+
+
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_put_get_summarize_part_of_conversation(summarizer_llm) -> None:
     # Given a chat history where only 2 responses fit in the token_limit
     tokens_most_recent_messages = sum(
@@ -165,6 +221,7 @@ def test_put_get_summarize_part_of_conversation(summarizer_llm) -> None:
     assert history[2].content == "Message 7"
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_get_when_initial_tokens_less_than_limit_returns_history() -> None:
     # Given some initial tokens much smaller than token_limit and message tokens
     initial_tokens = 5
@@ -182,6 +239,7 @@ def test_get_when_initial_tokens_less_than_limit_returns_history() -> None:
     assert history[0] == USER_CHAT_MESSAGE
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_get_when_initial_tokens_exceed_limit_raises_value_error() -> None:
     # Given some initial tokens exceeding token_limit
     initial_tokens = 50
@@ -193,12 +251,13 @@ def test_get_when_initial_tokens_exceed_limit_raises_value_error() -> None:
 
     # When I get the chat history from the memory
     with pytest.raises(ValueError) as error:
-        memory.get(initial_tokens)
+        memory.get(initial_token_count=initial_tokens)
 
     # Then a value error should be raised
     assert str(error.value) == "Initial token count exceeds token limit"
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_set() -> None:
     memory = ChatSummaryMemoryBuffer.from_defaults(chat_history=[USER_CHAT_MESSAGE])
 
@@ -210,6 +269,7 @@ def test_set() -> None:
     assert len(memory.get()) == 1
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_max_tokens_without_summarizer() -> None:
     memory = ChatSummaryMemoryBuffer.from_defaults(
         chat_history=[USER_CHAT_MESSAGE], token_limit=5
@@ -232,6 +292,7 @@ def test_max_tokens_without_summarizer() -> None:
     assert len(memory.get()) == 2
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_max_tokens_with_summarizer(summarizer_llm) -> None:
     max_tokens = 1
     summarizer_llm.set_max_tokens(max_tokens)
@@ -266,6 +327,7 @@ def test_max_tokens_with_summarizer(summarizer_llm) -> None:
     )
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_assistant_never_first_message(summarizer_llm) -> None:
     chat_history = [
         USER_CHAT_MESSAGE,
@@ -293,6 +355,7 @@ def test_assistant_never_first_message(summarizer_llm) -> None:
     assert memory_results[2].role == MessageRole.ASSISTANT
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_assistant_tool_pairs(summarizer_llm) -> None:
     chat_history = [
         USER_CHAT_MESSAGE,
@@ -321,6 +384,7 @@ def test_assistant_tool_pairs(summarizer_llm) -> None:
     assert memory_results[2].role == MessageRole.ASSISTANT
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_string_save_load(summarizer_llm) -> None:
     memory = ChatSummaryMemoryBuffer.from_defaults(
         llm=summarizer_llm,
@@ -343,6 +407,7 @@ def test_string_save_load(summarizer_llm) -> None:
     new_memory.llm = summarizer_llm
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_dict_save_load(summarizer_llm) -> None:
     memory = ChatSummaryMemoryBuffer.from_defaults(
         llm=summarizer_llm,
@@ -365,6 +430,7 @@ def test_dict_save_load(summarizer_llm) -> None:
     new_memory.llm = summarizer_llm
 
 
+@pytest.mark.skipif(not openai_installed, reason="OpenAI not installed")
 def test_pickle() -> None:
     """Unpickleable tiktoken tokenizer should be circumvented when pickling."""
     memory = ChatSummaryMemoryBuffer.from_defaults()

@@ -10,6 +10,8 @@ IMPORT_ERROR_MSG = (
     "`pymongo` or `motor` package not found, please run `pip install pymongo motor`"
 )
 
+APP_NAME = "Llama-Index-KVStore-Python"
+
 
 class MongoDBKVStore(BaseKVStore):
     """MongoDB Key-Value store.
@@ -71,7 +73,7 @@ class MongoDBKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        mongo_client: MongoClient = MongoClient(uri)
+        mongo_client: MongoClient = MongoClient(uri, appname=APP_NAME)
         mongo_aclient: AsyncIOMotorClient = AsyncIOMotorClient(uri)
         return cls(
             mongo_client=mongo_client,
@@ -101,8 +103,10 @@ class MongoDBKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        mongo_client: MongoClient = MongoClient(host, port)
-        mongo_aclient: AsyncIOMotorClient = AsyncIOMotorClient(host, port)
+        mongo_client: MongoClient = MongoClient(host, port, appname=APP_NAME)
+        mongo_aclient: AsyncIOMotorClient = AsyncIOMotorClient(
+            host, port, appname=APP_NAME
+        )
         return cls(
             mongo_client=mongo_client,
             mongo_aclient=mongo_aclient,
