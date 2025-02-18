@@ -5,30 +5,32 @@ build-backend = "poetry.core.masonry.api"
 [tool.codespell]
 check-filenames = true
 check-hidden = true
-# Feel free to un-skip examples, and experimental, you will just need to
-# work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
-# [tool.llamahub]
-# contains_example = false
-# import_path = "<import-path>"
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.agentql"
 
-# [tool.llamahub.class_authors]
-# CLASS = "github-username"
+[tool.llamahub.class_authors]
+AgentQLToolSpec = "jayfish0"
 
 [tool.mypy]
 disallow_untyped_defs = true
-# Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
 name = "llama-index-tools-agentql"
-version = "0.1.0"
+version = "1.0.0"
 description = "llama-index tools agentql integration"
-authors = ["Your Name <you@example.com>"]
+authors = [
+    { name = "Jason Zhang", email = "jason@tinyfish.io" },
+]
 license = "MIT"
+maintainers = [
+    { name = "Jason Zhang", email = "jason@tinyfish.io" },
+]
 readme = "README.md"
 packages = [{include = "llama_index/"}]
 
