@@ -15,7 +15,9 @@ class SafeFormatter:
         return re.sub(r"\{([^{}]+)\}", self._replace_match, format_string)
 
     def parse(self, format_string: str) -> List[str]:
-        return re.findall(r"\{([^{}]+)\}", format_string)
+        return re.findall(
+            r"\{([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)\}", format_string
+        )
 
     def _replace_match(self, match: re.Match) -> str:
         key = match.group(1)
