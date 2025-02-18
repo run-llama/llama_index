@@ -291,12 +291,9 @@ class WatsonxLLM(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         if self.model_id:
-            return LLMMetadata(
-                context_window=(
-                    self.model_info.get("model_limits", {}).get("max_sequence_length")
-                ),
-                num_output=(self.max_new_tokens or DEFAULT_MAX_TOKENS),
-                model_name=self.model_id,
+            model_id = self.model_id
+            context_window = self.model_info.get("model_limits", {}).get(
+                "max_sequence_length"
             )
         else:
             model_id = self.deployment_info.get("entity", {}).get("base_model_id")
@@ -305,13 +302,14 @@ class WatsonxLLM(FunctionCallingLLM):
                 .get("model_limits", {})
                 .get("max_sequence_length")
             )
-            return LLMMetadata(
-                context_window=context_window
-                or self._context_window
-                or DEFAULT_CONTEXT_WINDOW,
-                num_output=(self.max_new_tokens or DEFAULT_MAX_TOKENS),
-                model_name=model_id or self._model.deployment_id,
-            )
+
+        return LLMMetadata(
+            context_window=context_window
+            or self._context_window
+            or DEFAULT_CONTEXT_WINDOW,
+            num_output=self.max_new_tokens or DEFAULT_MAX_TOKENS,
+            model_name=model_id or self._model.deployment_id,
+        )
 
     @property
     def sample_generation_text_params(self) -> Dict[str, Any]:
