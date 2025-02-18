@@ -1,5 +1,32 @@
 # ChangeLog
 
+## [2025-02-17]
+
+### `llama-index-core` [0.12.19]
+
+- Added sync/async Function tool callback (#16637)
+- Tweaked regex for template vars
+
+### `llama-index-experimental` [0.5.4]
+
+- Experimental natural language retrievers using duck db (#15642)
+
+### `llama-index-graph-stores-memgraph` [0.3.0]
+
+- fix version on memgraph (#17842)
+
+### `llama-index-indices-managed-llama-cloud` [0.6.7]
+
+- Image Metadata Test + Sync Implementation (#17844)
+
+### `llama-index-postprocessor-nvidia-rerank` [0.4.2]
+
+- NVIDIARerank add http_client parameter to pass custom clients (#17832)
+
+### `llama-index-llms-mistralai` [0.3.3]
+
+- mistral saba support (#17847)
+
 ## [2025-02-16]
 
 ### `llama-index-core` [0.12.18]
