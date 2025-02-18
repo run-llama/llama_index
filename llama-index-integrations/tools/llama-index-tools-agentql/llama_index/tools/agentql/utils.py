@@ -7,7 +7,11 @@ from playwright.async_api import Browser as AsyncBrowser
 from playwright.async_api import Page as AsyncPage
 
 # from llama_index.tools.playwright import _aget_current_page
-from llama_index.tools.agentql.const import EXTRACT_DATA_ENDPOINT, DEFAULT_EXTRACT_DATA_TIMEOUT_SECONDS
+from llama_index.tools.agentql.const import (
+    EXTRACT_DATA_ENDPOINT,
+    DEFAULT_EXTRACT_DATA_TIMEOUT_SECONDS,
+)
+
 
 async def _aget_current_agentql_page(browser: AsyncBrowser) -> AsyncPage:
     """
@@ -22,9 +26,7 @@ async def _aget_current_agentql_page(browser: AsyncBrowser) -> AsyncPage:
     if not browser.contexts:
         context = await browser.new_context()
         return await agentql.wrap_async(await context.new_page())
-    context = browser.contexts[
-        0
-    ]  # Assuming you're using the default browser context
+    context = browser.contexts[0]  # Assuming you're using the default browser context
     if not context.pages:
         return await agentql.wrap_async(await context.new_page())
     # Assuming the last page in the list is the active one
@@ -44,7 +46,13 @@ async def aload_data(
     if not query and not prompt:
         raise ValueError("'query' and 'prompt' cannot both be empty")
 
-    payload = {"url": url, "query": query, "prompt": prompt, "params": params, "metadata": metadata}
+    payload = {
+        "url": url,
+        "query": query,
+        "prompt": prompt,
+        "params": params,
+        "metadata": metadata,
+    }
 
     headers = {
         "X-API-Key": f"{api_key}",
@@ -80,13 +88,12 @@ async def aload_data(
                     msg = f"HTTP {e}."
                 raise ValueError(msg) from e
         else:
-            data = response.json()
-            return data
-        
+            return response.json()
+
+
 def validate_url_scheme(url: str) -> None:
     """Check that the URL scheme is valid."""
     if url:
         parsed_url = urlparse(url)
         if parsed_url.scheme not in ("http", "https"):
             raise ValueError("URL scheme must be 'http' or 'https'")
-        
