@@ -1,4 +1,4 @@
-from llama_index.tools.agentql.base import <FILL>
+from llama_index.tools.agentql.base import AgentQLToolSpec
 
 
-__all__ = ["<FILL>"]
+__all__ = ["AgentQLToolSpec"]
