@@ -219,6 +219,23 @@ class TestWasonxLLMInference:
         )
     ]
 
+    MODEL_ID_PARAMETRIZATION = [
+        pytest.param(
+            {
+                "entity": {
+                    "base_model_id": TEST_MODEL,
+                }
+            },
+            TEST_MODEL,
+            id="base_model_id"
+        ),
+        pytest.param(
+            {},
+            TEST_DEPLOYMENT_ID,
+            id="deployment_id"
+        )
+    ]
+
     def test_initialization(self) -> None:
         with pytest.raises(ValueError, match=r"^Did not find") as e_info:
             _ = WatsonxLLM(model=self.TEST_MODEL, project_id=self.TEST_PROJECT_ID)
@@ -392,7 +409,7 @@ class TestWasonxLLMInference:
     )
     @pytest.mark.parametrize(
         ("instance_max_new_tokens", "expected_num_output"),
-        MAX_TOKENS_PARAMETRIZATION
+        MAX_TOKENS_PARAMETRIZATION,
     )
     @patch("llama_index.llms.ibm.base.ModelInference")
     def test_model_metadata_with_provided_model_id(
@@ -434,22 +451,7 @@ class TestWasonxLLMInference:
     )
     @pytest.mark.parametrize(
         ("get_details_result", "expected_model_name"),
-        [
-            pytest.param(
-                {
-                    "entity": {
-                        "base_model_id": TEST_MODEL,
-                    }
-                },
-                TEST_MODEL,
-                id="base_model_id"
-            ),
-            pytest.param(
-                {},
-                TEST_DEPLOYMENT_ID,
-                id="deployment_id"
-            )
-        ]
+        MODEL_ID_PARAMETRIZATION,
     )
     @patch("llama_index.llms.ibm.base.ModelInference")
     def test_model_metadata_with_provided_deployment_id(
