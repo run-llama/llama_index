@@ -308,7 +308,6 @@ class ChatSummaryMemoryBuffer(BaseMemory):
                     + "\n\n"
                 )
         prompt += '"\n\n'
-        prompt += self.summarize_prompt or ""
         return prompt
 
     def _handle_assistant_and_tool_messages(
