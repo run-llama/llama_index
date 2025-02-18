@@ -38,7 +38,7 @@ async def aload_data(
     api_key: str,
     params: dict,
     metadata: dict,
-    request_origin: str,
+    request_origin: str = "llamaindex-extractwebdata-tool",
     timeout: int = DEFAULT_EXTRACT_DATA_TIMEOUT_SECONDS,
     query: Optional[str] = None,
     prompt: Optional[str] = None,

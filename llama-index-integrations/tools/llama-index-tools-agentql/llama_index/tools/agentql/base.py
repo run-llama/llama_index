@@ -181,6 +181,7 @@ class AgentQLToolSpec(BaseToolSpec):
                 self.wait_for_network_idle,
                 self.include_hidden_data,
                 self.response_mode,
+                request_origin="llamaindex-extractwebdata-browser-tool",
             )
         elif prompt:
             return await page.get_data_by_prompt_experimental(
