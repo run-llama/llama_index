@@ -1,10 +1,9 @@
 import re
 
 import pytest
-
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.errors import WorkflowValidationError
-from llama_index.core.workflow.events import Event
+from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
 
 
@@ -22,12 +21,12 @@ def test_decorated_config(workflow):
 def test_decorate_method():
     class TestWorkflow(Workflow):
         @step
-        def f1(self, ev: Event) -> Event:
+        def f1(self, ev: StartEvent) -> Event:
             return ev
 
         @step
-        def f2(self, ev: Event) -> Event:
-            return ev
+        def f2(self, ev: Event) -> StopEvent:
+            return StopEvent()
 
     wf = TestWorkflow()
     assert getattr(wf.f1, "__step_config")

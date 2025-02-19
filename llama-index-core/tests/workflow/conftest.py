@@ -44,4 +44,4 @@ def events():
 
 @pytest.fixture()
 def ctx():
-    return Context(workflow=Workflow())
+    return Context(workflow=DummyWorkflow())
