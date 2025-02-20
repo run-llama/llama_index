@@ -80,6 +80,12 @@ class AgentQLToolSpec(BaseToolSpec):
         self.is_scroll_to_bottom_enabled = is_scroll_to_bottom_enabled
         self.is_screenshot_enabled = is_screenshot_enabled
 
+        self.api_key = os.getenv("AGENTQL_API_KEY")
+        if not self.api_key:
+            raise ValueError(
+                "AGENTQL_API_KEY environment variable not found. Please set your API key"
+            )
+
     @classmethod
     def from_async_browser(cls, async_browser: AsyncBrowser) -> "AgentQLToolSpec":
         """
@@ -118,18 +124,14 @@ class AgentQLToolSpec(BaseToolSpec):
         metadata = {
             "experimental_stealth_mode_enabled": self.stealth_mode,
         }
-        api_key = os.getenv("AGENTQL_API_KEY")
-        if not api_key:
-            raise ValueError(
-                "AGENTQL_API_KEY environment variable not found. Please set your API key"
-            )
+
         return await aload_data(
             url=url,
             query=query,
             prompt=prompt,
             params=params,
             metadata=metadata,
-            api_key=api_key,
+            api_key=self.api_key,
             timeout=self.extract_data_timeout,
             request_origin="llamaindex-extractwebdata-tool",
         )
