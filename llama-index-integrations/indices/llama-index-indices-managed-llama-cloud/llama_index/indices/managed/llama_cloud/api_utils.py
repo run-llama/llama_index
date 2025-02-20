@@ -172,6 +172,7 @@ def image_nodes_to_node_with_score(
         )
         image_base64 = base64.b64encode(image_bytes).decode("utf-8")
         image_node_metadata: Dict[str, Any] = {
+            **(raw_image_node.node.metadata or {}),
             "file_id": raw_image_node.node.file_id,
             "page_index": raw_image_node.node.page_index,
         }
@@ -203,6 +204,7 @@ async def aimage_nodes_to_node_with_score(
     for image_bytes, raw_image_node in zip(image_bytes_list, raw_image_nodes):
         image_base64 = base64.b64encode(image_bytes).decode("utf-8")
         image_node_metadata: Dict[str, Any] = {
+            **(raw_image_node.node.metadata or {}),
             "file_id": raw_image_node.node.file_id,
             "page_index": raw_image_node.node.page_index,
         }
