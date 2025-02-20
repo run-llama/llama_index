@@ -15,19 +15,21 @@ And you should configure credentials by setting the following environment variab
 
 - AGENTQL_API_KEY
 
+You can acquire an API key from our [dev portal](https://dev.agentql.com).
+
 ## Overview
 
-AgentQL provide the following three tools:
+AgentQL provides the following three tools:
 
 - **`extract_web_data`**: Extract structured data in JSON form from webpage provided by a url with either natural language description or AgentQL query.
 
-- **`extract_web_data_with_browser`**: Extracted structured data in JSON from the current browser webpage with either natural language description or AgentQL query. (Must use with a browser instance)
+- **`extract_web_data_from_browser`**: Extracted structured data in JSON from the current browser webpage with either natural language description or AgentQL query. (Must use with a browser instance)
 
-- **`extract_web_element_with_browser`**: Extract the CSS selector of a web element from the current browser webpage with natural language description. (Must use with a browser instance)
+- **`extract_web_element_from_browser`**: Extract the CSS selector of a web element from the current browser webpage with natural language description. (Must use with a browser instance)
 
 ## Setup
 
-In order to use this tool, you need to have a async Playwright browser instance. You can hook one up using the `create_async_playwright_browser` method:
+In order to use this tool, you need to have an async Playwright browser instance. You can hook one up using the `create_async_playwright_browser` method:
 
 ```python
 browser = await AgentQLToolSpec.create_async_playwright_browser(headless=False)
@@ -52,7 +54,7 @@ await agentql_tool.extract_web_data(
 
 ```python
 await playwright_tool.navigate_to("https://www.agentql.com/blog")
-await agentql_tool.extract_web_data_with_browser(
+await agentql_tool.extract_web_data_from_browser(
     prompt="Extract all the blog titles and urls from the current page.",
 )
 ```
@@ -60,7 +62,7 @@ await agentql_tool.extract_web_data_with_browser(
 ### Extract the CSS selector of a web element from the current browser instance
 
 ```python
-next_page_button = await agentql_tool.extract_web_element_with_browser(
+next_page_button = await agentql_tool.extract_web_element_from_browser(
     prompt="Button to navigate to the next blog page.",
 )
 await playwright_tool.click(next_page_button)
