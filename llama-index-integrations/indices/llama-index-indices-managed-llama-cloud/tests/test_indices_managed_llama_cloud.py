@@ -291,7 +291,6 @@ def test_image_retrieval() -> None:
     pipeline = _setup_empty_index(
         LlamaCloud(token=api_key, base_url=base_url), multi_modal_index=True
     )
-    print(f"Pipeline ID {pipeline.id} created")
 
     index = LlamaCloudIndex(
         name=pipeline.name,
