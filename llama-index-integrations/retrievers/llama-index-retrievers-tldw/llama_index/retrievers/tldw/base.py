@@ -82,34 +82,46 @@ class TldwRetriever(BaseRetriever):
         headers = {
             "Authorization": f"Bearer {self._api_key}",
         }
-        res = requests.post(f"{API_ENDPOINT}/search", headers=headers, json={
-            "collection_id": self._collection_id,
-            "search_term": query_bundle.query_str,
-        })
+        res = requests.post(
+            f"{API_ENDPOINT}/search",
+            headers=headers,
+            json={
+                "collection_id": self._collection_id,
+                "search_term": query_bundle.query_str,
+            },
+        )
         search_results = SearchResult.model_validate(res.json())
 
         if self._return_fragments:
             # Return individual fragments as nodes
-            return [NodeWithScore(
-                node=TextNode(
-                    text=fragment.description,
-                    metadata={
-                        "collection_id": self._collection_id,
-                        "media_id": scene.media_id,
-                        "start_ms": fragment.start_ms,
-                        "end_ms": fragment.end_ms,
-                        "scene_start_ms": scene.start_ms,
-                        "scene_end_ms": scene.end_ms,
-                    },
-                ),
-                score=fragment.similarity,
-            ) for scene in search_results.scenes for fragment in scene.fragments]
+            return [
+                NodeWithScore(
+                    node=TextNode(
+                        text=fragment.description,
+                        metadata={
+                            "collection_id": self._collection_id,
+                            "media_id": scene.media_id,
+                            "start_ms": fragment.start_ms,
+                            "end_ms": fragment.end_ms,
+                            "scene_start_ms": scene.start_ms,
+                            "scene_end_ms": scene.end_ms,
+                        },
+                    ),
+                    score=fragment.similarity,
+                )
+                for scene in search_results.scenes
+                for fragment in scene.fragments
+            ]
         else:
             # Summarize scenes and return them as nodes asynchronously
             loop = asyncio.get_event_loop()
             return loop.run_until_complete(
-                asyncio.gather(*(self._asummarize_scene(scene, query_bundle.query_str)
-                               for scene in search_results.scenes))
+                asyncio.gather(
+                    *(
+                        self._asummarize_scene(scene, query_bundle.query_str)
+                        for scene in search_results.scenes
+                    )
+                )
             )
 
     async def _asummarize_scene(self, scene: Scene, query_str: str) -> NodeWithScore:
