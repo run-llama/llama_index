@@ -89,13 +89,6 @@ class AgentQLToolSpec(BaseToolSpec):
         if not self.api_key:
             raise ValueError(UNSET_API_KEY_ERROR_MESSAGE)
 
-    @classmethod
-    def from_async_browser(cls, async_browser: AsyncBrowser) -> "AgentQLToolSpec":
-        """
-        Initialize AgentQLToolSpec from an async browser instance.
-        """
-        return cls(async_browser=async_browser)
-
     async def extract_web_data(
         self, url: str, query: Optional[str] = None, prompt: Optional[str] = None
     ) -> dict:
