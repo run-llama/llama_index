@@ -27,8 +27,8 @@ class AgentQLToolSpec(BaseToolSpec):
 
     spec_functions = [
         "extract_web_data",
-        "extract_web_data_with_browser",
-        "extract_web_element_with_browser",
+        "extract_web_data_from_browser",
+        "extract_web_element_from_browser",
     ]
 
     def __init__(
@@ -153,7 +153,7 @@ class AgentQLToolSpec(BaseToolSpec):
             request_origin="llamaindex-extractwebdata-tool",
         )
 
-    async def extract_web_data_with_browser(
+    async def extract_web_data_from_browser(
         self,
         query: Optional[str] = None,
         prompt: Optional[str] = None,
@@ -196,7 +196,7 @@ class AgentQLToolSpec(BaseToolSpec):
             # Check if one of 'query' or 'prompt' is provided
             raise ValueError("Either 'query' or 'prompt' must be provided")
 
-    async def extract_web_element_with_browser(
+    async def extract_web_element_from_browser(
         self,
         prompt: str,
     ) -> str:
