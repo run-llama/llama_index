@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional
 import os
 
 from playwright.async_api import Browser as AsyncBrowser
@@ -86,25 +86,6 @@ class AgentQLToolSpec(BaseToolSpec):
         Initialize AgentQLToolSpec from an async browser instance.
         """
         return cls(async_browser=async_browser)
-
-    @staticmethod
-    async def create_async_playwright_browser(
-        headless: bool = True, args: Optional[List[str]] = None
-    ) -> AsyncBrowser:
-        """
-        Create an async playwright browser.
-
-        Args:
-            headless: Whether to run the browser in headless mode. Defaults to True.
-            args: arguments to pass to browser.chromium.launch
-
-        Returns:
-            AsyncBrowser: The playwright browser.
-        """
-        from playwright.async_api import async_playwright
-
-        browser = await async_playwright().start()
-        return await browser.chromium.launch(headless=headless, args=args)
 
     async def extract_web_data(
         self, url: str, query: Optional[str] = None, prompt: Optional[str] = None
