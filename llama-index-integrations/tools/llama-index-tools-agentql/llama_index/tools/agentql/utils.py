@@ -6,10 +6,15 @@ from urllib.parse import urlparse
 from playwright.async_api import Browser as AsyncBrowser
 from playwright.async_api import Page as AsyncPage
 
-# from llama_index.tools.playwright import _aget_current_page
+from llama_index.tools.agentql.endpoint import EXTRACT_DATA_ENDPOINT
+
 from llama_index.tools.agentql.const import (
-    EXTRACT_DATA_ENDPOINT,
     DEFAULT_EXTRACT_DATA_TIMEOUT_SECONDS,
+)
+
+from llama_index.tools.agentql.message import (
+    UNAUTHORIZED_ERROR_MESSAGE,
+    QUERY_PROMPT_VALIDATION_ERROR_MESSAGE,
 )
 
 
@@ -23,14 +28,9 @@ async def _aget_current_agentql_page(browser: AsyncBrowser) -> AsyncPage:
     Returns:
         AsyncPage: The current page.
     """
-    if not browser.contexts:
-        context = await browser.new_context()
-        return await agentql.wrap_async(await context.new_page())
-    context = browser.contexts[0]  # Assuming you're using the default browser context
-    if not context.pages:
-        return await agentql.wrap_async(await context.new_page())
-    # Assuming the last page in the list is the active one
-    return await agentql.wrap_async(context.pages[-1])
+    context = browser.contexts[0] if browser.contexts else await browser.new_context()
+    page = context.pages[-1] if context.pages else await context.new_page()
+    return await agentql.wrap_async(page)
 
 
 async def aload_data(
@@ -38,13 +38,12 @@ async def aload_data(
     api_key: str,
     params: dict,
     metadata: dict,
-    request_origin: str = "llamaindex-extractwebdata-tool",
     timeout: int = DEFAULT_EXTRACT_DATA_TIMEOUT_SECONDS,
     query: Optional[str] = None,
     prompt: Optional[str] = None,
 ) -> dict:
     if not query and not prompt:
-        raise ValueError("'query' and 'prompt' cannot both be empty")
+        raise ValueError(QUERY_PROMPT_VALIDATION_ERROR_MESSAGE)
 
     payload = {
         "url": url,
@@ -57,7 +56,7 @@ async def aload_data(
     headers = {
         "X-API-Key": f"{api_key}",
         "Content-Type": "application/json",
-        "X-TF-Request-Origin": request_origin,
+        "X-TF-Request-Origin": "llamaindex-extract-web-data-tool",
     }
 
     async with httpx.AsyncClient() as client:
@@ -72,10 +71,9 @@ async def aload_data(
 
         except httpx.HTTPStatusError as e:
             response = e.response
-            if response.status_code in [401, 403]:
-                raise ValueError(
-                    "Please, provide a valid API Key. You can create one at https://dev.agentql.com."
-                ) from e
+            msg = response.text
+            if response.status_code == httpx.codes.UNAUTHORIZED:
+                raise ValueError(UNAUTHORIZED_ERROR_MESSAGE) from e
             else:
                 try:
                     error_json = response.json()

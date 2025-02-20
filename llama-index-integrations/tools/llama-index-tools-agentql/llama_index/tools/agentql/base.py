@@ -13,6 +13,11 @@ from llama_index.tools.agentql.const import (
     DEFAULT_INCLUDE_HIDDEN_ELEMENTS,
     DEFAULT_RESPONSE_MODE,
 )
+from llama_index.tools.agentql.message import (
+    QUERY_PROMPT_VALIDATION_ERROR_MESSAGE,
+    UNSET_API_KEY_ERROR_MESSAGE,
+    MISSING_BROWSER_ERROR_MESSAGE,
+)
 from llama_index.tools.agentql.utils import (
     aload_data,
     _aget_current_agentql_page,
@@ -82,9 +87,7 @@ class AgentQLToolSpec(BaseToolSpec):
 
         self.api_key = os.getenv("AGENTQL_API_KEY")
         if not self.api_key:
-            raise ValueError(
-                "AGENTQL_API_KEY environment variable not found. Please set your API key"
-            )
+            raise ValueError(UNSET_API_KEY_ERROR_MESSAGE)
 
     @classmethod
     def from_async_browser(cls, async_browser: AsyncBrowser) -> "AgentQLToolSpec":
@@ -113,7 +116,7 @@ class AgentQLToolSpec(BaseToolSpec):
 
         # Check if one of 'query' or 'prompt' is provided
         if not query and not prompt:
-            raise ValueError("Either 'query' or 'prompt' must be provided")
+            raise ValueError(QUERY_PROMPT_VALIDATION_ERROR_MESSAGE)
 
         params = {
             "wait_for": self.wait_for_page_load,
@@ -133,7 +136,6 @@ class AgentQLToolSpec(BaseToolSpec):
             metadata=metadata,
             api_key=self.api_key,
             timeout=self.extract_data_timeout,
-            request_origin="llamaindex-extractwebdata-tool",
         )
 
     async def extract_web_data_from_browser(
@@ -154,7 +156,7 @@ class AgentQLToolSpec(BaseToolSpec):
         """
         # Check if an async browser instance is provided
         if not self.async_browser:
-            raise ValueError("An async browser instance is required to use this tool.")
+            raise ValueError(MISSING_BROWSER_ERROR_MESSAGE)
 
         page = await _aget_current_agentql_page(self.async_browser)
         if query:
@@ -164,7 +166,7 @@ class AgentQLToolSpec(BaseToolSpec):
                 self.wait_for_network_idle,
                 self.include_hidden_data,
                 self.response_mode,
-                request_origin="llamaindex-extractwebdata-browser-tool",
+                request_origin="llamaindex-extract-web-data-browser-tool",
             )
         elif prompt:
             return await page.get_data_by_prompt_experimental(
@@ -173,11 +175,11 @@ class AgentQLToolSpec(BaseToolSpec):
                 self.wait_for_network_idle,
                 self.include_hidden_data,
                 self.response_mode,
-                request_origin="llamaindex-extractwebdata-browser-tool",
+                request_origin="llamaindex-extract-web-data-browser-tool",
             )
         else:
             # Check if one of 'query' or 'prompt' is provided
-            raise ValueError("Either 'query' or 'prompt' must be provided")
+            raise ValueError(QUERY_PROMPT_VALIDATION_ERROR_MESSAGE)
 
     async def extract_web_element_from_browser(
         self,
@@ -195,7 +197,7 @@ class AgentQLToolSpec(BaseToolSpec):
         """
         # Check if an async browser instance is provided
         if not self.async_browser:
-            raise ValueError("An async browser instance is required to use this tool.")
+            raise ValueError(MISSING_BROWSER_ERROR_MESSAGE)
 
         page = await _aget_current_agentql_page(self.async_browser)
         element = await page.get_by_prompt(
@@ -204,7 +206,7 @@ class AgentQLToolSpec(BaseToolSpec):
             self.wait_for_network_idle,
             self.include_hidden_elements,
             self.response_mode,
-            request_origin="llamaindex-extractwebelement-browser-tool",
+            request_origin="llamaindex-extract-web-element-browser-tool",
         )
         tf_id = await element.get_attribute("tf623_id")
         return f"[tf623_id='{tf_id}']"
