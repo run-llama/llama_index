@@ -32,9 +32,10 @@ class ValyuToolSpec(BaseToolSpec):
         query: str,
         search_type: str = "both",
         data_sources: Optional[List[str]] = None,
-        num_query: int = 10,
-        num_results: int = 10,
+        max_num_results: int = 10,
         max_price: Optional[float] = None,
+        query_rewrite: bool = True,
+        similarity_threshold: float = 0.5,
     ) -> List[Document]:
         """Find relevant programmaticly licensed proprietary content and the web to answer your query.
 
@@ -42,9 +43,10 @@ class ValyuToolSpec(BaseToolSpec):
             query (str): The question or topic to search for
             search_type (str): Type of sources to search - "proprietary", "web", or "both"
             data_sources (Optional[List[str]]): Specific indexes to query from
-            num_query (int): Number of query variations to generate. Defaults to 10
-            num_results (int): Maximum number of results to return. Defaults to 10
+            max_num_results (int): Maximum number of results to return. Defaults to 10
             max_price (Optional[float]): Maximum price per content in PCM. Defaults to 100
+            query_rewrite (bool): Whether to rewrite the query to improve results. Defaults to True
+            similarity_threshold (float): Minimum similarity score for results. Defaults to 0.5
 
         Returns:
             List[Document]: List of Document objects containing the search results
@@ -56,9 +58,10 @@ class ValyuToolSpec(BaseToolSpec):
             query=query,
             search_type=search_type,
             data_sources=data_sources,
-            num_query=num_query,
-            num_results=num_results,
+            max_num_results=max_num_results,
             max_price=max_price,
+            query_rewrite=query_rewrite,
+            similarity_threshold=similarity_threshold,
         )
 
         if self._verbose:
@@ -72,8 +75,6 @@ class ValyuToolSpec(BaseToolSpec):
                     "url": result.url,
                     "source": result.source,
                     "price": result.price,
-                    "orgname": result.orgname,
-                    "source_type": result.source_type,
                 },
             )
             for result in response.results
