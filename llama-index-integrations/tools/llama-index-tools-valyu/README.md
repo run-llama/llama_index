@@ -17,7 +17,7 @@ from llama_index.agent.openai import OpenAIAgent
 
 valyu_tool = ValyuToolSpec(
     api_key=os.environ["VALYU_API_KEY"],
-    max_price=100, # default is 100
+    max_price=100,  # default is 100
 )
 agent = OpenAIAgent.from_tools(valyu_tool.to_tool_list())
 
