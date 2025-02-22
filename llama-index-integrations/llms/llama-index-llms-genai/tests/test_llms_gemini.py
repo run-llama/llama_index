@@ -29,14 +29,12 @@ def test_complete_and_acomplete() -> None:
     # Test synchronous complete
     sync_response = llm.complete(prompt)
     assert sync_response is not None
-    assert isinstance(sync_response, str)
-    assert len(sync_response) > 0
+    assert len(sync_response.text) > 0
 
     # Test async complete
     async_response = asyncio.run(llm.acomplete(prompt))
     assert async_response is not None
-    assert isinstance(async_response, str)
-    assert len(async_response) > 0
+    assert len(async_response.text) > 0
 
 
 @pytest.mark.skipif(
@@ -54,14 +52,12 @@ def test_chat_and_achat() -> None:
     # Test synchronous chat
     sync_response = llm.chat(messages=[message])
     assert sync_response is not None
-    assert isinstance(sync_response, str)
-    assert len(sync_response) > 0
+    assert len(sync_response.message.content) > 0
 
     # Test async chat
     async_response = asyncio.run(llm.achat(messages=[message]))
     assert async_response is not None
-    assert isinstance(async_response, str)
-    assert len(async_response) > 0
+    assert len(async_response.message.content) > 0
 
 
 @pytest.mark.skipif(
@@ -79,7 +75,7 @@ def test_stream_chat_and_astream_chat() -> None:
     # Test synchronous stream chat
     sync_chunks = list(llm.stream_chat(messages=[message]))
     assert len(sync_chunks) > 0
-    assert all(isinstance(chunk, str) for chunk in sync_chunks)
+    assert all(isinstance(chunk.message.content, str) for chunk in sync_chunks)
 
     # Test async stream chat
     async def test_async_stream():
@@ -90,7 +86,7 @@ def test_stream_chat_and_astream_chat() -> None:
 
     async_chunks = asyncio.run(test_async_stream())
     assert len(async_chunks) > 0
-    assert all(isinstance(chunk, str) for chunk in async_chunks)
+    assert all(isinstance(chunk.message.content, str) for chunk in async_chunks)
 
 
 @pytest.mark.skipif(
@@ -108,7 +104,7 @@ def test_stream_complete_and_astream_complete() -> None:
     # Test synchronous stream complete
     sync_chunks = list(llm.stream_complete(prompt))
     assert len(sync_chunks) > 0
-    assert all(isinstance(chunk, str) for chunk in sync_chunks)
+    assert all(isinstance(chunk.text, str) for chunk in sync_chunks)
 
     # Test async stream complete
     async def test_async_stream():
@@ -119,7 +115,7 @@ def test_stream_complete_and_astream_complete() -> None:
 
     async_chunks = asyncio.run(test_async_stream())
     assert len(async_chunks) > 0
-    assert all(isinstance(chunk, str) for chunk in async_chunks)
+    assert all(isinstance(chunk.text, str) for chunk in async_chunks)
 
 
 @pytest.mark.skipif(
