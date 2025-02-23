@@ -7,6 +7,7 @@ from google.genai import types
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
+    CompletionResponse,
     ImageBlock,
     TextBlock,
 )
@@ -36,6 +37,25 @@ def _error_if_finished_early(candidate: types.Candidate) -> None:
             raise RuntimeError(f"Response was terminated early: {reason}")
 
 
+def completion_from_gemini_response(
+    response: types.GenerateContentResponse,
+) -> CompletionResponse:
+    if not response.candidates:
+        raise ValueError("Response has no candidates")
+
+    top_candidate = response.candidates[0]
+    _error_if_finished_early(top_candidate)
+
+    raw = {
+        **(top_candidate.model_dump()),
+        **(response.prompt_feedback.model_dump() if response.prompt_feedback else {}),
+    }
+
+    if response.usage_metadata:
+        raw["usage_metadata"] = response.usage_metadata.model_dump()
+    return CompletionResponse(text=response.text or "", raw=raw)
+
+
 def chat_from_gemini_response(
     response: types.GenerateContentResponse,
 ) -> ChatResponse:
@@ -46,14 +66,14 @@ def chat_from_gemini_response(
     _error_if_finished_early(top_candidate)
 
     response_feedback = (
-        response.prompt_feedback.to_json_dict() if response.prompt_feedback else {}
+        response.prompt_feedback.model_dump() if response.prompt_feedback else {}
     )
     raw = {
-        **(top_candidate.to_json_dict()),
+        **(top_candidate.model_dump()),
         **response_feedback,
     }
     if response.usage_metadata:
-        raw["usage_metadata"] = response.usage_metadata.to_json_dict
+        raw["usage_metadata"] = response.usage_metadata.model_dump()
 
     try:
         text = response.text

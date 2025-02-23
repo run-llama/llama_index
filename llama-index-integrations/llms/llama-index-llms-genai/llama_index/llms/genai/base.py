@@ -2,7 +2,6 @@
 
 import os
 import uuid
-import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -41,7 +40,11 @@ from llama_index.core.utilities.gemini_utils import (
 )
 from pydantic import PrivateAttr
 
-from .utils import chat_from_gemini_response, chat_message_to_gemini
+from .utils import (
+    chat_from_gemini_response,
+    chat_message_to_gemini,
+    completion_from_gemini_response,
+)
 
 dispatcher = instrument.get_dispatcher(__name__)
 
@@ -106,19 +109,9 @@ class Gemini(FunctionCallingLLM):
         callback_manager: Optional[CallbackManager] = None,
         api_base: Optional[str] = None,
         transport: Optional[str] = None,
-        model_name: Optional[str] = None,
         default_headers: Optional[Dict[str, str]] = None,
         **generate_kwargs: Any,
     ):
-        """Creates a new Gemini model interface."""
-        if model_name is not None:
-            warnings.warn(
-                "model_name is deprecated, please use model instead",
-                DeprecationWarning,
-            )
-
-            model = model_name
-
         # API keys are optional. The API can be authorised via OAuth (detected
         # environmentally) or by the GOOGLE_API_KEY environment variable.
         config_params: Dict[str, Any] = {
@@ -173,7 +166,7 @@ class Gemini(FunctionCallingLLM):
         response = self._client.models.generate_content(
             model=self.model, contents=prompt, **kwargs
         )
-        return CompletionResponse(text=response.text or "", raw=None)
+        return completion_from_gemini_response(response)
 
     @llm_completion_callback()
     async def acomplete(
@@ -183,7 +176,7 @@ class Gemini(FunctionCallingLLM):
             model=self.model, contents=prompt, **kwargs
         )
 
-        return CompletionResponse(text=response.text or "", raw=None)
+        return completion_from_gemini_response(response)
 
     @llm_completion_callback()
     def stream_complete(
@@ -194,8 +187,8 @@ class Gemini(FunctionCallingLLM):
                 model=self.model,
                 contents=prompt,
             )
-            for r in it:
-                yield CompletionResponse(text=r.text or "", raw=None)
+            for response in it:
+                yield completion_from_gemini_response(response)
 
         return gen()
 
@@ -208,8 +201,8 @@ class Gemini(FunctionCallingLLM):
                 model=self.model,
                 contents=prompt,
             )
-            async for r in await it:
-                yield CompletionResponse(text=r.text or "", raw=None)
+            async for response in await it:
+                yield completion_from_gemini_response(response)
 
         return gen()
 
@@ -248,7 +241,10 @@ class Gemini(FunctionCallingLLM):
         merged_messages = merge_neighboring_same_role_messages(messages)
         *history, next_msg = map(chat_message_to_gemini, merged_messages)
         chat = self._client.aio.chats.create(model=self.model, history=history)
-        response = await chat.send_message(next_msg.parts, **kwargs)
+        response = await chat.send_message(
+            next_msg.parts,  # type: ignore
+            **kwargs,
+        )
         return chat_from_gemini_response(response)
 
     @llm_chat_callback()
@@ -258,7 +254,7 @@ class Gemini(FunctionCallingLLM):
         merged_messages = merge_neighboring_same_role_messages(messages)
         *history, next_msg = map(chat_message_to_gemini, merged_messages)
         chat = self._client.chats.create(model=self.model, history=history)
-        response = chat.send_message_stream(next_msg.parts)
+        response = chat.send_message_stream(next_msg.parts)  #  type: ignore
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -427,10 +423,10 @@ class Gemini(FunctionCallingLLM):
         all_kwargs = {**llm_kwargs, **kwargs}
 
         # TODO: fix "function calling as structured generation"
-        message: str = prompt.format_messages(llm=self)[-1].content
+        messages = prompt.format_messages()
         response = self._client.models.generate_content(
             model=self.model,
-            contents=message,
+            contents=list(map(chat_message_to_gemini, messages)),
             **{
                 **all_kwargs,
                 **{
@@ -449,56 +445,56 @@ class Gemini(FunctionCallingLLM):
 
     @dispatcher.span
     async def astructured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+        self,
+        output_cls: type[BaseModel],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> BaseModel:
-        """Structured predict."""
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
 
-        if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
-            )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        return await super().astructured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        # TODO: fix "function calling as structured generation"
+        messages = prompt.format_messages()
+        response = await self._client.aio.models.generate_content(
+            model=self.model,
+            contents=list(map(chat_message_to_gemini, messages)),
+            **{
+                **all_kwargs,
+                **{
+                    "config": {
+                        "response_mime_type": "application/json",
+                        "response_schema": output_cls,
+                    }
+                },
+            },
+        )
+
+        if isinstance(response.parsed, BaseModel):
+            return response.parsed
+        else:
+            raise ValueError("Response is not a BaseModel")
 
     @dispatcher.span
     def stream_structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+        self,
+        output_cls: type[BaseModel],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> Generator[Union[Model, List[Model]], None, None]:
-        """Stream structured predict."""
-        llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
-
-        if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
-            )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        raise NotImplementedError(
+            "stream_structured_predict is not supported by default."
+        )
 
     @dispatcher.span
     async def astream_structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
+        self,
+        output_cls: type[BaseModel],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> Generator[Union[Model, List[Model]], None, None]:
-        """Stream structured predict."""
-        llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
-
-        if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
-            )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
-        return await super().astream_structured_predict(
-            *args, llm_kwargs=llm_kwargs, **kwargs
+        raise NotImplementedError(
+            "astream_structured_predict is not supported by default."
         )

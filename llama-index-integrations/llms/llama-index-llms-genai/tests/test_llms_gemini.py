@@ -8,8 +8,14 @@ import asyncio
 import os
 
 from llama_index.core.base.llms.types import (
+    ChatResponse,
     ChatMessage,
+    TextBlock,
+    ImageBlock,
+    MessageRole,
+    CompletionResponse,
 )
+from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.prompts import PromptTemplate
 
@@ -78,7 +84,7 @@ def test_stream_chat_and_astream_chat() -> None:
     assert all(isinstance(chunk.message.content, str) for chunk in sync_chunks)
 
     # Test async stream chat
-    async def test_async_stream():
+    async def test_async_stream() -> list[ChatResponse]:
         chunks = []
         async for chunk in await llm.astream_chat(messages=[message]):
             chunks.append(chunk)
@@ -107,7 +113,7 @@ def test_stream_complete_and_astream_complete() -> None:
     assert all(isinstance(chunk.text, str) for chunk in sync_chunks)
 
     # Test async stream complete
-    async def test_async_stream():
+    async def test_async_stream() -> list[CompletionResponse]:
         chunks = []
         async for chunk in await llm.astream_complete(prompt):
             chunks.append(chunk)
@@ -182,8 +188,6 @@ def test_complex_structured_predict() -> None:
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
 def test_as_structured_llm() -> None:
-    """Test the as_structured_llm interface."""
-
     class Poem(BaseModel):
         content: str
 
@@ -220,3 +224,33 @@ def test_as_structured_llm() -> None:
     assert isinstance(schema_response.raw, Schema)
     assert len(schema_response.raw.schema_name) > 0
     assert len(schema_response.raw.columns) > 0
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_structured_predict_multiple_block() -> None:
+    chat_messaages = [
+        ChatMessage(
+            content=[
+                TextBlock(text="which logo is this?"),
+                ImageBlock(
+                    url="https://upload.wikimedia.org/wikipedia/commons/7/7a/Nohat-wiki-logo.png"
+                ),
+            ],
+            role=MessageRole.USER,
+        ),
+    ]
+
+    class Response(BaseModel):
+        answer: str
+
+    llm = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+    support = llm.structured_predict(
+        output_cls=Response, prompt=ChatPromptTemplate(message_templates=chat_messaages)
+    )
+    assert isinstance(support, Response)
+    assert "wiki" in support.answer.lower()
