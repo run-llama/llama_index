@@ -1,13 +1,9 @@
-import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 
 import requests
-from llama_index.core import get_response_synthesizer
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
-from llama_index.core.response_synthesizers.base import BaseSynthesizer
-from llama_index.core.response_synthesizers.type import ResponseMode
 from llama_index.core.schema import (
     NodeWithScore,
     QueryBundle,
@@ -55,8 +51,6 @@ class TldwRetriever(BaseRetriever):
     Args:
         api_key (str): The API key for authentication.
         collection_id (str): The ID of the video collection to search within.
-        return_fragments (bool): Whether to return individual fragments or summarized scenes.
-        scene_summerizer (BaseSynthesizer): Synthesizer to summarize scenes if return_fragments is False.
         callback_manager (Optional[CallbackManager]): Optional callback manager for logging and event handling.
     """
 
@@ -64,16 +58,10 @@ class TldwRetriever(BaseRetriever):
         self,
         api_key: str,
         collection_id: str,
-        return_fragments: bool = True,
-        scene_summerizer: BaseSynthesizer = get_response_synthesizer(
-            response_mode=ResponseMode.COMPACT
-        ),
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._api_key = api_key
         self._collection_id = collection_id
-        self._return_fragments = return_fragments
-        self._scene_summerizer = scene_summerizer
         super().__init__(
             callback_manager=callback_manager,
         )
@@ -92,52 +80,22 @@ class TldwRetriever(BaseRetriever):
         )
         search_results = SearchResult.model_validate(res.json())
 
-        if self._return_fragments:
-            # Return individual fragments as nodes
-            return [
-                NodeWithScore(
-                    node=TextNode(
-                        text=fragment.description,
-                        metadata={
-                            "collection_id": self._collection_id,
-                            "media_id": scene.media_id,
-                            "start_ms": fragment.start_ms,
-                            "end_ms": fragment.end_ms,
-                            "scene_start_ms": scene.start_ms,
-                            "scene_end_ms": scene.end_ms,
-                        },
-                    ),
-                    score=fragment.similarity,
-                )
-                for scene in search_results.scenes
-                for fragment in scene.fragments
-            ]
-        else:
-            # Summarize scenes and return them as nodes asynchronously
-            loop = asyncio.get_event_loop()
-            return loop.run_until_complete(
-                asyncio.gather(
-                    *(
-                        self._asummarize_scene(scene, query_bundle.query_str)
-                        for scene in search_results.scenes
-                    )
-                )
+        # Return individual fragments as nodes
+        return [
+            NodeWithScore(
+                node=TextNode(
+                    text=fragment.description,
+                    metadata={
+                        "scene_index": idx,
+                        "media_id": scene.media_id,
+                        "start_ms": fragment.start_ms,
+                        "end_ms": fragment.end_ms,
+                        "scene_start_ms": scene.start_ms,
+                        "scene_end_ms": scene.end_ms,
+                    },
+                ),
+                score=fragment.similarity,
             )
-
-    async def _asummarize_scene(self, scene: Scene, query_str: str) -> NodeWithScore:
-        scene_summary = await self._scene_summerizer.aget_response(
-            query_str,
-            [fragment.description for fragment in scene.fragments],
-        )
-        return NodeWithScore(
-            node=TextNode(
-                text=scene_summary,
-                metadata={
-                    "collection_id": self._collection_id,
-                    "media_id": scene.media_id,
-                    "start_ms": scene.start_ms,
-                    "end_ms": scene.end_ms,
-                },
-            ),
-            score=scene.max_similarity,
-        )
+            for idx, scene in enumerate(search_results.scenes)
+            for fragment in scene.fragments
+        ]
