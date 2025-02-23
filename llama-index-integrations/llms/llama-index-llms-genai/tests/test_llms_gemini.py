@@ -1,23 +1,44 @@
+import asyncio
 import os
+from typing import List
+
 import pytest
-import asyncio
-from pydantic import BaseModel, Field
-from llama_index.llms.genai import Gemini
-
-import asyncio
-import os
-
+from google.genai import types
 from llama_index.core.base.llms.types import (
-    ChatResponse,
     ChatMessage,
-    TextBlock,
+    ChatResponse,
+    CompletionResponse,
     ImageBlock,
     MessageRole,
-    CompletionResponse,
+    TextBlock,
 )
+from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.program.function_program import get_function_tool
 from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate
-from llama_index.core.bridge.pydantic import BaseModel, Field
-from llama_index.core.prompts import PromptTemplate
+from llama_index.core.tools import FunctionTool
+from pydantic import BaseModel, Field
+
+from llama_index.llms.genai import Gemini
+from llama_index.llms.genai.utils import convert_schema_to_function_declaration
+
+
+class Poem(BaseModel):
+    content: str
+
+
+class Column(BaseModel):
+    name: str = Field(description="Column field")
+    data_type: str = Field(description="Data type field")
+
+
+class Table(BaseModel):
+    name: str = Field(description="Table name field")
+    columns: list[Column] = Field(description="List of random Column objects")
+
+
+class Schema(BaseModel):
+    schema_name: str = Field(description="Schema name")
+    tables: list[Table] = Field(description="List of random Table objects")
 
 
 @pytest.mark.skipif(
@@ -58,12 +79,12 @@ def test_chat_and_achat() -> None:
     # Test synchronous chat
     sync_response = llm.chat(messages=[message])
     assert sync_response is not None
-    assert len(sync_response.message.content) > 0
+    assert sync_response.message.content and len(sync_response.message.content) > 0
 
     # Test async chat
     async_response = asyncio.run(llm.achat(messages=[message]))
     assert async_response is not None
-    assert len(async_response.message.content) > 0
+    assert async_response.message.content and len(async_response.message.content) > 0
 
 
 @pytest.mark.skipif(
@@ -129,10 +150,6 @@ def test_stream_complete_and_astream_complete() -> None:
 )
 def test_simple_structured_predict() -> None:
     """Test structured prediction with a simple schema."""
-
-    class Poem(BaseModel):
-        content: str
-
     llm = Gemini(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
@@ -152,21 +169,105 @@ def test_simple_structured_predict() -> None:
 @pytest.mark.skipif(
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
+def test_simple_astructured_predict() -> None:
+    """Test async structured prediction with a simple schema."""
+    llm = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+
+    response = asyncio.run(
+        llm.astructured_predict(
+            output_cls=Poem,
+            prompt=PromptTemplate("Write a poem about a magic backpack"),
+        )
+    )
+
+    assert response is not None
+    assert isinstance(response, Poem)
+    assert isinstance(response.content, str)
+    assert len(response.content) > 0
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_simple_stream_structured_predict() -> None:
+    """Test stream structured prediction with a simple schema."""
+    llm = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+
+    response = llm.stream_structured_predict(
+        output_cls=Poem,
+        prompt=PromptTemplate("Write a poem about a magic backpack"),
+    )
+
+    result = None
+    for partial_response in response:
+        assert partial_response.content is not None
+        result = partial_response
+
+    assert result is not None
+    assert isinstance(result, Poem)
+    assert len(result.content) > 0
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_simple_astream_structured_predict() -> None:
+    """Test async stream structured prediction with a simple schema."""
+    llm = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+
+    response = llm.astream_structured_predict(
+        output_cls=Poem,
+        prompt=PromptTemplate("Write a poem about a magic backpack"),
+    )
+
+    async def run() -> None:
+        result = None
+        async for partial_response in await response:
+            result = partial_response
+            assert partial_response.content is not None
+
+        assert result is not None
+        assert isinstance(result, Poem)
+        assert isinstance(result.content, str)
+
+    asyncio.run(run())
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_simple_structured_predict_function_calling() -> None:
+    """Test structured prediction with a simple schema."""
+    llm = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+
+    response = llm.structured_predict_with_function_calling(
+        output_cls=Poem,
+        prompt=PromptTemplate("Write a poem about a magic backpack"),
+    )
+
+    assert response is not None
+    assert isinstance(response, Poem)
+    assert isinstance(response.content, str)
+    assert len(response.content) > 0
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
 def test_complex_structured_predict() -> None:
     """Test structured prediction with a complex nested schema."""
-
-    class Column(BaseModel):
-        name: str = Field(description="Column field")
-        data_type: str = Field(description="Data type field")
-
-    class Table(BaseModel):
-        name: str = Field(description="Table name field")
-        columns: list[Column] = Field(description="List of random Column objects")
-
-    class Schema(BaseModel):
-        schema_name: str = Field(description="Schema name")
-        tables: list[Table] = Field(description="List of random Table objects")
-
     llm = Gemini(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
@@ -187,22 +288,31 @@ def test_complex_structured_predict() -> None:
 @pytest.mark.skipif(
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
+def test_complex_structured_predict_function_calling() -> None:
+    """Test structured prediction with a complex nested schema."""
+    llm = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+
+    prompt = PromptTemplate("Generate a simple database structure")
+    response = llm.structured_predict_with_function_calling(
+        output_cls=Schema, prompt=prompt
+    )
+
+    assert response is not None
+    assert isinstance(response, Schema)
+    assert isinstance(response.schema_name, str)
+    assert len(response.schema_name) > 0
+    assert len(response.tables) > 0
+    assert all(isinstance(table, Table) for table in response.tables)
+    assert all(len(table.columns) > 0 for table in response.tables)
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
 def test_as_structured_llm() -> None:
-    class Poem(BaseModel):
-        content: str
-
-    class Column(BaseModel):
-        name: str = Field(description="Column field")
-        data_type: str = Field(description="Data type field")
-
-    class Table(BaseModel):
-        name: str = Field(description="Table name field")
-        columns: list[Column] = Field(description="List of random Column objects")
-
-    class Schema(BaseModel):
-        schema_name: str = Field(description="Schema name")
-        tables: list[Table] = Field(description="List of random Table objects")
-
     llm = Gemini(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
@@ -254,3 +364,86 @@ def test_structured_predict_multiple_block() -> None:
     )
     assert isinstance(support, Response)
     assert "wiki" in support.answer.lower()
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_get_tool_calls_from_response() -> None:
+    def add(a: int, b: int) -> int:
+        """Add two integers and returns the result integer."""
+        return a + b
+
+    llm = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+
+    add_tool = FunctionTool.from_defaults(fn=add)
+    msg = ChatMessage("What is the result of adding 2 and 3?")
+    response = llm.chat_with_tools(
+        user_msg=msg,
+        tools=[add_tool],
+    )
+
+    tool_calls: List[ToolSelection] = llm.get_tool_calls_from_response(response)
+    assert len(tool_calls) == 1
+    assert tool_calls[0].tool_name == "add"
+    assert tool_calls[0].tool_kwargs == {"a": 2, "b": 3}
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_convert_llama_index_schema_to_gemini_function_declaration() -> None:
+    """Test conversion of a llama_index schema to a gemini function declaration."""
+    llm = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+    function_tool = get_function_tool(Poem)
+    # this is our baseline, which is not working because:
+    # 1. the descriptions are missing
+    # 2. the required fields are not set
+    google_openai_function = types.FunctionDeclaration.from_callable(
+        client=llm._client,
+        callable=function_tool.metadata.fn_schema,  # type: ignore
+    )
+
+    assert google_openai_function.description is None
+    assert google_openai_function.parameters.required is None  # type: ignore
+
+    # this is our custom conversion that can take a llama index: fn_schema and convert it to a gemini compatible
+    # function declaration (subset of OpenAPI v3)
+    converted = convert_schema_to_function_declaration(function_tool)
+
+    assert converted.name == "Poem"
+    assert converted.description is not None
+    assert converted.parameters.required is not None  # type: ignore
+
+    assert converted.parameters
+
+
+def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case() -> (
+    None
+):
+    """Test conversion of a llama_index fn_schema to a gemini function declaration."""
+    function_tool = get_function_tool(Schema)
+
+    llama_index_model_json_schema = function_tool.metadata.fn_schema.model_json_schema()  # type: ignore
+    # check that the model_json_schema contains a $defs key, which is not supported by Gemini
+    assert "$defs" in llama_index_model_json_schema
+
+    converted = convert_schema_to_function_declaration(function_tool)
+
+    assert converted.name == "Schema"
+    assert converted.description is not None
+    assert converted.parameters.required is not None  # type: ignore
+
+    assert converted.parameters
+    assert list(converted.parameters.properties) == [
+        "schema_name",
+        "tables",
+    ]
+
+    assert converted.parameters.required == ["schema_name", "tables"]

@@ -40,10 +40,11 @@ from llama_index.core.utilities.gemini_utils import (
 )
 from pydantic import PrivateAttr
 
-from .utils import (
+from llama_index.llms.genai.utils import (
     chat_from_gemini_response,
     chat_message_to_gemini,
     completion_from_gemini_response,
+    convert_schema_to_function_declaration,
 )
 
 dispatcher = instrument.get_dispatcher(__name__)
@@ -201,7 +202,7 @@ class Gemini(FunctionCallingLLM):
                 model=self.model,
                 contents=prompt,
             )
-            async for response in await it:
+            async for response in await it:  # type: ignore
                 yield completion_from_gemini_response(response)
 
         return gen()
@@ -210,13 +211,17 @@ class Gemini(FunctionCallingLLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         merged_messages = merge_neighboring_same_role_messages(messages)
         *history, next_msg = map(chat_message_to_gemini, merged_messages)
-        tools: types.ToolDict | None = kwargs.pop("tools", None)
+
+        tools: types.Tool | list[types.Tool] | None = kwargs.pop("tools", None)
+        if tools and not isinstance(tools, list):
+            tools = [tools]
+
         if tools:
             chat = self._client.chats.create(
                 model=self.model,
                 history=history,
                 config=types.GenerateContentConfig(
-                    tools=[tools],
+                    tools=tools,  # type: ignore
                     automatic_function_calling=types.AutomaticFunctionCallingConfig(
                         disable=True, maximum_remote_calls=None
                     ),
@@ -230,7 +235,8 @@ class Gemini(FunctionCallingLLM):
             )
 
         response: types.GenerateContentResponse = chat.send_message(
-            next_msg.parts,  # type: ignore not sure why mypy thinks this is an error, we have a list of parts
+            # not sure why mypy thinks this is an error, we have a list of parts
+            next_msg.parts,  # type: ignore
         )
         return chat_from_gemini_response(response)
 
@@ -240,7 +246,26 @@ class Gemini(FunctionCallingLLM):
     ) -> ChatResponse:
         merged_messages = merge_neighboring_same_role_messages(messages)
         *history, next_msg = map(chat_message_to_gemini, merged_messages)
-        chat = self._client.aio.chats.create(model=self.model, history=history)
+
+        tools: types.Tool | list[types.Tool] | None = kwargs.pop("tools", None)
+        if tools and not isinstance(tools, list):
+            tools = [tools]
+
+        if tools:
+            chat = self._client.aio.chats.create(
+                model=self.model,
+                history=history,
+                config=types.GenerateContentConfig(
+                    tools=tools,  # type: ignore
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                        disable=True, maximum_remote_calls=None
+                    ),
+                    tool_config=kwargs.pop("tool_config", None),
+                ),
+            )
+        else:
+            chat = self._client.aio.chats.create(model=self.model, history=history)
+
         response = await chat.send_message(
             next_msg.parts,  # type: ignore
             **kwargs,
@@ -253,7 +278,24 @@ class Gemini(FunctionCallingLLM):
     ) -> ChatResponseGen:
         merged_messages = merge_neighboring_same_role_messages(messages)
         *history, next_msg = map(chat_message_to_gemini, merged_messages)
-        chat = self._client.chats.create(model=self.model, history=history)
+        tools: types.Tool | list[types.Tool] | None = kwargs.pop("tools", None)
+        if tools and not isinstance(tools, list):
+            tools = [tools]
+
+        if tools:
+            chat = self._client.chats.create(
+                model=self.model,
+                history=history,
+                config=types.GenerateContentConfig(
+                    tools=tools,  # type: ignore
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                        disable=True, maximum_remote_calls=None
+                    ),
+                    tool_config=kwargs.pop("tool_config", None),
+                ),
+            )
+        else:
+            chat = self._client.chats.create(model=self.model, history=history)
         response = chat.send_message_stream(next_msg.parts)  #  type: ignore
 
         def gen() -> ChatResponseGen:
@@ -262,7 +304,8 @@ class Gemini(FunctionCallingLLM):
             for r in response:
                 top_candidate = r.candidates[0]
                 content_delta = top_candidate.content.parts[0].text
-                content += content_delta
+                if content_delta:
+                    content += content_delta
                 llama_resp = chat_from_gemini_response(r)
                 existing_tool_calls.extend(
                     llama_resp.message.additional_kwargs.get("tool_calls", [])
@@ -280,12 +323,30 @@ class Gemini(FunctionCallingLLM):
     ) -> ChatResponseAsyncGen:
         merged_messages = merge_neighboring_same_role_messages(messages)
         *history, next_msg = map(chat_message_to_gemini, merged_messages)
-        chat = self._client.aio.chats.create(model=self.model, history=history)
+
+        tools: types.Tool | list[types.Tool] | None = kwargs.pop("tools", None)
+        if tools and not isinstance(tools, list):
+            tools = [tools]
+
+        if tools:
+            chat = self._client.aio.chats.create(
+                model=self.model,
+                history=history,
+                config=types.GenerateContentConfig(
+                    tools=tools,  # type: ignore
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                        disable=True, maximum_remote_calls=None
+                    ),
+                    tool_config=kwargs.pop("tool_config", None),
+                ),
+            )
+        else:
+            chat = self._client.aio.chats.create(model=self.model, history=history)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
             existing_tool_calls = []
-            async for r in await chat.send_message_stream(next_msg.parts):
+            async for r in await chat.send_message_stream(next_msg.parts):  # type: ignore
                 if candidates := r.candidates:
                     top_candidate = candidates[0]
                     if response_content := top_candidate.content:
@@ -293,18 +354,18 @@ class Gemini(FunctionCallingLLM):
                             content_delta = parts[0].text
                             if content_delta:
                                 content += content_delta
-                                llama_resp = chat_from_gemini_response(r)
-                                existing_tool_calls.extend(
-                                    llama_resp.message.additional_kwargs.get(
-                                        "tool_calls", []
-                                    )
+                            llama_resp = chat_from_gemini_response(r)
+                            existing_tool_calls.extend(
+                                llama_resp.message.additional_kwargs.get(
+                                    "tool_calls", []
                                 )
-                                llama_resp.delta = content_delta
-                                llama_resp.message.content = content
-                                llama_resp.message.additional_kwargs[
-                                    "tool_calls"
-                                ] = existing_tool_calls
-                                yield llama_resp
+                            )
+                            llama_resp.delta = content_delta
+                            llama_resp.message.content = content
+                            llama_resp.message.additional_kwargs[
+                                "tool_calls"
+                            ] = existing_tool_calls
+                            yield llama_resp
 
         return gen()
 
@@ -348,21 +409,9 @@ class Gemini(FunctionCallingLLM):
 
         tool_declarations = []
         for tool in tools:
-            descriptions = {}
-            for param_name, param_schema in tool.metadata.get_parameters_dict()[
-                "properties"
-            ].items():
-                param_description = param_schema.get("description", None)
-                if param_description:
-                    descriptions[param_name] = param_description
-
-            tool.metadata.fn_schema.__doc__ = tool.metadata.description
-            tool_declarations.append(
-                types.FunctionDeclaration.from_callable(
-                    client=self._client,
-                    callable=tool.metadata.fn_schema,  # this seems to work, but the typing is not correct
-                )
-            )
+            if tool.metadata.fn_schema:
+                function_declaration = convert_schema_to_function_declaration(tool)
+                tool_declarations.append(function_declaration)
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
@@ -373,7 +422,7 @@ class Gemini(FunctionCallingLLM):
 
         return {
             "messages": messages,
-            "tools": types.ToolDict(function_declarations=tool_declarations)
+            "tools": [types.Tool(function_declarations=tool_declarations)]
             if tool_declarations
             else None,
             "tool_config": tool_config,
@@ -399,7 +448,6 @@ class Gemini(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            print(tool_call)
             tool_selections.append(
                 ToolSelection(
                     tool_id=str(uuid.uuid4()),
@@ -411,7 +459,7 @@ class Gemini(FunctionCallingLLM):
         return tool_selections
 
     @dispatcher.span
-    def structured_predict(
+    def structured_predict_without_function_calling(
         self,
         output_cls: type[BaseModel],
         prompt: PromptTemplate,
@@ -422,7 +470,6 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
 
-        # TODO: fix "function calling as structured generation"
         messages = prompt.format_messages()
         response = self._client.models.generate_content(
             model=self.model,
@@ -444,6 +491,39 @@ class Gemini(FunctionCallingLLM):
             raise ValueError("Response is not a BaseModel")
 
     @dispatcher.span
+    def structured_predict_with_function_calling(
+        self,
+        output_cls: type[BaseModel],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> BaseModel:
+        return self.structured_predict(output_cls, prompt, llm_kwargs, **kwargs)
+
+    @dispatcher.span
+    def structured_predict(
+        self,
+        output_cls: type[BaseModel],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> BaseModel:
+        """Structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        all_kwargs = {**llm_kwargs, **kwargs}
+
+        if self._is_function_call_model:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in all_kwargs
+                else all_kwargs["tool_choice"]
+            )
+
+        return super().structured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
+        )
+
+    @dispatcher.span
     async def astructured_predict(
         self,
         output_cls: type[BaseModel],
@@ -451,29 +531,20 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> BaseModel:
+        """Structured predict."""
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
 
-        # TODO: fix "function calling as structured generation"
-        messages = prompt.format_messages()
-        response = await self._client.aio.models.generate_content(
-            model=self.model,
-            contents=list(map(chat_message_to_gemini, messages)),
-            **{
-                **all_kwargs,
-                **{
-                    "config": {
-                        "response_mime_type": "application/json",
-                        "response_schema": output_cls,
-                    }
-                },
-            },
-        )
+        if self._is_function_call_model:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in all_kwargs
+                else all_kwargs["tool_choice"]
+            )
 
-        if isinstance(response.parsed, BaseModel):
-            return response.parsed
-        else:
-            raise ValueError("Response is not a BaseModel")
+        return await super().astructured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
+        )
 
     @dispatcher.span
     def stream_structured_predict(
@@ -483,8 +554,18 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Generator[Union[Model, List[Model]], None, None]:
-        raise NotImplementedError(
-            "stream_structured_predict is not supported by default."
+        """Stream structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        all_kwargs = {**llm_kwargs, **kwargs}
+
+        if self._is_function_call_model:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in all_kwargs
+                else all_kwargs["tool_choice"]
+            )
+        return super().stream_structured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
         )
 
     @dispatcher.span
@@ -495,6 +576,16 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Generator[Union[Model, List[Model]], None, None]:
-        raise NotImplementedError(
-            "astream_structured_predict is not supported by default."
+        """Stream structured predict."""
+        llm_kwargs = llm_kwargs or {}
+        all_kwargs = {**llm_kwargs, **kwargs}
+
+        if self._is_function_call_model:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in all_kwargs
+                else all_kwargs["tool_choice"]
+            )
+        return await super().astream_structured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
         )

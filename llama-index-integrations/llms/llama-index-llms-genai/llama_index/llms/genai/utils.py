@@ -1,4 +1,5 @@
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
 )
@@ -15,6 +16,9 @@ from llama_index.core.utilities.gemini_utils import (
     ROLES_FROM_GEMINI,
     ROLES_TO_GEMINI,
 )
+
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
 
 
 def _error_if_finished_early(candidate: types.Candidate) -> None:
@@ -128,4 +132,76 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
     return types.Content(
         role=ROLES_TO_GEMINI[message.role],
         parts=parts,
+    )
+
+
+def convert_schema_to_function_declaration(tool: "BaseTool"):
+    """
+    Converts a tool's JSON schema into a function declaration.
+    Handles $ref resolution and nested property structures.
+    """
+
+    def resolve_ref(schema_dict, ref_path):
+        """
+        Resolves a $ref in the schema by navigating the reference path.
+        """
+        if not ref_path.startswith("#/$defs/"):
+            raise ValueError(f"Unsupported reference format: {ref_path}")
+
+        ref_parts = ref_path[8:].split("/")  # Remove '#/$defs/' and split
+        current = schema_dict["$defs"]
+        for part in ref_parts:
+            current = current[part]
+        return current
+
+    def process_property(prop_schema, schema_dict):
+        """
+        Processes a property schema, handling references and nested structures.
+        Returns a Schema object.
+        """
+        if "$ref" in prop_schema:
+            resolved_schema = resolve_ref(schema_dict, prop_schema["$ref"])
+            return process_property(resolved_schema, schema_dict)
+
+        prop_type = prop_schema["type"].upper()
+        description = prop_schema.get("description", "")
+        schema_args = {
+            "type": getattr(types.Type, prop_type),
+            "description": description,
+        }
+
+        if prop_type == "OBJECT":
+            if "properties" in prop_schema:
+                schema_args["properties"] = {
+                    name: process_property(nested_prop, schema_dict)
+                    for name, nested_prop in prop_schema["properties"].items()
+                }
+                schema_args["required"] = prop_schema.get("required", [])
+
+        elif prop_type == "ARRAY" and "items" in prop_schema:
+            schema_args["items"] = process_property(prop_schema["items"], schema_dict)
+
+        return types.Schema(**schema_args)
+
+    if not tool.metadata.fn_schema:
+        raise ValueError("fn_schema is missing")
+
+    # Get the JSON schema
+    json_schema = tool.metadata.fn_schema.model_json_schema()
+
+    # Create the root schema
+    root_schema = types.Schema(
+        type=types.Type.OBJECT,
+        required=json_schema.get("required", []),
+        properties={
+            name: process_property(prop_schema, json_schema)
+            for name, prop_schema in json_schema["properties"].items()
+        },
+    )
+
+    # Create the function declaration
+    return types.FunctionDeclaration(
+        description=tool.metadata.description.split("\n", maxsplit=1)[1],
+        name=tool.metadata.name,
+        parameters=root_schema,
     )
