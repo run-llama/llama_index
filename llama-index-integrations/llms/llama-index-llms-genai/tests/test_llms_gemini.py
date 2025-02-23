@@ -165,7 +165,7 @@ def test_complex_structured_predict() -> None:
 
     class Schema(BaseModel):
         schema_name: str = Field(description="Schema name")
-        columns: list[Table] = Field(description="List of random Table objects")
+        tables: list[Table] = Field(description="List of random Table objects")
 
     llm = Gemini(
         model="models/gemini-2.0-flash-001",
@@ -179,9 +179,9 @@ def test_complex_structured_predict() -> None:
     assert isinstance(response, Schema)
     assert isinstance(response.schema_name, str)
     assert len(response.schema_name) > 0
-    assert len(response.columns) > 0
-    assert all(isinstance(table, Table) for table in response.columns)
-    assert all(len(table.columns) > 0 for table in response.columns)
+    assert len(response.tables) > 0
+    assert all(isinstance(table, Table) for table in response.tables)
+    assert all(len(table.columns) > 0 for table in response.tables)
 
 
 @pytest.mark.skipif(
@@ -201,7 +201,7 @@ def test_as_structured_llm() -> None:
 
     class Schema(BaseModel):
         schema_name: str = Field(description="Schema name")
-        columns: list[Table] = Field(description="List of random Table objects")
+        tables: list[Table] = Field(description="List of random Table objects")
 
     llm = Gemini(
         model="models/gemini-2.0-flash-001",
@@ -223,7 +223,7 @@ def test_as_structured_llm() -> None:
     )
     assert isinstance(schema_response.raw, Schema)
     assert len(schema_response.raw.schema_name) > 0
-    assert len(schema_response.raw.columns) > 0
+    assert len(schema_response.raw.tables) > 0
 
 
 @pytest.mark.skipif(
