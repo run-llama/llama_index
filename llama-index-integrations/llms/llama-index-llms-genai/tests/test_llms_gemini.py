@@ -339,6 +339,69 @@ def test_as_structured_llm() -> None:
 @pytest.mark.skipif(
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
+def test_as_structured_llm_async() -> None:
+    llm = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+
+    prompt = PromptTemplate("Generate content")
+
+    # Test with simple schema
+    poem_response = asyncio.run(
+        llm.as_structured_llm(output_cls=Poem, prompt=prompt).acomplete(
+            "Write a poem about a magic backpack"
+        )
+    )
+    assert isinstance(poem_response.raw, Poem)
+    assert len(poem_response.raw.content) > 0
+
+    # Test with complex schema
+    schema_response = asyncio.run(
+        llm.as_structured_llm(output_cls=Schema, prompt=prompt).acomplete(
+            "Generate a simple database structure"
+        )
+    )
+    assert isinstance(schema_response.raw, Schema)
+    assert len(schema_response.raw.schema_name) > 0
+    assert len(schema_response.raw.tables) > 0
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_as_structure_llm_with_config() -> None:
+    llm = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+
+    response = (
+        llm.as_structured_llm(output_cls=Poem)
+        .complete(
+            prompt="Write a poem about a magic backpack",
+            # here we want to change the temperature, but it must not override the whole config
+            config={"temperature": 0.1},
+        )
+        .raw
+    )
+
+    assert isinstance(response, Poem)
+
+    response = asyncio.run(
+        llm.as_structured_llm(output_cls=Poem).acomplete(
+            prompt="Write a poem about a magic backpack",
+            # here we want to change the temperature, but it must not override the whole config
+            config={"temperature": 0.1},
+        )
+    ).raw
+
+    assert isinstance(response, Poem)
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
 def test_structured_predict_multiple_block() -> None:
     chat_messaages = [
         ChatMessage(

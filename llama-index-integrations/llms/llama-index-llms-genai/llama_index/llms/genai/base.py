@@ -216,11 +216,13 @@ class Gemini(FunctionCallingLLM):
         if tools and not isinstance(tools, list):
             tools = [tools]
 
+        config = kwargs.pop("config", {})
         if tools:
             chat = self._client.chats.create(
                 model=self.model,
                 history=history,
                 config=types.GenerateContentConfig(
+                    **config,
                     tools=tools,  # type: ignore
                     automatic_function_calling=types.AutomaticFunctionCallingConfig(
                         disable=True, maximum_remote_calls=None
@@ -232,9 +234,11 @@ class Gemini(FunctionCallingLLM):
             chat = self._client.chats.create(
                 model=self.model,
                 history=history,
+                config=config,
             )
 
-        response: types.GenerateContentResponse = chat.send_message(
+        # do not pass kwargs to gemini as it would override the config
+        response = chat.send_message(
             # not sure why mypy thinks this is an error, we have a list of parts
             next_msg.parts,  # type: ignore
         )
@@ -251,11 +255,13 @@ class Gemini(FunctionCallingLLM):
         if tools and not isinstance(tools, list):
             tools = [tools]
 
+        config = kwargs.pop("config", {})
         if tools:
             chat = self._client.aio.chats.create(
                 model=self.model,
                 history=history,
                 config=types.GenerateContentConfig(
+                    **config,
                     tools=tools,  # type: ignore
                     automatic_function_calling=types.AutomaticFunctionCallingConfig(
                         disable=True, maximum_remote_calls=None
@@ -264,11 +270,13 @@ class Gemini(FunctionCallingLLM):
                 ),
             )
         else:
-            chat = self._client.aio.chats.create(model=self.model, history=history)
+            chat = self._client.aio.chats.create(
+                model=self.model, history=history, config=config
+            )
 
+        # do not pass kwargs to gemini as it would override the config
         response = await chat.send_message(
             next_msg.parts,  # type: ignore
-            **kwargs,
         )
         return chat_from_gemini_response(response)
 
@@ -282,11 +290,13 @@ class Gemini(FunctionCallingLLM):
         if tools and not isinstance(tools, list):
             tools = [tools]
 
+        config = kwargs.pop("config", {})
         if tools:
             chat = self._client.chats.create(
                 model=self.model,
                 history=history,
                 config=types.GenerateContentConfig(
+                    **config,
                     tools=tools,  # type: ignore
                     automatic_function_calling=types.AutomaticFunctionCallingConfig(
                         disable=True, maximum_remote_calls=None
@@ -295,7 +305,9 @@ class Gemini(FunctionCallingLLM):
                 ),
             )
         else:
-            chat = self._client.chats.create(model=self.model, history=history)
+            chat = self._client.chats.create(
+                model=self.model, history=history, config=config
+            )
         response = chat.send_message_stream(next_msg.parts)  #  type: ignore
 
         def gen() -> ChatResponseGen:
@@ -328,11 +340,13 @@ class Gemini(FunctionCallingLLM):
         if tools and not isinstance(tools, list):
             tools = [tools]
 
+        config = kwargs.pop("config", {})
         if tools:
             chat = self._client.aio.chats.create(
                 model=self.model,
                 history=history,
                 config=types.GenerateContentConfig(
+                    **config,
                     tools=tools,  # type: ignore
                     automatic_function_calling=types.AutomaticFunctionCallingConfig(
                         disable=True, maximum_remote_calls=None
@@ -341,7 +355,9 @@ class Gemini(FunctionCallingLLM):
                 ),
             )
         else:
-            chat = self._client.aio.chats.create(model=self.model, history=history)
+            chat = self._client.aio.chats.create(
+                model=self.model, history=history, config=config
+            )
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
