@@ -1,5 +1,5 @@
+from collections.abc import Sequence
 from typing import (
-    TYPE_CHECKING,
     Any,
     Dict,
 )
@@ -15,10 +15,8 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.utilities.gemini_utils import (
     ROLES_FROM_GEMINI,
     ROLES_TO_GEMINI,
+    merge_neighboring_same_role_messages,
 )
-
-if TYPE_CHECKING:
-    from llama_index.core.tools.types import BaseTool
 
 
 def _error_if_finished_early(candidate: types.Candidate) -> None:
@@ -205,3 +203,43 @@ def convert_schema_to_function_declaration(tool: "BaseTool"):
         name=tool.metadata.name,
         parameters=root_schema,
     )
+
+
+def prepare_chat_params(
+    model: str, messages: Sequence[ChatMessage], **kwargs: Any
+) -> tuple[types.Content, dict]:
+    """
+    Prepare common parameters for chat creation.
+
+    Args:
+        messages: Sequence of chat messages
+        **kwargs: Additional keyword arguments
+
+    Returns:
+        tuple containing:
+        - next_msg: the next message to send
+        - chat_kwargs: processed keyword arguments for chat creation
+    """
+    merged_messages = merge_neighboring_same_role_messages(messages)
+    *history, next_msg = map(chat_message_to_gemini, merged_messages)
+
+    tools: types.Tool | list[types.Tool] | None = kwargs.pop("tools", None)
+    if tools and not isinstance(tools, list):
+        tools = [tools]
+
+    config = kwargs.pop("config", {})
+    chat_kwargs = {"model": model, "history": history}
+
+    if tools:
+        chat_kwargs["config"] = types.GenerateContentConfig(
+            **config,
+            tools=tools,  # type: ignore
+            automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                disable=True, maximum_remote_calls=None
+            ),
+            tool_config=kwargs.pop("tool_config", None),
+        )
+    else:
+        chat_kwargs["config"] = config
+
+    return next_msg, chat_kwargs

@@ -35,17 +35,14 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.types import Model
-from llama_index.core.utilities.gemini_utils import (
-    merge_neighboring_same_role_messages,
-)
-from pydantic import PrivateAttr
-
 from llama_index.llms.genai.utils import (
     chat_from_gemini_response,
     chat_message_to_gemini,
     completion_from_gemini_response,
     convert_schema_to_function_declaration,
+    prepare_chat_params,
 )
+from pydantic import PrivateAttr
 
 dispatcher = instrument.get_dispatcher(__name__)
 
@@ -209,106 +206,27 @@ class Gemini(FunctionCallingLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        merged_messages = merge_neighboring_same_role_messages(messages)
-        *history, next_msg = map(chat_message_to_gemini, merged_messages)
-
-        tools: types.Tool | list[types.Tool] | None = kwargs.pop("tools", None)
-        if tools and not isinstance(tools, list):
-            tools = [tools]
-
-        config = kwargs.pop("config", {})
-        if tools:
-            chat = self._client.chats.create(
-                model=self.model,
-                history=history,
-                config=types.GenerateContentConfig(
-                    **config,
-                    tools=tools,  # type: ignore
-                    automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                        disable=True, maximum_remote_calls=None
-                    ),
-                    tool_config=kwargs.pop("tool_config", None),
-                ),
-            )
-        else:
-            chat = self._client.chats.create(
-                model=self.model,
-                history=history,
-                config=config,
-            )
-
-        # do not pass kwargs to gemini as it would override the config
-        response = chat.send_message(
-            # not sure why mypy thinks this is an error, we have a list of parts
-            next_msg.parts,  # type: ignore
-        )
+        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **kwargs)
+        chat = self._client.chats.create(**chat_kwargs)
+        response = chat.send_message(next_msg.parts)  # type: ignore
         return chat_from_gemini_response(response)
 
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        merged_messages = merge_neighboring_same_role_messages(messages)
-        *history, next_msg = map(chat_message_to_gemini, merged_messages)
-
-        tools: types.Tool | list[types.Tool] | None = kwargs.pop("tools", None)
-        if tools and not isinstance(tools, list):
-            tools = [tools]
-
-        config = kwargs.pop("config", {})
-        if tools:
-            chat = self._client.aio.chats.create(
-                model=self.model,
-                history=history,
-                config=types.GenerateContentConfig(
-                    **config,
-                    tools=tools,  # type: ignore
-                    automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                        disable=True, maximum_remote_calls=None
-                    ),
-                    tool_config=kwargs.pop("tool_config", None),
-                ),
-            )
-        else:
-            chat = self._client.aio.chats.create(
-                model=self.model, history=history, config=config
-            )
-
-        # do not pass kwargs to gemini as it would override the config
-        response = await chat.send_message(
-            next_msg.parts,  # type: ignore
-        )
+        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **kwargs)
+        chat = self._client.aio.chats.create(**chat_kwargs)
+        response = await chat.send_message(next_msg.parts)  # type: ignore
         return chat_from_gemini_response(response)
 
     @llm_chat_callback()
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        merged_messages = merge_neighboring_same_role_messages(messages)
-        *history, next_msg = map(chat_message_to_gemini, merged_messages)
-        tools: types.Tool | list[types.Tool] | None = kwargs.pop("tools", None)
-        if tools and not isinstance(tools, list):
-            tools = [tools]
-
-        config = kwargs.pop("config", {})
-        if tools:
-            chat = self._client.chats.create(
-                model=self.model,
-                history=history,
-                config=types.GenerateContentConfig(
-                    **config,
-                    tools=tools,  # type: ignore
-                    automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                        disable=True, maximum_remote_calls=None
-                    ),
-                    tool_config=kwargs.pop("tool_config", None),
-                ),
-            )
-        else:
-            chat = self._client.chats.create(
-                model=self.model, history=history, config=config
-            )
-        response = chat.send_message_stream(next_msg.parts)  #  type: ignore
+        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **kwargs)
+        chat = self._client.chats.create(**chat_kwargs)
+        response = chat.send_message_stream(next_msg.parts)  # type: ignore
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -333,31 +251,8 @@ class Gemini(FunctionCallingLLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        merged_messages = merge_neighboring_same_role_messages(messages)
-        *history, next_msg = map(chat_message_to_gemini, merged_messages)
-
-        tools: types.Tool | list[types.Tool] | None = kwargs.pop("tools", None)
-        if tools and not isinstance(tools, list):
-            tools = [tools]
-
-        config = kwargs.pop("config", {})
-        if tools:
-            chat = self._client.aio.chats.create(
-                model=self.model,
-                history=history,
-                config=types.GenerateContentConfig(
-                    **config,
-                    tools=tools,  # type: ignore
-                    automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                        disable=True, maximum_remote_calls=None
-                    ),
-                    tool_config=kwargs.pop("tool_config", None),
-                ),
-            )
-        else:
-            chat = self._client.aio.chats.create(
-                model=self.model, history=history, config=config
-            )
+        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **kwargs)
+        chat = self._client.aio.chats.create(**chat_kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
