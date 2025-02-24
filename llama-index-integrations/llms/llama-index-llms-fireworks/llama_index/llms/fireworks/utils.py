@@ -17,6 +17,10 @@ LLAMA_MODELS = {
     "accounts/fireworks/models/llama-v3p1-8b-instruct": 131072,
     "accounts/fireworks/models/llama-v3p1-70b-instruct": 131072,
     "accounts/fireworks/models/llama-v3p1-405b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p2-1b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p2-3b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p2-11b-vision-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p2-90b-vision-instruct": 131072,
 }
 
 MISTRAL_MODELS = {
@@ -30,11 +34,16 @@ FUNCTION_CALLING_MODELS = {
     "accounts/fireworks/models/firefunction-v2": 8192,
 }
 
+DEEPSEEK_MODELS = {
+    "accounts/fireworks/models/deepseek-v3": 131072,
+    "accounts/fireworks/models/deepseek-r1": 163840,
+}
 
 ALL_AVAILABLE_MODELS = {
     **LLAMA_MODELS,
     **MISTRAL_MODELS,
     **FUNCTION_CALLING_MODELS,
+    **DEEPSEEK_MODELS,
 }
 
 DISCONTINUED_MODELS: Dict[str, int] = {}

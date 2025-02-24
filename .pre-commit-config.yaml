@@ -2,8 +2,6 @@
 default_language_version:
   python: python3
 
-exclude: "llama-index-integrations/vector_stores/llama-index-vector-stores-wordlift/manager_client/.*"
-
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -22,13 +20,14 @@ repos:
         exclude: llama-index-core/llama_index/core/_static
       - id: trailing-whitespace
         exclude: llama-index-core/llama_index/core/_static
+
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.1.5
-
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
         exclude: ".*poetry.lock|.*_static"
+
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
@@ -36,6 +35,7 @@ repos:
         name: black-src
         alias: black
         exclude: "^docs|.*poetry.lock|.*_static"
+
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.0.1
     hooks:
@@ -56,9 +56,10 @@ repos:
             --explicit-package-bases,
             --disallow-untyped-defs,
             --ignore-missing-imports,
-            --python-version=3.8,
+            --python-version=3.9,
           ]
         entry: bash -c "export MYPYPATH=llama_index"
+
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.10.1
     hooks:
@@ -68,6 +69,7 @@ repos:
         files: ^(docs/|examples/)
         # Using PEP 8's line length in docs prevents excess left/right scrolling
         args: [--line-length=79]
+
   - repo: https://github.com/adamchainz/blacken-docs
     rev: 1.16.0
     hooks:
@@ -78,11 +80,13 @@ repos:
         additional_dependencies: [black==23.10.1]
         # Using PEP 8's line length in docs prevents excess left/right scrolling
         args: [--line-length=79]
+
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.0.3
     hooks:
       - id: prettier
         exclude: llama-index-core/llama_index/core/_static|poetry.lock|llama-index-legacy/llama_index/legacy/_static|docs/docs
+
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
     hooks:
@@ -98,13 +102,15 @@ repos:
           [
             "--skip=*/algolia.js",
             "--ignore-words-list",
-            "astroid,gallary,momento,narl,ot,rouge,nin,gere,asend",
+            "astroid,gallary,momento,narl,ot,rouge,nin,gere,asend,seperator",
           ]
+
   - repo: https://github.com/srstevenson/nb-clean
     rev: 3.1.0
     hooks:
       - id: nb-clean
         args: [--preserve-cell-outputs, --remove-empty-cells]
+
   - repo: https://github.com/pappasam/toml-sort
     rev: v0.23.1
     hooks:

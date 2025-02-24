@@ -1,4 +1,5 @@
 import asyncio
+import json
 from logging import getLogger
 from typing import Any, List, Dict, Optional
 
@@ -17,6 +18,8 @@ from llama_index.core.vector_stores.types import (
 from wordlift_client import NodeRequest, VectorSearchQueryRequest, Configuration
 from wordlift_client.exceptions import ApiException
 from wordlift_client.models import AccountInfo, NodeRequestMetadataValue
+
+from .metadata_filters_to_filters import MetadataFiltersToFilters
 
 log = getLogger(__name__)
 
@@ -75,7 +78,12 @@ class WordliftVectorStore(BasePydanticVectorStore):
         fields: Optional[List[str]] = None,
     ):
         super().__init__(use_async=True)
-        nest_asyncio.apply()
+
+        try:
+            nest_asyncio.apply()
+        except ValueError:
+            # We may not be in asyncio
+            pass
 
         if configuration is None:
             self._configuration = _make_configuration(key=key)
@@ -211,17 +219,22 @@ class WordliftVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
+        filters = MetadataFiltersToFilters.metadata_filters_to_filters(
+            query.filters if query.filters else []
+        )
         if query.query_str:
             request = VectorSearchQueryRequest(
                 query_string=query.query_str,
                 similarity_top_k=query.similarity_top_k,
                 fields=self._fields,
+                filters=filters,
             )
         else:
             request = VectorSearchQueryRequest(
                 query_embedding=query.query_embedding,
                 similarity_top_k=query.similarity_top_k,
                 fields=self._fields,
+                filters=filters,
             )
 
         async with wordlift_client.ApiClient(self._configuration) as api_client:
@@ -232,19 +245,24 @@ class WordliftVectorStore(BasePydanticVectorStore):
                     vector_search_query_request=request,
                 )
             except ApiException as e:
-                log.error(f"Error querying for entities: {e}", exc_info=True)
+                log.error(
+                    f"Error querying for entities with the following request: {json.dumps(api_client.sanitize_for_serialization(request))}",
+                    exc_info=True,
+                )
 
         nodes: List[TextNode] = []
         similarities: List[float] = []
         ids: List[str] = []
 
         for item in page.items:
-            metadata = {**item.metadata, **item.fields}
+            metadata = item.metadata if item.metadata else {}
+            fields = item.fields if item.fields else {}
+            metadata = {**metadata, **fields}
 
             nodes.append(
                 TextNode(
-                    text=item.text,
-                    id_=item.node_id,
+                    text=item.text if item.text else "",
+                    id_=item.node_id if item.node_id else "",
                     embedding=(item.embeddings if "embeddings" in item else None),
                     metadata=metadata,
                 )

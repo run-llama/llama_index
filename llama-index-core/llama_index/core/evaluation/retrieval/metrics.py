@@ -34,6 +34,7 @@ class HitRate(BaseRetrievalMetric):
         retrieved_ids: Optional[List[str]] = None,
         expected_texts: Optional[List[str]] = None,
         retrieved_texts: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> RetrievalMetricResult:
         """Compute metric based on the provided inputs.
 
@@ -93,6 +94,7 @@ class MRR(BaseRetrievalMetric):
         retrieved_ids: Optional[List[str]] = None,
         expected_texts: Optional[List[str]] = None,
         retrieved_texts: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> RetrievalMetricResult:
         """Compute MRR based on the provided inputs and selected method.
 
@@ -160,6 +162,7 @@ class Precision(BaseRetrievalMetric):
         retrieved_ids: Optional[List[str]] = None,
         expected_texts: Optional[List[str]] = None,
         retrieved_texts: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> RetrievalMetricResult:
         """Compute precision based on the provided inputs and selected method.
 
@@ -208,6 +211,7 @@ class Recall(BaseRetrievalMetric):
         retrieved_ids: Optional[List[str]] = None,
         expected_texts: Optional[List[str]] = None,
         retrieved_texts: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> RetrievalMetricResult:
         """Compute recall based on the provided inputs and selected method.
 
@@ -256,6 +260,7 @@ class AveragePrecision(BaseRetrievalMetric):
         retrieved_ids: Optional[List[str]] = None,
         expected_texts: Optional[List[str]] = None,
         retrieved_texts: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> RetrievalMetricResult:
         """Compute average precision based on the provided inputs and selected method.
 
@@ -337,6 +342,7 @@ class NDCG(BaseRetrievalMetric):
         retrieved_ids: Optional[List[str]] = None,
         expected_texts: Optional[List[str]] = None,
         retrieved_texts: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> RetrievalMetricResult:
         """Compute NDCG based on the provided inputs and selected method.
 
@@ -369,13 +375,13 @@ class NDCG(BaseRetrievalMetric):
             discounted_gain(rel=docid in expected_set, i=i, mode=mode)
             for i, docid in enumerate(retrieved_ids, start=1)
         )
+
         idcg = sum(
             discounted_gain(rel=True, i=i, mode=mode)
-            for i in range(1, len(retrieved_ids) + 1)
+            for i in range(1, len(expected_ids) + 1)
         )
 
         ndcg_score = dcg / idcg
-
         return RetrievalMetricResult(score=ndcg_score)
 
 

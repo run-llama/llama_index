@@ -48,51 +48,51 @@ class DocumentGroup(BasePydanticReader):
         return self.documents
 
 
-def build_configurable_data_source_enum():
+class ConfigurableComponent(Enum):
+    @classmethod
+    def from_component(cls, component: BaseComponent) -> "ConfigurableComponent":
+        component_class = type(component)
+        for component_type in cls:
+            if component_type.value.component_type == component_class:
+                return component_type
+        raise ValueError(
+            f"Component {component} is not a supported data source component."
+        )
+
+    def build_configured_data_source(
+        self, component: BaseComponent, name: Optional[str] = None
+    ) -> "ConfiguredDataSource":
+        component_type = self.value.component_type
+        if not isinstance(component, component_type):
+            raise ValueError(
+                f"The enum value {self} is not compatible with component of "
+                f"type {type(component)}"
+            )
+        elif isinstance(component, BasePydanticReader):
+            reader_config = ReaderConfig(reader=component)
+            return ConfiguredDataSource[ReaderConfig](
+                component=reader_config
+            )  # type: ignore
+
+        if isinstance(component, DocumentGroup) and name is None:
+            # if the component is a DocumentGroup, we want to use the
+            # full file path as the name of the data source
+            component = cast(DocumentGroup, component)
+            name = component.file_path
+
+        if name is None:
+            suffix = uuid.uuid1()
+            name = self.value.name + f" [{suffix}]]"
+        return ConfiguredDataSource[component_type](  # type: ignore
+            component=component, name=name
+        )
+
+
+def build_configurable_data_source_enum() -> ConfigurableComponent:
     """
     Build an enum of configurable data sources.
     But conditional on if the corresponding reader is available.
     """
-
-    class ConfigurableComponent(Enum):
-        @classmethod
-        def from_component(cls, component: BaseComponent) -> "ConfigurableDataSources":
-            component_class = type(component)
-            for component_type in cls:
-                if component_type.value.component_type == component_class:
-                    return component_type
-            raise ValueError(
-                f"Component {component} is not a supported data source component."
-            )
-
-        def build_configured_data_source(
-            self, component: BaseComponent, name: Optional[str] = None
-        ) -> "ConfiguredDataSource":
-            component_type = self.value.component_type
-            if not isinstance(component, component_type):
-                raise ValueError(
-                    f"The enum value {self} is not compatible with component of "
-                    f"type {type(component)}"
-                )
-            elif isinstance(component, BasePydanticReader):
-                reader_config = ReaderConfig(loader=component)
-                return ConfiguredDataSource[ReaderConfig](
-                    component=reader_config
-                )  # type: ignore
-
-            if isinstance(component, DocumentGroup) and name is None:
-                # if the component is a DocumentGroup, we want to use the
-                # full file path as the name of the data source
-                component = cast(DocumentGroup, component)
-                name = component.file_path
-
-            if name is None:
-                suffix = uuid.uuid1()
-                name = self.value.name + f" [{suffix}]]"
-            return ConfiguredDataSource[component_type](  # type: ignore
-                component=component, name=name
-            )
-
     enum_members = []
 
     try:
@@ -434,7 +434,7 @@ def build_configurable_data_source_enum():
         )
     )
 
-    return ConfigurableComponent("ConfigurableDataSources", enum_members)
+    return ConfigurableComponent("ConfigurableDataSources", enum_members)  # type: ignore
 
 
 ConfigurableDataSources = build_configurable_data_source_enum()
@@ -472,5 +472,5 @@ class ConfiguredDataSource(BaseModel, Generic[T]):
         ).build_configured_data_source(component, name)
 
     @property
-    def configurable_data_source_type(self) -> ConfigurableDataSources:
+    def configurable_data_source_type(self) -> ConfigurableComponent:
         return ConfigurableDataSources.from_component(self.component)

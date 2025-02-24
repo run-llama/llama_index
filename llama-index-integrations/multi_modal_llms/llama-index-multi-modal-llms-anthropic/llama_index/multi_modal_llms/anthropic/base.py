@@ -22,7 +22,7 @@ from llama_index.core.multi_modal_llms import (
     MultiModalLLM,
     MultiModalLLMMetadata,
 )
-from llama_index.core.schema import ImageDocument
+from llama_index.core.schema import ImageNode
 from llama_index.multi_modal_llms.anthropic.utils import (
     ANTHROPIC_MULTI_MODAL_MODELS,
     generate_anthropic_multi_modal_chat_message,
@@ -46,12 +46,12 @@ class AnthropicMultiModal(MultiModalLLM):
     max_retries: int = Field(
         default=3,
         description="Maximum number of retries.",
-        gte=0,
+        ge=0,
     )
     timeout: float = Field(
         default=60.0,
         description="The timeout, in seconds, for API requests.",
-        gte=0,
+        ge=0,
     )
     api_key: str = Field(
         default=None, description="The Anthropic API key.", exclude=True
@@ -137,7 +137,7 @@ class AnthropicMultiModal(MultiModalLLM):
         )
 
     def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        return {
+        credential_kwargs = {
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
@@ -145,11 +145,16 @@ class AnthropicMultiModal(MultiModalLLM):
             **kwargs,
         }
 
+        if self.default_headers:
+            credential_kwargs["default_headers"] = self.default_headers
+
+        return credential_kwargs
+
     def _get_multi_modal_chat_messages(
         self,
         prompt: str,
         role: str,
-        image_documents: Sequence[ImageDocument],
+        image_documents: Sequence[ImageNode],
         **kwargs: Any,
     ) -> List[Dict]:
         return generate_anthropic_multi_modal_chat_message(
@@ -187,8 +192,9 @@ class AnthropicMultiModal(MultiModalLLM):
         }
 
     def _complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
+        """Complete the prompt with image support and optional tool calls."""
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER, image_documents=image_documents
@@ -201,14 +207,23 @@ class AnthropicMultiModal(MultiModalLLM):
             **all_kwargs,
         )
 
+        # Handle both tool and text responses
+        content = response.content[0]
+        if hasattr(content, "input"):
+            # Tool response - convert to string for compatibility
+            text = str(content.input)
+        else:
+            # Standard text response
+            text = content.text
+
         return CompletionResponse(
-            text=response.content[0].text,
+            text=text,
             raw=response,
             additional_kwargs=self._get_response_token_counts(response),
         )
 
     def _stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
@@ -239,12 +254,12 @@ class AnthropicMultiModal(MultiModalLLM):
         return gen()
 
     def complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         return self._complete(prompt, image_documents, **kwargs)
 
     def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
         return self._stream_complete(prompt, image_documents, **kwargs)
 
@@ -263,7 +278,7 @@ class AnthropicMultiModal(MultiModalLLM):
     # ===== Async Endpoints =====
 
     async def _acomplete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
@@ -283,12 +298,12 @@ class AnthropicMultiModal(MultiModalLLM):
         )
 
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         return await self._acomplete(prompt, image_documents, **kwargs)
 
     async def _astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
@@ -319,7 +334,7 @@ class AnthropicMultiModal(MultiModalLLM):
         return gen()
 
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         return await self._astream_complete(prompt, image_documents, **kwargs)
 

@@ -234,7 +234,7 @@ class DatasetGenerator(PromptMixin):
                 [
                     Document(
                         text=node.get_content(metadata_mode=self._metadata_mode),
-                        metadata=node.metadata,
+                        metadata=node.metadata,  # type: ignore
                     )
                 ],
                 callback_manager=self.callback_manager,

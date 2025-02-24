@@ -61,7 +61,7 @@ index = VectorStoreIndex.from_documents(
 
 You can implement any transformation yourself by implementing the base class.
 
-The following custom transformation will remove any special characters or punctutaion in text.
+The following custom transformation will remove any special characters or punctuation in text.
 
 ```python
 import re

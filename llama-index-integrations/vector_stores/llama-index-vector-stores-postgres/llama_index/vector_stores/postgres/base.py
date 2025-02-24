@@ -4,6 +4,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, TYPE_CHEC
 
 import asyncpg  # noqa
 import pgvector  # noqa
+from pgvector.sqlalchemy import HALFVEC
 import psycopg2  # noqa
 import sqlalchemy
 import sqlalchemy.ext.asyncio
@@ -46,6 +47,7 @@ def get_data_model(
     cache_okay: bool,
     embed_dim: int = 1536,
     use_jsonb: bool = False,
+    use_halfvec: bool = False,
 ) -> Any:
     """
     This part create a dynamic sqlalchemy model with a new table.
@@ -66,6 +68,11 @@ def get_data_model(
 
     metadata_dtype = JSONB if use_jsonb else JSON
 
+    if use_halfvec:
+        embedding_col = Column(HALFVEC(embed_dim))  # type: ignore
+    else:
+        embedding_col = Column(Vector(embed_dim))  # type: ignore
+
     if hybrid_search:
 
         class HybridAbstractData(base):  # type: ignore
@@ -74,7 +81,7 @@ def get_data_model(
             text = Column(VARCHAR, nullable=False)
             metadata_ = Column(metadata_dtype)
             node_id = Column(VARCHAR)
-            embedding = Column(Vector(embed_dim))  # type: ignore
+            embedding = embedding_col
             text_search_tsv = Column(  # type: ignore
                 TSVector(),
                 Computed(
@@ -101,7 +108,7 @@ def get_data_model(
             text = Column(VARCHAR, nullable=False)
             metadata_ = Column(metadata_dtype)
             node_id = Column(VARCHAR)
-            embedding = Column(Vector(embed_dim))  # type: ignore
+            embedding = embedding_col
 
         model = type(
             class_name,
@@ -130,6 +137,8 @@ class PGVectorStore(BasePydanticVectorStore):
             user="postgres",
             table_name="paul_graham_essay",
             embed_dim=1536  # openai embedding dimension
+            use_halfvec=True  # Enable half precision
+
         )
         ```
     """
@@ -138,7 +147,7 @@ class PGVectorStore(BasePydanticVectorStore):
     flat_metadata: bool = False
 
     connection_string: str
-    async_connection_string: Union[str, sqlalchemy.engine.URL]
+    async_connection_string: str
     table_name: str
     schema_name: str
     embed_dim: int
@@ -148,8 +157,12 @@ class PGVectorStore(BasePydanticVectorStore):
     perform_setup: bool
     debug: bool
     use_jsonb: bool
+    create_engine_kwargs: Dict
+    initialization_fail_on_error: bool = False
 
     hnsw_kwargs: Optional[Dict[str, Any]]
+
+    use_halfvec: bool = False
 
     _base: Any = PrivateAttr()
     _table_class: Any = PrivateAttr()
@@ -173,6 +186,9 @@ class PGVectorStore(BasePydanticVectorStore):
         debug: bool = False,
         use_jsonb: bool = False,
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
+        initialization_fail_on_error: bool = False,
+        use_halfvec: bool = False,
     ) -> None:
         """Constructor.
 
@@ -191,6 +207,8 @@ class PGVectorStore(BasePydanticVectorStore):
             hnsw_kwargs (Optional[Dict[str, Any]], optional): HNSW kwargs, a dict that
                 contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
                 which turns off HNSW search.
+            create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
+            use_halfvec (bool, optional): If `True`, use half-precision vectors. Defaults to False.
         """
         table_name = table_name.lower()
         schema_name = schema_name.lower()
@@ -204,8 +222,8 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy.orm import declarative_base
 
         super().__init__(
-            connection_string=connection_string,
-            async_connection_string=async_connection_string,
+            connection_string=str(connection_string),
+            async_connection_string=str(async_connection_string),
             table_name=table_name,
             schema_name=schema_name,
             hybrid_search=hybrid_search,
@@ -216,6 +234,9 @@ class PGVectorStore(BasePydanticVectorStore):
             debug=debug,
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
+            create_engine_kwargs=create_engine_kwargs or {},
+            initialization_fail_on_error=initialization_fail_on_error,
+            use_halfvec=use_halfvec,
         )
 
         # sqlalchemy model
@@ -229,6 +250,7 @@ class PGVectorStore(BasePydanticVectorStore):
             cache_ok,
             embed_dim=embed_dim,
             use_jsonb=use_jsonb,
+            use_halfvec=use_halfvec,
         )
 
     async def close(self) -> None:
@@ -264,6 +286,8 @@ class PGVectorStore(BasePydanticVectorStore):
         debug: bool = False,
         use_jsonb: bool = False,
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
+        create_engine_kwargs: Optional[Dict[str, Any]] = None,
+        use_halfvec: bool = False,
     ) -> "PGVectorStore":
         """Construct from params.
 
@@ -287,6 +311,8 @@ class PGVectorStore(BasePydanticVectorStore):
             hnsw_kwargs (Optional[Dict[str, Any]], optional): HNSW kwargs, a dict that
                 contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
                 which turns off HNSW search.
+            create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
+            use_halfvec (bool, optional): If `True`, use half-precision vectors. Defaults to False.
 
         Returns:
             PGVectorStore: Instance of PGVectorStore constructed from params.
@@ -311,6 +337,8 @@ class PGVectorStore(BasePydanticVectorStore):
             debug=debug,
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
+            create_engine_kwargs=create_engine_kwargs,
+            use_halfvec=use_halfvec,
         )
 
     @property
@@ -324,13 +352,21 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
 
-        self._engine = create_engine(self.connection_string, echo=self.debug)
+        self._engine = create_engine(
+            self.connection_string, echo=self.debug, **self.create_engine_kwargs
+        )
         self._session = sessionmaker(self._engine)
 
-        self._async_engine = create_async_engine(self.async_connection_string)
+        self._async_engine = create_async_engine(
+            self.async_connection_string, **self.create_engine_kwargs
+        )
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
 
-    def _create_schema_if_not_exists(self) -> None:
+    def _create_schema_if_not_exists(self) -> bool:
+        """
+        Create the schema if it does not exist.
+        Returns True if the schema was created, False if it already existed.
+        """
         if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", self.schema_name):
             raise ValueError(f"Invalid schema_name: {self.schema_name}")
         with self._session() as session, session.begin():
@@ -341,7 +377,8 @@ class PGVectorStore(BasePydanticVectorStore):
             result = session.execute(check_schema_statement).fetchone()
 
             # If the schema does not exist, then create it
-            if not result:
+            schema_doesnt_exist = result is None
+            if schema_doesnt_exist:
                 create_schema_statement = sqlalchemy.text(
                     # DDL won't tolerate quoted string literal here for schema_name,
                     # so use a format string to embed the schema_name directly, instead of a param.
@@ -350,6 +387,7 @@ class PGVectorStore(BasePydanticVectorStore):
                 session.execute(create_schema_statement)
 
             session.commit()
+            return schema_doesnt_exist
 
     def _create_tables_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
@@ -376,26 +414,59 @@ class PGVectorStore(BasePydanticVectorStore):
 
         hnsw_ef_construction = self.hnsw_kwargs.pop("hnsw_ef_construction")
         hnsw_m = self.hnsw_kwargs.pop("hnsw_m")
-        hnsw_dist_method = self.hnsw_kwargs.pop("hnsw_dist_method", "vector_cosine_ops")
+
+        # If user didn’t specify an operator, pick a default based on whether halfvec is used
+        if "hnsw_dist_method" in self.hnsw_kwargs:
+            hnsw_dist_method = self.hnsw_kwargs.pop("hnsw_dist_method")
+        else:
+            if self.use_halfvec:
+                hnsw_dist_method = "halfvec_l2_ops"
+            else:
+                # Default to vector_cosine_ops
+                hnsw_dist_method = "vector_cosine_ops"
 
         index_name = f"{self._table_class.__tablename__}_embedding_idx"
 
         with self._session() as session, session.begin():
             statement = sqlalchemy.text(
-                f"CREATE INDEX IF NOT EXISTS {index_name} ON {self.schema_name}.{self._table_class.__tablename__} USING hnsw (embedding {hnsw_dist_method}) WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
+                f"CREATE INDEX IF NOT EXISTS {index_name} "
+                f"ON {self.schema_name}.{self._table_class.__tablename__} "
+                f"USING hnsw (embedding {hnsw_dist_method}) "
+                f"WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
             )
             session.execute(statement)
             session.commit()
 
     def _initialize(self) -> None:
+        fail_on_error = self.initialization_fail_on_error
         if not self._is_initialized:
             self._connect()
             if self.perform_setup:
-                self._create_extension()
-                self._create_schema_if_not_exists()
-                self._create_tables_if_not_exists()
+                try:
+                    self._create_schema_if_not_exists()
+                except Exception as e:
+                    _logger.warning(f"PG Setup: Error creating schema: {e}")
+                    if fail_on_error:
+                        raise
+                try:
+                    self._create_extension()
+                except Exception as e:
+                    _logger.warning(f"PG Setup: Error creating extension: {e}")
+                    if fail_on_error:
+                        raise
+                try:
+                    self._create_tables_if_not_exists()
+                except Exception as e:
+                    _logger.warning(f"PG Setup: Error creating tables: {e}")
+                    if fail_on_error:
+                        raise
                 if self.hnsw_kwargs is not None:
-                    self._create_hnsw_index()
+                    try:
+                        self._create_hnsw_index()
+                    except Exception as e:
+                        _logger.warning(f"PG Setup: Error creating HNSW index: {e}")
+                        if fail_on_error:
+                            raise
             self._is_initialized = True
 
     def _node_to_table_row(self, node: BaseNode) -> Any:
@@ -451,6 +522,10 @@ class PGVectorStore(BasePydanticVectorStore):
             return "NOT IN"
         elif operator == FilterOperator.CONTAINS:
             return "@>"
+        elif operator == FilterOperator.TEXT_MATCH:
+            return "LIKE"
+        elif operator == FilterOperator.TEXT_MATCH_INSENSITIVE:
+            return "ILIKE"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
@@ -476,6 +551,16 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"metadata_::jsonb->'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"'[\"{filter_.value}\"]'"
+            )
+        elif (
+            filter_.operator == FilterOperator.TEXT_MATCH
+            or filter_.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
+        ):
+            # Where the operator is text_match or ilike, we need to wrap the filter in '%' characters
+            return text(
+                f"metadata_->>'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"'%{filter_.value}%'"
             )
         else:
             # Check if value is a number. If so, cast the metadata value to a float
@@ -932,6 +1017,58 @@ class PGVectorStore(BasePydanticVectorStore):
 
             await async_session.execute(stmt)
             await async_session.commit()
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from vector store."""
+        assert (
+            node_ids is not None or filters is not None
+        ), "Either node_ids or filters must be provided"
+
+        self._initialize()
+        from sqlalchemy import select
+
+        stmt = select(
+            self._table_class.node_id,
+            self._table_class.text,
+            self._table_class.metadata_,
+            self._table_class.embedding,
+        )
+
+        if node_ids:
+            stmt = stmt.where(self._table_class.node_id.in_(node_ids))
+
+        if filters:
+            filter_clause = self._recursively_apply_filters(filters)
+            stmt = stmt.where(filter_clause)
+
+        nodes: List[BaseNode] = []
+
+        with self._session() as session, session.begin():
+            res = session.execute(stmt).fetchall()
+            for item in res:
+                node_id = item.node_id
+                text = item.text
+                metadata = item.metadata_
+                embedding = item.embedding
+
+                try:
+                    node = metadata_dict_to_node(metadata)
+                    node.set_content(str(text))
+                    node.embedding = embedding
+                except Exception:
+                    node = TextNode(
+                        id_=node_id,
+                        text=text,
+                        metadata=metadata,
+                        embedding=embedding,
+                    )
+                nodes.append(node)
+
+        return nodes
 
 
 def _dedup_results(results: List[DBEmbeddingRow]) -> List[DBEmbeddingRow]:

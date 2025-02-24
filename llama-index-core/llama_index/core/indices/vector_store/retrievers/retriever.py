@@ -48,6 +48,7 @@ class VectorIndexRetriever(BaseRetriever):
         node_ids: Optional[List[str]] = None,
         doc_ids: Optional[List[str]] = None,
         sparse_top_k: Optional[int] = None,
+        hybrid_top_k: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
         object_map: Optional[dict] = None,
         embed_model: Optional[BaseEmbedding] = None,
@@ -67,6 +68,7 @@ class VectorIndexRetriever(BaseRetriever):
         self._doc_ids = doc_ids
         self._filters = filters
         self._sparse_top_k = sparse_top_k
+        self._hybrid_top_k = hybrid_top_k
         self._kwargs: Dict[str, Any] = kwargs.get("vector_store_kwargs", {})
 
         callback_manager = callback_manager or CallbackManager()
@@ -126,6 +128,7 @@ class VectorIndexRetriever(BaseRetriever):
             alpha=self._alpha,
             filters=self._filters,
             sparse_top_k=self._sparse_top_k,
+            hybrid_top_k=self._hybrid_top_k,
         )
 
     def _build_node_list_from_query_result(
@@ -155,9 +158,9 @@ class VectorIndexRetriever(BaseRetriever):
                 ):
                     node_id = query_result.nodes[i].node_id
                     if self._docstore.document_exists(node_id):
-                        query_result.nodes[i] = self._docstore.get_node(
+                        query_result.nodes[i] = self._docstore.get_node(  # type: ignore
                             node_id
-                        )  # type: ignore[index]
+                        )
 
         log_vector_store_query_result(query_result)
 

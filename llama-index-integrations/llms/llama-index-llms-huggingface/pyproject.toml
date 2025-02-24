@@ -28,14 +28,14 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-huggingface"
 readme = "README.md"
-version = "0.3.1"
+version = "0.4.2"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-huggingface-hub = "^0.23.0"
+python = ">=3.9,<4.0"
+huggingface-hub = ">=0.23.0"
 torch = "^2.1.2"
 text-generation = "^0.7.0"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.dependencies.transformers]
 extras = ["torch"]

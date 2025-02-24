@@ -1,7 +1,12 @@
-from typing import Any, Dict, Optional
+from typing import Annotated, Any, Dict, Optional
 
 import httpx
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, model_validator
+from llama_index.core.bridge.pydantic import (
+    Field,
+    PrivateAttr,
+    WithJsonSchema,
+    model_validator,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
@@ -16,6 +21,13 @@ from llama_index.llms.azure_openai.utils import (
 )
 from openai import AsyncAzureOpenAI, AzureOpenAI
 from openai.lib.azure import AzureADTokenProvider
+
+# Used to serialized provider in schema
+AnnotatedProvider = Annotated[
+    AzureADTokenProvider,
+    WithJsonSchema({"type": "string"}, mode="serialization"),
+    WithJsonSchema({"type": "string"}, mode="validation"),
+]
 
 
 class AzureOpenAIEmbedding(OpenAIEmbedding):
@@ -37,8 +49,10 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         validate_default=True,
     )
 
-    azure_ad_token_provider: Optional[AzureADTokenProvider] = Field(
-        default=None, description="Callback function to provide Azure AD token."
+    azure_ad_token_provider: Optional[AnnotatedProvider] = Field(
+        default=None,
+        description="Callback function to provide Azure AD token.",
+        exclude=True,
     )
     use_azure_ad: bool = Field(
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"

@@ -8,7 +8,7 @@ class StreamChatStartEvent(BaseEvent):
     """
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "StreamChatStartEvent"
 
@@ -20,7 +20,7 @@ class StreamChatEndEvent(BaseEvent):
     """
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "StreamChatEndEvent"
 
@@ -37,7 +37,7 @@ class StreamChatErrorEvent(BaseEvent):
     exception: Exception
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "StreamChatErrorEvent"
 
@@ -52,6 +52,6 @@ class StreamChatDeltaReceivedEvent(BaseEvent):
     delta: str
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "StreamChatDeltaReceivedEvent"

@@ -9,14 +9,13 @@ from typing import (
     List,
 )
 
-if TYPE_CHECKING:
-    from llama_index.core.bridge.langchain import Document as LCDocument
-from llama_index.core.bridge.pydantic import Field, GetJsonSchemaHandler, ConfigDict
-from llama_index.core.bridge.pydantic_core import CoreSchema
+if TYPE_CHECKING:  # pragma: no cover
+    from llama_index.core.bridge.langchain import Document as LCDocument  # type: ignore
+from llama_index.core.bridge.pydantic import ConfigDict, Field
 from llama_index.core.schema import BaseComponent, Document
 
 
-class BaseReader(ABC):
+class BaseReader(ABC):  # pragma: no cover
     """Utilities for loading data from a directory."""
 
     def lazy_load_data(self, *args: Any, **load_kwargs: Any) -> Iterable[Document]:
@@ -45,24 +44,6 @@ class BaseReader(ABC):
         docs = self.load_data(**load_kwargs)
         return [d.to_langchain_format() for d in docs]
 
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-    ) -> Dict[str, Any]:
-        json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
-        json_schema = handler.resolve_ref_schema(json_schema)
-        json_schema.update({"title": cls.__name__})
-        return json_schema
-
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls, core_schema, handler
-    ):  # Needed for pydantic v2 to work
-        json_schema = handler(core_schema)
-        json_schema = handler.resolve_ref_schema(json_schema)
-        json_schema["title"] = cls.__name__
-        return json_schema
-
 
 class BasePydanticReader(BaseReader, BaseComponent):
     """Serialiable Data Loader with Pydantic."""
@@ -74,7 +55,7 @@ class BasePydanticReader(BaseReader, BaseComponent):
     )
 
 
-class ResourcesReaderMixin(ABC):
+class ResourcesReaderMixin(ABC):  # pragma: no cover
     """
     Mixin for readers that provide access to different types of resources.
 
@@ -100,6 +81,22 @@ class ResourcesReaderMixin(ABC):
             channel IDs for a Slack reader, or pages for a Notion reader.
         """
         return self.list_resources(*args, **kwargs)
+
+    def get_permission_info(self, resource_id: str, *args: Any, **kwargs: Any) -> Dict:
+        """
+        Get a dictionary of information about the permissions of a specific resource.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not provide get_permission_info method currently"
+        )
+
+    async def aget_permission_info(
+        self, resource_id: str, *args: Any, **kwargs: Any
+    ) -> Dict:
+        """
+        Get a dictionary of information about the permissions of a specific resource asynchronously.
+        """
+        return self.get_permission_info(resource_id, *args, **kwargs)
 
     @abstractmethod
     def get_resource_info(self, resource_id: str, *args: Any, **kwargs: Any) -> Dict:
@@ -209,7 +206,7 @@ class ResourcesReaderMixin(ABC):
         }
 
 
-class ReaderConfig(BaseComponent):
+class ReaderConfig(BaseComponent):  # pragma: no cover
     """Represents a reader and it's input arguments."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

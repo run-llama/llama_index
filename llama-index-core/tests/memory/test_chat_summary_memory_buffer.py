@@ -251,7 +251,7 @@ def test_get_when_initial_tokens_exceed_limit_raises_value_error() -> None:
 
     # When I get the chat history from the memory
     with pytest.raises(ValueError) as error:
-        memory.get(initial_tokens)
+        memory.get(initial_token_count=initial_tokens)
 
     # Then a value error should be raised
     assert str(error.value) == "Initial token count exceeds token limit"

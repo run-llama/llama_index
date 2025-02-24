@@ -1,19 +1,14 @@
-from typing import Any, List, Optional, Union, TYPE_CHECKING, Dict
-from abc import abstractmethod
 import asyncio
-
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-)
-from llama_index.core.llms.llm import LLM
+from abc import abstractmethod
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
-    ChatResponseGen,
     ChatResponseAsyncGen,
+    ChatResponseGen,
 )
-from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.llms.llm import LLM, ToolSelection
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
@@ -27,9 +22,13 @@ class FunctionCallingLLM(LLM):
 
     """
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        # Help static checkers understand this class hierarchy
+        super().__init__(*args, **kwargs)
+
     def chat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -55,7 +54,7 @@ class FunctionCallingLLM(LLM):
 
     async def achat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -81,7 +80,7 @@ class FunctionCallingLLM(LLM):
 
     def stream_chat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -102,7 +101,7 @@ class FunctionCallingLLM(LLM):
 
     async def astream_chat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -124,7 +123,7 @@ class FunctionCallingLLM(LLM):
     @abstractmethod
     def _prepare_chat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -136,7 +135,7 @@ class FunctionCallingLLM(LLM):
     def _validate_chat_with_tools_response(
         self,
         response: ChatResponse,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
@@ -156,12 +155,13 @@ class FunctionCallingLLM(LLM):
 
     def predict_and_call(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         error_on_no_tool_call: bool = True,
+        error_on_tool_error: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
@@ -194,7 +194,15 @@ class FunctionCallingLLM(LLM):
             call_tool_with_selection(tool_call, tools, verbose=verbose)
             for tool_call in tool_calls
         ]
-        if allow_parallel_tool_calls:
+        tool_outputs_with_error = [
+            tool_output for tool_output in tool_outputs if tool_output.is_error
+        ]
+        if error_on_tool_error and len(tool_outputs_with_error) > 0:
+            error_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
+            )
+            raise ValueError(error_text)
+        elif allow_parallel_tool_calls:
             output_text = "\n\n".join(
                 [tool_output.content for tool_output in tool_outputs]
             )
@@ -204,7 +212,7 @@ class FunctionCallingLLM(LLM):
                 raise ValueError("Invalid")
             elif len(tool_outputs) == 0:
                 return AgentChatResponse(
-                    response=response.message.content, sources=tool_outputs
+                    response=response.message.content or "", sources=tool_outputs
                 )
 
             return AgentChatResponse(
@@ -213,19 +221,20 @@ class FunctionCallingLLM(LLM):
 
     async def apredict_and_call(
         self,
-        tools: List["BaseTool"],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         error_on_no_tool_call: bool = True,
+        error_on_tool_error: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
+        from llama_index.core.chat_engine.types import AgentChatResponse
         from llama_index.core.tools.calling import (
             acall_tool_with_selection,
         )
-        from llama_index.core.chat_engine.types import AgentChatResponse
 
         if not self.metadata.is_function_calling_model:
             return await super().apredict_and_call(
@@ -244,6 +253,7 @@ class FunctionCallingLLM(LLM):
             allow_parallel_tool_calls=allow_parallel_tool_calls,
             **kwargs,
         )
+
         tool_calls = self.get_tool_calls_from_response(
             response, error_on_no_tool_call=error_on_no_tool_call
         )
@@ -252,7 +262,15 @@ class FunctionCallingLLM(LLM):
             for tool_call in tool_calls
         ]
         tool_outputs = await asyncio.gather(*tool_tasks)
-        if allow_parallel_tool_calls:
+        tool_outputs_with_error = [
+            tool_output for tool_output in tool_outputs if tool_output.is_error
+        ]
+        if error_on_tool_error and len(tool_outputs_with_error) > 0:
+            error_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
+            )
+            raise ValueError(error_text)
+        elif allow_parallel_tool_calls:
             output_text = "\n\n".join(
                 [tool_output.content for tool_output in tool_outputs]
             )
@@ -262,7 +280,7 @@ class FunctionCallingLLM(LLM):
                 raise ValueError("Invalid")
             elif len(tool_outputs) == 0:
                 return AgentChatResponse(
-                    response=response.message.content, sources=tool_outputs
+                    response=response.message.content or "", sources=tool_outputs
                 )
 
             return AgentChatResponse(

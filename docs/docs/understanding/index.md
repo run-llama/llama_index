@@ -7,7 +7,7 @@ Welcome to the beginning of Understanding LlamaIndex. This is a series of short,
 !!! tip
     If you've already read our [high-level concepts](../getting_started/concepts.md) page you'll recognize several of these steps.
 
-This tutorial has two main parts: **Building a RAG pipeline** and **Building an agent**, with some smaller sections before and after. Here's what to expect:
+This tutorial has three main parts: **Building a RAG pipeline**, **Building an agent**, and **Building Workflows**, with some smaller sections before and after. Here's what to expect:
 
 - **[Using LLMs](./using_llms/using_llms.md)**: hit the ground running by getting started working with LLMs. We'll show you how to use any of our [dozens of supported LLMs](../module_guides/models/llms/modules/), whether via remote API calls or running locally on your machine.
 
@@ -30,6 +30,8 @@ This tutorial has two main parts: **Building a RAG pipeline** and **Building an 
     - **[Adding RAG to an agent](./agent/rag_agent.md)**: The RAG pipelines you built in the previous tutorial can be used as a tool by an agent, giving your agent powerful information-retrieval capabilities.
 
     - **[Adding other tools](./agent/tools.md)**: Let's add more sophisticated tools to your agent, such as API integrations.
+
+- **Building Workflows**: Workflows are a low-level, event-driven abstraction for building agentic applications. They're the base layer you should be using to build any custom, advanced RAG/agent system. You can use the pre-built abstractions you learned above, or build completely agentic applications from scratch. [Get started here](./workflows/index.md).
 
 - **[Putting it all together](./putting_it_all_together/index.md)**: whether you are building question & answering, chatbots, an API, or an autonomous agent, we show you how to get your application into production.
 

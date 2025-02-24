@@ -6,6 +6,19 @@ from llama_index.core.schema import NodeWithScore, Document
 from llama_index.core.node_parser import SentenceSplitter
 
 import faker
+import respx
+
+
+@pytest.fixture()
+def known_unknown() -> str:
+    return "mock-model"
+
+
+@pytest.fixture()
+def mock_local_models(respx_mock: respx.MockRouter, known_unknown: str) -> None:
+    respx_mock.get("http://localhost:8000/v1/models").respond(
+        json={"data": [{"id": known_unknown}]}
+    )
 
 
 @pytest.fixture()
@@ -170,3 +183,43 @@ def test_rerank_batching(
     assert all(
         result[i].score >= result[i + 1].score for i in range(len(result) - 1)
     ), "results are not sorted"
+
+
+def test_default_known(mock_local_models, known_unknown: str) -> None:
+    """
+    Test that a model in the model table will be accepted.
+    """
+    # check if default model is getting set
+    with pytest.warns(UserWarning):
+        x = NVIDIARerank(base_url="http://localhost:8000/v1")
+        assert x.model == known_unknown
+
+
+def test_local_model_not_found(mock_local_models) -> None:
+    """
+    Test that a model in the model table will be accepted.
+    """
+    err_msg = f"No locally hosted lora3 was found."
+    with pytest.raises(ValueError) as msg:
+        x = NVIDIARerank(base_url="http://localhost:8000/v1", model="lora3")
+    assert err_msg == str(msg.value)
+
+
+# marking this as xfail as we do not return invalid error anymore
+@pytest.mark.xfail(reason="value error is not raised anymore")
+def test_model_incompatible_client() -> None:
+    model_name = "x"
+    err_msg = (
+        f"Model {model_name} is incompatible with client NVIDIARerank. "
+        f"Please check `NVIDIARerank.available_models`."
+    )
+    with pytest.raises(ValueError) as msg:
+        NVIDIARerank(api_key="BOGUS", model=model_name)
+    assert err_msg == str(msg.value)
+
+
+def test_model_incompatible_client_known_model() -> None:
+    model_name = "google/deplot"
+    with pytest.warns(UserWarning) as warning:
+        model = NVIDIARerank(api_key="BOGUS", model=model_name)
+    assert "Unable to determine validity" in str(warning[0].message)

@@ -1,5 +1,8 @@
 """Base schema for data structures."""
 
+from __future__ import annotations
+
+import base64
 import json
 import logging
 import pickle
@@ -10,28 +13,50 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+)
 
+import filetype
+import requests
 from dataclasses_json import DataClassJsonMixin
+from deprecated import deprecated
+from typing_extensions import Self
+
 from llama_index.core.bridge.pydantic import (
+    AnyUrl,
     BaseModel,
+    ConfigDict,
     Field,
     GetJsonSchemaHandler,
-    SerializeAsAny,
     JsonSchemaValue,
-    ConfigDict,
+    PlainSerializer,
+    SerializationInfo,
+    SerializeAsAny,
+    SerializerFunctionWrapHandler,
+    ValidationInfo,
+    field_validator,
     model_serializer,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.utils import SAMPLE_TEXT, truncate_text
-from typing_extensions import Self
 
-if TYPE_CHECKING:
-    from haystack.schema import Document as HaystackDocument
-    from llama_index.core.bridge.langchain import Document as LCDocument
-    from semantic_kernel.memory.memory_record import MemoryRecord
-    from llama_cloud.types.cloud_document import CloudDocument
+if TYPE_CHECKING:  # pragma: no cover
+    from haystack.schema import Document as HaystackDocument  # type: ignore
+    from llama_cloud.types.cloud_document import CloudDocument  # type: ignore
+    from semantic_kernel.memory.memory_record import MemoryRecord  # type: ignore
+
+    from llama_index.core.bridge.langchain import Document as LCDocument  # type: ignore
 
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
@@ -44,6 +69,10 @@ ImageType = Union[str, BytesIO]
 
 logger = logging.getLogger(__name__)
 
+EnumNameSerializer = PlainSerializer(
+    lambda e: e.value, return_type="str", when_used="always"
+)
+
 
 class BaseComponent(BaseModel):
     """Base component object to capture class names."""
@@ -54,11 +83,14 @@ class BaseComponent(BaseModel):
     ) -> JsonSchemaValue:
         json_schema = handler(core_schema)
         json_schema = handler.resolve_ref_schema(json_schema)
-        json_schema["properties"]["class_name"] = {
-            "title": "Class Name",
-            "type": "string",
-            "default": cls.class_name(),
-        }
+
+        # inject class name to help with serde
+        if "properties" in json_schema:
+            json_schema["properties"]["class_name"] = {
+                "title": "Class Name",
+                "type": "string",
+                "default": cls.class_name(),
+            }
         return json_schema
 
     @classmethod
@@ -75,7 +107,9 @@ class BaseComponent(BaseModel):
         return self.to_json(**kwargs)
 
     @model_serializer(mode="wrap")
-    def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
+    def custom_model_dump(
+        self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
+    ) -> Dict[str, Any]:
         data = handler(self)
         data["class_name"] = self.class_name()
         return data
@@ -136,9 +170,11 @@ class BaseComponent(BaseModel):
     # TODO: return type here not supported by current mypy version
     @classmethod
     def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
+        # In SimpleKVStore we rely on shallow coping. Hence, the data will be modified in the store directly.
+        # And it is the same when the user is passing a dictionary to create a component. We can't modify the passed down dictionary.
+        data = dict(data)
         if isinstance(kwargs, dict):
             data.update(kwargs)
-
         data.pop("class_name", None)
         return cls(**data)
 
@@ -154,10 +190,12 @@ class TransformComponent(BaseComponent, DispatcherSpanMixin):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @abstractmethod
-    def __call__(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
+    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
         """Transform nodes."""
 
-    async def acall(self, nodes: List["BaseNode"], **kwargs: Any) -> List["BaseNode"]:
+    async def acall(
+        self, nodes: Sequence[BaseNode], **kwargs: Any
+    ) -> Sequence[BaseNode]:
         """Async transform nodes."""
         return self.__call__(nodes, **kwargs)
 
@@ -186,6 +224,14 @@ class ObjectType(str, Enum):
     IMAGE = auto()
     INDEX = auto()
     DOCUMENT = auto()
+    MULTIMODAL = auto()
+
+
+class Modality(str, Enum):
+    TEXT = auto()
+    IMAGE = auto()
+    AUDIO = auto()
+    VIDEO = auto()
 
 
 class MetadataMode(str, Enum):
@@ -197,7 +243,7 @@ class MetadataMode(str, Enum):
 
 class RelatedNodeInfo(BaseComponent):
     node_id: str
-    node_type: Optional[ObjectType] = None
+    node_type: Annotated[ObjectType, EnumNameSerializer] | str | None = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     hash: Optional[str] = None
 
@@ -247,9 +293,24 @@ class BaseNode(BaseComponent):
         default_factory=list,
         description="Metadata keys that are excluded from text for the LLM.",
     )
-    relationships: Dict[NodeRelationship, RelatedNodeType] = Field(
+    relationships: Dict[
+        Annotated[NodeRelationship, EnumNameSerializer],
+        RelatedNodeType,
+    ] = Field(
         default_factory=dict,
         description="A mapping of relationships to other node information.",
+    )
+    metadata_template: str = Field(
+        default=DEFAULT_METADATA_TMPL,
+        description=(
+            "Template for how metadata is formatted, with {key} and "
+            "{value} placeholders."
+        ),
+    )
+    metadata_separator: str = Field(
+        default="\n",
+        description="Separator between metadata fields when converting to string.",
+        alias="metadata_seperator",
     )
 
     @classmethod
@@ -261,9 +322,28 @@ class BaseNode(BaseComponent):
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.ALL) -> str:
         """Get object content."""
 
-    @abstractmethod
     def get_metadata_str(self, mode: MetadataMode = MetadataMode.ALL) -> str:
-        """Metadata string."""
+        """Metadata info string."""
+        if mode == MetadataMode.NONE:
+            return ""
+
+        usable_metadata_keys = set(self.metadata.keys())
+        if mode == MetadataMode.LLM:
+            for key in self.excluded_llm_metadata_keys:
+                if key in usable_metadata_keys:
+                    usable_metadata_keys.remove(key)
+        elif mode == MetadataMode.EMBED:
+            for key in self.excluded_embed_metadata_keys:
+                if key in usable_metadata_keys:
+                    usable_metadata_keys.remove(key)
+
+        return self.metadata_separator.join(
+            [
+                self.metadata_template.format(key=key, value=str(value))
+                for key, value in self.metadata.items()
+                if key in usable_metadata_keys
+            ]
+        )
 
     @abstractmethod
     def set_content(self, value: Any) -> None:
@@ -342,7 +422,7 @@ class BaseNode(BaseComponent):
         return relation
 
     @property
-    def ref_doc_id(self) -> Optional[str]:
+    def ref_doc_id(self) -> Optional[str]:  # pragma: no cover
         """Deprecated: Get ref doc id."""
         source_node = self.source_node
         if source_node is None:
@@ -350,9 +430,20 @@ class BaseNode(BaseComponent):
         return source_node.node_id
 
     @property
-    def extra_info(self) -> Dict[str, Any]:
-        """TODO: DEPRECATED: Extra info."""
+    @deprecated(
+        version="0.12.2",
+        reason="'extra_info' is deprecated, use 'metadata' instead.",
+    )
+    def extra_info(self) -> dict[str, Any]:  # pragma: no coverde
         return self.metadata
+
+    @extra_info.setter
+    @deprecated(
+        version="0.12.2",
+        reason="'extra_info' is deprecated, use 'metadata' instead.",
+    )
+    def extra_info(self, extra_info: dict[str, Any]) -> None:  # pragma: no coverde
+        self.metadata = extra_info
 
     def __str__(self) -> str:
         source_text_truncated = truncate_text(
@@ -383,7 +474,208 @@ class BaseNode(BaseComponent):
         )
 
 
+EmbeddingKind = Literal["sparse", "dense"]
+
+
+class MediaResource(BaseModel):
+    """A container class for media content.
+
+    This class represents a generic media resource that can be stored and accessed
+    in multiple ways - as raw bytes, on the filesystem, or via URL. It also supports
+    storing vector embeddings for the media content.
+
+    Attributes:
+        embeddings: Multi-vector dict representation of this resource for embedding-based search/retrieval
+        text: Plain text representation of this resource
+        data: Raw binary data of the media content
+        mimetype: The MIME type indicating the format/type of the media content
+        path: Local filesystem path where the media content can be accessed
+        url: URL where the media content can be accessed remotely
+    """
+
+    embeddings: dict[EmbeddingKind, list[float]] | None = Field(
+        default=None, description="Vector representation of this resource."
+    )
+    data: bytes | None = Field(
+        default=None,
+        exclude=True,
+        description="base64 binary representation of this resource.",
+    )
+    text: str | None = Field(
+        default=None, description="Text representation of this resource."
+    )
+    path: Path | None = Field(
+        default=None, description="Filesystem path of this resource."
+    )
+    url: AnyUrl | None = Field(default=None, description="URL to reach this resource.")
+    mimetype: str | None = Field(
+        default=None, description="MIME type of this resource."
+    )
+
+    model_config = {
+        # This ensures validation runs even for None values
+        "validate_default": True
+    }
+
+    @field_validator("data", mode="after")
+    @classmethod
+    def validate_data(cls, v: bytes | None, info: ValidationInfo) -> bytes | None:
+        """If binary data was passed, store the resource as base64 and guess the mimetype when possible.
+
+        In case the model was built passing binary data but without a mimetype,
+        we try to guess it using the filetype library. To avoid resource-intense
+        operations, we won't load the path or the URL to guess the mimetype.
+        """
+        if v is None:
+            return v
+
+        try:
+            # Check if data is already base64 encoded.
+            # b64decode() can succeed on random binary data, we make
+            # a full roundtrip to make sure it's not a false positive
+            decoded = base64.b64decode(v)
+            encoded = base64.b64encode(decoded)
+            if encoded != v:
+                # Roundtrip failed, this is a false positive, return encoded
+                return base64.b64encode(v)
+        except Exception:
+            # b64decode failed, return encoded
+            return base64.b64encode(v)
+
+        # Good as is, return unchanged
+        return v
+
+    @field_validator("mimetype", mode="after")
+    @classmethod
+    def validate_mimetype(cls, v: str | None, info: ValidationInfo) -> str | None:
+        if v is not None:
+            return v
+
+        # Since this field validator runs after the one for `data`
+        # then the contents of `data` should be encoded already
+        b64_data = info.data.get("data")
+        if b64_data:  # encoded bytes
+            decoded_data = base64.b64decode(b64_data)
+            if guess := filetype.guess(decoded_data):
+                return guess.mime
+
+        # guess from path
+        rpath: str | None = info.data["path"]
+        if rpath:
+            extension = Path(rpath).suffix.replace(".", "")
+            if ftype := filetype.get_type(ext=extension):
+                return ftype.mime
+
+        return v
+
+    @property
+    def hash(self) -> str:
+        """Generate a hash to uniquely identify the media resource.
+
+        The hash is generated based on the available content (data, path, text or url).
+        Returns an empty string if no content is available.
+        """
+        bits: list[str] = []
+        if self.text is not None:
+            bits.append(self.text)
+        if self.data is not None:
+            # Hash the binary data if available
+            bits.append(str(sha256(self.data).hexdigest()))
+        if self.path is not None:
+            # Hash the file path if provided
+            bits.append(str(sha256(str(self.path).encode("utf-8")).hexdigest()))
+        if self.url is not None:
+            # Use the URL string as basis for hash
+            bits.append(str(sha256(str(self.url).encode("utf-8")).hexdigest()))
+
+        doc_identity = "".join(bits)
+        if not doc_identity:
+            return ""
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
+
+
+class Node(BaseNode):
+    text_resource: MediaResource | None = Field(
+        default=None, description="Text content of the node."
+    )
+    image_resource: MediaResource | None = Field(
+        default=None, description="Image content of the node."
+    )
+    audio_resource: MediaResource | None = Field(
+        default=None, description="Audio content of the node."
+    )
+    video_resource: MediaResource | None = Field(
+        default=None, description="Video content of the node."
+    )
+    text_template: str = Field(
+        default=DEFAULT_TEXT_NODE_TMPL,
+        description=(
+            "Template for how text_resource is formatted, with {content} and "
+            "{metadata_str} placeholders."
+        ),
+    )
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "Node"
+
+    @classmethod
+    def get_type(cls) -> str:
+        """Get Object type."""
+        return ObjectType.MULTIMODAL
+
+    def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
+        """Get the text content for the node if available.
+
+        Provided for backward compatibility, use self.text_resource directly instead.
+        """
+        if self.text_resource:
+            return self.text_template.format(
+                content=self.text_resource.text or "",
+                metadata_str=self.get_metadata_str(metadata_mode),
+            ).strip()
+        return ""
+
+    def set_content(self, value: str) -> None:
+        """Set the text content of the node.
+
+        Provided for backward compatibility, set self.text_resource instead.
+        """
+        self.text_resource = MediaResource(text=value)
+
+    @property
+    def hash(self) -> str:
+        doc_identities = []
+        if self.audio_resource is not None:
+            doc_identities.append(self.audio_resource.hash)
+        if self.image_resource is not None:
+            doc_identities.append(self.image_resource.hash)
+        if self.text_resource is not None:
+            doc_identities.append(self.text_resource.hash)
+        if self.video_resource is not None:
+            doc_identities.append(self.video_resource.hash)
+
+        doc_identity = "-".join(doc_identities)
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
+
+
 class TextNode(BaseNode):
+    """Provided for backward compatibility.
+
+    Note: we keep the field with the typo "seperator" to maintain backward compatibility for
+    serialized objects.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Make TextNode forward-compatible with Node by supporting 'text_resource' in the constructor."""
+        if "text_resource" in kwargs:
+            tr = kwargs.pop("text_resource")
+            if isinstance(tr, MediaResource):
+                kwargs["text"] = tr.text
+            else:
+                kwargs["text"] = tr["text"]
+        super().__init__(*args, **kwargs)
+
     text: str = Field(default="", description="Text content of the node.")
     mimetype: str = Field(
         default="text/plain", description="MIME type of the node content."
@@ -394,23 +686,16 @@ class TextNode(BaseNode):
     end_char_idx: Optional[int] = Field(
         default=None, description="End char index of the node."
     )
+    metadata_seperator: str = Field(
+        default="\n",
+        description="Separator between metadata fields when converting to string.",
+    )
     text_template: str = Field(
         default=DEFAULT_TEXT_NODE_TMPL,
         description=(
             "Template for how text is formatted, with {content} and "
             "{metadata_str} placeholders."
         ),
-    )
-    metadata_template: str = Field(
-        default=DEFAULT_METADATA_TMPL,
-        description=(
-            "Template for how metadata is formatted, with {key} and "
-            "{value} placeholders."
-        ),
-    )
-    metadata_seperator: str = Field(
-        default="\n",
-        description="Separator between metadata fields when converting to string.",
     )
 
     @classmethod
@@ -472,13 +757,13 @@ class TextNode(BaseNode):
         return self.get_content(metadata_mode=MetadataMode.NONE)
 
     @property
+    @deprecated(
+        version="0.12.2",
+        reason="'node_info' is deprecated, use 'get_node_info' instead.",
+    )
     def node_info(self) -> Dict[str, Any]:
         """Deprecated: Get node info."""
         return self.get_node_info()
-
-
-# TODO: legacy backport of old Node class
-Node = TextNode
 
 
 class ImageNode(TextNode):
@@ -494,6 +779,28 @@ class ImageNode(TextNode):
         default=None,
         description="Text embedding of image node, if text field is filled out",
     )
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Make ImageNode forward-compatible with Node by supporting 'image_resource' in the constructor."""
+        if "image_resource" in kwargs:
+            ir = kwargs.pop("image_resource")
+            if isinstance(ir, MediaResource):
+                kwargs["image_path"] = ir.path.as_posix() if ir.path else None
+                kwargs["image_url"] = ir.url
+                kwargs["image_mimetype"] = ir.mimetype
+            else:
+                kwargs["image_path"] = ir.get("path", None)
+                kwargs["image_url"] = ir.get("url", None)
+                kwargs["image_mimetype"] = ir.get("mimetype", None)
+
+        mimetype = kwargs.get("image_mimetype")
+        if not mimetype and kwargs.get("image_path") is not None:
+            # guess mimetype from image_path
+            extension = Path(kwargs["image_path"]).suffix.replace(".", "")
+            if ftype := filetype.get_type(ext=extension):
+                kwargs["image_mimetype"] = ftype.mime
+
+        super().__init__(*args, **kwargs)
 
     @classmethod
     def get_type(cls) -> str:
@@ -519,6 +826,17 @@ class ImageNode(TextNode):
             return BytesIO(response.content)
         else:
             raise ValueError("No image found in node.")
+
+    @property
+    def hash(self) -> str:
+        """Get hash of node."""
+        # doc identity depends on if image, image_path, or image_url is set
+        image_str = self.image or "None"
+        image_path_str = self.image_path or "None"
+        image_url_str = self.image_url or "None"
+        image_text = self.text or "None"
+        doc_identity = f"{image_str}-{image_path_str}-{image_url_str}-{image_text}"
+        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
 
 
 class IndexNode(TextNode):
@@ -558,7 +876,7 @@ class IndexNode(TextNode):
         cls,
         node: TextNode,
         index_id: str,
-    ) -> "IndexNode":
+    ) -> IndexNode:
         """Create index node from text node."""
         # copy all attributes from text node, add index id
         return cls(
@@ -571,7 +889,7 @@ class IndexNode(TextNode):
     def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> Self:  # type: ignore
         output = super().from_dict(data, **kwargs)
 
-        obj = data.get("obj", None)
+        obj = data.get("obj")
         parsed_obj = None
 
         if isinstance(obj, str):
@@ -581,7 +899,7 @@ class IndexNode(TextNode):
 
             # check if its a node, else assume stringable
             try:
-                parsed_obj = json_to_doc(obj)
+                parsed_obj = json_to_doc(obj)  # type: ignore[assignment]
             except Exception:
                 parsed_obj = TextNode(text=str(obj))
 
@@ -660,21 +978,68 @@ class NodeWithScore(BaseComponent):
 # Document Classes for Readers
 
 
-class Document(TextNode):
+class Document(Node):
     """Generic interface for a data document.
 
     This document connects to data sources.
-
     """
 
-    # TODO: A lot of backwards compatibility logic here, clean up
-    id_: str = Field(
-        default_factory=lambda: str(uuid.uuid4()),
-        description="Unique ID of the node.",
-        alias="doc_id",
-    )
+    def __init__(self, **data: Any) -> None:
+        """Keeps backward compatibility with old 'Document' versions.
 
-    _compat_fields = {"doc_id": "id_", "extra_info": "metadata"}
+        If 'text' was passed, store it in 'text_resource'.
+        If 'doc_id' was passed, store it in 'id_'.
+        If 'extra_info' was passed, store it in 'metadata'.
+        """
+        if "doc_id" in data:
+            value = data.pop("doc_id")
+            if "id_" in data:
+                msg = "'doc_id' is deprecated and 'id_' will be used instead"
+                logging.warning(msg)
+            else:
+                data["id_"] = value
+
+        if "extra_info" in data:
+            value = data.pop("extra_info")
+            if "metadata" in data:
+                msg = "'extra_info' is deprecated and 'metadata' will be used instead"
+                logging.warning(msg)
+            else:
+                data["metadata"] = value
+
+        if "text" in data:
+            text = data.pop("text")
+            if "text_resource" in data:
+                text_resource = (
+                    data["text_resource"]
+                    if isinstance(data["text_resource"], MediaResource)
+                    else MediaResource.model_validate(data["text_resource"])
+                )
+                if (text_resource.text or "").strip() != text.strip():
+                    msg = (
+                        "'text' is deprecated and 'text_resource' will be used instead"
+                    )
+                    logging.warning(msg)
+            else:
+                data["text_resource"] = MediaResource(text=text)
+
+        super().__init__(**data)
+
+    @model_serializer(mode="wrap")
+    def custom_model_dump(
+        self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
+    ) -> Dict[str, Any]:
+        """For full backward compatibility with the text field, we customize the model serializer."""
+        data = super().custom_model_dump(handler, info)
+        exclude_set = set(info.exclude or [])
+        if "text" not in exclude_set:
+            data["text"] = self.text
+        return data
+
+    @property
+    def text(self) -> str:
+        """Provided for backward compatibility, it returns the content of text_resource."""
+        return self.get_content()
 
     @classmethod
     def get_type(cls) -> str:
@@ -686,6 +1051,10 @@ class Document(TextNode):
         """Get document ID."""
         return self.id_
 
+    @doc_id.setter
+    def doc_id(self, id_: str) -> None:
+        self.id_ = id_
+
     def __str__(self) -> str:
         source_text_truncated = truncate_text(
             self.get_content().strip(), TRUNCATE_LENGTH
@@ -695,37 +1064,39 @@ class Document(TextNode):
         )
         return f"Doc ID: {self.doc_id}\n{source_text_wrapped}"
 
-    def get_doc_id(self) -> str:
-        """TODO: Deprecated: Get document ID."""
+    @deprecated(
+        version="0.12.2",
+        reason="'get_doc_id' is deprecated, access the 'id_' property instead.",
+    )
+    def get_doc_id(self) -> str:  # pragma: nocover
         return self.id_
 
-    def __setattr__(self, name: str, value: object) -> None:
-        if name in self._compat_fields:
-            name = self._compat_fields[name]
-        super().__setattr__(name, value)
-
-    def to_langchain_format(self) -> "LCDocument":
+    def to_langchain_format(self) -> LCDocument:
         """Convert struct to LangChain document format."""
-        from llama_index.core.bridge.langchain import Document as LCDocument
+        from llama_index.core.bridge.langchain import (
+            Document as LCDocument,  # type: ignore
+        )
 
         metadata = self.metadata or {}
-        return LCDocument(page_content=self.text, metadata=metadata)
+        return LCDocument(page_content=self.text, metadata=metadata, id=self.id_)
 
     @classmethod
-    def from_langchain_format(cls, doc: "LCDocument") -> "Document":
+    def from_langchain_format(cls, doc: LCDocument) -> Document:
         """Convert struct from LangChain document format."""
+        if doc.id:
+            return cls(text=doc.page_content, metadata=doc.metadata, id_=doc.id)
         return cls(text=doc.page_content, metadata=doc.metadata)
 
-    def to_haystack_format(self) -> "HaystackDocument":
+    def to_haystack_format(self) -> HaystackDocument:
         """Convert struct to Haystack document format."""
-        from haystack.schema import Document as HaystackDocument
+        from haystack import Document as HaystackDocument  # type: ignore
 
         return HaystackDocument(
             content=self.text, meta=self.metadata, embedding=self.embedding, id=self.id_
         )
 
     @classmethod
-    def from_haystack_format(cls, doc: "HaystackDocument") -> "Document":
+    def from_haystack_format(cls, doc: HaystackDocument) -> Document:
         """Convert struct from Haystack document format."""
         return cls(
             text=doc.content, metadata=doc.meta, embedding=doc.embedding, id_=doc.id
@@ -739,7 +1110,7 @@ class Document(TextNode):
         }
 
     @classmethod
-    def from_embedchain_format(cls, doc: Dict[str, Any]) -> "Document":
+    def from_embedchain_format(cls, doc: Dict[str, Any]) -> Document:
         """Convert struct from EmbedChain document format."""
         return cls(
             text=doc["data"]["content"],
@@ -747,10 +1118,10 @@ class Document(TextNode):
             id_=doc["doc_id"],
         )
 
-    def to_semantic_kernel_format(self) -> "MemoryRecord":
+    def to_semantic_kernel_format(self) -> MemoryRecord:
         """Convert struct to Semantic Kernel document format."""
         import numpy as np
-        from semantic_kernel.memory.memory_record import MemoryRecord
+        from semantic_kernel.memory.memory_record import MemoryRecord  # type: ignore
 
         return MemoryRecord(
             id=self.id_,
@@ -760,7 +1131,7 @@ class Document(TextNode):
         )
 
     @classmethod
-    def from_semantic_kernel_format(cls, doc: "MemoryRecord") -> "Document":
+    def from_semantic_kernel_format(cls, doc: MemoryRecord) -> Document:
         """Convert struct from Semantic Kernel document format."""
         return cls(
             text=doc._text,
@@ -780,7 +1151,7 @@ class Document(TextNode):
             client.embed(f.name)
 
     @classmethod
-    def example(cls) -> "Document":
+    def example(cls) -> Document:
         return Document(
             text=SAMPLE_TEXT,
             metadata={"filename": "README.md", "category": "codebase"},
@@ -790,9 +1161,9 @@ class Document(TextNode):
     def class_name(cls) -> str:
         return "Document"
 
-    def to_cloud_document(self) -> "CloudDocument":
+    def to_cloud_document(self) -> CloudDocument:
         """Convert to LlamaCloud document type."""
-        from llama_cloud.types.cloud_document import CloudDocument
+        from llama_cloud.types.cloud_document import CloudDocument  # type: ignore
 
         return CloudDocument(
             text=self.text,
@@ -805,8 +1176,8 @@ class Document(TextNode):
     @classmethod
     def from_cloud_document(
         cls,
-        doc: "CloudDocument",
-    ) -> "Document":
+        doc: CloudDocument,
+    ) -> Document:
         """Convert from LlamaCloud document type."""
         return Document(
             text=doc.text,
@@ -817,12 +1188,116 @@ class Document(TextNode):
         )
 
 
-class ImageDocument(Document, ImageNode):
-    """Data document containing an image."""
+class ImageDocument(Document):
+    """Backward compatible wrapper around Document containing an image."""
+
+    def __init__(self, **kwargs: Any) -> None:
+        image = kwargs.pop("image", None)
+        image_path = kwargs.pop("image_path", None)
+        image_url = kwargs.pop("image_url", None)
+        image_mimetype = kwargs.pop("image_mimetype", None)
+        text_embedding = kwargs.pop("text_embedding", None)
+
+        if image:
+            kwargs["image_resource"] = MediaResource(
+                data=image, mimetype=image_mimetype
+            )
+        elif image_path:
+            kwargs["image_resource"] = MediaResource(
+                path=image_path, mimetype=image_mimetype
+            )
+        elif image_url:
+            kwargs["image_resource"] = MediaResource(
+                url=image_url, mimetype=image_mimetype
+            )
+
+        super().__init__(**kwargs)
+
+    @property
+    def image(self) -> str | None:
+        if self.image_resource and self.image_resource.data:
+            return self.image_resource.data.decode("utf-8")
+        return None
+
+    @image.setter
+    def image(self, image: str) -> None:
+        self.image_resource = MediaResource(data=image.encode("utf-8"))
+
+    @property
+    def image_path(self) -> str | None:
+        if self.image_resource and self.image_resource.path:
+            return str(self.image_resource.path)
+        return None
+
+    @image_path.setter
+    def image_path(self, image_path: str) -> None:
+        self.image_resource = MediaResource(path=Path(image_path))
+
+    @property
+    def image_url(self) -> str | None:
+        if self.image_resource and self.image_resource.url:
+            return str(self.image_resource.url)
+        return None
+
+    @image_url.setter
+    def image_url(self, image_url: str) -> None:
+        self.image_resource = MediaResource(url=AnyUrl(url=image_url))
+
+    @property
+    def image_mimetype(self) -> str | None:
+        if self.image_resource:
+            return self.image_resource.mimetype
+        return None
+
+    @image_mimetype.setter
+    def image_mimetype(self, image_mimetype: str) -> None:
+        if self.image_resource:
+            self.image_resource.mimetype = image_mimetype
+
+    @property
+    def text_embedding(self) -> list[float] | None:
+        if self.text_resource and self.text_resource.embeddings:
+            return self.text_resource.embeddings.get("dense")
+        return None
+
+    @text_embedding.setter
+    def text_embedding(self, embeddings: list[float]) -> None:
+        if self.text_resource:
+            if self.text_resource.embeddings is None:
+                self.text_resource.embeddings = {}
+            self.text_resource.embeddings["dense"] = embeddings
 
     @classmethod
     def class_name(cls) -> str:
         return "ImageDocument"
+
+    def resolve_image(self, as_base64: bool = False) -> BytesIO:
+        """Resolve an image such that PIL can read it.
+
+        Args:
+            as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
+        """
+        if self.image_resource is None:
+            return BytesIO()
+
+        if self.image_resource.data is not None:
+            if as_base64:
+                return BytesIO(self.image_resource.data)
+            return BytesIO(base64.b64decode(self.image_resource.data))
+        elif self.image_resource.path is not None:
+            img_bytes = self.image_resource.path.read_bytes()
+            if as_base64:
+                return BytesIO(base64.b64encode(img_bytes))
+            return BytesIO(img_bytes)
+        elif self.image_resource.url is not None:
+            # load image from URL
+            response = requests.get(str(self.image_resource.url))
+            img_bytes = response.content
+            if as_base64:
+                return BytesIO(base64.b64encode(img_bytes))
+            return BytesIO(img_bytes)
+        else:
+            raise ValueError("No image found in the chat message!")
 
 
 @dataclass

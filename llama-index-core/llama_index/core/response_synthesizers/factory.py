@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Type
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.callbacks.base import CallbackManager
@@ -11,7 +11,6 @@ from llama_index.core.prompts.default_prompt_selectors import (
 )
 from llama_index.core.prompts.default_prompts import DEFAULT_SIMPLE_INPUT_PROMPT
 from llama_index.core.llms import LLM
-from llama_index.core.prompts.prompts import PromptTemplate
 from llama_index.core.response_synthesizers.accumulate import Accumulate
 from llama_index.core.response_synthesizers.base import BaseSynthesizer
 from llama_index.core.response_synthesizers.compact_and_accumulate import (
@@ -43,8 +42,10 @@ def get_response_synthesizer(
     use_async: bool = False,
     streaming: bool = False,
     structured_answer_filtering: bool = False,
-    output_cls: Optional[BaseModel] = None,
-    program_factory: Optional[Callable[[PromptTemplate], BasePydanticProgram]] = None,
+    output_cls: Optional[Type[BaseModel]] = None,
+    program_factory: Optional[
+        Callable[[BasePromptTemplate], BasePydanticProgram]
+    ] = None,
     verbose: bool = False,
 ) -> BaseSynthesizer:
     """Get a response synthesizer."""

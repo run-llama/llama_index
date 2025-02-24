@@ -99,6 +99,7 @@ class GPTTreeIndexBuilder:
                     node.get_content(metadata_mode=MetadataMode.LLM)
                     for node in cur_nodes_chunk
                 ],
+                llm=self._llm,
             )
             text_chunk = "\n".join(truncated_chunks)
             indices.append(i)
@@ -218,8 +219,7 @@ class GPTTreeIndexBuilder:
                 self._llm.apredict(self.summary_prompt, context_str=text_chunk)
                 for text_chunk in text_chunks_progress
             ]
-            outputs: List[Tuple[str, str]] = await asyncio.gather(*tasks)
-            summaries = [output[0] for output in outputs]
+            summaries = await asyncio.gather(*tasks)
 
             event.on_end(payload={"summaries": summaries, "level": level})
 

@@ -96,7 +96,7 @@ class QueryEngineTool(AsyncBaseTool):
         )
         return LlamaIndexTool.from_tool_config(tool_config=tool_config)
 
-    def _get_query_str(self, *args, **kwargs) -> str:
+    def _get_query_str(self, *args: Any, **kwargs: Any) -> str:
         if args is not None and len(args) > 0:
             query_str = str(args[0])
         elif kwargs is not None and "input" in kwargs:

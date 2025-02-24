@@ -18,7 +18,6 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-from neo4j.exceptions import CypherSyntaxError
 
 _logger = logging.getLogger(__name__)
 
@@ -436,26 +435,39 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         self.database_query(fts_index_query)
 
     def database_query(
-        self, query: str, params: Optional[dict] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        This method sends a Cypher query to the connected Neo4j database
-        and returns the results as a list of dictionaries.
-
-        Args:
-            query (str): The Cypher query to execute.
-            params (dict, optional): Dictionary of query parameters. Defaults to {}.
-
-        Returns:
-            List[Dict[str, Any]]: List of dictionaries containing the query results.
-        """
+        self,
+        query: str,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Any:
         params = params or {}
+        try:
+            data, _, _ = self._driver.execute_query(
+                query, database_=self._database, parameters_=params
+            )
+            return [r.data() for r in data]
+        except neo4j.exceptions.Neo4jError as e:
+            if not (
+                (
+                    (  # isCallInTransactionError
+                        e.code == "Neo.DatabaseError.Statement.ExecutionFailed"
+                        or e.code
+                        == "Neo.DatabaseError.Transaction.TransactionStartFailed"
+                    )
+                    and "in an implicit transaction" in e.message
+                )
+                or (  # isPeriodicCommitError
+                    e.code == "Neo.ClientError.Statement.SemanticError"
+                    and (
+                        "in an open transaction is not possible" in e.message
+                        or "tried to execute in an explicit transaction" in e.message
+                    )
+                )
+            ):
+                raise
+        # Fallback to allow implicit transactions
         with self._driver.session(database=self._database) as session:
-            try:
-                data = session.run(query, params)
-                return [r.data() for r in data]
-            except CypherSyntaxError as e:
-                raise ValueError(f"Cypher Statement is not valid\n{e}")
+            data = session.run(neo4j.Query(text=query), params)
+            return [r.data() for r in data]
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         ids = [r.node_id for r in nodes]

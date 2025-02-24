@@ -27,12 +27,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-milvus"
 readme = "README.md"
-version = "0.2.1"
+version = "0.5.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-pymilvus = "^2.3.6"
-llama-index-core = "^0.11.0"
+python = ">=3.9,<4.0"
+pymilvus = "^2.5.2"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -41,6 +41,7 @@ mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
+pytest-asyncio = "^0.23.6"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"

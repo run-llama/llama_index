@@ -127,9 +127,11 @@ class FaithfulnessEvaluator(BaseEvaluator):
         self._eval_template: BasePromptTemplate
         if isinstance(eval_template, str):
             self._eval_template = PromptTemplate(eval_template)
+        if isinstance(eval_template, BasePromptTemplate):
+            self._eval_template = eval_template
         else:
             model_name = self._llm.metadata.model_name
-            self._eval_template = eval_template or TEMPLATES_CATALOG.get(
+            self._eval_template = TEMPLATES_CATALOG.get(
                 model_name, DEFAULT_EVAL_TEMPLATE
             )
 

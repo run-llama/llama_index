@@ -5,11 +5,12 @@ An index that is built within Milvus.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
+from copy import deepcopy
 from enum import Enum
 
-
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
 from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.utils import iter_batch
 from llama_index.vector_stores.milvus.utils import (
@@ -34,13 +35,20 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-from pymilvus import Collection, MilvusClient, DataType, AnnSearchRequest
+from pymilvus import (
+    Collection,
+    MilvusClient,
+    AsyncMilvusClient,
+    DataType,
+    AnnSearchRequest,
+)
 from pymilvus.client.types import LoadState
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_BATCH_SIZE = 100
 MILVUS_ID_FIELD = "id"
+DEFAULT_MMR_PREFETCH_FACTOR = 4.0
 
 try:
     from pymilvus import WeightedRanker, RRFRanker
@@ -109,7 +117,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         doc_id_field (str, optional): The name of the doc_id field for the collection,
             defaults to DEFAULT_DOC_ID_KEY.
         similarity_metric (str, optional): The similarity metric to use,
-            currently supports IP and L2.
+            currently supports IP, COSINE and L2.
         consistency_level (str, optional): Which consistency level to use for a newly
             created collection. Defaults to "Session".
         overwrite (bool, optional): Whether to overwrite existing collection with same
@@ -149,7 +157,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
                   These weights are used to adjust the importance of the dense and sparse components of the embeddings
                   in the hybrid retrieval process.
             Defaults to an empty dictionary, implying that the ranker will operate with its predefined default settings.
-        index_managemen (IndexManagement): Specifies the index management strategy to use. Defaults to "create_if_not_exists".
+        index_management (IndexManagement): Specifies the index management strategy to use. Defaults to "create_if_not_exists".
+        scalar_field_names (list): The names of the extra scalar fields to be included in the collection schema.
+        scalar_field_types (list): The types of the extra scalar fields.
 
     Raises:
         ImportError: Unable to import `pymilvus`.
@@ -200,8 +210,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
     hybrid_ranker: str
     hybrid_ranker_params: dict = {}
     index_management: IndexManagement = IndexManagement.CREATE_IF_NOT_EXISTS
+    scalar_field_names: Optional[List[str]]
+    scalar_field_types: Optional[List[DataType]]
 
     _milvusclient: MilvusClient = PrivateAttr()
+    _async_milvusclient: AsyncMilvusClient = PrivateAttr()
     _collection: Any = PrivateAttr()
 
     def __init__(
@@ -226,6 +239,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         hybrid_ranker: str = "RRFRanker",
         hybrid_ranker_params: dict = {},
         index_management: IndexManagement = IndexManagement.CREATE_IF_NOT_EXISTS,
+        scalar_field_names: Optional[List[str]] = None,
+        scalar_field_types: Optional[List[DataType]] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -247,6 +262,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
             hybrid_ranker=hybrid_ranker,
             hybrid_ranker_params=hybrid_ranker_params,
             index_management=index_management,
+            scalar_field_names=scalar_field_names,
+            scalar_field_types=scalar_field_types,
         )
 
         # Select the similarity metric
@@ -265,25 +282,78 @@ class MilvusVectorStore(BasePydanticVectorStore):
             token=token,
             **kwargs,  # pass additional arguments such as server_pem_path
         )
+        self._async_milvusclient = AsyncMilvusClient(
+            uri=uri,
+            token=token,
+            **kwargs,  # pass additional arguments such as server_pem_path
+        )
         # Delete previous collection if overwriting
         if overwrite and collection_name in self.client.list_collections():
-            self._milvusclient.drop_collection(collection_name)
+            self.client.drop_collection(collection_name)
 
         # Create the collection if it does not exist
         if collection_name not in self.client.list_collections():
             if dim is None:
                 raise ValueError("Dim argument required for collection creation.")
             if self.enable_sparse is False:
-                self._milvusclient.create_collection(
-                    collection_name=collection_name,
-                    dimension=dim,
-                    primary_field_name=MILVUS_ID_FIELD,
-                    vector_field_name=embedding_field,
-                    id_type="string",
-                    metric_type=self.similarity_metric,
-                    max_length=65_535,
-                    consistency_level=consistency_level,
-                )
+                # Check if custom index should be created
+                if (
+                    index_config is not None
+                    and self.index_management is not IndexManagement.NO_VALIDATION
+                ):
+                    try:
+                        # Prepare index
+                        index_params = self.client.prepare_index_params()
+                        index_type = index_config["index_type"]
+                        index_params.add_index(
+                            field_name=embedding_field,
+                            index_type=index_type,
+                            metric_type=self.similarity_metric,
+                        )
+
+                        # Create a schema according to LlamaIndex Schema.
+                        schema = self._create_schema()
+                        schema.verify()
+
+                        # Using private method exposed by pymilvus client, in order to avoid creating indexes twice
+                        # Reason: create_collection in pymilvus only checks schema and ignores index_config setup
+                        # https://github.com/milvus-io/pymilvus/issues/2265
+                        self.client._create_collection_with_schema(
+                            collection_name=collection_name,
+                            schema=schema,
+                            index_params=index_params,
+                            dimemsion=dim,
+                            primary_field=MILVUS_ID_FIELD,
+                            vector_field=embedding_field,
+                            id_type="string",
+                            max_length=65_535,
+                            consistency_level=consistency_level,
+                        )
+                        self._collection = Collection(
+                            collection_name, using=self.client._using
+                        )
+                    except Exception as e:
+                        logger.error("Error creating collection with index_config")
+                        raise NotImplementedError(
+                            "Error creating collection with index_config"
+                        ) from e
+                else:
+                    self.client.create_collection(
+                        collection_name=collection_name,
+                        dimension=dim,
+                        primary_field_name=MILVUS_ID_FIELD,
+                        vector_field_name=embedding_field,
+                        id_type="string",
+                        metric_type=self.similarity_metric,
+                        max_length=65_535,
+                        consistency_level=consistency_level,
+                    )
+                    self._collection = Collection(
+                        collection_name, using=self.client._using
+                    )
+
+                    # Check if we have to create an index here to avoid duplicity of indexes
+                    self._create_index_if_required()
             else:
                 try:
                     _ = DataType.SPARSE_FLOAT_VECTOR
@@ -295,13 +365,12 @@ class MilvusVectorStore(BasePydanticVectorStore):
                         "Hybrid retrieval requires Milvus 2.4.0 or later."
                     ) from e
                 self._create_hybrid_index(collection_name)
-
-        self._collection = Collection(collection_name, using=self._milvusclient._using)
-        self._create_index_if_required()
+        else:
+            self._collection = Collection(collection_name, using=self.client._using)
 
         # Set properties
         if collection_properties:
-            if self._milvusclient.get_load_state(collection_name) == LoadState.Loaded:
+            if self.client.get_load_state(collection_name) == LoadState.Loaded:
                 self._collection.release()
                 self._collection.set_properties(properties=collection_properties)
                 self._collection.load()
@@ -320,9 +389,14 @@ class MilvusVectorStore(BasePydanticVectorStore):
         logger.debug(f"Successfully created a new collection: {self.collection_name}")
 
     @property
-    def client(self) -> Any:
+    def client(self) -> MilvusClient:
         """Get client."""
         return self._milvusclient
+
+    @property
+    def aclient(self) -> AsyncMilvusClient:
+        """Get async client."""
+        return self._async_milvusclient
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into Milvus.
@@ -361,10 +435,49 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         # Insert the data into milvus
         for insert_batch in iter_batch(insert_list, self.batch_size):
-            self._collection.insert(insert_batch)
+            self.client.insert(self.collection_name, insert_batch)
         if add_kwargs.get("force_flush", False):
-            self._collection.flush()
-        self._create_index_if_required()
+            self.client.flush(self.collection_name)
+        logger.debug(
+            f"Successfully inserted embeddings into: {self.collection_name} "
+            f"Num Inserted: {len(insert_list)}"
+        )
+        return insert_ids
+
+    async def async_add(
+        self,
+        nodes: List[BaseNode],
+        **add_kwargs: Any,
+    ) -> List[str]:
+        """Asynchronous version of the add method."""
+        insert_list = []
+        insert_ids = []
+
+        if self.enable_sparse is True and self.sparse_embedding_function is None:
+            logger.fatal(
+                "sparse_embedding_function is None when enable_sparse is True."
+            )
+
+        # Process that data we are going to insert
+        for node in nodes:
+            entry = node_to_metadata_dict(node)
+            entry[MILVUS_ID_FIELD] = node.node_id
+            entry[self.embedding_field] = node.embedding
+
+            if self.enable_sparse is True:
+                entry[
+                    self.sparse_embedding_field
+                ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+
+            insert_ids.append(node.node_id)
+            insert_list.append(entry)
+
+        # Insert the data into milvus
+        for insert_batch in iter_batch(insert_list, self.batch_size):
+            await self.aclient.insert(self.collection_name, insert_batch)
+        if add_kwargs.get("force_flush", False):
+            raise NotImplementedError("force_flush is not supported in async mode.")
+            # await self.aclient.flush(self.collection_name)
         logger.debug(
             f"Successfully inserted embeddings into: {self.collection_name} "
             f"Num Inserted: {len(insert_list)}"
@@ -390,13 +503,33 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         # Begin by querying for the primary keys to delete
         doc_ids = ['"' + entry + '"' for entry in doc_ids]
-        entries = self._milvusclient.query(
+        entries = self.client.query(
             collection_name=self.collection_name,
             filter=f"{self.doc_id_field} in [{','.join(doc_ids)}]",
         )
         if len(entries) > 0:
             ids = [entry["id"] for entry in entries]
-            self._milvusclient.delete(collection_name=self.collection_name, pks=ids)
+            self.client.delete(collection_name=self.collection_name, pks=ids)
+            logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
+
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """Asynchronous version of the delete method."""
+        # Adds ability for multiple doc delete in future.
+        doc_ids: List[str]
+        if isinstance(ref_doc_id, list):
+            doc_ids = ref_doc_id  # type: ignore
+        else:
+            doc_ids = [ref_doc_id]
+
+        # Begin by querying for the primary keys to delete
+        doc_ids = ['"' + entry + '"' for entry in doc_ids]
+        entries = await self.aclient.query(
+            collection_name=self.collection_name,
+            filter=f"{self.doc_id_field} in [{','.join(doc_ids)}]",
+        )
+        if len(entries) > 0:
+            ids = [entry["id"] for entry in entries]
+            await self.aclient.delete(collection_name=self.collection_name, pks=ids)
             logger.debug(f"Successfully deleted embedding with doc_id: {doc_ids}")
 
     def delete_nodes(
@@ -411,8 +544,6 @@ class MilvusVectorStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
         """
-        from copy import deepcopy
-
         filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
 
         if node_ids:
@@ -425,7 +556,33 @@ class MilvusVectorStore(BasePydanticVectorStore):
         else:
             filter = None
 
-        self._milvusclient.delete(
+        self.client.delete(
+            collection_name=self.collection_name,
+            filter=filter,
+            **delete_kwargs,
+        )
+        logger.debug(f"Successfully deleted node_ids: {node_ids}")
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Asynchronous version of the delete_nodes method."""
+        filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
+
+        if node_ids:
+            filters_cpy.filters.append(
+                MetadataFilter(key="id", value=node_ids, operator=FilterOperator.IN)
+            )
+
+        if filters_cpy is not None:
+            filter = _to_milvus_filter(filters_cpy)
+        else:
+            filter = None
+
+        await self.aclient.delete(
             collection_name=self.collection_name,
             filter=filter,
             **delete_kwargs,
@@ -434,7 +591,104 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
     def clear(self) -> None:
         """Clears db."""
-        self._milvusclient.drop_collection(self.collection_name)
+        self.client.drop_collection(self.collection_name)
+
+    async def aclear(self) -> None:
+        """Asynchronous version of the clear method."""
+        await self.aclient.drop_collection(self.collection_name)
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes by node ids or metadata filters.
+
+        Args:
+            node_ids (Optional[List[str]], optional): IDs of nodes to retrieve. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
+        Raises:
+            ValueError: Neither or both of node_ids and filters are provided.
+
+        Returns:
+            List[BaseNode]:
+        """
+        if node_ids is None and filters is None:
+            raise ValueError("Either node_ids or filters must be provided.")
+
+        filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
+        milvus_filter = _to_milvus_filter(filters_cpy)
+
+        if node_ids is not None and milvus_filter:
+            raise ValueError("Only one of node_ids or filters can be provided.")
+
+        res = self.client.query(
+            ids=node_ids, collection_name=self.collection_name, filter=milvus_filter
+        )
+
+        nodes = []
+        for item in res:
+            if not self.text_key:
+                node = metadata_dict_to_node(item)
+                node.embedding = item.get(self.embedding_field, None)
+            else:
+                try:
+                    text = item.pop(self.text_key)
+                except Exception:
+                    raise ValueError(
+                        "The passed in text_key value does not exist "
+                        "in the retrieved entity."
+                    ) from None
+                embedding = item.pop(self.embedding_field, None)
+                node = TextNode(
+                    text=text,
+                    embedding=embedding,
+                    metadata=item,
+                )
+            nodes.append(node)
+        return nodes
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Asynchronous version of the get_nodes method."""
+        if node_ids is None and filters is None:
+            raise ValueError("Either node_ids or filters must be provided.")
+
+        filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
+        milvus_filter = _to_milvus_filter(filters_cpy)
+
+        if node_ids is not None and milvus_filter:
+            raise ValueError("Only one of node_ids or filters can be provided.")
+
+        res = await self.aclient.query(
+            ids=node_ids, collection_name=self.collection_name, filter=milvus_filter
+        )
+
+        nodes = []
+        for item in res:
+            if not self.text_key:
+                node = metadata_dict_to_node(item)
+                node.embedding = item.get(self.embedding_field, None)
+            else:
+                try:
+                    text = item.pop(self.text_key)
+                except Exception:
+                    raise ValueError(
+                        "The passed in text_key value does not exist "
+                        "in the retrieved entity."
+                    ) from None
+                embedding = item.pop(self.embedding_field, None)
+                node = TextNode(
+                    text=text,
+                    embedding=embedding,
+                    metadata=item,
+                )
+            nodes.append(node)
+        return nodes
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query index for top k most similar nodes.
@@ -452,14 +706,74 @@ class MilvusVectorStore(BasePydanticVectorStore):
         elif query.mode == VectorStoreQueryMode.HYBRID:
             if self.enable_sparse is False:
                 raise ValueError(f"QueryMode is HYBRID, but enable_sparse is False.")
+        elif query.mode == VectorStoreQueryMode.MMR:
+            pass
         else:
             raise ValueError(f"Milvus does not support {query.mode} yet.")
 
+        string_expr, output_fields = self._prepare_before_search(query, **kwargs)
+
+        # Perform the search
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            nodes, similarities, ids = self._default_search(
+                query, string_expr, output_fields, **kwargs
+            )
+
+        elif query.mode == VectorStoreQueryMode.MMR:
+            nodes, similarities, ids = self._mmr_search(
+                query, string_expr, output_fields, **kwargs
+            )
+
+        else:
+            nodes, similarities, ids = self._hybrid_search(
+                query, string_expr, output_fields
+            )
+
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
+        """Asynchronous version of the query method."""
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            pass
+        elif query.mode == VectorStoreQueryMode.HYBRID:
+            if self.enable_sparse is False:
+                raise ValueError(f"QueryMode is HYBRID, but enable_sparse is False.")
+        elif query.mode == VectorStoreQueryMode.MMR:
+            pass
+        else:
+            raise ValueError(f"Milvus does not support {query.mode} yet.")
+
+        string_expr, output_fields = self._prepare_before_search(query, **kwargs)
+
+        # Perform the search
+        if query.mode == VectorStoreQueryMode.DEFAULT:
+            nodes, similarities, ids = await self._async_default_search(
+                query, string_expr, output_fields, **kwargs
+            )
+
+        elif query.mode == VectorStoreQueryMode.MMR:
+            nodes, similarities, ids = await self._async_mmr_search(
+                query, string_expr, output_fields, **kwargs
+            )
+
+        else:
+            nodes, similarities, ids = await self._async_hybrid_search(
+                query, string_expr, output_fields
+            )
+
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    def _prepare_before_search(
+        self, query: VectorStoreQuery, **kwargs
+    ) -> Tuple[str, List[str]]:
+        """
+        Prepare the expression and output fields for search.
+        """
         expr = []
         output_fields = ["*"]
-
         # Parse the filter
-
         if query.filters is not None or "milvus_scalar_filters" in kwargs:
             expr.append(
                 _to_milvus_filter(
@@ -471,17 +785,14 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     ),
                 )
             )
-
         # Parse any docs we are filtering on
         if query.doc_ids is not None and len(query.doc_ids) != 0:
             expr_list = ['"' + entry + '"' for entry in query.doc_ids]
             expr.append(f"{self.doc_id_field} in [{','.join(expr_list)}]")
-
         # Parse any nodes we are filtering on
         if query.node_ids is not None and len(query.node_ids) != 0:
             expr_list = ['"' + entry + '"' for entry in query.node_ids]
             expr.append(f"{MILVUS_ID_FIELD} in [{','.join(expr_list)}]")
-
         # Limit output fields
         outputs_limited = False
         if query.output_fields is not None:
@@ -490,151 +801,309 @@ class MilvusVectorStore(BasePydanticVectorStore):
         elif len(self.output_fields) > 0:
             output_fields = [*self.output_fields]
             outputs_limited = True
-
         # Add the text key to output fields if necessary
         if self.text_key and self.text_key not in output_fields and outputs_limited:
             output_fields.append(self.text_key)
-
         # Convert to string expression
         string_expr = ""
         if len(expr) != 0:
             string_expr = f" and ".join(expr)
+        return string_expr, output_fields
 
-        # Perform the search
-        if query.mode == VectorStoreQueryMode.DEFAULT:
-            # Perform default search
-            res = self._milvusclient.search(
-                collection_name=self.collection_name,
-                data=[query.query_embedding],
-                filter=string_expr,
-                limit=query.similarity_top_k,
-                output_fields=output_fields,
-                search_params=self.search_config,
-                anns_field=self.embedding_field,
+    def _default_search(
+        self,
+        query: VectorStoreQuery,
+        string_expr: str,
+        output_fields: List[str],
+        **kwargs,
+    ) -> Tuple[List[BaseNode], List[float], List[str]]:
+        """
+        Perform default search.
+        """
+        res = self.client.search(
+            collection_name=self.collection_name,
+            data=[query.query_embedding],
+            filter=string_expr,
+            limit=query.similarity_top_k,
+            output_fields=output_fields,
+            search_params=kwargs.get("milvus_search_config", self.search_config),
+            anns_field=self.embedding_field,
+        )
+        logger.debug(
+            f"Successfully searched embedding in collection: {self.collection_name}"
+            f" Num Results: {len(res[0])}"
+        )
+        nodes, similarities, ids = self._parse_from_milvus_results(res)
+        return nodes, similarities, ids
+
+    async def _async_default_search(
+        self,
+        query: VectorStoreQuery,
+        string_expr: str,
+        output_fields: List[str],
+        **kwargs,
+    ) -> Tuple[List[BaseNode], List[float], List[str]]:
+        """
+        Perform asynchronous default search.
+        """
+        res = await self.aclient.search(
+            collection_name=self.collection_name,
+            data=[query.query_embedding],
+            filter=string_expr,
+            limit=query.similarity_top_k,
+            output_fields=output_fields,
+            search_params=kwargs.get("milvus_search_config", self.search_config),
+            anns_field=self.embedding_field,
+        )
+        logger.debug(
+            f"Successfully searched embedding in collection: {self.collection_name}"
+            f" Num Results: {len(res[0])}"
+        )
+        nodes, similarities, ids = self._parse_from_milvus_results(res)
+        return nodes, similarities, ids
+
+    def _mmr_search(
+        self,
+        query: VectorStoreQuery,
+        string_expr: str,
+        output_fields: List[str],
+        **kwargs,
+    ) -> Tuple[List[BaseNode], List[float], List[str]]:
+        """
+        Perform MMR search.
+        """
+        mmr_threshold = kwargs.get("mmr_threshold", None)
+        if (
+            kwargs.get("mmr_prefetch_factor") is not None
+            and kwargs.get("mmr_prefetch_k") is not None
+        ):
+            raise ValueError(
+                "'mmr_prefetch_factor' and 'mmr_prefetch_k' "
+                "cannot coexist in a call to query()"
             )
-            logger.debug(
-                f"Successfully searched embedding in collection: {self.collection_name}"
-                f" Num Results: {len(res[0])}"
-            )
-
-            nodes = []
-            similarities = []
-            ids = []
-            # Parse the results
-            for hit in res[0]:
-                if not self.text_key:
-                    node = metadata_dict_to_node(
-                        {
-                            "_node_content": hit["entity"].get("_node_content", None),
-                            "_node_type": hit["entity"].get("_node_type", None),
-                        }
-                    )
-                else:
-                    try:
-                        text = hit["entity"].get(self.text_key)
-                    except Exception:
-                        raise ValueError(
-                            "The passed in text_key value does not exist "
-                            "in the retrieved entity."
-                        )
-
-                    metadata = {
-                        key: hit["entity"].get(key) for key in self.output_fields
-                    }
-                    node = TextNode(text=text, metadata=metadata)
-
-                nodes.append(node)
-                similarities.append(hit["distance"])
-                ids.append(hit["id"])
-
         else:
-            # Perform hybrid search
-            sparse_emb = self.sparse_embedding_function.encode_queries(
-                [query.query_str]
-            )[0]
-            sparse_search_params = {"metric_type": "IP"}
-
-            sparse_req = AnnSearchRequest(
-                data=[sparse_emb],
-                anns_field=self.sparse_embedding_field,
-                param=sparse_search_params,
-                limit=query.similarity_top_k,
-                expr=string_expr,  # Apply metadata filters to sparse search
-            )
-
-            dense_search_params = {
-                "metric_type": self.similarity_metric,
-                "params": self.search_config,
-            }
-            dense_emb = query.query_embedding
-            dense_req = AnnSearchRequest(
-                data=[dense_emb],
-                anns_field=self.embedding_field,
-                param=dense_search_params,
-                limit=query.similarity_top_k,
-                expr=string_expr,  # Apply metadata filters to dense search
-            )
-            ranker = None
-
-            if WeightedRanker is None or RRFRanker is None:
-                logger.error(
-                    "Hybrid retrieval is only supported in Milvus 2.4.0 or later."
-                )
-                raise ValueError(
-                    "Hybrid retrieval is only supported in Milvus 2.4.0 or later."
-                )
-            if self.hybrid_ranker == "WeightedRanker":
-                if self.hybrid_ranker_params == {}:
-                    self.hybrid_ranker_params = {"weights": [1.0, 1.0]}
-                ranker = WeightedRanker(*self.hybrid_ranker_params["weights"])
-            elif self.hybrid_ranker == "RRFRanker":
-                if self.hybrid_ranker_params == {}:
-                    self.hybrid_ranker_params = {"k": 60}
-                ranker = RRFRanker(self.hybrid_ranker_params["k"])
+            if kwargs.get("mmr_prefetch_k") is not None:
+                prefetch_k0 = int(kwargs["mmr_prefetch_k"])
             else:
-                raise ValueError(f"Unsupported ranker: {self.hybrid_ranker}")
+                prefetch_k0 = int(
+                    query.similarity_top_k
+                    * kwargs.get("mmr_prefetch_factor", DEFAULT_MMR_PREFETCH_FACTOR)
+                )
+        res = self.client.search(
+            collection_name=self.collection_name,
+            data=[query.query_embedding],
+            filter=string_expr,
+            limit=prefetch_k0,
+            output_fields=output_fields,
+            search_params=kwargs.get("milvus_search_config", self.search_config),
+            anns_field=self.embedding_field,
+        )
+        nodes = res[0]
+        node_embeddings = []
+        node_ids = []
+        for node in nodes:
+            node_embeddings.append(node["entity"]["embedding"])
+            node_ids.append(node["id"])
+        mmr_similarities, mmr_ids = get_top_k_mmr_embeddings(
+            query_embedding=query.query_embedding,
+            embeddings=node_embeddings,
+            similarity_top_k=query.similarity_top_k,
+            embedding_ids=node_ids,
+            mmr_threshold=mmr_threshold,
+        )
+        node_dict = dict(list(zip(node_ids, nodes)))
+        selected_nodes = [node_dict[id] for id in mmr_ids if id in node_dict]
+        similarities = mmr_similarities  # Passing the MMR similarities instead of the original similarities
+        ids = mmr_ids
+        nodes, _, _ = self._parse_from_milvus_results([selected_nodes])
+        logger.debug(
+            f"Successfully performed MMR on embeddings in collection: {self.collection_name}"
+        )
+        return nodes, similarities, ids
 
-            res = self._collection.hybrid_search(
-                [dense_req, sparse_req],
-                rerank=ranker,
-                limit=query.similarity_top_k,
-                output_fields=output_fields,
+    async def _async_mmr_search(
+        self,
+        query: VectorStoreQuery,
+        string_expr: str,
+        output_fields: List[str],
+        **kwargs,
+    ) -> Tuple[List[BaseNode], List[float], List[str]]:
+        """
+        Perform asynchronous MMR search.
+        """
+        mmr_threshold = kwargs.get("mmr_threshold", None)
+        if (
+            kwargs.get("mmr_prefetch_factor") is not None
+            and kwargs.get("mmr_prefetch_k") is not None
+        ):
+            raise ValueError(
+                "'mmr_prefetch_factor' and 'mmr_prefetch_k' "
+                "cannot coexist in a call to query()"
             )
+        else:
+            if kwargs.get("mmr_prefetch_k") is not None:
+                prefetch_k0 = int(kwargs["mmr_prefetch_k"])
+            else:
+                prefetch_k0 = int(
+                    query.similarity_top_k
+                    * kwargs.get("mmr_prefetch_factor", DEFAULT_MMR_PREFETCH_FACTOR)
+                )
 
-            logger.debug(
-                f"Successfully searched embedding in collection: {self.collection_name}"
-                f" Num Results: {len(res[0])}"
+        res = await self.aclient.search(
+            collection_name=self.collection_name,
+            data=[query.query_embedding],
+            filter=string_expr,
+            limit=prefetch_k0,
+            output_fields=output_fields,
+            search_params=kwargs.get("milvus_search_config", self.search_config),
+            anns_field=self.embedding_field,
+        )
+        nodes = res[0]
+        node_embeddings = []
+        node_ids = []
+        for node in nodes:
+            node_embeddings.append(node["entity"]["embedding"])
+            node_ids.append(node["id"])
+        mmr_similarities, mmr_ids = get_top_k_mmr_embeddings(
+            query_embedding=query.query_embedding,
+            embeddings=node_embeddings,
+            similarity_top_k=query.similarity_top_k,
+            embedding_ids=node_ids,
+            mmr_threshold=mmr_threshold,
+        )
+        node_dict = dict(list(zip(node_ids, nodes)))
+        selected_nodes = [node_dict[id] for id in mmr_ids if id in node_dict]
+        similarities = mmr_similarities  # Passing the MMR similarities instead of the original similarities
+        ids = mmr_ids
+        nodes, _, _ = self._parse_from_milvus_results([selected_nodes])
+        logger.debug(
+            f"Successfully performed MMR on embeddings in collection: {self.collection_name}"
+        )
+        return nodes, similarities, ids
+
+    def _hybrid_search(
+        self, query: VectorStoreQuery, string_expr: str, output_fields: List[str]
+    ) -> Tuple[List[BaseNode], List[float], List[str]]:
+        """
+        Perform hybrid search.
+        """
+        sparse_emb = self.sparse_embedding_function.encode_queries([query.query_str])[0]
+        sparse_search_params = {"metric_type": "IP"}
+        sparse_req = AnnSearchRequest(
+            data=[sparse_emb],
+            anns_field=self.sparse_embedding_field,
+            param=sparse_search_params,
+            limit=query.similarity_top_k,
+            expr=string_expr,  # Apply metadata filters to sparse search
+        )
+        dense_search_params = {
+            "metric_type": self.similarity_metric,
+            "params": self.search_config,
+        }
+        dense_emb = query.query_embedding
+        dense_req = AnnSearchRequest(
+            data=[dense_emb],
+            anns_field=self.embedding_field,
+            param=dense_search_params,
+            limit=query.similarity_top_k,
+            expr=string_expr,  # Apply metadata filters to dense search
+        )
+        if WeightedRanker is None or RRFRanker is None:
+            logger.error("Hybrid retrieval is only supported in Milvus 2.4.0 or later.")
+            raise ValueError(
+                "Hybrid retrieval is only supported in Milvus 2.4.0 or later."
             )
+        if self.hybrid_ranker == "WeightedRanker":
+            if self.hybrid_ranker_params == {}:
+                self.hybrid_ranker_params = {"weights": [1.0, 1.0]}
+            ranker = WeightedRanker(*self.hybrid_ranker_params["weights"])
+        elif self.hybrid_ranker == "RRFRanker":
+            if self.hybrid_ranker_params == {}:
+                self.hybrid_ranker_params = {"k": 60}
+            ranker = RRFRanker(self.hybrid_ranker_params["k"])
+        else:
+            raise ValueError(f"Unsupported ranker: {self.hybrid_ranker}")
+        if not hasattr(self.client, "hybrid_search"):
+            raise ValueError(
+                "Your pymilvus version does not support hybrid search. please update it by `pip install -U pymilvus`"
+            )
+        res = self.client.hybrid_search(
+            self.collection_name,
+            [dense_req, sparse_req],
+            ranker=ranker,
+            limit=query.similarity_top_k,
+            output_fields=output_fields,
+        )
+        logger.debug(
+            f"Successfully searched embedding in collection: {self.collection_name}"
+            f" Num Results: {len(res[0])}"
+        )
+        nodes, similarities, ids = self._parse_from_milvus_results(res)
+        return nodes, similarities, ids
 
-            nodes = []
-            similarities = []
-            ids = []
-            # Parse the results
-            for hit in res[0]:
-                if not self.text_key:
-                    node = metadata_dict_to_node(
-                        {
-                            "_node_content": hit.entity.get("_node_content"),
-                            "_node_type": hit.entity.get("_node_type"),
-                        }
-                    )
-                else:
-                    try:
-                        text = hit.entity.get(self.text_key)
-                    except Exception:
-                        raise ValueError(
-                            "The passed in text_key value does not exist "
-                            "in the retrieved entity."
-                        )
-
-                    metadata = {key: hit.entity.get(key) for key in self.output_fields}
-                    node = TextNode(text=text, metadata=metadata)
-
-                nodes.append(node)
-                similarities.append(hit.distance)
-                ids.append(hit.id)
-
-        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+    async def _async_hybrid_search(
+        self,
+        query: VectorStoreQuery,
+        string_expr: str,
+        output_fields: List[str],
+        **kwargs,
+    ) -> Tuple[List[BaseNode], List[float], List[str]]:
+        """
+        Perform asynchronous hybrid search.
+        """
+        sparse_emb = self.sparse_embedding_function.encode_queries([query.query_str])[0]
+        sparse_search_params = {"metric_type": "IP"}
+        sparse_req = AnnSearchRequest(
+            data=[sparse_emb],
+            anns_field=self.sparse_embedding_field,
+            param=sparse_search_params,
+            limit=query.similarity_top_k,
+            expr=string_expr,  # Apply metadata filters to sparse search
+        )
+        dense_search_params = {
+            "metric_type": self.similarity_metric,
+            "params": self.search_config,
+        }
+        dense_emb = query.query_embedding
+        dense_req = AnnSearchRequest(
+            data=[dense_emb],
+            anns_field=self.embedding_field,
+            param=dense_search_params,
+            limit=query.similarity_top_k,
+            expr=string_expr,  # Apply metadata filters to dense search
+        )
+        if WeightedRanker is None or RRFRanker is None:
+            logger.error("Hybrid retrieval is only supported in Milvus 2.4.0 or later.")
+            raise ValueError(
+                "Hybrid retrieval is only supported in Milvus 2.4.0 or later."
+            )
+        if self.hybrid_ranker == "WeightedRanker":
+            if self.hybrid_ranker_params == {}:
+                self.hybrid_ranker_params = {"weights": [1.0, 1.0]}
+            ranker = WeightedRanker(*self.hybrid_ranker_params["weights"])
+        elif self.hybrid_ranker == "RRFRanker":
+            if self.hybrid_ranker_params == {}:
+                self.hybrid_ranker_params = {"k": 60}
+            ranker = RRFRanker(self.hybrid_ranker_params["k"])
+        else:
+            raise ValueError(f"Unsupported ranker: {self.hybrid_ranker}")
+        if not hasattr(self.aclient, "hybrid_search"):
+            raise ValueError(
+                "Your pymilvus version does not support hybrid search. please update it by `pip install -U pymilvus`"
+            )
+        res = await self.aclient.hybrid_search(
+            self.collection_name,
+            [dense_req, sparse_req],
+            ranker=ranker,
+            limit=query.similarity_top_k,
+            output_fields=output_fields,
+        )
+        logger.debug(
+            f"Successfully searched embedding in collection: {self.collection_name}"
+            f" Num Results: {len(res[0])}"
+        )
+        nodes, similarities, ids = self._parse_from_milvus_results(res)
+        return nodes, similarities, ids
 
     def _create_index_if_required(self) -> None:
         """
@@ -688,7 +1157,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             collection_name (str): The name of the collection to create the index for.
         """
         # Check if the collection exists, if not, create it
-        if collection_name not in self._milvusclient.list_collections():
+        if collection_name not in self.client.list_collections():
             schema = MilvusClient.create_schema(
                 auto_id=False, enable_dynamic_field=True
             )
@@ -707,12 +1176,12 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 field_name=self.sparse_embedding_field,
                 datatype=DataType.SPARSE_FLOAT_VECTOR,
             )
-            self._milvusclient.create_collection(
+            self.client.create_collection(
                 collection_name=collection_name, schema=schema
             )
 
         # Initialize or get the collection
-        self._collection = Collection(collection_name, using=self._milvusclient._using)
+        self._collection = Collection(collection_name, using=self.client._using)
 
         dense_index_exists = self._collection.has_index(index_name=self.embedding_field)
         sparse_index_exists = self._collection.has_index(
@@ -745,3 +1214,82 @@ class MilvusVectorStore(BasePydanticVectorStore):
             self._collection.create_index(self.embedding_field, dense_index)
 
         self._collection.load()
+
+    def _create_schema(self):
+        """
+        Creates the collection schema. The default fields include the id, embedding and doc_id.
+
+        Returns: The schema of the collection
+        """
+        schema = MilvusClient.create_schema(auto_id=False, enable_dynamic_field=True)
+        schema.add_field(
+            field_name="id",
+            datatype=DataType.VARCHAR,
+            max_length=65_535,
+            is_primary=True,
+        )
+        schema.add_field(
+            field_name=self.embedding_field,
+            datatype=DataType.FLOAT_VECTOR,
+            dim=self.dim,
+        )
+        schema.add_field(
+            field_name=self.doc_id_field,
+            datatype=DataType.VARCHAR,
+            max_length=65_535,
+        )
+        if self.scalar_field_names is not None and self.scalar_field_types is not None:
+            if len(self.scalar_field_names) != len(self.scalar_field_types):
+                raise ValueError(
+                    "scalar_field_names and scalar_field_types must have same length."
+                )
+
+            for field_name, field_type in zip(
+                self.scalar_field_names, self.scalar_field_types
+            ):
+                max_length = 65_535 if field_type == DataType.VARCHAR else None
+                schema.add_field(
+                    field_name=field_name, datatype=field_type, max_length=max_length
+                )
+
+        return schema
+
+    def _parse_from_milvus_results(
+        self, results: List
+    ) -> Tuple[List[BaseNode], List[float], List[str]]:
+        """
+        Parses the results from Milvus and returns a list of nodes, similarities and ids.
+        Only parse the first result since we are only searching for one query.
+        """
+        if len(results) > 1:
+            logger.warning(
+                "More than one result found in Milvus search. Only parsing the first result."
+            )
+        nodes = []
+        similarities = []
+        ids = []
+        # Parse the results
+        for hit in results[0]:
+            if not self.text_key:
+                node = metadata_dict_to_node(
+                    {
+                        "_node_content": hit["entity"].get("_node_content", None),
+                        "_node_type": hit["entity"].get("_node_type", None),
+                    }
+                )
+            else:
+                try:
+                    text = hit["entity"].get(self.text_key)
+                except Exception:
+                    raise ValueError(
+                        "The passed in text_key value does not exist "
+                        "in the retrieved entity."
+                    )
+
+                metadata = {key: hit["entity"].get(key) for key in self.output_fields}
+                node = TextNode(text=text, metadata=metadata)
+
+            nodes.append(node)
+            similarities.append(hit["distance"])
+            ids.append(hit["id"])
+        return nodes, similarities, ids

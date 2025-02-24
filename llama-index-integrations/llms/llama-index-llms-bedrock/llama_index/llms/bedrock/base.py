@@ -94,6 +94,21 @@ class Bedrock(LLM):
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )
+    guardrail_identifier: Optional[str] = (
+        Field(
+            description="The unique identifier of the guardrail that you want to use. If you don’t provide a value, no guardrail is applied to the invocation."
+        ),
+    )
+    guardrail_version: Optional[str] = (
+        Field(
+            description="The version number for the guardrail. The value can also be DRAFT"
+        ),
+    )
+    trace: Optional[str] = (
+        Field(
+            description="Specifies whether to enable or disable the Bedrock trace. If enabled, you can see the full Bedrock trace."
+        ),
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional kwargs for the bedrock invokeModel request.",
@@ -125,6 +140,9 @@ class Bedrock(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        guardrail_identifier: Optional[str] = None,
+        guardrail_version: Optional[str] = None,
+        trace: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         if context_size is None and model not in BEDROCK_FOUNDATION_LLMS:
@@ -187,11 +205,20 @@ class Bedrock(LLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            guardrail_identifier=guardrail_identifier,
+            guardrail_version=guardrail_version,
+            trace=trace,
         )
         self._provider = get_provider(model)
-        messages_to_prompt = messages_to_prompt or self._provider.messages_to_prompt
-        completion_to_prompt = (
-            completion_to_prompt or self._provider.completion_to_prompt
+        self.messages_to_prompt = (
+            messages_to_prompt
+            or self._provider.messages_to_prompt
+            or self.messages_to_prompt
+        )
+        self.completion_to_prompt = (
+            completion_to_prompt
+            or self._provider.completion_to_prompt
+            or self.completion_to_prompt
         )
         # Prior to general availability, custom boto3 wheel files were
         # distributed that used the bedrock service to invokeModel.
@@ -251,6 +278,9 @@ class Bedrock(LLM):
             model=self.model,
             request_body=request_body_str,
             max_retries=self.max_retries,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
         )
         response_body = response["body"].read()
@@ -281,6 +311,9 @@ class Bedrock(LLM):
             request_body=request_body_str,
             max_retries=self.max_retries,
             stream=True,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace,
             **all_kwargs,
         )
         response_body = response["body"]

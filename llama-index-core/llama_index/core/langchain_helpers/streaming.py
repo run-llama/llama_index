@@ -1,3 +1,4 @@
+import time
 from queue import Queue
 from threading import Event
 from typing import Any, Generator, List, Optional
@@ -35,10 +36,25 @@ class StreamingGeneratorCallbackHandler(BaseCallbackHandler):
     ) -> None:
         self._done.set()
 
-    def get_response_gen(self) -> Generator:
+    def get_response_gen(self, timeout: float = 120.0) -> Generator:
+        """Get response generator with timeout.
+
+        Args:
+            timeout (float): Maximum time in seconds to wait for the complete response.
+                            Defaults to 120 seconds.
+        """
+        start_time = time.time()
         while True:
+            if time.time() - start_time > timeout:
+                raise TimeoutError(
+                    f"Response generation timed out after {timeout} seconds"
+                )
+
             if not self._token_queue.empty():
                 token = self._token_queue.get_nowait()
                 yield token
             elif self._done.is_set():
                 break
+            else:
+                # Small sleep to prevent CPU spinning
+                time.sleep(0.01)

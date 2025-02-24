@@ -1,11 +1,18 @@
 import os
 
 import pytest
-
+import respx
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank as Interface
 from llama_index.core.schema import NodeWithScore, Document
 
 from typing import Any
+
+
+@pytest.fixture()
+def mock_local_models(respx_mock: respx.MockRouter) -> None:
+    respx_mock.get("https://test_url/v1/models").respond(
+        json={"data": [{"id": "model1"}]}
+    )
 
 
 def get_api_key(instance: Any) -> str:
@@ -18,6 +25,7 @@ def test_create_default_url_without_api_key(masked_env_var: str) -> None:
     assert "API key is required" in str(e.value)
 
 
+@pytest.mark.usefixtures("mock_local_models")
 def test_create_unknown_url_without_api_key(masked_env_var: str) -> None:
     Interface(base_url="https://test_url/v1")
 

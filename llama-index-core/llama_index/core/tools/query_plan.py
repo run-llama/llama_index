@@ -98,7 +98,7 @@ class QueryPlanTool(BaseTool):
         self._response_synthesizer = response_synthesizer
         self._name = name
         self._description_prefix = description_prefix
-        self._custom_metadata = None
+        self._custom_metadata: Optional[ToolMetadata] = None
 
     @classmethod
     def from_defaults(
@@ -141,7 +141,7 @@ class QueryPlanTool(BaseTool):
         return ToolMetadata(description, self._name, fn_schema=QueryPlan)
 
     @metadata.setter
-    def metadata(self, value: ToolMetadata):
+    def metadata(self, value: ToolMetadata) -> None:
         self._custom_metadata = value
 
     def _execute_node(

@@ -25,8 +25,7 @@ class BaseMemory(BaseComponent):
     @abstractmethod
     def from_defaults(
         cls,
-        chat_history: Optional[List[ChatMessage]] = None,
-        llm: Optional[LLM] = None,
+        **kwargs: Any,
     ) -> "BaseMemory":
         """Create a chat memory from defaults."""
 
@@ -42,10 +41,19 @@ class BaseMemory(BaseComponent):
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
 
+    async def aput(self, message: ChatMessage) -> None:
+        """Put chat history."""
+        self.put(message)
+
     def put_messages(self, messages: List[ChatMessage]) -> None:
         """Put chat history."""
         for message in messages:
             self.put(message)
+
+    async def aput_messages(self, messages: List[ChatMessage]) -> None:
+        """Put chat history."""
+        for message in messages:
+            await self.aput(message)
 
     @abstractmethod
     def set(self, messages: List[ChatMessage]) -> None:
@@ -66,7 +74,7 @@ class BaseChatStoreMemory(BaseMemory):
     chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
 
     @field_serializer("chat_store")
-    def serialize_courses_in_order(chat_store: BaseChatStore):
+    def serialize_courses_in_order(self, chat_store: BaseChatStore) -> dict:
         res = chat_store.model_dump()
         res.update({"class_name": chat_store.class_name()})
         return res
@@ -82,6 +90,7 @@ class BaseChatStoreMemory(BaseMemory):
         cls,
         chat_history: Optional[List[ChatMessage]] = None,
         llm: Optional[LLM] = None,
+        **kwargs: Any,
     ) -> "BaseChatStoreMemory":
         """Create a chat memory from defaults."""
 
@@ -93,6 +102,11 @@ class BaseChatStoreMemory(BaseMemory):
         """Put chat history."""
         # ensure everything is serialized
         self.chat_store.add_message(self.chat_store_key, message)
+
+    async def aput(self, message: ChatMessage) -> None:
+        """Put chat history."""
+        # ensure everything is serialized
+        await self.chat_store.async_add_message(self.chat_store_key, message)
 
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""

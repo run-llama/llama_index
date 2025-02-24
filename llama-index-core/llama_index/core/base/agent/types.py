@@ -192,8 +192,6 @@ class Task(BaseModel):
 class BaseAgentWorker(PromptMixin, DispatcherSpanMixin):
     """Base agent worker."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
         # TODO: the ReAct agent does not explicitly specify prompts, would need a
@@ -238,6 +236,10 @@ class BaseAgentWorker(PromptMixin, DispatcherSpanMixin):
     @abstractmethod
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
+
+    async def afinalize_task(self, task: Task, **kwargs: Any) -> None:
+        """Finalize task, after all the steps are completed."""
+        self.finalize_task(task, **kwargs)
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

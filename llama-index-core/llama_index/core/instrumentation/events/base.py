@@ -12,12 +12,12 @@ class BaseEvent(BaseModel):
         # copy_on_model_validation = "deep"  # not supported in Pydantic V2...
     )
     timestamp: datetime = Field(default_factory=lambda: datetime.now())
-    id_: str = Field(default_factory=lambda: uuid4())
-    span_id: Optional[str] = Field(default_factory=active_span_id.get)
+    id_: str = Field(default_factory=lambda: str(uuid4()))
+    span_id: Optional[str] = Field(default_factory=active_span_id.get)  # type: ignore
     tags: Dict[str, Any] = Field(default={})
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Return class name."""
         return "BaseEvent"
 

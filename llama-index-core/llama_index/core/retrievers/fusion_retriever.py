@@ -147,7 +147,9 @@ class QueryFusionRetriever(BaseRetriever):
             if not nodes_with_scores:
                 min_max_scores[query_tuple] = (0.0, 0.0)
                 continue
-            scores = [node_with_score.score for node_with_score in nodes_with_scores]
+            scores = [
+                node_with_score.score or 0.0 for node_with_score in nodes_with_scores
+            ]
             if dist_based:
                 # Set min and max based on mean and std dev
                 mean_score = sum(scores) / len(scores)
@@ -173,7 +175,10 @@ class QueryFusionRetriever(BaseRetriever):
                     )
                 # Scale by the weight of the retriever
                 retriever_idx = query_tuple[1]
-                node_with_score.score *= self._retriever_weights[retriever_idx]
+                existing_score = node_with_score.score or 0.0
+                node_with_score.score = (
+                    existing_score * self._retriever_weights[retriever_idx]
+                )
                 # Divide by the number of queries
                 node_with_score.score /= self.num_queries
 
@@ -185,7 +190,8 @@ class QueryFusionRetriever(BaseRetriever):
             for node_with_score in nodes_with_scores:
                 hash = node_with_score.node.hash
                 if hash in all_nodes:
-                    all_nodes[hash].score += node_with_score.score
+                    cur_score = all_nodes[hash].score or 0.0
+                    all_nodes[hash].score = cur_score + (node_with_score.score or 0.0)
                 else:
                     all_nodes[hash] = node_with_score
 
@@ -201,7 +207,9 @@ class QueryFusionRetriever(BaseRetriever):
             for node_with_score in nodes_with_scores:
                 hash = node_with_score.node.hash
                 if hash in all_nodes:
-                    max_score = max(node_with_score.score, all_nodes[hash].score)
+                    max_score = max(
+                        node_with_score.score or 0.0, all_nodes[hash].score or 0.0
+                    )
                     all_nodes[hash].score = max_score
                 else:
                     all_nodes[hash] = node_with_score

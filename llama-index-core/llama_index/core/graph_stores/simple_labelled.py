@@ -1,7 +1,7 @@
 import fsspec
 import json
 import os
-from typing import Any, List, Dict, Tuple, Optional
+from typing import Any, List, Dict, Sequence, Tuple, Optional
 
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
@@ -128,7 +128,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
 
         return triplets[:limit]
 
-    def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
+    def upsert_nodes(self, nodes: Sequence[LabelledNode]) -> None:
         """Add nodes."""
         for node in nodes:
             self.graph.add_node(node)
@@ -202,7 +202,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         # need to load nodes manually
         node_dicts = data["nodes"]
 
-        kg_nodes = {}
+        kg_nodes: Dict[str, LabelledNode] = {}
         for id, node_dict in node_dicts.items():
             if "name" in node_dict:
                 kg_nodes[id] = EntityNode.model_validate(node_dict)
@@ -292,8 +292,8 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         nodes = []
         edges = []
         for node in self.graph.nodes.values():
-            node = {"id": node.id, "properties": {"label": node.id}}
-            nodes.append(node)
+            node_dict = {"id": node.id, "properties": {"label": node.id}}
+            nodes.append(node_dict)
         for triplet in self.graph.triplets:
             edge = {
                 "id": triplet[1],
@@ -304,4 +304,4 @@ class SimplePropertyGraphStore(PropertyGraphStore):
             edges.append(edge)
         w.nodes = nodes
         w.edges = edges
-        display(w)
+        display(w)  # type: ignore[name-defined]

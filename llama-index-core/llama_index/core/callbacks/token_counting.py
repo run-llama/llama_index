@@ -42,7 +42,7 @@ def get_tokens_from_response(
     """Get the token counts from a raw response."""
     raw_response = response.raw
     if not isinstance(raw_response, dict):
-        raw_response = dict(raw_response)
+        raw_response = dict(raw_response or {})
 
     usage = raw_response.get("usage", {})
     if usage is None:

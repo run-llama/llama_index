@@ -58,8 +58,8 @@ class LanguageConfig:
             raise ImportError(
                 "Spacy is not installed, please install it with `pip install spacy`."
             )
-        self.nlp = spacy.load(self.spacy_model)
-        self.stopwords = set(stopwords.words(self.language))
+        self.nlp = spacy.load(self.spacy_model)  # type: ignore
+        self.stopwords = set(stopwords.words(self.language))  # type: ignore
 
 
 class SemanticDoubleMergingSplitterNodeParser(NodeParser):
@@ -215,6 +215,9 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         initial_chunks: List[str] = []
         chunk = sentences[0]  # ""
         new = True
+
+        assert self.language_config.nlp is not None
+
         for sentence in sentences[1:]:
             if new:
                 # check if 2 sentences got anything in common
@@ -272,6 +275,8 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         chunks: List[str] = []
         skip = 0
         current = initial_chunks[0]
+
+        assert self.language_config.nlp is not None
 
         # TODO avoid connecting 1st chunk with 3rd if 2nd one is above some value, or if its length is above some value
 

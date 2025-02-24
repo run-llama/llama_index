@@ -4,7 +4,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Optional, cast
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, cast
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
@@ -49,7 +49,7 @@ def _build_metadata_filter_fn(
 ) -> Callable[[str], bool]:
     """Build metadata filter function."""
     filter_list = metadata_filters.filters if metadata_filters else []
-    if not filter_list:
+    if not filter_list or not metadata_filters:
         return lambda _: True
 
     filter_condition = cast(MetadataFilters, metadata_filters.condition)
@@ -90,6 +90,9 @@ def _build_metadata_filter_fn(
 
         filter_matches_list = []
         for filter_ in filter_list:
+            if isinstance(filter_, MetadataFilters):
+                raise ValueError("Nested MetadataFilters are not supported.")
+
             filter_matches = True
             metadata_value = metadata.get(filter_.key, None)
             if filter_.operator == FilterOperator.IS_EMPTY:
@@ -156,7 +159,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        super().__init__(data=data or SimpleVectorStoreData())
+        super().__init__(data=data or SimpleVectorStoreData())  # type: ignore[call-arg]
         self._fs = fs or fsspec.filesystem("file")
 
     @classmethod
@@ -243,7 +246,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
 
     def add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
         """Add nodes to index."""
@@ -413,9 +416,9 @@ class SimpleVectorStore(BasePydanticVectorStore):
         return cls(data)
 
     @classmethod
-    def from_dict(cls, save_dict: dict) -> "SimpleVectorStore":
-        data = SimpleVectorStoreData.from_dict(save_dict)
-        return cls(data)
+    def from_dict(cls, data: Dict[str, Any], **kwargs: Any) -> "SimpleVectorStore":
+        save_data = SimpleVectorStoreData.from_dict(data)
+        return cls(save_data)
 
-    def to_dict(self) -> dict:
+    def to_dict(self, **kwargs: Any) -> Dict[str, Any]:
         return self.data.to_dict()

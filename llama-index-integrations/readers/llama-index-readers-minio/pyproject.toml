@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.readers.minio"
 
 [tool.llamahub.class_authors]
-BotoMinioReader = "llama-index"
+BotoMinioReader = "webcoderz"
 MinioReader = "llama-index"
 
 [tool.mypy]
@@ -28,13 +28,13 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-readers-minio"
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 minio = "^7.2.3"
 boto3 = "^1.34.29"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

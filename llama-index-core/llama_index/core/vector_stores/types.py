@@ -75,6 +75,9 @@ class FilterOperator(str, Enum):
     ANY = "any"  # Contains any (array of strings)
     ALL = "all"  # Contains all (array of strings)
     TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
+    TEXT_MATCH_INSENSITIVE = (
+        "text_match_insensitive"  # full text match (case insensitive)
+    )
     CONTAINS = "contains"  # metadata array contains value (string or number)
     IS_EMPTY = "is_empty"  # the field is not exist or empty (null or empty array)
 
@@ -85,6 +88,7 @@ class FilterCondition(str, Enum):
     # TODO add more conditions
     AND = "and"
     OR = "or"
+    NOT = "not"  # negates the filter condition
 
 
 class MetadataFilter(BaseModel):
@@ -181,7 +185,10 @@ class MetadataFilters(BaseModel):
         """Convert MetadataFilters to legacy ExactMatchFilters."""
         filters = []
         for filter in self.filters:
-            if filter.operator != FilterOperator.EQ:
+            if (
+                isinstance(filter, MetadataFilters)
+                or filter.operator != FilterOperator.EQ
+            ):
                 raise ValueError(
                     "Vector Store only supports exact match filters. "
                     "Please use ExactMatchFilter or FilterOperator.EQ instead."
@@ -349,14 +356,14 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     @abstractmethod
     def add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         **kwargs: Any,
     ) -> List[str]:
         """Add nodes to vector store."""
 
     async def async_add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         **kwargs: Any,
     ) -> List[str]:
         """

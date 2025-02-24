@@ -1,11 +1,5 @@
 import asyncio
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
-
-try:
-    from typing import TypeAlias
-except ImportError:
-    # python 3.8 and 3.9 compatibility
-    TypeAlias = Any
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
 
 from llama_index.core.async_utils import run_jobs
 from llama_index.core.bridge.pydantic import create_model, field_validator
@@ -21,7 +15,7 @@ from llama_index.core.indices.property_graph.transformations.utils import (
     get_relation_class,
 )
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.schema import TransformComponent, BaseNode
+from llama_index.core.schema import TransformComponent, BaseNode, MetadataMode
 from llama_index.core.llms.llm import LLM
 
 
@@ -101,12 +95,12 @@ class SchemaLLMPathExtractor(TransformComponent):
             The language model to use.
         extract_prompt (Union[PromptTemplate, str], optional):
             The template to use for the extraction query. Defaults to None.
-        possible_entities (Optional[TypeAlias], optional):
+        possible_entities (Optional[Type[Any]], optional):
             The possible entities to extract. Defaults to None.
         possible_entity_props (Optional[Union[List[str], List[Tuple[str, str]]], optional):
             The possible entity properties to extract. Defaults to None.
             Can be a list of strings or a list of tuples with the format (name, description).
-        possible_relations (Optional[TypeAlias], optional):
+        possible_relations (Optional[Type[Any]], optional):
             The possible relations to extract. Defaults to None.
         possible_relation_props (Optional[Union[List[str], List[Tuple[str, str]]], optional):
             The possible relation properties to extract. Defaults to None.
@@ -137,16 +131,16 @@ class SchemaLLMPathExtractor(TransformComponent):
     def __init__(
         self,
         llm: LLM,
-        extract_prompt: Union[PromptTemplate, str] = None,
-        possible_entities: Optional[TypeAlias] = None,
+        extract_prompt: Optional[Union[PromptTemplate, str]] = None,
+        possible_entities: Optional[Type[Any]] = None,
         possible_entity_props: Optional[Union[List[str], List[Tuple[str, str]]]] = None,
-        possible_relations: Optional[TypeAlias] = None,
+        possible_relations: Optional[Type[Any]] = None,
         possible_relation_props: Optional[
             Union[List[str], List[Tuple[str, str]]]
         ] = None,
         strict: bool = True,
         kg_schema_cls: Any = None,
-        kg_validation_schema: Union[Dict[str, str], List[Triple]] = None,
+        kg_validation_schema: Optional[Union[Dict[str, str], List[Triple]]] = None,
         max_triplets_per_chunk: int = 10,
         num_workers: int = 4,
     ) -> None:
@@ -156,26 +150,26 @@ class SchemaLLMPathExtractor(TransformComponent):
 
         # Build a pydantic model on the fly
         if kg_schema_cls is None:
-            possible_entities = possible_entities or DEFAULT_ENTITIES
+            possible_entities = possible_entities or DEFAULT_ENTITIES  # type: ignore
             if possible_entity_props and isinstance(possible_entity_props[0], tuple):
-                entity_props = [
+                entity_props = [  # type: ignore
                     f"Property label `{k}` with description ({v})"
                     for k, v in possible_entity_props
                 ]
             else:
-                entity_props = possible_entity_props
+                entity_props = possible_entity_props  # type: ignore
             entity_cls = get_entity_class(possible_entities, entity_props, strict)
 
-            possible_relations = possible_relations or DEFAULT_RELATIONS
+            possible_relations = possible_relations or DEFAULT_RELATIONS  # type: ignore
             if possible_relation_props and isinstance(
                 possible_relation_props[0], tuple
             ):
-                relation_props = [
+                relation_props = [  # type: ignore
                     f"Property label `{k}` with description ({v})"
                     for k, v in possible_relation_props
                 ]
             else:
-                relation_props = possible_relation_props
+                relation_props = possible_relation_props  # type: ignore
             relation_cls = get_relation_class(
                 possible_relations, relation_props, strict
             )
@@ -210,8 +204,8 @@ class SchemaLLMPathExtractor(TransformComponent):
             root = field_validator("triplets", mode="before")(validate)
             kg_schema_cls = create_model(
                 "KGSchema",
-                __validators__={"validator1": root},
-                triplets=(List[triplet_cls], ...),
+                __validators__={"validator1": root},  # type: ignore
+                triplets=(List[triplet_cls], ...),  # type: ignore
             )
             kg_schema_cls.__doc__ = "Knowledge Graph Schema."
 
@@ -219,7 +213,7 @@ class SchemaLLMPathExtractor(TransformComponent):
         kg_validation_schema = kg_validation_schema or DEFAULT_VALIDATION_SCHEMA
         # TODO: Remove this in a future version & encourage List[Triple] for validation schema
         if isinstance(kg_validation_schema, list):
-            kg_validation_schema = {"relationships": kg_validation_schema}
+            kg_validation_schema = {"relationships": kg_validation_schema}  # type: ignore
 
         # flatten tuples now that we don't need the descriptions
         if possible_relation_props and isinstance(possible_relation_props[0], tuple):
@@ -245,13 +239,13 @@ class SchemaLLMPathExtractor(TransformComponent):
         return "SchemaLLMPathExtractor"
 
     def __call__(
-        self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
+        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
     ) -> List[BaseNode]:
         """Extract triplets from nodes."""
         return asyncio.run(self.acall(nodes, show_progress=show_progress, **kwargs))
 
     def _prune_invalid_props(
-        self, props: Dict[str, Any], allowed_props: List[str]
+        self, props: Dict[str, Any], allowed_props: Optional[List[str]]
     ) -> Dict[str, Any]:
         """Prune invalid properties."""
         if not allowed_props:
@@ -267,15 +261,13 @@ class SchemaLLMPathExtractor(TransformComponent):
 
         return props
 
-    def _prune_invalid_triplets(self, kg_schema: Any) -> List[Triplet]:
+    def _prune_invalid_triplets(self, kg_schema: Any) -> Sequence[Triplet]:
         """Prune invalid triplets."""
-        assert isinstance(kg_schema, self.kg_schema_cls)
-
         valid_triplets = []
         for triplet in kg_schema.triplets:
             subject = triplet.subject.name
             subject_type = triplet.subject.type
-            subject_props = {}
+            subject_props: Dict[str, Any] = {}
             if hasattr(triplet.subject, "properties"):
                 subject_props = triplet.subject.properties or {}
                 if self.strict:
@@ -285,7 +277,7 @@ class SchemaLLMPathExtractor(TransformComponent):
                     )
 
             relation = triplet.relation.type
-            relation_props = {}
+            relation_props: Dict[str, Any] = {}
             if hasattr(triplet.relation, "properties"):
                 relation_props = triplet.relation.properties or {}
                 if self.strict:
@@ -296,7 +288,7 @@ class SchemaLLMPathExtractor(TransformComponent):
 
             obj = triplet.object.name
             obj_type = triplet.object.type
-            obj_props = {}
+            obj_props: Dict[str, Any] = {}
             if hasattr(triplet.object, "properties"):
                 obj_props = triplet.object.properties or {}
                 if self.strict:
@@ -347,9 +339,7 @@ class SchemaLLMPathExtractor(TransformComponent):
 
     async def _aextract(self, node: BaseNode) -> BaseNode:
         """Extract triplets from a node."""
-        assert hasattr(node, "text")
-
-        text = node.get_content(metadata_mode="llm")
+        text = node.get_content(metadata_mode=MetadataMode.LLM)
         try:
             kg_schema = await self.llm.astructured_predict(
                 self.kg_schema_cls,
@@ -358,7 +348,7 @@ class SchemaLLMPathExtractor(TransformComponent):
                 max_triplets_per_chunk=self.max_triplets_per_chunk,
             )
             triplets = self._prune_invalid_triplets(kg_schema)
-        except ValueError:
+        except (ValueError, TypeError, AttributeError):
             triplets = []
 
         existing_nodes = node.metadata.pop(KG_NODES_KEY, [])
@@ -380,7 +370,7 @@ class SchemaLLMPathExtractor(TransformComponent):
         return node
 
     async def acall(
-        self, nodes: List[BaseNode], show_progress: bool = False, **kwargs: Any
+        self, nodes: Sequence[BaseNode], show_progress: bool = False, **kwargs: Any
     ) -> List[BaseNode]:
         """Extract triplets from nodes async."""
         jobs = []

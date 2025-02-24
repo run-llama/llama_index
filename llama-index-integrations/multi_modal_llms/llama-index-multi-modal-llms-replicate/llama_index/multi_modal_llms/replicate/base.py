@@ -20,7 +20,7 @@ from llama_index.core.multi_modal_llms import (
     MultiModalLLM,
     MultiModalLLMMetadata,
 )
-from llama_index.core.schema import ImageDocument
+from llama_index.core.schema import ImageNode
 
 _logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ class ReplicateMultiModal(MultiModalLLM):
             image_key=image_key,
             callback_manager=callback_manager,
         )
-        self._messages_to_rompt = messages_to_prompt or generic_messages_to_prompt
+        self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
 
     @classmethod
@@ -122,7 +122,7 @@ class ReplicateMultiModal(MultiModalLLM):
         }
 
     def _get_multi_modal_chat_messages(
-        self, prompt: str, image_document: ImageDocument, **kwargs: Any
+        self, prompt: str, image_document: ImageNode, **kwargs: Any
     ) -> Dict[str, Any]:
         if image_document.image_path:
             # load local image file and pass file handler to replicate
@@ -151,7 +151,7 @@ class ReplicateMultiModal(MultiModalLLM):
             )
 
     def complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         response_gen = self.stream_complete(prompt, image_documents, **kwargs)
         response_list = list(response_gen)
@@ -160,7 +160,7 @@ class ReplicateMultiModal(MultiModalLLM):
         return final_response
 
     def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
         try:
             import replicate
@@ -220,7 +220,7 @@ class ReplicateMultiModal(MultiModalLLM):
     # ===== Async Endpoints =====
 
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         response_gen = self.stream_complete(prompt, image_documents, **kwargs)
         response_list = list(response_gen)
@@ -229,7 +229,7 @@ class ReplicateMultiModal(MultiModalLLM):
         return final_response
 
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         try:
             import replicate

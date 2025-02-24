@@ -22,7 +22,7 @@ class ReRankStartEvent(BaseEvent):
     model_name: str
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "ReRankStartEvent"
 
@@ -37,6 +37,6 @@ class ReRankEndEvent(BaseEvent):
     nodes: List[NodeWithScore]
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "ReRankEndEvent"

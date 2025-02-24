@@ -28,13 +28,14 @@ license = "MIT"
 name = "llama-index-llms-azure-inference"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.1"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-azure-ai-inference = ">=1.0.0b2"
+python = ">=3.9,<4.0"
+azure-ai-inference = ">=1.0.0b5"
 azure-identity = "^1.15.0"
-llama-index-core = "^0.11.0"
+aiohttp = "^3.10.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

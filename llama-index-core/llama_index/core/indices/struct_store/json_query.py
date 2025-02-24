@@ -42,7 +42,7 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
 def default_output_response_parser(llm_output: str) -> str:
     """Attempts to parse the JSON path prompt output. Only applicable if the default prompt is used."""
     try:
-        llm_output_parsed = re.search(
+        llm_output_parsed = re.search(  # type: ignore
             pattern=r"JSONPath:\s+(.*)", string=llm_output
         ).groups()[0]
     except Exception:
@@ -56,7 +56,7 @@ def default_output_response_parser(llm_output: str) -> str:
     return llm_output_parsed
 
 
-def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
+def default_output_processor(llm_output: str, json_value: JSONType) -> Dict[str, str]:
     """Default output processor that extracts values based on JSON Path expressions."""
     # Post-process the LLM output to remove the JSONPath: prefix
     llm_output = llm_output.replace("JSONPath: ", "").replace("JSON Path: ", "").strip()
@@ -65,13 +65,13 @@ def default_output_processor(llm_output: str, json_value: JSONType) -> JSONType:
     expressions = [expr.strip() for expr in llm_output.split(",")]
 
     try:
-        from jsonpath_ng.ext import parse
-        from jsonpath_ng.jsonpath import DatumInContext
+        from jsonpath_ng.ext import parse  # pants: no-infer-dep
+        from jsonpath_ng.jsonpath import DatumInContext  # pants: no-infer-dep
     except ImportError as exc:
         IMPORT_ERROR_MSG = "You need to install jsonpath-ng to use this function!"
         raise ImportError(IMPORT_ERROR_MSG) from exc
 
-    results = {}
+    results: Dict[str, str] = {}
 
     for expression in expressions:
         try:

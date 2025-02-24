@@ -28,13 +28,13 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-callbacks-arize-phoenix"
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.13"
+python = ">=3.9,<3.13"
 arize-phoenix = ">=3.0.3"
-openinference-instrumentation-llama-index = ">=1.0.0"
-llama-index-core = "^0.11.0"
+openinference-instrumentation-llama-index = ">=3.0.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

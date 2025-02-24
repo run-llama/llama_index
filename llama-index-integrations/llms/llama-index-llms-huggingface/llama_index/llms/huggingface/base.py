@@ -5,7 +5,6 @@ from deprecated import deprecated
 import torch
 from huggingface_hub import AsyncInferenceClient, InferenceClient, model_info
 from huggingface_hub.hf_api import ModelInfo
-from huggingface_hub.inference._types import ConversationalOutput
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -48,7 +47,7 @@ from llama_index.llms.huggingface.utils import (
     to_tgi_messages,
     force_single_tool_call,
     resolve_tgi_function_call,
-    get_max_input_length,
+    get_max_total_tokens,
     resolve_tool_choice,
 )
 from transformers import (
@@ -137,7 +136,7 @@ class HuggingFaceLLM(CustomLLM):
     )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
-        description="The maximum number of tokens available for input.",
+        description=(LLMMetadata.model_fields["context_window"].description),
         gt=0,
     )
     max_new_tokens: int = Field(
@@ -259,9 +258,9 @@ class HuggingFaceLLM(CustomLLM):
             tokenizer_name, **tokenizer_kwargs
         )
 
-        if tokenizer.name_or_path != model_name:
+        if tokenizer.name_or_path != model.name_or_path:
             logger.warning(
-                f"The model `{model_name}` and tokenizer `{self._tokenizer.name_or_path}` "
+                f"The model `{model.name_or_path}` and tokenizer `{tokenizer.name_or_path}` "
                 f"are different, please ensure that they are compatible."
             )
 
@@ -432,34 +431,6 @@ class HuggingFaceLLM(CustomLLM):
         prompt = self.messages_to_prompt(messages)
         completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
-
-
-def chat_messages_to_conversational_kwargs(
-    messages: Sequence[ChatMessage],
-) -> Dict[str, Any]:
-    """Convert ChatMessages to keyword arguments for Inference API conversational."""
-    if len(messages) % 2 != 1:
-        raise NotImplementedError("Messages passed in must be of odd length.")
-    last_message = messages[-1]
-    kwargs: Dict[str, Any] = {
-        "text": last_message.content,
-        **last_message.additional_kwargs,
-    }
-    if len(messages) != 1:
-        kwargs["past_user_inputs"] = []
-        kwargs["generated_responses"] = []
-        for user_msg, assistant_msg in zip(messages[::2], messages[1::2]):
-            if (
-                user_msg.role != MessageRole.USER
-                or assistant_msg.role != MessageRole.ASSISTANT
-            ):
-                raise NotImplementedError(
-                    "Didn't handle when messages aren't ordered in alternating"
-                    f" pairs of {(MessageRole.USER, MessageRole.ASSISTANT)}."
-                )
-            kwargs["past_user_inputs"].append(user_msg.content)
-            kwargs["generated_responses"].append(assistant_msg.content)
-    return kwargs
 
 
 @deprecated(
@@ -637,12 +608,17 @@ class HuggingFaceInferenceAPI(CustomLLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # default to conversational task as that was the previous functionality
         if self.task == "conversational" or self.task is None:
-            output: "ConversationalOutput" = self._sync_client.conversational(
-                **{**chat_messages_to_conversational_kwargs(messages), **kwargs}
+            output = self._sync_client.chat_completion(
+                messages=[
+                    {"role": m.role.value, "content": m.content} for m in messages
+                ],
+                model=self.model_name,
+                **kwargs,
             )
             return ChatResponse(
                 message=ChatMessage(
-                    role=MessageRole.ASSISTANT, content=output["generated_text"]
+                    role=MessageRole.ASSISTANT,
+                    content=output["choices"][0]["message"]["content"] or "",
                 )
             )
         else:
@@ -675,7 +651,28 @@ class HuggingFaceInferenceAPI(CustomLLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        raise NotImplementedError
+        # default to conversational task as that was the previous functionality
+        if self.task == "conversational" or self.task is None:
+            output = await self._async_client.chat_completion(
+                messages=[
+                    {"role": m.role.value, "content": m.content} for m in messages
+                ],
+                model=self.model_name,
+                **kwargs,
+            )
+            return ChatResponse(
+                message=ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content=output["choices"][0]["message"]["content"] or "",
+                )
+            )
+        else:
+            # try and use text generation
+            prompt = self.messages_to_prompt(messages)
+            completion = await self.acomplete(prompt)
+            return ChatResponse(
+                message=ChatMessage(role=MessageRole.ASSISTANT, content=completion.text)
+            )
 
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -708,8 +705,8 @@ class TextGenerationInference(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description=("The temperature to use for sampling."),
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
@@ -724,10 +721,10 @@ class TextGenerationInference(FunctionCallingLLM):
         ),
     )
     timeout: float = Field(
-        default=120, description=("The timeout to use in seconds."), gte=0
+        default=120, description=("The timeout to use in seconds."), ge=0
     )
     max_retries: int = Field(
-        default=5, description=("The maximum number of API retries."), gte=0
+        default=5, description=("The maximum number of API retries."), ge=0
     )
     headers: Optional[Dict[str, str]] = Field(
         default=None,
@@ -752,7 +749,10 @@ class TextGenerationInference(FunctionCallingLLM):
 
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
-        description=("Maximum input length in tokens returned from TGI endpoint"),
+        description=(
+            LLMMetadata.model_fields["context_window"].description
+            + " Maximum total tokens returned from TGI endpoint."
+        ),
     )
     is_chat_model: bool = Field(
         default=True,
@@ -819,7 +819,7 @@ class TextGenerationInference(FunctionCallingLLM):
             logger.warning(f"TGI client has no function call support: {e}")
             is_function_calling_model = False
 
-        context_window = get_max_input_length(model_url) or DEFAULT_CONTEXT_WINDOW
+        context_window = get_max_total_tokens(model_url) or DEFAULT_CONTEXT_WINDOW
 
         super().__init__(
             context_window=context_window,

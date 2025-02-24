@@ -217,9 +217,10 @@ class CitationQueryEngine(BaseQueryEngine):
                 text = f"Source {len(new_nodes) + 1}:\n{text_chunk}\n"
 
                 new_node = NodeWithScore(
-                    node=TextNode.model_validate(node.node), score=node.score
+                    node=TextNode.model_validate(node.node.model_dump()),
+                    score=node.score,
                 )
-                new_node.node.text = text
+                new_node.node.set_content(text)
                 new_nodes.append(new_node)
         return new_nodes
 

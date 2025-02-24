@@ -226,7 +226,7 @@ class SelfRAGQueryEngine(CustomQueryEngine):
             # Add the paragraph as source node with its relevance score
             source_nodes.append(
                 NodeWithScore(
-                    node=TextNode(text=paragraph, id_=p_idx),
+                    node=TextNode(text=paragraph, id_=str(p_idx)),
                     score=isRel_score,
                 )
             )

@@ -24,7 +24,9 @@ class GeminiEmbedding(BaseEmbedding):
         transport (Optional[str]): Transport to access the model.
     """
 
-    _model: Any = PrivateAttr()
+    _model: gemini = PrivateAttr()
+    _request_options: Optional[gemini.types.RequestOptions] = PrivateAttr()
+
     title: Optional[str] = Field(
         default="",
         description="Title is only applicable for retrieval_document tasks, and is used to represent a document title. For other tasks, title is invalid.",
@@ -48,6 +50,7 @@ class GeminiEmbedding(BaseEmbedding):
         title: Optional[str] = None,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
         callback_manager: Optional[CallbackManager] = None,
+        request_options: Optional[gemini.types.RequestOptions] = None,
         **kwargs: Any,
     ):
         # API keys are optional. The API can be authorised via OAuth (detected
@@ -71,7 +74,9 @@ class GeminiEmbedding(BaseEmbedding):
             **kwargs,
         )
         gemini.configure(**config_params)
+
         self._model = gemini
+        self._request_options = request_options
 
     @classmethod
     def class_name(cls) -> str:
@@ -84,6 +89,7 @@ class GeminiEmbedding(BaseEmbedding):
             content=query,
             title=self.title,
             task_type=self.task_type,
+            request_options=self._request_options,
         )["embedding"]
 
     def _get_text_embedding(self, text: str) -> List[float]:
@@ -93,6 +99,7 @@ class GeminiEmbedding(BaseEmbedding):
             content=text,
             title=self.title,
             task_type=self.task_type,
+            request_options=self._request_options,
         )["embedding"]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
@@ -103,21 +110,26 @@ class GeminiEmbedding(BaseEmbedding):
                 content=text,
                 title=self.title,
                 task_type=self.task_type,
+                request_options=self._request_options,
             )["embedding"]
             for text in texts
         ]
 
-    ### Async methods ###
-    # need to wait async calls from Gemini side to be implemented.
-    # Issue: https://github.com/google/generative-ai-python/issues/125
     async def _aget_query_embedding(self, query: str) -> List[float]:
         """The asynchronous version of _get_query_embedding."""
-        return self._get_query_embedding(query)
+        return (await self._aget_text_embeddings([query]))[0]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
         """Asynchronously get text embedding."""
-        return self._get_text_embedding(text)
+        return (await self._aget_text_embeddings([text]))[0]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get text embeddings."""
-        return self._get_text_embeddings(texts)
+        response = await self._model.embed_content_async(
+            model=self.model_name,
+            content=texts,
+            title=self.title,
+            task_type=self.task_type,
+            request_options=self._request_options,
+        )
+        return response["embedding"]

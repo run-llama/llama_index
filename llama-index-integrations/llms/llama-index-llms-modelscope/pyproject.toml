@@ -18,7 +18,7 @@ ModelScopeLLM = "llama-index"
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.9"
 
 [tool.poetry]
 authors = ["ModelScope <modelscope@list.alibaba-inc.com>"]
@@ -27,13 +27,15 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-modelscope"
 readme = "README.md"
-version = "0.2.1"
+version = "0.4.1"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.12"
-modelscope = ">=1.12.0"
+python = ">=3.9,<4.0"
+modelscope = {extras = ["framework"], version = ">=1.12.0"}
 torch = "^2.1.2"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
+sentencepiece = "*"
+ms-swift = "*"
 
 [tool.poetry.dependencies.transformers]
 extras = ["torch"]

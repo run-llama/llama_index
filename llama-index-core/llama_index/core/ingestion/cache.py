@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional, Sequence
 
 import fsspec
 from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
@@ -25,7 +25,7 @@ class IngestionCache(BaseModel):
 
     # TODO: add async get/put methods?
     def put(
-        self, key: str, nodes: List[BaseNode], collection: Optional[str] = None
+        self, key: str, nodes: Sequence[BaseNode], collection: Optional[str] = None
     ) -> None:
         """Put a value into the cache."""
         collection = collection or self.collection
@@ -35,7 +35,7 @@ class IngestionCache(BaseModel):
 
     def get(
         self, key: str, collection: Optional[str] = None
-    ) -> Optional[List[BaseNode]]:
+    ) -> Optional[Sequence[BaseNode]]:
         """Get a value from the cache."""
         collection = collection or self.collection
         node_dicts = self.cache.get(key, collection=collection)

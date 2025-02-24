@@ -196,7 +196,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "LLMCompilerAgentWorker":
-        """Convenience constructor method from set of of BaseTools (Optional).
+        """Convenience constructor method from set of BaseTools (Optional).
 
         Returns:
             LLMCompilerAgentWorker: the LLMCompilerAgentWorker instance

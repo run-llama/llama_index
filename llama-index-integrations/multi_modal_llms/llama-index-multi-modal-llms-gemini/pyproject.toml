@@ -27,13 +27,13 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-multi-modal-llms-gemini"
 readme = "README.md"
-version = "0.3.0"
+version = "0.5.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-index-llms-gemini = "^0.3.0"
+llama-index-llms-gemini = "^0.4.4"
 pillow = "^10.2.0"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.12"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

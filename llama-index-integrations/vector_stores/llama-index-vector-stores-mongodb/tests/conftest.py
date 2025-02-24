@@ -1,5 +1,6 @@
 import os
 from typing import List
+
 import pytest
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.node_parser import SentenceSplitter
@@ -23,7 +24,7 @@ def documents() -> List[Document]:
     text = Document.example().text
     metadata = Document.example().metadata
     texts = text.split("\n")
-    return [Document(text=text, metadata=metadata) for text in texts]
+    return [Document(text=text, metadata={"text": text}) for text in texts]
 
 
 @pytest.fixture(scope="session")
@@ -41,7 +42,7 @@ def nodes(documents) -> List[TextNode]:
     return pipeline.run(documents=documents)
 
 
-db_name = os.environ.get("MONGODB_DATABASE", "llama_index_test_db")
+DB_NAME = os.environ.get("MONGODB_DATABASE", "llama_index_test_db")
 collection_name = os.environ.get("MONGODB_COLLECTION", "llama_index_test_vectorstore")
 vector_index_name = os.environ.get("MONGODB_INDEX", "vector_index")
 MONGODB_URI = os.environ.get("MONGODB_URI")
@@ -53,29 +54,18 @@ def atlas_client() -> MongoClient:
         return None
 
     client = MongoClient(MONGODB_URI)
-
-    assert db_name in client.list_database_names()
-    assert collection_name in client[db_name].list_collection_names()
-
-    # TODO error: $listSearchIndexes is not allowed or the syntax is incorrect
-    # assert vector_index_name in [
-    #    idx["name"] for idx in client[db_name][collection_name].list_search_indexes()
-    # ]
-
-    # Clear the collection for the tests
-    client[db_name][collection_name].delete_many({})
-
+    assert DB_NAME in client.list_database_names()
     return client
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def vector_store(atlas_client: MongoClient) -> MongoDBAtlasVectorSearch:
     if MONGODB_URI is None:
         return None
 
     return MongoDBAtlasVectorSearch(
         mongodb_client=atlas_client,
-        db_name=db_name,
+        db_name=DB_NAME,
         collection_name=collection_name,
         vector_index_name=vector_index_name,
         fulltext_index_name="fulltext_index",

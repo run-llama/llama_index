@@ -30,13 +30,13 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-indices-managed-bge-m3"
 readme = "README.md"
-version = "0.2.0"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-peft = "^0.12.0"
-flagembedding = "^1.2.11"
-llama-index-core = "^0.11.0"
+python = ">=3.10,<4.0"
+peft = ">=0.12.0"
+flagembedding = ">=1.2.11"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}

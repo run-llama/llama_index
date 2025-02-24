@@ -183,7 +183,7 @@ class DecomposeQueryTransform(BaseQueryTransform):
         """Init params."""
         super().__init__()
         self._llm = llm or Settings.llm
-        self._decompose_query_prompt = (
+        self._decompose_query_prompt: BasePromptTemplate = (
             decompose_query_prompt or DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT
         )
         self.verbose = verbose
@@ -244,7 +244,9 @@ class ImageOutputQueryTransform(BaseQueryTransform):
                 augmenting query with image output instructions.
         """
         self._width = width
-        self._query_prompt = query_prompt or DEFAULT_IMAGE_OUTPUT_PROMPT
+        self._query_prompt: BasePromptTemplate = (
+            query_prompt or DEFAULT_IMAGE_OUTPUT_PROMPT
+        )
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -288,7 +290,7 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
         """Init params."""
         super().__init__()
         self._llm = llm or Settings.llm
-        self._step_decompose_query_prompt = (
+        self._step_decompose_query_prompt: BasePromptTemplate = (
             step_decompose_query_prompt or DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT
         )
         self.verbose = verbose

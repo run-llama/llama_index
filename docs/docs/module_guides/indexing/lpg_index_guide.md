@@ -163,10 +163,9 @@ kg_extractor = SchemaLLMPathExtractor(
     possible_entities=entities,
     possible_relations=relations,
     kg_validation_schema=schema,
-    strict=True,  # if false, will allow triples outside of the schema
+    strict=True,  # if false, will allow triplets outside of the schema
     num_workers=4,
-    max_paths_per_chunk=10,
-    show_progres=False,
+    max_triplets_per_chunk=10,
 )
 ```
 
@@ -339,7 +338,7 @@ To illustrate how this works, here is a small example:
 
 ```python
 # NOTE: current v1 is needed
-from pydantic.v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from llama_index.core.indices.property_graph import CypherTemplateRetriever
 
 # write a query with template params
@@ -447,7 +446,7 @@ index = PropertyGraphIndex.from_existing(
 
 ### Using the Property Graph Store Directly
 
-The base storage class for property graphs is the `PropertyGraphStore`. These property graph stores are constructured using different types of `LabeledNode` objects, and connected using `Relation` objects.
+The base storage class for property graphs is the `PropertyGraphStore`. These property graph stores are constructed using different types of `LabeledNode` objects, and connected using `Relation` objects.
 
 We can create these ourselves, and also insert ourselves!
 

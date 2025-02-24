@@ -16,6 +16,7 @@ from .neptune import remove_empty_values, refresh_schema
 
 logger = logging.getLogger(__name__)
 BASE_ENTITY_LABEL = "__Entity__"
+BASE_NODE_LABEL = "__Node__"
 
 
 class NeptuneBasePropertyGraph(PropertyGraphStore):

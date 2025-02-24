@@ -239,7 +239,8 @@ class RaptorRetriever(BaseRetriever):
         """Query the index as a tree, traversing the tree from the top down."""
         # get top k nodes for each level, starting with the top
         parent_ids = None
-        nodes = []
+        selected_node_ids = set()
+        selected_nodes = []
         level = self.tree_depth - 1
         while level >= 0:
             # retrieve nodes at the current level
@@ -250,6 +251,11 @@ class RaptorRetriever(BaseRetriever):
                         filters=[MetadataFilter(key="level", value=level)]
                     ),
                 ).aretrieve(query_str)
+
+                for node in nodes:
+                    if node.id_ not in selected_node_ids:
+                        selected_nodes.append(node)
+                        selected_node_ids.add(node.id_)
 
                 parent_ids = [node.id_ for node in nodes]
                 if self._verbose:
@@ -269,6 +275,10 @@ class RaptorRetriever(BaseRetriever):
                 )
 
                 nodes = [node for nested in nested_nodes for node in nested]
+                for node in nodes:
+                    if node.id_ not in selected_node_ids:
+                        selected_nodes.append(node)
+                        selected_node_ids.add(node.id_)
 
                 if self._verbose:
                     print(f"Retrieved {len(nodes)} from parents at level {level}.")
@@ -276,7 +286,7 @@ class RaptorRetriever(BaseRetriever):
                 level -= 1
                 parent_ids = None
 
-        return nodes
+        return selected_nodes
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve nodes given query and mode."""

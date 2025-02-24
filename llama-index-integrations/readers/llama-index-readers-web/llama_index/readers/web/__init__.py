@@ -1,4 +1,7 @@
 """Init file."""
+from llama_index.readers.web.agentql_web.base import (
+    AgentQLWebReader,
+)
 from llama_index.readers.web.async_web.base import (
     AsyncWebPageReader,
 )
@@ -7,6 +10,7 @@ from llama_index.readers.web.beautiful_soup_web.base import (
 )
 from llama_index.readers.web.browserbase_web.base import BrowserbaseWebReader
 from llama_index.readers.web.firecrawl_web.base import FireCrawlWebReader
+from llama_index.readers.web.hyperbrowser_web.base import HyperbrowserWebReader
 from llama_index.readers.web.knowledge_base.base import (
     KnowledgeBaseWebReader,
 )
@@ -44,13 +48,18 @@ from llama_index.readers.web.unstructured_web.base import (
 from llama_index.readers.web.whole_site.base import (
     WholeSiteReader,
 )
+from llama_index.readers.web.zyte_web.base import (
+    ZyteWebReader,
+)
 
 
 __all__ = [
+    "AgentQLWebReader",
     "AsyncWebPageReader",
     "BeautifulSoupWebReader",
     "BrowserbaseWebReader",
     "FireCrawlWebReader",
+    "HyperbrowserWebReader",
     "KnowledgeBaseWebReader",
     "MainContentExtractorReader",
     "NewsArticleReader",
@@ -64,4 +73,5 @@ __all__ = [
     "TrafilaturaWebReader",
     "UnstructuredURLLoader",
     "WholeSiteReader",
+    "ZyteWebReader",
 ]

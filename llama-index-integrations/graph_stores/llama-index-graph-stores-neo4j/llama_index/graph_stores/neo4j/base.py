@@ -1,6 +1,7 @@
 """Neo4j graph store index."""
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
+from types import TracebackType
 
 from llama_index.core.graph_stores.types import GraphStore
 
@@ -42,11 +43,14 @@ class Neo4jGraphStore(GraphStore):
         url: str,
         database: str = "neo4j",
         node_label: str = "Entity",
+        refresh_schema: bool = True,
+        timeout: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
         self.node_label = node_label
         self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
         self._database = database
+        self._timeout = timeout
         self.schema = ""
         self.structured_schema: Dict[str, Any] = {}
         # Verify connection
@@ -64,14 +68,17 @@ class Neo4jGraphStore(GraphStore):
                 "Please ensure that the username and password are correct"
             )
         # Set schema
-        try:
-            self.refresh_schema()
-        except neo4j.exceptions.ClientError:
-            raise ValueError(
-                "Could not use APOC procedures. "
-                "Please ensure the APOC plugin is installed in Neo4j and that "
-                "'apoc.meta.data()' is allowed in Neo4j configuration "
-            )
+        self.schema = ""
+        self.structured_schema = {}
+        if refresh_schema:
+            try:
+                self.refresh_schema()
+            except neo4j.exceptions.ClientError:
+                raise ValueError(
+                    "Could not use APOC procedures. "
+                    "Please ensure the APOC plugin is installed in Neo4j and that "
+                    "'apoc.meta.data()' is allowed in Neo4j configuration "
+                )
         # Create constraint for faster insert and retrieval
         try:  # Using Neo4j 5
             self.query(
@@ -249,7 +256,114 @@ class Neo4jGraphStore(GraphStore):
         logger.debug(f"get_schema() schema:\n{self.schema}")
         return self.schema
 
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+    def query(self, query: str, param_map: Optional[Dict[str, Any]] = None) -> Any:
+        param_map = param_map or {}
+        try:
+            data, _, _ = self._driver.execute_query(
+                neo4j.Query(text=query, timeout=self._timeout),
+                database_=self._database,
+                parameters_=param_map,
+            )
+            return [r.data() for r in data]
+        except neo4j.exceptions.Neo4jError as e:
+            if not (
+                (
+                    (  # isCallInTransactionError
+                        e.code == "Neo.DatabaseError.Statement.ExecutionFailed"
+                        or e.code
+                        == "Neo.DatabaseError.Transaction.TransactionStartFailed"
+                    )
+                    and "in an implicit transaction" in e.message
+                )
+                or (  # isPeriodicCommitError
+                    e.code == "Neo.ClientError.Statement.SemanticError"
+                    and (
+                        "in an open transaction is not possible" in e.message
+                        or "tried to execute in an explicit transaction" in e.message
+                    )
+                )
+            ):
+                raise
+        # Fallback to allow implicit transactions
         with self._driver.session(database=self._database) as session:
-            result = session.run(query, param_map)
-            return [d.data() for d in result]
+            data = session.run(
+                neo4j.Query(text=query, timeout=self._timeout), param_map
+            )
+            return [r.data() for r in data]
+
+    def close(self) -> None:
+        """
+        Explicitly close the Neo4j driver connection.
+
+        Delegates connection management to the Neo4j driver.
+        """
+        if hasattr(self, "_driver"):
+            self._driver.close()
+            # Remove the driver attribute to indicate closure
+            delattr(self, "_driver")
+
+    def __enter__(self) -> "Neo4jGraphStore":
+        """
+        Enter the runtime context for the Neo4j graph connection.
+
+        Enables use of the graph connection with the 'with' statement.
+        This method allows for automatic resource management and ensures
+        that the connection is properly handled.
+
+        Returns:
+            Neo4jPropertyGraphStore: The current graph connection instance
+        """
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        """
+        Exit the runtime context for the Neo4j graph connection.
+
+        This method is automatically called when exiting a 'with' statement.
+        It ensures that the database connection is closed, regardless of
+        whether an exception occurred during the context's execution.
+
+        Args:
+            exc_type: The type of exception that caused the context to exit
+                      (None if no exception occurred)
+            exc_val: The exception instance that caused the context to exit
+                     (None if no exception occurred)
+            exc_tb: The traceback for the exception (None if no exception occurred)
+
+        Note:
+            Any exception is re-raised after the connection is closed.
+        """
+        self.close()
+
+    def __del__(self) -> None:
+        """
+        Destructor for the Neo4j graph connection.
+
+        This method is called during garbage collection to ensure that
+        database resources are released if not explicitly closed.
+
+        Caution:
+            - Do not rely on this method for deterministic resource cleanup
+            - Always prefer explicit .close() or context manager
+
+        Best practices:
+            1. Use context manager:
+               with Neo4jGraph(...) as graph:
+                   ...
+            2. Explicitly close:
+               graph = Neo4jGraph(...)
+               try:
+                   ...
+               finally:
+                   graph.close()
+        """
+        try:
+            self.close()
+        except Exception:
+            # Suppress any exceptions during garbage collection
+            pass

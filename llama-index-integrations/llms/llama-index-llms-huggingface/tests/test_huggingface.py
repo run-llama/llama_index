@@ -46,19 +46,18 @@ class TestHuggingFaceInferenceAPI:
             " It's based on the book of the same name by James Fenimore Cooper."
         )
         conversational_return = {
-            "generated_text": generated_response,
-            "conversation": {
-                "generated_responses": ["It's Die Hard for sure.", generated_response],
-                "past_user_inputs": [
-                    "Which movie is the best?",
-                    "Can you explain why?",
-                ],
-            },
+            "choices": [
+                {
+                    "message": {
+                        "content": generated_response,
+                    }
+                }
+            ]
         }
 
         with patch.object(
             hf_inference_api._sync_client,
-            "conversational",
+            "chat_completion",
             return_value=conversational_return,
         ) as mock_conversational:
             response = hf_inference_api.chat(messages=messages)
@@ -66,9 +65,8 @@ class TestHuggingFaceInferenceAPI:
         assert response.message.role == MessageRole.ASSISTANT
         assert response.message.content == generated_response
         mock_conversational.assert_called_once_with(
-            text="Can you explain why?",
-            past_user_inputs=["Which movie is the best?"],
-            generated_responses=["It's Die Hard for sure."],
+            messages=[{"role": m.role.value, "content": m.content} for m in messages],
+            model=STUB_MODEL_NAME,
         )
 
     def test_chat_text_generation(

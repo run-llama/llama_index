@@ -1,8 +1,17 @@
-import asyncio
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Union
 
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    MessageRole,
+)
+from llama_index.core.base.response.schema import (
+    StreamingResponse,
+    AsyncStreamingResponse,
+)
 from llama_index.core.callbacks import CallbackManager, trace_method
 from llama_index.core.chat_engine.types import (
     AgentChatResponse,
@@ -13,16 +22,31 @@ from llama_index.core.chat_engine.types import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
-from llama_index.core.settings import (
-    Settings,
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.response_synthesizers import CompactAndRefine
+from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.settings import Settings
+from llama_index.core.chat_engine.utils import (
+    get_prefix_messages_with_context,
+    get_response_synthesizer,
 )
-from llama_index.core.types import Thread
+
 
 DEFAULT_CONTEXT_TEMPLATE = (
-    "Context information is below."
+    "Use the context information below to assist the user."
     "\n--------------------\n"
     "{context_str}"
+    "\n--------------------\n"
+)
+
+DEFAULT_REFINE_TEMPLATE = (
+    "Using the context below, refine the following existing answer using the provided context to assist the user.\n"
+    "If the context isn't helpful, just repeat the existing answer and nothing more.\n"
+    "\n--------------------\n"
+    "{context_msg}"
+    "\n--------------------\n"
+    "Existing Answer:\n"
+    "{existing_answer}"
     "\n--------------------\n"
 )
 
@@ -42,7 +66,8 @@ class ContextChatEngine(BaseChatEngine):
         memory: BaseMemory,
         prefix_messages: List[ChatMessage],
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        context_template: Optional[str] = None,
+        context_template: Optional[Union[str, PromptTemplate]] = None,
+        context_refine_template: Optional[Union[str, PromptTemplate]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._retriever = retriever
@@ -50,7 +75,16 @@ class ContextChatEngine(BaseChatEngine):
         self._memory = memory
         self._prefix_messages = prefix_messages
         self._node_postprocessors = node_postprocessors or []
-        self._context_template = context_template or DEFAULT_CONTEXT_TEMPLATE
+
+        context_template = context_template or DEFAULT_CONTEXT_TEMPLATE
+        if isinstance(context_template, str):
+            context_template = PromptTemplate(context_template)
+        self._context_template = context_template
+
+        context_refine_template = context_refine_template or DEFAULT_REFINE_TEMPLATE
+        if isinstance(context_refine_template, str):
+            context_refine_template = PromptTemplate(context_refine_template)
+        self._context_refine_template = context_refine_template
 
         self.callback_manager = callback_manager or CallbackManager([])
         for node_postprocessor in self._node_postprocessors:
@@ -65,7 +99,8 @@ class ContextChatEngine(BaseChatEngine):
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        context_template: Optional[str] = None,
+        context_template: Optional[Union[str, PromptTemplate]] = None,
+        context_refine_template: Optional[Union[str, PromptTemplate]] = None,
         llm: Optional[LLM] = None,
         **kwargs: Any,
     ) -> "ContextChatEngine":
@@ -97,9 +132,10 @@ class ContextChatEngine(BaseChatEngine):
             node_postprocessors=node_postprocessors,
             callback_manager=Settings.callback_manager,
             context_template=context_template,
+            context_refine_template=context_refine_template,
         )
 
-    def _generate_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
+    def _get_nodes(self, message: str) -> List[NodeWithScore]:
         """Generate context information from a message."""
         nodes = self._retriever.retrieve(message)
         for postprocessor in self._node_postprocessors:
@@ -107,28 +143,22 @@ class ContextChatEngine(BaseChatEngine):
                 nodes, query_bundle=QueryBundle(message)
             )
 
-        context_str = "\n\n".join(
-            [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
-        )
+        return nodes
 
-        return self._context_template.format(context_str=context_str), nodes
-
-    async def _agenerate_context(self, message: str) -> Tuple[str, List[NodeWithScore]]:
+    async def _aget_nodes(self, message: str) -> List[NodeWithScore]:
         """Generate context information from a message."""
         nodes = await self._retriever.aretrieve(message)
         for postprocessor in self._node_postprocessors:
             nodes = postprocessor.postprocess_nodes(
                 nodes, query_bundle=QueryBundle(message)
             )
-        context_str = "\n\n".join(
-            [n.node.get_content(metadata_mode=MetadataMode.LLM).strip() for n in nodes]
-        )
 
-        return self._context_template.format(context_str=context_str), nodes
+        return nodes
 
-    def _get_prefix_messages_with_context(self, context_str: str) -> List[ChatMessage]:
-        """Get the prefix messages with context."""
-        # ensure we grab the user-configured system prompt
+    def _get_response_synthesizer(
+        self, chat_history: List[ChatMessage], streaming: bool = False
+    ) -> CompactAndRefine:
+        # Pull the system prompt from the prefix messages
         system_prompt = ""
         prefix_messages = self._prefix_messages
         if (
@@ -138,63 +168,69 @@ class ContextChatEngine(BaseChatEngine):
             system_prompt = str(self._prefix_messages[0].content)
             prefix_messages = self._prefix_messages[1:]
 
-        context_str_w_sys_prompt = system_prompt.strip() + "\n" + context_str
-        return [
-            ChatMessage(
-                content=context_str_w_sys_prompt, role=self._llm.metadata.system_role
-            ),
-            *prefix_messages,
-        ]
+        # Get the messages for the QA and refine prompts
+        qa_messages = get_prefix_messages_with_context(
+            self._context_template,
+            system_prompt,
+            prefix_messages,
+            chat_history,
+            self._llm.metadata.system_role,
+        )
+        refine_messages = get_prefix_messages_with_context(
+            self._context_refine_template,
+            system_prompt,
+            prefix_messages,
+            chat_history,
+            self._llm.metadata.system_role,
+        )
+
+        # Get the response synthesizer
+        return get_response_synthesizer(
+            self._llm,
+            self.callback_manager,
+            qa_messages,
+            refine_messages,
+            streaming,
+            qa_function_mappings=self._context_template.function_mappings,
+            refine_function_mappings=self._context_refine_template.function_mappings,
+        )
 
     @trace_method("chat")
     def chat(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        prev_chunks=None,
+        prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
-        self._memory.put(ChatMessage(content=message, role="user"))
 
-        context_str_template, nodes = self._generate_context(message)
-
-        # If the fetched context is completely empty
+        # get nodes and postprocess them
+        nodes = self._get_nodes(message)
         if len(nodes) == 0 and prev_chunks is not None:
-            nodes = [j for i in prev_chunks for j in i]
-            context_str = "\n\n".join(
-                [
-                    n.node.get_content(metadata_mode=MetadataMode.LLM).strip()
-                    for n in nodes
-                ]
-            )
+            nodes = prev_chunks
 
-            # Create a new context string template by using previous nodes
-            context_str_template = self._context_template.format(
-                context_str=context_str
-            )
+        # Get the response synthesizer with dynamic prompts
+        chat_history = self._memory.get(
+            input=message,
+        )
+        synthesizer = self._get_response_synthesizer(chat_history)
 
-        prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        prefix_messages_token_count = len(
-            self._memory.tokenizer_fn(
-                " ".join([(m.content or "") for m in prefix_messages])
-            )
-        )
-        all_messages = prefix_messages + self._memory.get(
-            initial_token_count=prefix_messages_token_count
-        )
-        chat_response = self._llm.chat(all_messages)
-        ai_message = chat_response.message
+        response = synthesizer.synthesize(message, nodes)
+        user_message = ChatMessage(content=message, role=MessageRole.USER)
+        ai_message = ChatMessage(content=str(response), role=MessageRole.ASSISTANT)
+
+        self._memory.put(user_message)
         self._memory.put(ai_message)
 
         return AgentChatResponse(
-            response=str(chat_response.message.content),
+            response=str(response),
             sources=[
                 ToolOutput(
                     tool_name="retriever",
-                    content=str(prefix_messages[0]),
+                    content=str(nodes),
                     raw_input={"message": message},
-                    raw_output=prefix_messages[0],
+                    raw_output=nodes,
                 )
             ],
             source_nodes=nodes,
@@ -205,109 +241,91 @@ class ContextChatEngine(BaseChatEngine):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        prev_chunks=None,
+        prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
 
-        self._memory.put(ChatMessage(content=message, role="user"))
-
-        context_str_template, nodes = self._generate_context(message)
-
-        # If the fetched context is completely empty
+        # get nodes and postprocess them
+        nodes = self._get_nodes(message)
         if len(nodes) == 0 and prev_chunks is not None:
-            nodes = [j for i in prev_chunks for j in i]
-            context_str = "\n\n".join(
-                [
-                    n.node.get_content(metadata_mode=MetadataMode.LLM).strip()
-                    for n in nodes
-                ]
-            )
+            nodes = prev_chunks
 
-            # Create a new context string template by using previous nodes
-            context_str_template = self._context_template.format(
-                context_str=context_str
-            )
-
-        prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        initial_token_count = len(
-            self._memory.tokenizer_fn(
-                " ".join([(m.content or "") for m in prefix_messages])
-            )
+        # Get the response synthesizer with dynamic prompts
+        chat_history = self._memory.get(
+            input=message,
         )
-        all_messages = prefix_messages + self._memory.get(
-            initial_token_count=initial_token_count
-        )
+        synthesizer = self._get_response_synthesizer(chat_history, streaming=True)
 
-        chat_response = StreamingAgentChatResponse(
-            chat_stream=self._llm.stream_chat(all_messages),
+        response = synthesizer.synthesize(message, nodes)
+        assert isinstance(response, StreamingResponse)
+
+        def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
+            full_response = ""
+            for token in response.response_gen:
+                full_response += token
+                yield ChatResponse(
+                    message=ChatMessage(
+                        content=full_response, role=MessageRole.ASSISTANT
+                    ),
+                    delta=token,
+                )
+
+            user_message = ChatMessage(content=message, role=MessageRole.USER)
+            ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
+            self._memory.put(user_message)
+            self._memory.put(ai_message)
+
+        return StreamingAgentChatResponse(
+            chat_stream=wrapped_gen(response),
             sources=[
                 ToolOutput(
                     tool_name="retriever",
-                    content=str(prefix_messages[0]),
+                    content=str(nodes),
                     raw_input={"message": message},
-                    raw_output=prefix_messages[0],
+                    raw_output=nodes,
                 )
             ],
             source_nodes=nodes,
+            is_writing_to_memory=False,
         )
-        thread = Thread(
-            target=chat_response.write_response_to_history, args=(self._memory,)
-        )
-        thread.start()
-
-        return chat_response
 
     @trace_method("chat")
     async def achat(
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        prev_chunks=None,
+        prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> AgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
-        self._memory.put(ChatMessage(content=message, role="user"))
 
-        context_str_template, nodes = await self._agenerate_context(message)
-
-        # If the fetched context is completely empty
+        # get nodes and postprocess them
+        nodes = await self._aget_nodes(message)
         if len(nodes) == 0 and prev_chunks is not None:
-            nodes = [j for i in prev_chunks for j in i]
-            context_str = "\n\n".join(
-                [
-                    n.node.get_content(metadata_mode=MetadataMode.LLM).strip()
-                    for n in nodes
-                ]
-            )
+            nodes = prev_chunks
 
-            # Create a new context string template by using previous nodes
-            context_str_template = self._context_template.format(
-                context_str=context_str
-            )
-
-        prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        initial_token_count = len(
-            self._memory.tokenizer_fn(
-                " ".join([(m.content or "") for m in prefix_messages])
-            )
+        # Get the response synthesizer with dynamic prompts
+        chat_history = self._memory.get(
+            input=message,
         )
-        all_messages = prefix_messages + self._memory.get(
-            initial_token_count=initial_token_count
-        )
+        synthesizer = self._get_response_synthesizer(chat_history)
 
-        chat_response = await self._llm.achat(all_messages)
-        ai_message = chat_response.message
-        self._memory.put(ai_message)
+        response = await synthesizer.asynthesize(message, nodes)
+        user_message = ChatMessage(content=message, role=MessageRole.USER)
+        ai_message = ChatMessage(content=str(response), role=MessageRole.ASSISTANT)
+
+        await self._memory.aput(user_message)
+        await self._memory.aput(ai_message)
 
         return AgentChatResponse(
-            response=str(chat_response.message.content),
+            response=str(response),
             sources=[
                 ToolOutput(
                     tool_name="retriever",
-                    content=str(prefix_messages[0]),
+                    content=str(nodes),
                     raw_input={"message": message},
-                    raw_output=prefix_messages[0],
+                    raw_output=nodes,
                 )
             ],
             source_nodes=nodes,
@@ -318,54 +336,53 @@ class ContextChatEngine(BaseChatEngine):
         self,
         message: str,
         chat_history: Optional[List[ChatMessage]] = None,
-        prev_chunks=None,
+        prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
             self._memory.set(chat_history)
-        self._memory.put(ChatMessage(content=message, role="user"))
-
-        context_str_template, nodes = await self._agenerate_context(message)
-
-        # If the fetched context is completely empty
+        # get nodes and postprocess them
+        nodes = await self._aget_nodes(message)
         if len(nodes) == 0 and prev_chunks is not None:
-            nodes = [j for i in prev_chunks for j in i]
-            context_str = "\n\n".join(
-                [
-                    n.node.get_content(metadata_mode=MetadataMode.LLM).strip()
-                    for n in nodes
-                ]
-            )
+            nodes = prev_chunks
 
-            # Create a new context string template by using previous nodes
-            context_str_template = self._context_template.format(
-                context_str=context_str
-            )
-
-        prefix_messages = self._get_prefix_messages_with_context(context_str_template)
-        initial_token_count = len(
-            self._memory.tokenizer_fn(
-                " ".join([(m.content or "") for m in prefix_messages])
-            )
+        # Get the response synthesizer with dynamic prompts
+        chat_history = self._memory.get(
+            input=message,
         )
-        all_messages = prefix_messages + self._memory.get(
-            initial_token_count=initial_token_count
-        )
+        synthesizer = self._get_response_synthesizer(chat_history, streaming=True)
 
-        chat_response = StreamingAgentChatResponse(
-            achat_stream=await self._llm.astream_chat(all_messages),
+        response = await synthesizer.asynthesize(message, nodes)
+        assert isinstance(response, AsyncStreamingResponse)
+
+        async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
+            full_response = ""
+            async for token in response.async_response_gen():
+                full_response += token
+                yield ChatResponse(
+                    message=ChatMessage(
+                        content=full_response, role=MessageRole.ASSISTANT
+                    ),
+                    delta=token,
+                )
+
+            user_message = ChatMessage(content=message, role=MessageRole.USER)
+            ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
+            await self._memory.aput(user_message)
+            await self._memory.aput(ai_message)
+
+        return StreamingAgentChatResponse(
+            achat_stream=wrapped_gen(response),
             sources=[
                 ToolOutput(
                     tool_name="retriever",
-                    content=str(prefix_messages[0]),
+                    content=str(nodes),
                     raw_input={"message": message},
-                    raw_output=prefix_messages[0],
+                    raw_output=nodes,
                 )
             ],
             source_nodes=nodes,
+            is_writing_to_memory=False,
         )
-        asyncio.create_task(chat_response.awrite_response_to_history(self._memory))
-
-        return chat_response
 
     def reset(self) -> None:
         self._memory.reset()

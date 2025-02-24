@@ -19,8 +19,8 @@ from llama_index.core.base.query_pipeline.query import (
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
-    Field,
     ConfigDict,
+    Field,
 )
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
@@ -29,8 +29,8 @@ from llama_index.core.constants import (
     DEFAULT_NUM_OUTPUTS,
 )
 from llama_index.core.instrumentation import DispatcherSpanMixin
-from llama_index.core.llms.callbacks import llm_completion_callback, llm_chat_callback
-from llama_index.core.schema import BaseComponent, ImageDocument
+from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
+from llama_index.core.schema import BaseComponent, ImageDocument, ImageNode
 
 
 class MultiModalLLMMetadata(BaseModel):
@@ -86,6 +86,10 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
         default_factory=CallbackManager, exclude=True
     )
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        # Help static checkers understand this class hierarchy
+        super().__init__(*args, **kwargs)
+
     @property
     @abstractmethod
     def metadata(self) -> MultiModalLLMMetadata:
@@ -93,13 +97,13 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
 
     @abstractmethod
     def complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: List[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         """Completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: List[ImageNode], **kwargs: Any
     ) -> CompletionResponseGen:
         """Streaming completion endpoint for Multi-Modal LLM."""
 
@@ -123,13 +127,13 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
 
     @abstractmethod
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: List[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
         """Async completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageDocument], **kwargs: Any
+        self, prompt: str, image_documents: List[ImageNode], **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for Multi-Modal LLM."""
 
@@ -157,7 +161,7 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
         else:
             return MultiModalCompleteComponent(multi_modal_llm=self, **kwargs)
 
-    def __init_subclass__(cls, **kwargs) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         """
         The callback decorators installs events, so they must be applied before
         the span decorators, otherwise the spans wouldn't contain the events.
@@ -213,9 +217,9 @@ class MultiModalCompleteComponent(BaseMultiModalComponent):
             if not isinstance(input["image_documents"], list):
                 raise ValueError("image_documents must be a list.")
             for doc in input["image_documents"]:
-                if not isinstance(doc, ImageDocument):
+                if not isinstance(doc, (ImageDocument, ImageNode)):
                     raise ValueError(
-                        "image_documents must be a list of ImageDocument objects."
+                        "image_documents must be a list of ImageNode objects."
                     )
 
         return input
@@ -225,6 +229,8 @@ class MultiModalCompleteComponent(BaseMultiModalComponent):
         # TODO: support only complete for now
         prompt = kwargs["prompt"]
         image_documents = kwargs.get("image_documents", [])
+
+        response: Any
         if self.streaming:
             response = self.multi_modal_llm.stream_complete(prompt, image_documents)
         else:
@@ -237,6 +243,8 @@ class MultiModalCompleteComponent(BaseMultiModalComponent):
         # non-trivial to figure how to support chat/complete/etc.
         prompt = kwargs["prompt"]
         image_documents = kwargs.get("image_documents", [])
+
+        response: Any
         if self.streaming:
             response = await self.multi_modal_llm.astream_complete(
                 prompt, image_documents

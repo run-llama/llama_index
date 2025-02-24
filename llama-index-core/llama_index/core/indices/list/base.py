@@ -92,7 +92,10 @@ class SummaryIndex(BaseIndex[IndexList]):
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
     def _build_index_from_nodes(
-        self, nodes: Sequence[BaseNode], show_progress: bool = False
+        self,
+        nodes: Sequence[BaseNode],
+        show_progress: bool = False,
+        **build_kwargs: Any,
     ) -> IndexList:
         """Build the index from documents.
 

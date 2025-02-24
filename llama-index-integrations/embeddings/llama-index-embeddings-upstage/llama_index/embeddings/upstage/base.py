@@ -15,9 +15,9 @@ from llama_index.embeddings.upstage.utils import (
 logger = logging.getLogger(__name__)
 
 UPSTAGE_EMBEDDING_MODELS = {
-    "solar-1-mini-embedding": {
-        "query": "solar-1-mini-embedding-query",
-        "passage": "solar-1-mini-embedding-passage",
+    "embedding": {
+        "query": "embedding-query",
+        "passage": "embedding-passage",
     },
     "solar-embedding-1-large": {
         "query": "solar-embedding-1-large-query",
@@ -51,7 +51,7 @@ class UpstageEmbedding(OpenAIEmbedding):
         default_factory=dict, description="Additional kwargs for the Upstage API."
     )
 
-    api_key: str = Field(alias="upstage_api_key", description="The Upstage API key.")
+    api_key: str = Field(description="The Upstage API key.")
     api_base: Optional[str] = Field(
         default=DEFAULT_UPSTAGE_API_BASE, description="The base URL for Upstage API."
     )
@@ -62,7 +62,7 @@ class UpstageEmbedding(OpenAIEmbedding):
 
     def __init__(
         self,
-        model: str = "solar-embedding-1-large",
+        model: str = "embedding",
         embed_batch_size: int = 100,
         dimensions: Optional[int] = None,
         additional_kwargs: Dict[str, Any] = None,
@@ -127,14 +127,14 @@ class UpstageEmbedding(OpenAIEmbedding):
     def class_name(cls) -> str:
         return "UpstageEmbedding"
 
-    def _get_credential_kwargs(self) -> Dict[str, Any]:
+    def _get_credential_kwargs(self, is_async: bool = False) -> Dict[str, Any]:
         return {
             "api_key": self.api_key,
             "base_url": self.api_base,
             "max_retries": self.max_retries,
             "timeout": self.timeout,
             "default_headers": self.default_headers,
-            "http_client": self._http_client,
+            "http_client": self._async_http_client if is_async else self._http_client,
         }
 
     def _get_query_embedding(self, query: str) -> List[float]:

@@ -5,7 +5,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     Optional,
     Tuple,
 )
@@ -25,8 +24,6 @@ from llama_index.core.chat_engine.types import (
     AGENT_CHAT_RESPONSE_TYPE,
     AgentChatResponse,
 )
-from llama_index.core.tools import adapt_to_async_tool
-from llama_index.core.tools.types import AsyncBaseTool
 from llama_index.core.query_pipeline.components.function import get_parameters
 
 
@@ -87,10 +84,6 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
             input=task.input,
             step_state=step_state,
         )
-
-    def get_tools(self, input: str) -> List[AsyncBaseTool]:
-        """Get tools."""
-        return [adapt_to_async_tool(t) for t in self._get_tools(input)]
 
     def _get_task_step_response(
         self, agent_response: AGENT_CHAT_RESPONSE_TYPE, step: TaskStep, is_done: bool

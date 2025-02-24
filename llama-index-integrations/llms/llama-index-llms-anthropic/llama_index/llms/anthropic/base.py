@@ -8,6 +8,7 @@ from anthropic.types import (
     ContentBlockStopEvent,
 )
 from anthropic.types.tool_use_block import ToolUseBlock
+
 from typing import (
     Any,
     Callable,
@@ -63,6 +64,19 @@ DEFAULT_ANTHROPIC_MODEL = "claude-2.1"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
 
 
+class AnthropicTokenizer:
+    def __init__(self, client, model) -> None:
+        self._client = client
+        self.model = model
+
+    def encode(self, text: str, *args: Any, **kwargs: Any) -> List[int]:
+        count = self._client.beta.messages.count_tokens(
+            messages=[{"role": "user", "content": text}],
+            model=self.model,
+        ).input_tokens
+        return [1] * count
+
+
 class Anthropic(FunctionCallingLLM):
     """Anthropic LLM.
 
@@ -85,8 +99,8 @@ class Anthropic(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: int = Field(
         default=DEFAULT_ANTHROPIC_MAX_TOKENS,
@@ -96,18 +110,22 @@ class Anthropic(FunctionCallingLLM):
 
     base_url: Optional[str] = Field(default=None, description="The base URL to use.")
     timeout: Optional[float] = Field(
-        default=None, description="The timeout to use in seconds.", gte=0
+        default=None, description="The timeout to use in seconds.", ge=0
     )
     max_retries: int = Field(
-        default=10, description="The maximum number of API retries.", gte=0
+        default=10, description="The maximum number of API retries.", ge=0
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the anthropic API."
     )
 
-    _client: Union[anthropic.Anthropic, anthropic.AnthropicVertex] = PrivateAttr()
+    _client: Union[
+        anthropic.Anthropic, anthropic.AnthropicVertex, anthropic.AnthropicBedrock
+    ] = PrivateAttr()
     _aclient: Union[
-        anthropic.AsyncAnthropic, anthropic.AsyncAnthropicVertex
+        anthropic.AsyncAnthropic,
+        anthropic.AsyncAnthropicVertex,
+        anthropic.AsyncAnthropicBedrock,
     ] = PrivateAttr()
 
     def __init__(
@@ -129,6 +147,7 @@ class Anthropic(FunctionCallingLLM):
         output_parser: Optional[BaseOutputParser] = None,
         region: Optional[str] = None,
         project_id: Optional[str] = None,
+        aws_region: Optional[str] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -149,7 +168,7 @@ class Anthropic(FunctionCallingLLM):
             output_parser=output_parser,
         )
 
-        if region and project_id:
+        if region and project_id and not aws_region:
             self._client = anthropic.AnthropicVertex(
                 region=region,
                 project_id=project_id,
@@ -164,6 +183,14 @@ class Anthropic(FunctionCallingLLM):
                 timeout=timeout,
                 max_retries=max_retries,
                 default_headers=default_headers,
+            )
+        elif aws_region:
+            # Note: this assumes you have AWS credentials configured.
+            self._client = anthropic.AnthropicBedrock(
+                aws_region=aws_region,
+            )
+            self._aclient = anthropic.AsyncAnthropicBedrock(
+                aws_region=aws_region,
             )
         else:
             self._client = anthropic.Anthropic(
@@ -197,7 +224,7 @@ class Anthropic(FunctionCallingLLM):
 
     @property
     def tokenizer(self) -> Tokenizer:
-        return self._client.get_tokenizer()
+        return AnthropicTokenizer(self._client, self.model)
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:

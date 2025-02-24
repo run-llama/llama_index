@@ -82,7 +82,7 @@ class CallbackManager(BaseCallbackHandler, ABC):
             if cb_manager is not None:
                 handlers = cb_manager.handlers
 
-        self.handlers = handlers
+        self.handlers: List[BaseCallbackHandler] = handlers
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
 
     def on_event_start(

@@ -25,7 +25,7 @@ class AgentRunStepStartEvent(BaseEvent):
     input: Optional[str]
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "AgentRunStepStartEvent"
 
@@ -40,7 +40,7 @@ class AgentRunStepEndEvent(BaseEvent):
     step_output: TaskStepOutput
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "AgentRunStepEndEvent"
 
@@ -55,7 +55,7 @@ class AgentChatWithStepStartEvent(BaseEvent):
     user_msg: str
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "AgentChatWithStepStartEvent"
 
@@ -100,7 +100,7 @@ class AgentChatWithStepEndEvent(BaseEvent):
         return response
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "AgentChatWithStepEndEvent"
 
@@ -117,6 +117,6 @@ class AgentToolCallEvent(BaseEvent):
     tool: ToolMetadata
 
     @classmethod
-    def class_name(cls):
+    def class_name(cls) -> str:
         """Class name."""
         return "AgentToolCallEvent"

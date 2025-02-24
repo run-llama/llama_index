@@ -79,6 +79,37 @@ llama_index.core.set_global_handler(
 
 ![](../../_static/integrations/arize_phoenix.png)
 
+
+### MLflow
+
+[MLflow](https://mlflow.org/docs/latest/llms/tracing/index.html) is an open-source MLOps/LLMOps platform, focuses on the full lifecycle for machine learning projects, ensuring that each phase is manageable, traceable, and reproducible.
+**MLflow Tracing** is an OpenTelemetry-based tracing capability and supports one-click instrumentation for LlamaIndex applications.
+
+#### Usage Pattern
+
+Since MLflow is open-source, you can start using it without any account creation or API key setup. Jump straight into the code after installing the MLflow package!
+
+```python
+import mlflow
+
+mlflow.llama_index.autolog()  # Enable mlflow tracing
+```
+
+![](../../_static/integrations/mlflow/mlflow.gif)
+
+#### Guides
+
+MLflow LlamaIndex integration also provides experiment tracking, evaluation, dependency management, and more. Check out the [MLflow documentation](https://mlflow.org/docs/latest/llms/llama-index/index.html) for more details.
+
+#### Support Table
+
+MLflow Tracing support the full range of LlamaIndex features. Some new features like [AgentWorkflow](https://www.llamaindex.ai/blog/introducing-agentworkflow-a-powerful-system-for-building-ai-agent-systems) requires MLflow >= 2.18.0.
+
+| Streaming | Async | Engine | Agents | Workflow | AgentWorkflow |
+| --- | --- | --- | --- | --- | --- |
+| ✅ |  ✅ | ✅ | ✅ | ✅ (>= 2.18) | ✅  (>= 2.18) |
+
+
 ### OpenLLMetry
 
 [OpenLLMetry](https://github.com/traceloop/openllmetry) is an open-source project based on OpenTelemetry for tracing and monitoring
@@ -164,13 +195,106 @@ set_global_handler("literalai")
 
 ![](../../_static/integrations/literal_ai.gif)
 
+### Comet Opik
+
+[Opik](https://www.comet.com/docs/opik/?utm_source=llama-index&utm_medium=docs&utm_campaign=opik&utm_content=home_page) is an open-source end to end LLM Evaluation Platform built by Comet.
+
+To get started, simply sign up for an account on [Comet](https://www.comet.com/signup?from=llm&utm_medium=github&utm_source=llama-index&utm_campaign=opik) and grab your API key.
+
+#### Usage Pattern
+
+- Install the Opik Python SDK with `pip install opik`
+- In Opik, get your API key from the user menu.
+- If you are using a self-hosted instance of Opik, also make note of its base URL.
+
+You can configure Opik using the environment variables `OPIK_API_KEY`, `OPIK_WORKSPACE` and `OPIK_URL_OVERRIDE` if you are using a [self-hosted instance](https://www.comet.com/docs/opik/self-host/self_hosting_opik). You can set these by calling:
+
+```bash
+export OPIK_API_KEY="<OPIK_API_KEY>"
+export OPIK_WORKSPACE="<OPIK_WORKSPACE - Often the same as your API key>"
+
+# Optional
+#export OPIK_URL_OVERRIDE="<OPIK_URL_OVERRIDE>"
+```
+
+You can now use the Opik integration with LlamaIndex by setting the global handler:
+
+```python
+from llama_index.core import Document, VectorStoreIndex, set_global_handler
+
+# You should provide your OPIK API key and Workspace using the following environment variables:
+# OPIK_API_KEY, OPIK_WORKSPACE
+set_global_handler(
+    "opik",
+)
+
+# This example uses OpenAI by default so don't forget to set an OPENAI_API_KEY
+index = VectorStoreIndex.from_documents([Document.example()])
+query_engine = index.as_query_engine()
+
+questions = [
+    "Tell me about LLMs",
+    "How do you fine-tune a neural network ?",
+    "What is RAG ?",
+]
+
+for question in questions:
+    print(f"> \033[92m{question}\033[0m")
+    response = query_engine.query(question)
+    print(response)
+```
+
+You will see the following traces in Opik:
+
+![Opik integration with LlamaIndex](../../_static/integrations/opik.png)
+
+#### Example Guides
+
+- [Llama-index + Opik documentation page](https://www.comet.com/docs/opik/tracing/integrations/llama_index?utm_source=llamaindex&utm_medium=docs&utm_campaign=opik)
+- [Llama-index integration cookbook](https://www.comet.com/docs/opik/cookbook/llama-index?utm_source=llama-index&utm_medium=docs&utm_campaign=opik)
+
+### Argilla
+
+[Argilla](https://github.com/argilla-io/argilla) is a collaboration tool for AI engineers and domain experts who need to build high-quality datasets for their projects.
+
+To get started, you need to deploy the Argilla server. If you have not done so, you can easily deploy it following this [guide](https://docs.argilla.io/latest/getting_started/quickstart/).
+
+#### Usage Pattern
+
+- Install the Argilla LlamaIndex integration package with `pip install argilla-llama-index`
+- Initialize the ArgillaHandler. The `<api_key>` is in the `My Settings` page of your Argilla Space but make sure you are logged in with the `owner` account you used to create the Space. The `<api_url>` is the URL shown in your browser.
+- Add the ArgillaHandler to the dispatcher.
+
+```python
+from llama_index.core.instrumentation import get_dispatcher
+from argilla_llama_index import ArgillaHandler
+
+argilla_handler = ArgillaHandler(
+    dataset_name="query_llama_index",
+    api_url="http://localhost:6900",
+    api_key="argilla.apikey",
+    number_of_retrievals=2,
+)
+root_dispatcher = get_dispatcher()
+root_dispatcher.add_span_handler(argilla_handler)
+root_dispatcher.add_event_handler(argilla_handler)
+```
+
+#### Example Guides
+
+- [Getting started with Argilla's LlamaIndex Integration](https://github.com/argilla-io/argilla-llama-index/blob/main/docs/tutorials/getting_started.ipynb)
+- [Other example tutorials](https://github.com/argilla-io/argilla-llama-index/tree/main/docs/tutorials)
+
+![Argilla integration with LlamaIndex](../../_static/integrations/argilla.png)
+
+
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
 These partner integrations use our legacy `CallbackManager` or third-party calls.
 
 ### Langfuse
 
-[Langfuse](https://langfuse.com/docs) is an open source LLM engineering platform to help teams collaboratively debug, analyze and iterate on their LLM Applications. With the Langfuse integration, you can seamlessly track and monitor performance, traces, and metrics of your LlamaIndex application. Detailed traces of the LlamaIndex context augmentation and the LLM querying processes are captured and can be inspected directly in the Langfuse UI.
+[Langfuse](https://langfuse.com/docs) is an open source LLM engineering platform to help teams collaboratively debug, analyze and iterate on their LLM Applications. With the Langfuse integration, you can seamlessly track and monitor performance, traces, and metrics of your LlamaIndex application. Detailed [traces](https://langfuse.com/docs/tracing) of the LlamaIndex context augmentation and the LLM querying processes are captured and can be inspected directly in the Langfuse UI.
 
 #### Usage Pattern
 
@@ -187,7 +311,8 @@ set_global_handler("langfuse")
 
 #### Guides
 
-- [Langfuse Callback Handler](../../examples/callbacks/LangfuseCallbackHandler.ipynb)
+- [Langfuse Callback Handler](../../examples/observability/LangfuseCallbackHandler.ipynb)
+- [Langfuse Tracing with PostHog](../../examples/observability/LangfuseMistralPostHog.ipynb)
 
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
 
@@ -451,39 +576,6 @@ import llama_index.core
 
 llama_index.core.set_global_handler("simple")
 ```
-
-### MLflow
-
-[MLflow](https://mlflow.org/docs/latest/index.html) is an open-source platform, purpose-built to assist machine learning practitioners and teams in handling the complexities of the machine learning process. MLflow focuses on the full lifecycle for machine learning projects, ensuring that each phase is manageable, traceable, and reproducible.
-
-##### Install
-
-```shell
-pip install mlflow>=2.15 llama-index>=0.10.44
-```
-
-#### Usage Pattern
-
-```python
-import mlflow
-
-mlflow.llama_index.autolog()  # Enable mlflow tracing
-
-with mlflow.start_run() as run:
-    mlflow.llama_index.log_model(
-        index,
-        artifact_path="llama_index",
-        engine_type="query",  # Logged engine type for inference
-        input_example="hi",
-        registered_model_name="my_llama_index_vector_store",
-    )
-    model_uri = f"runs:/{run.info.run_id}/llama_index"
-
-predictions = mlflow.pyfunc.load_model(model_uri).predict("hi")
-print(f"Query engine prediction: {predictions}")
-```
-
-![](../../_static/integrations/mlflow.gif)
 
 #### Guides
 

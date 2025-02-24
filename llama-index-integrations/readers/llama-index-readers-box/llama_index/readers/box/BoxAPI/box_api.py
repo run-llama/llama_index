@@ -1,26 +1,21 @@
+import logging
 import os
 import shutil
-from typing import List, Optional, Dict
-import logging
+from typing import Dict, List, Optional
+
 import requests
 from box_sdk_gen import (
+    AiItemBase,
     BoxAPIError,
     BoxClient,
-    File,
-    ByteStream,
     BoxSDKError,
-)
-from box_sdk_gen.managers.search import (
-    SearchForContentScope,
+    ByteStream,
+    CreateAiAskMode,
+    File,
     SearchForContentContentTypes,
+    SearchForContentScope,
     SearchForContentType,
     SearchResults,
-)
-from box_sdk_gen.managers.ai import CreateAiAskMode, CreateAiAskItems
-
-from llama_index.readers.box.BoxAPI.box_ai_extract_beta import (
-    AiExtractManager,
-    CreateAiExtractItems,
 )
 
 logger = logging.getLogger(__name__)
@@ -201,7 +196,7 @@ def get_ai_response_from_box_files(
     if individual_document_prompt:
         mode = CreateAiAskMode.SINGLE_ITEM_QA
         for file in box_files:
-            ask_item = CreateAiAskItems(file.id)
+            ask_item = AiItemBase(file.id)
             logger.info(f"Getting AI prompt for file: {file.id} {file.name}")
 
             # get the AI prompt for the file
@@ -220,7 +215,7 @@ def get_ai_response_from_box_files(
 
     else:
         mode = CreateAiAskMode.MULTIPLE_ITEM_QA
-        file_ids = [CreateAiAskItems(file.id) for file in box_files]
+        file_ids = [AiItemBase(file.id) for file in box_files]
 
         # get the AI prompt for the file
         ai_response = box_client.ai.create_ai_ask(
@@ -353,17 +348,13 @@ def get_files_ai_extract_data(
     Raises:
         BoxAPIError: If an error occurs while interacting with the Box AI API.
     """
-    ai_extract_manager = AiExtractManager(
-        auth=box_client.auth, network_session=box_client.network_session
-    )
-
     for file in box_files:
-        ask_item = CreateAiExtractItems(file.id)
+        ask_item = AiItemBase(file.id)
         logger.info(f"Getting AI extracted data for file: {file.id} {file.name}")
 
         # get the AI extracted data for the file
         try:
-            ai_response = ai_extract_manager.create_ai_extract(
+            ai_response = box_client.ai.create_ai_extract(
                 prompt=ai_prompt, items=[ask_item]
             )
         except BoxAPIError as e:
@@ -391,18 +382,8 @@ def search_files(
     recent_updater_user_ids: Optional[List[str]] = None,
     ancestor_folder_ids: Optional[List[str]] = None,
     content_types: Optional[List[SearchForContentContentTypes]] = None,
-    # type: Optional[SearchForContentType] = None,
-    # trash_content: Optional[SearchForContentTrashContent] = None,
-    # mdfilters: Optional[List[MetadataFilter]] = None,
-    # sort: Optional[SearchForContentSort] = None,
-    # direction: Optional[SearchForContentDirection] = None,
     limit: Optional[int] = None,
-    # include_recent_shared_links: Optional[bool] = None,
-    # fields: Optional[List[str]] = None,
     offset: Optional[int] = None,
-    # deleted_user_ids: Optional[List[str]] = None,
-    # deleted_at_range: Optional[List[str]] = None,
-    # extra_headers: Optional[Dict[str, Optional[str]]] = None,
 ) -> List[File]:
     """
     Searches for files in Box based on a query string.
@@ -448,11 +429,8 @@ def search_files_by_metadata(
     ancestor_folder_id: str,
     query: Optional[str] = None,
     query_params: Optional[Dict[str, str]] = None,
-    # order_by: Optional[List[SearchByMetadataQueryOrderBy]] = None,
     limit: Optional[int] = None,
     marker: Optional[str] = None,
-    # fields: Optional[List[str]] = None,
-    # extra_headers: Optional[Dict[str, Optional[str]]] = None,
 ) -> List[File]:
     """
     Searches for files in Box based on metadata filters.

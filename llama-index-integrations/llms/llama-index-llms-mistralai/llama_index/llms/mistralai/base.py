@@ -48,7 +48,7 @@ from mistralai.models import (
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
-DEFAULT_MISTRALAI_MODEL = "mistral-tiny"
+DEFAULT_MISTRALAI_MODEL = "mistral-large-latest"
 DEFAULT_MISTRALAI_ENDPOINT = "https://api.mistral.ai"
 DEFAULT_MISTRALAI_MAX_TOKENS = 512
 
@@ -68,7 +68,13 @@ def to_mistral_chatmessage(
         elif m.role == MessageRole.SYSTEM:
             new_messages.append(SystemMessage(content=m.content))
         elif m.role == MessageRole.TOOL or m.role == MessageRole.FUNCTION:
-            new_messages.append(ToolMessage(content=m.content))
+            new_messages.append(
+                ToolMessage(
+                    content=m.content,
+                    tool_call_id=m.additional_kwargs.get("tool_call_id"),
+                    name=m.additional_kwargs.get("name"),
+                )
+            )
         else:
             raise ValueError(f"Unsupported message role {m.role}")
 
@@ -94,6 +100,10 @@ class MistralAI(FunctionCallingLLM):
         # otherwise it will lookup MISTRAL_API_KEY from your env variable
         # llm = MistralAI(api_key="<api_key>")
 
+        # You can specify a custom endpoint by passing the `endpoint` variable or setting
+        # MISTRAL_ENDPOINT in your environment
+        # llm = MistralAI(endpoint="<endpoint>")
+
         llm = MistralAI()
 
         resp = llm.complete("Paul Graham is ")
@@ -108,8 +118,8 @@ class MistralAI(FunctionCallingLLM):
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use for sampling.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: int = Field(
         default=DEFAULT_MISTRALAI_MAX_TOKENS,
@@ -118,12 +128,12 @@ class MistralAI(FunctionCallingLLM):
     )
 
     timeout: float = Field(
-        default=120, description="The timeout to use in seconds.", gte=0
+        default=120, description="The timeout to use in seconds.", ge=0
     )
     max_retries: int = Field(
-        default=5, description="The maximum number of API retries.", gte=0
+        default=5, description="The maximum number of API retries.", ge=0
     )
-    random_seed: str = Field(
+    random_seed: Optional[int] = Field(
         default=None, description="The random seed to use for sampling."
     )
     additional_kwargs: Dict[str, Any] = Field(
@@ -163,7 +173,9 @@ class MistralAI(FunctionCallingLLM):
             )
 
         # Use the custom endpoint if provided, otherwise default to DEFAULT_MISTRALAI_ENDPOINT
-        endpoint = endpoint or DEFAULT_MISTRALAI_ENDPOINT
+        endpoint = get_from_param_or_env(
+            "endpoint", endpoint, "MISTRAL_ENDPOINT", DEFAULT_MISTRALAI_ENDPOINT
+        )
 
         super().__init__(
             temperature=temperature,

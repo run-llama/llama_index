@@ -22,8 +22,12 @@ We support [a huge number of LLMs](../module_guides/models/llms/modules.md).
 
 ## Observability/Tracing/Evaluation
 
-Check out our [one-click observability](../module_guides/observability/observability.md) page
+Check out our [one-click observability](../module_guides/observability/index.md) page
 for full tracing integrations.
+
+## Experiment Tracking
+
+- [MLflow](../../examples/observability/mlflow)
 
 ## Structured Outputs
 

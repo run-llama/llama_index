@@ -61,7 +61,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
         min_length=1,
     )
     embed_batch_size: int = Field(
-        default=128, description="The batch size for embedding calls.", gt=0, lte=256
+        default=128, description="The batch size for embedding calls.", gt=0, le=256
     )
 
     _client: MixedbreadAI = PrivateAttr()
