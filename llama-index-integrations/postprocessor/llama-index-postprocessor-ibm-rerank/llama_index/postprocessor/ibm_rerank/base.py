@@ -27,7 +27,7 @@ from llama_index.core.instrumentation.events.rerank import (
 
 from llama_index.core.callbacks import CallbackManager
 
-from llama_index.llms.ibm.utils import resolve_watsonx_credentials
+from llama_index.postprocessor.ibm_rerank.utils import resolve_watsonx_credentials
 
 dispatcher = get_dispatcher(__name__)
 
