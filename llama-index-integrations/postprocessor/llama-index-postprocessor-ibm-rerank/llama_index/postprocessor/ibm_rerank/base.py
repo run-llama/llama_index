@@ -58,6 +58,11 @@ class WatsonxRerank(BaseNodePostprocessor):
         description="Number of top results to return.",
     )
 
+    truncate_input_tokens: Optional[int] = Field(
+        default=None,
+        description="""Represents the maximum number of input tokens accepted.""",
+    )
+
     project_id: Optional[str] = Field(
         default=None,
         description="ID of the Watson Studio project.",
@@ -119,6 +124,7 @@ class WatsonxRerank(BaseNodePostprocessor):
         self,
         model_id: Optional[str] = None,
         top_n: Optional[int] = None,
+        truncate_input_tokens: Optional[int] = None,
         project_id: Optional[str] = None,
         space_id: Optional[str] = None,
         url: Optional[str] = None,
@@ -154,6 +160,7 @@ class WatsonxRerank(BaseNodePostprocessor):
         super().__init__(
             model_id=model_id,
             top_n=top_n,
+            truncate_input_tokens=truncate_input_tokens,
             project_id=project_id,
             space_id=space_id,
             url=creds.get("url"),
@@ -169,20 +176,10 @@ class WatsonxRerank(BaseNodePostprocessor):
             **kwargs,
         )
 
-        rerank_return_options: RerankReturnOptions = RerankReturnOptions(
-            top_n=self.top_n,
-            inputs=False,
-            query=False,
-        )
-        rerank_parameters: RerankParameters = RerankParameters(
-            truncate_input_tokens=kwargs.get("truncate_input_tokens"),
-            return_options=rerank_return_options,
-        )
-
         self._client = api_client
         self._watsonx_rerank = Rerank(
             model_id=model_id,
-            params=rerank_parameters,
+            params=self.params,
             credentials=(
                 Credentials.from_dict(
                     {
@@ -216,6 +213,18 @@ class WatsonxRerank(BaseNodePostprocessor):
             "version": self.version,
         }
 
+    @property
+    def params(self) -> RerankParameters:
+        rerank_return_options: RerankReturnOptions = RerankReturnOptions(
+            top_n=self.top_n,
+            inputs=False,
+            query=False,
+        )
+        return RerankParameters(
+            truncate_input_tokens=self.truncate_input_tokens,
+            return_options=rerank_return_options,
+        )
+
     def _postprocess_nodes(
         self,
         nodes: List[NodeWithScore],
@@ -241,6 +250,7 @@ class WatsonxRerank(BaseNodePostprocessor):
         results = self._watsonx_rerank.generate(
             query=query_bundle.query_str,
             inputs=texts,
+            params=self.params,
         )
 
         new_nodes = []
