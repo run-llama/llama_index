@@ -197,9 +197,10 @@ def convert_schema_to_function_declaration(tool: "BaseTool"):
         },
     )
 
+    description_parts = tool.metadata.description.split("\n", maxsplit=1)
     # Create the function declaration
     return types.FunctionDeclaration(
-        description=tool.metadata.description.split("\n", maxsplit=1)[1],
+        description=description_parts[-1] if len(description_parts) > 1 else None,
         name=tool.metadata.name,
         parameters=root_schema,
     )
