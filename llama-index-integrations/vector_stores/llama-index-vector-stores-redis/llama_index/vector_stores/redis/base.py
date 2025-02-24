@@ -134,15 +134,9 @@ class RedisVectorStore(BasePydanticVectorStore):
             TEXT_FIELD_NAME,
             NODE_CONTENT_FIELD_NAME,
         ]
-        if redis_client:
-            self._index = SearchIndex(schema=schema, redis_client=redis_client)
-        elif redis_url:
-            self._index = SearchIndex(schema=schema, redis_url=redis_url)
-        else:
-            raise ValueError(
-                "Failed to connect to Redis. Must provide a valid redis client or url"
-            )
-
+        self._index = SearchIndex(
+            schema=schema, redis_client=redis_client, redis_url=redis_url
+        )
         self._overwrite = overwrite
 
         # Create index
