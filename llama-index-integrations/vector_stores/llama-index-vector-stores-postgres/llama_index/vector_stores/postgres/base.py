@@ -651,8 +651,7 @@ class PGVectorStore(BasePydanticVectorStore):
             if kwargs.get("ivfflat_probes"):
                 ivfflat_probes = kwargs.get("ivfflat_probes")
                 session.execute(
-                    text(f"SET ivfflat.probes = :ivfflat_probes"),
-                    {"ivfflat_probes": ivfflat_probes},
+                    text(f"SET ivfflat.probes = :{ivfflat_probes}"),
                 )
             if self.hnsw_kwargs:
                 hnsw_ef_search = (
@@ -697,8 +696,7 @@ class PGVectorStore(BasePydanticVectorStore):
             if kwargs.get("ivfflat_probes"):
                 ivfflat_probes = kwargs.get("ivfflat_probes")
                 await async_session.execute(
-                    text(f"SET ivfflat.probes = :ivfflat_probes"),
-                    {"ivfflat_probes": ivfflat_probes},
+                    text(f"SET ivfflat.probes = :{ivfflat_probes}"),
                 )
 
             res = await async_session.execute(stmt)
