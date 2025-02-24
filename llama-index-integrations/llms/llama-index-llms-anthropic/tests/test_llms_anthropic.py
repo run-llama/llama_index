@@ -203,3 +203,74 @@ def test_anthropic_tokenizer():
         messages=[{"role": "user", "content": test_text}],
         model="claude-3-5-sonnet-20241022",
     )
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available for testing",
+)
+def test_anthropic_direct():
+    """Test the regular Anthropic SDK integration."""
+    anthropic_llm = Anthropic(
+        model="claude-3-7-sonnet-20250219",
+        api_key=os.getenv("ANTHROPIC_API_KEY"),
+    )
+
+    # Test completion
+    completion_response = anthropic_llm.complete("Give me a recipe for banana bread")
+    try:
+        assert isinstance(completion_response.text, str)
+        print("Assertion passed for completion_response.text")
+    except AssertionError:
+        print(
+            f"Assertion failed for completion_response.text: {completion_response.text}"
+        )
+        raise
+
+    # Test streaming completion
+    stream_resp = anthropic_llm.stream_complete(
+        "Answer in 5 sentences or less. Paul Graham is "
+    )
+    full_response = ""
+    for chunk in stream_resp:
+        full_response += chunk.delta
+
+    try:
+        assert isinstance(full_response, str)
+        print("Assertion passed: full_response is a string")
+    except AssertionError:
+        print(f"Assertion failed: full_response is not a string")
+        print(f"Type of full_response: {type(full_response)}")
+        print(f"Content of full_response: {full_response}")
+        raise
+
+    # Test chat
+    messages = [
+        ChatMessage(
+            role="system", content="You are a pirate with a colorful personality"
+        ),
+        ChatMessage(role="user", content="Tell me a story"),
+    ]
+
+    chat_response = anthropic_llm.chat(messages)
+    try:
+        assert isinstance(chat_response.message.content, str)
+        print("Assertion passed for chat_response")
+    except AssertionError:
+        print(f"Assertion failed for chat_response: {chat_response}")
+        raise
+
+    # Test streaming chat
+    stream_chat_resp = anthropic_llm.stream_chat(messages)
+    full_response = ""
+    for chunk in stream_chat_resp:
+        full_response += chunk.delta
+
+    try:
+        assert isinstance(full_response, str)
+        print("Assertion passed: full_response is a string")
+    except AssertionError:
+        print(f"Assertion failed: full_response is not a string")
+        print(f"Type of full_response: {type(full_response)}")
+        print(f"Content of full_response: {full_response}")
+        raise
