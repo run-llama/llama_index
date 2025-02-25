@@ -323,11 +323,16 @@ def to_openai_message_dict(
             raise ValueError(msg)
 
     # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
-    # It's only Allowed to send None if it's an Assistant Message
+    # It's only Allowed to send None if it's an Assistant Message and either a function call or tool calls were performed
     # Reference: https://platform.openai.com/docs/api-reference/chat/create
     content_txt = (
         None
-        if content_txt == "" and message.role == MessageRole.ASSISTANT
+        if content_txt == ""
+        and message.role == MessageRole.ASSISTANT
+        and (
+            "function_call" in message.additional_kwargs
+            or "tool_calls" in message.additional_kwargs
+        )
         else content_txt
     )
 
