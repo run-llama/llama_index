@@ -975,11 +975,12 @@ async def test_delete_nodes_metadata(
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_hybrid"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
-async def test_set_ivfflat(pg_fixture: PGVectorStore, use_async:bool) -> None:
-
+async def test_set_ivfflat(pg_fixture: PGVectorStore, use_async: bool) -> None:
     vector_index = VectorStoreIndex.from_vector_store(vector_store=pg_fixture)
 
-    vector_retriever = vector_index.as_retriever(vector_store_kwargs={"ivfflat_probes": 20})
+    vector_retriever = vector_index.as_retriever(
+        vector_store_kwargs={"ivfflat_probes": 20}
+    )
     vector_response_synthesizer = get_response_synthesizer(
         use_async=use_async,
     )
@@ -996,7 +997,6 @@ async def test_set_ivfflat(pg_fixture: PGVectorStore, use_async:bool) -> None:
         response = vector_query_engine.query(query)
 
     assert response
-
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
