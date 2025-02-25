@@ -5,6 +5,8 @@ from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.errors import WorkflowDone
 from llama_index.core.workflow.events import Event, StopEvent
 
+from .utils import BUSY_WAIT_DELAY
+
 
 class WorkflowHandler(asyncio.Future):
     def __init__(
@@ -101,7 +103,7 @@ class WorkflowHandler(asyncio.Future):
                     # step function to return before proceeding.
                     in_progress = len(await self.ctx.running_steps())
                     while in_progress:
-                        await asyncio.sleep(0.01)
+                        await asyncio.sleep(BUSY_WAIT_DELAY)
                         in_progress = len(await self.ctx.running_steps())
 
                     # notify unblocked task that we're ready to accept next event
