@@ -46,7 +46,9 @@ def convert_chat_message_to_gemini_content(
             raise ValueError("Only text and image_url types are supported!")
         return Part.from_image(image)
 
-    if message.content == "" and "tool_calls" in message.additional_kwargs:
+    if (
+        message.content == "" or message.content is None
+    ) and "tool_calls" in message.additional_kwargs:
         tool_calls = message.additional_kwargs["tool_calls"]
         parts = [
             Part._from_gapic(raw_part=gapic_content_types.Part(function_call=tool_call))
