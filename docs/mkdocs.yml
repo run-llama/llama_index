@@ -1162,12 +1162,32 @@ nav:
           - ./api_reference/packs/voyage_query_engine.md
           - ./api_reference/packs/zenguard.md
           - ./api_reference/packs/zephyr_query_engine.md
+      - LlamaDeploy:
+          - ./api_reference/llama_deploy/apiserver.md
+          - ./api_reference/llama_deploy/client.md
+          - ./api_reference/llama_deploy/control_plane.md
+          - ./api_reference/llama_deploy/deploy.md
+          - ./api_reference/llama_deploy/deployment.md
+          - ./api_reference/llama_deploy/message_consumers.md
+          - ./api_reference/llama_deploy/message_publishers.md
+          - ./api_reference/llama_deploy/messages.md
+          - ./api_reference/llama_deploy/orchestrators.md
+          - ./api_reference/llama_deploy/python_sdk.md
+          - ./api_reference/llama_deploy/services.md
+          - ./api_reference/llama_deploy/types.md
       - Memory:
           - ./api_reference/memory/chat_memory_buffer.md
           - ./api_reference/memory/index.md
           - ./api_reference/memory/mem0.md
           - ./api_reference/memory/simple_composable_memory.md
           - ./api_reference/memory/vector_memory.md
+      - Message Queues:
+          - ./api_reference/llama_deploy/message_queues/index.md
+          - ./api_reference/llama_deploy/message_queues/kafka.md
+          - ./api_reference/llama_deploy/message_queues/rabbitmq.md
+          - ./api_reference/llama_deploy/message_queues/redis.md
+          - ./api_reference/llama_deploy/message_queues/simple.md
+          - ./api_reference/llama_deploy/message_queues/solace.md
       - Metadata Extractors:
           - ./api_reference/extractors/documentcontext.md
           - ./api_reference/extractors/entity.md
