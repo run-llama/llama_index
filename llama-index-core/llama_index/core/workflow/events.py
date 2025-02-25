@@ -124,6 +124,10 @@ class Event(BaseModel):
     def dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return self._data
 
+    def __bool__(self) -> bool:
+        """Make test `if event:` pass on Event instances."""
+        return True
+
     @model_serializer(mode="wrap")
     def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
         data = handler(self)
