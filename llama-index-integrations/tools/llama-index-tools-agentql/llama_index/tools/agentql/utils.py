@@ -56,7 +56,7 @@ async def aload_data(
     headers = {
         "X-API-Key": f"{api_key}",
         "Content-Type": "application/json",
-        "X-TF-Request-Origin": "llamaindex-extract-web-data-tool",
+        "X-TF-Request-Origin": "llamaindex",
     }
 
     async with httpx.AsyncClient() as client:

@@ -12,6 +12,11 @@ from llama_index.tools.agentql.const import (
     DEFAULT_INCLUDE_HIDDEN_DATA,
     DEFAULT_INCLUDE_HIDDEN_ELEMENTS,
     DEFAULT_RESPONSE_MODE,
+    DEFAULT_ENABLE_STEALTH_MODE,
+    DEFAULT_WAIT_FOR_PAGE_LOAD,
+    DEFAULT_SCROLL_TO_BOTTOM,
+    DEFAULT_SCREENSHOT_ENABLED,
+    API_TIMEOUT_SECONDS,
 )
 from llama_index.tools.agentql.message import (
     QUERY_PROMPT_VALIDATION_ERROR_MESSAGE,
@@ -43,14 +48,15 @@ class AgentQLToolSpec(BaseToolSpec):
         extract_elements_timeout: Optional[
             int
         ] = DEFAULT_EXTRACT_ELEMENTS_TIMEOUT_SECONDS,
-        wait_for_page_load: Optional[int] = 0,
+        wait_for_page_load: Optional[int] = DEFAULT_WAIT_FOR_PAGE_LOAD,
         wait_for_network_idle: Optional[bool] = DEFAULT_WAIT_FOR_NETWORK_IDLE,
         include_hidden_data: Optional[bool] = DEFAULT_INCLUDE_HIDDEN_DATA,
         include_hidden_elements: Optional[bool] = DEFAULT_INCLUDE_HIDDEN_ELEMENTS,
         response_mode: Optional[str] = DEFAULT_RESPONSE_MODE,
-        stealth_mode: Optional[bool] = False,
-        is_scroll_to_bottom_enabled: Optional[bool] = False,
-        is_screenshot_enabled: Optional[bool] = False,
+        stealth_mode: Optional[bool] = DEFAULT_ENABLE_STEALTH_MODE,
+        is_scroll_to_bottom_enabled: Optional[bool] = DEFAULT_SCROLL_TO_BOTTOM,
+        is_screenshot_enabled: Optional[bool] = DEFAULT_SCREENSHOT_ENABLED,
+        api_timeout: Optional[int] = API_TIMEOUT_SECONDS,
     ) -> None:
         """
         Initialize AgentQLToolSpec.
@@ -67,6 +73,7 @@ class AgentQLToolSpec(BaseToolSpec):
             stealth_mode: Whether to run the browser in stealth mode. This is useful for avoiding detection by anti-bot services (extract_web_data only).
             is_scroll_to_bottom_enabled: Enable scrolling to bottom of the page before extracting data (extract_web_data only).
             is_screenshot_enabled: Whether to take a screenshot of the page before extracting data (extract_web_data only).
+            api_timeout: Timeout value in seconds for the connection with AgentQL API.
         """
         self.async_browser = async_browser
 
@@ -84,6 +91,8 @@ class AgentQLToolSpec(BaseToolSpec):
 
         self.is_scroll_to_bottom_enabled = is_scroll_to_bottom_enabled
         self.is_screenshot_enabled = is_screenshot_enabled
+
+        self.api_timeout = api_timeout
 
         self.api_key = os.getenv("AGENTQL_API_KEY")
         if not self.api_key:
@@ -128,7 +137,7 @@ class AgentQLToolSpec(BaseToolSpec):
             params=params,
             metadata=metadata,
             api_key=self.api_key,
-            timeout=self.extract_data_timeout,
+            timeout=self.api_timeout,
         )
 
     async def extract_web_data_from_browser(
@@ -159,7 +168,7 @@ class AgentQLToolSpec(BaseToolSpec):
                 self.wait_for_network_idle,
                 self.include_hidden_data,
                 self.response_mode,
-                request_origin="llamaindex-extract-web-data-browser-tool",
+                request_origin="llamaindex",
             )
         elif prompt:
             return await page.get_data_by_prompt_experimental(
@@ -168,7 +177,7 @@ class AgentQLToolSpec(BaseToolSpec):
                 self.wait_for_network_idle,
                 self.include_hidden_data,
                 self.response_mode,
-                request_origin="llamaindex-extract-web-data-browser-tool",
+                request_origin="llamaindex",
             )
         else:
             # Check if one of 'query' or 'prompt' is provided
@@ -199,7 +208,7 @@ class AgentQLToolSpec(BaseToolSpec):
             self.wait_for_network_idle,
             self.include_hidden_elements,
             self.response_mode,
-            request_origin="llamaindex-extract-web-element-browser-tool",
+            request_origin="llamaindex",
         )
         tf_id = await element.get_attribute("tf623_id")
         return f"[tf623_id='{tf_id}']"
