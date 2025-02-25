@@ -30,7 +30,8 @@ readme = "README.md"
 version = "0.5.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+# Use same python version requirement as redisvl
+python = ">=3.9,<3.14"
 redisvl = "^0.4.1"
 llama-index-core = "^0.12.0"
 
