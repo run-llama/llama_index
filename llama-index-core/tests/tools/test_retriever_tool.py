@@ -3,7 +3,7 @@
 from typing import List, Optional
 
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.schema import NodeWithScore, TextNode, QueryType, QueryBundle
+from llama_index.core.schema import NodeWithScore, TextNode, QueryBundle
 from llama_index.core.tools import RetrieverTool
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 import pytest
@@ -81,7 +81,7 @@ def test_retriever_tool() -> None:
     )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_retriever_tool_async() -> None:
     """Test retriever tool async call."""
     # Test async retrieval
