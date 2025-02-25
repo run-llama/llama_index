@@ -36,7 +36,7 @@ def resolve_watsonx_credentials(
     )
 
     parsed_url = urllib.parse.urlparse(creds["url"].get_secret_value())
-    if parsed_url.netloc.endswith("cloud.ibm.com"):
+    if parsed_url.netloc.endswith(".cloud.ibm.com"):
         if not (apikey or "WATSONX_APIKEY" in os.environ) and not (
             token or "WATSONX_TOKEN" in os.environ
         ):
