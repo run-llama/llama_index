@@ -29,7 +29,7 @@ license = "MIT"
 maintainers = ["llama-index"]
 name = "llama-index-readers-microsoft-outlook-emails"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
