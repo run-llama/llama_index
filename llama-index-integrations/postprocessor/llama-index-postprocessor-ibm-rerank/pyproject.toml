@@ -35,7 +35,7 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
-ibm-watsonx-ai = ">=1.2.8"
+ibm-watsonx-ai = ">=1.1.16"
 pyarrow = "*"
 llama-index-core = "^0.12.0"
 
