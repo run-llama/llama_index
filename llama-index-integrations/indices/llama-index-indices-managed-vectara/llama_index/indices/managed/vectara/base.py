@@ -104,7 +104,7 @@ class VectaraIndex(BaseManagedIndex):
         # for calling Vectara API
         self._session = requests.Session()  # to reuse connections
         if not vectara_verify_ssl:
-            self._session.verify = False    # to ignore SSL verification
+            self._session.verify = False  # to ignore SSL verification
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("https://", adapter)
         self.vectara_api_timeout = 90
