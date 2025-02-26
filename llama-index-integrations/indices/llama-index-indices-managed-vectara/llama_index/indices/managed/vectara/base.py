@@ -71,7 +71,7 @@ class VectaraIndex(BaseManagedIndex):
     ) -> None:
         """Initialize the Vectara API."""
         self.parallelize_ingest = parallelize_ingest
-        self.vectara_base_url = vectara_base_url.rstrip("/")
+        self._base_url = vectara_base_url.rstrip("/")
 
         index_struct = VectaraIndexStruct(
             index_id=str(vectara_corpus_key),

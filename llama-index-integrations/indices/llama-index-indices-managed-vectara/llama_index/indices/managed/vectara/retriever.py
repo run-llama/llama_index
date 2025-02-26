@@ -533,7 +533,7 @@ class VectaraRetriever(BaseRetriever):
         else:
             response = self._index._session.post(
                 headers=self._get_post_headers(),
-                url=f"{self._indedx._base_url}/v2/query",
+                url=f"{self._index._base_url}/v2/query",
                 data=json.dumps(data),
                 timeout=self._index.vectara_api_timeout,
             )
