@@ -17,7 +17,8 @@ from llama_index.core.workflow import (
 )
 ```
 
-Next we'll create a tool that performs a hypothetical dangerous task. There are a couple ofnew things happening here:
+Next we'll create a tool that performs a hypothetical dangerous task. There are a couple of new things happening here:
+
 * We're calling `write_event_to_stream` with an `InputRequiredEvent`. This emits an event to the external stream to be captured. You can attach arbitrary data to the event, which we do in the form of a `user_name`.
 * We call `wait_for_event`, specifying that we want to wait for a `HumanResponseEvent` and that it must have the `user_name` set to "Laurie". You can see how this would be useful in a multi-user system where more than one incoming event might be involved.
 
