@@ -1,5 +1,5 @@
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.postprocessor.ibm_rerank import WatsonxRerank
+from llama_index.postprocessor.ibm import WatsonxRerank
 
 
 def test_class():

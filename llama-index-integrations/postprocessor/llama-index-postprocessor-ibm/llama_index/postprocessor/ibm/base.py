@@ -27,7 +27,7 @@ from llama_index.core.instrumentation.events.rerank import (
 
 from llama_index.core.callbacks import CallbackManager
 
-from llama_index.postprocessor.ibm_rerank.utils import resolve_watsonx_credentials
+from llama_index.postprocessor.ibm.utils import resolve_watsonx_credentials
 
 dispatcher = get_dispatcher(__name__)
 
@@ -37,11 +37,11 @@ class WatsonxRerank(BaseNodePostprocessor):
     IBM watsonx.ai Rerank.
 
     Example:
-        `pip install llama-index-postprocessor-ibm-rerank`
+        `pip install llama-index-postprocessor-ibm`
 
         ```python
 
-        from llama_index.postprocessor.ibm_rerank import WatsonxRerank
+        from llama_index.postprocessor.ibm import WatsonxRerank
         watsonx_llm = WatsonxRerank(
             model_id="<RERANK MODEL>",
             url="https://us-south.ml.cloud.ibm.com",

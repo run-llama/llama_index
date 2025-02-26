@@ -1,6 +1,6 @@
 import pytest
 
-from llama_index.postprocessor.ibm_rerank import WatsonxRerank
+from llama_index.postprocessor.ibm import WatsonxRerank
 
 
 class TestWasonxRerank:

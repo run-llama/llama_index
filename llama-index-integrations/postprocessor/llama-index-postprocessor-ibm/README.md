@@ -5,5 +5,5 @@ This package integrates the LlamaIndex Postprocessor API with the IBM watsonx.ai
 ## Installation
 
 ```bash
-pip install llama-index-postprocessor-ibm-rerank
+pip install llama-index-postprocessor-ibm
 ```
