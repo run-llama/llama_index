@@ -34,23 +34,13 @@ nav:
   - Learn:
       - Building an LLM Application: ./understanding/index.md
       - Using LLMs: ./understanding/using_llms/using_llms.md
-      - Building a RAG pipeline:
-          - Introduction to RAG: ./understanding/rag/index.md
-          - Loading & Ingestion:
-              - ./understanding/loading/loading.md
-              - ./understanding/loading/llamahub.md
-              - ./understanding/loading/llamacloud.md
-          - Indexing & Embedding: ./understanding/indexing/indexing.md
-          - Storing: ./understanding/storing/storing.md
-          - Querying: ./understanding/querying/querying.md
-      - Building an agent:
+      - Building agents:
           - Building a basic agent: ./understanding/agent/index.md
-          - Agents with local models: ./understanding/agent/local_models.md
-          - Adding RAG to an agent: ./understanding/agent/rag_agent.md
-          - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
-          - Memory: ./understanding/agent/memory.md
-          - Adding other tools: ./understanding/agent/tools.md
-          - Multi-agent workflows: ./understanding/agent/multi_agents.md
+          - Using existing tools: ./understanding/agent/tools.md
+          - Maintaining state: ./understanding/agent/state.md
+          - Streaming output and events: ./understanding/agent/streaming.md
+          - Human in the loop: ./understanding/agent/human_in_the_loop.md
+          - Multi-agent workflows: ./understanding/agent/multi_agent.md
       - Building Workflows:
           - Introduction to workflows: ./understanding/workflows/index.md
           - A basic workflow: ./understanding/workflows/basic_flow.md
@@ -62,6 +52,15 @@ nav:
           - Nested workflows: ./understanding/workflows/nested.md
           - Observability: ./understanding/workflows/observability.md
           - Unbound syntax: ./understanding/workflows/unbound_functions.md
+      - Building a RAG pipeline:
+          - Introduction to RAG: ./understanding/rag/index.md
+          - Loading & Ingestion:
+              - ./understanding/loading/loading.md
+              - ./understanding/loading/llamahub.md
+              - ./understanding/loading/llamacloud.md
+          - Indexing & Embedding: ./understanding/indexing/indexing.md
+          - Storing: ./understanding/storing/storing.md
+          - Querying: ./understanding/querying/querying.md
       - Structured Data Extraction:
           - Introduction: ./understanding/extraction/index.md
           - Using Structured LLMs: ./understanding/extraction/structured_llms.md
