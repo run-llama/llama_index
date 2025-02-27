@@ -18,8 +18,8 @@ from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate
 from llama_index.core.tools import FunctionTool
 from pydantic import BaseModel, Field
 
-from langfuse_utils.llms.gemini_genai import Gemini
-from langfuse_utils.llms.utils import convert_schema_to_function_declaration
+from llama_index.llms.gemini_genai import Gemini
+from llama_index.llms.utils import convert_schema_to_function_declaration
 
 
 class Poem(BaseModel):
