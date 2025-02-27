@@ -51,6 +51,7 @@ BEDROCK_MODELS = {
     "meta.llama3-2-3b-instruct-v1:0": 131000,
     "meta.llama3-2-11b-instruct-v1:0": 128000,
     "meta.llama3-2-90b-instruct-v1:0": 128000,
+    "meta.llama3-3-70b-instruct-v1:0": 128000,
     "mistral.mistral-7b-instruct-v0:2": 32000,
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
     "mistral.mistral-large-2402-v1:0": 32000,
@@ -81,6 +82,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "meta.llama3-2-3b-instruct-v1:0",
     "meta.llama3-2-11b-instruct-v1:0",
     "meta.llama3-2-90b-instruct-v1:0",
+    "meta.llama3-3-70b-instruct-v1:0",
 )
 
 BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
@@ -100,6 +102,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "meta.llama3-2-3b-instruct-v1:0",
     "meta.llama3-2-11b-instruct-v1:0",
     "meta.llama3-2-90b-instruct-v1:0",
+    "meta.llama3-3-70b-instruct-v1:0",
 )
 
 
