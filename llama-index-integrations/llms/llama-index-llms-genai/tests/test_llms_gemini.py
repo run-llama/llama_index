@@ -18,8 +18,8 @@ from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate
 from llama_index.core.tools import FunctionTool
 from pydantic import BaseModel, Field
 
-from llama_index.llms.genai import Gemini
-from llama_index.llms.genai.utils import convert_schema_to_function_declaration
+from langfuse_utils.llms.gemini_genai import Gemini
+from langfuse_utils.llms.utils import convert_schema_to_function_declaration
 
 
 class Poem(BaseModel):
@@ -33,12 +33,12 @@ class Column(BaseModel):
 
 class Table(BaseModel):
     name: str = Field(description="Table name field")
-    columns: list[Column] = Field(description="List of random Column objects")
+    columns: List[Column] = Field(description="List of random Column objects")
 
 
 class Schema(BaseModel):
     schema_name: str = Field(description="Schema name")
-    tables: list[Table] = Field(description="List of random Table objects")
+    tables: List[Table] = Field(description="List of random Table objects")
 
 
 @pytest.mark.skipif(
@@ -105,7 +105,7 @@ def test_stream_chat_and_astream_chat() -> None:
     assert all(isinstance(chunk.message.content, str) for chunk in sync_chunks)
 
     # Test async stream chat
-    async def test_async_stream() -> list[ChatResponse]:
+    async def test_async_stream() -> List[ChatResponse]:
         chunks = []
         async for chunk in await llm.astream_chat(messages=[message]):
             chunks.append(chunk)
@@ -134,7 +134,7 @@ def test_stream_complete_and_astream_complete() -> None:
     assert all(isinstance(chunk.text, str) for chunk in sync_chunks)
 
     # Test async stream complete
-    async def test_async_stream() -> list[CompletionResponse]:
+    async def test_async_stream() -> List[CompletionResponse]:
         chunks = []
         async for chunk in await llm.astream_complete(prompt):
             chunks.append(chunk)

@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
 )
@@ -17,6 +18,9 @@ from llama_index.core.utilities.gemini_utils import (
     ROLES_TO_GEMINI,
     merge_neighboring_same_role_messages,
 )
+
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
 
 
 def _error_if_finished_early(candidate: types.Candidate) -> None:

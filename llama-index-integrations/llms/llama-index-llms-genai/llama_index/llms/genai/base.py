@@ -51,7 +51,7 @@ GEMINI_MODELS = (
     "models/gemini-2.0-flash-thinking",
     "models/gemini-2.0-flash-thinking-exp-01-21",
     "models/gemini-2.0-flash-lite",
-    "models/gemini-2.0-flash-lite-preview-02-05",
+    "models/gemini-2.0-flash-lite-001",
     "models/gemini-2.0-pro-exp-02-05",
     "models/gemini-1.5-flash",
     "models/gemini-1.5-flash-8b",
@@ -67,7 +67,7 @@ class Gemini(FunctionCallingLLM):
     Gemini LLM.
 
     Examples:
-        `pip install llama-index-llms-gemini`
+        `pip install llama-index-llms-genai`
 
         ```python
         from llama_index.llms.gemini import Gemini
@@ -333,9 +333,11 @@ class Gemini(FunctionCallingLLM):
 
         return {
             "messages": messages,
-            "tools": [types.Tool(function_declarations=tool_declarations)]
-            if tool_declarations
-            else None,
+            "tools": (
+                [types.Tool(function_declarations=tool_declarations)]
+                if tool_declarations
+                else None
+            ),
             "tool_config": tool_config,
             **kwargs,
         }
