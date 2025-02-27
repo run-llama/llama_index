@@ -266,6 +266,7 @@ class Workflow(metaclass=WorkflowMeta):
                         attempts = 0
                         while True:
                             await ctx.mark_in_progress(name=name, ev=ev)
+                            await ctx.add_running_step(name)
                             try:
                                 new_ev = await instrumented_step(**kwargs)
                                 break  # exit the retrying loop
@@ -293,6 +294,8 @@ class Workflow(metaclass=WorkflowMeta):
                                         f"Step {name} produced an error, retry in {delay} seconds"
                                     )
                                 await asyncio.sleep(delay)
+                            finally:
+                                await ctx.remove_running_step(name)
 
                     else:
                         try:
@@ -369,8 +372,11 @@ class Workflow(metaclass=WorkflowMeta):
 
             # add dedicated cancel task
             async def _cancel_workflow_task() -> None:
-                await ctx._cancel_flag.wait()
-                raise WorkflowCancelledByUser
+                try:
+                    await ctx._cancel_flag.wait()
+                    raise WorkflowCancelledByUser
+                except asyncio.CancelledError:
+                    return
 
             ctx._tasks.add(
                 asyncio.create_task(
@@ -458,11 +464,6 @@ class Workflow(metaclass=WorkflowMeta):
 
                     # the context is now running
                     ctx.is_running = True
-                else:
-                    # resend in-progress events if already running
-                    for name, evs in ctx._in_progress.items():
-                        for ev in evs:
-                            ctx.send_event(ev, step=name)
 
                 done, unfinished = await asyncio.wait(
                     ctx._tasks,
@@ -485,7 +486,14 @@ class Workflow(metaclass=WorkflowMeta):
                     t.cancel()
 
                 # wait for cancelled tasks to cleanup
-                await asyncio.gather(*unfinished, return_exceptions=True)
+                # prevents any tasks from being stuck
+                try:
+                    await asyncio.wait_for(
+                        asyncio.gather(*unfinished, return_exceptions=True),
+                        timeout=0.5,
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning("Some tasks did not clean up within timeout")
 
                 # the context is no longer running
                 ctx.is_running = False

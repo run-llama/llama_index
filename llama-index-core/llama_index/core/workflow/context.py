@@ -53,7 +53,13 @@ class Context:
         )
         self._accepted_events: List[Tuple[str, str]] = []
         self._retval: Any = None
+        # Map the step names that were executed to a list of events they received.
+        # This will be serialized, and is needed to resume a Workflow run passing
+        # an existing context.
         self._in_progress: Dict[str, List[Event]] = defaultdict(list)
+        # Keep track of the steps currently running. This is only valid when a
+        # workflow is running and won't be serialized.
+        self._currently_running_steps: Set[str] = set()
         # Streaming machinery
         self._streaming_queue: asyncio.Queue = asyncio.Queue()
         # Global data storage
@@ -198,6 +204,18 @@ class Context:
         async with self.lock:
             events = [e for e in self._in_progress[name] if e != ev]
             self._in_progress[name] = events
+
+    async def add_running_step(self, name: str) -> None:
+        async with self.lock:
+            self._currently_running_steps.add(name)
+
+    async def remove_running_step(self, name: str) -> None:
+        async with self.lock:
+            self._currently_running_steps.remove(name)
+
+    async def running_steps(self) -> List[str]:
+        async with self.lock:
+            return list(self._currently_running_steps)
 
     async def get(self, key: str, default: Optional[Any] = Ellipsis) -> Any:
         """Get the value corresponding to `key` from the Context.

@@ -4,11 +4,11 @@ import asyncio
 import base64
 import os
 import random
-import requests
 import sys
 import time
 import traceback
 import uuid
+from binascii import Error as BinasciiError
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial, wraps
@@ -30,6 +30,8 @@ from typing import (
     Union,
     runtime_checkable,
 )
+
+import requests
 
 
 class GlobalsHelper:
@@ -600,6 +602,15 @@ def resolve_binary(
         try:
             decoded_bytes = base64.b64decode(raw_bytes)
         except Exception:
+            decoded_bytes = raw_bytes
+
+        try:
+            # Check if raw_bytes is already base64 encoded.
+            # b64decode() can succeed on random binary data, so we
+            # pass verify=True to make sure it's not a false positive
+            decoded_bytes = base64.b64decode(raw_bytes, validate=True)
+        except BinasciiError:
+            # b64decode failed, leave as is
             decoded_bytes = raw_bytes
 
         if as_base64:

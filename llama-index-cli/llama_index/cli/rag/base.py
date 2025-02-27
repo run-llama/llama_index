@@ -4,7 +4,7 @@ import shutil
 from argparse import ArgumentParser
 from glob import iglob
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from llama_index.core import (
     Settings,
@@ -176,7 +176,7 @@ class RagCLI(BaseModel):
 
     async def handle_cli(
         self,
-        files: Optional[str] = None,
+        files: Optional[List[str]] = None,
         question: Optional[str] = None,
         chat: bool = False,
         verbose: bool = False,
@@ -205,8 +205,11 @@ class RagCLI(BaseModel):
         if self.verbose:
             print("Saving/Loading from persist_dir: ", self.persist_dir)
         if files is not None:
+            expanded_files = []
+            for pattern in files:
+                expanded_files.extend(iglob(pattern, recursive=True))
             documents = []
-            for _file in iglob(files, recursive=True):
+            for _file in expanded_files:
                 _file = os.path.abspath(_file)
                 if os.path.isdir(_file):
                     reader = SimpleDirectoryReader(
@@ -228,7 +231,7 @@ class RagCLI(BaseModel):
 
             # Append the `--files` argument to the history file
             with open(f"{self.persist_dir}/{RAG_HISTORY_FILE_NAME}", "a") as f:
-                f.write(files + "\n")
+                f.write(str(files) + "\n")
 
         if create_llama:
             if shutil.which("npx") is None:
@@ -337,9 +340,10 @@ class RagCLI(BaseModel):
                 "-f",
                 "--files",
                 type=str,
+                nargs="+",
                 help=(
-                    "The name of the file or directory you want to ask a question about,"
-                    'such as "file.pdf".'
+                    "The name of the file(s) or directory you want to ask a question about,"
+                    'such as "file.pdf". Supports globs like "*.py".'
                 ),
             )
             parser.add_argument(
