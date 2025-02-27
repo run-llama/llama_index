@@ -153,7 +153,7 @@ The `.run()` method is async, so we use await here to wait for the result.
 
 Workflows can be visualized, using the power of type annotations in your step definitions. You can either draw all possible paths through the workflow, or the most recent execution, to help with debugging.
 
-Firs install:
+First install:
 
 ```bash
 pip install llama-index-utils-workflow

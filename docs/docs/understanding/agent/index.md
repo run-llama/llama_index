@@ -1,8 +1,8 @@
-# Building a basic agent
+# Building an agent
 
 In LlamaIndex, an agent is a semi-autonomous piece of software powered by an LLM that is given a task and executes a series of steps towards solving that task. It is given a set of tools, which can be anything from arbitrary functions up to full LlamaIndex query engines, and it selects the best available tool to complete each step. When each step is completed, the agent judges whether the task is now complete, in which case it returns a result to the user, or whether it needs to take another step, in which case it loops back to the start.
 
-In LlamaIndex, you can either use our prepackaged agents/tools or [build your own agentic workflows from scratch](https://docs.llamaindex.ai/en/stable/understanding/workflows/), covered in the "Building Workflows" section. This section covers our prepackaged agents and tools.
+In LlamaIndex, you can either [build your own agentic workflows from scratch](../understanding/workflows/index.md), covered in the "Building Workflows" section, or you can use our pre-built `AgentWorkflow` class. This tutorial covers building single and multi-agent systems using `AgentWorkflow`. Because `AgentWorkflow` is itself a Workflow, you'll learn lots of concepts that you can apply to building Workflows from scratch later.
 
 ![agent flow](./agent_flow.png)
 
@@ -20,20 +20,20 @@ poetry shell
 And then we'll install the LlamaIndex library and some other dependencies that will come in handy:
 
 ```bash
-pip install llama-index python-dotenv
+pip install llama-index-core llama-index-llms-openai python-dotenv
 ```
 
 If any of this gives you trouble, check out our more detailed [installation guide](../getting_started/installation/).
 
 ## OpenAI Key
 
-Our agent will be powered by OpenAI's `GPT-3.5-Turbo` LLM, so you'll need an [API key](https://platform.openai.com/). Once you have your key, you can put it in a `.env` file in the root of your project:
+Our agent will be powered by OpenAI's `gpt-4o-mini` LLM, so you'll need an [API key](https://platform.openai.com/). Once you have your key, you can put it in a `.env` file in the root of your project:
 
 ```bash
 OPENAI_API_KEY=sk-proj-xxxx
 ```
 
-If you don't want to use OpenAI, we'll show you how to use other models later.
+If you don't want to use OpenAI, you can use [any other LLM](../using_llms/index.md) including local models. Agents require capable models, so smaller models may be less reliable.
 
 ## Bring in dependencies
 
@@ -43,9 +43,9 @@ We'll start by importing the components of LlamaIndex we need, as well as loadin
 from dotenv import load_dotenv
 
 load_dotenv()
-from llama_index.core.agent import ReActAgent
+
 from llama_index.llms.openai import OpenAI
-from llama_index.core.tools import FunctionTool
+from llama_index.core.agent.workflow import AgentWorkflow
 ```
 
 ## Create basic tools
@@ -58,63 +58,66 @@ def multiply(a: float, b: float) -> float:
     return a * b
 
 
-multiply_tool = FunctionTool.from_defaults(fn=multiply)
-
-
 def add(a: float, b: float) -> float:
     """Add two numbers and returns the sum"""
     return a + b
-
-
-add_tool = FunctionTool.from_defaults(fn=add)
 ```
 
-As you can see, these are regular vanilla Python functions. The docstring comments provide metadata to the agent about what the tool does: if your LLM is having trouble figuring out which tool to use, these docstrings are what you should tweak first.
-
-After each function is defined we create `FunctionTool` objects from these functions, which wrap them in a way that the agent can understand.
+As you can see, these are regular Python functions. When deciding what tool to use, your agent will use the tool's name, parameters, and docstring to determine what the tool does and whether it's appropriate for the task at hand. So it's important to make sure the docstrings are descriptive and helpful. It will also use the type hints to determine the expected parameters and return type.
 
 ## Initialize the LLM
 
-`GPT-3.5-Turbo` is going to be doing the work today:
+`gpt-4o-mini` is going to be doing the work today:
 
 ```python
-llm = OpenAI(model="gpt-3.5-turbo", temperature=0)
+llm = OpenAI(model="gpt-4o-mini")
 ```
 
-You could also pick another popular model accessible via API, such as those from [Mistral](../examples/llm/mistralai/), [Claude from Anthropic](../examples/llm/anthropic/) or [Gemini from Google](../examples/llm/gemini/).
+You could also pick another popular model accessible via API, such as those from [Mistral](../../examples/llm/mistralai/), [Claude from Anthropic](../../examples/llm/anthropic/) or [Gemini from Google](../../examples/llm/gemini/).
 
 ## Initialize the agent
 
-Now we create our agent. In this case, this is a [ReAct agent](https://klu.ai/glossary/react-agent-model), a relatively simple but powerful agent. We give it an array containing our two tools, the LLM we just created, and set `verbose=True` so we can see what's going on:
+Now we create our agent. It needs an array of tools, an LLM, and a system prompt to tell it what kind of agent to be. Your system prompt would usually be more detailed than this!
 
 ```python
-agent = ReActAgent.from_tools([multiply_tool, add_tool], llm=llm, verbose=True)
+workflow = AgentWorkflow.from_tools_or_functions(
+    [multiply, add],
+    llm=llm,
+    system_prompt="You are an agent that can perform basic mathematical operations using tools.",
+)
 ```
+
+GPT-4o-mini is actually smart enough to not need tools to do such simple math, which is why we specified that it should use tools in the prompt.
 
 ## Ask a question
 
-We specify that it should use a tool, as this is pretty simple and GPT-3.5 doesn't really need this tool to get the answer.
+Now we can ask the agent to do some math:
 
 ```python
-response = agent.chat("What is 20+(2*4)? Use a tool to calculate every step.")
+response = await workflow.run(user_msg="What is 20+(2*4)?")
+print(response)
+```
+
+Note that this is asynchronous code. It will work in a notebook environment, but if you want to run it in regular Python you'll need to wrap it an asynchronous function, like this:
+
+```python
+async def main():
+    response = await workflow.run(user_msg="What is 20+(2*4)?")
+    print(response)
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(main())
 ```
 
 This should give you output similar to the following:
 
 ```
-Thought: The current language of the user is: English. I need to use a tool to help me answer the question.
-Action: multiply
-Action Input: {'a': 2, 'b': 4}
-Observation: 8
-Thought: I need to add 20 to the result of the multiplication.
-Action: add
-Action Input: {'a': 20, 'b': 8}
-Observation: 28
-Thought: I can answer without using any more tools. I'll use the user's language to answer
-Answer: The result of 20 + (2 * 4) is 28.
-The result of 20 + (2 * 4) is 28.
+The result of (20 + (2 times 4)) is 28.
 ```
 
-As you can see, the agent picks the correct tools one after the other and combines the answers to give the final result. Check the [repo](https://github.com/run-llama/python-agents-tutorial/blob/main/1_basic_agent.py) to see what the final code should look like.
+Check the [repo](https://github.com/run-llama/python-agents-tutorial/blob/main/1_basic_agent.py) to see what the final code should look like.
 
-Congratulations! You've built the most basic kind of agent. Next you can find out how to use [local models](./local_models.md) or skip to [adding RAG to your agent](./rag_agent.md).
+Congratulations! You've built the most basic kind of agent. Next let's learn how to use [pre-built tools](./tools.md).

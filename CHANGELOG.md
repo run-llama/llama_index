@@ -1,5 +1,37 @@
 # ChangeLog
 
+## [2025-02-25]
+
+### `llama-index-core` [0.12.20]
+
+- feat: Attach more metadata to retrieved image node (#17868)
+- fix: FunctionAgent and ReActAgent error out when LLM response contains no chat messages (#17884)
+- fix: Convert Embedding Functions to Async (#17888)
+
+### `llama-index-networks` [0.6.0]
+
+- fix: Bump python-jose version (#17866)
+
+### `llama-index-vector-stores-redis` [0.5.0]
+
+- fix: Update for redisvl 0.4.0 (#17902)
+
+### `llama-index-llms-anthropic` [0.6.6]
+
+- fix: Add support for Claude 3.7-family models (#17905)
+
+### `llama-index-readers-microsoft-outlook-emails` [0.1.1]
+
+- fix: Import path was incorrect for microsoft_outlook_emails integration (#17867)
+
+### `llama-index-llms-vertex` [0.4.3]
+
+- fix: Chat messages with tool calls incorrectly mapping to Vertex message (#17893)
+
+### `llama-index-llms-bedrock-converse` [0.4.6]
+
+- feat: add Claude 3.7 Sonnet model support (#17911)
+
 ## [2025-02-17]
 
 ### `llama-index-core` [0.12.19]
