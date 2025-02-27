@@ -318,13 +318,13 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         """
         _ddb_query = f"""
             DELETE FROM {self.table_name}
-            WHERE json_extract_string(metadata_, '$.ref_doc_id') = '{ref_doc_id}';
+            WHERE json_extract_string(metadata_, '$.ref_doc_id') = ?;
             """
         if self.database_name == ":memory:":
-            self._conn.execute(_ddb_query)
+            self._conn.execute(_ddb_query, [ref_doc_id])
         elif self._database_path is not None:
             with DuckDBLocalContext(self._database_path) as _conn:
-                _conn.execute(_ddb_query)
+                _conn.execute(_ddb_query, [ref_doc_id])
 
     @staticmethod
     def _build_metadata_filter_condition(
@@ -388,30 +388,39 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             _ddb_query = f"""
             SELECT node_id, text, embedding, metadata_, score
             FROM (
-                SELECT *, list_cosine_similarity(embedding, {query.query_embedding}) AS score
+                SELECT *, list_cosine_similarity(embedding, ?) AS score
                 FROM {self.table_name}
-                WHERE {_filter_string}
+                WHERE ?
             ) sq
             WHERE score IS NOT NULL
-            ORDER BY score DESC LIMIT {query.similarity_top_k};
+            ORDER BY score DESC LIMIT ?;
             """
+            query_params = [
+                query.query_embedding,
+                _filter_string,
+                query.similarity_top_k,
+            ]
         else:
             _ddb_query = f"""
             SELECT node_id, text, embedding, metadata_, score
             FROM (
-                SELECT *, list_cosine_similarity(embedding, {query.query_embedding}) AS score
+                SELECT *, list_cosine_similarity(embedding, ?) AS score
                 FROM {self.table_name}
             ) sq
             WHERE score IS NOT NULL
-            ORDER BY score DESC LIMIT {query.similarity_top_k};
+            ORDER BY score DESC LIMIT ?;
             """
+            query_params = [
+                query.query_embedding,
+                query.similarity_top_k,
+            ]
 
         _final_results = []
         if self.database_name == ":memory:":
-            _final_results = self._conn.execute(_ddb_query).fetchall()
+            _final_results = self._conn.execute(_ddb_query, query_params).fetchall()
         elif self._database_path is not None:
             with DuckDBLocalContext(self._database_path) as _conn:
-                _final_results = _conn.execute(_ddb_query).fetchall()
+                _final_results = _conn.execute(_ddb_query, query_params).fetchall()
 
         for _row in _final_results:
             node = self._table_row_to_node(_row)
