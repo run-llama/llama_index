@@ -626,10 +626,19 @@ def update_tool_calls(
             # validations to get passed by mypy
             assert t.function is not None
             assert tc_delta.function is not None
-            assert t.function.arguments is not None
-            assert t.function.name is not None
-            assert t.id is not None
 
+            # Initialize fields if they're None
+            # OpenAI(or Compatible)'s streaming API can return partial tool call
+            # information across multiple chunks where some fields may be None in
+            # initial chunks and populated in subsequent ones
+            if t.function.arguments is None:
+                t.function.arguments = ""
+            if t.function.name is None:
+                t.function.name = ""
+            if t.id is None:
+                t.id = ""
+
+            # Update with delta values
             t.function.arguments += tc_delta.function.arguments or ""
             t.function.name += tc_delta.function.name or ""
             t.id += tc_delta.id or ""
