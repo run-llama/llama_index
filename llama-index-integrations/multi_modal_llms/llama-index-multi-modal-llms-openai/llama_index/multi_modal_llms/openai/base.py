@@ -1,4 +1,5 @@
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
+from pathlib import Path
 
 from llama_index.core.base.llms.generic_utils import (
     chat_response_to_completion_response,
@@ -11,13 +12,10 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     MessageRole,
+    ImageBlock,
 )
 from llama_index.core.schema import ImageNode
-
-from llama_index.llms.openai.base import OpenAI
-from llama_index.multi_modal_llms.openai.utils import (
-    generate_openai_multi_modal_chat_message,
-)
+from llama_index.llms.openai import OpenAI
 
 
 class OpenAIMultiModal(OpenAI):
@@ -30,14 +28,46 @@ class OpenAIMultiModal(OpenAI):
         prompt: str,
         role: str,
         image_documents: Sequence[ImageNode],
+        image_detail: Optional[str] = "low",
         **kwargs: Any,
     ) -> ChatMessage:
-        return generate_openai_multi_modal_chat_message(
-            prompt=prompt,
-            role=role,
-            image_documents=image_documents,
-            image_detail="low",
-        )
+        chat_msg = ChatMessage(role=role, content=prompt)
+        if not image_documents:
+            # if image_documents is empty, return text only chat message
+            return chat_msg
+
+        for image_document in image_documents:
+            # Create the appropriate ContentBlock depending on the document content
+            if image_document.image:
+                chat_msg.blocks.append(
+                    ImageBlock(
+                        image=bytes(image_document.image, encoding="utf-8"),
+                        detail=image_detail,
+                    )
+                )
+            elif image_document.image_url:
+                chat_msg.blocks.append(
+                    ImageBlock(url=image_document.image_url, detail=image_detail)
+                )
+            elif image_document.image_path:
+                chat_msg.blocks.append(
+                    ImageBlock(
+                        path=Path(image_document.image_path),
+                        detail=image_detail,
+                        image_mimetype=image_document.image_mimetype
+                        or image_document.metadata.get("file_type"),
+                    )
+                )
+            elif f_path := image_document.metadata.get("file_path"):
+                chat_msg.blocks.append(
+                    ImageBlock(
+                        path=Path(f_path),
+                        detail=image_detail,
+                        image_mimetype=image_document.metadata.get("file_type"),
+                    )
+                )
+
+        return chat_msg
 
     def complete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
