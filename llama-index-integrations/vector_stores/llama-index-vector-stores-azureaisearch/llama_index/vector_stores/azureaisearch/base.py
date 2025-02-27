@@ -382,7 +382,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         )
         logger.info(f"Configuring {index_name} semantic search")
         semantic_config = SemanticConfiguration(
-            name=self._semantic_configuration_name,
+            name=self._semantic_configuration_name or "mySemanticConfig",
             prioritized_fields=SemanticPrioritizedFields(
                 content_fields=[SemanticField(field_name=self._field_mapping["chunk"])],
             ),
@@ -504,7 +504,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         )
         logger.info(f"Configuring {index_name} semantic search")
         semantic_config = SemanticConfiguration(
-            name=self._semantic_configuration_name,
+            name=self._semantic_configuration_name or "mySemanticConfig",
             prioritized_fields=SemanticPrioritizedFields(
                 content_fields=[SemanticField(field_name=self._field_mapping["chunk"])],
             ),
