@@ -65,7 +65,7 @@ async def test_get_not_found(ctx):
 async def test_legacy_data(workflow):
     c1 = Context(workflow)
     await c1.set(key="test_key", value=42)
-    assert c1.data["test_key"] == 42
+    assert await c1.get("test_key") == 42
 
 
 def test_send_event_step_is_none(ctx):

@@ -221,7 +221,7 @@ async def test_workflow_num_workers():
             ctx.send_event(OneTestEvent(test_param="test3"))
 
             # send one extra event
-            ctx.session.send_event(AnotherTestEvent(another_test_param="test4"))
+            ctx.send_event(AnotherTestEvent(another_test_param="test4"))
 
             return LastEvent()
 
