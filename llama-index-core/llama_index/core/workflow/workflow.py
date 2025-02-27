@@ -266,6 +266,7 @@ class Workflow(metaclass=WorkflowMeta):
                         attempts = 0
                         while True:
                             await ctx.mark_in_progress(name=name, ev=ev)
+                            await ctx.add_running_step(name)
                             try:
                                 new_ev = await instrumented_step(**kwargs)
                                 break  # exit the retrying loop
@@ -293,6 +294,8 @@ class Workflow(metaclass=WorkflowMeta):
                                         f"Step {name} produced an error, retry in {delay} seconds"
                                     )
                                 await asyncio.sleep(delay)
+                            finally:
+                                await ctx.remove_running_step(name)
 
                     else:
                         try:
