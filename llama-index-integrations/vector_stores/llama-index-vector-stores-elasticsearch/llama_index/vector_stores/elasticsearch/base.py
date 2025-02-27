@@ -5,7 +5,6 @@ from logging import getLogger
 from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 import nest_asyncio
-import numpy as np
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -401,10 +400,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             Exception: If AsyncElasticsearch delete_by_query fails.
         """
         await self._store.delete(
-            query={
-                "term": {"metadata.ref_doc_id": ref_doc_id}
-            },
-            **delete_kwargs
+            query={"term": {"metadata.ref_doc_id": ref_doc_id}}, **delete_kwargs
         )
 
     def delete_nodes(
@@ -438,7 +434,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]], optional): List of node IDs. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
             delete_kwargs (Any, optional): Optional additional arguments to pass to delete operation.
-        """ 
+        """
         if not node_ids and not filters:
             return
 
@@ -450,14 +446,14 @@ class ElasticsearchStore(BasePydanticVectorStore):
 
         if node_ids:
             query["bool"]["must"].append({"terms": {"_id": node_ids}})
-        
+
         if filters:
             es_filter = _to_elasticsearch_filter(filters)
             if "bool" in es_filter and "must" in es_filter["bool"]:
                 query["bool"]["must"].extend(es_filter["bool"]["must"])
             else:
                 query["bool"]["must"].append(es_filter)
-        
+
         await self._store.delete(query=query, **delete_kwargs)
 
     def query(

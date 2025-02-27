@@ -628,10 +628,7 @@ async def test_delete_nodes(
         VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=5)
     )
     assert len(res.nodes) == 3
-    assert all(
-        node.metadata.get("author") != "Marie Curie"
-        for node in res.nodes
-    )
+    assert all(node.metadata.get("author") != "Marie Curie" for node in res.nodes)
 
     remaining_node_ids = [node.node_id for node in res.nodes[:2]]
     filters = MetadataFilters(
@@ -647,4 +644,6 @@ async def test_delete_nodes(
     )
     assert len(res.nodes) == 2
     assert any(node.metadata.get("author") == "Charlotte Bronte" for node in res.nodes)
-    assert any(node.metadata.get("director") == "Christopher Nolan" for node in res.nodes)
+    assert any(
+        node.metadata.get("director") == "Christopher Nolan" for node in res.nodes
+    )
