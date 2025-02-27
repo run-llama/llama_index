@@ -691,8 +691,8 @@ class ReActAgentWorker(BaseAgentWorker):
                     start_idx + len("Answer:") :
                 ].strip()
 
-            # set delta to the content, minus the "Answer: "
-            latest_chunk.delta = latest_chunk.message.content
+                # set delta to the content, minus the "Answer: "
+                latest_chunk.delta = latest_chunk.message.content
 
             # add back the chunks that were missed
             response_stream = self._add_back_chunk_to_stream(

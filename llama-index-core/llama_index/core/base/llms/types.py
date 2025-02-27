@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+from binascii import Error as BinasciiError
 from enum import Enum
 from io import BytesIO
 from typing import (
@@ -78,11 +79,12 @@ class ImageBlock(BaseModel):
             return self
 
         try:
-            # Check if image is already base64 encoded
-            decoded_img = base64.b64decode(self.image)
-        except Exception:
+            # Check if self.image is already base64 encoded.
+            # b64decode() can succeed on random binary data, so we
+            # pass verify=True to make sure it's not a false positive
+            decoded_img = base64.b64decode(self.image, validate=True)
+        except BinasciiError:
             decoded_img = self.image
-            # Not base64 - encode it
             self.image = base64.b64encode(self.image)
 
         self._guess_mimetype(decoded_img)

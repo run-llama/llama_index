@@ -1,3 +1,3 @@
-from llama_index.readers.outlook_emails.base import OutlookEmailReader
+from .base import OutlookEmailReader
 
 __all__ = ["OutlookEmailReader"]
