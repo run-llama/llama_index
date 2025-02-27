@@ -745,7 +745,7 @@ async def test_custom_stop_event():
         async def end_step(self, ev: LastEvent) -> MyStop:
             return MyStop(outcome="Workflow completed")
 
-    wf = CustomEventsWorkflow(start_event_class=MyStart, stop_event_class=MyStop)
+    wf = CustomEventsWorkflow()
     assert wf._start_event_class == MyStart
     assert wf._stop_event_class == MyStop
     result = await wf.run(query="foo")
@@ -764,20 +764,30 @@ def test_is_done(workflow):
 
 
 def test_wrong_event_types():
-    class CustomEvent(Event):
+    class RandomEvent(Event):
         pass
 
-    with pytest.raises(
-        WorkflowConfigurationError,
-        match="Start event class 'CustomEvent' must derive from 'StartEvent'",
-    ):
-        DummyWorkflow(start_event_class=CustomEvent)  # type: ignore
+    class InvalidStopWorkflow(Workflow):
+        @step
+        async def a_step(self, ev: MyStart) -> RandomEvent:
+            return RandomEvent()
 
     with pytest.raises(
         WorkflowConfigurationError,
-        match="Stop event class 'CustomEvent' must derive from 'StopEvent'",
+        match="At least one Event of type StopEvent must be returned by any step.",
     ):
-        DummyWorkflow(stop_event_class=CustomEvent)  # type: ignore
+        InvalidStopWorkflow()
+
+    class InvalidStartWorkflow(Workflow):
+        @step
+        async def a_step(self, ev: RandomEvent) -> StopEvent:
+            return StopEvent()
+
+    with pytest.raises(
+        WorkflowConfigurationError,
+        match="At least one Event of type StartEvent must be received by any step.",
+    ):
+        InvalidStartWorkflow()
 
 
 def test__get_start_event_instance(caplog):
@@ -785,14 +795,8 @@ def test__get_start_event_instance(caplog):
         field: str
 
     e = CustomEvent(field="test")
-    d = DummyWorkflow(start_event_class=CustomEvent)
-
-    # Invoke run() with wrong start_event type
-    with pytest.raises(
-        ValueError,
-        match="The 'start_event' argument must be an instance of 'StartEvent'.",
-    ):
-        d._get_start_event_instance(start_event="wrong type", arg="foo")  # type: ignore
+    d = DummyWorkflow()
+    d._start_event_class = CustomEvent
 
     # Invoke run() passing a legit start event but with additional kwargs
     with caplog.at_level(logging.WARN):

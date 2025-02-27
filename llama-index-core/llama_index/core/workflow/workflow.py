@@ -68,8 +68,6 @@ class Workflow(metaclass=WorkflowMeta):
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
         num_concurrent_runs: Optional[int] = None,
-        stop_event_class: Optional[type[StopEvent]] = None,
-        start_event_class: Optional[type[StartEvent]] = None,
     ) -> None:
         """Create an instance of the workflow.
 
@@ -89,18 +87,14 @@ class Workflow(metaclass=WorkflowMeta):
             num_concurrent_runs:
                 maximum number of .run() executions occurring simultaneously. If set to `None`, there
                 is no limit to this number.
-            stop_event_class:
-                custom type used instead of StopEvent
-            start_event_class:
-                custom type used instead of StartEvent
         """
         # Configuration
         self._timeout = timeout
         self._verbose = verbose
         self._disable_validation = disable_validation
         self._num_concurrent_runs = num_concurrent_runs
-        self._stop_event_class = self._ensure_stop_event_class(stop_event_class)
-        self._start_event_class = self._ensure_start_event_class(start_event_class)
+        self._stop_event_class = self._ensure_stop_event_class()
+        self._start_event_class = self._ensure_start_event_class()
         self._sem = (
             asyncio.Semaphore(num_concurrent_runs) if num_concurrent_runs else None
         )
@@ -110,20 +104,11 @@ class Workflow(metaclass=WorkflowMeta):
         # Services management
         self._service_manager = service_manager or ServiceManager()
 
-    def _ensure_start_event_class(
-        self, user_defined: Optional[type[StartEvent]]
-    ) -> type[StartEvent]:
-        """Validate the StartEvent type used in this workflow.
+    def _ensure_start_event_class(self) -> type[StartEvent]:
+        """Returns the StartEvent type used in this workflow.
 
-        If no custom event class was passed, deduce it by inspecting the events received by
-        the step methods.
+        It works by inspecting the events received by the step methods.
         """
-        if user_defined is not None:
-            if not issubclass(user_defined, StartEvent):
-                msg = f"Start event class '{user_defined.__name__}' must derive from 'StartEvent'"
-                raise WorkflowConfigurationError(msg)
-            return user_defined
-
         start_events_found: set[type[StartEvent]] = set()
         for step_func in self._get_steps().values():
             step_config: StepConfig = getattr(step_func, "__step_config")
@@ -141,16 +126,11 @@ class Workflow(metaclass=WorkflowMeta):
         else:
             return start_events_found.pop()
 
-    def _ensure_stop_event_class(
-        self, user_defined: Optional[type[StopEvent]]
-    ) -> type[StopEvent]:
-        """Returns the StopEvent type used in this workflow by inspecting the events returned."""
-        if user_defined is not None:
-            if not issubclass(user_defined, StopEvent):
-                msg = f"Stop event class '{user_defined.__name__}' must derive from 'StopEvent'"
-                raise WorkflowConfigurationError(msg)
-            return user_defined
+    def _ensure_stop_event_class(self) -> type[StopEvent]:
+        """Returns the StopEvent type used in this workflow.
 
+        It works by inspecting the events returned.
+        """
         stop_events_found: set[type[StopEvent]] = set()
         for step_func in self._get_steps().values():
             step_config: StepConfig = getattr(step_func, "__step_config")
