@@ -12,84 +12,45 @@ First we need to install the tool:
 pip install llama-index-tools-yahoo-finance
 ```
 
-Then we can set up our dependencies. This is exactly the same as our previous examples, except for the final import:
+Our dependencies are the same as our previous example, we just need to add the Yahoo Finance tools:
 
 ```python
-from dotenv import load_dotenv
-
-load_dotenv()
-from llama_index.core.agent import ReActAgent
-from llama_index.llms.openai import OpenAI
-from llama_index.core.tools import FunctionTool
-from llama_index.core import Settings
 from llama_index.tools.yahoo_finance import YahooFinanceToolSpec
 ```
 
-To show how custom tools and LlamaHub tools can work together, we'll include the code from our previous examples the defines a "multiple" tool. We'll also take this opportunity to set up the LLM:
-
-```python
-# settings
-Settings.llm = OpenAI(model="gpt-4o", temperature=0)
-
-
-# function tools
-def multiply(a: float, b: float) -> float:
-    """Multiply two numbers and returns the product"""
-    return a * b
-
-
-multiply_tool = FunctionTool.from_defaults(fn=multiply)
-
-
-def add(a: float, b: float) -> float:
-    """Add two numbers and returns the sum"""
-    return a + b
-
-
-add_tool = FunctionTool.from_defaults(fn=add)
-```
-
-Now we'll do the new step, which is to fetch the array of tools:
+To show how you can combine custom tools with LlamaHub tools, we're going to leave the `add` and `multiply` functions in place even though we don't need them here. We'll bring in our tools:
 
 ```python
 finance_tools = YahooFinanceToolSpec().to_tool_list()
 ```
 
-This is just a regular array, so we can use Python's `extend` method to add our own tools to the mix:
+A tool list is just an array, so we can use Python's `extend` method to add our own tools to the mix:
 
 ```python
-finance_tools.extend([multiply_tool, add_tool])
+finance_tools.extend([multiply, add])
 ```
 
-Then we set up the agent as usual, and ask a question:
+And we'll ask a different question than last time, necessitating the use of the new tools:
 
 ```python
-agent = ReActAgent.from_tools(finance_tools, verbose=True)
-
-response = agent.chat("What is the current price of NVDA?")
-
-print(response)
+async def main():
+    response = await workflow.run(
+        user_msg="What's the current stock price of NVIDIA?"
+    )
+    print(response)
 ```
 
-The response is very wordy, so we've truncated it:
+We get this response:
 
 ```
-Thought: The current language of the user is English. I need to use a tool to help me answer the question.
-Action: stock_basic_info
-Action Input: {'ticker': 'NVDA'}
-Observation: Info:
-{'address1': '2788 San Tomas Expressway'
-...
-'currentPrice': 135.58
-...}
-Thought: I have obtained the current price of NVDA from the stock basic info.
-Answer: The current price of NVDA (NVIDIA Corporation) is $135.58.
-The current price of NVDA (NVIDIA Corporation) is $135.58.
+The current stock price of NVIDIA Corporation (NVDA) is $128.41.
 ```
 
-Perfect! As you can see, using existing tools is a snap.
+(This is cheating a little bit, because our model already knew the ticker symbol for NVIDIA. If it were a less well-known corporation you would need to add a search tool like [Tavily](https://llamahub.ai/l/tools/llama-index-tools-tavily-research) to find the ticker symbol.)
 
-As always, you can check [the repo](https://github.com/run-llama/python-agents-tutorial/blob/main/6_tools.py) to see this code all in one place.
+And that's it! You can now use any of the tools in LlamaHub in your agents.
+
+As always, you can check [the repo](https://github.com/run-llama/python-agents-tutorial/blob/main/2_tools.py) to see this code all in one place.
 
 ## Building and contributing your own tools
 
@@ -100,4 +61,4 @@ We love open source contributions of new tools! You can see an example of [what 
 
 Once you've got a tool working, follow our [contributing guide](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md#2--contribute-a-pack-reader-tool-or-dataset-formerly-from-llama-hub) for instructions on correctly setting metadata and submitting a pull request.
 
-Congratulations! You've completed our guide to building agents with LlamaIndex. We can't wait to see what use-cases you build!
+Next we'll look at [how to maintain state](./state.md) in your agents.

@@ -496,6 +496,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         initial_state: Optional[dict] = None,
         timeout: Optional[float] = None,
+        verbose: bool = False,
     ) -> "AgentWorkflow":
         """Initializes an AgentWorkflow from a list of tools or functions.
 
@@ -528,4 +529,5 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             state_prompt=state_prompt,
             initial_state=initial_state,
             timeout=timeout,
+            verbose=verbose,
         )

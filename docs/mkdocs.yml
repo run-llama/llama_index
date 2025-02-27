@@ -34,23 +34,13 @@ nav:
   - Learn:
       - Building an LLM Application: ./understanding/index.md
       - Using LLMs: ./understanding/using_llms/using_llms.md
-      - Building a RAG pipeline:
-          - Introduction to RAG: ./understanding/rag/index.md
-          - Loading & Ingestion:
-              - ./understanding/loading/loading.md
-              - ./understanding/loading/llamahub.md
-              - ./understanding/loading/llamacloud.md
-          - Indexing & Embedding: ./understanding/indexing/indexing.md
-          - Storing: ./understanding/storing/storing.md
-          - Querying: ./understanding/querying/querying.md
-      - Building an agent:
+      - Building agents:
           - Building a basic agent: ./understanding/agent/index.md
-          - Agents with local models: ./understanding/agent/local_models.md
-          - Adding RAG to an agent: ./understanding/agent/rag_agent.md
-          - Enhancing with LlamaParse: ./understanding/agent/llamaparse.md
-          - Memory: ./understanding/agent/memory.md
-          - Adding other tools: ./understanding/agent/tools.md
-          - Multi-agent workflows: ./understanding/agent/multi_agents.md
+          - Using existing tools: ./understanding/agent/tools.md
+          - Maintaining state: ./understanding/agent/state.md
+          - Streaming output and events: ./understanding/agent/streaming.md
+          - Human in the loop: ./understanding/agent/human_in_the_loop.md
+          - Multi-agent workflows: ./understanding/agent/multi_agent.md
       - Building Workflows:
           - Introduction to workflows: ./understanding/workflows/index.md
           - A basic workflow: ./understanding/workflows/basic_flow.md
@@ -62,6 +52,15 @@ nav:
           - Nested workflows: ./understanding/workflows/nested.md
           - Observability: ./understanding/workflows/observability.md
           - Unbound syntax: ./understanding/workflows/unbound_functions.md
+      - Building a RAG pipeline:
+          - Introduction to RAG: ./understanding/rag/index.md
+          - Loading & Ingestion:
+              - ./understanding/loading/loading.md
+              - ./understanding/loading/llamahub.md
+              - ./understanding/loading/llamacloud.md
+          - Indexing & Embedding: ./understanding/indexing/indexing.md
+          - Storing: ./understanding/storing/storing.md
+          - Querying: ./understanding/querying/querying.md
       - Structured Data Extraction:
           - Introduction: ./understanding/extraction/index.md
           - Using Structured LLMs: ./understanding/extraction/structured_llms.md
@@ -718,7 +717,6 @@ nav:
       - Workflow:
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
-          - ./examples/workflow/auto_retrieval.ipynb
           - ./examples/workflow/checkpointing_workflows.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
@@ -1163,12 +1161,32 @@ nav:
           - ./api_reference/packs/voyage_query_engine.md
           - ./api_reference/packs/zenguard.md
           - ./api_reference/packs/zephyr_query_engine.md
+      - LlamaDeploy:
+          - ./api_reference/llama_deploy/apiserver.md
+          - ./api_reference/llama_deploy/client.md
+          - ./api_reference/llama_deploy/control_plane.md
+          - ./api_reference/llama_deploy/deploy.md
+          - ./api_reference/llama_deploy/deployment.md
+          - ./api_reference/llama_deploy/message_consumers.md
+          - ./api_reference/llama_deploy/message_publishers.md
+          - ./api_reference/llama_deploy/messages.md
+          - ./api_reference/llama_deploy/orchestrators.md
+          - ./api_reference/llama_deploy/python_sdk.md
+          - ./api_reference/llama_deploy/services.md
+          - ./api_reference/llama_deploy/types.md
       - Memory:
           - ./api_reference/memory/chat_memory_buffer.md
           - ./api_reference/memory/index.md
           - ./api_reference/memory/mem0.md
           - ./api_reference/memory/simple_composable_memory.md
           - ./api_reference/memory/vector_memory.md
+      - Message Queues:
+          - ./api_reference/llama_deploy/message_queues/index.md
+          - ./api_reference/llama_deploy/message_queues/kafka.md
+          - ./api_reference/llama_deploy/message_queues/rabbitmq.md
+          - ./api_reference/llama_deploy/message_queues/redis.md
+          - ./api_reference/llama_deploy/message_queues/simple.md
+          - ./api_reference/llama_deploy/message_queues/solace.md
       - Metadata Extractors:
           - ./api_reference/extractors/documentcontext.md
           - ./api_reference/extractors/entity.md

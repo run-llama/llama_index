@@ -1,19 +1,20 @@
 from typing import Any, List
-import pytest
 
-from llama_index.core.llms import MockLLM
-from llama_index.core.agent.workflow.multi_agent_workflow import AgentWorkflow
+import pytest
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
+from llama_index.core.agent.workflow.multi_agent_workflow import AgentWorkflow
 from llama_index.core.agent.workflow.react_agent import ReActAgent
 from llama_index.core.llms import (
     ChatMessage,
     ChatResponse,
-    MessageRole,
     ChatResponseAsyncGen,
     LLMMetadata,
+    MessageRole,
+    MockLLM,
 )
-from llama_index.core.tools import FunctionTool, ToolSelection
 from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.tools import FunctionTool, ToolSelection
+from llama_index.core.workflow import WorkflowRuntimeError
 
 
 class MockLLM(MockLLM):
@@ -29,30 +30,36 @@ class MockLLM(MockLLM):
     async def astream_chat(
         self, messages: List[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        response_msg = self._responses[self._response_index]
-        self._response_index = (self._response_index + 1) % len(self._responses)
+        response_msg = None
+        if self._responses:
+            response_msg = self._responses[self._response_index]
+            self._response_index = (self._response_index + 1) % len(self._responses)
 
         async def _gen():
-            yield ChatResponse(
-                message=response_msg,
-                delta=response_msg.content,
-                raw={"content": response_msg.content},
-            )
+            if response_msg:
+                yield ChatResponse(
+                    message=response_msg,
+                    delta=response_msg.content,
+                    raw={"content": response_msg.content},
+                )
 
         return _gen()
 
     async def astream_chat_with_tools(
         self, tools: List[Any], chat_history: List[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        response_msg = self._responses[self._response_index]
-        self._response_index = (self._response_index + 1) % len(self._responses)
+        response_msg = None
+        if self._responses:
+            response_msg = self._responses[self._response_index]
+            self._response_index = (self._response_index + 1) % len(self._responses)
 
         async def _gen():
-            yield ChatResponse(
-                message=response_msg,
-                delta=response_msg.content,
-                raw={"content": response_msg.content},
-            )
+            if response_msg:
+                yield ChatResponse(
+                    message=response_msg,
+                    delta=response_msg.content,
+                    raw={"content": response_msg.content},
+                )
 
         return _gen()
 
@@ -98,6 +105,20 @@ def calculator_agent():
 
 
 @pytest.fixture()
+def empty_calculator_agent():
+    return ReActAgent(
+        name="calculator",
+        description="Performs basic arithmetic operations",
+        system_prompt="You are a calculator assistant.",
+        tools=[
+            FunctionTool.from_defaults(fn=add),
+            FunctionTool.from_defaults(fn=subtract),
+        ],
+        llm=MockLLM(responses=[]),
+    )
+
+
+@pytest.fixture()
 def retriever_agent():
     return FunctionAgent(
         name="retriever",
@@ -122,6 +143,18 @@ def retriever_agent():
                     },
                 ),
             ],
+        ),
+    )
+
+
+@pytest.fixture()
+def empty_retriever_agent():
+    return FunctionAgent(
+        name="retriever",
+        description="Manages data retrieval",
+        system_prompt="You are a retrieval assistant.",
+        llm=MockLLM(
+            responses=[],
         ),
     )
 
@@ -199,6 +232,44 @@ async def test_workflow_execution(calculator_agent, retriever_agent):
         for ev in events
     )
     assert "8" in str(response.response)
+
+
+@pytest.mark.asyncio()
+async def test_workflow_execution_empty(empty_calculator_agent, retriever_agent):
+    """Test basic workflow execution with agent handoff."""
+    workflow = AgentWorkflow(
+        agents=[empty_calculator_agent, retriever_agent],
+        root_agent="retriever",
+    )
+
+    memory = ChatMemoryBuffer.from_defaults()
+    handler = workflow.run(user_msg="Can you add 5 and 3?", memory=memory)
+
+    events = []
+    async for event in handler.stream_events():
+        events.append(event)
+
+    with pytest.raises(WorkflowRuntimeError, match="Got empty message"):
+        await handler
+
+
+@pytest.mark.asyncio()
+async def test_workflow_handoff_empty(calculator_agent, empty_retriever_agent):
+    """Test basic workflow execution with agent handoff."""
+    workflow = AgentWorkflow(
+        agents=[calculator_agent, empty_retriever_agent],
+        root_agent="retriever",
+    )
+
+    memory = ChatMemoryBuffer.from_defaults()
+    handler = workflow.run(user_msg="Can you add 5 and 3?", memory=memory)
+
+    events = []
+    async for event in handler.stream_events():
+        events.append(event)
+
+    response = await handler
+    assert response.response.content is None
 
 
 @pytest.mark.asyncio()
