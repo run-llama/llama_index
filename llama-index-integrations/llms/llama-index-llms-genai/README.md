@@ -5,8 +5,8 @@
 1. Install the required Python packages:
 
    ```bash
-   %pip install llama-index-llms-gemini
-   !pip install -q llama-index google-generativeai
+   %pip install llama-index-llms-genai
+   !pip install -q llama-index google-genai
    ```
 
 2. Set the Google API key as an environment variable:
@@ -22,7 +22,7 @@
 To generate a poem using the Gemini model, use the following code:
 
 ```python
-from llama_index.llms.gemini import Gemini
+from llama_index.llms.genai import Gemini
 
 resp = Gemini().complete("Write a poem about a magic backpack")
 print(resp)
@@ -34,7 +34,7 @@ To simulate a conversation, send a list of messages:
 
 ```python
 from llama_index.core.llms import ChatMessage
-from llama_index.llms.gemini import Gemini
+from llama_index.llms.genai import Gemini
 
 messages = [
     ChatMessage(role="user", content="Hello friend!"),
@@ -52,7 +52,7 @@ print(resp)
 To stream content responses in real-time:
 
 ```python
-from llama_index.llms.gemini import Gemini
+from llama_index.llms.genai import Gemini
 
 llm = Gemini()
 resp = llm.stream_complete(
@@ -65,7 +65,7 @@ for r in resp:
 To stream chat responses:
 
 ```python
-from llama_index.llms.gemini import Gemini
+from llama_index.llms.genai import Gemini
 from llama_index.core.llms import ChatMessage
 
 llm = Gemini()
@@ -79,24 +79,12 @@ messages = [
 resp = llm.stream_chat(messages)
 ```
 
-### Using Other Models
-
-To find suitable models available in the Gemini model site:
-
-```python
-import google.generativeai as genai
-
-for m in genai.list_models():
-    if "generateContent" in m.supported_generation_methods:
-        print(m.name)
-```
-
 ### Specific Model Usage
 
 To use a specific model, you can configure it like this:
 
 ```python
-from llama_index.llms.gemini import Gemini
+from llama_index.llms.genai import Gemini
 
 llm = Gemini(model="models/gemini-pro")
 resp = llm.complete("Write a short, but joyous, ode to LlamaIndex")
@@ -108,7 +96,7 @@ print(resp)
 To use the asynchronous completion API:
 
 ```python
-from llama_index.llms.gemini import Gemini
+from llama_index.llms.genai import Gemini
 
 llm = Gemini()
 resp = await llm.acomplete("Llamas are famous for ")
@@ -122,7 +110,3 @@ resp = await llm.astream_complete("Llamas are famous for ")
 async for chunk in resp:
     print(chunk.text, end="")
 ```
-
-### LLM Implementation example
-
-https://docs.llamaindex.ai/en/stable/examples/llm/gemini/
