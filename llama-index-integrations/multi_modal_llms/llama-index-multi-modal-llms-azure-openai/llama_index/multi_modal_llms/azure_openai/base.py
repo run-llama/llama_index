@@ -61,7 +61,7 @@ class AzureOpenAIMultiModal(OpenAIMultiModal):
         model: str = "gpt-4-vision-preview",
         engine: Optional[str] = None,
         temperature: float = DEFAULT_TEMPERATURE,
-        max_new_tokens: Optional[int] = 300,
+        max_tokens: Optional[int] = 300,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         context_window: Optional[int] = DEFAULT_CONTEXT_WINDOW,
         max_retries: int = 3,
@@ -85,6 +85,13 @@ class AzureOpenAIMultiModal(OpenAIMultiModal):
         http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
+        # TODO: support deprecated max_new_tokens
+        if "max_new_tokens" in kwargs:
+            max_tokens = kwargs["max_new_tokens"]
+            del kwargs["max_new_tokens"]
+        else:
+            max_tokens = max_tokens
+
         engine = resolve_from_aliases(
             engine, deployment_name, deployment_id, deployment, azure_deployment
         )
@@ -99,7 +106,7 @@ class AzureOpenAIMultiModal(OpenAIMultiModal):
             engine=engine,
             model=model,
             temperature=temperature,
-            max_new_tokens=max_new_tokens,
+            max_tokens=max_tokens,
             additional_kwargs=additional_kwargs,
             context_window=context_window,
             max_retries=max_retries,
