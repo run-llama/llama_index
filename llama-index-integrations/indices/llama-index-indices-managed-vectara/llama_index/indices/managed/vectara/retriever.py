@@ -338,7 +338,7 @@ class VectaraRetriever(BaseRetriever):
                 model_parameters["presence_penalty"] = self._presence_penalty
 
             if len(model_parameters) > 0:
-                summary_config["model_parameters"] = model_paramters
+                summary_config["model_parameters"] = model_parameters
 
             citations_config = {}
             if self._citations_style:
