@@ -46,7 +46,7 @@ license = "GPL-3.0-or-later"
 maintainers = ["HawkClaws", "Hironsan", "NA", "an-bluecat", "bborn", "jasonwcfan", "kravetsmic", "pandazki", "ruze00", "selamanse", "thejessezhang"]
 name = "llama-index-readers-web"
 readme = "README.md"
-version = "0.3.5"
+version = "0.3.6"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
