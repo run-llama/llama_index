@@ -269,14 +269,18 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         ):
             return chat_history_to_be_summarized[0]
 
-        summarize_prompt = [ChatMessage(
-            role=MessageRole.SYSTEM,
-            content=self.summarize_prompt,
-        )]
-        summarize_prompt.append(ChatMessage(
-            role=MessageRole.USER,
-            content=self._get_prompt_to_summarize(chat_history_to_be_summarized),
-        ))
+        summarize_prompt = [
+            ChatMessage(
+                role=MessageRole.SYSTEM,
+                content=self.summarize_prompt,
+            )
+        ]
+        summarize_prompt.append(
+            ChatMessage(
+                role=MessageRole.USER,
+                content=self._get_prompt_to_summarize(chat_history_to_be_summarized),
+            )
+        )
         # TODO: Maybe it is better to pass a list of history to llm
         r = self.llm.chat(summarize_prompt)
         return ChatMessage(
