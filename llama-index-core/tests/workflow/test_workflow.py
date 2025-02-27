@@ -251,6 +251,7 @@ async def test_workflow_num_workers():
     assert set(result) == {"test1", "test2", "test4"}
 
     # ctx should have 1 extra event
+    assert handler.ctx
     assert (
         len(handler.ctx._events_buffer["tests.workflow.conftest.AnotherTestEvent"]) == 1
     )
@@ -463,18 +464,21 @@ async def test_workflow_continue_context():
     # first run
     r = wf.run()
     result = await r
+    assert r.ctx
     assert result == "Done"
     assert await r.ctx.get("number") == 1
 
     # second run -- independent from the first
     r = wf.run()
     result = await r
+    assert r.ctx
     assert result == "Done"
     assert await r.ctx.get("number") == 1
 
     # third run -- continue from the second run
     r = wf.run(ctx=r.ctx)
     result = await r
+    assert r.ctx
     assert result == "Done"
     assert await r.ctx.get("number") == 2
 
@@ -493,6 +497,7 @@ async def test_workflow_pickle():
 
     wf = DummyWorkflow()
     handler = wf.run()
+    assert handler.ctx
     _ = await handler
 
     # by default, we can't pickle the LLM/embedding object
@@ -504,6 +509,7 @@ async def test_workflow_pickle():
     new_handler = WorkflowHandler(
         ctx=Context.from_dict(wf, state_dict, serializer=JsonPickleSerializer())
     )
+    assert new_handler.ctx
 
     # check that the step count is the same
     cur_step = await handler.ctx.get("step")
@@ -521,6 +527,7 @@ async def test_workflow_pickle():
     assert new_llm.max_tokens == llm.max_tokens
 
     handler = wf.run(ctx=new_handler.ctx)
+    assert handler.ctx
     _ = await handler
 
     # check that the step count is incremented
@@ -626,6 +633,7 @@ async def test_human_in_the_loop():
     workflow = HumanInTheLoopWorkflow()
 
     handler: WorkflowHandler = workflow.run()
+    assert handler.ctx
     async for event in handler.stream_events():
         if isinstance(event, InputRequiredEvent):
             assert event.prefix == "Enter a number: "

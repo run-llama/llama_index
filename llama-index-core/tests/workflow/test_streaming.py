@@ -151,4 +151,5 @@ async def test_resume_streams():
         pass
     await handler_2
 
+    assert handler_2.ctx
     assert await handler_2.ctx.get("cur_count") == 2

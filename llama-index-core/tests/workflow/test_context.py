@@ -168,6 +168,7 @@ async def test_wait_for_event_in_workflow():
 
     workflow = TestWorkflow()
     handler = workflow.run()
+    assert handler.ctx
     async for ev in handler.stream_events():
         if isinstance(ev, Event) and ev.msg == "foo":
             handler.ctx.send_event(Event(msg="bar"))
