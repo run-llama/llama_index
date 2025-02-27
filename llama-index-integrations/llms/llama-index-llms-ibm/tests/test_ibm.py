@@ -198,25 +198,12 @@ class TestWasonxLLMInference:
             TEST_CONTEXT_WINDOW,
             id="context_window_only",
         ),
-        pytest.param(
-            {},
-            None,
-            DEFAULT_CONTEXT_WINDOW,
-            id="default_context_window"
-        ),
+        pytest.param({}, None, DEFAULT_CONTEXT_WINDOW, id="default_context_window"),
     ]
 
     MAX_TOKENS_PARAMETRIZATION = [
-        pytest.param(
-            TEST_MAX_NEW_TOKENS, 
-            TEST_MAX_NEW_TOKENS,
-            id="max_new_tokens"
-        ),
-        pytest.param(
-            None, 
-            DEFAULT_MAX_TOKENS,
-            id="default_max_tokens"
-        )
+        pytest.param(TEST_MAX_NEW_TOKENS, TEST_MAX_NEW_TOKENS, id="max_new_tokens"),
+        pytest.param(None, DEFAULT_MAX_TOKENS, id="default_max_tokens"),
     ]
 
     MODEL_ID_PARAMETRIZATION = [
@@ -227,13 +214,9 @@ class TestWasonxLLMInference:
                 }
             },
             TEST_MODEL,
-            id="base_model_id"
+            id="base_model_id",
         ),
-        pytest.param(
-            {},
-            TEST_DEPLOYMENT_ID,
-            id="deployment_id"
-        )
+        pytest.param({}, TEST_DEPLOYMENT_ID, id="deployment_id"),
     ]
 
     def test_initialization(self) -> None:
@@ -442,7 +425,11 @@ class TestWasonxLLMInference:
         )
 
     @pytest.mark.parametrize(
-        ("get_model_specs_result", "instance_context_window", "expected_context_window"),
+        (
+            "get_model_specs_result",
+            "instance_context_window",
+            "expected_context_window",
+        ),
         CONTEXT_WINDOW_PARAMETRIZATION,
     )
     @pytest.mark.parametrize(
