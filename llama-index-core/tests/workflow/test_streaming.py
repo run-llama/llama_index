@@ -19,7 +19,7 @@ class StreamingWorkflow(Workflow):
                 yield word
 
         async for w in stream_messages():
-            ctx.session.write_event_to_stream(Event(msg=w))
+            ctx.write_event_to_stream(Event(msg=w))
 
         return StopEvent(result=None)
 
@@ -151,4 +151,5 @@ async def test_resume_streams():
         pass
     await handler_2
 
+    assert handler_2.ctx
     assert await handler_2.ctx.get("cur_count") == 2

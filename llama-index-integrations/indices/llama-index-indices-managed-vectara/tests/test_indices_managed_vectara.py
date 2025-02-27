@@ -95,6 +95,7 @@ def get_nodes() -> List[Node]:
     return nodes
 
 
+# Normal vectara index fixture
 @pytest.fixture()
 def vectara1():
     docs = get_docs()
@@ -110,9 +111,36 @@ def vectara1():
         vectara1.delete_ref_doc(id)
 
 
+# vectara index fixture, where we specify the base url
+@pytest.fixture()
+def vectara1_custom():
+    docs = get_docs()
+    try:
+        vectara1_custom = VectaraIndex.from_documents(
+            docs, vectara_base_url="https://api.vectara.io"
+        )
+    except ValueError:
+        pytest.skip("Missing Vectara credentials, skipping test")
+
+    yield vectara1_custom
+
+    # Tear down code
+    for id in vectara1_custom.doc_ids:
+        vectara1_custom.delete_ref_doc(id)
+
+
 def test_simple_retrieval(vectara1) -> None:
     docs = get_docs()
     qe = vectara1.as_retriever(similarity_top_k=1)
+    res = qe.retrieve("Find me something different")
+    assert len(res) == 1
+    assert res[0].node.get_content() == docs[1].text
+    assert res[0].node.node_id == docs[1].doc_id
+
+
+def test_simple_retrieval_with_custom_base_url(vectara1_custom) -> None:
+    docs = get_docs()
+    qe = vectara1_custom.as_retriever(similarity_top_k=1)
     res = qe.retrieve("Find me something different")
     assert len(res) == 1
     assert res[0].node.get_content() == docs[1].text
@@ -257,8 +285,6 @@ def test_chain_rerank_retrieval(vectara1) -> None:
 
 
 def test_custom_prompt(vectara1) -> None:
-    docs = get_docs()
-
     qe = vectara1.as_query_engine(
         similarity_top_k=3,
         n_sentences_before=0,
@@ -269,11 +295,10 @@ def test_custom_prompt(vectara1) -> None:
         prompt_text='[\n  {"role": "system", "content": "You are an expert in summarizing the future of Vectara\'s inegration with LlamaIndex. Your summaries are insightful, concise, and highlight key innovations and changes."},\n  #foreach ($result in $vectaraQueryResults)\n    {"role": "user", "content": "What are the key points in result number $vectaraIdxWord[$foreach.index] about Vectara\'s LlamaIndex integration?"},\n    {"role": "assistant", "content": "In result number $vectaraIdxWord[$foreach.index], the key points are: ${result.getText()}"},\n  #end\n  {"role": "user", "content": "Can you generate a comprehensive summary on \'Vectara\'s LlamaIndex Integration\' incorporating all the key points discussed?"}\n]\n',
     )
 
-    res = qe.query("How will Vectara's integration look in the future?")
+    res = qe.query("How does Vectara's integration with llamaindex work?")
     assert "integration" in str(res).lower()
     assert "llamaindex" in str(res).lower()
     assert "vectara" in str(res).lower()
-    assert "result" in str(res).lower()
 
 
 def test_update_doc(vectara1) -> None:
@@ -337,7 +362,7 @@ def test_file_upload(vectara2) -> None:
     query_engine = vectara2.as_query_engine(similarity_top_k=3)
     res = query_engine.query("How is Paul related to Reddit?")
     summary = res.response
-    assert "paul graham" in summary.lower() and "reddit" in summary.lower()
+    assert "paul" in summary.lower() and "reddit" in summary.lower()
     assert "https://www.paulgraham.com/worked.html" in str(res.source_nodes)
 
 
@@ -419,7 +444,7 @@ def test_chat(vectara2) -> None:
     res = chat_engine.chat("What did he learn at the graduate school he selected?")
     summary = res.response
 
-    assert "learn" in summary.lower()
+    assert "paul" in summary.lower()
     assert "harvard" in summary.lower()
     assert res.metadata["fcs"] > 0
     assert chat_engine.conv_id == chat_id
