@@ -76,7 +76,9 @@ class MarkdownNodeParser(NodeParser):
                             self._build_node_from_split(
                                 current_section.strip(),
                                 node,
-                                self.header_path_separator.join(h[1] for h in header_stack[:-1]),
+                                self.header_path_separator.join(
+                                    h[1] for h in header_stack[:-1]
+                                ),
                             )
                         )
 
@@ -121,7 +123,9 @@ class MarkdownNodeParser(NodeParser):
             separator = self.header_path_separator
             node.metadata["header_path"] = (
                 # ex: "/header1/header2/" || "/"
-                separator + header_path + separator if header_path else separator
+                separator + header_path + separator
+                if header_path
+                else separator
             )
 
         return node
