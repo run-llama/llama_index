@@ -348,7 +348,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             cur_tool_calls: List[ToolCallResult] = await ctx.get(
                 "current_tool_calls", default=[]
             )
-            output.tool_calls.extend(cur_tool_calls)
+            output.tool_calls.extend(cur_tool_calls)  # type: ignore
             await ctx.set("current_tool_calls", [])
 
             return StopEvent(result=output)
