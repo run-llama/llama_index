@@ -1,7 +1,9 @@
 """Google's hosted Gemini API."""
 
 import os
+import typing
 import uuid
+from google import auth
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -29,7 +31,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
+from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
@@ -62,6 +64,12 @@ if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
 
+class VertexAIConfig(typing.TypedDict):
+    credentials: Optional[auth.credentials.Credentials] = None
+    project: Optional[str] = None
+    location: Optional[str] = None
+
+
 class Gemini(FunctionCallingLLM):
     """
     Gemini LLM.
@@ -83,51 +91,53 @@ class Gemini(FunctionCallingLLM):
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
         ge=0.0,
-        le=1.0,
-    )
-    max_tokens: int = Field(
-        default=DEFAULT_NUM_OUTPUTS,
-        description="The number of tokens to generate.",
-        gt=0,
+        le=2.0,
     )
     generate_kwargs: dict = Field(
         default_factory=dict, description="Kwargs for generation."
     )
+    _max_tokens: int = PrivateAttr()
     _client: genai.Client = PrivateAttr()
+    _generation_config: Optional[types.GenerateContentConfig] = PrivateAttr()
+    _safety_settings: Optional[types.SafetySetting] = PrivateAttr()
     _model_meta: types.Model = PrivateAttr()
 
     def __init__(
         self,
         api_key: Optional[str] = None,
         model: str = GEMINI_MODELS[0],
+        vertexai: bool = False,
         temperature: float = DEFAULT_TEMPERATURE,
+        vertexai_config: Optional[VertexAIConfig] = None,
         max_tokens: Optional[int] = None,
+        http_options: Optional[types.HttpOptions] = None,
+        debug_config: Optional[genai.client.DebugConfig] = None,
         generation_config: Optional[types.GenerateContentConfig] = None,
         safety_settings: Optional[types.SafetySetting] = None,
         callback_manager: Optional[CallbackManager] = None,
-        api_base: Optional[str] = None,
-        transport: Optional[str] = None,
-        default_headers: Optional[Dict[str, str]] = None,
+        is_function_call_model: bool = True,
         **generate_kwargs: Any,
     ):
         # API keys are optional. The API can be authorised via OAuth (detected
         # environmentally) or by the GOOGLE_API_KEY environment variable.
         config_params: Dict[str, Any] = {
+            **(vertexai_config if vertexai_config else {}),
             "api_key": api_key or os.getenv("GOOGLE_API_KEY"),
+            "vertexai": vertexai,
         }
-        if api_base:
-            config_params["client_options"] = {"api_endpoint": api_base}
-        if transport:
-            config_params["transport"] = transport
-        if default_headers:
-            default_metadata = []
-            for key, value in default_headers.items():
-                default_metadata.append((key, value))
-            # `default_metadata` contains (key, value) pairs that will be sent with every request.
-            # When using `transport="rest"`, these will be sent as HTTP headers.
-            config_params["default_metadata"] = default_metadata
 
-        max_tokens = max_tokens or 2**13
+        if http_options:
+            config_params["http_options"] = http_options
+
+        if debug_config:
+            config_params["debug_config"] = debug_config
+
+        client = genai.Client(**config_params)
+        model_meta = client.models.get(model=model)
+        if not max_tokens:
+            max_tokens = model_meta.output_token_limit
+        else:
+            max_tokens = min(max_tokens, model_meta.output_token_limit)
 
         super().__init__(
             model=model,
@@ -138,20 +148,23 @@ class Gemini(FunctionCallingLLM):
         )
 
         self.model = model
-        self._client = genai.Client(**config_params)
-        self._model_meta = self._client.models.get(model=model)
-        self._is_function_call_model = True
+        self._client = client
+        self._model_meta = model_meta
+        self._is_function_call_model = is_function_call_model
+        self._generation_config = generation_config
+        self._safety_settings = safety_settings
+        self._max_tokens = max_tokens
 
     @classmethod
     def class_name(cls) -> str:
-        return "Gemini_LLM"
+        return "GenAI"
 
     @property
     def metadata(self) -> LLMMetadata:
-        total_tokens = (self._model_meta.input_token_limit or 0) + self.max_tokens
+        total_tokens = (self._model_meta.input_token_limit or 0) + self._max_tokens
         return LLMMetadata(
             context_window=total_tokens,
-            num_output=self.max_tokens,
+            num_output=self._max_tokens,
             model_name=self.model,
             is_chat_model=True,
             is_function_calling_model=self._is_function_call_model,
