@@ -2,6 +2,7 @@
 import re
 from typing import Any, List, Optional, Sequence
 
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.node_parser.node_utils import build_nodes_from_splits
@@ -21,17 +22,9 @@ class MarkdownNodeParser(NodeParser):
         header_path_separator (str): separator char used for section header path metadata
     """
 
-    def __init__(
-        self,
-        include_metadata: bool = True,
-        include_prev_next_rel: bool = True,
-        header_path_separator: str = "/",
-        callback_manager: CallbackManager = CallbackManager([]),
-    ):
-        self.include_metadata = include_metadata
-        self.include_prev_next_rel = include_prev_next_rel
-        self.header_path_separator = header_path_separator
-        self.callback_manager = callback_manager
+    header_path_separator: str = Field(
+        default="/", description="Separator char used for section header path metadata."
+    )
 
     @classmethod
     def from_defaults(
