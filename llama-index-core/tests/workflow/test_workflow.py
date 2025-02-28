@@ -34,6 +34,14 @@ class EventWithName(Event):
     name: str
 
 
+class MyStart(StartEvent):
+    query: str
+
+
+class MyStop(StopEvent):
+    outcome: str
+
+
 def test_fn():
     print("test_fn")
 
@@ -126,12 +134,11 @@ async def test_workflow_validation_unproduced_events():
         async def invalid_step(self, ev: StartEvent) -> None:
             pass
 
-    workflow = InvalidWorkflow()
     with pytest.raises(
-        WorkflowValidationError,
-        match="No event of type StopEvent is produced.",
+        WorkflowConfigurationError,
+        match="At least one Event of type StopEvent must be returned by any step.",
     ):
-        await workflow.run()
+        workflow = InvalidWorkflow()
 
 
 @pytest.mark.asyncio()
@@ -164,12 +171,11 @@ async def test_workflow_validation_start_event_not_consumed():
         async def another_step(self, ev: OneTestEvent) -> OneTestEvent:
             return OneTestEvent()
 
-    workflow = InvalidWorkflow()
     with pytest.raises(
-        WorkflowValidationError,
-        match="The following events are produced but never consumed: StartEvent",
+        WorkflowConfigurationError,
+        match="At least one Event of type StartEvent must be received by any step.",
     ):
-        await workflow.run()
+        workflow = InvalidWorkflow()
 
 
 @pytest.mark.asyncio()
@@ -221,7 +227,7 @@ async def test_workflow_num_workers():
             ctx.send_event(OneTestEvent(test_param="test3"))
 
             # send one extra event
-            ctx.session.send_event(AnotherTestEvent(another_test_param="test4"))
+            ctx.send_event(AnotherTestEvent(another_test_param="test4"))
 
             return LastEvent()
 
@@ -251,6 +257,7 @@ async def test_workflow_num_workers():
     assert set(result) == {"test1", "test2", "test4"}
 
     # ctx should have 1 extra event
+    assert handler.ctx
     assert (
         len(handler.ctx._events_buffer["tests.workflow.conftest.AnotherTestEvent"]) == 1
     )
@@ -362,22 +369,21 @@ async def test_workflow_multiple_runs():
     assert set(results) == {6, 84, -198}
 
 
-def test_deprecated_send_event():
+def test_deprecated_send_event(workflow):
     ev = StartEvent()
-    wf = Workflow()
     ctx = mock.MagicMock()
 
     # One context, assert step emits a warning
-    wf._contexts.add(ctx)
+    workflow._contexts.add(ctx)
     with pytest.warns(UserWarning):
-        wf.send_event(message=ev)
+        workflow.send_event(message=ev)
     ctx.send_event.assert_called_with(message=ev, step=None)
 
     # Second context, assert step raises an exception
     ctx = mock.MagicMock()
-    wf._contexts.add(ctx)
+    workflow._contexts.add(ctx)
     with pytest.raises(WorkflowRuntimeError):
-        wf.send_event(message=ev)
+        workflow.send_event(message=ev)
     ctx.send_event.assert_not_called()
 
 
@@ -443,7 +449,12 @@ async def test_workflow_task_raises_step():
 
 
 def test_workflow_disable_validation():
-    w = Workflow(disable_validation=True)
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ev: StartEvent) -> StopEvent:
+            raise ValueError("The step raised an error!")
+
+    w = DummyWorkflow(disable_validation=True)
     w._get_steps = mock.MagicMock()
     w._validate()
     w._get_steps.assert_not_called()
@@ -463,18 +474,21 @@ async def test_workflow_continue_context():
     # first run
     r = wf.run()
     result = await r
+    assert r.ctx
     assert result == "Done"
     assert await r.ctx.get("number") == 1
 
     # second run -- independent from the first
     r = wf.run()
     result = await r
+    assert r.ctx
     assert result == "Done"
     assert await r.ctx.get("number") == 1
 
     # third run -- continue from the second run
     r = wf.run(ctx=r.ctx)
     result = await r
+    assert r.ctx
     assert result == "Done"
     assert await r.ctx.get("number") == 2
 
@@ -493,6 +507,7 @@ async def test_workflow_pickle():
 
     wf = DummyWorkflow()
     handler = wf.run()
+    assert handler.ctx
     _ = await handler
 
     # by default, we can't pickle the LLM/embedding object
@@ -504,6 +519,7 @@ async def test_workflow_pickle():
     new_handler = WorkflowHandler(
         ctx=Context.from_dict(wf, state_dict, serializer=JsonPickleSerializer())
     )
+    assert new_handler.ctx
 
     # check that the step count is the same
     cur_step = await handler.ctx.get("step")
@@ -521,6 +537,7 @@ async def test_workflow_pickle():
     assert new_llm.max_tokens == llm.max_tokens
 
     handler = wf.run(ctx=new_handler.ctx)
+    assert handler.ctx
     _ = await handler
 
     # check that the step count is incremented
@@ -626,6 +643,7 @@ async def test_human_in_the_loop():
     workflow = HumanInTheLoopWorkflow()
 
     handler: WorkflowHandler = workflow.run()
+    assert handler.ctx
     async for event in handler.stream_events():
         if isinstance(event, InputRequiredEvent):
             assert event.prefix == "Enter a number: "
@@ -722,12 +740,6 @@ async def test_workflow_run_num_concurrent(
 
 @pytest.mark.asyncio()
 async def test_custom_stop_event():
-    class MyStart(StartEvent):
-        query: str
-
-    class MyStop(StopEvent):
-        outcome: str
-
     class CustomEventsWorkflow(Workflow):
         @step
         async def start_step(self, ev: MyStart) -> OneTestEvent:
@@ -741,7 +753,13 @@ async def test_custom_stop_event():
         async def end_step(self, ev: LastEvent) -> MyStop:
             return MyStop(outcome="Workflow completed")
 
-    wf = CustomEventsWorkflow(start_event_class=MyStart, stop_event_class=MyStop)
+    wf = CustomEventsWorkflow()
+    assert wf._start_event_class == MyStart
+    assert wf._stop_event_class == MyStop
+    result = await wf.run(query="foo")
+
+    # Ensure the event types can be inferred when not passed to the init
+    wf = CustomEventsWorkflow()
     assert wf._start_event_class == MyStart
     assert wf._stop_event_class == MyStop
     result = await wf.run(query="foo")
@@ -754,48 +772,86 @@ def test_is_done(workflow):
 
 
 def test_wrong_event_types():
-    class CustomEvent(Event):
+    class RandomEvent(Event):
         pass
 
-    with pytest.raises(
-        WorkflowConfigurationError,
-        match="Start event class 'CustomEvent' must derive from 'StartEvent'",
-    ):
-        DummyWorkflow(start_event_class=CustomEvent)  # type: ignore
+    class InvalidStopWorkflow(Workflow):
+        @step
+        async def a_step(self, ev: MyStart) -> RandomEvent:
+            return RandomEvent()
 
     with pytest.raises(
         WorkflowConfigurationError,
-        match="Stop event class 'CustomEvent' must derive from 'StopEvent'",
+        match="At least one Event of type StopEvent must be returned by any step.",
     ):
-        DummyWorkflow(stop_event_class=CustomEvent)  # type: ignore
+        InvalidStopWorkflow()
+
+    class InvalidStartWorkflow(Workflow):
+        @step
+        async def a_step(self, ev: RandomEvent) -> StopEvent:
+            return StopEvent()
+
+    with pytest.raises(
+        WorkflowConfigurationError,
+        match="At least one Event of type StartEvent must be received by any step.",
+    ):
+        InvalidStartWorkflow()
 
 
-def test__get_start_event(caplog):
+def test__get_start_event_instance(caplog):
     class CustomEvent(StartEvent):
         field: str
 
     e = CustomEvent(field="test")
-    d = DummyWorkflow(start_event_class=CustomEvent)
-
-    # Invoke run() with wrong start_event type
-    with pytest.raises(
-        ValueError,
-        match="The 'start_event' argument must be an instance of 'StartEvent'.",
-    ):
-        d._get_start_event(start_event="wrong type", arg="foo")  # type: ignore
+    d = DummyWorkflow()
+    d._start_event_class = CustomEvent
 
     # Invoke run() passing a legit start event but with additional kwargs
     with caplog.at_level(logging.WARN):
-        assert d._get_start_event(e, this_will_be_ignored=True) == e
+        assert d._get_start_event_instance(e, this_will_be_ignored=True) == e
         assert (
             "Keyword arguments are not supported when 'run()' is invoked with the 'start_event' parameter."
             in caplog.text
         )
 
     # Old style kwargs passed to the designed StartEvent
-    assert type(d._get_start_event(None, field="test")) is CustomEvent
+    assert type(d._get_start_event_instance(None, field="test")) is CustomEvent
 
     # Old style but wrong kwargs passed to the designed StartEvent
     err = "Failed creating a start event of type 'CustomEvent' with the keyword arguments: {'wrong_field': 'test'}"
     with pytest.raises(WorkflowRuntimeError, match=err):
-        d._get_start_event(None, wrong_field="test")
+        d._get_start_event_instance(None, wrong_field="test")
+
+
+def test__ensure_start_event_class_multiple_types():
+    class DummyWorkflow(Workflow):
+        @step
+        def one(self, ev: MyStart) -> None:
+            pass
+
+        @step
+        def two(self, ev: StartEvent) -> StopEvent:
+            return StopEvent()
+
+    with pytest.raises(
+        WorkflowConfigurationError,
+        match="Only one type of StartEvent is allowed per workflow, found 2",
+    ):
+        wf = DummyWorkflow()
+
+
+def test__ensure_stop_event_class_multiple_types():
+    class DummyWorkflow(Workflow):
+        @step
+        def one(self, ev: MyStart) -> MyStop:
+            return MyStop(outcome="nope")
+
+        @step
+        def two(self, ev: MyStart) -> StopEvent:
+            return StopEvent()
+
+    with pytest.raises(
+        WorkflowConfigurationError,
+        match="Only one type of StopEvent is allowed per workflow, found 2",
+    ):
+        wf = DummyWorkflow()

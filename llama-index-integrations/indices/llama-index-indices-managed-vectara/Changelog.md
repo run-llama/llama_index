@@ -1,5 +1,9 @@
 # CHANGELOG — llama-index-indices-managed-vectara
 
+## [0.4.1]
+
+Added vectara_base_url to support custom Vectara server, and vectara_verify_ssl to enable ignoring SSL when needed.
+
 ## [0.4.0]
 
 Implementation switched from using Vectara API v1 to API v2.
