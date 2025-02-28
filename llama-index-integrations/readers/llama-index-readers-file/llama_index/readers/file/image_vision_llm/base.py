@@ -53,6 +53,7 @@ class ImageVisionLLMReader(BaseReader):
                 "dtype": dtype,
             }
         else:
+            # Try to install PyTorch in order to run inference efficiently.
             try:
                 import torch
 
