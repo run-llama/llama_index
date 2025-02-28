@@ -148,27 +148,6 @@ def test_stream_complete_and_astream_complete() -> None:
 @pytest.mark.skipif(
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
-def test_simple_structured_predict() -> None:
-    """Test structured prediction with a simple schema."""
-    llm = Gemini(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
-
-    response = llm.structured_predict(
-        output_cls=Poem,
-        prompt=PromptTemplate("Write a poem about a magic backpack"),
-    )
-
-    assert response is not None
-    assert isinstance(response, Poem)
-    assert isinstance(response.content, str)
-    assert len(response.content) > 0
-
-
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
 def test_simple_astructured_predict() -> None:
     """Test async structured prediction with a simple schema."""
     llm = Gemini(
@@ -245,14 +224,14 @@ def test_simple_astream_structured_predict() -> None:
 @pytest.mark.skipif(
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
-def test_simple_structured_predict_function_calling() -> None:
+def test_simple_structured_predict() -> None:
     """Test structured prediction with a simple schema."""
     llm = Gemini(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
 
-    response = llm.structured_predict_with_function_calling(
+    response = llm.structured_predict(
         output_cls=Poem,
         prompt=PromptTemplate("Write a poem about a magic backpack"),
     )
@@ -275,30 +254,6 @@ def test_complex_structured_predict() -> None:
 
     prompt = PromptTemplate("Generate a simple database structure")
     response = llm.structured_predict(output_cls=Schema, prompt=prompt)
-
-    assert response is not None
-    assert isinstance(response, Schema)
-    assert isinstance(response.schema_name, str)
-    assert len(response.schema_name) > 0
-    assert len(response.tables) > 0
-    assert all(isinstance(table, Table) for table in response.tables)
-    assert all(len(table.columns) > 0 for table in response.tables)
-
-
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_complex_structured_predict_function_calling() -> None:
-    """Test structured prediction with a complex nested schema."""
-    llm = Gemini(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
-
-    prompt = PromptTemplate("Generate a simple database structure")
-    response = llm.structured_predict_with_function_calling(
-        output_cls=Schema, prompt=prompt
-    )
 
     assert response is not None
     assert isinstance(response, Schema)

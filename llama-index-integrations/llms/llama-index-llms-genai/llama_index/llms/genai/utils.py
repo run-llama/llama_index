@@ -4,6 +4,7 @@ from typing import (
     Any,
     Dict,
 )
+import typing
 
 from google.genai import types
 from llama_index.core.base.llms.types import (
@@ -210,9 +211,15 @@ def convert_schema_to_function_declaration(tool: "BaseTool"):
     )
 
 
+class ChatParams(typing.TypedDict):
+    model: str
+    history: list[types.Content]
+    config: types.GenerateContentConfig
+
+
 def prepare_chat_params(
     model: str, messages: Sequence[ChatMessage], **kwargs: Any
-) -> tuple[types.Content, dict]:
+) -> tuple[types.Content, ChatParams]:
     """
     Prepare common parameters for chat creation.
 
@@ -232,8 +239,8 @@ def prepare_chat_params(
     if tools and not isinstance(tools, list):
         tools = [tools]
 
-    config = kwargs.pop("config", {})
-    chat_kwargs = {"model": model, "history": history}
+    config: types.GenerateContentConfig = kwargs.pop("generation_config", {})
+    chat_kwargs: ChatParams = {"model": model, "history": history}
 
     if tools:
         chat_kwargs["config"] = types.GenerateContentConfig(

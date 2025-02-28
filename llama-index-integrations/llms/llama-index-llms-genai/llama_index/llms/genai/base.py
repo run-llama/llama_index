@@ -98,8 +98,7 @@ class Gemini(FunctionCallingLLM):
     )
     _max_tokens: int = PrivateAttr()
     _client: genai.Client = PrivateAttr()
-    _generation_config: Optional[types.GenerateContentConfig] = PrivateAttr()
-    _safety_settings: Optional[types.SafetySetting] = PrivateAttr()
+    _generation_config: types.GenerateContentConfigDict = PrivateAttr()
     _model_meta: types.Model = PrivateAttr()
 
     def __init__(
@@ -113,7 +112,6 @@ class Gemini(FunctionCallingLLM):
         http_options: Optional[types.HttpOptions] = None,
         debug_config: Optional[genai.client.DebugConfig] = None,
         generation_config: Optional[types.GenerateContentConfig] = None,
-        safety_settings: Optional[types.SafetySetting] = None,
         callback_manager: Optional[CallbackManager] = None,
         is_function_call_model: bool = True,
         **generate_kwargs: Any,
@@ -151,8 +149,11 @@ class Gemini(FunctionCallingLLM):
         self._client = client
         self._model_meta = model_meta
         self._is_function_call_model = is_function_call_model
-        self._generation_config = generation_config
-        self._safety_settings = safety_settings
+        # store this as a dict and not as a pydantic model so we can more easily
+        # merge it later
+        self._generation_config = (
+            generation_config.model_dump() if generation_config else {}
+        )
         self._max_tokens = max_tokens
 
     @classmethod
@@ -174,8 +175,15 @@ class Gemini(FunctionCallingLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        generation_config = {
+            **(self._generation_config or {}),
+            **kwargs.pop("generation_config", {}),
+        }
         response = self._client.models.generate_content(
-            model=self.model, contents=prompt, **kwargs
+            model=self.model,
+            contents=prompt,
+            config=generation_config,
+            **kwargs,
         )
         return completion_from_gemini_response(response)
 
@@ -183,8 +191,15 @@ class Gemini(FunctionCallingLLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        generation_config = {
+            **(self._generation_config or {}),
+            **kwargs.pop("generation_config", {}),
+        }
         response = await self._client.aio.models.generate_content(
-            model=self.model, contents=prompt, **kwargs
+            model=self.model,
+            contents=prompt,
+            config=generation_config,
+            **kwargs,
         )
 
         return completion_from_gemini_response(response)
@@ -193,10 +208,16 @@ class Gemini(FunctionCallingLLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
+        generation_config = {
+            **(self._generation_config or {}),
+            **kwargs.pop("generation_config", {}),
+        }
+
         def gen():
             it = self._client.models.generate_content_stream(
                 model=self.model,
                 contents=prompt,
+                config=generation_config,
             )
             for response in it:
                 yield completion_from_gemini_response(response)
@@ -207,10 +228,16 @@ class Gemini(FunctionCallingLLM):
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
+        generation_config = {
+            **(self._generation_config or {}),
+            **kwargs.pop("generation_config", {}),
+        }
+
         async def gen():
             it = self._client.aio.models.generate_content_stream(
                 model=self.model,
                 contents=prompt,
+                config=generation_config,
             )
             async for response in await it:  # type: ignore
                 yield completion_from_gemini_response(response)
@@ -219,7 +246,12 @@ class Gemini(FunctionCallingLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **kwargs)
+        generation_config = {
+            **(self._generation_config or {}),
+            **kwargs.pop("generation_config", {}),
+        }
+        params = {**kwargs, "generation_config": generation_config}
+        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **params)
         chat = self._client.chats.create(**chat_kwargs)
         response = chat.send_message(next_msg.parts)  # type: ignore
         return chat_from_gemini_response(response)
@@ -228,7 +260,12 @@ class Gemini(FunctionCallingLLM):
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **kwargs)
+        generation_config = {
+            **(self._generation_config or {}),
+            **kwargs.pop("generation_config", {}),
+        }
+        params = {**kwargs, "generation_config": generation_config}
+        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **params)
         chat = self._client.aio.chats.create(**chat_kwargs)
         response = await chat.send_message(next_msg.parts)  # type: ignore
         return chat_from_gemini_response(response)
@@ -237,7 +274,12 @@ class Gemini(FunctionCallingLLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
-        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **kwargs)
+        generation_config = {
+            **(self._generation_config or {}),
+            **kwargs.pop("generation_config", {}),
+        }
+        params = {**kwargs, "generation_config": generation_config}
+        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **params)
         chat = self._client.chats.create(**chat_kwargs)
         response = chat.send_message_stream(next_msg.parts)  # type: ignore
 
@@ -264,7 +306,12 @@ class Gemini(FunctionCallingLLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **kwargs)
+        generation_config = {
+            **(self._generation_config or {}),
+            **kwargs.pop("generation_config", {}),
+        }
+        params = {**kwargs, "generation_config": generation_config}
+        next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **params)
         chat = self._client.aio.chats.create(**chat_kwargs)
 
         async def gen() -> ChatResponseAsyncGen:
@@ -415,16 +462,6 @@ class Gemini(FunctionCallingLLM):
             return response.parsed
         else:
             raise ValueError("Response is not a BaseModel")
-
-    @dispatcher.span
-    def structured_predict_with_function_calling(
-        self,
-        output_cls: type[BaseModel],
-        prompt: PromptTemplate,
-        llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> BaseModel:
-        return self.structured_predict(output_cls, prompt, llm_kwargs, **kwargs)
 
     @dispatcher.span
     def structured_predict(
