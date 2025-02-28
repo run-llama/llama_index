@@ -79,7 +79,9 @@ class ImageVisionLLMReader(BaseReader):
 
         inputs = processor(image, self._prompt, return_tensors="pt").to(device, dtype)
 
-        out = model.generate(**inputs)
+        with torch.no_grad():
+            out = model.generate(**inputs)
+
         text_str = processor.decode(out[0], skip_special_tokens=True)
 
         return [
