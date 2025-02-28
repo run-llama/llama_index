@@ -1,5 +1,103 @@
 # ChangeLog
 
+## [2025-02-27]
+
+### `llama-index-core` [0.12.21]
+
+- fix: remove warnings from workflow tests (#17943)
+- fix: take step workers into account when running a workflow step-wise (#17942)
+- feat: auto-detect custom start and stop events in workflow classes (#17865)
+- Feature/remove retriever tool template override (#17909)
+- only modify delta if 'Answer:' was actually detected (#17901)
+- Fix CitationQueryEngine init function for response_synthesizer (#17897)
+- fix ChatSummaryMemoryBuffer.\_summarize_oldest_chat_history (#17845)
+- fix: make base64 detection more robust across the board (#17930)
+- fix: stepwise execution breaks when steps do async work (#17914)
+- safer workflow cancel + fix restored context bug (#17938)
+
+### `llama-index-cli` [0.4.1]
+
+- fix: escape user input before shelling out command (#17953)
+- llamaindex-cli to handle glob patterns correctly (#17904)
+
+### `llama-index-embeddings-gaudi` [0.2.1]
+
+- fix: Remove cache_dir Pydantic field validation (#17947)
+
+### `llama-index-indices-managed-vectara` [0.4.1]
+
+- Support for custom vectara_base_url (#17934)
+
+### `llama-index-llms-anthropic` [0.6.7]
+
+- fix: tools param cannot be Null when calling Anthropic Messages API (#17928)
+
+### `llama-index-llms-bedrock` [0.3.4]
+
+- feat(bedrock): add Claude 3.7 Sonnet model support (#17950)
+
+### `llama-index-llms-bedrock-converse` [0.4.7]
+
+- feat(bedrock converse): add Meta Llama 3.3 70B instruct model support (#17915)
+
+### `llama-index-llms-gemini` [0.4.11]
+
+- feat: change maximum allowed model temperature to 2.0 for Gemini (#17886)
+
+### `llama-index-llms-ibm` [0.3.3]
+
+- Update WatsonxLLM.metadata property to avoid validation error when model_limits field isn't present (#17839)
+
+### `llama-index-llms-openai` [0.3.24]
+
+- add gpt-4.5-preview (#17954)
+- fix: openai-like openai agent streaming over vLLM (#17927)
+- Fix "Invalid value for 'content': expected a string, got null." openai error in case of empty assistant messages (#17921)
+
+### `llama-index-multi-modal-llms-azure-openai` [0.4.0]
+
+- Refactored to be a light wrapper on top of the normal AzureOpenAI llm (which also supports images using content blocks) to prevent code duplication (#17951)
+
+### `llama-index-multi-modal-llms-huggingface` [0.4.2]
+
+- Support text-only prompts for LlamaMultiModal class (#17855)
+
+### `llama-index-multi-modal-llms-openai` [0.5.0]
+
+- Refactored to be a light wrapper on top of the normal OpenAI llm (which also supports images using content blocks) to prevent code duplication (#17951)
+
+### `llama-index-postprocessor-ibm` [0.1.0]
+
+- feat: Add ibm-watsonx-ai rerank integration (#17900)
+
+### `llama-index-readers-web` [0.3.6]
+
+- fix: respect max_depth in KnowledgeBaseWebReader (#17949)
+
+### `llama-index-retrievers-tldw` [0.0.1]
+
+- tl;dw AI Integration for Retrievers (#17872)
+
+### `llama-index-tools-valyu` [0.1.0]
+
+- feat: Add Valyu Integration (#17892)
+
+### `llama-index-vector-stores-azureaisearch` [0.3.6]
+
+- azureaisearch: add default mySemanticConfig as name when creating index (#17908)
+
+### `llama-index-vector-stores-databricks` [0.4.0]
+
+- build: support python3=3.9,<4.0 for llama-index-vector-stores-databricks (#17937)
+
+### `llama-index-vector-stores-duckdb` [0.3.1]
+
+- fix: escape params in SQL queries in DuckDB vector store (#17952)
+
+### `llama-index-vector-stores-elasticsearch` [0.4.2]
+
+- fix: fix adelete method and add delete_nodes to elasticsearch vector store (#17890)
+
 ## [2025-02-25]
 
 ### `llama-index-core` [0.12.20]
