@@ -58,7 +58,10 @@ class FireCrawlWebReader(BasePydanticReader):
         return "Firecrawl_reader"
 
     def load_data(
-        self, url: Optional[str] = None, query: Optional[str] = None, urls: Optional[List[str]] = None
+        self,
+        url: Optional[str] = None,
+        query: Optional[str] = None,
+        urls: Optional[List[str]] = None,
     ) -> List[Document]:
         """Load data from the input directory.
 
@@ -106,23 +109,22 @@ class FireCrawlWebReader(BasePydanticReader):
             # [SEARCH] params: https://docs.firecrawl.dev/api-reference/endpoint/search
             if query is None:
                 raise ValueError("Query must be provided for search mode.")
-            print(f"Searching with query: {query}, params: {self.params}")
+
             # Remove query from params if it exists to avoid duplicate
             search_params = self.params.copy() if self.params else {}
             if "query" in search_params:
                 del search_params["query"]
-            
+
             # Get search results
             search_response = self.firecrawl.search(query, params=search_params)
-            
+
             # Handle the search response format
             if isinstance(search_response, dict):
                 # Check for success
                 if search_response.get("success", False):
                     # Get the data array
                     search_results = search_response.get("data", [])
-                    print(f"Found {len(search_results)} search results")
-                    
+
                     # Process each search result
                     for result in search_results:
                         # Extract text content (prefer markdown if available)
@@ -130,20 +132,22 @@ class FireCrawlWebReader(BasePydanticReader):
                         if not text:
                             # Fall back to description if markdown is not available
                             text = result.get("description", "")
-                        
+
                         # Extract metadata
                         metadata = {
                             "title": result.get("title", ""),
                             "url": result.get("url", ""),
                             "description": result.get("description", ""),
                             "source": "search",
-                            "query": query
+                            "query": query,
                         }
-                        
+
                         # Add additional metadata if available
-                        if "metadata" in result and isinstance(result["metadata"], dict):
+                        if "metadata" in result and isinstance(
+                            result["metadata"], dict
+                        ):
                             metadata.update(result["metadata"])
-                        
+
                         # Create document
                         documents.append(
                             Document(
@@ -158,7 +162,11 @@ class FireCrawlWebReader(BasePydanticReader):
                     documents.append(
                         Document(
                             text=f"Search for '{query}' was unsuccessful: {warning}",
-                            metadata={"source": "search", "query": query, "error": warning},
+                            metadata={
+                                "source": "search",
+                                "query": query,
+                                "error": warning,
+                            },
                         )
                     )
             else:
@@ -178,22 +186,17 @@ class FireCrawlWebReader(BasePydanticReader):
                     urls = [url]
                 else:
                     raise ValueError("URLs must be provided for extract mode.")
-            
+
             # Ensure we have a prompt in params
             extract_params = self.params.copy() if self.params else {}
             if "prompt" not in extract_params:
                 raise ValueError("A 'prompt' parameter is required for extract mode.")
-            
+
             # Prepare the payload according to the new API structure
-            payload = {
-                "prompt": extract_params.pop("prompt")
-            }
-            
-            print(f"Extracting data with urls: {urls} and params: {payload}")
+            payload = {"prompt": extract_params.pop("prompt")}
+
             # Call the extract method with the urls and params
             extract_response = self.firecrawl.extract(urls=urls, params=payload)
-            
-            print(f"Extract response type: {type(extract_response)}")
 
             # Handle the extract response format
             if isinstance(extract_response, dict):
@@ -201,31 +204,31 @@ class FireCrawlWebReader(BasePydanticReader):
                 if extract_response.get("success", False):
                     # Get the data from the response
                     extract_data = extract_response.get("data", {})
-                    
+
                     # Get the sources if available
                     sources = extract_response.get("sources", {})
-                    
+
                     # Convert the extracted data to text
                     if extract_data:
                         # Convert the data to a formatted string
                         text_parts = []
                         for key, value in extract_data.items():
                             text_parts.append(f"{key}: {value}")
-                        
+
                         text = "\n".join(text_parts)
-                        
+
                         # Create metadata
                         metadata = {
                             "urls": urls,
                             "source": "extract",
                             "status": extract_response.get("status"),
-                            "expires_at": extract_response.get("expiresAt")
+                            "expires_at": extract_response.get("expiresAt"),
                         }
-                        
+
                         # Add sources to metadata if available
                         if sources:
                             metadata["sources"] = sources
-                        
+
                         # Create document
                         documents.append(
                             Document(
@@ -249,7 +252,11 @@ class FireCrawlWebReader(BasePydanticReader):
                     documents.append(
                         Document(
                             text=f"Extraction was unsuccessful: {warning}",
-                            metadata={"urls": urls, "source": "extract", "error": warning},
+                            metadata={
+                                "urls": urls,
+                                "source": "extract",
+                                "error": warning,
+                            },
                         )
                     )
             else:
