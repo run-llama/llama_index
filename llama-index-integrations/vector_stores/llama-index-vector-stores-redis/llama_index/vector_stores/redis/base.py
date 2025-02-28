@@ -632,5 +632,7 @@ def _to_redis_filters(metadata_filters: MetadataFilters) -> str:
         filter_string = f"@{key}:{{{tokenizer.escape(str(values))}}}"
         filter_strings.append(filter_string)
     # A space can be used for the AND operator: https://redis.io/docs/latest/develop/interact/search-and-query/query/combined/
-    joined_filter_strings = " ".join(filter_strings)
+    filter_strings_base = [f"({filter_string})" for filter_string in filter_strings]
+    joined_filter_strings = " ".join(filter_strings_base)
+    print("Using filter string: ", joined_filter_strings)
     return f"({joined_filter_strings})"
