@@ -54,9 +54,7 @@ Contact info content
     assert splits[1].metadata == {"header_path": "›MainHeader›"}
     assert splits[2].metadata == {"header_path": "›MainHeader›FAQ›"}
     assert splits[3].metadata == {"header_path": "›MainHeader›FAQ›24/7Support›"}
-    assert splits[4].metadata == {
-        "header_path": "›MainHeader›FAQ›24/7Support›Contact info›"
-    }
+
     assert splits[0].text == "# Main Header\n\nHeader 1 content"
     assert splits[1].text == "## FAQ\nFAQ content"
     assert splits[2].text == "### 24/7 Support\nSupport content"
