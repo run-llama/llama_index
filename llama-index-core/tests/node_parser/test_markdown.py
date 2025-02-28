@@ -49,11 +49,11 @@ Contact info content
             )
         ]
     )
-    assert len(splits) == 5
+    assert len(splits) == 4
     assert splits[0].metadata == {"header_path": "›"}
-    assert splits[1].metadata == {"header_path": "›MainHeader›"}
-    assert splits[2].metadata == {"header_path": "›MainHeader›FAQ›"}
-    assert splits[3].metadata == {"header_path": "›MainHeader›FAQ›24/7Support›"}
+    assert splits[1].metadata == {"header_path": "›Main Header›"}
+    assert splits[2].metadata == {"header_path": "›Main Header›FAQ›"}
+    assert splits[3].metadata == {"header_path": "›Main Header›FAQ›24/7 Support›"}
 
     assert splits[0].text == "# Main Header\n\nHeader 1 content"
     assert splits[1].text == "## FAQ\nFAQ content"
