@@ -24,6 +24,39 @@ Header 2 content
     assert splits[0].text == "# Main Header\n\nHeader 1 content"
     assert splits[1].text == "# Header 2\nHeader 2 content"
 
+def test_header_splits_with_forwardslash() -> None:
+    markdown_parser = MarkdownNodeParser(header_path_separator="\u203A") # Unicode for "›", infrequently used char
+
+    splits = markdown_parser.get_nodes_from_documents(
+        [
+            Document(
+                text="""# Main Header
+
+Header 1 content
+
+## FAQ
+FAQ content
+
+### 24/7 Support
+Support content
+
+#### Contact info
+Contact info content
+    """
+            )
+        ]
+    )
+    assert len(splits) == 5
+    assert splits[0].metadata == {"header_path": "›"}
+    assert splits[1].metadata == {"header_path": "›MainHeader›"}
+    assert splits[2].metadata == {"header_path": "›MainHeader›FAQ›"}
+    assert splits[3].metadata == {"header_path": "›MainHeader›FAQ›24/7Support›"}
+    assert splits[4].metadata == {"header_path": "›MainHeader›FAQ›24/7Support›Contact info›"}
+    assert splits[0].text == "# Main Header\n\nHeader 1 content"
+    assert splits[1].text == "## FAQ\nFAQ content"
+    assert splits[2].text == "### 24/7 Support\nSupport content"
+    assert splits[3].text == "#### Contact info\nContact info content"
+
 
 def test_header_splits_with_indented_code_blocks() -> None:
     markdown_parser = MarkdownNodeParser()
