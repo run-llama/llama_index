@@ -4,23 +4,17 @@ from typing import Any, Optional
 from llama_index.llms.openai_like import OpenAILike
 from pydantic import Field
 from llama_index.core.llms.callbacks import (
-    llm_chat_callback,
     llm_completion_callback,
 )
 from llama_index.core.base.llms.types import (
     CompletionResponse,
-    CompletionResponseGen,
-    ChatResponse,
-    ChatResponseGen,
-    ChatResponseAsyncGen,
-    CompletionResponseAsyncGen,
-    LLMMetadata,
     MessageRole,
     ChatMessage,
 )
 
 
 from contextual import ContextualAI
+
 
 class Contextual(OpenAILike):
     """
@@ -45,10 +39,19 @@ class Contextual(OpenAILike):
     """
 
     model: str = Field(description="The model to use. Currently only supports `v1`.")
-    api_key: str = Field(description="The API key to use.", default=os.environ.get("API_KEY", None))
-    base_url: str = Field(description="The base URL to use.", default="https://api.contextual.com")
-    system_prompt: str = Field(description="Instructions that the model follows when generating responses. Note that we do not guarantee that the model follows these instructions exactly.")
-    avoid_commentary: bool = Field(description="Flag to indicate whether the model should avoid providing additional commentary in responses. Commentary is conversational in nature and does not contain verifiable claims; therefore, commentary is not strictly grounded in available context. However, commentary may provide useful context which improves the helpfulness of responses.", default=False)
+    api_key: str = Field(
+        description="The API key to use.", default=os.environ.get("API_KEY", None)
+    )
+    base_url: str = Field(
+        description="The base URL to use.", default="https://api.contextual.com"
+    )
+    system_prompt: str = Field(
+        description="Instructions that the model follows when generating responses. Note that we do not guarantee that the model follows these instructions exactly."
+    )
+    avoid_commentary: bool = Field(
+        description="Flag to indicate whether the model should avoid providing additional commentary in responses. Commentary is conversational in nature and does not contain verifiable claims; therefore, commentary is not strictly grounded in available context. However, commentary may provide useful context which improves the helpfulness of responses.",
+        default=False,
+    )
     client: Any = Field(default=None, exclude=True, description="Contextual AI Client")
 
     def __init__(
@@ -67,7 +70,6 @@ class Contextual(OpenAILike):
         except Exception as e:
             raise ValueError(f"Failed to initialize Contextual client: {e}")
 
-
         super().__init__(
             model=model,
             api_key=api_key,
@@ -80,7 +82,7 @@ class Contextual(OpenAILike):
     def class_name(cls) -> str:
         """Get class name."""
         return "contextual-clm"
-    
+
     # Synchronous Methods
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs) -> CompletionResponse:
@@ -102,7 +104,9 @@ class Contextual(OpenAILike):
             **kwargs,
         )
 
-    def _generate(self, knowledge, messages, model, system_prompt, **kwargs) -> CompletionResponse:
+    def _generate(
+        self, knowledge, messages, model, system_prompt, **kwargs
+    ) -> CompletionResponse:
         """
         Generate completion for the given prompt.
         """
