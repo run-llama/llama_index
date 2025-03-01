@@ -1,5 +1,19 @@
 # ChangeLog
 
+## [2025-02-28]
+
+### `llama-index-core` [0.12.22]
+
+- fix agentworkflow tool call tracking on final response (#17968)
+
+### `llama-index-readers-github` [0.6.0]
+
+- Ensure that Github reader uses timeout and retries params (#17959)
+
+### `llama-index-readers-web` [0.3.7]
+
+- chore: update FireCrawlWebReader integration to support extract (#17957)
+
 ## [2025-02-27]
 
 ### `llama-index-core` [0.12.21]
@@ -10,7 +24,7 @@
 - Feature/remove retriever tool template override (#17909)
 - only modify delta if 'Answer:' was actually detected (#17901)
 - Fix CitationQueryEngine init function for response_synthesizer (#17897)
-- fix ChatSummaryMemoryBuffer._summarize_oldest_chat_history (#17845)
+- fix ChatSummaryMemoryBuffer.\_summarize_oldest_chat_history (#17845)
 - fix: make base64 detection more robust across the board (#17930)
 - fix: stepwise execution breaks when steps do async work (#17914)
 - safer workflow cancel + fix restored context bug (#17938)
