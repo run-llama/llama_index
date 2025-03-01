@@ -224,7 +224,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
 
     def _parse_streaming_tool_calls(
         self, tool_call_strs: List[str]
-    ) -> List[ToolSelection | str]:
+    ) -> List[Union[ToolSelection, str]]:
         tool_calls = []
         # Try to parse into complete objects, otherwise keep as strings
         for tool_call_str in tool_call_strs:
