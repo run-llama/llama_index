@@ -1,5 +1,19 @@
 # ChangeLog
 
+## [2025-02-28]
+
+### `llama-index-core` [0.12.22]
+
+- fix agentworkflow tool call tracking on final response (#17968)
+
+### `llama-index-readers-github` [0.6.0]
+
+- Ensure that Github reader uses timeout and retries params (#17959)
+
+### `llama-index-readers-web` [0.3.7]
+
+- chore: update FireCrawlWebReader integration to support extract (#17957)
+
 ## [2025-02-27]
 
 ### `llama-index-core` [0.12.21]

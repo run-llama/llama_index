@@ -173,10 +173,13 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         self._sync_client = InferenceClient(**self._get_inference_client_kwargs())
         self._async_client = AsyncInferenceClient(**self._get_inference_client_kwargs())
 
-        # set context window if not provided
-        info = self._sync_client.get_endpoint_info()
-        if "max_input_tokens" in info and kwargs.get("context_window") is None:
-            self.context_window = info["max_input_tokens"]
+        # set context window if not provided, if we can get the endpoint info
+        try:
+            info = self._sync_client.get_endpoint_info()
+            if "max_input_tokens" in info and kwargs.get("context_window") is None:
+                self.context_window = info["max_input_tokens"]
+        except Exception:
+            pass
 
     def _get_inference_client_kwargs(self) -> Dict[str, Any]:
         """Extract the Hugging Face InferenceClient construction parameters."""
@@ -224,7 +227,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
 
     def _parse_streaming_tool_calls(
         self, tool_call_strs: List[str]
-    ) -> List[ToolSelection | str]:
+    ) -> List[Union[ToolSelection, str]]:
         tool_calls = []
         # Try to parse into complete objects, otherwise keep as strings
         for tool_call_str in tool_call_strs:
