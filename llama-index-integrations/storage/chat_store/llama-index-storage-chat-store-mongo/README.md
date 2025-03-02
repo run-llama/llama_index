@@ -18,7 +18,7 @@ from llama_index.storage.chat_store.mongo import MongoChatStore
 chat_store = MongoChatStore(
     mongodb_uri="mongodb://localhost:27017/",
     db_name="llama_index",
-    collection_name="chat_sessions"
+    collection_name="chat_sessions",
 )
 ```
 
@@ -35,7 +35,7 @@ chat_store = MongoChatStore(
     client=client,
     amongo_client=async_client,
     db_name="llama_index",
-    collection_name="chat_sessions"
+    collection_name="chat_sessions",
 )
 ```
 
@@ -51,7 +51,9 @@ async_client = AsyncIOMotorClient("mongodb://localhost:27017/")
 collection = client["llama_index"]["chat_sessions"]
 async_collection = async_client["llama_index"]["chat_sessions"]
 
-chat_store = MongoChatStore(collection=collection, async_collection=async_collection)
+chat_store = MongoChatStore(
+    collection=collection, async_collection=async_collection
+)
 ```
 
 ## Usage with LlamaIndex
