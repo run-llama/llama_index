@@ -53,16 +53,8 @@ class ImageVisionLLMReader(BaseReader):
                 "dtype": dtype,
             }
         else:
-            self._torch = None
-
             # Try to install PyTorch in order to run inference efficiently.
-            try:
-                import torch
-
-                self._torch = torch
-                self._torch_imported = True
-            except ImportError:
-                self._torch_imported = False
+            self._import_torch()
 
         self._parser_config = parser_config
         self._keep_image = keep_image
@@ -117,3 +109,14 @@ class ImageVisionLLMReader(BaseReader):
                 metadata=extra_info or {},
             )
         ]
+
+    def _import_torch(self) -> None:
+        self._torch = None
+
+        try:
+            import torch
+
+            self._torch = torch
+            self._torch_imported = True
+        except ImportError:
+            self._torch_imported = False
