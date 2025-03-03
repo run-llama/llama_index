@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import base64
+import filetype
 from binascii import Error as BinasciiError
 from enum import Enum
 from io import BytesIO
+from pathlib import Path
 from typing import (
     Annotated,
     Any,
@@ -76,6 +78,14 @@ class ImageBlock(BaseModel):
         operations, we won't load the path or the URL to guess the mimetype.
         """
         if not self.image:
+            if not self.image_mimetype:
+                path = self.path or self.url
+                if path:
+                    suffix = Path(path).suffix.replace(".", "") or None
+                    mimetype = filetype.get_type(ext=suffix)
+                    if mimetype:
+                        self.image_mimetype = mimetype.mime
+
             return self
 
         try:
