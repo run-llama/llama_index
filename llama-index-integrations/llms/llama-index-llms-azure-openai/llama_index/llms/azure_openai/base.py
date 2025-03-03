@@ -11,6 +11,7 @@ from llama_index.llms.azure_openai.utils import (
     resolve_from_aliases,
 )
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai.utils import DEFAULT_OPENAI_API_BASE
 from openai import AsyncAzureOpenAI
 from openai import AzureOpenAI as SyncAzureOpenAI
 from openai.lib.azure import AzureADTokenProvider
@@ -89,14 +90,15 @@ class AzureOpenAI(OpenAI):
     azure_deployment: Optional[str] = Field(
         default=None, description="The Azure deployment to use."
     )
-    api_base: Optional[str] = Field(
-        default=None, description="The Azure Base URL to use."
     use_azure_ad: bool = Field(
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
     )
-
     azure_ad_token_provider: Optional[AzureADTokenProvider] = Field(
         default=None, description="Callback function to provide Azure Entra ID token."
+    )
+    api_base: Optional[str] = Field(
+        default=None,
+        description="The Azure Base URL to use. Useful for proxies on top of Azure OpenAI.",
     )
 
     _azure_ad_token: Any = PrivateAttr(default=None)
@@ -115,10 +117,10 @@ class AzureOpenAI(OpenAI):
         reuse_client: bool = True,
         api_key: Optional[str] = None,
         api_version: Optional[str] = None,
+        api_base: Optional[str] = None,
         # azure specific
         azure_endpoint: Optional[str] = None,
         azure_deployment: Optional[str] = None,
-        api_base: Optional[str] = None,
         azure_ad_token_provider: Optional[AzureADTokenProvider] = None,
         use_azure_ad: bool = False,
         callback_manager: Optional[CallbackManager] = None,
@@ -174,6 +176,10 @@ class AzureOpenAI(OpenAI):
             output_parser=output_parser,
             **kwargs,
         )
+
+        # reset api_base to None if it is the default
+        if self.api_base == DEFAULT_OPENAI_API_BASE:
+            self.api_base = None
 
     @model_validator(mode="before")
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
