@@ -8,5 +8,5 @@ def test_embedding_class():
 
 
 def test_init():
-    m = MistralAIMultiModal(max_tokens=400)
+    m = MistralAIMultiModal(max_tokens=400, api_key="test")
     assert m.max_tokens == 400
