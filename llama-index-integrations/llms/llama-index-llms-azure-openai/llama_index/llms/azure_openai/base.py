@@ -89,8 +89,8 @@ class AzureOpenAI(OpenAI):
     azure_deployment: Optional[str] = Field(
         default=None, description="The Azure deployment to use."
     )
-    base_url: Optional[str] = Field(
-        default=None, desription="The Azure Base URL to use."
+    api_base: Optional[str] = Field(
+        default=None, description="The Azure Base URL to use."
     use_azure_ad: bool = Field(
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
     )
@@ -118,7 +118,7 @@ class AzureOpenAI(OpenAI):
         # azure specific
         azure_endpoint: Optional[str] = None,
         azure_deployment: Optional[str] = None,
-        base_url: Optional[str] = None,
+        api_base: Optional[str] = None,
         azure_ad_token_provider: Optional[AzureADTokenProvider] = None,
         use_azure_ad: bool = False,
         callback_manager: Optional[CallbackManager] = None,
@@ -160,7 +160,7 @@ class AzureOpenAI(OpenAI):
             api_key=api_key,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
-            base_url=base_url,
+            api_base=api_base,
             azure_ad_token_provider=azure_ad_token_provider,
             use_azure_ad=use_azure_ad,
             api_version=api_version,
@@ -239,7 +239,7 @@ class AzureOpenAI(OpenAI):
             "timeout": self.timeout,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
-            "base_url": self.base_url,
+            "base_url": self.api_base,
             "azure_ad_token_provider": self.azure_ad_token_provider,
             "api_version": self.api_version,
             "default_headers": self.default_headers,
