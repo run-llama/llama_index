@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 import builtins
 
 import pytest
@@ -115,6 +117,44 @@ class ModelFake:
         """
 
 
+@contextmanager
+def get_custom_import(torch_installed: bool):
+    """
+    Simulate absence of PyTorch installation depending on the input flag.
+
+    Args:
+        torch_installed (bool): Flag indicating whether or not PyTorch is installed.
+
+    Returns:
+        Generator: Parametrized `custom_import()` function.
+    """
+    # Store the original __import__ function
+    original_import = builtins.__import__
+
+    def custom_import(module_name: str, *args, **kwargs) -> ModuleType:
+        """
+        If `torch_installed` is False, act as if PyTorch is not installed.
+        """
+        if module_name == "torch" and not torch_installed:
+            raise ImportError('No module named "torch.')
+
+        return original_import(module_name, *args, **kwargs)
+
+    try:
+        # Replace the built-in __import__ function
+        builtins.__import__ = custom_import
+
+        yield
+    except Exception:
+        # Restore the original import function
+        builtins.__import__ = original_import
+
+        raise
+    finally:
+        # Restore the original import function
+        builtins.__import__ = original_import
+
+
 @pytest.mark.skipif(
     Image is None,
     reason="PIL not installed",
@@ -140,15 +180,6 @@ def test_image_vision_llm_reader_load_data_with_parser_config(
     in order to avoid having to download checkpoints as part of tests, while
     still covering most of the `ImageVisionLLMReader` class functionality.
     """
-    # Store the original __import__ function
-    original_import = builtins.__import__
-
-    def custom_import(module_name: str, *args, **kwargs) -> ModuleType:
-        if module_name == "torch" and not torch_installed:
-            raise ImportError('No module named "torch.')
-
-        return original_import(module_name, *args, **kwargs)
-
     with mock.patch(
         "transformers.Blip2ForConditionalGeneration.from_pretrained",
         return_value=ModelFake(),
@@ -169,16 +200,11 @@ def test_image_vision_llm_reader_load_data_with_parser_config(
             )
             assert image_vision_llm_reader._torch_imported
         else:
-            # Replace the built-in __import__ function
-            builtins.__import__ = custom_import
-
-            image_vision_llm_reader = ImageVisionLLMReader(
-                parser_config=parser_config, keep_image=True
-            )
-            assert not image_vision_llm_reader._torch_imported
-
-            # Restore the original import function
-            builtins.__import__ = original_import
+            with get_custom_import(torch_installed=False):
+                image_vision_llm_reader = ImageVisionLLMReader(
+                    parser_config=parser_config, keep_image=True
+                )
+                assert not image_vision_llm_reader._torch_imported
 
         result = image_vision_llm_reader.load_data(file=test_16x16_png_image_file)[0]
         assert (
@@ -212,15 +238,6 @@ def test_image_vision_llm_reader_load_data_wo_parser_config(
     in order to avoid having to download checkpoints as part of tests, while
     still covering most of the `ImageVisionLLMReader` class functionality.
     """
-    # Store the original __import__ function
-    original_import = builtins.__import__
-
-    def custom_import(module_name: str, *args, **kwargs) -> ModuleType:
-        if module_name == "torch" and not torch_installed:
-            raise ImportError('No module named "torch".')
-
-        return original_import(module_name, *args, **kwargs)
-
     with mock.patch(
         "transformers.Blip2ForConditionalGeneration.from_pretrained",
         return_value=ModelFake(),
@@ -238,16 +255,11 @@ def test_image_vision_llm_reader_load_data_wo_parser_config(
                 == "Question: describe what you see in this image. Answer: a black and white checkered pattern"
             )
         else:
-            with pytest.raises(ImportError) as excinfo:
-                # Replace the built-in __import__ function
-                builtins.__import__ = custom_import
+            with get_custom_import(torch_installed=False):
+                with pytest.raises(ImportError) as excinfo:
+                    image_vision_llm_reader = ImageVisionLLMReader()
 
-                image_vision_llm_reader = ImageVisionLLMReader()
-
-            assert (
-                str(excinfo.value)
-                == "Please install extra dependencies that are required for the ImageCaptionReader: `pip install torch transformers sentencepiece Pillow`"
-            )
-
-            # Restore the original import function
-            builtins.__import__ = original_import
+                assert (
+                    str(excinfo.value)
+                    == "Please install extra dependencies that are required for the ImageCaptionReader: `pip install torch transformers sentencepiece Pillow`"
+                )
