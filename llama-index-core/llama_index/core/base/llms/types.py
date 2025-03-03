@@ -81,7 +81,7 @@ class ImageBlock(BaseModel):
             if not self.image_mimetype:
                 path = self.path or self.url
                 if path:
-                    suffix = Path(path).suffix.replace(".", "") or None
+                    suffix = Path(str(path)).suffix.replace(".", "") or None
                     mimetype = filetype.get_type(ext=suffix)
                     if mimetype and str(mimetype.mime).startswith("image/"):
                         self.image_mimetype = str(mimetype.mime)
