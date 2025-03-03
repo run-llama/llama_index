@@ -52,9 +52,9 @@ class ImageVisionLLMReader(BaseReader):
                 "device": device,
                 "dtype": dtype,
             }
-        else:
-            # Try to install PyTorch in order to run inference efficiently.
-            self._import_torch()
+
+        # Try to import PyTorch in order to run inference efficiently.
+        self._import_torch()
 
         self._parser_config = parser_config
         self._keep_image = keep_image

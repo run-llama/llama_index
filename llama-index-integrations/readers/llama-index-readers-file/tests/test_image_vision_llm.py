@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import builtins
+
 import pytest
 from unittest import mock
 
 from typing import Dict, List
+from types import ModuleType
 
 try:
     import torch
@@ -116,12 +119,108 @@ class ModelFake:
     Image is None,
     reason="PIL not installed",
 )
-def test_image_vision_llm_reader(test_16x16_png_image_file: str):
+@pytest.mark.parametrize(
+    "torch_installed",
+    [
+        pytest.param(
+            False,
+            id="torch_not_installed",
+        ),
+        pytest.param(
+            True,
+            id="torch_installed",
+        ),
+    ],
+)
+def test_image_vision_llm_reader_load_data_with_parser_config(
+    torch_installed: bool, test_16x16_png_image_file: str
+):
     """
     We use doubles (mocks and fakes) for the model and the tokenizer objects
     in order to avoid having to download checkpoints as part of tests, while
     still covering most of the `ImageVisionLLMReader` class functionality.
     """
+    # Store the original __import__ function
+    original_import = builtins.__import__
+
+    def custom_import(module_name: str, *args, **kwargs) -> ModuleType:
+        if module_name == "torch" and not torch_installed:
+            raise ImportError('No module named "torch.')
+
+        return original_import(module_name, *args, **kwargs)
+
+    with mock.patch(
+        "transformers.Blip2ForConditionalGeneration.from_pretrained",
+        return_value=ModelFake(),
+    ) as model, mock.patch(
+        "transformers.Blip2Processor.from_pretrained",
+        return_value=TokenizerFake(),
+    ) as processor:
+        parser_config = {
+            "processor": processor(),
+            "model": model(),
+            "device": "auto",  # not used (placeholder)
+            "dtype": float,  # not used (placeholder)
+        }
+
+        if torch_installed:
+            image_vision_llm_reader = ImageVisionLLMReader(
+                parser_config=parser_config, keep_image=True
+            )
+            assert image_vision_llm_reader._torch_imported
+        else:
+            # Replace the built-in __import__ function
+            builtins.__import__ = custom_import
+
+            image_vision_llm_reader = ImageVisionLLMReader(
+                parser_config=parser_config, keep_image=True
+            )
+            assert not image_vision_llm_reader._torch_imported
+
+            # Restore the original import function
+            builtins.__import__ = original_import
+
+        result = image_vision_llm_reader.load_data(file=test_16x16_png_image_file)[0]
+        assert (
+            result.text
+            == "Question: describe what you see in this image. Answer: a black and white checkered pattern"
+        )
+
+
+@pytest.mark.skipif(
+    Image is None,
+    reason="PIL not installed",
+)
+@pytest.mark.parametrize(
+    "torch_installed",
+    [
+        pytest.param(
+            False,
+            id="torch_not_installed",
+        ),
+        pytest.param(
+            True,
+            id="torch_installed",
+        ),
+    ],
+)
+def test_image_vision_llm_reader_load_data_wo_parser_config(
+    torch_installed: bool, test_16x16_png_image_file: str
+):
+    """
+    We use doubles (mocks and fakes) for the model and the tokenizer objects
+    in order to avoid having to download checkpoints as part of tests, while
+    still covering most of the `ImageVisionLLMReader` class functionality.
+    """
+    # Store the original __import__ function
+    original_import = builtins.__import__
+
+    def custom_import(module_name: str, *args, **kwargs) -> ModuleType:
+        if module_name == "torch" and not torch_installed:
+            raise ImportError('No module named "torch".')
+
+        return original_import(module_name, *args, **kwargs)
+
     with mock.patch(
         "transformers.Blip2ForConditionalGeneration.from_pretrained",
         return_value=ModelFake(),
@@ -129,9 +228,26 @@ def test_image_vision_llm_reader(test_16x16_png_image_file: str):
         "transformers.Blip2Processor.from_pretrained",
         return_value=TokenizerFake(),
     ):
-        image_vision_llm_reader = ImageVisionLLMReader()
-        result = image_vision_llm_reader.load_data(file=test_16x16_png_image_file)[0]
-        assert (
-            result.text
-            == "Question: describe what you see in this image. Answer: a black and white checkered pattern"
-        )
+        if torch_installed:
+            image_vision_llm_reader = ImageVisionLLMReader()
+            result = image_vision_llm_reader.load_data(file=test_16x16_png_image_file)[
+                0
+            ]
+            assert (
+                result.text
+                == "Question: describe what you see in this image. Answer: a black and white checkered pattern"
+            )
+        else:
+            with pytest.raises(ImportError) as excinfo:
+                # Replace the built-in __import__ function
+                builtins.__import__ = custom_import
+
+                image_vision_llm_reader = ImageVisionLLMReader()
+
+            assert (
+                str(excinfo.value)
+                == "Please install extra dependencies that are required for the ImageCaptionReader: `pip install torch transformers sentencepiece Pillow`"
+            )
+
+            # Restore the original import function
+            builtins.__import__ = original_import
