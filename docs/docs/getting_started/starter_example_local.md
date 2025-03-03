@@ -87,7 +87,7 @@ The `AgentWorkflow` is also able to remember previous messages. This is containe
 If the `Context` is passed in, the agent will use it to continue the conversation.
 
 ```python
-from llama_index.core.context import Context
+from llama_index.core.workflow import Context
 
 # create context
 ctx = Context(agent)
