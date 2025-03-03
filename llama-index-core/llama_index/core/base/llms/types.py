@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import base64
+import filetype
 from binascii import Error as BinasciiError
 from enum import Enum
 from io import BytesIO
+from pathlib import Path
 from typing import (
     Annotated,
     Any,
@@ -61,10 +63,13 @@ class ImageBlock(BaseModel):
 
     @field_validator("url", mode="after")
     @classmethod
-    def urlstr_to_anyurl(cls, url: str | AnyUrl) -> AnyUrl:
+    def urlstr_to_anyurl(cls, url: str | AnyUrl | None) -> AnyUrl | None:
         """Store the url as Anyurl."""
         if isinstance(url, AnyUrl):
             return url
+        if url is None:
+            return None
+
         return AnyUrl(url=url)
 
     @model_validator(mode="after")
@@ -76,6 +81,14 @@ class ImageBlock(BaseModel):
         operations, we won't load the path or the URL to guess the mimetype.
         """
         if not self.image:
+            if not self.image_mimetype:
+                path = self.path or self.url
+                if path:
+                    suffix = Path(str(path)).suffix.replace(".", "") or None
+                    mimetype = filetype.get_type(ext=suffix)
+                    if mimetype and str(mimetype.mime).startswith("image/"):
+                        self.image_mimetype = str(mimetype.mime)
+
             return self
 
         try:
