@@ -11,6 +11,7 @@ from llama_index.llms.azure_openai.utils import (
     resolve_from_aliases,
 )
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.openai.utils import DEFAULT_OPENAI_API_BASE
 from openai import AsyncAzureOpenAI
 from openai import AzureOpenAI as SyncAzureOpenAI
 from openai.lib.azure import AzureADTokenProvider
@@ -92,9 +93,12 @@ class AzureOpenAI(OpenAI):
     use_azure_ad: bool = Field(
         description="Indicates if Microsoft Entra ID (former Azure AD) is used for token authentication"
     )
-
     azure_ad_token_provider: Optional[AzureADTokenProvider] = Field(
         default=None, description="Callback function to provide Azure Entra ID token."
+    )
+    api_base: Optional[str] = Field(
+        default=None,
+        description="The Azure Base URL to use. Useful for proxies on top of Azure OpenAI.",
     )
 
     _azure_ad_token: Any = PrivateAttr(default=None)
@@ -113,6 +117,7 @@ class AzureOpenAI(OpenAI):
         reuse_client: bool = True,
         api_key: Optional[str] = None,
         api_version: Optional[str] = None,
+        api_base: Optional[str] = None,
         # azure specific
         azure_endpoint: Optional[str] = None,
         azure_deployment: Optional[str] = None,
@@ -157,6 +162,7 @@ class AzureOpenAI(OpenAI):
             api_key=api_key,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
+            api_base=api_base,
             azure_ad_token_provider=azure_ad_token_provider,
             use_azure_ad=use_azure_ad,
             api_version=api_version,
@@ -170,6 +176,10 @@ class AzureOpenAI(OpenAI):
             output_parser=output_parser,
             **kwargs,
         )
+
+        # reset api_base to None if it is the default
+        if self.api_base == DEFAULT_OPENAI_API_BASE:
+            self.api_base = None
 
     @model_validator(mode="before")
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -235,6 +245,7 @@ class AzureOpenAI(OpenAI):
             "timeout": self.timeout,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
+            "base_url": self.api_base,
             "azure_ad_token_provider": self.azure_ad_token_provider,
             "api_version": self.api_version,
             "default_headers": self.default_headers,
