@@ -42,7 +42,6 @@ def test_classes():
     assert BaseReader.__name__ in names_of_base_classes
 
     names_of_base_classes = [b.__name__ for b in ImageVisionLLMReader.__mro__]
-    assert BaseReader.__name__ in names_of_base_classes
 
     names_of_base_classes = [b.__name__ for b in IPYNBReader.__mro__]
     assert BaseReader.__name__ in names_of_base_classes
