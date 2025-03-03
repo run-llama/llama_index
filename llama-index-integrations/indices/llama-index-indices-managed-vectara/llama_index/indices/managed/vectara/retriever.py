@@ -577,14 +577,7 @@ class VectaraRetriever(BaseRetriever):
                 node=Node(
                     text_resource=MediaResource(text=search_result["text"]),
                     id_=search_result["document_id"],
-                    metadata={
-                        **search_result.get(
-                            "part_metadata", {}
-                        ),  # Metadata from the matched part
-                        "document": search_result.get(
-                            "document_metadata", {}
-                        ),  # Document-level metadata
-                    },
+                    metadata=search_result["document_metadata"],
                 ),
                 score=search_result["score"],
             )
