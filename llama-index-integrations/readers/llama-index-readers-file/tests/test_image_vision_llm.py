@@ -128,7 +128,7 @@ class ModelFake:
 
 
 @contextmanager
-def get_custom_import(torch_installed: bool):
+def _get_custom_import(torch_installed: bool):
     """
     Simulate absence of PyTorch installation depending on the input flag.
 
@@ -136,12 +136,12 @@ def get_custom_import(torch_installed: bool):
         torch_installed (bool): Flag indicating whether or not PyTorch is installed.
 
     Returns:
-        Generator: Parametrized `custom_import()` function.
+        Generator: Parametrized `_custom_import()` function.
     """
     # Store the original __import__ function
     original_import = builtins.__import__
 
-    def custom_import(module_name: str, *args, **kwargs) -> ModuleType:
+    def _custom_import(module_name: str, *args, **kwargs) -> ModuleType:
         """
         If `torch_installed` is False, act as if PyTorch is not installed.
         """
@@ -152,7 +152,7 @@ def get_custom_import(torch_installed: bool):
 
     try:
         # Replace the built-in __import__ function
-        builtins.__import__ = custom_import
+        builtins.__import__ = _custom_import
 
         yield
     except Exception:
@@ -188,7 +188,7 @@ def test_image_vision_llm_reader_load_data_with_parser_config(
     """
     We use doubles (mocks and fakes) for the model and the tokenizer objects
     in order to avoid having to download checkpoints as part of tests, while
-    still covering most of the `ImageVisionLLMReader` class functionality.
+    still covering all essential `ImageVisionLLMReader` class functionality.
     """
     with mock.patch(
         "transformers.Blip2ForConditionalGeneration.from_pretrained",
@@ -210,7 +210,7 @@ def test_image_vision_llm_reader_load_data_with_parser_config(
             )
             assert image_vision_llm_reader._torch_imported
         else:
-            with get_custom_import(torch_installed=False):
+            with _get_custom_import(torch_installed=False):
                 image_vision_llm_reader = ImageVisionLLMReader(
                     parser_config=parser_config, keep_image=True
                 )
@@ -265,7 +265,7 @@ def test_image_vision_llm_reader_load_data_wo_parser_config(
                 == "Question: describe what you see in this image. Answer: a black and white checkered pattern"
             )
         else:
-            with get_custom_import(torch_installed=False):
+            with _get_custom_import(torch_installed=False):
                 with pytest.raises(ImportError) as excinfo:
                     image_vision_llm_reader = ImageVisionLLMReader()
 
