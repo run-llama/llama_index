@@ -16,6 +16,8 @@ MISTRALAI_MODELS: Dict[str, int] = {
     "open-mistral-nemo-latest": 131000,
     "ministral-8b-latest": 131000,
     "ministral-3b-latest": 131000,
+    "pixtral-large-latest": 131000,
+    "pixtral-12b-2409": 131000,
 }
 
 MISTRALAI_FUNCTION_CALLING_MODELS = (
@@ -26,6 +28,8 @@ MISTRALAI_FUNCTION_CALLING_MODELS = (
     "mistral-small-latest",
     "codestral-latest",
     "open-mistral-nemo-latest",
+    "pixtral-large-latest",
+    "pixtral-12b-2409",
 )
 
 MISTRALAI_CODE_MODELS = "codestral-latest"

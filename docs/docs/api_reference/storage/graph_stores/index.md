@@ -2,5 +2,6 @@
     options:
       members:
         - GraphStore
+        - PropertyGraphStore
         - DEFAULT_PERSIST_DIR
         - DEFAULT_PERSIST_FNAME
