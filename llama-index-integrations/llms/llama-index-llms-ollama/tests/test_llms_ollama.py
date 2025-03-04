@@ -21,9 +21,9 @@ try:
             break
 
     if not model_found:
-        client = None # type: ignore
+        client = None  # type: ignore
 except Exception:
-    client = None # type: ignore
+    client = None  # type: ignore
 
 
 class Song(BaseModel):
