@@ -21,6 +21,9 @@ export OPENAI_API_KEY=XXXXX
 set OPENAI_API_KEY=XXXXX
 ```
 
+!!! tip
+    If you are using an OpenAI-Compatible API, you can use the `OpenAILike` LLM class. You can find more information in the [OpenAILike LLM](https://docs.llamaindex.ai/en/stable/api_reference/llms/openai_like/#llama_index.llms.openai_like.OpenAILike) integration.
+
 ## Basic Agent Example
 
 Let's start with a simple example using an agent that can perform basic multiplication by calling a tool. Create a file called `starter.py`:
