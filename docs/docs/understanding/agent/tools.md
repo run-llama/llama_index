@@ -33,6 +33,13 @@ finance_tools.extend([multiply, add])
 And we'll ask a different question than last time, necessitating the use of the new tools:
 
 ```python
+workflow = AgentWorkflow.from_tools_or_functions(
+    finance_tools,
+    llm=OpenAI(model="gpt-4o-mini"),
+    system_prompt="You are a helpful assistant.",
+)
+
+
 async def main():
     response = await workflow.run(
         user_msg="What's the current stock price of NVIDIA?"
