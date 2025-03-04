@@ -226,7 +226,7 @@ This is just the beginning of what you can do with LlamaIndex agents! You can:
 
 Some helpful next links:
 
-- See more advanced agent examples in our [Agent documentation](../understanding/agent/multi_agents.md)
+- See more advanced agent examples in our [Agent documentation](../understanding/agent/index.md)
 - Learn more about [high-level concepts](./concepts.md)
 - Explore how to [customize things](./customization.md)
 - Check out the [component guides](../module_guides/index.md)
