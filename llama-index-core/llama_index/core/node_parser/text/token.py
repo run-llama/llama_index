@@ -40,7 +40,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
     )
 
     keep_whitespaces: bool = Field(
-        default=False, description="Whether to keep leading/trailing whitespaces in the chunk."
+        default=False,
+        description="Whether to keep leading/trailing whitespaces in the chunk.",
     )
 
     _tokenizer: Callable = PrivateAttr()
@@ -208,7 +209,11 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             # we need to end the current chunk and start a new one
             if cur_len + split_len > chunk_size:
                 # end the previous chunk
-                chunk = "".join(cur_chunk) if self.keep_whitespaces else "".join(cur_chunk).strip()
+                chunk = (
+                    "".join(cur_chunk)
+                    if self.keep_whitespaces
+                    else "".join(cur_chunk).strip()
+                )
                 if chunk:
                     chunks.append(chunk)
 
@@ -225,7 +230,9 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             cur_len += split_len
 
         # handle the last chunk
-        chunk = "".join(cur_chunk) if self.keep_whitespaces else "".join(cur_chunk).strip()
+        chunk = (
+            "".join(cur_chunk) if self.keep_whitespaces else "".join(cur_chunk).strip()
+        )
         if chunk:
             chunks.append(chunk)
 
