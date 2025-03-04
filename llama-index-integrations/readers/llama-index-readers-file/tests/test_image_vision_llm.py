@@ -40,6 +40,11 @@ def test_16x16_png_image_file(tmp_path) -> str:
 
 
 class TokenizerFake:
+    """
+    This double fakes the `Blip2Processor` tokenizer object so as to
+    avoid having to instantiate the actual tokenizer for these tests.
+    """
+
     def __call__(self, img, prompt, return_tensors) -> TokenizerFake:
         """This is just a stub for the purposes of the test,
         so we just return the instance itself.
@@ -76,6 +81,11 @@ class TokenizerFake:
 
 
 class ModelFake:
+    """
+    This double fakes the `Blip2ForConditionalGeneration` model object
+    in order to avoid having to download checkpoints for these tests.
+    """
+
     def generate(self, **kwargs) -> list:
         """
         The output is the tokenized version of the prompt
