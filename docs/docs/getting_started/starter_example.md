@@ -1,4 +1,4 @@
-# Starter Tutorial
+# Starter Tutorial (Using OpenAI)
 
 This tutorial will show you how to get started building agents with LlamaIndex. We'll start with a basic example and then show how to add RAG (Retrieval-Augmented Generation) capabilities.
 
