@@ -71,6 +71,11 @@ class AIMonRerank(BaseNodePostprocessor):
             node.node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes
         ]
 
+        lengths = {"Document lengths": [len(text) for text in texts]}
+        
+        print("\n")
+        print(json.dumps(lengths, indent=4))
+
         # Construct the AIMon POST request payload
         payload = [
             {
@@ -86,6 +91,7 @@ class AIMonRerank(BaseNodePostprocessor):
         ]
 
         ## Printing AIMon Payload for debugging
+        print("\n")
         print("AIMon Request Payload:")
         print(json.dumps(payload, indent=2))
 
