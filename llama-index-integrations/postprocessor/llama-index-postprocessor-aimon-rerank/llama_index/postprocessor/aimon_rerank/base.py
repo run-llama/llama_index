@@ -114,6 +114,7 @@ class AIMonRerank(BaseNodePostprocessor):
         response_data = response.json()
 
         # Print the full response data for debugging
+        print("\n")
         print("AIMon API Response:")
         print(json.dumps(response_data, indent=2))
 
