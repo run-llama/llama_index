@@ -462,7 +462,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     )
                     for t in cur_tool_calls
                 ],
-                raw=str(return_direct_tool.tool_output.raw_output),
+                raw=return_direct_tool.tool_output.raw_output,
                 current_agent_name=agent.name,
             )
             result = await agent.finalize(ctx, result, memory)

@@ -9,37 +9,42 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.multi_modal_llms.mistralai"
+import_path = "llama_index.storage.chat_store.mongo"
 
 [tool.llamahub.class_authors]
-MistralMultiModal = "llama-index"
+MongoChatStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.9"
+python_version = "3.8"
 
 [tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index multi-modal-llms mistral integration"
+authors = ["Vrushab Ghodke <vrushab.ghodke@gmail.com>"]
+description = "llama-index storage-chat-store mongo integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-multi-modal-llms-mistralai"
+name = "llama-index-storage-chat-store-mongo"
 readme = "README.md"
-version = "0.4.0"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-index-llms-mistralai = "^0.4.0"
+llama-index-core = "^0.12.0"
+pymongo = "^4.11.1"
+motor = "^3.7.0"
 
 [tool.poetry.group.dev.dependencies]
+docker = "^7.1.0"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
-pytest = "7.2.1"
+pytest = "^8.3.5"
+pytest-asyncio = "^0.25.3"
+pytest-cov = "^6.0.0"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
