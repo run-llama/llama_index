@@ -85,6 +85,10 @@ class AIMonRerank(BaseNodePostprocessor):
             }
         ]
 
+        ## Printing AIMon Payload for debugging
+        print("AIMon Request Payload:")
+        print(json.dumps(payload, indent=2))
+
         # Define the request headers
         headers = {
             "Authorization": f"Bearer {self._api_key}",
@@ -103,7 +107,7 @@ class AIMonRerank(BaseNodePostprocessor):
 
         response_data = response.json()
 
-        # Print the full response data in a readable format
+        # Print the full response data for debugging
         print("AIMon API Response:")
         print(json.dumps(response_data, indent=2))
 
