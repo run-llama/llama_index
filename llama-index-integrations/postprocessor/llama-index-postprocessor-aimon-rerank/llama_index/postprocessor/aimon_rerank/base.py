@@ -62,7 +62,7 @@ class AIMonRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
-        
+        # Dispatch a start event for reranking
         dispatcher.event(
             ReRankStartEvent(
                 query=query_bundle, nodes=nodes, top_n=self.top_n, model_name=self.model
@@ -74,6 +74,7 @@ class AIMonRerank(BaseNodePostprocessor):
         if len(nodes) == 0:
             return []
 
+        # Start the callback event for reranking
         with self.callback_manager.event(
             CBEventType.RERANKING,
             payload={
@@ -83,24 +84,32 @@ class AIMonRerank(BaseNodePostprocessor):
                 EventPayload.TOP_K: self.top_n,
             },
         ) as event:
+            # Extract the text from each node using the embed metadata mode
             texts = [
                 node.node.get_content(metadata_mode=MetadataMode.EMBED)
                 for node in nodes
             ]
 
-            results = self._client.retrieval.rerank(
+            # Retrieve scores using the AIMon reranker.
+            # This returns a List[List[float]]; the inner list corresponds to the scores for the query.
+            scores = self._client.retrieval.rerank(
                 context_docs=texts,
-                queries=[query_bundle.query_str],           # Wrap the query string in a list
+                queries=[query_bundle.query_str],       # Wrap the query string in a list
                 task_definition=self.task_definition,
-                model_type=self.model,                      # Pass model as model_type
             )
 
+            # Extract the list of scores for the provided query.
+            scores_list = scores[0]
+
+            # Create new nodes with their corresponding scores.
             new_nodes = []
-            for result in results.results:
+            for idx, score in enumerate(scores_list):
                 new_node_with_score = NodeWithScore(
-                    node=nodes[result.index].node, score=result.relevance_score
+                    node=nodes[idx].node,               # assumption that the original node is stored here
+                    score=score
                 )
                 new_nodes.append(new_node_with_score)
+
             event.on_end(payload={EventPayload.NODES: new_nodes})
 
         dispatcher.event(ReRankEndEvent(nodes=new_nodes))
