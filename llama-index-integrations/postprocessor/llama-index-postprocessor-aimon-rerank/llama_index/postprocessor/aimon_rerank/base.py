@@ -4,7 +4,6 @@ import requests
 from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.instrumentation.events.rerank import (
     ReRankEndEvent,
@@ -74,73 +73,63 @@ class AIMonRerank(BaseNodePostprocessor):
 
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
-        if not nodes:
+        if len(nodes) == 0:
             return []
 
-        with self.callback_manager.event(
-            CBEventType.RERANKING,
-            payload={
-                EventPayload.NODES: nodes,
-                EventPayload.MODEL_NAME: self.model,
-                EventPayload.QUERY_STR: query_bundle.query_str,
-                EventPayload.TOP_K: self.top_n,
-            },
-        ) as event:
+        texts = [
+            node.node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes
+        ]
 
-            texts = [
-                node.node.get_content(metadata_mode=MetadataMode.EMBED)
-                for node in nodes
-            ]
-
-            # Construct the AIMon POST request payload
-            payload = [
-                {
-                    "task_definition": self.task_definition,
-                    "context": texts,
-                    "user_query": query_bundle.query_str,
-                    "config": {
-                        "retrieval_relevance": {
-                            "detector_name": "default"
-                        }
+        # Construct the AIMon POST request payload
+        payload = [
+            {
+                "task_definition": self.task_definition,
+                "context": texts,
+                "user_query": query_bundle.query_str,
+                "config": {
+                    "retrieval_relevance": {
+                        "detector_name": "default"
                     }
                 }
-            ]
-
-            # Define the request headers
-            headers = {
-                "Authorization": f"Bearer {self._api_key}",
-                "Content-Type": "application/json",
             }
+        ]
 
-            # Send the request
-            url = "https://pbe-api.aimon.ai/v2/detect"
-            response = requests.post(url, headers=headers, data=json.dumps(payload))
+        # Define the request headers
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+        }
 
-            # Validate response
-            if response.status_code != 200:
-                raise ValueError(
-                    f"AIMon API request failed with status code {response.status_code}: {response.text}"
-                )
+        # Send the request
+        url = "https://pbe-api.aimon.ai/v2/detect"
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
 
-            response_data = response.json()
+        # Validate response
+        if response.status_code != 200:
+            raise ValueError(
+                f"AIMon API request failed with status code {response.status_code}: {response.text}"
+            )
 
-            # Print the full response data in a readable format
-            print("AIMon API Response:")
-            print(json.dumps(response_data, indent=2))
+        response_data = response.json()
 
-            relevance_scores = response_data[0]["retrieval_relevance"][0]["relevance_scores"]
+        # Print the full response data in a readable format
+        print("AIMon API Response:")
+        print(json.dumps(response_data, indent=2))
 
-            # Attach scores to nodes
-            scored_nodes = [
-                NodeWithScore(node=nodes[i].node, score=relevance_scores[i])
-                for i in range(len(nodes))
-            ]
 
-            # Sort nodes by score in descending order
-            scored_nodes.sort(key=lambda x: x.score, reverse=True)
+        relevance_scores = response_data[0]["retrieval_relevance"][0]["relevance_scores"]
 
-            # Keep only top N nodes
-            new_nodes = scored_nodes[: self.top_n]
+        # Attach scores to nodes
+        scored_nodes = [
+            NodeWithScore(node=nodes[i].node, score=relevance_scores[i])
+            for i in range(len(nodes))
+        ]
 
-            dispatcher.event(ReRankEndEvent(nodes=new_nodes))
-            return new_nodes
+        # Sort nodes by score in descending order
+        scored_nodes.sort(key=lambda x: x.score, reverse=True)
+
+        # Keep only top N nodes
+        new_nodes = scored_nodes[: self.top_n]
+
+        dispatcher.event(ReRankEndEvent(nodes=new_nodes))
+        return new_nodes
