@@ -2,7 +2,7 @@
 Utility functions for the Anthropic SDK LLM integration.
 """
 
-from typing import Dict, Sequence, Tuple
+from typing import Any, Dict, Iterable, Sequence, Tuple
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -134,13 +134,12 @@ def messages_to_anthropic_messages(
         - System prompt
     """
     anthropic_messages = []
-    system_prompt = ""
+    system_prompt = []
     for message in messages:
         if message.role == MessageRole.SYSTEM:
-            # For system messages, concatenate all text blocks
             for block in message.blocks:
-                if isinstance(block, TextBlock):
-                    system_prompt += block.text + "\n"
+                if isinstance(block, TextBlock) and block.text:
+                    system_prompt.append(_text_block_to_anthropic_message(block, message.additional_kwargs))
         elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
             content = ToolResultBlockParam(
                 tool_use_id=message.additional_kwargs["tool_call_id"],
@@ -156,19 +155,8 @@ def messages_to_anthropic_messages(
             content: list[TextBlockParam | ImageBlockParam] = []
             for block in message.blocks:
                 if isinstance(block, TextBlock):
-                    content_ = (
-                        TextBlockParam(
-                            text=block.text,
-                            type="text",
-                            cache_control=CacheControlEphemeralParam(type="ephemeral"),
-                        )
-                        if "cache_control" in message.additional_kwargs
-                        else TextBlockParam(text=block.text, type="text")
-                    )
-
-                    # avoid empty text blocks
-                    if content_["text"]:
-                        content.append(content_)
+                    if block.text:
+                        content.append(_text_block_to_anthropic_message(block, message.additional_kwargs))
                 elif isinstance(block, ImageBlock):
                     # FUTURE: Claude does not support URLs, so we need to always convert to base64
                     img_bytes = block.resolve_image(as_base64=True).read()
@@ -211,6 +199,14 @@ def messages_to_anthropic_messages(
             anthropic_messages.append(anth_message)
     return __merge_common_role_msgs(anthropic_messages), system_prompt.strip()
 
+def _text_block_to_anthropic_message(block: TextBlock, kwargs: dict[str, Any]) -> TextBlockParam:
+    if "cache_control" in kwargs:
+        return TextBlockParam(
+            text=block.text,
+            type="text",
+            cache_control=CacheControlEphemeralParam(type="ephemeral"),
+        )
+    return TextBlockParam(text=block.text, type="text")
 
 # Function used in bedrock
 def _message_to_anthropic_prompt(message: ChatMessage) -> str:
