@@ -476,7 +476,9 @@ class Anthropic(FunctionCallingLLM):
                         "input_schema": tool.metadata.get_parameters_dict(),
                     }
                 )
-            if "prompt-caching" in kwargs.get("extra_headers", {}).get("anthropic-beta", ""):
+            if "prompt-caching" in kwargs.get("extra_headers", {}).get(
+                "anthropic-beta", ""
+            ):
                 tool_dicts[-1]["cache_control"] = {"type": "ephemeral"}
 
         return {"messages": chat_history, "tools": tool_dicts, **kwargs}
