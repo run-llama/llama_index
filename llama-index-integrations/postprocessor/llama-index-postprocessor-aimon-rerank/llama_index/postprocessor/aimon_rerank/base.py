@@ -1,6 +1,4 @@
 import os
-import json
-import requests
 from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -84,10 +82,10 @@ class AIMonRerank(BaseNodePostprocessor):
         # print("\n")
         # print(json.dumps(lengths, indent=4))
 
-        scores = self._client.retrieval.rerank(   context_docs=texts,
-                                                            queries=[query_bundle.query_str],
-                                                            task_definition=self.task_definition,
-                                                        )
+        scores = self._client.retrieval.rerank( context_docs=texts,
+                                                queries=[query_bundle.query_str],
+                                                task_definition=self.task_definition,
+                                            )
 
         relevance_scores = scores[0]
 
