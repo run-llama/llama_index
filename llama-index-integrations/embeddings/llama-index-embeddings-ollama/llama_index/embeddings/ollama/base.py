@@ -46,9 +46,9 @@ class OllamaEmbedding(BaseEmbedding):
             **kwargs,
         )
 
-    client_kwargs = client_kwargs or {}
-    self._client = Client(host=self.base_url, **client_kwargs)
-    self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
+        client_kwargs = client_kwargs or {}
+        self._client = Client(host=self.base_url, **client_kwargs)
+        self._async_client = AsyncClient(host=self.base_url, **client_kwargs)
 
     @classmethod
     def class_name(cls) -> str:
