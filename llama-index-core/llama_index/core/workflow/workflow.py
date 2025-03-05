@@ -16,6 +16,7 @@ from typing import (
 
 from llama_index.core.bridge.pydantic import ValidationError
 from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.workflow.types import RunResultT
 
 from .checkpointer import Checkpoint, CheckpointCallback
 from .context import Context
@@ -68,8 +69,6 @@ class Workflow(metaclass=WorkflowMeta):
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
         num_concurrent_runs: Optional[int] = None,
-        stop_event_class: type[StopEvent] = StopEvent,
-        start_event_class: type[StartEvent] = StartEvent,
     ) -> None:
         """Create an instance of the workflow.
 
@@ -89,24 +88,14 @@ class Workflow(metaclass=WorkflowMeta):
             num_concurrent_runs:
                 maximum number of .run() executions occurring simultaneously. If set to `None`, there
                 is no limit to this number.
-            stop_event_class:
-                custom type used instead of StopEvent
-            start_event_class:
-                custom type used instead of StartEvent
         """
         # Configuration
         self._timeout = timeout
         self._verbose = verbose
         self._disable_validation = disable_validation
         self._num_concurrent_runs = num_concurrent_runs
-        self._stop_event_class = stop_event_class
-        if not issubclass(self._stop_event_class, StopEvent):
-            msg = f"Stop event class '{stop_event_class.__name__}' must derive from 'StopEvent'"
-            raise WorkflowConfigurationError(msg)
-        self._start_event_class = start_event_class
-        if not issubclass(self._start_event_class, StartEvent):
-            msg = f"Start event class '{start_event_class.__name__}' must derive from 'StartEvent'"
-            raise WorkflowConfigurationError(msg)
+        self._stop_event_class = self._ensure_stop_event_class()
+        self._start_event_class = self._ensure_start_event_class()
         self._sem = (
             asyncio.Semaphore(num_concurrent_runs) if num_concurrent_runs else None
         )
@@ -115,6 +104,50 @@ class Workflow(metaclass=WorkflowMeta):
         self._stepwise_context: Optional[Context] = None
         # Services management
         self._service_manager = service_manager or ServiceManager()
+
+    def _ensure_start_event_class(self) -> type[StartEvent]:
+        """Returns the StartEvent type used in this workflow.
+
+        It works by inspecting the events received by the step methods.
+        """
+        start_events_found: set[type[StartEvent]] = set()
+        for step_func in self._get_steps().values():
+            step_config: StepConfig = getattr(step_func, "__step_config")
+            for event_type in step_config.accepted_events:
+                if issubclass(event_type, StartEvent):
+                    start_events_found.add(event_type)
+
+        num_found = len(start_events_found)
+        if num_found == 0:
+            msg = "At least one Event of type StartEvent must be received by any step."
+            raise WorkflowConfigurationError(msg)
+        elif num_found > 1:
+            msg = f"Only one type of StartEvent is allowed per workflow, found {num_found}: {start_events_found}."
+            raise WorkflowConfigurationError(msg)
+        else:
+            return start_events_found.pop()
+
+    def _ensure_stop_event_class(self) -> type[RunResultT]:
+        """Returns the StopEvent type used in this workflow.
+
+        It works by inspecting the events returned.
+        """
+        stop_events_found: set[type[StopEvent]] = set()
+        for step_func in self._get_steps().values():
+            step_config: StepConfig = getattr(step_func, "__step_config")
+            for event_type in step_config.return_types:
+                if issubclass(event_type, StopEvent):
+                    stop_events_found.add(event_type)
+
+        num_found = len(stop_events_found)
+        if num_found == 0:
+            msg = "At least one Event of type StopEvent must be returned by any step."
+            raise WorkflowConfigurationError(msg)
+        elif num_found > 1:
+            msg = f"Only one type of StopEvent is allowed per workflow, found {num_found}: {stop_events_found}."
+            raise WorkflowConfigurationError(msg)
+        else:
+            return stop_events_found.pop()
 
     async def stream_events(self) -> AsyncGenerator[Event, None]:
         """Returns an async generator to consume any event that workflow steps decide to stream.
@@ -266,6 +299,7 @@ class Workflow(metaclass=WorkflowMeta):
                         attempts = 0
                         while True:
                             await ctx.mark_in_progress(name=name, ev=ev)
+                            await ctx.add_running_step(name)
                             try:
                                 new_ev = await instrumented_step(**kwargs)
                                 break  # exit the retrying loop
@@ -293,6 +327,8 @@ class Workflow(metaclass=WorkflowMeta):
                                         f"Step {name} produced an error, retry in {delay} seconds"
                                     )
                                 await asyncio.sleep(delay)
+                            finally:
+                                await ctx.remove_running_step(name)
 
                     else:
                         try:
@@ -369,8 +405,11 @@ class Workflow(metaclass=WorkflowMeta):
 
             # add dedicated cancel task
             async def _cancel_workflow_task() -> None:
-                await ctx._cancel_flag.wait()
-                raise WorkflowCancelledByUser
+                try:
+                    await ctx._cancel_flag.wait()
+                    raise WorkflowCancelledByUser
+                except asyncio.CancelledError:
+                    return
 
             ctx._tasks.add(
                 asyncio.create_task(
@@ -396,7 +435,7 @@ class Workflow(metaclass=WorkflowMeta):
         ctx = next(iter(self._contexts))
         ctx.send_event(message=message, step=step)
 
-    def _get_start_event(
+    def _get_start_event_instance(
         self, start_event: Optional[StartEvent], **kwargs: Any
     ) -> StartEvent:
         if start_event is not None:
@@ -453,16 +492,13 @@ class Workflow(metaclass=WorkflowMeta):
             try:
                 if not ctx.is_running:
                     # Send the first event
-                    start_event_instance = self._get_start_event(start_event, **kwargs)
+                    start_event_instance = self._get_start_event_instance(
+                        start_event, **kwargs
+                    )
                     ctx.send_event(start_event_instance)
 
                     # the context is now running
                     ctx.is_running = True
-                else:
-                    # resend in-progress events if already running
-                    for name, evs in ctx._in_progress.items():
-                        for ev in evs:
-                            ctx.send_event(ev, step=name)
 
                 done, unfinished = await asyncio.wait(
                     ctx._tasks,
@@ -485,7 +521,14 @@ class Workflow(metaclass=WorkflowMeta):
                     t.cancel()
 
                 # wait for cancelled tasks to cleanup
-                await asyncio.gather(*unfinished, return_exceptions=True)
+                # prevents any tasks from being stuck
+                try:
+                    await asyncio.wait_for(
+                        asyncio.gather(*unfinished, return_exceptions=True),
+                        timeout=0.5,
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning("Some tasks did not clean up within timeout")
 
                 # the context is no longer running
                 ctx.is_running = False
@@ -548,7 +591,11 @@ class Workflow(metaclass=WorkflowMeta):
     @step
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
-        ctx._retval = ev.result
+        if self._stop_event_class is StopEvent:
+            ctx._retval = ev.result
+        else:
+            ctx._retval = ev
+
         ctx.write_event_to_stream(ev)
 
         # Signal we want to stop the workflow

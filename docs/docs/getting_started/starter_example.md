@@ -1,4 +1,4 @@
-# Starter Tutorial
+# Starter Tutorial (Using OpenAI)
 
 This tutorial will show you how to get started building agents with LlamaIndex. We'll start with a basic example and then show how to add RAG (Retrieval-Augmented Generation) capabilities.
 
@@ -20,6 +20,9 @@ export OPENAI_API_KEY=XXXXX
 # Windows
 set OPENAI_API_KEY=XXXXX
 ```
+
+!!! tip
+    If you are using an OpenAI-Compatible API, you can use the `OpenAILike` LLM class. You can find more information in the [OpenAILike LLM](https://docs.llamaindex.ai/en/stable/api_reference/llms/openai_like/#llama_index.llms.openai_like.OpenAILike) integration.
 
 ## Basic Agent Example
 
@@ -75,7 +78,7 @@ The `AgentWorkflow` is also able to remember previous messages. This is containe
 If the `Context` is passed in, the agent will use it to continue the conversation.
 
 ```python
-from llama_index.core.context import Context
+from llama_index.core.workflow import Context
 
 # create context
 ctx = Context(agent)
@@ -190,7 +193,7 @@ This is just the beginning of what you can do with LlamaIndex agents! You can:
 
 Some helpful next links:
 
-- See more advanced agent examples in our [Agent documentation](../understanding/agent/multi_agents.md)
+- See more advanced agent examples in our [Agent documentation](../understanding/agent/index.md)
 - Learn more about [high-level concepts](./concepts.md)
 - Explore how to [customize things](./customization.md)
 - Check out the [component guides](../module_guides/index.md)

@@ -127,7 +127,12 @@ class KnowledgeBaseWebReader(BaseReader):
         return {"title": title, "subtitle": subtitle, "body": body, "url": url}
 
     def get_article_urls(
-        self, browser: Any, root_url: str, current_url: str, max_depth: int = 100
+        self,
+        browser: Any,
+        root_url: str,
+        current_url: str,
+        max_depth: int = 100,
+        depth: int = 0,
     ) -> List[str]:
         """
         Recursively crawl through the knowledge base to find a list of articles.
@@ -136,11 +141,17 @@ class KnowledgeBaseWebReader(BaseReader):
             browser (Any): a Playwright Chromium browser.
             root_url (str): root URL of the knowledge base.
             current_url (str): current URL that is being crawled.
+            max_depth (int): maximum recursion level for the crawler
+            depth (int): current depth level
 
         Returns:
             List[str]: a list of URLs of found articles.
 
         """
+        if depth >= max_depth:
+            print(f"Reached max depth ({max_depth}): {current_url}")
+            return []
+
         page = browser.new_page(ignore_https_errors=True)
         page.set_default_timeout(60000)
         page.goto(current_url, wait_until="domcontentloaded")
@@ -162,7 +173,7 @@ class KnowledgeBaseWebReader(BaseReader):
         for link in links:
             url = root_url + page.evaluate("(node) => node.getAttribute('href')", link)
             article_urls.extend(
-                self.get_article_urls(browser, root_url, url, max_depth)
+                self.get_article_urls(browser, root_url, url, max_depth, depth + 1)
             )
 
         page.close()

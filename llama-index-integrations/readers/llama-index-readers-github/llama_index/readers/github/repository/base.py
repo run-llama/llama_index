@@ -103,6 +103,7 @@ class GithubRepositoryReader(BaseReader):
                 make to the Github API.
             - timeout (int or None): Timeout for the requests to the Github API. Default is 5.
             - retries (int): Number of retries for requests made to the Github API. Default is 0.
+              This limit applies individually to each request made by this class.
             - filter_directories (Optional[Tuple[List[str], FilterType]]): Tuple
                 containing a list of directories and a FilterType. If the FilterType
                 is INCLUDE, only the files in the directories in the list will be
@@ -242,7 +243,11 @@ class GithubRepositoryReader(BaseReader):
         """
         commit_response: GitCommitResponseModel = self._loop.run_until_complete(
             self._github_client.get_commit(
-                self._owner, self._repo, commit_sha, timeout=self._timeout
+                self._owner,
+                self._repo,
+                commit_sha,
+                timeout=self._timeout,
+                retries=self._retries,
             )
         )
 
@@ -267,7 +272,11 @@ class GithubRepositoryReader(BaseReader):
         """
         branch_data: GitBranchResponseModel = self._loop.run_until_complete(
             self._github_client.get_branch(
-                self._owner, self._repo, branch, timeout=self._timeout
+                self._owner,
+                self._repo,
+                branch,
+                timeout=self._timeout,
+                retries=self._retries,
             )
         )
 
@@ -339,7 +348,11 @@ class GithubRepositoryReader(BaseReader):
         )
 
         tree_data: GitTreeResponseModel = await self._github_client.get_tree(
-            self._owner, self._repo, tree_sha, timeout=self._timeout
+            self._owner,
+            self._repo,
+            tree_sha,
+            timeout=self._timeout,
+            retries=self._retries,
         )
         print_if_verbose(
             self._verbose, "\t" * current_depth + f"tree data: {tree_data}"
@@ -414,6 +427,8 @@ class GithubRepositoryReader(BaseReader):
             loop=self._loop,
             buffer_size=self._concurrent_requests,  # TODO: make this configurable
             verbose=self._verbose,
+            timeout=self._timeout,
+            retries=self._retries,
         )
 
         documents = []
