@@ -71,7 +71,7 @@ class AIMonRerank(BaseNodePostprocessor):
 
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
-        if len(nodes) == 0:
+        if not nodes:
             return []
 
         with self.callback_manager.event(
@@ -83,36 +83,37 @@ class AIMonRerank(BaseNodePostprocessor):
                 EventPayload.TOP_K: self.top_n,
             },
         ) as event:
-            # Extract text content from each node using the embed metadata mode.
+            # Get the text content from each node.
             texts = [
                 node.node.get_content(metadata_mode=MetadataMode.EMBED)
                 for node in nodes
             ]
-            # Retrieve scores from AIMon; this returns a List[List[float]].
-            # Since we pass in a single query, scores[0] contains our scores.
+            # Retrieve scores; AIMon returns a List[List[float]].
             scores = self._client.retrieval.rerank(
                 context_docs=texts,
-                queries=[query_bundle.query_str],       # Wrap the query string in a list.
+                queries=[query_bundle.query_str],  # Single query wrapped in a list.
                 task_definition=self.task_definition,
             )
             scores_list = scores[0]
 
-            # Pair each score with its document index.
+            # Pair each score with its original document index.
             indexed_scores = list(enumerate(scores_list))
-            # Sort the pairs in descending order by score.
+            # Sort by score in descending order.
             sorted_scores = sorted(indexed_scores, key=lambda x: x[1], reverse=True)
-            # If top_n is specified, take only the top_n results.
+            # Take only the top_n documents.
             if self.top_n is not None:
                 sorted_scores = sorted_scores[: self.top_n]
 
-            # Create new NodeWithScore objects using the sorted indices.
             new_nodes = []
             for idx, score in sorted_scores:
                 new_node_with_score = NodeWithScore(
                     node=nodes[idx].node,
                     score=score,
                 )
+                # Explicitly update the similarity field if needed.
+                new_node_with_score.similarity = score
                 new_nodes.append(new_node_with_score)
+
             event.on_end(payload={EventPayload.NODES: new_nodes})
 
         dispatcher.event(ReRankEndEvent(nodes=new_nodes))
