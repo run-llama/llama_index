@@ -13,15 +13,15 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, MetadataMode
 
 dispatcher = get_dispatcher(__name__)
 
+
 class AIMonRerank(BaseNodePostprocessor):
 
     model: str = Field(description="AIMon's reranking model name.")
     top_n: int = Field(description="Top N nodes to return.")
-
-    ## Defining a default task definition for the AIMon reranker
-    task_definition: str = Field(   default="Determine the relevance of context documents with respect to the user query.",
-                                    description="The task definition for the AIMon reranker."
-                                )
+    task_definition: str = Field(
+        default="Determine the relevance of context documents with respect to the user query.",
+        description="The task definition for the AIMon reranker.",
+    )
 
     _client: Any = PrivateAttr()
 
@@ -32,17 +32,15 @@ class AIMonRerank(BaseNodePostprocessor):
         api_key: Optional[str] = None,
         task_definition: Optional[str] = None,
     ):
-        
         super().__init__(top_n=top_n, model=model)
-
-        self.task_definition = task_definition or "Determine the relevance of context documents with respect to the user query."
-        
+        self.task_definition = task_definition or (
+            "Determine the relevance of context documents with respect to the user query."
+        )
         try:
             api_key = api_key or os.environ["AIMON_API_KEY"]
         except IndexError:
             raise ValueError(
-                "Must pass in AIMon api key or "
-                "specify via AIMON_API_KEY environment variable "
+                "Must pass in AIMon api key or specify via AIMON_API_KEY environment variable"
             )
         try:
             from aimon import Client
@@ -62,10 +60,12 @@ class AIMonRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
-        # Dispatch a start event for reranking
         dispatcher.event(
             ReRankStartEvent(
-                query=query_bundle, nodes=nodes, top_n=self.top_n, model_name=self.model
+                query=query_bundle,
+                nodes=nodes,
+                top_n=self.top_n,
+                model_name=self.model,
             )
         )
 
@@ -74,7 +74,6 @@ class AIMonRerank(BaseNodePostprocessor):
         if len(nodes) == 0:
             return []
 
-        # Start the callback event for reranking
         with self.callback_manager.event(
             CBEventType.RERANKING,
             payload={
@@ -84,32 +83,36 @@ class AIMonRerank(BaseNodePostprocessor):
                 EventPayload.TOP_K: self.top_n,
             },
         ) as event:
-            # Extract the text from each node using the embed metadata mode
+            # Extract text content from each node using the embed metadata mode.
             texts = [
                 node.node.get_content(metadata_mode=MetadataMode.EMBED)
                 for node in nodes
             ]
-
-            # Retrieve scores using the AIMon reranker.
-            # This returns a List[List[float]]; the inner list corresponds to the scores for the query.
+            # Retrieve scores from AIMon; this returns a List[List[float]].
+            # Since we pass in a single query, scores[0] contains our scores.
             scores = self._client.retrieval.rerank(
                 context_docs=texts,
-                queries=[query_bundle.query_str],       # Wrap the query string in a list
+                queries=[query_bundle.query_str],       # Wrap the query string in a list.
                 task_definition=self.task_definition,
             )
-
-            # Extract the list of scores for the provided query.
             scores_list = scores[0]
 
-            # Create new nodes with their corresponding scores.
+            # Pair each score with its document index.
+            indexed_scores = list(enumerate(scores_list))
+            # Sort the pairs in descending order by score.
+            sorted_scores = sorted(indexed_scores, key=lambda x: x[1], reverse=True)
+            # If top_n is specified, take only the top_n results.
+            if self.top_n is not None:
+                sorted_scores = sorted_scores[: self.top_n]
+
+            # Create new NodeWithScore objects using the sorted indices.
             new_nodes = []
-            for idx, score in enumerate(scores_list):
+            for idx, score in sorted_scores:
                 new_node_with_score = NodeWithScore(
-                    node=nodes[idx].node,               # assumption that the original node is stored here
-                    score=score
+                    node=nodes[idx].node,
+                    score=score,
                 )
                 new_nodes.append(new_node_with_score)
-
             event.on_end(payload={EventPayload.NODES: new_nodes})
 
         dispatcher.event(ReRankEndEvent(nodes=new_nodes))
