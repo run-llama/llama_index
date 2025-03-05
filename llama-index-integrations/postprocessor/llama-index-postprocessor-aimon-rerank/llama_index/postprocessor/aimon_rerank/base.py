@@ -1,4 +1,6 @@
 import os
+import json
+import requests
 from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -24,6 +26,7 @@ class AIMonRerank(BaseNodePostprocessor):
     )
 
     _client: Any = PrivateAttr()
+    _api_key: str = PrivateAttr()
 
     def __init__(
         self,
@@ -37,7 +40,7 @@ class AIMonRerank(BaseNodePostprocessor):
             "Determine the relevance of context documents with respect to the user query."
         )
         try:
-            api_key = api_key or os.environ["AIMON_API_KEY"]
+            self._api_key = api_key or os.environ["AIMON_API_KEY"]
         except IndexError:
             raise ValueError(
                 "Must pass in AIMon api key or specify via AIMON_API_KEY environment variable"
@@ -83,36 +86,56 @@ class AIMonRerank(BaseNodePostprocessor):
                 EventPayload.TOP_K: self.top_n,
             },
         ) as event:
-            # Extract the text content from each node using the EMBED metadata mode.
+
             texts = [
                 node.node.get_content(metadata_mode=MetadataMode.EMBED)
                 for node in nodes
             ]
-            # Retrieve scores from AIMon; the API returns a List[List[float]],
-            # where scores[0] corresponds to the query and is in the same order as texts.
-            scores = self._client.retrieval.rerank(
-                context_docs=texts,
-                queries=[query_bundle.query_str],       # Single query wrapped in a list.
-                task_definition=self.task_definition,
-            )
-            scores_list = scores[0]
 
-            # Since AIMon scores are aligned with texts, we can simply take the top_n items by slicing.
-            if self.top_n is not None:
-                scores_list = scores_list[: self.top_n]
-                selected_nodes = nodes[: self.top_n]
-            else:
-                selected_nodes = nodes
+            # Construct the AIMon POST request payload
+            payload = [
+                {
+                    "task_definition": self.task_definition,
+                    "context": texts,
+                    "user_query": query_bundle.query_str,
+                    "config": {
+                        "retrieval_relevance": {
+                            "detector_name": "default"
+                        }
+                    }
+                }
+            ]
 
-            new_nodes = []
-            for idx, score in enumerate(scores_list):
-                new_node_with_score = NodeWithScore(
-                    node=selected_nodes[idx].node,
-                    score=score,
+            # Define the request headers
+            headers = {
+                "Authorization": f"Bearer {self._api_key}",
+                "Content-Type": "application/json",
+            }
+
+            # Send the request
+            url = "https://pbe-api.aimon.ai/v2/detect"
+            response = requests.post(url, headers=headers, data=json.dumps(payload))
+
+            # Validate response
+            if response.status_code != 200:
+                raise ValueError(
+                    f"AIMon API request failed with status code {response.status_code}: {response.text}"
                 )
-                new_nodes.append(new_node_with_score)
 
-            event.on_end(payload={EventPayload.NODES: new_nodes})
+            response_data = response.json()
+            relevance_scores = response_data[0]["retrieval_relevance"][0]["relevance_scores"]
 
-        dispatcher.event(ReRankEndEvent(nodes=new_nodes))
-        return new_nodes
+            # Attach scores to nodes
+            scored_nodes = [
+                NodeWithScore(node=nodes[i].node, score=relevance_scores[i])
+                for i in range(len(nodes))
+            ]
+
+            # Sort nodes by score in descending order
+            scored_nodes.sort(key=lambda x: x.score, reverse=True)
+
+            # Keep only top N nodes
+            new_nodes = scored_nodes[: self.top_n]
+
+            dispatcher.event(ReRankEndEvent(nodes=new_nodes))
+            return new_nodes
