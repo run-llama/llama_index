@@ -90,8 +90,9 @@ class AIMonRerank(BaseNodePostprocessor):
 
             results = self._client.retrieval.rerank(
                 context_docs=texts,
-                query=query_bundle.query_str,
-                task_definition = self.task_definition,
+                queries=[query_bundle.query_str],           # Wrap the query string in a list
+                task_definition=self.task_definition,
+                model_type=self.model,                      # Pass model as model_type
             )
 
             new_nodes = []
