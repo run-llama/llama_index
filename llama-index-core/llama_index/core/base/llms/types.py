@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import base64
+import filetype
+from binascii import Error as BinasciiError
 from enum import Enum
 from io import BytesIO
+from pathlib import Path
 from typing import (
     Annotated,
     Any,
@@ -16,7 +19,6 @@ from typing import (
 )
 
 import filetype
-import requests
 from typing_extensions import Self
 
 from llama_index.core.bridge.pydantic import (
@@ -31,6 +33,7 @@ from llama_index.core.bridge.pydantic import (
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.schema import ImageDocument
+from llama_index.core.utils import resolve_binary
 
 
 class MessageRole(str, Enum):
@@ -60,10 +63,13 @@ class ImageBlock(BaseModel):
 
     @field_validator("url", mode="after")
     @classmethod
-    def urlstr_to_anyurl(cls, url: str | AnyUrl) -> AnyUrl:
+    def urlstr_to_anyurl(cls, url: str | AnyUrl | None) -> AnyUrl | None:
         """Store the url as Anyurl."""
         if isinstance(url, AnyUrl):
             return url
+        if url is None:
+            return None
+
         return AnyUrl(url=url)
 
     @model_validator(mode="after")
@@ -75,14 +81,23 @@ class ImageBlock(BaseModel):
         operations, we won't load the path or the URL to guess the mimetype.
         """
         if not self.image:
+            if not self.image_mimetype:
+                path = self.path or self.url
+                if path:
+                    suffix = Path(str(path)).suffix.replace(".", "") or None
+                    mimetype = filetype.get_type(ext=suffix)
+                    if mimetype and str(mimetype.mime).startswith("image/"):
+                        self.image_mimetype = str(mimetype.mime)
+
             return self
 
         try:
-            # Check if image is already base64 encoded
-            decoded_img = base64.b64decode(self.image)
-        except Exception:
+            # Check if self.image is already base64 encoded.
+            # b64decode() can succeed on random binary data, so we
+            # pass verify=True to make sure it's not a false positive
+            decoded_img = base64.b64decode(self.image, validate=True)
+        except BinasciiError:
             decoded_img = self.image
-            # Not base64 - encode it
             self.image = base64.b64encode(self.image)
 
         self._guess_mimetype(decoded_img)
@@ -99,30 +114,73 @@ class ImageBlock(BaseModel):
         Args:
             as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
         """
-        if self.image is not None:
-            if as_base64:
-                return BytesIO(self.image)
-            return BytesIO(base64.b64decode(self.image))
-        elif self.path is not None:
-            img_bytes = self.path.read_bytes()
-            self._guess_mimetype(img_bytes)
-            if as_base64:
-                return BytesIO(base64.b64encode(img_bytes))
-            return BytesIO(img_bytes)
-        elif self.url is not None:
-            # load image from URL
-            response = requests.get(str(self.url))
-            img_bytes = response.content
-            self._guess_mimetype(img_bytes)
-            if as_base64:
-                return BytesIO(base64.b64encode(img_bytes))
-            return BytesIO(img_bytes)
-        else:
-            raise ValueError("No image found in the chat message!")
+        return resolve_binary(
+            raw_bytes=self.image,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=as_base64,
+        )
+
+
+class AudioBlock(BaseModel):
+    block_type: Literal["audio"] = "audio"
+    audio: bytes | None = None
+    path: FilePath | None = None
+    url: AnyUrl | str | None = None
+    format: str | None = None
+
+    @field_validator("url", mode="after")
+    @classmethod
+    def urlstr_to_anyurl(cls, url: str | AnyUrl) -> AnyUrl:
+        """Store the url as Anyurl."""
+        if isinstance(url, AnyUrl):
+            return url
+        return AnyUrl(url=url)
+
+    @model_validator(mode="after")
+    def audio_to_base64(self) -> Self:
+        """Store the audio as base64 and guess the mimetype when possible.
+
+        In case the model was built passing audio data but without a mimetype,
+        we try to guess it using the filetype library. To avoid resource-intense
+        operations, we won't load the path or the URL to guess the mimetype.
+        """
+        if not self.audio:
+            return self
+
+        try:
+            # Check if audio is already base64 encoded
+            decoded_audio = base64.b64decode(self.audio)
+        except Exception:
+            decoded_audio = self.audio
+            # Not base64 - encode it
+            self.audio = base64.b64encode(self.audio)
+
+        self._guess_format(decoded_audio)
+
+        return self
+
+    def _guess_format(self, audio_data: bytes) -> None:
+        if not self.format:
+            guess = filetype.guess(audio_data)
+            self.format = guess.extension if guess else None
+
+    def resolve_audio(self, as_base64: bool = False) -> BytesIO:
+        """Resolve an audio such that PIL can read it.
+
+        Args:
+            as_base64 (bool): whether the resolved audio should be returned as base64-encoded bytes
+        """
+        return resolve_binary(
+            raw_bytes=self.audio,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=as_base64,
+        )
 
 
 ContentBlock = Annotated[
-    Union[TextBlock, ImageBlock], Field(discriminator="block_type")
+    Union[TextBlock, ImageBlock, AudioBlock], Field(discriminator="block_type")
 ]
 
 

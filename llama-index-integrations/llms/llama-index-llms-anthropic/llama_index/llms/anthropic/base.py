@@ -1,15 +1,6 @@
-import anthropic
 import json
-from anthropic.types import (
-    ContentBlockDeltaEvent,
-    TextBlock,
-    TextDelta,
-    ContentBlockStartEvent,
-    ContentBlockStopEvent,
-)
-from anthropic.types.tool_use_block import ToolUseBlock
-
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -18,9 +9,14 @@ from typing import (
     Sequence,
     Tuple,
     Union,
-    TYPE_CHECKING,
 )
 
+from llama_index.core.base.llms.generic_utils import (
+    achat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -39,22 +35,26 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.core.base.llms.generic_utils import (
-    achat_to_completion_decorator,
-    astream_chat_to_completion_decorator,
-    chat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
-)
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
+from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.utils import Tokenizer
 from llama_index.llms.anthropic.utils import (
     anthropic_modelname_to_contextsize,
     force_single_tool_call,
     is_function_calling_model,
     messages_to_anthropic_messages,
 )
-from llama_index.core.utils import Tokenizer
-from llama_index.core.llms.utils import parse_partial_json
+
+import anthropic
+from anthropic.types import (
+    ContentBlockDeltaEvent,
+    ContentBlockStartEvent,
+    ContentBlockStopEvent,
+    TextBlock,
+    TextDelta,
+)
+from anthropic.types.tool_use_block import ToolUseBlock
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -78,7 +78,8 @@ class AnthropicTokenizer:
 
 
 class Anthropic(FunctionCallingLLM):
-    """Anthropic LLM.
+    """
+    Anthropic LLM.
 
     Examples:
         `pip install llama-index-llms-anthropic`
@@ -478,7 +479,7 @@ class Anthropic(FunctionCallingLLM):
             if "prompt-caching" in kwargs.get("extra_headers", {}).get("anthropic-beta", ""):
                 tool_dicts[-1]["cache_control"] = {"type": "ephemeral"}
 
-        return {"messages": chat_history, "tools": tool_dicts or None, **kwargs}
+        return {"messages": chat_history, "tools": tool_dicts, **kwargs}
 
     def _validate_chat_with_tools_response(
         self,

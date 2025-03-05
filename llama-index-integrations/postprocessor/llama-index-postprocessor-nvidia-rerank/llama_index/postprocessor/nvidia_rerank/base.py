@@ -1,8 +1,9 @@
 from typing import Any, List, Optional, Generator, Literal
+import os
+from urllib.parse import urlparse, urlunparse
+import httpx
 
-
-from urllib.parse import urlparse, urljoin
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, BaseModel, ConfigDict
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, ConfigDict
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.instrumentation.events.rerank import (
@@ -11,26 +12,26 @@ from llama_index.core.instrumentation.events.rerank import (
 )
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
-import requests
 import warnings
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
-
-DEFAULT_MODEL = "nvidia/nv-rerankqa-mistral-4b-v3"
-
-MODEL_ENDPOINT_MAP = {
-    "nvidia/nv-rerankqa-mistral-4b-v3": "https://ai.api.nvidia.com/v1/retrieval/nvidia/nv-rerankqa-mistral-4b-v3/reranking",
-    "nv-rerank-qa-mistral-4b:1": "https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking",
-    "nvidia/llama-3.2-nv-rerankqa-1b-v1": "https://ai.api.nvidia.com/v1/retrieval/nvidia/llama-3_2-nv-rerankqa-1b-v1/reranking",
-    "nvidia/llama-3.2-nv-rerankqa-1b-v2": "https://ai.api.nvidia.com/v1/retrieval/nvidia/llama-3_2-nv-rerankqa-1b-v2/reranking",
-}
+from .utils import (
+    RANKING_MODEL_TABLE,
+    BASE_URL,
+    DEFAULT_MODEL,
+    Model,
+    determine_model,
+)
+from .utils import (
+    RANKING_MODEL_TABLE,
+    BASE_URL,
+    DEFAULT_MODEL,
+    Model,
+    determine_model,
+)
 
 dispatcher = get_dispatcher(__name__)
-
-
-class Model(BaseModel):
-    id: str
-    base_model: Optional[str] = None
+KNOWN_URLS = [item.endpoint for item in RANKING_MODEL_TABLE.values()]
 
 
 class NVIDIARerank(BaseNodePostprocessor):
@@ -61,23 +62,16 @@ class NVIDIARerank(BaseNodePostprocessor):
     _api_key: str = PrivateAttr("NO_API_KEY_PROVIDED")  # TODO: should be SecretStr
     _mode: str = PrivateAttr("nvidia")
     _is_hosted: bool = PrivateAttr(True)
-    _base_url: str = PrivateAttr(MODEL_ENDPOINT_MAP.get(DEFAULT_MODEL))
-    _inference_url: Optional[str] = PrivateAttr(None)
-
-    def _set_api_key(self, nvidia_api_key: str = None, api_key: str = None) -> None:
-        self._api_key = get_from_param_or_env(
-            "api_key",
-            nvidia_api_key or api_key,
-            "NVIDIA_API_KEY",
-            "NO_API_KEY_PROVIDED",
-        )
+    base_url: Optional[str] = None
+    _http_client: Optional[httpx.Client] = PrivateAttr(None)
 
     def __init__(
         self,
         model: Optional[str] = None,
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
+        base_url: Optional[str] = os.getenv("NVIDIA_BASE_URL", BASE_URL),
+        http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ):
         """
@@ -90,6 +84,7 @@ class NVIDIARerank(BaseNodePostprocessor):
             nvidia_api_key (str, optional): The NVIDIA API key. Defaults to None.
             api_key (str, optional): The API key. Defaults to None.
             base_url (str, optional): The base URL of the on-premises NIM. Defaults to None.
+            http_client (httpx.Client, optional): Custom HTTP client for making requests.
             truncate (str): "NONE", "END", truncate input text if it exceeds
                             the model's context length. Default is model dependent and
                             is likely to raise an error if an input is too long.
@@ -98,33 +93,25 @@ class NVIDIARerank(BaseNodePostprocessor):
         API Key:
         - The recommended way to provide the API key is through the `NVIDIA_API_KEY` environment variable.
         """
-        if not base_url or (base_url in MODEL_ENDPOINT_MAP.values() and not model):
+        if not base_url or (base_url in KNOWN_URLS and not model):
             model = model or DEFAULT_MODEL
         super().__init__(model=model, **kwargs)
 
-        base_url = base_url or MODEL_ENDPOINT_MAP.get(DEFAULT_MODEL)
-        self._is_hosted = base_url in MODEL_ENDPOINT_MAP.values()
-
-        if not self._is_hosted and base_url:
-            self._base_url = base_url.rstrip("/") + "/"
-
+        self._is_hosted = base_url in KNOWN_URLS
+        self.base_url = base_url
+        self._is_hosted = base_url in KNOWN_URLS
+        self.base_url = base_url
         self._api_key = get_from_param_or_env(
             "api_key",
             nvidia_api_key or api_key,
             "NVIDIA_API_KEY",
             "NO_API_KEY_PROVIDED",
         )
-
-        if not self._is_hosted:  # on-premises mode
-            # in this case we trust the model name and base_url
-            self._inference_url = self._validate_url(base_url) + "/ranking"
-        else:  # hosted mode
-            if self._api_key == "NO_API_KEY_PROVIDED":
+        if self._is_hosted:  # hosted on API Catalog (build.nvidia.com)
+            if (not self._api_key) or (self._api_key == "NO_API_KEY_PROVIDED"):
                 raise ValueError("An API key is required for hosted NIM.")
-            if not model:
-                model = MODEL_ENDPOINT_MAP.get(base_url)
-            if model in MODEL_ENDPOINT_MAP:
-                self._inference_url = MODEL_ENDPOINT_MAP[model]
+        else:  # not hosted
+            self.base_url = self._validate_url(self.base_url)
 
         self.model = model
         if not self.model:
@@ -133,7 +120,10 @@ class NVIDIARerank(BaseNodePostprocessor):
             else:
                 self.__get_default_model()
 
-        self._validate_model(self.model)  ## validate model
+        if not self.model.startswith("nvdev/"):
+            self._validate_model(self.model)  ## validate model
+
+        self._http_client = http_client
 
     def __get_default_model(self):
         """Set default model."""
@@ -156,24 +146,30 @@ class NVIDIARerank(BaseNodePostprocessor):
         else:
             self.model = DEFAULT_MODEL
 
-    def _get_models(self) -> List[Model]:
-        session = requests.Session()
+    @property
+    def normalized_base_url(self) -> str:
+        """Return the normalized base URL (without trailing slashes)."""
+        return self.base_url.rstrip("/")
 
-        if self._is_hosted:
-            _headers = {
-                "Authorization": f"Bearer {self._api_key}",
-                "Accept": "application/json",
-            }
-        else:
-            _headers = {
-                "Accept": "application/json",
-            }
+    def _get_headers(self, auth_required: bool = False) -> dict:
+        """Return default headers for HTTP requests.
+
+        If auth_required is True or the client is hosted, includes an Authorization header.
+        """
+        headers = {"Accept": "application/json"}
+        if auth_required or self._is_hosted:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+        return headers
+
+    def _get_models(self) -> List[Model]:
+        client = self.client
+        _headers = self._get_headers(auth_required=self._is_hosted)
         url = (
             "https://integrate.api.nvidia.com/v1/models"
             if self._is_hosted
-            else urljoin(self._base_url, "models")
+            else self.normalized_base_url + "/models"
         )
-        response = session.get(url, headers=_headers)
+        response = client.get(url, headers=_headers)
         response.raise_for_status()
 
         assert (
@@ -189,38 +185,94 @@ class NVIDIARerank(BaseNodePostprocessor):
             "id" in result for result in response.json()["data"]
         ), "Response 'rankings' is not a list of dictionaries with 'id'"
 
-        return [
-            Model(
-                id=model["id"],
-                base_model=getattr(model, "params", {}).get("root", None),
-            )
-            for model in response.json()["data"]
-        ]
+        # TODO: hosted now has a model listing, need to merge known and listed models
+        # TODO: parse model config for local models
+        if not self._is_hosted:
+            return [
+                Model(
+                    id=model["id"],
+                    base_model=getattr(model, "params", {}).get("root", None),
+                )
+                for model in response.json()["data"]
+            ]
+        else:
+            return RANKING_MODEL_TABLE
+        # TODO: hosted now has a model listing, need to merge known and listed models
+        # TODO: parse model config for local models
+        if not self._is_hosted:
+            return [
+                Model(
+                    id=model["id"],
+                    base_model=getattr(model, "params", {}).get("root", None),
+                )
+                for model in response.json()["data"]
+            ]
+        else:
+            return RANKING_MODEL_TABLE
 
     def _validate_url(self, base_url):
         """
-        Base URL Validation.
-        ValueError : url which do not have valid scheme and netloc.
-        Warning : v1/rankings routes.
-        ValueError : Any other routes other than above.
+        validate the base_url.
+        if the base_url is not a url, raise an error
+        if the base_url does not end in /v1, e.g. /embeddings
+        emit a warning. old documentation told users to pass in the full
+        inference url, which is incorrect and prevents model listing from working.
+        normalize base_url to end in /v1.
+        validate the base_url.
+        if the base_url is not a url, raise an error
+        if the base_url does not end in /v1, e.g. /embeddings
+        emit a warning. old documentation told users to pass in the full
+        inference url, which is incorrect and prevents model listing from working.
+        normalize base_url to end in /v1.
         """
-        expected_format = "Expected format is 'http://host:port'."
-        result = urlparse(base_url)
-        if not (result.scheme and result.netloc):
-            raise ValueError(f"Invalid base_url, {expected_format}")
-        if result.path:
-            normalized_path = result.path.strip("/")
-            if normalized_path == "v1":
-                pass
-            elif normalized_path == "v1/rankings":
-                warnings.warn(f"{expected_format} Rest is Ignored.")
-            else:
-                raise ValueError(f"Invalid base_url, {expected_format}")
+        if base_url is not None:
+            parsed = urlparse(base_url)
+
+            # Ensure scheme and netloc (domain name) are present
+            if not (parsed.scheme and parsed.netloc):
+                expected_format = "Expected format is: http://host:port"
+                raise ValueError(
+                    f"Invalid base_url format. {expected_format} Got: {base_url}"
+                )
+
+            normalized_path = parsed.path.rstrip("/")
+            if not normalized_path.endswith("/v1"):
+                warnings.warn(
+                    f"{base_url} does not end in /v1, you may "
+                    "have inference and listing issues"
+                )
+                normalized_path += "/v1"
+
+                base_url = urlunparse(
+                    (parsed.scheme, parsed.netloc, normalized_path, None, None, None)
+                )
+        if base_url is not None:
+            parsed = urlparse(base_url)
+
+            # Ensure scheme and netloc (domain name) are present
+            if not (parsed.scheme and parsed.netloc):
+                expected_format = "Expected format is: http://host:port"
+                raise ValueError(
+                    f"Invalid base_url format. {expected_format} Got: {base_url}"
+                )
+
+            normalized_path = parsed.path.rstrip("/")
+            if not normalized_path.endswith("/v1"):
+                warnings.warn(
+                    f"{base_url} does not end in /v1, you may "
+                    "have inference and listing issues"
+                )
+                normalized_path += "/v1"
+
+                base_url = urlunparse(
+                    (parsed.scheme, parsed.netloc, normalized_path, None, None, None)
+                )
         return base_url
 
     def _validate_model(self, model_name: str) -> None:
         """
         Validates compatibility of the hosted model with the client.
+        Skipping the client validation for non-catalogue requests.
 
         Args:
             model_name (str): The name of the model.
@@ -228,28 +280,50 @@ class NVIDIARerank(BaseNodePostprocessor):
         Raises:
             ValueError: If the model is incompatible with the client.
         """
-        if self._is_hosted:
-            if model_name not in MODEL_ENDPOINT_MAP:
-                if model_name in [model.id for model in self._get_models()]:
-                    warnings.warn(f"Unable to determine validity of {model_name}")
-                else:
-                    raise ValueError(
-                        f"Model {model_name} is incompatible with client {self.class_name()}. "
-                        f"Please check `{self.class_name()}.available_models()`."
-                    )
-        else:
-            if model_name not in [model.id for model in self.available_models]:
-                raise ValueError(f"No locally hosted {model_name} was found.")
+        model = determine_model(model_name)
+        available_model_ids = [model.id for model in self.available_models]
+
+        if not model:
+            if self._is_hosted:
+                warnings.warn(f"Unable to determine validity of {model_name}")
+            else:
+                if model_name not in available_model_ids:
+                    raise ValueError(f"No locally hosted {model_name} was found.")
+        model = determine_model(model_name)
+        available_model_ids = [model.id for model in self.available_models]
+
+        if not model:
+            if self._is_hosted:
+                warnings.warn(f"Unable to determine validity of {model_name}")
+            else:
+                if model_name not in available_model_ids:
+                    raise ValueError(f"No locally hosted {model_name} was found.")
+
+        if model and model.endpoint:
+            self.base_url = model.endpoint
+
+        if model and model.endpoint:
+            self.base_url = model.endpoint
 
     @property
     def available_models(self) -> List[Model]:
         """Get available models."""
         # all available models are in the map
-        ids = MODEL_ENDPOINT_MAP.keys()
+        ids = RANKING_MODEL_TABLE.keys()
+        ids = RANKING_MODEL_TABLE.keys()
         if not self._is_hosted:
             return self._get_models()
         else:
             return [Model(id=id) for id in ids]
+
+    @property
+    def client(self) -> httpx.Client:
+        """
+        Lazy initialization of the HTTP client.
+        """
+        if self._http_client is None:
+            self._http_client = httpx.Client()
+        return self._http_client
 
     @classmethod
     def class_name(cls) -> str:
@@ -276,12 +350,8 @@ class NVIDIARerank(BaseNodePostprocessor):
         if len(nodes) == 0:
             return []
 
-        session = requests.Session()
-
-        _headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Accept": "application/json",
-        }
+        client = self.client
+        _headers = self._get_headers(auth_required=True)
 
         # TODO: replace with itertools.batched in python 3.12
         def batched(ls: list, size: int) -> Generator[List[NodeWithScore], None, None]:
@@ -308,9 +378,7 @@ class NVIDIARerank(BaseNodePostprocessor):
                         for n in batch
                     ],
                 }
-                response = session.post(
-                    self._inference_url, headers=_headers, json=payloads
-                )
+                response = client.post(self.base_url, headers=_headers, json=payloads)
                 response.raise_for_status()
                 # expected response format:
                 # {

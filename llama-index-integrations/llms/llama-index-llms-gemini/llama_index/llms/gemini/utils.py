@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Dict, Any
 
 import google.ai.generativelanguage as glm
 import google.generativeai as genai
@@ -11,6 +11,13 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.multi_modal_llms.base import ChatMessage
 from llama_index.core.utilities.gemini_utils import ROLES_FROM_GEMINI, ROLES_TO_GEMINI
+
+# These are the shortened model names
+# Any model that contains one of these names will not support function calling
+MODELS_WITHOUT_FUNCTION_CALLING_SUPPORT = [
+    "gemini-2.0-flash-thinking",
+    "gemini-2.0-flash-lite",
+]
 
 
 def _error_if_finished_early(candidate: "glm.Candidate") -> None:  # type: ignore[name-defined] # only until release
@@ -68,16 +75,39 @@ def chat_from_gemini_response(
             response.usage_metadata
         )
     role = ROLES_FROM_GEMINI[top_candidate.content.role]
-    return ChatResponse(message=ChatMessage(role=role, content=response.text), raw=raw)
+    try:
+        # When the response contains only a function call, the library
+        # raises an exception.
+        # The easiest way to detect this is to try access the text attribute and
+        # catch the exception.
+        # https://github.com/google-gemini/generative-ai-python/issues/670
+        text = response.text
+    except (ValueError, AttributeError):
+        text = None
+
+    additional_kwargs: Dict[str, Any] = {}
+    for part in response.parts:
+        if fn := part.function_call:
+            if "tool_calls" not in additional_kwargs:
+                additional_kwargs["tool_calls"] = []
+            additional_kwargs["tool_calls"].append(fn)
+
+    return ChatResponse(
+        message=ChatMessage(
+            role=role, content=text, additional_kwargs=additional_kwargs
+        ),
+        raw=raw,
+        additional_kwargs=additional_kwargs,
+    )
 
 
 def chat_message_to_gemini(message: ChatMessage) -> "genai.types.ContentDict":
     """Convert ChatMessages to Gemini-specific history, including ImageDocuments."""
     parts = []
-    content_txt = ""
     for block in message.blocks:
         if isinstance(block, TextBlock):
-            parts.append(block.text)
+            if block.text:
+                parts.append({"text": block.text})
         elif isinstance(block, ImageBlock):
             base64_bytes = block.resolve_image(as_base64=False).read()
             parts.append(
@@ -90,7 +120,17 @@ def chat_message_to_gemini(message: ChatMessage) -> "genai.types.ContentDict":
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
 
+    for tool_call in message.additional_kwargs.get("tool_calls", []):
+        parts.append(tool_call)
+
     return {
         "role": ROLES_TO_GEMINI[message.role],
         "parts": parts,
     }
+
+
+def is_function_calling_model(model: str) -> bool:
+    for model_name in MODELS_WITHOUT_FUNCTION_CALLING_SUPPORT:
+        if model_name in model:
+            return False
+    return True

@@ -277,7 +277,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             sources=task.extra_state["sources"],
         )
         # create task to write chat response to history
-        asyncio.create_task(
+        chat_stream_response.awrite_response_to_history_task = asyncio.create_task(
             chat_stream_response.awrite_response_to_history(
                 task.extra_state["new_memory"],
                 on_stream_end_fn=partial(self.afinalize_task, task),
@@ -700,8 +700,8 @@ class OpenAIAgentWorker(BaseAgentWorker):
             )
 
             # Process results
-            for return_direct in tool_results:
-                task.extra_state["sources"].append(latest_tool_outputs[-1])
+            for index, return_direct in enumerate(tool_results):
+                task.extra_state["sources"].append(latest_tool_outputs[index])
 
                 # change function call to the default value if a custom function was given
                 if tool_choice not in ("auto", "none"):
@@ -711,7 +711,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
                 # If any tool call requests direct return and it's the only call
                 if return_direct and len(latest_tool_calls) == 1:
                     is_done = True
-                    response_str = latest_tool_outputs[-1].content
+                    response_str = latest_tool_outputs[index].content
                     chat_response = ChatResponse(
                         message=ChatMessage(
                             role=MessageRole.ASSISTANT, content=response_str
@@ -791,10 +791,11 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
     async def afinalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
-        # add new messages to memory
-        await task.memory.aput_messages(task.extra_state["new_memory"].get_all())
-        # reset new memory
+        messages = task.extra_state["new_memory"].get_all()
+        # reset new memory before aputting messages for async race conditions
         task.extra_state["new_memory"].reset()
+        # add new messages to memory
+        await task.memory.aput_messages(messages)
 
     def undo_step(self, task: Task, **kwargs: Any) -> Optional[TaskStep]:
         """Undo step from task.

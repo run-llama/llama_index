@@ -27,6 +27,8 @@ vector_store = MariaDBVectorStore.from_params(
     database="vectordb",
     table_name="llama_index_vectorstore",
     embed_dim=1536,  # OpenAI embedding dimension
+    default_m=6,  # MariaDB Vector system parameter
+    ef_search=20,  # MariaDB Vector system parameter
 )
 ```
 

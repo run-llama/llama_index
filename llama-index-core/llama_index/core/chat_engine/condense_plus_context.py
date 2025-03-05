@@ -347,6 +347,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         )
 
         response = synthesizer.synthesize(message, context_nodes)
+        assert isinstance(response, StreamingResponse)
 
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
             full_response = ""
@@ -405,6 +406,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         )
 
         response = await synthesizer.asynthesize(message, context_nodes)
+        assert isinstance(response, AsyncStreamingResponse)
 
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
             full_response = ""

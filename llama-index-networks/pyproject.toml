@@ -32,13 +32,13 @@ maintainers = [
 name = "llama-index-networks"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.5.1"
+version = "0.6.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 fastapi = {extras = ["all"], version = "^0.115.6"}
 pyjwt = {extras = ["crypto"], version = "^2.8.0"}
-python-jose = "^3.3.0"
+python-jose = "^3.4.0"
 uvicorn = {extras = ["standard"], version = "^0.27.1"}
 pydantic = {extras = ["dotenv"], version = "^2.6.1"}
 python-dotenv = "^1.0.1"

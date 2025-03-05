@@ -40,8 +40,8 @@ class MarkdownNodeParser(NodeParser):
         markdown_nodes = []
         lines = text.split("\n")
         current_section = ""
-        # Keep track of headers at each level
-        header_stack: List[str] = []
+        # Keep track of (markdown level, text) for headers
+        header_stack: List[tuple[int, str]] = []
         code_block = False
 
         for line in lines:
@@ -61,20 +61,22 @@ class MarkdownNodeParser(NodeParser):
                             self._build_node_from_split(
                                 current_section.strip(),
                                 node,
-                                "/".join(header_stack[:-1]) if header_stack else "",
+                                "/".join(h[1] for h in header_stack[:-1]),
                             )
                         )
 
-                    level = len(header_match.group(1))
+                    header_level = len(header_match.group(1))
                     header_text = header_match.group(2)
 
-                    # Pop headers of equal or higher level
-                    while header_stack and len(header_stack) >= level:
+                    # Compare against top-of-stack item’s markdown level.
+                    # Pop headers of equal or higher markdown level; not necessarily current stack size / depth.
+                    # Hierarchy depth gets deeper one level at a time, but markdown headers can jump from H1 to H3, for example.
+                    while header_stack and header_stack[-1][0] >= header_level:
                         header_stack.pop()
 
                     # Add the new header
-                    header_stack.append(header_text)
-                    current_section = "#" * level + f" {header_text}\n"
+                    header_stack.append((header_level, header_text))
+                    current_section = "#" * header_level + f" {header_text}\n"
                     continue
 
             current_section += line + "\n"
@@ -85,7 +87,7 @@ class MarkdownNodeParser(NodeParser):
                 self._build_node_from_split(
                     current_section.strip(),
                     node,
-                    "/".join(header_stack[:-1]) if header_stack else "",
+                    "/".join(h[1] for h in header_stack[:-1]),
                 )
             )
 

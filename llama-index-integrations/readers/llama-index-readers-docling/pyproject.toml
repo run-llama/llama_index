@@ -30,7 +30,7 @@ license = "MIT"
 name = "llama-index-readers-docling"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"  # 3.13 disabled until llama-index-core supports a 3.13-capable numpy version

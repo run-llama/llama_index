@@ -2,8 +2,10 @@ import asyncio
 from typing import Any, AsyncGenerator, Optional
 
 from llama_index.core.workflow.context import Context
-from llama_index.core.workflow.events import Event, StopEvent
 from llama_index.core.workflow.errors import WorkflowDone
+from llama_index.core.workflow.events import Event, StopEvent
+
+from .utils import BUSY_WAIT_DELAY
 
 
 class WorkflowHandler(asyncio.Future):
@@ -12,7 +14,7 @@ class WorkflowHandler(asyncio.Future):
         *args: Any,
         ctx: Optional[Context] = None,
         run_id: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         self.run_id = run_id
@@ -79,7 +81,7 @@ class WorkflowHandler(asyncio.Future):
 
                     we_done = True
                     e = t.exception()
-                    if type(e) != WorkflowDone:
+                    if type(e) is not WorkflowDone:
                         exception_raised = e
 
                 if we_done:
@@ -96,7 +98,14 @@ class WorkflowHandler(asyncio.Future):
 
                     if not self.done():
                         self.set_result(self.ctx.get_result())
-                else:  # continue with running next step
+                else:
+                    # Continue with running next step. Make sure we wait for the
+                    # step function to return before proceeding.
+                    in_progress = len(await self.ctx.running_steps())
+                    while in_progress:
+                        await asyncio.sleep(BUSY_WAIT_DELAY)
+                        in_progress = len(await self.ctx.running_steps())
+
                     # notify unblocked task that we're ready to accept next event
                     async with self.ctx._step_condition:
                         self.ctx._step_condition.notify()

@@ -6,13 +6,7 @@ Supports Delta Sync indexes and Direct Access indexes in Databricks Vector Searc
 
 import json
 import logging
-from typing import (
-    Any,
-    List,
-    Dict,
-    Optional,
-    cast,
-)
+from typing import Any, List, Dict, Optional, cast
 from enum import Enum
 
 from databricks.vector_search.client import VectorSearchIndex

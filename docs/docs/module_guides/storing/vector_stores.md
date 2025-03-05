@@ -32,6 +32,8 @@ We are actively adding more integrations and improving feature coverage for each
 | DynamoDB                 | cloud                   |                    |               | ✓      |                 |       |
 | Elasticsearch            | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | FAISS                    | in-memory               |                    |               |        |                 |       |
+| Google AlloyDB           | cloud                   | ✓                  |               | ✓      | ✓               | ✓     |
+| Google Cloud SQL Postgres| cloud                   | ✓                  |               | ✓      | ✓               | ✓     |
 | Hnswlib                  | in-memory               |                    |               |        |                 |       |
 | txtai                    | in-memory               |                    |               |        |                 |       |
 | Jaguar                   | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
@@ -84,6 +86,8 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [DocArray in-Memory](../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb)
 - [DuckDB](../../examples/vector_stores/DuckDBDemo.ipynb)
 - [Espilla](../../examples/vector_stores/EpsillaIndexDemo.ipynb)
+- [Google AlloyDB for PostgreSQL](../../examples/vector_stores/AlloyDBVectorStoreDemo.ipynb)
+- [Google Cloud SQL for PostgreSQL](../../examples/vector_stores/CloudSQLPgVectorStoreDemo.ipynb)
 - [Jaguar](../../examples/vector_stores/JaguarIndexDemo.ipynb)
 - [LanceDB](../../examples/vector_stores/LanceDBIndexDemo.ipynb)
 - [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)

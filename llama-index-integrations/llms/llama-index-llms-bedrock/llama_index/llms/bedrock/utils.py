@@ -67,6 +67,7 @@ CHAT_ONLY_MODELS = {
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
     "us.anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
     "us.anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "us.anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "us.meta.llama3-1-70b-instruct-v1:0": 8192,
     "us.meta.llama3-1-8b-instruct-v1:0": 8192,
     "us.meta.llama3-2-11b-instruct-v1:0": 8192,
@@ -79,6 +80,7 @@ CHAT_ONLY_MODELS = {
     "eu.anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
     "eu.anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
     "eu.anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "eu.anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "eu.meta.llama3-1-70b-instruct-v1:0": 8192,
     "eu.meta.llama3-1-8b-instruct-v1:0": 8192,
     "eu.meta.llama3-2-11b-instruct-v1:0": 8192,
@@ -115,12 +117,14 @@ STREAMING_MODELS = {
     "us.anthropic.claude-3-5-haiku-20241022-v1:0",
     "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
     "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
     "eu.anthropic.claude-3-haiku-20240307-v1:0",
     "eu.anthropic.claude-3-opus-20240229-v1:0",
     "eu.anthropic.claude-3-sonnet-20240229-v1:0",
     "eu.anthropic.claude-3-5-haiku-20241022-v1:0",
     "eu.anthropic.claude-3-5-sonnet-20240620-v1:0",
     "eu.anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "eu.anthropic.claude-3-7-sonnet-20250219-v1:0",
 }
 
 

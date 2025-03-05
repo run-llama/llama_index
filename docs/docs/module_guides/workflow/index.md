@@ -153,7 +153,7 @@ The `.run()` method is async, so we use await here to wait for the result.
 
 Workflows can be visualized, using the power of type annotations in your step definitions. You can either draw all possible paths through the workflow, or the most recent execution, to help with debugging.
 
-Firs install:
+First install:
 
 ```bash
 pip install llama-index-utils-workflow
@@ -274,7 +274,7 @@ class MyWorkflow(Workflow):
         self, ctx: Context, ev: GatherEvent | MyEventResult
     ) -> StopEvent | None:
         # wait for events to finish
-        events = ctx.collect_events([MyEventResult, MyEventResult])
+        events = ctx.collect_events(ev, [MyEventResult, MyEventResult])
         if not events:
             return None
 
@@ -428,18 +428,20 @@ final_result = await handler
 Workflows have built-in utilities for stepwise execution, allowing you to control execution and debug state as things progress.
 
 ```python
-w = JokeFlow(...)
+# Create a workflow, same as usual
+w = JokeFlow()
+# Get the handler. Passing `stepwise=True` will block execution, waiting for manual intervention
+handler = workflow.run(stepwise=True)
+# Each time we call `run_step`, the workflow will advance and return the Event
+# that was produced in the last step. This event needs to be manually propagated
+# for the workflow to keep going (we assign it to `ev` with the := operator).
+while ev := await handler.run_step():
+    # If we're here, it means there's an event we need to propagate,
+    # let's do it with `send_event`
+    handler.ctx.send_event(ev)
 
-# Kick off the workflow
-handler = w.run(topic="Pirates")
-
-# Iterate until done
-async for _ in handler:
-    # inspect context
-    # val = await handler.ctx.get("key")
-    continue
-
-# Get the final result
+# If we're here, it means the workflow execution completed, and
+# we can now access the final result.
 result = await handler
 ```
 

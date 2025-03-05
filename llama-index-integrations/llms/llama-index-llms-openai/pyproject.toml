@@ -29,12 +29,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-openai"
 readme = "README.md"
-version = "0.3.13"
+version = "0.3.24"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 openai = "^1.58.1"
-llama-index-core = "^0.12.4"
+llama-index-core = "^0.12.17"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

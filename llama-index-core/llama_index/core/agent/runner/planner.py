@@ -106,7 +106,7 @@ class PlannerAgentState(AgentState):
 
 
 DEFAULT_INITIAL_PLAN_PROMPT = """\
-Think step-by-step. Given a task and a set of tools, create a comprehesive, end-to-end plan to accomplish the task.
+Think step-by-step. Given a task and a set of tools, create a comprehensive, end-to-end plan to accomplish the task.
 Keep in mind not every task needs to be decomposed into multiple sub-tasks if it is simple enough.
 The plan should end with a sub-task that can achieve the overall task.
 

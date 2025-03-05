@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Generator,
     List,
+    Literal,
     Optional,
     Protocol,
     Sequence,
@@ -217,6 +218,18 @@ class OpenAI(FunctionCallingLLM):
         default=False,
         description="Whether to use strict mode for invoking tools/using schemas.",
     )
+    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
+        default=None,
+        description="The effort to use for reasoning models.",
+    )
+    modalities: Optional[List[str]] = Field(
+        default=None,
+        description="The output modalities to use for the model.",
+    )
+    audio_config: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="The audio configuration to use for the model.",
+    )
 
     _client: Optional[SyncOpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
@@ -248,8 +261,16 @@ class OpenAI(FunctionCallingLLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
         strict: bool = False,
+        reasoning_effort: Optional[Literal["low", "medium", "high"]] = None,
+        modalities: Optional[List[str]] = None,
+        audio_config: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
+        # TODO: Support deprecated max_new_tokens
+        if "max_new_tokens" in kwargs:
+            max_tokens = kwargs["max_new_tokens"]
+            del kwargs["max_new_tokens"]
+
         additional_kwargs = additional_kwargs or {}
 
         api_key, api_base, api_version = resolve_openai_credentials(
@@ -281,6 +302,9 @@ class OpenAI(FunctionCallingLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
             strict=strict,
+            reasoning_effort=reasoning_effort,
+            modalities=modalities,
+            audio_config=audio_config,
             **kwargs,
         )
 
@@ -368,6 +392,11 @@ class OpenAI(FunctionCallingLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        if self.modalities and "audio" in self.modalities:
+            raise ValueError(
+                "Audio is not supported for completion. Use chat/achat instead."
+            )
+
         if self._use_chat_completions(kwargs):
             complete_fn = chat_to_completion_decorator(self._chat)
         else:
@@ -417,6 +446,20 @@ class OpenAI(FunctionCallingLLM):
         all_kwargs = {**base_kwargs, **self.additional_kwargs}
         if "stream" not in all_kwargs and "stream_options" in all_kwargs:
             del all_kwargs["stream_options"]
+        if self.model in O1_MODELS and base_kwargs.get("max_tokens") is not None:
+            # O1 models use max_completion_tokens instead of max_tokens
+            all_kwargs["max_completion_tokens"] = all_kwargs.get(
+                "max_completion_tokens", all_kwargs["max_tokens"]
+            )
+            all_kwargs.pop("max_tokens", None)
+        if self.model in O1_MODELS and self.reasoning_effort is not None:
+            # O1 models support reasoning_effort of low, medium, high
+            all_kwargs["reasoning_effort"] = self.reasoning_effort
+
+        if self.modalities is not None:
+            all_kwargs["modalities"] = self.modalities
+        if self.audio_config is not None:
+            all_kwargs["audio"] = self.audio_config
 
         return all_kwargs
 
@@ -443,7 +486,9 @@ class OpenAI(FunctionCallingLLM):
                 )
 
         openai_message = response.choices[0].message
-        message = from_openai_message(openai_message)
+        message = from_openai_message(
+            openai_message, modalities=self.modalities or ["text"]
+        )
         openai_token_logprobs = response.choices[0].logprobs
         logprobs = None
         if openai_token_logprobs and openai_token_logprobs.content:
@@ -460,6 +505,9 @@ class OpenAI(FunctionCallingLLM):
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        if self.modalities and "audio" in self.modalities:
+            raise ValueError("Audio is not supported for chat streaming")
+
         client = self._get_client()
         message_dicts = to_openai_message_dicts(
             messages,
@@ -651,6 +699,11 @@ class OpenAI(FunctionCallingLLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        if self.modalities and "audio" in self.modalities:
+            raise ValueError(
+                "Audio is not supported for completion. Use chat/achat instead."
+            )
+
         if self._use_chat_completions(kwargs):
             acomplete_fn = achat_to_completion_decorator(self._achat)
         else:
@@ -692,7 +745,9 @@ class OpenAI(FunctionCallingLLM):
                 )
 
         openai_message = response.choices[0].message
-        message = from_openai_message(openai_message)
+        message = from_openai_message(
+            openai_message, modalities=self.modalities or ["text"]
+        )
         openai_token_logprobs = response.choices[0].logprobs
         logprobs = None
         if openai_token_logprobs and openai_token_logprobs.content:
@@ -709,6 +764,9 @@ class OpenAI(FunctionCallingLLM):
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
+        if self.modalities and "audio" in self.modalities:
+            raise ValueError("Audio is not supported for chat streaming")
+
         aclient = self._get_aclient()
         message_dicts = to_openai_message_dicts(
             messages,
