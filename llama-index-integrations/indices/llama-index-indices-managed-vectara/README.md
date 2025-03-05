@@ -98,7 +98,7 @@ for node in results.source_nodes[:2]:
 
 ## 📂 Understanding `source_nodes` structure
 
-Each node objects in `source_nodes` contains a `NodeWithScore` object with:
+Each node object in `source_nodes` contains a `NodeWithScore` object with:
 
 - `text`: The matched text snippet.
 - `id_`: The unique identifier of the document.
