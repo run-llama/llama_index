@@ -525,7 +525,7 @@ w_cptr.checkpoints[handler.run_id]
 
 # to run from one of the checkpoints, use `run_from` method
 ckpt = w_cptr.checkpoints[handler.run_id][0]
-handler = w_cptr.run_from(topic="Ships")
+handler = w_cptr.run_from(topic="Ships", checkpoint=ckpt)
 await handler
 ```
 
