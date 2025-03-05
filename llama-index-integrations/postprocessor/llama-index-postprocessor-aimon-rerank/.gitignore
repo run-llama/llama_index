@@ -1,3 +1,5 @@
+llama_index/postprocessor/aimon_rerank/features_to_add.txt
+
 llama_index/_static
 .DS_Store
 # Byte-compiled / optimized / DLL files

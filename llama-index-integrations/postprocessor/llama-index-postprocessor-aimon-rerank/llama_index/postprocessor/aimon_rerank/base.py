@@ -38,11 +38,19 @@ class AIMonRerank(BaseNodePostprocessor):
             "Determine the relevance of context documents with respect to the user query."
         )
         try:
-            self._api_key = api_key or os.environ["AIMON_API_KEY"]
+            api_key = api_key or os.environ["AIMON_API_KEY"]
         except IndexError:
             raise ValueError(
-                "Must pass in AIMon api key or specify via AIMON_API_KEY environment variable"
+                "Must pass in AIMon API key or specify via AIMON_API_KEY environment variable"
             )
+        try:
+            from aimon import Client
+        except ImportError:
+            raise ImportError(
+                "Cannot import AIMon package, please `pip install aimon`."
+            )
+        
+        self._client = Client(auth_header="Bearer {}".format(api_key))
 
     @classmethod
     def class_name(cls) -> str:
@@ -71,54 +79,17 @@ class AIMonRerank(BaseNodePostprocessor):
             node.node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes
         ]
 
-        lengths = {"Document lengths": [len(text.split()) for text in texts]}
+        # lengths = {"Length of documents (in words)": [len(text.split()) for text in texts]}
         
-        print("\n")
-        print(json.dumps(lengths, indent=4))
+        # print("\n")
+        # print(json.dumps(lengths, indent=4))
 
-        # Construct the AIMon POST request payload
-        payload = [
-            {
-                "task_definition": self.task_definition,
-                "context": texts,
-                "user_query": query_bundle.query_str,
-                "config": {
-                    "retrieval_relevance": {
-                        "detector_name": "default"
-                    }
-                }
-            }
-        ]
+        scores = self._client.retrieval.rerank(   context_docs=texts,
+                                                            queries=[query_bundle.query_str],
+                                                            task_definition=self.task_definition,
+                                                        )
 
-        ## Printing AIMon Payload for debugging
-        print("\n")
-        print("AIMon Request Payload:")
-        print(json.dumps(payload, indent=2))
-
-        # Define the request headers
-        headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Content-Type": "application/json",
-        }
-
-        # Send the request
-        url = "https://pbe-api.aimon.ai/v2/detect"
-        response = requests.post(url, headers=headers, data=json.dumps(payload))
-
-        # Validate response
-        if response.status_code != 200:
-            raise ValueError(
-                f"AIMon API request failed with status code {response.status_code}: {response.text}"
-            )
-
-        response_data = response.json()
-
-        # Print the full response data for debugging
-        print("\n")
-        print("AIMon API Response:")
-        print(json.dumps(response_data, indent=2))
-
-        relevance_scores = response_data[0]["retrieval_relevance"][0]["relevance_scores"]
+        relevance_scores = scores[0]
 
         # Attach scores to nodes
         scored_nodes = [
@@ -134,3 +105,4 @@ class AIMonRerank(BaseNodePostprocessor):
 
         dispatcher.event(ReRankEndEvent(nodes=new_nodes))
         return new_nodes
+    
