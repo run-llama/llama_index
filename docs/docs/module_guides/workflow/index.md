@@ -429,7 +429,7 @@ Workflows have built-in utilities for stepwise execution, allowing you to contro
 
 ```python
 # Create a workflow, same as usual
-w = JokeFlow()
+workflow = JokeFlow()
 # Get the handler. Passing `stepwise=True` will block execution, waiting for manual intervention
 handler = workflow.run(stepwise=True)
 # Each time we call `run_step`, the workflow will advance and return the Event
