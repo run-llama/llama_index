@@ -24,7 +24,6 @@ class AIMonRerank(BaseNodePostprocessor):
         description="The task definition for the AIMon reranker.",
     )
 
-    _client: Any = PrivateAttr()
     _api_key: str = PrivateAttr()
 
     def __init__(
@@ -44,14 +43,6 @@ class AIMonRerank(BaseNodePostprocessor):
             raise ValueError(
                 "Must pass in AIMon api key or specify via AIMON_API_KEY environment variable"
             )
-        try:
-            from aimon import Client
-        except ImportError:
-            raise ImportError(
-                "Cannot import AIMon package, please `pip install aimon`."
-            )
-
-        self._client = Client(auth_header="Bearer {}".format(api_key))
 
     @classmethod
     def class_name(cls) -> str:
