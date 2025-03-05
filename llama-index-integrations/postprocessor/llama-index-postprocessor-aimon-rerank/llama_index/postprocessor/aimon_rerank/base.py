@@ -71,7 +71,7 @@ class AIMonRerank(BaseNodePostprocessor):
             node.node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes
         ]
 
-        lengths = {"Document lengths": [len(text) for text in texts]}
+        lengths = {"Document lengths": [len(text.split()) for text in texts]}
         
         print("\n")
         print(json.dumps(lengths, indent=4))
