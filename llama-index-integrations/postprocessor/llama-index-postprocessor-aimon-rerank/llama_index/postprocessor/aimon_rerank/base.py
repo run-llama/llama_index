@@ -88,10 +88,11 @@ class AIMonRerank(BaseNodePostprocessor):
                                             )
 
         relevance_scores = scores[0]
+        normalized_scores = [score / 100 for score in relevance_scores]
 
         # Attach scores to nodes
         scored_nodes = [
-            NodeWithScore(node=nodes[i].node, score=relevance_scores[i])
+            NodeWithScore(node=nodes[i].node, score=normalized_scores[i])
             for i in range(len(nodes))
         ]
 
