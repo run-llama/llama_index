@@ -1,5 +1,3 @@
-## Packages installed so far: pip3 install llama-index aimon
-
 import os
 from typing import Any, List, Optional
 
@@ -19,7 +17,12 @@ class AIMonRerank(BaseNodePostprocessor):
 
     model: str = Field(description="AIMon's reranking model name.")
     top_n: int = Field(description="Top N nodes to return.")
-    
+
+    ## Defining a default task definition for the AIMon reranker
+    task_definition: str = Field(   default="Determine the relevance of context documents with respect to the user query.",
+                                    description="The task definition for the AIMon reranker."
+                                )
+
     _client: Any = PrivateAttr()
 
     def __init__(
@@ -27,14 +30,13 @@ class AIMonRerank(BaseNodePostprocessor):
         top_n: int = 2,
         model: str = "rr",
         api_key: Optional[str] = None,
-        ## Defining a default task definition for the AIMon reranker
-        task_definition: Optional[str] = "Determine the relevance of context documents with respect to the user query.",
+        task_definition: Optional[str] = None,
     ):
         
         super().__init__(top_n=top_n, model=model)
 
-        self.task_definition = task_definition
-
+        self.task_definition = task_definition or "Determine the relevance of context documents with respect to the user query."
+        
         try:
             api_key = api_key or os.environ["AIMON_API_KEY"]
         except IndexError:
