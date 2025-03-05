@@ -429,7 +429,7 @@ Workflows have built-in utilities for stepwise execution, allowing you to contro
 
 ```python
 # Create a workflow, same as usual
-w = JokeFlow()
+workflow = JokeFlow()
 # Get the handler. Passing `stepwise=True` will block execution, waiting for manual intervention
 handler = workflow.run(stepwise=True)
 # Each time we call `run_step`, the workflow will advance and return the Event
@@ -525,7 +525,7 @@ w_cptr.checkpoints[handler.run_id]
 
 # to run from one of the checkpoints, use `run_from` method
 ckpt = w_cptr.checkpoints[handler.run_id][0]
-handler = w_cptr.run_from(topic="Ships")
+handler = w_cptr.run_from(topic="Ships", checkpoint=ckpt)
 await handler
 ```
 
