@@ -123,6 +123,11 @@ class AIMonRerank(BaseNodePostprocessor):
                 )
 
             response_data = response.json()
+
+            # Print the full response data in a readable format
+            print("AIMon API Response:")
+            print(json.dumps(response_data, indent=2))
+
             relevance_scores = response_data[0]["retrieval_relevance"][0]["relevance_scores"]
 
             # Attach scores to nodes
