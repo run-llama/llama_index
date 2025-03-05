@@ -2,7 +2,7 @@
 
 # Welcome to LlamaIndex 🦙 !
 
-LlamaIndex is the leading framework for building LLM-powered agents over your data with [LLMs](https://en.wikipedia.org/wiki/Large_language_model) and [workflows](./understanding/workflows/).
+LlamaIndex is the leading framework for building LLM-powered agents over your data with [LLMs](https://en.wikipedia.org/wiki/Large_language_model){target=_blank} and [workflows](./understanding/workflows/){target=_blank}.
 
 <div class="grid cards" markdown>
 
@@ -20,7 +20,7 @@ LlamaIndex is the leading framework for building LLM-powered agents over your da
 
 -   <span style="font-size: 200%">[LlamaCloud](#llamacloud)</span>
 
-    Managed services for LlamaIndex including [LlamaParse](https://docs.cloud.llamaindex.ai/llamaparse/getting_started), the world's best document parser.
+    Managed services for LlamaIndex including [LlamaParse](https://docs.cloud.llamaindex.ai/llamaparse/getting_started){target=_blank}, the world's best document parser.
 
 -   <span style="font-size: 200%">[Community](#community)</span>
 
@@ -28,7 +28,7 @@ LlamaIndex is the leading framework for building LLM-powered agents over your da
 
 -   <span style="font-size: 200%">[Related projects](#related-projects)</span>
 
-    Check out our library of connectors, readers, and other integrations at [LlamaHub](https://llamahub.ai) as well as demos and starter apps like [create-llama](https://www.npmjs.com/package/create-llama).
+    Check out our library of connectors, readers, and other integrations at [LlamaHub](https://llamahub.ai){target=_blank} as well as demos and starter apps like [create-llama](https://www.npmjs.com/package/create-llama){target=_blank}.
 
 </div>
 
@@ -36,13 +36,13 @@ LlamaIndex is the leading framework for building LLM-powered agents over your da
 
 ### What are agents?
 
-[Agents](./understanding/agent/basic_agent/) are LLM-powered knowledge assistants that use tools to perform tasks like research, data extraction, and more. Agents range from simple question-answering to being able to sense, decide and take actions in order to complete tasks.
+[Agents](./understanding/agent/basic_agent/){target=_blank} are LLM-powered knowledge assistants that use tools to perform tasks like research, data extraction, and more. Agents range from simple question-answering to being able to sense, decide and take actions in order to complete tasks.
 
 LlamaIndex provides a framework for building agents including the ability to use RAG pipelines as one of many tools to complete a task.
 
 ### What are workflows?
 
-[Workflows](./understanding/workflows/) are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications. You can then [deploy these agentic workflows](./module_guides/workflow/deployment.md) as production microservices.
+[Workflows](./understanding/workflows/){target=_blank} are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications. You can then [deploy these agentic workflows](./module_guides/workflow/deployment.md){target=_blank} as production microservices.
 
 ### What is context augmentation?
 
@@ -50,7 +50,7 @@ LLMs offer a natural language interface between humans and data. LLMs come pre-t
 
 Context augmentation makes your data available to the LLM to solve the problem at hand. LlamaIndex provides the tools to build any of context-augmentation use case, from prototype to production. Our tools allow you to ingest, parse, index and process your data and quickly implement complex query workflows combining data access with LLM prompting.
 
-The most popular example of context-augmentation is [Retrieval-Augmented Generation or RAG](./getting_started/concepts.md), which combines context with LLMs at inference time.
+The most popular example of context-augmentation is [Retrieval-Augmented Generation or RAG](./getting_started/concepts.md){target=_blank}, which combines context with LLMs at inference time.
 
 ### LlamaIndex is the framework for Context-Augmented LLM Applications
 
@@ -69,14 +69,14 @@ LlamaIndex imposes no restriction on how you use LLMs. You can use LLMs as auto-
 
 Some popular use cases for LlamaIndex and context augmentation in general include:
 
-- [Question-Answering](./use_cases/q_and_a/index.md) (Retrieval-Augmented Generation aka RAG)
-- [Chatbots](./use_cases/chatbots.md)
-- [Document Understanding and Data Extraction](./use_cases/extraction.md)
-- [Autonomous Agents](./use_cases/agents.md) that can perform research and take actions
-- [Multi-modal applications](./use_cases/multimodal.md) that combine text, images, and other data types
-- [Fine-tuning](./use_cases/fine_tuning.md) models on data to improve performance
+- [Question-Answering](./use_cases/q_and_a/index.md){target=_blank} (Retrieval-Augmented Generation aka RAG)
+- [Chatbots](./use_cases/chatbots.md){target=_blank}
+- [Document Understanding and Data Extraction](./use_cases/extraction.md){target=_blank}
+- [Autonomous Agents](./use_cases/agents.md){target=_blank} that can perform research and take actions
+- [Multi-modal applications](./use_cases/multimodal.md){target=_blank} that combine text, images, and other data types
+- [Fine-tuning](./use_cases/fine_tuning.md){target=_blank} models on data to improve performance
 
-Check out our [use cases](./use_cases/index.md) documentation for more examples and links to tutorials.
+Check out our [use cases](./use_cases/index.md){target=_blank} documentation for more examples and links to tutorials.
 
 ### 👨‍👩‍👧‍👦 Who is LlamaIndex for?
 
@@ -88,11 +88,11 @@ For more complex applications, our lower-level APIs allow advanced users to cust
 
 ## Getting Started
 
-LlamaIndex is available in Python (these docs) and [Typescript](https://ts.llamaindex.ai/). If you're not sure where to start, we recommend reading [how to read these docs](./getting_started/reading.md) which will point you to the right place based on your experience level.
+LlamaIndex is available in Python (these docs) and [Typescript](https://ts.llamaindex.ai/){target=_blank}. If you're not sure where to start, we recommend reading [how to read these docs](./getting_started/reading.md){target=_blank} which will point you to the right place based on your experience level.
 
 ### 30 second quickstart
 
-Set an environment variable called `OPENAI_API_KEY` with an [OpenAI API key](https://platform.openai.com/api-keys). Install the Python library:
+Set an environment variable called `OPENAI_API_KEY` with an [OpenAI API key](https://platform.openai.com/api-keys){target=_blank}. Install the Python library:
 
 ```bash
 pip install llama-index
@@ -110,44 +110,44 @@ response = query_engine.query("Some question about the data should go here")
 print(response)
 ```
 
-If any part of this trips you up, don't worry! Check out our more comprehensive starter tutorials using [remote APIs like OpenAI](./getting_started/starter_example.md) or [any model that runs on your laptop](./getting_started/starter_example_local.md).
+If any part of this trips you up, don't worry! Check out our more comprehensive starter tutorials using [remote APIs like OpenAI](./getting_started/starter_example.md){target=_blank} or [any model that runs on your laptop](./getting_started/starter_example_local.md){target=_blank}.
 
 ## LlamaCloud
 
-If you're an enterprise developer, check out [**LlamaCloud**](https://llamaindex.ai/enterprise). It is an end-to-end managed service for data parsing, ingestion, indexing, and retrieval, allowing you to get production-quality data for your production LLM application. It's available both hosted on our servers or as a self-hosted solution.
+If you're an enterprise developer, check out [**LlamaCloud**](https://llamaindex.ai/enterprise){target=_blank}. It is an end-to-end managed service for data parsing, ingestion, indexing, and retrieval, allowing you to get production-quality data for your production LLM application. It's available both hosted on our servers or as a self-hosted solution.
 
 ### LlamaParse
 
-LlamaParse is our state-of-the-art document parsing solution. It's available as part of LlamaCloud and also available as a self-serve API. You can [sign up](https://cloud.llamaindex.ai/) and parse up to 1000 pages/day for free, or enter a credit card for unlimited parsing. [Learn more](https://llamaindex.ai/enterprise).
+LlamaParse is our state-of-the-art document parsing solution. It's available as part of LlamaCloud and also available as a self-serve API. You can [sign up](https://cloud.llamaindex.ai/{target=_blank} and parse up to 1000 pages/day for free, or enter a credit card for unlimited parsing. [Learn more](https://llamaindex.ai/enterprise){target=_blank}.
 
 ## Community
 
 Need help? Have a feature suggestion? Join the LlamaIndex community:
 
-- [Twitter](https://twitter.com/llama_index)
-- [Discord](https://discord.gg/dGcwcsnxhU)
-- [LinkedIn](https://www.linkedin.com/company/llamaindex/)
+- [Twitter](https://twitter.com/llama_index){target=_blank}
+- [Discord](https://discord.gg/dGcwcsnxhU){target=_blank}
+- [LinkedIn](https://www.linkedin.com/company/llamaindex/){target=_blank}
 
 ### Getting the library
 
 - LlamaIndex Python
-    - [LlamaIndex Python Github](https://github.com/run-llama/llama_index)
-    - [Python Docs](https://docs.llamaindex.ai/) (what you're reading now)
-    - [LlamaIndex on PyPi](https://pypi.org/project/llama-index/)
+    - [LlamaIndex Python Github](https://github.com/run-llama/llama_index){target=_blank}
+    - [Python Docs](https://docs.llamaindex.ai/){target=_blank} (what you're reading now)
+    - [LlamaIndex on PyPi](https://pypi.org/project/llama-index/){target=_blank}
 - LlamaIndex.TS (Typescript/Javascript package):
-    - [LlamaIndex.TS Github](https://github.com/run-llama/LlamaIndexTS)
-    - [TypeScript Docs](https://ts.llamaindex.ai/)
-    - [LlamaIndex.TS on npm](https://www.npmjs.com/package/llamaindex)
+    - [LlamaIndex.TS Github](https://github.com/run-llama/LlamaIndexTS){target=_blank}
+    - [TypeScript Docs](https://ts.llamaindex.ai/){target=_blank}
+    - [LlamaIndex.TS on npm](https://www.npmjs.com/package/llamaindex){target=_blank}
 
 ### Contributing
 
-We are open-source and always welcome contributions to the project! Check out our [contributing guide](./CONTRIBUTING.md) for full details on how to extend the core library or add an integration to a third party like an LLM, a vector store, an agent tool and more.
+We are open-source and always welcome contributions to the project! Check out our [contributing guide](./CONTRIBUTING.md)for full details on how to extend the core library or add an integration to a third party like an LLM, a vector store, an agent tool and more.
 
 ## LlamaIndex Ecosystem
 
 There's more to the LlamaIndex universe! Check out some of our other projects:
 
-- [llama_deploy](https://github.com/run-llama/llama_deploy) | Deploy your agentic workflows as production microservices
-- [LlamaHub](https://llamahub.ai) | A large (and growing!) collection of custom data connectors
-- [SEC Insights](https://secinsights.ai) | A LlamaIndex-powered application for financial research
-- [create-llama](https://www.npmjs.com/package/create-llama) | A CLI tool to quickly scaffold LlamaIndex projects
+- [llama_deploy](https://github.com/run-llama/llama_deploy){target=_blank} | Deploy your agentic workflows as production microservices
+- [LlamaHub](https://llamahub.ai){target=_blank} | A large (and growing!) collection of custom data connectors
+- [SEC Insights](https://secinsights.ai){target=_blank} | A LlamaIndex-powered application for financial research
+- [create-llama](https://www.npmjs.com/package/create-llama){target=_blank} | A CLI tool to quickly scaffold LlamaIndex projects
