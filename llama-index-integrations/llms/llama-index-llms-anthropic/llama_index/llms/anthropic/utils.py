@@ -2,7 +2,7 @@
 Utility functions for the Anthropic SDK LLM integration.
 """
 
-from typing import Any, Dict, Sequence, Tuple
+from typing import Any, Dict, Sequence, Tuple, Optional
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -15,6 +15,7 @@ from llama_index.core.base.llms.types import (
 from anthropic.types import (
     MessageParam,
     TextBlockParam,
+    ThinkingBlockParam,
     ImageBlockParam,
     CacheControlEphemeralParam,
 )
@@ -127,6 +128,7 @@ def __merge_common_role_msgs(
 
 def messages_to_anthropic_messages(
     messages: Sequence[ChatMessage],
+    cache_idx: Optional[int] = None,
 ) -> Tuple[Sequence[MessageParam], str]:
     """Converts a list of generic ChatMessages to anthropic messages.
 
@@ -140,7 +142,11 @@ def messages_to_anthropic_messages(
     """
     anthropic_messages = []
     system_prompt = []
-    for message in messages:
+    for idx, message in enumerate(messages):
+        # inject cache_control for all messages up to and including the cache_idx
+        if cache_idx is not None and (idx <= cache_idx or cache_idx == -1):
+            message.additional_kwargs["cache_control"] = {"type": "ephemeral"}
+
         if message.role == MessageRole.SYSTEM:
             for block in message.blocks:
                 if isinstance(block, TextBlock) and block.text:
@@ -211,19 +217,23 @@ def messages_to_anthropic_messages(
                 content=content,
             )
             anthropic_messages.append(anth_message)
+
     return __merge_common_role_msgs(anthropic_messages), system_prompt
 
 
 def _text_block_to_anthropic_message(
     block: TextBlock, kwargs: dict[str, Any]
 ) -> TextBlockParam:
-    if "cache_control" in kwargs:
+    if "thinking" in kwargs and kwargs["thinking"] is not None:
+        return ThinkingBlockParam(**kwargs["thinking"])
+    elif "cache_control" in kwargs:
         return TextBlockParam(
             text=block.text,
             type="text",
             cache_control=CacheControlEphemeralParam(type="ephemeral"),
         )
-    return TextBlockParam(text=block.text, type="text")
+    else:
+        return TextBlockParam(text=block.text, type="text")
 
 
 # Function used in bedrock
