@@ -10,6 +10,7 @@ from llama_index.core.agent.react.types import (
     ResponseReasoningStep,
 )
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentOutput,
@@ -32,7 +33,7 @@ def default_formatter() -> ReActChatFormatter:
     return ReActChatFormatter.from_defaults(context="some context")
 
 
-class ReActAgent(BaseWorkflowAgent):
+class ReActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
     """React agent implementation."""
 
     reasoning_key: str = "current_reasoning"
