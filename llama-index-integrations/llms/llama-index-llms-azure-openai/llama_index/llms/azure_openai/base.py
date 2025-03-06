@@ -141,9 +141,10 @@ class AzureOpenAI(OpenAI):
         if engine is None:
             raise ValueError("You must specify an `engine` parameter.")
 
-        azure_endpoint = get_from_param_or_env(
-            "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
-        )
+        if api_base is None:
+            azure_endpoint = get_from_param_or_env(
+                "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
+            )
 
         super().__init__(
             engine=engine,
