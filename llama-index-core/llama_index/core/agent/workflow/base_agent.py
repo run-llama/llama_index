@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, List, Sequence, Optional, Union
+from typing import Callable, List, Sequence, Optional, Union, Any
 
 from llama_index.core.agent.workflow.workflow_events import (
     AgentOutput,
@@ -18,6 +18,8 @@ from llama_index.core.tools import BaseTool, AsyncBaseTool, FunctionTool
 from llama_index.core.workflow import Context
 from llama_index.core.objects import ObjectRetriever
 from llama_index.core.settings import Settings
+from llama_index.core.workflow.checkpointer import CheckpointCallback
+from llama_index.core.workflow.handler import WorkflowHandler
 
 
 def get_default_llm() -> LLM:
@@ -109,3 +111,16 @@ class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
         self, ctx: Context, output: AgentOutput, memory: BaseMemory
     ) -> AgentOutput:
         """Finalize the agent's execution."""
+
+    @abstractmethod
+    def run(
+        self,
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        ctx: Optional[Context] = None,
+        stepwise: bool = False,
+        checkpoint_callback: Optional[CheckpointCallback] = None,
+        **workflow_kwargs: Any,
+    ) -> WorkflowHandler:
+        """Run the agent."""
