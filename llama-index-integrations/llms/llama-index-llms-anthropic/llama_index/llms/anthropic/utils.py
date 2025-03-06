@@ -224,7 +224,7 @@ def messages_to_anthropic_messages(
 def _text_block_to_anthropic_message(
     block: TextBlock, kwargs: dict[str, Any]
 ) -> TextBlockParam:
-    if "thinking" in kwargs:
+    if "thinking" in kwargs and kwargs["thinking"] is not None:
         return ThinkingBlockParam(**kwargs["thinking"])
     elif "cache_control" in kwargs:
         return TextBlockParam(
