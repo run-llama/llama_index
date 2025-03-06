@@ -1,5 +1,5 @@
 import os
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.instrumentation import get_dispatcher
@@ -12,6 +12,8 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, MetadataMode
 
 dispatcher = get_dispatcher(__name__)
 
+# Maximum cumulative word count per batch.
+MAX_WORDS_PER_BATCH = 10000
 
 class AIMonRerank(BaseNodePostprocessor):
 
@@ -73,35 +75,63 @@ class AIMonRerank(BaseNodePostprocessor):
         if len(nodes) == 0:
             return []
 
+        # Extract text content from each node.
         texts = [
             node.node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes
         ]
 
-        # lengths = {"Length of documents (in words)": [len(text.split()) for text in texts]}
+        # Build batches where the total number of words is <= MAX_WORDS_PER_BATCH.
+        batches = []           # List of (batch_texts, corresponding indices)
+        current_batch = []     # List of texts for the current batch.
+        current_indices = []   # Corresponding indices of texts in the original list.
+        current_word_count = 0
+
+        for i, text in enumerate(texts):
+            word_count = len(text.split())
+            if current_word_count + word_count <= MAX_WORDS_PER_BATCH:
+                current_batch.append(text)
+                current_indices.append(i)
+                current_word_count += word_count
+            else:
+                batches.append((current_batch, current_indices))
+                # Start a new batch with the current text.
+                current_batch = [text]
+                current_indices = [i]
+                current_word_count = word_count
+        if current_batch:
+            batches.append((current_batch, current_indices))
+
+        print(f"Total number of batches formed: {len(batches)}")
+
+        # Prepare a list to hold scores for each text in the original order.
+        all_scores = [None] * len(texts)
         
-        # print("\n")
-        # print(json.dumps(lengths, indent=4))
+        for batch_num, (batch_texts, indices) in enumerate(batches, start=1):
+            print(f"Processing batch {batch_num}/{len(batches)} with {len(batch_texts)} texts.")
+            scores_batch = self._client.retrieval.rerank(
+                context_docs=batch_texts,
+                queries=[query_bundle.query_str],
+                task_definition=self.task_definition,
+            )
 
-        scores = self._client.retrieval.rerank( context_docs=texts,
-                                                queries=[query_bundle.query_str],
-                                                task_definition=self.task_definition,
-                                            )
+            batch_scores = scores_batch[0]
+            for idx, score in zip(indices, batch_scores):
+                all_scores[idx] = score
 
-        relevance_scores = scores[0]
-        normalized_scores = [score / 100 for score in relevance_scores]
+        normalized_scores = [score / 100 for score in all_scores]
 
-        # Attach scores to nodes
+        # Attach scores to nodes.
         scored_nodes = [
             NodeWithScore(node=nodes[i].node, score=normalized_scores[i])
             for i in range(len(nodes))
         ]
 
-        # Sort nodes by score in descending order
+        # Sort nodes by score in descending order and keep the top N.
         scored_nodes.sort(key=lambda x: x.score, reverse=True)
-
-        # Keep only top N nodes
         new_nodes = scored_nodes[: self.top_n]
+
+        print(f"Finished processing. Total batches sent: {len(batches)}")
+        print(f"Top {self.top_n} nodes selected after reranking.")
 
         dispatcher.event(ReRankEndEvent(nodes=new_nodes))
         return new_nodes
-    
