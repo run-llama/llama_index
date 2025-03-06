@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, TypeVar
 
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import BaseMemory
@@ -9,6 +9,8 @@ from llama_index.core.workflow import (
 from llama_index.core.workflow.checkpointer import CheckpointCallback
 from llama_index.core.workflow.handler import WorkflowHandler
 
+T = TypeVar("T", bound="BaseWorkflowAgent")  # type: ignore[name-defined]
+
 
 class SingleAgentRunnerMixin(ABC):
     """Mixin class for executing a single agent within a workflow system.
@@ -16,7 +18,7 @@ class SingleAgentRunnerMixin(ABC):
     """
 
     def run(
-        self,
+        self: T,
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
