@@ -55,9 +55,9 @@ from anthropic.types import (
     TextDelta,
     ThinkingBlock,
     ThinkingDelta,
+    ToolUseBlock,
     SignatureDelta,
 )
-from anthropic.types.tool_use_block import ToolUseBlock
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -338,6 +338,7 @@ class Anthropic(FunctionCallingLLM):
 
         def gen() -> ChatResponseGen:
             content = ""
+            content_delta = ""
             thinking = None
             cur_tool_calls: List[ToolUseBlock] = []
             cur_tool_call: Optional[ToolUseBlock] = None
@@ -346,27 +347,26 @@ class Anthropic(FunctionCallingLLM):
             for r in response:
                 if isinstance(r, ContentBlockDeltaEvent):
                     if isinstance(r.delta, TextDelta):
-                        if isinstance(r.delta, SignatureDelta):
-                            if thinking is None:
-                                thinking = ThinkingBlock(
-                                    signature=r.delta.signature,
-                                    thinking="",
-                                    type="thinking",
-                                )
-                            else:
-                                thinking.signature += r.delta.signature
-                        elif isinstance(r.delta, ThinkingDelta):
-                            if thinking is None:
-                                thinking = ThinkingBlock(
-                                    signature="",
-                                    thinking=r.delta.thinking,
-                                    type="thinking",
-                                )
-                            else:
-                                thinking.thinking += r.delta.thinking
+                        content_delta = r.delta.text
+                        content += content_delta
+                    elif isinstance(r.delta, SignatureDelta):
+                        if thinking is None:
+                            thinking = ThinkingBlock(
+                                signature=r.delta.signature,
+                                thinking="",
+                                type="thinking",
+                            )
                         else:
-                            content_delta = r.delta.text
-                            content += content_delta
+                            thinking.signature += r.delta.signature
+                    elif isinstance(r.delta, ThinkingDelta):
+                        if thinking is None:
+                            thinking = ThinkingBlock(
+                                signature="",
+                                thinking=r.delta.thinking,
+                                type="thinking",
+                            )
+                        else:
+                            thinking.thinking += r.delta.thinking
                     else:
                         if not isinstance(cur_tool_call, ToolUseBlock):
                             raise ValueError("Tool call not started")
@@ -382,6 +382,7 @@ class Anthropic(FunctionCallingLLM):
                         tool_calls_to_send = [*cur_tool_calls, cur_tool_call]
                     else:
                         tool_calls_to_send = cur_tool_calls
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
@@ -462,6 +463,7 @@ class Anthropic(FunctionCallingLLM):
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
+            content_delta = ""
             thinking = None
             cur_tool_calls: List[ToolUseBlock] = []
             cur_tool_call: Optional[ToolUseBlock] = None
@@ -470,27 +472,26 @@ class Anthropic(FunctionCallingLLM):
             async for r in response:
                 if isinstance(r, ContentBlockDeltaEvent):
                     if isinstance(r.delta, TextDelta):
-                        if isinstance(r.delta, SignatureDelta):
-                            if thinking is None:
-                                thinking = ThinkingBlock(
-                                    signature=r.delta.signature,
-                                    thinking="",
-                                    type="thinking",
-                                )
-                            else:
-                                thinking.signature += r.delta.signature
-                        elif isinstance(r.delta, ThinkingDelta):
-                            if thinking is None:
-                                thinking = ThinkingBlock(
-                                    signature="",
-                                    thinking=r.delta.thinking,
-                                    type="thinking",
-                                )
-                            else:
-                                thinking.thinking += r.delta.thinking
+                        content_delta = r.delta.text
+                        content += content_delta
+                    elif isinstance(r.delta, SignatureDelta):
+                        if thinking is None:
+                            thinking = ThinkingBlock(
+                                signature=r.delta.signature,
+                                thinking="",
+                                type="thinking",
+                            )
                         else:
-                            content_delta = r.delta.text
-                            content += content_delta
+                            thinking.signature += r.delta.signature
+                    elif isinstance(r.delta, ThinkingDelta):
+                        if thinking is None:
+                            thinking = ThinkingBlock(
+                                signature="",
+                                thinking=r.delta.thinking,
+                                type="thinking",
+                            )
+                        else:
+                            thinking.thinking += r.delta.thinking
                     else:
                         if not isinstance(cur_tool_call, ToolUseBlock):
                             raise ValueError("Tool call not started")
