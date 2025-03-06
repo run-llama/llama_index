@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Sequence, cast
+from typing import List, Sequence, cast, Any
 
 from llama_index.core.agent.react.formatter import ReActChatFormatter
 from llama_index.core.agent.react.output_parser import ReActOutputParser
@@ -27,9 +27,9 @@ from llama_index.core.tools import AsyncBaseTool
 from llama_index.core.workflow import Context
 
 
-def default_formatter() -> ReActChatFormatter:
+def default_formatter(fields: dict[str, Any]) -> ReActChatFormatter:
     """Sets up a default formatter so that the proper react header is set."""
-    return ReActChatFormatter.from_defaults(context="some context")
+    return ReActChatFormatter.from_defaults(context=fields["system_prompt"])
 
 
 class ReActAgent(BaseWorkflowAgent):
