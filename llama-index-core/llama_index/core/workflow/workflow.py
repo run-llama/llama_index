@@ -362,8 +362,6 @@ class Workflow(metaclass=WorkflowMeta):
                         warnings.warn(
                             f"Step function {name} returned {type(new_ev).__name__} instead of an Event instance."
                         )
-                    elif isinstance(new_ev, InputRequiredEvent):
-                        ctx.write_event_to_stream(new_ev)
                     else:
                         if stepwise:
                             async with ctx._step_condition:
@@ -393,7 +391,13 @@ class Workflow(metaclass=WorkflowMeta):
                                     input_ev=ev,
                                     output_ev=new_ev,
                                 )
-                            ctx.send_event(new_ev)
+
+                            # InputRequiredEvent's are special case and need to be written to the stream
+                            # this way, the user can access and respond to the event
+                            if isinstance(new_ev, InputRequiredEvent):
+                                ctx.write_event_to_stream(new_ev)
+                            else:
+                                ctx.send_event(new_ev)
 
             for _ in range(step_config.num_workers):
                 ctx._tasks.add(
