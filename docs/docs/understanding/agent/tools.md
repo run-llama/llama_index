@@ -33,9 +33,11 @@ finance_tools.extend([multiply, add])
 And we'll ask a different question than last time, necessitating the use of the new tools:
 
 ```python
-workflow = AgentWorkflow.from_tools_or_functions(
-    finance_tools,
+workflow = FunctionAgent(
+    name="Agent",
+    description="",
     llm=OpenAI(model="gpt-4o-mini"),
+    tools=finance_tools,
     system_prompt="You are a helpful assistant.",
 )
 

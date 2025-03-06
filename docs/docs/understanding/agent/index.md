@@ -80,8 +80,10 @@ You could also pick another popular model accessible via API, such as those from
 Now we create our agent. It needs an array of tools, an LLM, and a system prompt to tell it what kind of agent to be. Your system prompt would usually be more detailed than this!
 
 ```python
-workflow = AgentWorkflow.from_tools_or_functions(
-    [multiply, add],
+workflow = FunctionAgent(
+    name="Agent",
+    description="",
+    tools=[multiply, add],
     llm=llm,
     system_prompt="You are an agent that can perform basic mathematical operations using tools.",
 )
