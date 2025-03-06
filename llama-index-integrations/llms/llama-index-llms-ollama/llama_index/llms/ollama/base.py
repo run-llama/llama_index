@@ -1,46 +1,47 @@
-from ollama import Client, AsyncClient
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     Dict,
+    Generator,
     List,
     Optional,
     Sequence,
     Tuple,
     Type,
     Union,
-    Generator,
-    AsyncGenerator,
 )
 
+from ollama import AsyncClient, Client
+
 from llama_index.core.base.llms.generic_utils import (
-    chat_to_completion_decorator,
     achat_to_completion_decorator,
-    stream_chat_to_completion_decorator,
     astream_chat_to_completion_decorator,
+    chat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
 )
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
-    ChatResponseGen,
     ChatResponseAsyncGen,
+    ChatResponseGen,
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
+    ImageBlock,
     LLMMetadata,
     MessageRole,
     TextBlock,
-    ImageBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
+from llama_index.core.program.utils import process_streaming_objects
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.tools import ToolSelection
 from llama_index.core.types import PydanticProgramMode
-from llama_index.core.program.utils import process_streaming_objects
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -132,7 +133,7 @@ class Ollama(FunctionCallingLLM):
         base_url: str = "http://localhost:11434",
         temperature: float = 0.75,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
-        request_timeout: float = DEFAULT_REQUEST_TIMEOUT,
+        request_timeout: Optional[float] = DEFAULT_REQUEST_TIMEOUT,
         prompt_key: str = "prompt",
         json_mode: bool = False,
         additional_kwargs: Dict[str, Any] = {},

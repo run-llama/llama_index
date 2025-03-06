@@ -47,6 +47,8 @@ messages = [
 chat_response = llm.chat(messages)
 ```
 
+`stream_chat` and `astream_chat` are also available.
+
 ## Specifying models
 
 Many LLM integrations provide more than one model. You can specify a model by passing the `model` parameter to the LLM constructor:
@@ -56,6 +58,60 @@ llm = OpenAI(model="gpt-4o-mini")
 response = llm.complete("Who is Laurie Voss?")
 print(response)
 ```
+
+## Multi-Modal LLMs
+
+Some LLMs support multi-modal chat messages. This means that you can pass in a mix of text and other modalities (images, audio, video, etc.) and the LLM will handle it.
+
+Currently, LlamaIndex supports text, images, and audio inside ChatMessages using content blocks.
+
+```python
+from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+from llama_index.llms.openai import OpenAI
+
+llm = OpenAI(model="gpt-4o")
+
+messages = [
+    ChatMessage(
+        role="user",
+        blocks=[
+            ImageBlock(path="image.png"),
+            TextBlock(text="Describe the image in a few sentences."),
+        ],
+    )
+]
+
+resp = llm.chat(messages)
+print(resp.message.content)
+```
+
+## Tool Calling
+
+Some LLMs (OpenAI, Anthropic, Gemini, Ollama, etc.) support tool calling directly over API calls -- this means tools and functions can be called without specific prompts and parsing mechanisms.
+
+```python
+from llama_index.core.tools import FunctionTool
+from llama_index.llms.openai import OpenAI
+
+
+def generate_song(name: str, artist: str) -> Song:
+    """Generates a song with provided name and artist."""
+    return {"name": name, "artist": artist}
+
+
+tool = FunctionTool.from_defaults(fn=generate_song)
+
+llm = OpenAI(model="gpt-4o")
+response = llm.predict_and_call(
+    [tool],
+    "Pick a random song for me",
+)
+print(str(response))
+```
+
+For more details on even more advanced tool calling, check out the in-depth guide using [OpenAI](../../examples/llm/openai.ipynb). The same approaches work for any LLM that supports tools/functions (e.g. Anthropic, Gemini, Ollama, etc.).
+
+You can learn more about tools and agents in the [tools guide](../../understanding/agent/tools.md).
 
 ## Available LLMs
 
