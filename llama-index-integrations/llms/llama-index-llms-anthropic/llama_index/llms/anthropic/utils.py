@@ -154,6 +154,7 @@ def messages_to_anthropic_messages(
                 tool_use_id=message.additional_kwargs["tool_call_id"],
                 type="tool_result",
                 content=[TextBlockParam(text=message.content, type="text")],
+                cache_control=message.additional_kwargs.get("cache_control"),
             )
             anth_message = MessageParam(
                 role=MessageRole.USER.value,
