@@ -126,7 +126,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
 
     merging_separator: str = Field(
         default=" ",
-        description="The separator to use when merging chunks. Defaults to a single space."
+        description="The separator to use when merging chunks. Defaults to a single space.",
     )
 
     sentence_splitter: Callable[[str], List[str]] = Field(
@@ -327,7 +327,12 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                 + 2
                 <= self.max_chunk_size
             ):
-                current += self.merging_separator + initial_chunks[i] + self.merging_separator + initial_chunks[i + 1]
+                current += (
+                    self.merging_separator
+                    + initial_chunks[i]
+                    + self.merging_separator
+                    + initial_chunks[i + 1]
+                )
                 skip = 1
 
             # check if 1st and 4th chunk are smilar, if yes then merge 1st, 2nd, 3rd and 4th together
