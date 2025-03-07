@@ -180,7 +180,7 @@ Optimize text extraction for this language, paying attention to:
             self._client = genai.Client(api_key=self.api_key)
             if self.verbose:
                 logger.info(
-                 f"Initialized Gemini API client with model: {self.model_name}"
+                    f"Initialized Gemini API client with model: {self.model_name}"
                 )
         return self._client
 
@@ -193,17 +193,17 @@ Optimize text extraction for this language, paying attention to:
         else:
             # Use the default system prompt template
             # Fill in template sections based on configuration
-            form_instructions = self.FORM_INSTRUCTIONS\
-                if self.extract_forms else ""
-            table_instructions = self.TABLE_INSTRUCTIONS\
-                if self.extract_tables else ""
-            checkbox_instructions = self.CHECKBOX_INSTRUCTIONS\
-                if self.extract_forms else ""
+            form_instructions = self.FORM_INSTRUCTIONS if self.extract_forms else ""
+            table_instructions = self.TABLE_INSTRUCTIONS if self.extract_tables else ""
+            checkbox_instructions = (
+                self.CHECKBOX_INSTRUCTIONS if self.extract_forms else ""
+            )
             language_instructions = self.LANGUAGE_INSTRUCTIONS_TEMPLATE.format(
                 language=self.language
             )
-            math_formula_instructions = self.MATH_FORMULA_INSTRUCTIONS\
-                if self.extract_math_formulas else ""
+            math_formula_instructions = (
+                self.MATH_FORMULA_INSTRUCTIONS if self.extract_math_formulas else ""
+            )
             return self.SYSTEM_PROMPT_TEMPLATE.format(
                 form_instructions=form_instructions,
                 table_instructions=table_instructions,

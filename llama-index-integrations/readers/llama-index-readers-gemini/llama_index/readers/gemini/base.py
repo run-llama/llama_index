@@ -51,8 +51,7 @@ class GeminiReader(BasePydanticReader):
 
     # API access configuration
     api_key: str = Field(
-        description="The API key for the Google Gemini API",
-        validate_default=True
+        description="The API key for the Google Gemini API", validate_default=True
     )
     model_name: str = Field(
         default="gemini-2.0-flash",
@@ -67,15 +66,10 @@ class GeminiReader(BasePydanticReader):
         default=False, description="Whether to print progress information"
     )
     ignore_errors: bool = Field(
-        default=True,
-        description="Whether to ignore errors and continue processing"
+        default=True, description="Whether to ignore errors and continue processing"
     )
-    dpi: int = Field(
-        default=300, description="DPI for PDF to image conversion"
-    )
-    language: str = Field(
-        default="en", description="Primary language of the documents"
-    )
+    dpi: int = Field(default=300, description="DPI for PDF to image conversion")
+    language: str = Field(default="en", description="Primary language of the documents")
     max_workers: int = Field(
         default=4,
         gt=0,
@@ -91,7 +85,7 @@ class GeminiReader(BasePydanticReader):
         default="256-512",
         description="Target size range for chunks in words (e.g., '256-512').\
             Can also be a single number (e.g., 256).",
-        )
+    )
 
     # Caching configuration
     enable_caching: bool = Field(
@@ -114,8 +108,7 @@ class GeminiReader(BasePydanticReader):
         default=True, description="Whether to extract and format tables"
     )
     extract_math_formulas: bool = Field(
-        default=True,
-        description="Whether to extract and format mathematical formulas"
+        default=True, description="Whether to extract and format mathematical formulas"
     )
 
     # Retry configuration
@@ -136,8 +129,7 @@ class GeminiReader(BasePydanticReader):
     _api: Optional[GeminiAPI] = PrivateAttr(default=None)
     _cache_manager: Optional[CacheManager] = PrivateAttr(default=None)
     _pdf_processor: Optional[PDFProcessor] = PrivateAttr(default=None)
-    _progress_callback: Optional[Callable[[int, int], None]] = PrivateAttr(
-        default=None)
+    _progress_callback: Optional[Callable[[int, int], None]] = PrivateAttr(default=None)
     _stats: ProcessingStats = PrivateAttr(
         default_factory=lambda: ProcessingStats(start_time=time.time())
     )
@@ -162,7 +154,7 @@ class GeminiReader(BasePydanticReader):
             if api_key is None:
                 raise ValueError(
                     "API key not provided",
-                    "GOOGLE_API_KEY environment variable not set"
+                    "GOOGLE_API_KEY environment variable not set",
                 )
             return api_key
         return v
@@ -266,8 +258,7 @@ class GeminiReader(BasePydanticReader):
                 )
             else:
                 documents = self._pdf_processor.process_pages_parallel(
-                    images, pdf_path,
-                    self.split_by_page, self._api.process_image
+                    images, pdf_path, self.split_by_page, self._api.process_image
                 )
 
             # Update and finalize statistics
@@ -275,25 +266,24 @@ class GeminiReader(BasePydanticReader):
 
             if self.verbose:
                 logger.info(
-                 f"PDF processing complete. Extracted {len(documents)} documents."
+                    f"PDF processing complete. Extracted {len(documents)} documents."
+                )
+                logger.info(f"Processing time: {self._stats.duration:.2f} seconds")
+                logger.info(
+                    f"Average processing time per page: {self._stats.seconds_per_page:.2f} seconds"
                 )
                 logger.info(
-                 f"Processing time: {self._stats.duration:.2f} seconds")
-                logger.info(
-                 f"Average processing time per page: {self._stats.seconds_per_page:.2f} seconds")
-                logger.info(
-                 f"Average chunks per page: {self._stats.chunks_per_page:.2f}"
+                    f"Average chunks per page: {self._stats.chunks_per_page:.2f}"
                 )
                 if self._stats.errors:
                     logger.warning(
-                     f"Encountered {len(self._stats.errors)} errors during processing"
+                        f"Encountered {len(self._stats.errors)} errors during processing"
                     )
 
             # Cache the results if enabled
             if self.enable_caching:
                 file_hash = self._cache_manager.compute_file_hash(pdf_path)
-                self._cache_manager.save_to_cache(
-                    file_hash, documents, self._stats)
+                self._cache_manager.save_to_cache(file_hash, documents, self._stats)
 
             return documents
 
@@ -319,9 +309,7 @@ class GeminiReader(BasePydanticReader):
         Returns:
             List of documents with extracted text.
         """
-        return asyncio_run(
-            self.aload_data(file_path, extra_info=extra_info)
-        )
+        return asyncio_run(self.aload_data(file_path, extra_info=extra_info))
 
     async def aload_data(
         self,
@@ -353,7 +341,7 @@ class GeminiReader(BasePydanticReader):
                 except Exception as e:
                     if self.verbose:
                         logger.error(
-                         f"Error processing file {i+1}/{len(file_path)}: {e!s}"
+                            f"Error processing file {i+1}/{len(file_path)}: {e!s}"
                         )
                     if not self.ignore_errors:
                         raise
@@ -389,9 +377,7 @@ class GeminiReader(BasePydanticReader):
                     return documents
                 except Exception as e:
                     if self.verbose:
-                        logger.error(
-                            f"Error loading data from URL {file_path}: {e!s}"
-                        )
+                        logger.error(f"Error loading data from URL {file_path}: {e!s}")
                     if self.ignore_errors:
                         return []
                     else:

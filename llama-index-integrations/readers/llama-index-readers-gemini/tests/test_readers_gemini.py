@@ -120,8 +120,7 @@ class TestCacheManager:
         file_hash3 = cache_manager.compute_file_hash(test_file_path)
         assert file_hash != file_hash3
 
-    def test_save_and_load_cache(
-     self, cache_manager, mock_documents, mock_stats):
+    def test_save_and_load_cache(self, cache_manager, mock_documents, mock_stats):
         """Test saving to cache and loading from cache."""
         file_hash = "test_hash_123"
 
@@ -129,8 +128,7 @@ class TestCacheManager:
         cache_manager.save_to_cache(file_hash, mock_documents, mock_stats)
 
         # Verify cache file was created
-        cache_file_path = os.path.join(
-            cache_manager.cache_dir, f"{file_hash}.json")
+        cache_file_path = os.path.join(cache_manager.cache_dir, f"{file_hash}.json")
         assert os.path.exists(cache_file_path)
 
         # Load from cache
@@ -142,8 +140,7 @@ class TestCacheManager:
             assert doc.text == mock_documents[i].text
             assert doc.metadata == mock_documents[i].metadata
 
-    def test_cache_expiration(
-     self, setup_cache_dir, mock_documents, mock_stats):
+    def test_cache_expiration(self, setup_cache_dir, mock_documents, mock_stats):
         """Test cache expiration based on TTL."""
         # Create cache manager with short TTL
         short_ttl_cache = CacheManager(
@@ -183,8 +180,7 @@ class TestCacheManager:
         disabled_cache.save_to_cache(file_hash, mock_documents, mock_stats)
 
         # Verify no cache file was created
-        cache_file_path = os.path.join(
-            disabled_cache.cache_dir, f"{file_hash}.json")
+        cache_file_path = os.path.join(disabled_cache.cache_dir, f"{file_hash}.json")
         assert not os.path.exists(cache_file_path)
 
         # Attempt to load from cache
@@ -240,8 +236,7 @@ class TestUtils:
     def test_is_web_url_with_exception(self):
         """Test is_web_url handles exceptions gracefully."""
         # Create a scenario where urlparse would raise an exception
-        with patch(
-         "llama_index.readers.gemini.utils.urlparse") as mock_urlparse:
+        with patch("llama_index.readers.gemini.utils.urlparse") as mock_urlparse:
             mock_urlparse.side_effect = Exception("Test exception")
             assert is_web_url("http://example.com") is False
 

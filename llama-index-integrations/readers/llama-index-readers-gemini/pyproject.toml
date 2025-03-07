@@ -1,6 +1,6 @@
 [build-system]
-requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
 
 [tool.codespell]
 check-filenames = true
@@ -12,13 +12,13 @@ contains_example = false
 import_path = "llama_index.readers.gemini"
 
 [tool.poetry]
-authors = ["Sumit Aryal <sumitaryal310@hotmail.com>" ]
+authors = ["Sumit Aryal <sumitaryal310@hotmail.com>"]
 description = "Gemini PDF Reader for LlamaIndex"
-name = "llama-index-readers-gemini"
 keywords = ["gemini", "pdf", "reader"]
-version = "0.1.0"
 license = "MIT"
+name = "llama-index-readers-gemini"
 readme = "README.md"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
