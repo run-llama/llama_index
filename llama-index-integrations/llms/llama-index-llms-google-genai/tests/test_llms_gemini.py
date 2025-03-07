@@ -18,8 +18,8 @@ from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate
 from llama_index.core.tools import FunctionTool
 from pydantic import BaseModel, Field
 
-from llama_index.llms.genai import Gemini
-from llama_index.llms.genai.utils import convert_schema_to_function_declaration
+from llama_index.llms.google_genai import GoogleGenAI
+from llama_index.llms.google_genai.utils import convert_schema_to_function_declaration
 
 
 class Poem(BaseModel):
@@ -46,7 +46,7 @@ class Schema(BaseModel):
 )
 def test_complete_and_acomplete() -> None:
     """Test both sync and async complete methods."""
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -69,7 +69,7 @@ def test_complete_and_acomplete() -> None:
 )
 def test_chat_and_achat() -> None:
     """Test both sync and async chat methods."""
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -92,7 +92,7 @@ def test_chat_and_achat() -> None:
 )
 def test_stream_chat_and_astream_chat() -> None:
     """Test both sync and async stream chat methods."""
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -121,7 +121,7 @@ def test_stream_chat_and_astream_chat() -> None:
 )
 def test_stream_complete_and_astream_complete() -> None:
     """Test both sync and async stream complete methods."""
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -150,7 +150,7 @@ def test_stream_complete_and_astream_complete() -> None:
 )
 def test_simple_astructured_predict() -> None:
     """Test async structured prediction with a simple schema."""
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -173,7 +173,7 @@ def test_simple_astructured_predict() -> None:
 )
 def test_simple_stream_structured_predict() -> None:
     """Test stream structured prediction with a simple schema."""
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -198,7 +198,7 @@ def test_simple_stream_structured_predict() -> None:
 )
 def test_simple_astream_structured_predict() -> None:
     """Test async stream structured prediction with a simple schema."""
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -226,7 +226,7 @@ def test_simple_astream_structured_predict() -> None:
 )
 def test_simple_structured_predict() -> None:
     """Test structured prediction with a simple schema."""
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -247,7 +247,7 @@ def test_simple_structured_predict() -> None:
 )
 def test_complex_structured_predict() -> None:
     """Test structured prediction with a complex nested schema."""
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -268,7 +268,7 @@ def test_complex_structured_predict() -> None:
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
 def test_as_structured_llm() -> None:
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -295,7 +295,7 @@ def test_as_structured_llm() -> None:
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
 def test_as_structured_llm_async() -> None:
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -326,7 +326,7 @@ def test_as_structured_llm_async() -> None:
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
 def test_as_structure_llm_with_config() -> None:
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -373,7 +373,7 @@ def test_structured_predict_multiple_block() -> None:
     class Response(BaseModel):
         answer: str
 
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -392,7 +392,7 @@ def test_get_tool_calls_from_response() -> None:
         """Add two integers and returns the result integer."""
         return a + b
 
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )
@@ -415,7 +415,7 @@ def test_get_tool_calls_from_response() -> None:
 )
 def test_convert_llama_index_schema_to_gemini_function_declaration() -> None:
     """Test conversion of a llama_index schema to a gemini function declaration."""
-    llm = Gemini(
+    llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
     )

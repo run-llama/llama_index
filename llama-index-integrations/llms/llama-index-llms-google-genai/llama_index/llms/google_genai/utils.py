@@ -3,14 +3,14 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Union,
 )
 import typing
 
-from google.genai import types
+import google.genai.types as types
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
-    CompletionResponse,
     ImageBlock,
     TextBlock,
 )
@@ -42,25 +42,6 @@ def _error_if_finished_early(candidate: types.Candidate) -> None:
                 reason += f" {relevant_safety}"
 
             raise RuntimeError(f"Response was terminated early: {reason}")
-
-
-def completion_from_gemini_response(
-    response: types.GenerateContentResponse,
-) -> CompletionResponse:
-    if not response.candidates:
-        raise ValueError("Response has no candidates")
-
-    top_candidate = response.candidates[0]
-    _error_if_finished_early(top_candidate)
-
-    raw = {
-        **(top_candidate.model_dump()),
-        **(response.prompt_feedback.model_dump() if response.prompt_feedback else {}),
-    }
-
-    if response.usage_metadata:
-        raw["usage_metadata"] = response.usage_metadata.model_dump()
-    return CompletionResponse(text=response.text or "", raw=raw)
 
 
 def chat_from_gemini_response(
@@ -239,19 +220,26 @@ def prepare_chat_params(
     if tools and not isinstance(tools, list):
         tools = [tools]
 
-    config: types.GenerateContentConfig = kwargs.pop("generation_config", {})
+    config: Union[types.GenerateContentConfig, dict] = kwargs.pop(
+        "generation_config", {}
+    )
+    if not isinstance(config, dict):
+        config = config.model_dump()
+
     chat_kwargs: ChatParams = {"model": model, "history": history}
 
     if tools:
-        chat_kwargs["config"] = types.GenerateContentConfig(
-            **config,
-            tools=tools,  # type: ignore
-            automatic_function_calling=types.AutomaticFunctionCallingConfig(
+        if not config.get("automatic_function_calling"):
+            config["automatic_function_calling"] = types.AutomaticFunctionCallingConfig(
                 disable=True, maximum_remote_calls=None
-            ),
-            tool_config=kwargs.pop("tool_config", None),
-        )
-    else:
-        chat_kwargs["config"] = config
+            )
+
+        if not config.get("tool_config"):
+            config["tool_config"] = kwargs.pop("tool_config", None)
+
+        if not config.get("tools"):
+            config["tools"] = tools
+
+    chat_kwargs["config"] = types.GenerateContentConfig(**config)
 
     return next_msg, chat_kwargs

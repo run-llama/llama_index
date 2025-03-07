@@ -3,7 +3,6 @@
 import os
 import typing
 import uuid
-from google import auth
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,8 +15,12 @@ from typing import (
 )
 
 import llama_index.core.instrumentation as instrument
-from google import genai
-from google.genai import types
+from llama_index.core.base.llms.generic_utils import (
+    chat_to_completion_decorator,
+    achat_to_completion_decorator,
+    stream_chat_to_completion_decorator,
+    astream_chat_to_completion_decorator,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -29,7 +32,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
@@ -37,56 +40,49 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.types import Model
-from llama_index.llms.genai.utils import (
+from llama_index.llms.google_genai.utils import (
     chat_from_gemini_response,
     chat_message_to_gemini,
-    completion_from_gemini_response,
     convert_schema_to_function_declaration,
     prepare_chat_params,
 )
-from pydantic import PrivateAttr
+
+import google.genai
+import google.auth
+import google.genai.types as types
+
 
 dispatcher = instrument.get_dispatcher(__name__)
 
-GEMINI_MODELS = (
-    "models/gemini-2.0-flash",
-    "models/gemini-2.0-flash-thinking",
-    "models/gemini-2.0-flash-thinking-exp-01-21",
-    "models/gemini-2.0-flash-lite",
-    "models/gemini-2.0-flash-lite-001",
-    "models/gemini-2.0-pro-exp-02-05",
-    "models/gemini-1.5-flash",
-    "models/gemini-1.5-flash-8b",
-    "models/gemini-1.0-pro",
-)
+DEFAULT_MODEL = "models/gemini-2.0-flash"
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
 
 class VertexAIConfig(typing.TypedDict):
-    credentials: Optional[auth.credentials.Credentials] = None
+    credentials: Optional[google.auth.credentials.Credentials] = None
     project: Optional[str] = None
     location: Optional[str] = None
 
 
-class Gemini(FunctionCallingLLM):
+class GoogleGenAI(FunctionCallingLLM):
     """
-    Gemini LLM.
+    Google GenAI LLM.
 
     Examples:
-        `pip install llama-index-llms-genai`
+        `pip install llama-index-llms-google-genai`
 
         ```python
-        from llama_index.llms.gemini import Gemini
+        from llama_index.llms.google_genai import GoogleGenAI
 
-        llm = Gemini(model="models/gemini-ultra", api_key="YOUR_API_KEY")
+        llm = GoogleGenAI(model="models/gemini-2.0-flash", api_key="YOUR_API_KEY")
         resp = llm.complete("Write a poem about a magic backpack")
         print(resp)
         ```
     """
 
-    model: str = Field(default=GEMINI_MODELS[0], description="The Gemini model to use.")
+    model: str = Field(default=DEFAULT_MODEL, description="The Gemini model to use.")
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
@@ -96,33 +92,47 @@ class Gemini(FunctionCallingLLM):
     generate_kwargs: dict = Field(
         default_factory=dict, description="Kwargs for generation."
     )
+    is_function_calling_model: bool = Field(
+        default=True, description="Whether the model is a function calling model."
+    )
+
     _max_tokens: int = PrivateAttr()
-    _client: genai.Client = PrivateAttr()
+    _client: google.genai.Client = PrivateAttr()
     _generation_config: types.GenerateContentConfigDict = PrivateAttr()
     _model_meta: types.Model = PrivateAttr()
 
     def __init__(
         self,
+        model: str = DEFAULT_MODEL,
         api_key: Optional[str] = None,
-        model: str = GEMINI_MODELS[0],
-        vertexai: bool = False,
         temperature: float = DEFAULT_TEMPERATURE,
-        vertexai_config: Optional[VertexAIConfig] = None,
         max_tokens: Optional[int] = None,
+        vertexai_config: Optional[VertexAIConfig] = None,
         http_options: Optional[types.HttpOptions] = None,
-        debug_config: Optional[genai.client.DebugConfig] = None,
+        debug_config: Optional[google.genai.client.DebugConfig] = None,
         generation_config: Optional[types.GenerateContentConfig] = None,
         callback_manager: Optional[CallbackManager] = None,
-        is_function_call_model: bool = True,
+        is_function_calling_model: bool = True,
         **generate_kwargs: Any,
     ):
         # API keys are optional. The API can be authorised via OAuth (detected
         # environmentally) or by the GOOGLE_API_KEY environment variable.
+        api_key = api_key or os.getenv("GOOGLE_API_KEY", None)
+        vertexai = vertexai or os.getenv("GOOGLE_GENAI_USE_VERTEXAI", False)
+        project = project or os.getenv("GOOGLE_CLOUD_PROJECT", None)
+        location = location or os.getenv("GOOGLE_CLOUD_LOCATION", None)
+
         config_params: Dict[str, Any] = {
-            **(vertexai_config if vertexai_config else {}),
-            "api_key": api_key or os.getenv("GOOGLE_API_KEY"),
-            "vertexai": vertexai,
+            "api_key": api_key,
         }
+
+        if vertexai_config:
+            config_params.update(vertexai_config)
+            config_params["vertexai"] = True
+        elif vertexai:
+            config_params["project"] = project
+            config_params["location"] = location
+            config_params["vertexai"] = True
 
         if http_options:
             config_params["http_options"] = http_options
@@ -130,7 +140,7 @@ class Gemini(FunctionCallingLLM):
         if debug_config:
             config_params["debug_config"] = debug_config
 
-        client = genai.Client(**config_params)
+        client = google.genai.Client(**config_params)
         model_meta = client.models.get(model=model)
         if not max_tokens:
             max_tokens = model_meta.output_token_limit
@@ -143,12 +153,12 @@ class Gemini(FunctionCallingLLM):
             max_tokens=max_tokens,
             generate_kwargs=generate_kwargs,
             callback_manager=callback_manager,
+            is_function_calling_model=is_function_calling_model,
         )
 
         self.model = model
         self._client = client
         self._model_meta = model_meta
-        self._is_function_call_model = is_function_call_model
         # store this as a dict and not as a pydantic model so we can more easily
         # merge it later
         self._generation_config = (
@@ -168,81 +178,36 @@ class Gemini(FunctionCallingLLM):
             num_output=self._max_tokens,
             model_name=self.model,
             is_chat_model=True,
-            is_function_calling_model=self._is_function_call_model,
+            is_function_calling_model=self.is_function_calling_model,
         )
 
     @llm_completion_callback()
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        generation_config = {
-            **(self._generation_config or {}),
-            **kwargs.pop("generation_config", {}),
-        }
-        response = self._client.models.generate_content(
-            model=self.model,
-            contents=prompt,
-            config=generation_config,
-            **kwargs,
-        )
-        return completion_from_gemini_response(response)
+        chat_fn = chat_to_completion_decorator(self.chat)
+        return chat_fn(prompt, **kwargs)
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        generation_config = {
-            **(self._generation_config or {}),
-            **kwargs.pop("generation_config", {}),
-        }
-        response = await self._client.aio.models.generate_content(
-            model=self.model,
-            contents=prompt,
-            config=generation_config,
-            **kwargs,
-        )
-
-        return completion_from_gemini_response(response)
+        chat_fn = achat_to_completion_decorator(self.achat)
+        return await chat_fn(prompt, **kwargs)
 
     @llm_completion_callback()
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        generation_config = {
-            **(self._generation_config or {}),
-            **kwargs.pop("generation_config", {}),
-        }
-
-        def gen():
-            it = self._client.models.generate_content_stream(
-                model=self.model,
-                contents=prompt,
-                config=generation_config,
-            )
-            for response in it:
-                yield completion_from_gemini_response(response)
-
-        return gen()
+        chat_fn = stream_chat_to_completion_decorator(self.stream_chat)
+        return chat_fn(prompt, **kwargs)
 
     @llm_completion_callback()
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        generation_config = {
-            **(self._generation_config or {}),
-            **kwargs.pop("generation_config", {}),
-        }
-
-        async def gen():
-            it = self._client.aio.models.generate_content_stream(
-                model=self.model,
-                contents=prompt,
-                config=generation_config,
-            )
-            async for response in await it:  # type: ignore
-                yield completion_from_gemini_response(response)
-
-        return gen()
+        chat_fn = astream_chat_to_completion_decorator(self.astream_chat)
+        return await chat_fn(prompt, **kwargs)
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -253,7 +218,7 @@ class Gemini(FunctionCallingLLM):
         params = {**kwargs, "generation_config": generation_config}
         next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **params)
         chat = self._client.chats.create(**chat_kwargs)
-        response = chat.send_message(next_msg.parts)  # type: ignore
+        response = chat.send_message(next_msg.parts)
         return chat_from_gemini_response(response)
 
     @llm_chat_callback()
@@ -267,7 +232,7 @@ class Gemini(FunctionCallingLLM):
         params = {**kwargs, "generation_config": generation_config}
         next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **params)
         chat = self._client.aio.chats.create(**chat_kwargs)
-        response = await chat.send_message(next_msg.parts)  # type: ignore
+        response = await chat.send_message(next_msg.parts)
         return chat_from_gemini_response(response)
 
     @llm_chat_callback()
@@ -281,7 +246,7 @@ class Gemini(FunctionCallingLLM):
         params = {**kwargs, "generation_config": generation_config}
         next_msg, chat_kwargs = prepare_chat_params(self.model, messages, **params)
         chat = self._client.chats.create(**chat_kwargs)
-        response = chat.send_message_stream(next_msg.parts)  # type: ignore
+        response = chat.send_message_stream(next_msg.parts)
 
         def gen() -> ChatResponseGen:
             content = ""
@@ -317,7 +282,7 @@ class Gemini(FunctionCallingLLM):
         async def gen() -> ChatResponseAsyncGen:
             content = ""
             existing_tool_calls = []
-            async for r in await chat.send_message_stream(next_msg.parts):  # type: ignore
+            async for r in await chat.send_message_stream(next_msg.parts):
                 if candidates := r.candidates:
                     top_candidate = candidates[0]
                     if response_content := top_candidate.content:

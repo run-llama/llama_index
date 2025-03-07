@@ -9,7 +9,7 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.genai"
+import_path = "llama_index.llms.google_genai"
 
 [tool.llamahub.class_authors]
 Gemini = "llama-index"
@@ -22,10 +22,10 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index llms genai integration"
+description = "llama-index llms google genai integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-llms-genai"
+name = "llama-index-llms-google-genai"
 readme = "README.md"
 version = "0.1.0"
 
