@@ -107,19 +107,17 @@ In a notebook environment it can be helpful to run a workflow step by step. You 
 w = ConcurrentFlow(timeout=10, verbose=True)
 handler = w.run(stepwise=True)
 
-while not handler.is_done():
-    # run_step returns the step's output event
-    ev = await handler.run_step()
-    # can make modifications to the results before dispatching the event
-    # val = ev.get("some_key")
-    # ev.set("some_key", new_val)
-    # can also inspect context
-    # val = await handler.ctx.get("key")
+# Each time we call `run_step`, the workflow will advance and return the Event
+# that was produced in the last step. This event needs to be manually propagated
+# for the workflow to keep going (we assign it to `ev` with the := operator).
+while ev := await handler.run_step():
+    # If we're here, it means there's an event we need to propagate,
+    # let's do it with `send_event`
     handler.ctx.send_event(ev)
-    continue
 
-# get the result
-result = handler.result()
+# If we're here, it means the workflow execution completed, and
+# we can now access the final result.
+result = await handler
 ```
 
 You can call `run_step` multiple times to step through the workflow one step at a time.
