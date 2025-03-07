@@ -494,6 +494,7 @@ nav:
           - ./examples/node_postprocessor/SentenceTransformerRerank.ipynb
           - ./examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
           - ./examples/node_postprocessor/VoyageAIRerank.ipynb
+          - ./examples/node_postprocessor/ibm_watsonx.ipynb
           - ./examples/node_postprocessor/openvino_rerank.ipynb
           - ./examples/node_postprocessor/rankGPT.ipynb
           - ./examples/node_postprocessor/rankLLM.ipynb
@@ -717,6 +718,7 @@ nav:
       - Workflow:
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
+          - ./examples/workflow/auto_retrieval.ipynb
           - ./examples/workflow/checkpointing_workflows.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
@@ -1247,6 +1249,7 @@ nav:
           - ./api_reference/postprocessor/embedding_recency.md
           - ./api_reference/postprocessor/fixed_recency.md
           - ./api_reference/postprocessor/flag_embedding_reranker.md
+          - ./api_reference/postprocessor/ibm.md
           - ./api_reference/postprocessor/index.md
           - ./api_reference/postprocessor/jinaai_rerank.md
           - ./api_reference/postprocessor/keyword.md
@@ -1516,6 +1519,7 @@ nav:
           - ./api_reference/retrievers/router.md
           - ./api_reference/retrievers/sql.md
           - ./api_reference/retrievers/summary.md
+          - ./api_reference/retrievers/tldw.md
           - ./api_reference/retrievers/transform.md
           - ./api_reference/retrievers/tree.md
           - ./api_reference/retrievers/vector.md
@@ -1535,6 +1539,7 @@ nav:
               - ./api_reference/storage/chat_store/azurecosmosnosql.md
               - ./api_reference/storage/chat_store/dynamodb.md
               - ./api_reference/storage/chat_store/index.md
+              - ./api_reference/storage/chat_store/mongo.md
               - ./api_reference/storage/chat_store/postgres.md
               - ./api_reference/storage/chat_store/redis.md
               - ./api_reference/storage/chat_store/simple.md
@@ -1714,6 +1719,7 @@ nav:
           - ./api_reference/tools/tavily_research.md
           - ./api_reference/tools/text_to_image.md
           - ./api_reference/tools/tool_spec.md
+          - ./api_reference/tools/valyu.md
           - ./api_reference/tools/vectara_query.md
           - ./api_reference/tools/vector_db.md
           - ./api_reference/tools/waii.md
@@ -2394,6 +2400,11 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-openvino-genai
             - ../llama-index-integrations/tools/llama-index-tools-mcp
             - ../llama-index-integrations/readers/llama-index-readers-microsoft-outlook-emails
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-tldw
+            - ../llama-index-integrations/tools/llama-index-tools-valyu
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-ibm
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-mongo
+            - ../llama-index-integrations/llms/llama-index-llms-google-genai
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

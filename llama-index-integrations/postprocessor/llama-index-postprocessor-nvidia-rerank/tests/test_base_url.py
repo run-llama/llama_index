@@ -31,7 +31,8 @@ def mock_v1_local_models2(respx_mock: respx.MockRouter, base_url: str) -> None:
     )
 
 
-# Updated test for non-hosted URLs that may need normalization.
+# marking as skip because base_url validation is removed
+@pytest.mark.skip(reason="base_url validation is removed")
 @pytest.mark.parametrize(
     "base_url",
     [
@@ -98,6 +99,8 @@ def test_proxy_base_url(base_url: str, mock_v1_local_models2: None) -> None:
     assert client.base_url == base_url
 
 
+# marking as skip because base_url validation is removed
+@pytest.mark.skip(reason="base_url validation is removed")
 @pytest.mark.parametrize(
     "base_url",
     [

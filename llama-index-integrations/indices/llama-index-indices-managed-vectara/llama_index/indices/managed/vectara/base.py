@@ -65,10 +65,14 @@ class VectaraIndex(BaseManagedIndex):
         vectara_api_key: Optional[str] = None,
         parallelize_ingest: bool = False,
         x_source_str: str = "llama_index",
+        vectara_base_url: str = "https://api.vectara.io",
+        vectara_verify_ssl: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize the Vectara API."""
         self.parallelize_ingest = parallelize_ingest
+        self._base_url = vectara_base_url.rstrip("/")
+
         index_struct = VectaraIndexStruct(
             index_id=str(vectara_corpus_key),
             summary="Vectara Index",
@@ -99,6 +103,8 @@ class VectaraIndex(BaseManagedIndex):
         # setup requests session with max 3 retries and 90s timeout
         # for calling Vectara API
         self._session = requests.Session()  # to reuse connections
+        if not vectara_verify_ssl:
+            self._session.verify = False  # to ignore SSL verification
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("https://", adapter)
         self.vectara_api_timeout = 90
@@ -138,7 +144,7 @@ class VectaraIndex(BaseManagedIndex):
         valid_corpus_key = self._get_corpus_key(corpus_key)
         body = {}
         response = self._session.delete(
-            f"https://api.vectara.io/v2/corpora/{valid_corpus_key}/documents/{doc_id}",
+            f"{self._base_url}/v2/corpora/{valid_corpus_key}/documents/{doc_id}",
             data=json.dumps(body),
             verify=True,
             headers=self._get_post_headers(),
@@ -156,7 +162,7 @@ class VectaraIndex(BaseManagedIndex):
     def _index_doc(self, doc: dict, corpus_key) -> str:
         response = self._session.post(
             headers=self._get_post_headers(),
-            url=f"https://api.vectara.io/v2/corpora/{corpus_key}/documents",
+            url=f"{self._base_url}/v2/corpora/{corpus_key}/documents",
             data=json.dumps(doc),
             timeout=self.vectara_api_timeout,
             verify=True,
@@ -366,7 +372,7 @@ class VectaraIndex(BaseManagedIndex):
         headers.pop("Content-Type")
         valid_corpus_key = self._get_corpus_key(corpus_key)
         response = self._session.post(
-            f"https://api.vectara.io/v2/corpora/{valid_corpus_key}/upload_file",
+            f"{self._base_url}/v2/corpora/{valid_corpus_key}/upload_file",
             files=files,
             verify=True,
             headers=headers,
@@ -426,7 +432,7 @@ class VectaraIndex(BaseManagedIndex):
             doc_id = document.doc_id
             body = {"metadata": update_kwargs["metadata"]}
             response = self._session.patch(
-                f"https://api.vectara.io/v2/corpora/{valid_corpus_key}/documents/{doc_id}",
+                f"{self._base_url}/v2/corpora/{valid_corpus_key}/documents/{doc_id}",
                 data=json.dumps(body),
                 verify=True,
                 headers=self._get_post_headers(),
