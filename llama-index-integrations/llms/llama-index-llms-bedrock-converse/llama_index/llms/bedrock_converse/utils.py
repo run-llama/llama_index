@@ -182,7 +182,7 @@ def messages_to_converse_messages(
                     "toolUseId": message.additional_kwargs["tool_call_id"],
                     "content": [
                         {
-                            "text": message.content,
+                            "text": message.content or "",
                         },
                     ],
                 }

@@ -1,6 +1,5 @@
 from typing import Any, List, Optional, Generator, Literal
 import os
-from urllib.parse import urlparse, urlunparse
 import httpx
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, ConfigDict
@@ -110,8 +109,6 @@ class NVIDIARerank(BaseNodePostprocessor):
         if self._is_hosted:  # hosted on API Catalog (build.nvidia.com)
             if (not self._api_key) or (self._api_key == "NO_API_KEY_PROVIDED"):
                 raise ValueError("An API key is required for hosted NIM.")
-        else:  # not hosted
-            self.base_url = self._validate_url(self.base_url)
 
         self.model = model
         if not self.model:
@@ -209,65 +206,6 @@ class NVIDIARerank(BaseNodePostprocessor):
             ]
         else:
             return RANKING_MODEL_TABLE
-
-    def _validate_url(self, base_url):
-        """
-        validate the base_url.
-        if the base_url is not a url, raise an error
-        if the base_url does not end in /v1, e.g. /embeddings
-        emit a warning. old documentation told users to pass in the full
-        inference url, which is incorrect and prevents model listing from working.
-        normalize base_url to end in /v1.
-        validate the base_url.
-        if the base_url is not a url, raise an error
-        if the base_url does not end in /v1, e.g. /embeddings
-        emit a warning. old documentation told users to pass in the full
-        inference url, which is incorrect and prevents model listing from working.
-        normalize base_url to end in /v1.
-        """
-        if base_url is not None:
-            parsed = urlparse(base_url)
-
-            # Ensure scheme and netloc (domain name) are present
-            if not (parsed.scheme and parsed.netloc):
-                expected_format = "Expected format is: http://host:port"
-                raise ValueError(
-                    f"Invalid base_url format. {expected_format} Got: {base_url}"
-                )
-
-            normalized_path = parsed.path.rstrip("/")
-            if not normalized_path.endswith("/v1"):
-                warnings.warn(
-                    f"{base_url} does not end in /v1, you may "
-                    "have inference and listing issues"
-                )
-                normalized_path += "/v1"
-
-                base_url = urlunparse(
-                    (parsed.scheme, parsed.netloc, normalized_path, None, None, None)
-                )
-        if base_url is not None:
-            parsed = urlparse(base_url)
-
-            # Ensure scheme and netloc (domain name) are present
-            if not (parsed.scheme and parsed.netloc):
-                expected_format = "Expected format is: http://host:port"
-                raise ValueError(
-                    f"Invalid base_url format. {expected_format} Got: {base_url}"
-                )
-
-            normalized_path = parsed.path.rstrip("/")
-            if not normalized_path.endswith("/v1"):
-                warnings.warn(
-                    f"{base_url} does not end in /v1, you may "
-                    "have inference and listing issues"
-                )
-                normalized_path += "/v1"
-
-                base_url = urlunparse(
-                    (parsed.scheme, parsed.netloc, normalized_path, None, None, None)
-                )
-        return base_url
 
     def _validate_model(self, model_name: str) -> None:
         """

@@ -1,4 +1,4 @@
-# Starter Tutorial
+# Starter Tutorial (Using OpenAI)
 
 This tutorial will show you how to get started building agents with LlamaIndex. We'll start with a basic example and then show how to add RAG (Retrieval-Augmented Generation) capabilities.
 
@@ -21,13 +21,16 @@ export OPENAI_API_KEY=XXXXX
 set OPENAI_API_KEY=XXXXX
 ```
 
+!!! tip
+    If you are using an OpenAI-Compatible API, you can use the `OpenAILike` LLM class. You can find more information in the [OpenAILike LLM](https://docs.llamaindex.ai/en/stable/api_reference/llms/openai_like/#llama_index.llms.openai_like.OpenAILike) integration.
+
 ## Basic Agent Example
 
 Let's start with a simple example using an agent that can perform basic multiplication by calling a tool. Create a file called `starter.py`:
 
 ```python
 import asyncio
-from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 
 
@@ -38,8 +41,10 @@ def multiply(a: float, b: float) -> float:
 
 
 # Create an agent workflow with our calculator tool
-agent = AgentWorkflow.from_tools_or_functions(
-    [multiply],
+agent = FunctionAgent(
+    name="Agent",
+    description="Useful for multiplying two numbers",
+    tools=[multiply],
     llm=OpenAI(model="gpt-4o-mini"),
     system_prompt="You are a helpful assistant that can multiply two numbers.",
 )
@@ -108,7 +113,7 @@ Our modified `starter.py` should look like this:
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 import asyncio
 import os
@@ -131,8 +136,10 @@ async def search_documents(query: str) -> str:
 
 
 # Create an enhanced workflow with both tools
-agent = AgentWorkflow.from_tools_or_functions(
-    [multiply, search_documents],
+agent = FunctionAgent(
+    name="Agent",
+    description="Useful for multiplying two numbers and searching through documents to answer questions.",
+    tools=[multiply, search_documents],
     llm=OpenAI(model="gpt-4o-mini"),
     system_prompt="""You are a helpful assistant that can perform calculations
     and search through documents to answer questions.""",
@@ -190,7 +197,7 @@ This is just the beginning of what you can do with LlamaIndex agents! You can:
 
 Some helpful next links:
 
-- See more advanced agent examples in our [Agent documentation](../understanding/agent/multi_agents.md)
+- See more advanced agent examples in our [Agent documentation](../understanding/agent/index.md)
 - Learn more about [high-level concepts](./concepts.md)
 - Explore how to [customize things](./customization.md)
 - Check out the [component guides](../module_guides/index.md)
