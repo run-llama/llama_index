@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, cast
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
@@ -209,7 +209,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             if handoff_tool:
                 tools.append(handoff_tool)
 
-        return self._ensure_tools_are_async(tools)
+        return self._ensure_tools_are_async(cast(List[BaseTool], tools))
 
     async def _init_context(self, ctx: Context, ev: StartEvent) -> None:
         """Initialize the context once, if needed."""
