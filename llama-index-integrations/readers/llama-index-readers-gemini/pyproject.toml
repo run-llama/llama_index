@@ -1,20 +1,27 @@
-[project]
-name = "llama-index-readers-gemini"
-version = "0.1.0"
-description = "llama-index readers gemini integration"
-authors = [
-    {name = "sumitaryal",email = "sumitaryal310@hotmail.com"}
-]
-license = {text = "MIT"}
-readme = "README.md"
-requires-python = ">=3.10"
-dependencies = [
-    "pdf2image (>=1.17.0,<2.0.0)",
-    "google-genai (>=1.4.0,<2.0.0)",
-    "llama-index (>=0.12.22,<0.13.0)"
-]
-
-
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.gemini"
+
+[tool.poetry]
+authors = ["Sumit Aryal <sumitaryal310@hotmail.com>" ]
+description = "Gemini PDF Reader for LlamaIndex"
+name = "llama-index-readers-gemini"
+keywords = ["gemini", "pdf", "reader"]
+version = "0.1.0"
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+pdf2image = ">=1.17.0,<2.0.0"
+google-genai = ">=1.4.0,<2.0.0"
+llama-index = ">=0.12.22,<0.13.0"
