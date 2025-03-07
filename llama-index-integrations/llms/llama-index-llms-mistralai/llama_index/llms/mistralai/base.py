@@ -6,11 +6,14 @@ from llama_index.core.base.llms.types import (
     ChatResponse,
     ChatResponseAsyncGen,
     ChatResponseGen,
+    ContentBlock,
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    TextBlock,
+    ImageBlock,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -43,6 +46,9 @@ from mistralai.models import (
     SystemMessage,
     ToolMessage,
     UserMessage,
+    TextChunk,
+    ImageURLChunk,
+    ContentChunk,
 )
 
 if TYPE_CHECKING:
@@ -53,22 +59,56 @@ DEFAULT_MISTRALAI_ENDPOINT = "https://api.mistral.ai"
 DEFAULT_MISTRALAI_MAX_TOKENS = 512
 
 
+def to_mistral_chunks(content_blocks: Sequence[ContentBlock]) -> Sequence[ContentChunk]:
+    content_chunks = []
+    for content_block in content_blocks:
+        if isinstance(content_block, TextBlock):
+            content_chunks.append(TextChunk(text=content_block.text))
+        elif isinstance(content_block, ImageBlock):
+            if content_block.url:
+                content_chunks.append(ImageURLChunk(url=content_block.url))
+            else:
+                base_64_str = (
+                    content_block.resolve_image(as_base64=True).read().decode("utf-8")
+                )
+                image_mimetype = content_block.image_mimetype
+                if not image_mimetype:
+                    raise ValueError(
+                        "Image mimetype not found in chat message image block"
+                    )
+
+                content_chunks.append(
+                    ImageURLChunk(
+                        image_url=f"data:{image_mimetype};base64,{base_64_str}"
+                    )
+                )
+        else:
+            raise ValueError(f"Unsupported content block type {type(content_block)}")
+
+    return content_chunks
+
+
 def to_mistral_chatmessage(
     messages: Sequence[ChatMessage],
 ) -> List[Messages]:
     new_messages = []
     for m in messages:
         tool_calls = m.additional_kwargs.get("tool_calls")
+        chunks = to_mistral_chunks(m.blocks)
         if m.role == MessageRole.USER:
-            new_messages.append(UserMessage(content=m.content))
+            new_messages.append(UserMessage(content=chunks))
         elif m.role == MessageRole.ASSISTANT:
-            new_messages.append(
-                AssistantMessage(content=m.content, tool_calls=tool_calls)
-            )
+            new_messages.append(AssistantMessage(content=chunks, tool_calls=tool_calls))
         elif m.role == MessageRole.SYSTEM:
-            new_messages.append(SystemMessage(content=m.content))
+            new_messages.append(SystemMessage(content=chunks))
         elif m.role == MessageRole.TOOL or m.role == MessageRole.FUNCTION:
-            new_messages.append(ToolMessage(content=m.content))
+            new_messages.append(
+                ToolMessage(
+                    content=chunks,
+                    tool_call_id=m.additional_kwargs.get("tool_call_id"),
+                    name=m.additional_kwargs.get("name"),
+                )
+            )
         else:
             raise ValueError(f"Unsupported message role {m.role}")
 
@@ -278,12 +318,8 @@ class MistralAI(FunctionCallingLLM):
                 if delta.tool_calls:
                     additional_kwargs["tool_calls"] = delta.tool_calls
 
-                content_delta = delta.content
-                if content_delta is None:
-                    pass
-                    # continue
-                else:
-                    content += content_delta
+                content_delta = delta.content or ""
+                content += content_delta
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
@@ -354,12 +390,8 @@ class MistralAI(FunctionCallingLLM):
                 if delta.tool_calls:
                     additional_kwargs["tool_calls"] = delta.tool_calls
 
-                content_delta = delta.content
-                if content_delta is None:
-                    pass
-                    # continue
-                else:
-                    content += content_delta
+                content_delta = delta.content or ""
+                content += content_delta
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,

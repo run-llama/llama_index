@@ -4,8 +4,8 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import PrivateAttr
-
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     FilterCondition,
@@ -123,14 +123,22 @@ class OpensearchVectorClient:
         self._os_async_client = os_async_client or self._get_async_opensearch_client(
             self._endpoint, **kwargs
         )
-        self._os_version = self._get_opensearch_version()
-        self._efficient_filtering_enabled = self._is_efficient_filtering_enabled(
-            self._os_version
-        )
+        self._efficient_filtering_enabled = self._is_efficient_filtering_enabled()
         not_found_error = self._import_not_found_error()
 
         try:
             self._os_client.indices.get(index=self._index)
+        except TypeError:
+            # Probably using async so switch to async client
+            try:
+                asyncio_run(self._os_async_client.indices.get(index=self._index))
+            except not_found_error:
+                asyncio_run(
+                    self._os_async_client.indices.create(
+                        index=self._index, body=idx_conf
+                    )
+                )
+                asyncio_run(self._os_async_client.indices.refresh(index=self._index))
         except not_found_error:
             self._os_client.indices.create(index=self._index, body=idx_conf)
             self._os_client.indices.refresh(index=self._index)
@@ -617,10 +625,18 @@ class OpensearchVectorClient:
             return True
         return False
 
-    def _is_efficient_filtering_enabled(self, os_version: str) -> bool:
+    def _is_efficient_filtering_enabled(self) -> bool:
         """Check if kNN with efficient filtering is enabled."""
-        major, minor, patch = os_version.split(".")
-        return int(major) >= 2 and int(minor) >= 9
+        # Technically, AOSS supports efficient filtering,
+        # but we can't check the version number using .info(); AOSS doesn't support 'GET /'
+        #  so we must skip and disable by default.
+        if self.is_aoss:
+            ef_enabled = False
+        else:
+            self._os_version = self._get_opensearch_version()
+            major, minor, patch = self._os_version.split(".")
+            ef_enabled = int(major) >= 2 and int(minor) >= 9
+        return ef_enabled
 
     def index_results(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """Store results in the index."""

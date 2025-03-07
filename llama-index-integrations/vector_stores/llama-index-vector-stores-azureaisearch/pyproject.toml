@@ -28,7 +28,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-azureaisearch"
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.6"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

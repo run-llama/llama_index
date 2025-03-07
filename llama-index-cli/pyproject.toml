@@ -14,7 +14,7 @@ disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.9"
 
 [tool.poetry]
 authors = ["llamaindex"]
@@ -32,7 +32,7 @@ maintainers = [
 name = "llama-index-cli"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.4.0"
+version = "0.4.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
@@ -45,6 +45,7 @@ black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 ipython = "8.10.0"
 jupyter = "^1.0.0"
+llama-index-vector-stores-chroma = "^0.4.1"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"

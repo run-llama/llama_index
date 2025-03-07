@@ -1,4 +1,6 @@
-from typing import Any, List, Dict, Optional, Tuple
+from typing import Any, List, Dict, Optional, Tuple, Type
+from types import TracebackType
+
 from llama_index.core.graph_stores.prompts import DEFAULT_CYPHER_TEMPALTE
 from llama_index.core.graph_stores.types import (
     PropertyGraphStore,
@@ -41,6 +43,7 @@ EXHAUSTIVE_SEARCH_LIMIT = 10000
 DISTINCT_VALUE_LIMIT = 10
 CHUNK_SIZE = 1000
 VECTOR_INDEX_NAME = "entity"
+LONG_TEXT_THRESHOLD = 52
 
 node_properties_query = """
 CALL apoc.meta.data()
@@ -111,6 +114,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         password (str): The password for the Neo4j database.
         url (str): The URL for the Neo4j database.
         database (Optional[str]): The name of the database to connect to. Defaults to "neo4j".
+        timeout (Optional[float]): The timeout for transactions in seconds.
+        Useful for terminating long-running queries.
+        By default, there is no timeout set.
 
     Examples:
         `pip install llama-index-graph-stores-neo4j`
@@ -152,6 +158,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         sanitize_query_output: bool = True,
         enhanced_schema: bool = False,
         create_indexes: bool = True,
+        timeout: Optional[float] = None,
         **neo4j_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
@@ -169,6 +176,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             **neo4j_kwargs,
         )
         self._database = database
+        self._timeout = timeout
         self.structured_schema = {}
         if refresh_schema:
             self.refresh_schema()
@@ -276,6 +284,19 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             )
             enhanced_info = self.structured_query(enhanced_cypher)[0]["output"]
             for prop in node_props:
+                # Map to custom types
+                # Text
+                if prop["type"] == "STRING" and any(
+                    len(value) >= LONG_TEXT_THRESHOLD
+                    for value in enhanced_info[prop["property"]]["values"]
+                ):
+                    enhanced_info[prop["property"]]["type"] = "TEXT"
+                # Embedding
+                if (
+                    prop["type"] == "LIST"
+                    and enhanced_info[prop["property"]]["max_size"] > LIST_LIMIT
+                ):
+                    enhanced_info[prop["property"]]["type"] = "EMBEDDING"
                 if prop["property"] in enhanced_info:
                     prop.update(enhanced_info[prop["property"]])
         # Update rel info
@@ -592,7 +613,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         param_map = param_map or {}
         try:
             data, _, _ = self._driver.execute_query(
-                query, database_=self._database, parameters_=param_map
+                neo4j.Query(text=query, timeout=self._timeout),
+                database_=self._database,
+                parameters_=param_map,
             )
             full_result = [d.data() for d in data]
 
@@ -620,7 +643,9 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 raise
         # Fallback to allow implicit transactions
         with self._driver.session(database=self._database) as session:
-            data = session.run(neo4j.Query(text=query), param_map)
+            data = session.run(
+                neo4j.Query(text=query, timeout=self._timeout), param_map
+            )
             full_result = [d.data() for d in data]
 
             if self.sanitize_query_output:
@@ -745,7 +770,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 prop_type = prop["type"]
                 if prop_type == "STRING":
                     with_clauses.append(
-                        f"collect(distinct substring(toString(coalesce(n.`{prop_name}`, '')), 0, 50)) "
+                        f"collect(distinct substring(toString(coalesce(n.`{prop_name}`, '')), 0, {LONG_TEXT_THRESHOLD})) "
                         f"AS `{prop_name}_values`"
                     )
                     return_clauses.append(
@@ -772,11 +797,14 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 elif prop_type == "LIST":
                     with_clauses.append(
                         f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "
-                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`"
+                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`, "
+                        # Get first 3 sub-elements of the first element as sample values
+                        f"collect(n.`{prop_name}`)[0][..3] AS `{prop_name}_values`"
                     )
                     return_clauses.append(
                         f"min_size: `{prop_name}_size_min`, "
-                        f"max_size: `{prop_name}_size_max`"
+                        f"max_size: `{prop_name}_size_max`, "
+                        f"values:`{prop_name}_values`"
                     )
                 elif prop_type in ["BOOLEAN", "POINT", "DURATION"]:
                     continue
@@ -812,7 +840,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                         )
                     else:
                         with_clauses.append(
-                            f"collect(distinct substring(n.`{prop_name}`, 0, 50)) "
+                            f"collect(distinct substring(toString(n.`{prop_name}`), 0, {LONG_TEXT_THRESHOLD})) "
                             f"AS `{prop_name}_values`"
                         )
                         return_clauses.append(f"values: `{prop_name}_values`")
@@ -848,11 +876,14 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                 elif prop_type == "LIST":
                     with_clauses.append(
                         f"min(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_min`, "
-                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`"
+                        f"max(size(coalesce(n.`{prop_name}`, []))) AS `{prop_name}_size_max`, "
+                        # Get first 3 sub-elements of the first element as sample values
+                        f"collect(n.`{prop_name}`)[0][..3] AS `{prop_name}_values`"
                     )
                     return_clauses.append(
                         f"min_size: `{prop_name}_size_min`, "
-                        f"max_size: `{prop_name}_size_max`"
+                        f"max_size: `{prop_name}_size_max`, "
+                        f"values:`{prop_name}_values`"
                     )
                 elif prop_type in ["BOOLEAN", "POINT", "DURATION"]:
                     continue
@@ -925,7 +956,12 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                                 if prop["values"]
                                 else ""
                             )
-
+                    elif prop["type"] == "TEXT":
+                        example = (
+                            f'Example: "{clean_string_values(prop["values"][0])}"'
+                            if prop["values"]
+                            else ""
+                        )
                     elif prop["type"] in [
                         "INTEGER",
                         "FLOAT",
@@ -943,9 +979,17 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                             )
                     elif prop["type"] == "LIST":
                         # Skip embeddings
-                        if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
-                            continue
-                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                        # if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
+                        #    continue
+                        example = (
+                            f'Min Size: {prop.get("min_size", "N/A")}, '
+                            f'Max Size: {prop.get("max_size", "N/A")}, '
+                            + (
+                                f'Example: [{prop["values"][0]}]'
+                                if prop.get("values") and len(prop["values"]) > 0
+                                else ""
+                            )
+                        )
                     formatted_node_props.append(
                         f"  - `{prop['property']}`: {prop['type']} {example}"
                     )
@@ -1049,6 +1093,83 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
             self._supports_vector_index = True
         else:
             self._supports_vector_index = False
+
+    def close(self) -> None:
+        """
+        Explicitly close the Neo4j driver connection.
+
+        Delegates connection management to the Neo4j driver.
+        """
+        if hasattr(self, "_driver"):
+            self._driver.close()
+            # Remove the driver attribute to indicate closure
+            delattr(self, "_driver")
+
+    def __enter__(self) -> "Neo4jPropertyGraphStore":
+        """
+        Enter the runtime context for the Neo4j graph connection.
+
+        Enables use of the graph connection with the 'with' statement.
+        This method allows for automatic resource management and ensures
+        that the connection is properly handled.
+
+        Returns:
+            Neo4jPropertyGraphStore: The current graph connection instance
+        """
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        """
+        Exit the runtime context for the Neo4j graph connection.
+
+        This method is automatically called when exiting a 'with' statement.
+        It ensures that the database connection is closed, regardless of
+        whether an exception occurred during the context's execution.
+
+        Args:
+            exc_type: The type of exception that caused the context to exit
+                      (None if no exception occurred)
+            exc_val: The exception instance that caused the context to exit
+                     (None if no exception occurred)
+            exc_tb: The traceback for the exception (None if no exception occurred)
+
+        Note:
+            Any exception is re-raised after the connection is closed.
+        """
+        self.close()
+
+    def __del__(self) -> None:
+        """
+        Destructor for the Neo4j graph connection.
+
+        This method is called during garbage collection to ensure that
+        database resources are released if not explicitly closed.
+
+        Caution:
+            - Do not rely on this method for deterministic resource cleanup
+            - Always prefer explicit .close() or context manager
+
+        Best practices:
+            1. Use context manager:
+               with Neo4jGraph(...) as graph:
+                   ...
+            2. Explicitly close:
+               graph = Neo4jGraph(...)
+               try:
+                   ...
+               finally:
+                   graph.close()
+        """
+        try:
+            self.close()
+        except Exception:
+            # Suppress any exceptions during garbage collection
+            pass
 
 
 Neo4jPGStore = Neo4jPropertyGraphStore

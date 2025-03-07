@@ -24,11 +24,11 @@ python_version = "3.8"
 authors = ["Your Name <you@example.com>"]
 description = "llama-index readers confluence integration"
 exclude = ["**/BUILD"]
-license = "MIT"
+license = "GPL-3.0-or-later"
 maintainers = ["zywilliamli"]
 name = "llama-index-readers-confluence"
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

@@ -31,7 +31,7 @@ readme = "README.md"
 version = "0.3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.10,<4.0"
 llama-index-readers-airbyte-cdk = "^0.3.0"
 llama-index-core = "^0.12.0"
 

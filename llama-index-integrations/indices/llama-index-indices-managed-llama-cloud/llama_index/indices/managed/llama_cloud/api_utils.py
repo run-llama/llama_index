@@ -1,5 +1,8 @@
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple, Union, Dict
+import urllib.parse
+from httpx import Request
 
+from llama_index.core.async_utils import run_jobs
 from llama_cloud import (
     AutoTransformConfig,
     Pipeline,
@@ -9,7 +12,9 @@ from llama_cloud import (
     PipelineType,
     Project,
 )
-from llama_cloud.client import LlamaCloud
+from llama_cloud.core import remove_none_from_dict
+from llama_cloud.client import LlamaCloud, AsyncLlamaCloud
+from llama_cloud.core.api_error import ApiError
 
 
 def default_embedding_config() -> PipelineCreateEmbeddingConfig:
@@ -96,3 +101,116 @@ def resolve_project_and_pipeline(
         )
 
     return project, pipeline
+
+
+def _build_get_page_screenshot_request(
+    client: Union[LlamaCloud, AsyncLlamaCloud],
+    file_id: str,
+    page_index: int,
+    project_id: str,
+) -> Request:
+    return client._client_wrapper.httpx_client.build_request(
+        "GET",
+        urllib.parse.urljoin(
+            f"{client._client_wrapper.get_base_url()}/",
+            f"api/v1/files/{file_id}/page_screenshots/{page_index}",
+        ),
+        params=remove_none_from_dict({"project_id": project_id}),
+        headers=client._client_wrapper.get_headers(),
+        timeout=60,
+    )
+
+
+def get_page_screenshot(
+    client: LlamaCloud, file_id: str, page_index: int, project_id: str
+) -> str:
+    """Get the page screenshot."""
+    # TODO: this currently uses requests, should be replaced with the client
+    request = _build_get_page_screenshot_request(
+        client, file_id, page_index, project_id
+    )
+    _response = client._client_wrapper.httpx_client.send(request)
+    if 200 <= _response.status_code < 300:
+        return _response.content
+    else:
+        raise ApiError(status_code=_response.status_code, body=_response.text)
+
+
+async def aget_page_screenshot(
+    client: AsyncLlamaCloud, file_id: str, page_index: int, project_id: str
+) -> str:
+    """Get the page screenshot (async)."""
+    request = _build_get_page_screenshot_request(
+        client, file_id, page_index, project_id
+    )
+    _response = await client._client_wrapper.httpx_client.send(request)
+    if 200 <= _response.status_code < 300:
+        return _response.content
+    else:
+        raise ApiError(status_code=_response.status_code, body=_response.text)
+
+
+from typing import List
+import base64
+from llama_cloud import PageScreenshotNodeWithScore
+from llama_index.core.schema import NodeWithScore, ImageNode
+from llama_cloud.client import LlamaCloud, AsyncLlamaCloud
+
+
+def image_nodes_to_node_with_score(
+    client: LlamaCloud,
+    raw_image_nodes: List[PageScreenshotNodeWithScore],
+    project_id: str,
+) -> List[NodeWithScore]:
+    image_nodes = []
+    for raw_image_node in raw_image_nodes:
+        image_bytes = get_page_screenshot(
+            client=client,
+            file_id=raw_image_node.node.file_id,
+            page_index=raw_image_node.node.page_index,
+            project_id=project_id,
+        )
+        image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+        image_node_metadata: Dict[str, Any] = {
+            **(raw_image_node.node.metadata or {}),
+            "file_id": raw_image_node.node.file_id,
+            "page_index": raw_image_node.node.page_index,
+        }
+        image_node_with_score = NodeWithScore(
+            node=ImageNode(image=image_base64, metadata=image_node_metadata),
+            score=raw_image_node.score,
+        )
+        image_nodes.append(image_node_with_score)
+    return image_nodes
+
+
+async def aimage_nodes_to_node_with_score(
+    client: AsyncLlamaCloud,
+    raw_image_nodes: List[PageScreenshotNodeWithScore],
+    project_id: str,
+) -> List[NodeWithScore]:
+    image_nodes = []
+    tasks = [
+        aget_page_screenshot(
+            client=client,
+            file_id=raw_image_node.node.file_id,
+            page_index=raw_image_node.node.page_index,
+            project_id=project_id,
+        )
+        for raw_image_node in raw_image_nodes
+    ]
+
+    image_bytes_list = await run_jobs(tasks)
+    for image_bytes, raw_image_node in zip(image_bytes_list, raw_image_nodes):
+        image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+        image_node_metadata: Dict[str, Any] = {
+            **(raw_image_node.node.metadata or {}),
+            "file_id": raw_image_node.node.file_id,
+            "page_index": raw_image_node.node.page_index,
+        }
+        image_node_with_score = NodeWithScore(
+            node=ImageNode(image=image_base64, metadata=image_node_metadata),
+            score=raw_image_node.score,
+        )
+        image_nodes.append(image_node_with_score)
+    return image_nodes

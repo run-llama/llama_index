@@ -67,6 +67,7 @@ CHAT_ONLY_MODELS = {
     "us.anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
     "us.anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
     "us.anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "us.anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "us.meta.llama3-1-70b-instruct-v1:0": 8192,
     "us.meta.llama3-1-8b-instruct-v1:0": 8192,
     "us.meta.llama3-2-11b-instruct-v1:0": 8192,
@@ -79,6 +80,7 @@ CHAT_ONLY_MODELS = {
     "eu.anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
     "eu.anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
     "eu.anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "eu.anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "eu.meta.llama3-1-70b-instruct-v1:0": 8192,
     "eu.meta.llama3-1-8b-instruct-v1:0": 8192,
     "eu.meta.llama3-2-11b-instruct-v1:0": 8192,
@@ -115,12 +117,14 @@ STREAMING_MODELS = {
     "us.anthropic.claude-3-5-haiku-20241022-v1:0",
     "us.anthropic.claude-3-5-sonnet-20240620-v1:0",
     "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
     "eu.anthropic.claude-3-haiku-20240307-v1:0",
     "eu.anthropic.claude-3-opus-20240229-v1:0",
     "eu.anthropic.claude-3-sonnet-20240229-v1:0",
     "eu.anthropic.claude-3-5-haiku-20241022-v1:0",
     "eu.anthropic.claude-3-5-sonnet-20240620-v1:0",
     "eu.anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "eu.anthropic.claude-3-7-sonnet-20250219-v1:0",
 }
 
 
@@ -299,6 +303,9 @@ def completion_with_retry(
     request_body: str,
     max_retries: int,
     stream: bool = False,
+    guardrail_identifier: Optional[str] = None,
+    guardrail_version: Optional[str] = None,
+    trace: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -307,9 +314,29 @@ def completion_with_retry(
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
         if stream:
-            return client.invoke_model_with_response_stream(
-                modelId=model, body=request_body
-            )
-        return client.invoke_model(modelId=model, body=request_body)
+            if guardrail_identifier is None or guardrail_version is None:
+                return client.invoke_model_with_response_stream(
+                    modelId=model,
+                    body=request_body,
+                )
+            else:
+                return client.invoke_model_with_response_stream(
+                    modelId=model,
+                    body=request_body,
+                    guardrailIdentifier=guardrail_identifier,
+                    guardrailVersion=guardrail_version,
+                    trace=trace,
+                )
+        else:
+            if guardrail_identifier is None or guardrail_version is None:
+                return client.invoke_model(modelId=model, body=request_body)
+            else:
+                return client.invoke_model(
+                    modelId=model,
+                    body=request_body,
+                    guardrailIdentifier=guardrail_identifier,
+                    guardrailVersion=guardrail_version,
+                    trace=trace,
+                )
 
     return _completion_with_retry(**kwargs)

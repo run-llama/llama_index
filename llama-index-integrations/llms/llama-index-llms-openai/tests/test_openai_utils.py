@@ -59,7 +59,7 @@ def chat_messages_with_function_calling() -> List[ChatMessage]:
 
 
 @pytest.fixture()
-def openi_message_dicts_with_function_calling() -> List[ChatCompletionMessageParam]:
+def openai_message_dicts_with_function_calling() -> List[ChatCompletionMessageParam]:
     return [
         {
             "role": "user",
@@ -156,21 +156,37 @@ def test_to_openai_message_dicts_basic_string() -> None:
     ]
 
 
+def test_to_openai_message_dicts_empty_content() -> None:
+    """If neither `tool_calls` nor `function_call` is set, content must not be set to None,
+    see: https://platform.openai.com/docs/api-reference/chat/create"""
+    chat_messages = [
+        ChatMessage(role="user", content="test question"),
+        ChatMessage(role="assistant", content=""),
+    ]
+    openai_messages = to_openai_message_dicts(
+        chat_messages,
+    )
+    assert openai_messages == [
+        {"role": "user", "content": "test question"},
+        {"role": "assistant", "content": ""},
+    ]
+
+
 def test_to_openai_message_dicts_function_calling(
     chat_messages_with_function_calling: List[ChatMessage],
-    openi_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
+    openai_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
 ) -> None:
     message_dicts = to_openai_message_dicts(
         chat_messages_with_function_calling,
     )
-    assert message_dicts == openi_message_dicts_with_function_calling
+    assert message_dicts == openai_message_dicts_with_function_calling
 
 
 def test_from_openai_message_dicts_function_calling(
-    openi_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
+    openai_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
     chat_messages_with_function_calling: List[ChatMessage],
 ) -> None:
-    chat_messages = from_openai_message_dicts(openi_message_dicts_with_function_calling)  # type: ignore
+    chat_messages = from_openai_message_dicts(openai_message_dicts_with_function_calling)  # type: ignore
 
     # assert attributes match
     for chat_message, chat_message_with_function_calling in zip(
@@ -189,7 +205,8 @@ def test_from_openai_messages_function_calling_azure(
     azure_chat_messages_with_function_calling: List[ChatMessage],
 ) -> None:
     chat_messages = from_openai_messages(
-        azure_openai_message_dicts_with_function_calling
+        azure_openai_message_dicts_with_function_calling,
+        ["text"],
     )
     assert chat_messages == azure_chat_messages_with_function_calling
 

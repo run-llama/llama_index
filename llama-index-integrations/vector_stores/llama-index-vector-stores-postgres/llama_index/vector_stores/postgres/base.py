@@ -4,6 +4,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, TYPE_CHEC
 
 import asyncpg  # noqa
 import pgvector  # noqa
+from pgvector.sqlalchemy import HALFVEC
 import psycopg2  # noqa
 import sqlalchemy
 import sqlalchemy.ext.asyncio
@@ -46,6 +47,7 @@ def get_data_model(
     cache_okay: bool,
     embed_dim: int = 1536,
     use_jsonb: bool = False,
+    use_halfvec: bool = False,
 ) -> Any:
     """
     This part create a dynamic sqlalchemy model with a new table.
@@ -66,6 +68,11 @@ def get_data_model(
 
     metadata_dtype = JSONB if use_jsonb else JSON
 
+    if use_halfvec:
+        embedding_col = Column(HALFVEC(embed_dim))  # type: ignore
+    else:
+        embedding_col = Column(Vector(embed_dim))  # type: ignore
+
     if hybrid_search:
 
         class HybridAbstractData(base):  # type: ignore
@@ -74,7 +81,7 @@ def get_data_model(
             text = Column(VARCHAR, nullable=False)
             metadata_ = Column(metadata_dtype)
             node_id = Column(VARCHAR)
-            embedding = Column(Vector(embed_dim))  # type: ignore
+            embedding = embedding_col
             text_search_tsv = Column(  # type: ignore
                 TSVector(),
                 Computed(
@@ -101,7 +108,7 @@ def get_data_model(
             text = Column(VARCHAR, nullable=False)
             metadata_ = Column(metadata_dtype)
             node_id = Column(VARCHAR)
-            embedding = Column(Vector(embed_dim))  # type: ignore
+            embedding = embedding_col
 
         model = type(
             class_name,
@@ -130,6 +137,8 @@ class PGVectorStore(BasePydanticVectorStore):
             user="postgres",
             table_name="paul_graham_essay",
             embed_dim=1536  # openai embedding dimension
+            use_halfvec=True  # Enable half precision
+
         )
         ```
     """
@@ -152,6 +161,8 @@ class PGVectorStore(BasePydanticVectorStore):
     initialization_fail_on_error: bool = False
 
     hnsw_kwargs: Optional[Dict[str, Any]]
+
+    use_halfvec: bool = False
 
     _base: Any = PrivateAttr()
     _table_class: Any = PrivateAttr()
@@ -177,6 +188,7 @@ class PGVectorStore(BasePydanticVectorStore):
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
         create_engine_kwargs: Optional[Dict[str, Any]] = None,
         initialization_fail_on_error: bool = False,
+        use_halfvec: bool = False,
     ) -> None:
         """Constructor.
 
@@ -196,6 +208,7 @@ class PGVectorStore(BasePydanticVectorStore):
                 contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
                 which turns off HNSW search.
             create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
+            use_halfvec (bool, optional): If `True`, use half-precision vectors. Defaults to False.
         """
         table_name = table_name.lower()
         schema_name = schema_name.lower()
@@ -223,6 +236,7 @@ class PGVectorStore(BasePydanticVectorStore):
             hnsw_kwargs=hnsw_kwargs,
             create_engine_kwargs=create_engine_kwargs or {},
             initialization_fail_on_error=initialization_fail_on_error,
+            use_halfvec=use_halfvec,
         )
 
         # sqlalchemy model
@@ -236,6 +250,7 @@ class PGVectorStore(BasePydanticVectorStore):
             cache_ok,
             embed_dim=embed_dim,
             use_jsonb=use_jsonb,
+            use_halfvec=use_halfvec,
         )
 
     async def close(self) -> None:
@@ -272,6 +287,7 @@ class PGVectorStore(BasePydanticVectorStore):
         use_jsonb: bool = False,
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
         create_engine_kwargs: Optional[Dict[str, Any]] = None,
+        use_halfvec: bool = False,
     ) -> "PGVectorStore":
         """Construct from params.
 
@@ -296,6 +312,7 @@ class PGVectorStore(BasePydanticVectorStore):
                 contains "hnsw_ef_construction", "hnsw_ef_search", "hnsw_m", and optionally "hnsw_dist_method". Defaults to None,
                 which turns off HNSW search.
             create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
+            use_halfvec (bool, optional): If `True`, use half-precision vectors. Defaults to False.
 
         Returns:
             PGVectorStore: Instance of PGVectorStore constructed from params.
@@ -321,6 +338,7 @@ class PGVectorStore(BasePydanticVectorStore):
             use_jsonb=use_jsonb,
             hnsw_kwargs=hnsw_kwargs,
             create_engine_kwargs=create_engine_kwargs,
+            use_halfvec=use_halfvec,
         )
 
     @property
@@ -396,13 +414,25 @@ class PGVectorStore(BasePydanticVectorStore):
 
         hnsw_ef_construction = self.hnsw_kwargs.pop("hnsw_ef_construction")
         hnsw_m = self.hnsw_kwargs.pop("hnsw_m")
-        hnsw_dist_method = self.hnsw_kwargs.pop("hnsw_dist_method", "vector_cosine_ops")
+
+        # If user didn’t specify an operator, pick a default based on whether halfvec is used
+        if "hnsw_dist_method" in self.hnsw_kwargs:
+            hnsw_dist_method = self.hnsw_kwargs.pop("hnsw_dist_method")
+        else:
+            if self.use_halfvec:
+                hnsw_dist_method = "halfvec_l2_ops"
+            else:
+                # Default to vector_cosine_ops
+                hnsw_dist_method = "vector_cosine_ops"
 
         index_name = f"{self._table_class.__tablename__}_embedding_idx"
 
         with self._session() as session, session.begin():
             statement = sqlalchemy.text(
-                f"CREATE INDEX IF NOT EXISTS {index_name} ON {self.schema_name}.{self._table_class.__tablename__} USING hnsw (embedding {hnsw_dist_method}) WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
+                f"CREATE INDEX IF NOT EXISTS {index_name} "
+                f"ON {self.schema_name}.{self._table_class.__tablename__} "
+                f"USING hnsw (embedding {hnsw_dist_method}) "
+                f"WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
             )
             session.execute(statement)
             session.commit()

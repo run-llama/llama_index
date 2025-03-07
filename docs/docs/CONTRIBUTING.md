@@ -50,6 +50,8 @@ Help us extend LlamaIndex's functionality by contributing to any of our core mod
 
 Explore the different modules below to get inspired!
 
+New integrations should meaningfully integrate with existing LlamaIndex framework components. At the discretion of LlamaIndex maintainers, some integrations may be declined.
+
 ### 2. 📦 Contribute Tools, Readers, Packs, or Datasets
 
 Create new Packs, Readers, or Tools that simplify how others use LlamaIndex with various platforms.
@@ -170,15 +172,19 @@ LlamaIndex is organized as a **monorepo**, meaning different packages live withi
    ```bash
    curl -sSL https://install.python-poetry.org | python3 -
    ```
-2. Activate the environment:
+2. Install the Poetry shell plugin (if you don't already have it):
+   ```bash
+   poetry self add poetry-plugin-shell
+   ```
+3. Activate the environment:
    ```bash
    poetry shell
    ```
-3. Install dependencies:
+4. Install dependencies:
    ```bash
    poetry install --only dev,docs --no-root
    ```
-4. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
+5. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
 
    ```bash
    pip install -e llama-index-core

@@ -30,11 +30,11 @@ license = "MIT"
 name = "llama-index-llms-gaudi"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.2.0"
+version = "0.2.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-huggingface-hub = "^0.23.0"
+huggingface-hub = ">=0.23.0"
 torch = "^2.1.2"
 text-generation = "^0.7.0"
 llama-index-core = "^0.12.0"

@@ -92,7 +92,7 @@ class LangChainLLM(LLM):
             return completion_response_to_chat_response(completion_response)
 
         lc_messages = to_lc_messages(messages)
-        lc_message = self._llm.predict_messages(messages=lc_messages, **kwargs)
+        lc_message = self._llm.invoke(input=lc_messages, **kwargs)
         message = from_lc_messages([lc_message])[0]
         return ChatResponse(message=message)
 
@@ -127,7 +127,7 @@ class LangChainLLM(LLM):
                 response_str = ""
                 for message in self._llm.stream(lc_messages, **kwargs):
                     message = from_lc_messages([message])[0]
-                    delta = message.content
+                    delta = message.content or ""
                     response_str += delta
                     yield ChatResponse(
                         message=ChatMessage(role=message.role, content=response_str),

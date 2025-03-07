@@ -18,7 +18,7 @@ explicit_package_bases = true
 ignore_missing_imports = true
 namespace_packages = true
 plugins = "pydantic.mypy"
-python_version = "3.9"
+python_version = "3.10"
 
 [tool.poetry]
 authors = ["Jerry Liu <jerry@llamaindex.ai>"]
@@ -46,7 +46,7 @@ name = "llama-index-core"
 packages = [{include = "llama_index"}]
 readme = "README.md"
 repository = "https://github.com/run-llama/llama_index"
-version = "0.12.5"
+version = "0.12.22"
 
 [tool.poetry.dependencies]
 SQLAlchemy = {extras = ["asyncio"], version = ">=1.4.49"}

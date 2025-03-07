@@ -6,11 +6,14 @@ from unittest import mock
 import pytest
 from llama_index.core.base.llms.types import (
     ChatMessage,
+    ChatResponse,
+    CompletionResponse,
     ImageBlock,
     MessageRole,
     TextBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.schema import ImageDocument
 from pydantic import AnyUrl
 
 
@@ -74,6 +77,8 @@ def test_chat_message_content_legacy_set():
 
 def test_chat_message_content_returns_empty_string():
     m = ChatMessage(content=[TextBlock(text="test content"), ImageBlock()])
+    assert m.content == "test content"
+    m = ChatMessage()
     assert m.content is None
 
 
@@ -142,7 +147,7 @@ def test_image_block_resolve_image_path(
 
 
 def test_image_block_resolve_image_url(png_1px_b64: bytes, png_1px: bytes):
-    with mock.patch("llama_index.core.base.llms.types.requests") as mocked_req:
+    with mock.patch("llama_index.core.utils.requests") as mocked_req:
         url_str = "http://example.com"
         mocked_req.get.return_value = mock.MagicMock(content=png_1px)
         b = ImageBlock(url=AnyUrl(url=url_str))
@@ -156,7 +161,9 @@ def test_image_block_resolve_image_url(png_1px_b64: bytes, png_1px: bytes):
 
 
 def test_image_block_resolve_error():
-    with pytest.raises(ValueError, match="No image found in the chat message!"):
+    with pytest.raises(
+        ValueError, match="No valid source provided to resolve binary data!"
+    ):
         b = ImageBlock()
         b.resolve_image()
 
@@ -172,3 +179,21 @@ def test_image_block_store_as_base64(png_1px_b64: bytes, png_1px: bytes):
     assert ImageBlock(image=png_1px).image == png_1px_b64
     # Store already encoded data
     assert ImageBlock(image=png_1px_b64).image == png_1px_b64
+
+
+def test_legacy_image_additional_kwargs(png_1px_b64: bytes):
+    image_doc = ImageDocument(image=png_1px_b64)
+    msg = ChatMessage(additional_kwargs={"images": [image_doc]})
+    assert len(msg.blocks) == 1
+    assert msg.blocks[0].image == png_1px_b64
+
+
+def test_chat_response():
+    message = ChatMessage("some content")
+    cr = ChatResponse(message=message)
+    assert str(cr) == str(message)
+
+
+def test_completion_response():
+    cr = CompletionResponse(text="some text")
+    assert str(cr) == "some text"

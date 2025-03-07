@@ -5,7 +5,6 @@ from logging import getLogger
 from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 import nest_asyncio
-import numpy as np
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
@@ -79,11 +78,13 @@ def _to_elasticsearch_filter(
 
 
 def _to_llama_similarities(scores: List[float]) -> List[float]:
-    if scores is None or len(scores) == 0:
+    if not scores:
         return []
-
-    scores_to_norm: np.ndarray = np.array(scores)
-    return np.exp(scores_to_norm - np.max(scores_to_norm)).tolist()
+    min_score = min(scores)
+    max_score = max(scores)
+    if max_score == min_score:
+        return [1.0 if max_score > 0 else 0.0 for _ in scores]
+    return [(x - min_score) / (max_score - min_score) for x in scores]
 
 
 def _mode_must_match_retrieval_strategy(
@@ -402,6 +403,59 @@ class ElasticsearchStore(BasePydanticVectorStore):
             query={"term": {"metadata.ref_doc_id": ref_doc_id}}, **delete_kwargs
         )
 
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Delete nodes from vector store using node IDs and filters.
+
+        Args:
+            node_ids: Optional list of node IDs to delete.
+            filters: Optional metadata filters to select nodes to delete.
+            delete_kwargs: Optional additional arguments to pass to delete operation.
+        """
+        return asyncio.get_event_loop().run_until_complete(
+            self.adelete_nodes(node_ids, filters, **delete_kwargs)
+        )
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """
+        Asynchronously delete nodes from vector store using node IDs and filters.
+
+        Args:
+            node_ids (Optional[List[str]], optional): List of node IDs. Defaults to None.
+            filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+            delete_kwargs (Any, optional): Optional additional arguments to pass to delete operation.
+        """
+        if not node_ids and not filters:
+            return
+
+        if node_ids and not filters:
+            await self._store.delete(ids=node_ids, **delete_kwargs)
+            return
+
+        query = {"bool": {"must": []}}
+
+        if node_ids:
+            query["bool"]["must"].append({"terms": {"_id": node_ids}})
+
+        if filters:
+            es_filter = _to_elasticsearch_filter(filters)
+            if "bool" in es_filter and "must" in es_filter["bool"]:
+                query["bool"]["must"].extend(es_filter["bool"]["must"])
+            else:
+                query["bool"]["must"].append(es_filter)
+
+        await self._store.delete(query=query, **delete_kwargs)
+
     def query(
         self,
         query: VectorStoreQuery,
@@ -487,11 +541,13 @@ class ElasticsearchStore(BasePydanticVectorStore):
         top_k_nodes = []
         top_k_ids = []
         top_k_scores = []
+
         for hit in hits:
             source = hit["_source"]
             metadata = source.get("metadata", {})
             text = source.get(self.text_field, None)
             node_id = hit["_id"]
+            score = hit["_score"]
 
             try:
                 node = metadata_dict_to_node(metadata)
@@ -519,14 +575,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
                 )
             top_k_nodes.append(node)
             top_k_ids.append(node_id)
-            top_k_scores.append(hit.get("_rank", hit["_score"]))
-
-        if (
-            isinstance(self.retrieval_strategy, AsyncDenseVectorStrategy)
-            and self.retrieval_strategy.hybrid
-        ):
-            total_rank = sum(top_k_scores)
-            top_k_scores = [total_rank - rank / total_rank for rank in top_k_scores]
+            top_k_scores.append(score)
 
         return VectorStoreQueryResult(
             nodes=top_k_nodes,

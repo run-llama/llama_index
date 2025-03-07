@@ -137,6 +137,10 @@ class NeptuneAnalyticsVectorStore(BasePydanticVectorStore):
     def class_name(cls) -> str:
         return "NeptuneAnalyticsVectorStore"
 
+    @property
+    def client(self) -> Any:
+        return self._client
+
     def database_query(
         self, query: str, params: Optional[dict] = None
     ) -> List[Dict[str, Any]]:

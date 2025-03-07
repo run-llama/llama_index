@@ -283,7 +283,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
         logger.info(f"> query engine response: {other_response}")
 
         if self._streaming:
-            response_str = self._llm.stream(
+            response_gen = self._llm.stream(
                 self._sql_join_synthesis_prompt,
                 query_str=query_bundle.query_str,
                 sql_query_str=sql_query,
@@ -298,7 +298,7 @@ class SQLJoinQueryEngine(BaseQueryEngine):
             }
             source_nodes = other_response.source_nodes
             return StreamingResponse(
-                response_str,
+                response_gen,
                 metadata=response_metadata,
                 source_nodes=source_nodes,
             )

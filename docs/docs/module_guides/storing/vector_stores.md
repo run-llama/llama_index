@@ -14,9 +14,9 @@ LlamaIndex supports over 20 different vector store options.
 We are actively adding more integrations and improving feature coverage for each.
 
 | Vector Store             | Type                    | Metadata Filtering | Hybrid Search | Delete | Store Documents | Async |
-| ------------------------ | ----------------------- | ------------------ | ------------- | ------ | --------------- | ----- |
+|--------------------------|-------------------------| ------------------ | ------------- | ------ | --------------- | ----- |
 | Alibaba Cloud OpenSearch | cloud                   | ✓                  |               | ✓      | ✓               | ✓     |
-| Apache Cassandra®       | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
+| Apache Cassandra®        | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Astra DB                 | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Azure AI Search          | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Azure CosmosDB MongoDB   | cloud                   |                    |               | ✓      | ✓               |       |
@@ -32,6 +32,8 @@ We are actively adding more integrations and improving feature coverage for each
 | DynamoDB                 | cloud                   |                    |               | ✓      |                 |       |
 | Elasticsearch            | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | FAISS                    | in-memory               |                    |               |        |                 |       |
+| Google AlloyDB           | cloud                   | ✓                  |               | ✓      | ✓               | ✓     |
+| Google Cloud SQL Postgres| cloud                   | ✓                  |               | ✓      | ✓               | ✓     |
 | Hnswlib                  | in-memory               |                    |               |        |                 |       |
 | txtai                    | in-memory               |                    |               |        |                 |       |
 | Jaguar                   | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
@@ -51,6 +53,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Simple                   | in-memory               | ✓                  |               | ✓      |                 |       |
 | SingleStore              | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Supabase                 | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
+| Tablestore               | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Tair                     | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | TiDB                     | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | TencentVectorDB          | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
@@ -61,6 +64,7 @@ We are actively adding more integrations and improving feature coverage for each
 | Vespa                    | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | Vertex AI Vector Search  | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Weaviate                 | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
+| WordLift                 | cloud                   | ✓                  | ✓             | ✓      | ✓               | ✓     |
 
 For more details, see [Vector Store Integrations](../../community/integrations/vector_stores.md).
 
@@ -82,6 +86,8 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [DocArray in-Memory](../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb)
 - [DuckDB](../../examples/vector_stores/DuckDBDemo.ipynb)
 - [Espilla](../../examples/vector_stores/EpsillaIndexDemo.ipynb)
+- [Google AlloyDB for PostgreSQL](../../examples/vector_stores/AlloyDBVectorStoreDemo.ipynb)
+- [Google Cloud SQL for PostgreSQL](../../examples/vector_stores/CloudSQLPgVectorStoreDemo.ipynb)
 - [Jaguar](../../examples/vector_stores/JaguarIndexDemo.ipynb)
 - [LanceDB](../../examples/vector_stores/LanceDBIndexDemo.ipynb)
 - [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
@@ -105,6 +111,7 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Rockset](../../examples/vector_stores/RocksetIndexDemo.ipynb)
 - [Simple](../../examples/vector_stores/SimpleIndexDemo.ipynb)
 - [Supabase](../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb)
+- [Tablestore](../../examples/vector_stores/TablestoreDemo.ipynb)
 - [Tair](../../examples/vector_stores/TairIndexDemo.ipynb)
 - [TiDB](../../examples/vector_stores/TiDBVector.ipynb)
 - [Tencent](../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb)
@@ -115,4 +122,5 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Vertex AI Vector Search](../../examples/vector_stores/VertexAIVectorSearchDemo.ipynb)
 - [Weaviate](../../examples/vector_stores/WeaviateIndexDemo.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
+- [WordLift](../../examples/vector_stores/WordLiftDemo.ipynb)
 - [Zep](../../examples/vector_stores/ZepIndexDemo.ipynb)

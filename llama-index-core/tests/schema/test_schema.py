@@ -1,4 +1,5 @@
 import base64
+import logging
 from io import BytesIO
 from pathlib import Path
 from unittest import mock
@@ -95,38 +96,68 @@ def test_image_node_hash() -> None:
     assert node3.hash == node4.hash
 
 
+def test_image_node_mimetype() -> None:
+    node = ImageNode(image_path="path")
+    node2 = ImageNode(image_path="path.png")
+
+    assert node.image_mimetype is None
+    assert node2.image_mimetype == "image/png"
+
+
+def test_build_image_node_image_resource() -> None:
+    ir = MediaResource(path="my-image.jpg", mimetype=None)
+    tr = MediaResource(text="test data")
+    node = ImageNode(id_="test_node", image_resource=ir, text_resource=tr)
+    assert node.text == "test data"
+    assert node.image_mimetype == "image/jpeg"
+    assert node.image_path == "my-image.jpg"
+
+
 def test_build_text_node_text_resource() -> None:
     node = TextNode(id_="test_node", text_resource=MediaResource(text="test data"))
     assert node.text == "test data"
 
 
-def test_document_init() -> None:
-    doc = Document(doc_id="test")
-    assert doc.doc_id == "test"
-    assert doc.id_ == "test"
-    with pytest.raises(
-        ValueError,
-        match="Cannot pass both 'doc_id' and 'id_' to create a Document, use 'id_'",
-    ):
-        doc = Document(id_="test", doc_id="test")
+def test_document_init(caplog) -> None:
+    with caplog.at_level(logging.WARNING):
+        # Legacy init
+        doc = Document(doc_id="test")
+        assert doc.doc_id == "test"
+        assert doc.id_ == "test"
+        # Legacy init mixed with new
+        doc = Document(id_="test", doc_id="legacy_test")
+        assert "'doc_id' is deprecated and 'id_' will be used instead" in caplog.text
+        assert doc.id_ == "test"
+        caplog.clear()
 
-    doc = Document(extra_info={"key": "value"})
-    assert doc.metadata == {"key": "value"}
-    with pytest.raises(
-        ValueError,
-        match="Cannot pass both 'extra_info' and 'metadata' to create a Document, use 'metadata'",
-    ):
-        doc = Document(extra_info={}, metadata={})
+        # Legacy init
+        doc = Document(extra_info={"key": "value"})
+        assert doc.metadata == {"key": "value"}
+        assert doc.extra_info == {"key": "value"}
+        # Legacy init mixed with new
+        doc = Document(extra_info={"old_key": "old_value"}, metadata={"key": "value"})
+        assert (
+            "'extra_info' is deprecated and 'metadata' will be used instead"
+            in caplog.text
+        )
+        assert doc.metadata == {"key": "value"}
+        assert doc.extra_info == {"key": "value"}
+        caplog.clear()
 
-    doc = Document(text="test")
-    assert doc.text == "test"
-    assert doc.text_resource
-    assert doc.text_resource.text == "test"
-    with pytest.raises(
-        ValueError,
-        match="Cannot pass both 'text' and 'text_resource' to create a Document, use 'text_resource'",
-    ):
-        doc = Document(text="test", text_resource="test")
+        # Legacy init
+        doc = Document(text="test")
+        assert doc.text == "test"
+        assert doc.text_resource
+        assert doc.text_resource.text == "test"
+        # Legacy init mixed with new
+        doc = Document(text="legacy_test", text_resource=MediaResource(text="test"))
+        assert (
+            "'text' is deprecated and 'text_resource' will be used instead"
+            in caplog.text
+        )
+        assert doc.text == "test"
+        assert doc.text_resource
+        assert doc.text_resource.text == "test"
 
 
 def test_document_properties():
@@ -143,6 +174,63 @@ def test_document_str():
             text="Lorem ipsum dolor sit amet, consectetur adipiscing elit",
         )
         assert str(doc) == "Doc ID: test_id\nText: Lo..."
+
+
+def test_document_legacy_roundtrip():
+    origin = Document(id_="test_id", text="this is a test")
+    assert origin.model_dump() == {
+        "id_": "test_id",
+        "embedding": None,
+        "metadata": {},
+        "excluded_embed_metadata_keys": [],
+        "excluded_llm_metadata_keys": [],
+        "relationships": {},
+        "metadata_template": "{key}: {value}",
+        "metadata_separator": "\n",
+        "text": "this is a test",
+        "text_resource": {
+            "embeddings": None,
+            "text": "this is a test",
+            "mimetype": None,
+            "path": None,
+            "url": None,
+        },
+        "image_resource": None,
+        "audio_resource": None,
+        "video_resource": None,
+        "text_template": "{metadata_str}\n\n{content}",
+        "class_name": "Document",
+    }
+    dest = Document(**origin.model_dump())
+    assert dest.text == "this is a test"
+
+
+def test_document_model_dump_exclude():
+    doc = Document(id_="test_id", text="this is a test")
+    model_dump = doc.model_dump(exclude={"text", "metadata", "relationships"})
+    assert "text" not in model_dump
+    assert "metadata" not in model_dump
+    assert "relationships" not in model_dump
+    assert model_dump == {
+        "id_": "test_id",
+        "embedding": None,
+        "excluded_embed_metadata_keys": [],
+        "excluded_llm_metadata_keys": [],
+        "metadata_template": "{key}: {value}",
+        "metadata_separator": "\n",
+        "text_resource": {
+            "embeddings": None,
+            "text": "this is a test",
+            "mimetype": None,
+            "path": None,
+            "url": None,
+        },
+        "image_resource": None,
+        "audio_resource": None,
+        "video_resource": None,
+        "text_template": "{metadata_str}\n\n{content}",
+        "class_name": "Document",
+    }
 
 
 def test_image_document_empty():

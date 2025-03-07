@@ -9,6 +9,7 @@ import pickle
 import textwrap
 import uuid
 from abc import abstractmethod
+from binascii import Error as BinasciiError
 from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
@@ -40,9 +41,12 @@ from llama_index.core.bridge.pydantic import (
     GetJsonSchemaHandler,
     JsonSchemaValue,
     PlainSerializer,
+    SerializationInfo,
     SerializeAsAny,
+    SerializerFunctionWrapHandler,
+    ValidationInfo,
+    field_validator,
     model_serializer,
-    model_validator,
 )
 from llama_index.core.bridge.pydantic_core import CoreSchema
 from llama_index.core.instrumentation import DispatcherSpanMixin
@@ -104,7 +108,9 @@ class BaseComponent(BaseModel):
         return self.to_json(**kwargs)
 
     @model_serializer(mode="wrap")
-    def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
+    def custom_model_dump(
+        self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
+    ) -> Dict[str, Any]:
         data = handler(self)
         data["class_name"] = self.class_name()
         return data
@@ -499,38 +505,65 @@ class MediaResource(BaseModel):
     text: str | None = Field(
         default=None, description="Text representation of this resource."
     )
-    mimetype: str | None = Field(
-        default=None, description="MIME type of this resource."
-    )
     path: Path | None = Field(
         default=None, description="Filesystem path of this resource."
     )
     url: AnyUrl | None = Field(default=None, description="URL to reach this resource.")
+    mimetype: str | None = Field(
+        default=None, description="MIME type of this resource."
+    )
 
-    @model_validator(mode="after")
-    def data_to_base64(self) -> Self:
+    model_config = {
+        # This ensures validation runs even for None values
+        "validate_default": True
+    }
+
+    @field_validator("data", mode="after")
+    @classmethod
+    def validate_data(cls, v: bytes | None, info: ValidationInfo) -> bytes | None:
         """If binary data was passed, store the resource as base64 and guess the mimetype when possible.
 
         In case the model was built passing binary data but without a mimetype,
         we try to guess it using the filetype library. To avoid resource-intense
         operations, we won't load the path or the URL to guess the mimetype.
         """
-        if not self.data:
-            return self
+        if v is None:
+            return v
 
         try:
-            # Check if data is already base64 encoded
-            decoded_data = base64.b64decode(self.data)
-        except Exception:
-            decoded_data = self.data
-            # Not base64 - encode it
-            self.data = base64.b64encode(self.data)
+            # Check if data is already base64 encoded.
+            # b64decode() can succeed on random binary data, so we
+            # pass verify=True to make sure it's not a false positive
+            decoded = base64.b64decode(v, validate=True)
+        except BinasciiError:
+            # b64decode failed, return encoded
+            return base64.b64encode(v)
 
-        if not self.mimetype:
-            guess = filetype.guess(decoded_data)
-            self.mimetype = guess.mime if guess else None
+        # Good as is, return unchanged
+        return v
 
-        return self
+    @field_validator("mimetype", mode="after")
+    @classmethod
+    def validate_mimetype(cls, v: str | None, info: ValidationInfo) -> str | None:
+        if v is not None:
+            return v
+
+        # Since this field validator runs after the one for `data`
+        # then the contents of `data` should be encoded already
+        b64_data = info.data.get("data")
+        if b64_data:  # encoded bytes
+            decoded_data = base64.b64decode(b64_data)
+            if guess := filetype.guess(decoded_data):
+                return guess.mime
+
+        # guess from path
+        rpath: str | None = info.data["path"]
+        if rpath:
+            extension = Path(rpath).suffix.replace(".", "")
+            if ftype := filetype.get_type(ext=extension):
+                return ftype.mime
+
+        return v
 
     @property
     def hash(self) -> str:
@@ -744,6 +777,28 @@ class ImageNode(TextNode):
         description="Text embedding of image node, if text field is filled out",
     )
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Make ImageNode forward-compatible with Node by supporting 'image_resource' in the constructor."""
+        if "image_resource" in kwargs:
+            ir = kwargs.pop("image_resource")
+            if isinstance(ir, MediaResource):
+                kwargs["image_path"] = ir.path.as_posix() if ir.path else None
+                kwargs["image_url"] = ir.url
+                kwargs["image_mimetype"] = ir.mimetype
+            else:
+                kwargs["image_path"] = ir.get("path", None)
+                kwargs["image_url"] = ir.get("url", None)
+                kwargs["image_mimetype"] = ir.get("mimetype", None)
+
+        mimetype = kwargs.get("image_mimetype")
+        if not mimetype and kwargs.get("image_path") is not None:
+            # guess mimetype from image_path
+            extension = Path(kwargs["image_path"]).suffix.replace(".", "")
+            if ftype := filetype.get_type(ext=extension):
+                kwargs["image_mimetype"] = ftype.mime
+
+        super().__init__(*args, **kwargs)
+
     @classmethod
     def get_type(cls) -> str:
         return ObjectType.IMAGE
@@ -934,24 +989,49 @@ class Document(Node):
         If 'extra_info' was passed, store it in 'metadata'.
         """
         if "doc_id" in data:
+            value = data.pop("doc_id")
             if "id_" in data:
-                msg = "Cannot pass both 'doc_id' and 'id_' to create a Document, use 'id_'"
-                raise ValueError(msg)
-            data["id_"] = data.pop("doc_id")
+                msg = "'doc_id' is deprecated and 'id_' will be used instead"
+                logging.warning(msg)
+            else:
+                data["id_"] = value
 
         if "extra_info" in data:
+            value = data.pop("extra_info")
             if "metadata" in data:
-                msg = "Cannot pass both 'extra_info' and 'metadata' to create a Document, use 'metadata'"
-                raise ValueError(msg)
-            data["metadata"] = data.pop("extra_info")
+                msg = "'extra_info' is deprecated and 'metadata' will be used instead"
+                logging.warning(msg)
+            else:
+                data["metadata"] = value
 
         if "text" in data:
+            text = data.pop("text")
             if "text_resource" in data:
-                msg = "Cannot pass both 'text' and 'text_resource' to create a Document, use 'text_resource'"
-                raise ValueError(msg)
-            data["text_resource"] = MediaResource(text=data.pop("text"))
+                text_resource = (
+                    data["text_resource"]
+                    if isinstance(data["text_resource"], MediaResource)
+                    else MediaResource.model_validate(data["text_resource"])
+                )
+                if (text_resource.text or "").strip() != text.strip():
+                    msg = (
+                        "'text' is deprecated and 'text_resource' will be used instead"
+                    )
+                    logging.warning(msg)
+            else:
+                data["text_resource"] = MediaResource(text=text)
 
         super().__init__(**data)
+
+    @model_serializer(mode="wrap")
+    def custom_model_dump(
+        self, handler: SerializerFunctionWrapHandler, info: SerializationInfo
+    ) -> Dict[str, Any]:
+        """For full backward compatibility with the text field, we customize the model serializer."""
+        data = super().custom_model_dump(handler, info)
+        exclude_set = set(info.exclude or [])
+        if "text" not in exclude_set:
+            data["text"] = self.text
+        return data
 
     @property
     def text(self) -> str:
@@ -1116,11 +1196,17 @@ class ImageDocument(Document):
         text_embedding = kwargs.pop("text_embedding", None)
 
         if image:
-            kwargs["image_resource"] = MediaResource(data=image)
+            kwargs["image_resource"] = MediaResource(
+                data=image, mimetype=image_mimetype
+            )
         elif image_path:
-            kwargs["image_resource"] = MediaResource(path=image_path)
+            kwargs["image_resource"] = MediaResource(
+                path=image_path, mimetype=image_mimetype
+            )
         elif image_url:
-            kwargs["image_resource"] = MediaResource(url=image_url)
+            kwargs["image_resource"] = MediaResource(
+                url=image_url, mimetype=image_mimetype
+            )
 
         super().__init__(**kwargs)
 

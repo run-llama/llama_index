@@ -237,6 +237,10 @@ class BaseAgentWorker(PromptMixin, DispatcherSpanMixin):
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
 
+    async def afinalize_task(self, task: Task, **kwargs: Any) -> None:
+        """Finalize task, after all the steps are completed."""
+        self.finalize_task(task, **kwargs)
+
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
         # TODO: make this abstractmethod (right now will break some agent impls)

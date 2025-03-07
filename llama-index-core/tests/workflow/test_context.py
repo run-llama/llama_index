@@ -1,17 +1,18 @@
+import asyncio
+import json
+from typing import Optional, Union
 from unittest import mock
-from typing import Union, Optional
 
 import pytest
-from llama_index.core.workflow.workflow import (
-    Workflow,
-    Context,
-)
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.errors import WorkflowRuntimeError
-from llama_index.core.workflow.events import StartEvent, StopEvent, Event
-from llama_index.core.workflow.workflow import Workflow
+from llama_index.core.workflow.events import Event, StartEvent, StopEvent
+from llama_index.core.workflow.workflow import (
+    Context,
+    Workflow,
+)
 
-from .conftest import OneTestEvent, AnotherTestEvent
+from .conftest import AnotherTestEvent, OneTestEvent
 
 
 @pytest.mark.asyncio()
@@ -64,7 +65,7 @@ async def test_get_not_found(ctx):
 async def test_legacy_data(workflow):
     c1 = Context(workflow)
     await c1.set(key="test_key", value=42)
-    assert c1.data["test_key"] == 42
+    assert await c1.get("test_key") == 42
 
 
 def test_send_event_step_is_none(ctx):
@@ -114,9 +115,64 @@ def test_get_result(ctx):
     assert ctx.get_result() == 42
 
 
+def test_to_dict_with_events_buffer(ctx):
+    ctx.collect_events(OneTestEvent(), [OneTestEvent, AnotherTestEvent])
+    assert json.dumps(ctx.to_dict())
+
+
 @pytest.mark.asyncio()
 async def test_deprecated_params(ctx):
     with pytest.warns(
         DeprecationWarning, match="`make_private` is deprecated and will be ignored"
     ):
         await ctx.set("foo", 42, make_private=True)
+
+
+@pytest.mark.asyncio()
+async def test_empty_inprogress_when_workflow_done(workflow):
+    h = workflow.run()
+    _ = await h
+
+    # there shouldn't be any in progress events
+    for inprogress_list in h.ctx._in_progress.values():
+        assert len(inprogress_list) == 0
+
+
+@pytest.mark.asyncio()
+async def test_wait_for_event(ctx):
+    wait_job = asyncio.create_task(ctx.wait_for_event(Event))
+    await asyncio.sleep(0.01)
+    ctx.send_event(Event(msg="foo"))
+    ev = await wait_job
+    assert ev.msg == "foo"
+
+
+@pytest.mark.asyncio()
+async def test_wait_for_event_with_requirements(ctx):
+    wait_job = asyncio.create_task(ctx.wait_for_event(Event, {"msg": "foo"}))
+    await asyncio.sleep(0.01)
+    ctx.send_event(Event(msg="bar"))
+    ctx.send_event(Event(msg="foo"))
+    ev = await wait_job
+    assert ev.msg == "foo"
+
+
+@pytest.mark.asyncio()
+async def test_wait_for_event_in_workflow():
+    class TestWorkflow(Workflow):
+        @step
+        async def step1(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            ctx.write_event_to_stream(Event(msg="foo"))
+            result = await ctx.wait_for_event(Event)
+            return StopEvent(result=result.msg)
+
+    workflow = TestWorkflow()
+    handler = workflow.run()
+    assert handler.ctx
+    async for ev in handler.stream_events():
+        if isinstance(ev, Event) and ev.msg == "foo":
+            handler.ctx.send_event(Event(msg="bar"))
+            break
+
+    result = await handler
+    assert result == "bar"

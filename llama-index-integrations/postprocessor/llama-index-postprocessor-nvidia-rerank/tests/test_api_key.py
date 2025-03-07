@@ -1,23 +1,17 @@
 import os
 
 import pytest
-
+import respx
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank as Interface
 from llama_index.core.schema import NodeWithScore, Document
 
 from typing import Any
-from requests_mock import Mocker
 
 
 @pytest.fixture()
-def mock_local_models(requests_mock: Mocker) -> None:
-    requests_mock.get(
-        "https://test_url/v1/models",
-        json={
-            "data": [
-                {"id": "model1"},
-            ]
-        },
+def mock_local_models(respx_mock: respx.MockRouter) -> None:
+    respx_mock.get("https://test_url/v1/models").respond(
+        json={"data": [{"id": "model1"}]}
     )
 
 

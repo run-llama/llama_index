@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from tenacity import (
@@ -33,6 +34,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
     "anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
     "anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
+    "anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
     "cohere.command-text-v14": 4096,
@@ -49,6 +51,7 @@ BEDROCK_MODELS = {
     "meta.llama3-2-3b-instruct-v1:0": 131000,
     "meta.llama3-2-11b-instruct-v1:0": 128000,
     "meta.llama3-2-90b-instruct-v1:0": 128000,
+    "meta.llama3-3-70b-instruct-v1:0": 128000,
     "mistral.mistral-7b-instruct-v0:2": 32000,
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
     "mistral.mistral-large-2402-v1:0": 32000,
@@ -68,6 +71,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-3-5-sonnet-20240620-v1:0",
     "anthropic.claude-3-5-sonnet-20241022-v2:0",
     "anthropic.claude-3-5-haiku-20241022-v1:0",
+    "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "cohere.command-r-v1:0",
     "cohere.command-r-plus-v1:0",
     "mistral.mistral-large-2402-v1:0",
@@ -78,6 +82,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "meta.llama3-2-3b-instruct-v1:0",
     "meta.llama3-2-11b-instruct-v1:0",
     "meta.llama3-2-90b-instruct-v1:0",
+    "meta.llama3-3-70b-instruct-v1:0",
 )
 
 BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
@@ -90,12 +95,14 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-3-5-sonnet-20240620-v1:0",
     "anthropic.claude-3-5-sonnet-20241022-v2:0",
     "anthropic.claude-3-5-haiku-20241022-v1:0",
+    "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "meta.llama3-1-8b-instruct-v1:0",
     "meta.llama3-1-70b-instruct-v1:0",
     "meta.llama3-2-1b-instruct-v1:0",
     "meta.llama3-2-3b-instruct-v1:0",
     "meta.llama3-2-11b-instruct-v1:0",
     "meta.llama3-2-90b-instruct-v1:0",
+    "meta.llama3-3-70b-instruct-v1:0",
 )
 
 
@@ -175,7 +182,7 @@ def messages_to_converse_messages(
                     "toolUseId": message.additional_kwargs["tool_call_id"],
                     "content": [
                         {
-                            "text": message.content,
+                            "text": message.content or "",
                         },
                     ],
                 }
@@ -208,7 +215,20 @@ def messages_to_converse_messages(
             assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
             assert "input" in tool_call, f"`input` not found in {tool_call}"
             assert "name" in tool_call, f"`name` not found in {tool_call}"
-            content.append({"toolUse": tool_call})
+            tool_input = (
+                json.loads(tool_call["input"])
+                if isinstance(tool_call["input"], str)
+                else tool_call["input"]
+            )
+            content.append(
+                {
+                    "toolUse": {
+                        "input": tool_input,
+                        "toolUseId": tool_call["toolUseId"],
+                        "name": tool_call["name"],
+                    }
+                }
+            )
         if len(content) > 0:
             converse_messages.append(
                 {
@@ -307,6 +327,9 @@ def converse_with_retry(
     max_tokens: int = 1000,
     temperature: float = 0.1,
     stream: bool = False,
+    guardrail_identifier: Optional[str] = None,
+    guardrail_version: Optional[str] = None,
+    trace: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -323,8 +346,19 @@ def converse_with_retry(
         converse_kwargs["system"] = [{"text": system_prompt}]
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
+    if guardrail_identifier and guardrail_version:
+        converse_kwargs["guardrailConfig"] = {}
+        converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
+        converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
+        if trace:
+            converse_kwargs["guardrailConfig"]["trace"] = trace
     converse_kwargs = join_two_dicts(
-        converse_kwargs, {k: v for k, v in kwargs.items() if k != "tools"}
+        converse_kwargs,
+        {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
+        },
     )
 
     @retry_decorator
@@ -346,6 +380,9 @@ async def converse_with_retry_async(
     max_tokens: int = 1000,
     temperature: float = 0.1,
     stream: bool = False,
+    guardrail_identifier: Optional[str] = None,
+    guardrail_version: Optional[str] = None,
+    trace: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -362,8 +399,19 @@ async def converse_with_retry_async(
         converse_kwargs["system"] = [{"text": system_prompt}]
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
+    if guardrail_identifier and guardrail_version:
+        converse_kwargs["guardrailConfig"] = {}
+        converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
+        converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
+        if trace:
+            converse_kwargs["guardrailConfig"]["trace"] = trace
     converse_kwargs = join_two_dicts(
-        converse_kwargs, {k: v for k, v in kwargs.items() if k != "tools"}
+        converse_kwargs,
+        {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
+        },
     )
 
     ## NOTE: Returning the generator directly from converse_stream doesn't work
