@@ -35,7 +35,7 @@ And we'll ask a different question than last time, necessitating the use of the 
 ```python
 workflow = FunctionAgent(
     name="Agent",
-    description="",
+    description="Useful for performing financial operations.",
     llm=OpenAI(model="gpt-4o-mini"),
     tools=finance_tools,
     system_prompt="You are a helpful assistant.",

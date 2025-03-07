@@ -82,7 +82,7 @@ Now we create our agent. It needs an array of tools, an LLM, and a system prompt
 ```python
 workflow = FunctionAgent(
     name="Agent",
-    description="",
+    description="Useful for performing basic mathematical operations.",
     tools=[multiply, add],
     llm=llm,
     system_prompt="You are an agent that can perform basic mathematical operations using tools.",

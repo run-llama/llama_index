@@ -43,7 +43,7 @@ def multiply(a: float, b: float) -> float:
 # Create an agent workflow with our calculator tool
 agent = FunctionAgent(
     name="Agent",
-    description="",
+    description="Useful for multiplying two numbers",
     tools=[multiply],
     llm=OpenAI(model="gpt-4o-mini"),
     system_prompt="You are a helpful assistant that can multiply two numbers.",
@@ -138,7 +138,7 @@ async def search_documents(query: str) -> str:
 # Create an enhanced workflow with both tools
 agent = FunctionAgent(
     name="Agent",
-    description="",
+    description="Useful for multiplying two numbers and searching through documents to answer questions.",
     tools=[multiply, search_documents],
     llm=OpenAI(model="gpt-4o-mini"),
     system_prompt="""You are a helpful assistant that can perform calculations

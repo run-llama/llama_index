@@ -28,7 +28,7 @@ Now we'll create an agent using that tool and an LLM that we initialized just li
 ```python
 workflow = FunctionAgent(
     name="Agent",
-    description="",
+    description="Useful for searching the web for information.",
     tools=tavily_tool.to_tool_list(),
     llm=llm,
     system_prompt="You're a helpful assistant that can search the web for information.",
