@@ -74,6 +74,22 @@ def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
     # If the file extension is not recognized
 
 
+def is_valid_image_path(image_path: str) -> bool:
+    """Check if the image path is valid.
+
+    Args:
+        image_path (str): Path to the image file.
+
+    Returns:
+        bool: True if the image path is valid, False otherwise.
+    """
+    import os
+
+    if os.path.isfile(image_path):
+        return True
+    return False
+
+
 # Function to encode the image to base64 content
 def encode_image(image_path: str) -> str:
     with open(image_path, "rb") as image_file:
@@ -112,6 +128,7 @@ def create_image_content(image_document) -> Optional[Dict[str, Any]]:
     elif (
         "file_path" in image_document.metadata
         and image_document.metadata["file_path"] != ""
+        and is_valid_image_path(image_document.metadata["file_path"])
     ):
         mimetype = infer_image_mimetype_from_file_path(
             image_document.metadata["file_path"]

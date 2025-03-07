@@ -22,6 +22,22 @@ def load_image_urls(image_urls: List[str]) -> List[ImageDocument]:
     return [ImageDocument(image_url=url) for url in image_urls]
 
 
+def is_valid_image_path(image_path: str) -> bool:
+    """Check if the image path is valid.
+
+    Args:
+        image_path (str): Path to the image file.
+
+    Returns:
+        bool: True if the image path is valid, False otherwise.
+    """
+    import os
+
+    if os.path.isfile(image_path):
+        return True
+    return False
+
+
 def encode_image(image_path: str) -> str:
     """Create base64 representation of an image.
 
@@ -57,13 +73,14 @@ def image_documents_to_base64(
     for image_document in image_documents:
         if image_document.image:  # This field is already base64-encoded
             image_encodings.append(image_document.image)
-        elif (
+        elif image_document.image_path and is_valid_image_path(
             image_document.image_path
         ):  # This field is a path to the image, which is then encoded.
             image_encodings.append(encode_image(image_document.image_path))
         elif (
             "file_path" in image_document.metadata
             and image_document.metadata["file_path"] != ""
+            and is_valid_image_path(image_document.metadata["file_path"])
         ):  # Alternative path to the image, which is then encoded.
             image_encodings.append(encode_image(image_document.metadata["file_path"]))
         elif image_document.image_url:  # Image can also be pulled from the URL.
