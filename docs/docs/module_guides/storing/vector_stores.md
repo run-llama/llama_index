@@ -40,7 +40,7 @@ We are actively adding more integrations and improving feature coverage for each
 | LanceDB                  | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Lantern                  | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Metal                    | cloud                   | ✓                  |               | ✓      | ✓               |       |
-| MongoDB Atlas            | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
+| MongoDB Atlas            | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | MyScale                  | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Milvus / Zilliz          | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | Neo4jVector              | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
