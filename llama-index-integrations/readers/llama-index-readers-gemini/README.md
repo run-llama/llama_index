@@ -1,4 +1,4 @@
-# GeminiReader
+# GeminiReader for LlamaIndex
 
 > A high-performance PDF extractor and chunker powered by Google's Gemini AI
 
@@ -12,11 +12,11 @@ GeminiReader is a library that leverages Google's Gemini AI for accurate PDF tex
 - **Form Recognition**: Special handling for forms, checkboxes, and structured documents
 - **Math Formula Support**: Extracts and formats mathematical formulas properly
 - **Multilingual Support**: Optimized for multiple languages beyond English
-- **Parallel Processing**: Efficiently processes multi-page documents with configurable parallelism
+- **Parallel Processing**: Efficiently processes multi-page documents with configurable concurrency
 - **Continuous Mode**: Option to parse documents continuously for better handling of content that spans multiple pages
 - **Caching System**: Built-in caching to avoid redundant processing of the same documents
 - **Progress Tracking**: Provides detailed statistics and progress tracking during processing
-- **Configurable**: Extensive configuration options to customize behavior
+- **Highly Configurable**: Extensive configuration options to customize behavior
 
 ## Installation
 
@@ -51,7 +51,7 @@ Poppler for Windows binaries can be downloaded [here](https://github.com/oschwar
 
 ```python
 from llama_index.readers.gemini import GeminiReader
-from llama_index.core import VectorStoreIndex, ServiceContext
+from llama_index.core import VectorStoreIndex
 
 # Initialize with your Google API key
 reader = GeminiReader(
@@ -63,21 +63,35 @@ reader = GeminiReader(
 # Load a single PDF
 documents = reader.load_data("path/to/your/document.pdf")
 
-# Process multiple PDFs
+# Or load multiple PDFs
 documents = reader.load_data([
-    "path/to/document1.pdf",
-    "path/to/document2.pdf",
-    "https://example.com/document3.pdf"  # Also supports URLs
+    "path/to/your/document1.pdf",
+    "path/to/your/document2.pdf"
 ])
 
-# Use with LlamaIndex
+# Create an index and query
 index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine()
 response = query_engine.query("What is this document about?")
 print(response)
 ```
 
-### Processing Statistics
+### Progress Tracking
+
+Monitor processing progress with a callback function:
+
+```python
+def progress_callback(current, total):
+    print(f"Progress: {current}/{total} pages ({int(100 * current / total)}%)")
+
+reader = GeminiReader(
+    api_key="your_google_api_key",
+    progress_callback=progress_callback,
+    verbose=True
+)
+```
+
+### Getting Processing Statistics
 
 ```python
 # Get detailed processing statistics
@@ -85,19 +99,6 @@ stats = reader.get_processing_stats()
 print(f"Processed {stats['processed_pages']} pages in {stats['duration_seconds']:.2f} seconds")
 print(f"Average processing speed: {stats['pages_per_second']:.2f} pages/second")
 print(f"Extracted {stats['total_chunks']} chunks, {stats['chunks_per_page']:.2f} chunks/page")
-```
-
-### Progress Tracking
-
-```python
-def progress_callback(current, total):
-    progress = (current / total) * 100
-    print(f"Processing: {progress:.2f}% ({current}/{total} pages)")
-
-reader = GeminiReader(
-    api_key="your_google_api_key",
-    progress_callback=progress_callback
-)
 ```
 
 ## Configuration Options
@@ -120,9 +121,9 @@ GeminiReader provides numerous configuration options:
 | `ignore_errors` | bool | True | Whether to ignore errors and continue processing. |
 | `dpi` | int | 300 | DPI for PDF to image conversion. |
 | `language` | str | "en" | Primary language of the documents. |
-| `max_workers` | int | 4 | Maximum number of workers for parallel processing (1-10). |
-| `continuous_mode` | bool | False | Parse documents continuously for better results with content spanning multiple pages. |
-| `chunk_size` | str, int | "256-512" | Target size range for chunks in words. |
+| `max_workers` | int | 4 | Maximum number of concurrent workers (1-10). |
+| `continuous_mode` | bool | False | Parse documents continuously for cross-page content. |
+| `chunk_size` | str/int | "256-512" | Target size range for chunks in words. |
 
 ### Extraction Options
 
@@ -176,16 +177,29 @@ reader = GeminiReader(
 )
 ```
 
+
 ## Performance Considerations
 
+- **Concurrency Control**: Adjust `max_workers` based on your machine's capabilities and API rate limits.
 - **DPI Setting**: Higher DPI values provide better extraction quality but increase processing time and memory usage.
-- **Parallelism**: Adjust `max_workers` based on your machine's capabilities.
 - **Model Selection**: "gemini-2.0-flash" provides a good balance of speed and quality.
 - **Caching**: Enable caching to avoid redundant processing of the same documents.
+- **Continuous Mode**: Only enable when you need to preserve content across page boundaries, as it may result in larger chunks.
 
-## Contributing
+## Code Structure
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+The package is organized into modular components:
+
+```
+llama_index/readers/gemini/
+├── __init__.py          # Exports the main classes
+├── reader.py            # Main GeminiReader class
+├── types.py             # Data models and type definitions
+├── api.py               # Gemini API integration
+├── processor.py         # PDF processing and conversion logic
+├── cache.py             # Caching implementation
+└── utils.py             # Utility functions
+```
 
 ## License
 
