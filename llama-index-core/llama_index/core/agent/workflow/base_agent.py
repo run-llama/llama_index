@@ -38,7 +38,7 @@ class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
     system_prompt: Optional[str] = Field(
         default=None, description="The system prompt for the agent"
     )
-    tools: Optional[List[BaseTool | Callable]] = Field(
+    tools: Optional[List[Union[BaseTool, Callable]]] = Field(
         default=None, description="The tools that the agent can use"
     )
     tool_retriever: Optional[ObjectRetriever] = Field(
