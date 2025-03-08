@@ -8,23 +8,25 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.agentql.const import (
     DEFAULT_EXTRACT_ELEMENTS_TIMEOUT_SECONDS,
     DEFAULT_EXTRACT_DATA_TIMEOUT_SECONDS,
+    DEFAULT_IS_STEALTH_MODE_ENABLED,
     DEFAULT_WAIT_FOR_NETWORK_IDLE,
     DEFAULT_INCLUDE_HIDDEN_DATA,
     DEFAULT_INCLUDE_HIDDEN_ELEMENTS,
     DEFAULT_RESPONSE_MODE,
-    DEFAULT_ENABLE_STEALTH_MODE,
-    DEFAULT_WAIT_FOR_PAGE_LOAD,
-    DEFAULT_SCROLL_TO_BOTTOM,
-    DEFAULT_SCREENSHOT_ENABLED,
-    API_TIMEOUT_SECONDS,
+    DEFAULT_WAIT_FOR_PAGE_LOAD_SECONDS,
+    DEFAULT_IS_SCROLL_TO_BOTTOM_ENABLED,
+    DEFAULT_IS_SCREENSHOT_ENABLED,
+    DEFAULT_API_TIMEOUT_SECONDS,
+    REQUEST_ORIGIN,
 )
-from llama_index.tools.agentql.message import (
-    QUERY_PROMPT_VALIDATION_ERROR_MESSAGE,
+from llama_index.tools.agentql.messages import (
+    QUERY_PROMPT_REQUIRED_ERROR_MESSAGE,
+    QUERY_PROMPT_EXCLUSIVE_ERROR_MESSAGE,
     UNSET_API_KEY_ERROR_MESSAGE,
     MISSING_BROWSER_ERROR_MESSAGE,
 )
+from llama_index.tools.agentql.load_data import aload_data
 from llama_index.tools.agentql.utils import (
-    aload_data,
     _aget_current_agentql_page,
     validate_url_scheme,
 )
@@ -36,49 +38,69 @@ class AgentQLToolSpec(BaseToolSpec):
     """
 
     spec_functions = [
-        "extract_web_data",
+        "extract_web_data_from_rest_api",
         "extract_web_data_from_browser",
-        "extract_web_element_from_browser",
+        "get_web_element_from_browser",
     ]
 
     def __init__(
         self,
         async_browser: Optional[AsyncBrowser] = None,
+        api_key: Optional[str] = None,
         extract_data_timeout: Optional[int] = DEFAULT_EXTRACT_DATA_TIMEOUT_SECONDS,
         extract_elements_timeout: Optional[
             int
         ] = DEFAULT_EXTRACT_ELEMENTS_TIMEOUT_SECONDS,
-        wait_for_page_load: Optional[int] = DEFAULT_WAIT_FOR_PAGE_LOAD,
+        api_timeout: Optional[int] = DEFAULT_API_TIMEOUT_SECONDS,
+        is_stealth_mode_enabled: Optional[bool] = DEFAULT_IS_STEALTH_MODE_ENABLED,
+        wait_for_page_load: Optional[int] = DEFAULT_WAIT_FOR_PAGE_LOAD_SECONDS,
         wait_for_network_idle: Optional[bool] = DEFAULT_WAIT_FOR_NETWORK_IDLE,
         include_hidden_data: Optional[bool] = DEFAULT_INCLUDE_HIDDEN_DATA,
         include_hidden_elements: Optional[bool] = DEFAULT_INCLUDE_HIDDEN_ELEMENTS,
-        response_mode: Optional[str] = DEFAULT_RESPONSE_MODE,
-        stealth_mode: Optional[bool] = DEFAULT_ENABLE_STEALTH_MODE,
-        is_scroll_to_bottom_enabled: Optional[bool] = DEFAULT_SCROLL_TO_BOTTOM,
-        is_screenshot_enabled: Optional[bool] = DEFAULT_SCREENSHOT_ENABLED,
-        api_timeout: Optional[int] = API_TIMEOUT_SECONDS,
+        is_scroll_to_bottom_enabled: Optional[
+            bool
+        ] = DEFAULT_IS_SCROLL_TO_BOTTOM_ENABLED,
+        mode: Optional[str] = DEFAULT_RESPONSE_MODE,
+        is_screenshot_enabled: Optional[bool] = DEFAULT_IS_SCREENSHOT_ENABLED,
     ) -> None:
         """
         Initialize AgentQLToolSpec.
 
         Args:
-            async_browser: A browser instance to use for automation.
-            extract_data_timeout: Timeout value in seconds for the connection with Extract Data service.
-            extract_elements_timeout: Timeout value in seconds for the connection with Extract Elements service.
-            wait_for_page_load: Wait time in seconds for page load completion.
-            wait_for_network_idle: Whether to wait for network reaching full idle state before querying the page.
-            include_hidden_data: Whether to include hidden elements on the page for extract data.
-            include_hidden_elements: Whether to include hidden elements on the page for extract elements.
-            response_mode: The mode of the query. It can be either 'standard' or 'fast'.
-            stealth_mode: Whether to run the browser in stealth mode. This is useful for avoiding detection by anti-bot services (extract_web_data only).
-            is_scroll_to_bottom_enabled: Enable scrolling to bottom of the page before extracting data (extract_web_data only).
-            is_screenshot_enabled: Whether to take a screenshot of the page before extracting data (extract_web_data only).
-            api_timeout: Timeout value in seconds for the connection with AgentQL API.
+            async_browser: An async browser instance. Required for extract_web_data_from_browser/get_web_element_from_browser.
+            api_key: AgentQL API key. You can create one at https://dev.agentql.com.
+
+            extract_data_timeout: The number of seconds to wait for a request before timing out for **extracting data from browser**. Defaults to 900.
+            extract_elements_timeout: The number of seconds to wait for a request before timing out for **getting elements from browser**. Defaults to 300.
+            api_timeout: The number of seconds to wait for a request before timing out for **extracting data from rest api**. Defaults to 900.
+
+            is_stealth_mode_enabled: Whether to enable experimental anti-bot evasion strategies. This feature may not work for all websites at all times.
+            Data extraction may take longer to complete with this mode enabled. Defaults to `False`.
+
+            wait_for_page_load: The number of seconds to wait for the page to load before **extracting data from rest api**. Defaults to 0.
+            wait_for_network_idle: Whether to wait until the network reaches a full idle state before **extracting data/getting elements from browser**. Defaults to `True`.
+
+            include_hidden_data: Whether to take into account visually hidden elements on the page for **extracting data from browser**. Defaults to `False`.
+            include_hidden_elements: Whether to take into account visually hidden elements on the page for **getting elements from browser**. Defaults to `False`.
+
+            is_scroll_to_bottom_enabled: Whether to scroll to bottom of the page before **extracting data from rest api**. Defaults to `False`
+
+            mode: 'standard' uses deep data analysis, while 'fast' trades some depth of analysis for speed and is adequate for most usecases.
+            Learn more about the modes in this guide: https://docs.agentql.com/accuracy/standard-mode. Defaults to 'fast'.
+
+            is_screenshot_enabled: Whether to take a screenshot before **extracting data from rest api**. Returned in 'metadata' as a Base64 string. Defaults to `False`
         """
         self.async_browser = async_browser
 
+        self._api_key = api_key or os.getenv("AGENTQL_API_KEY")
+        if not self._api_key:
+            raise ValueError(UNSET_API_KEY_ERROR_MESSAGE)
+
         self.extract_data_timeout = extract_data_timeout
         self.extract_elements_timeout = extract_elements_timeout
+        self.api_timeout = api_timeout
+
+        self.is_stealth_mode_enabled = is_stealth_mode_enabled
 
         self.wait_for_page_load = wait_for_page_load
         self.wait_for_network_idle = wait_for_network_idle
@@ -86,29 +108,20 @@ class AgentQLToolSpec(BaseToolSpec):
         self.include_hidden_data = include_hidden_data
         self.include_hidden_elements = include_hidden_elements
 
-        self.response_mode = response_mode
-        self.stealth_mode = stealth_mode
-
         self.is_scroll_to_bottom_enabled = is_scroll_to_bottom_enabled
+        self.mode = mode
         self.is_screenshot_enabled = is_screenshot_enabled
 
-        self.api_timeout = api_timeout
-
-        self.api_key = os.getenv("AGENTQL_API_KEY")
-        if not self.api_key:
-            raise ValueError(UNSET_API_KEY_ERROR_MESSAGE)
-
-    async def extract_web_data(
+    async def extract_web_data_from_rest_api(
         self, url: str, query: Optional[str] = None, prompt: Optional[str] = None
     ) -> dict:
         """
-        Extract structure data from a web page given an URL.
-        The data is extracted with either a agentql query or a description of the data to extract.
+        Extracts structured data as JSON from a web page given a URL using either an AgentQL query or a Natural Language description of the data.
 
         Args:
-            url: The URL of the web page to extract data from.
-            query: The AgentQL query used to extract the data. The query must be enclosed with curly braces `{}`. Either this field or prompt field must be provided.
-            prompt: The natural language description of the data you want to extract. Either this field or query field must be provided.
+            url: Accepts the URL of the public webpage to extract data from.
+            query: Accepts AgentQL query used to extract the data. The query must be enclosed with curly braces `{}`. Either this field or `prompt` field must be provided.
+            prompt: Accepts Natural Language description of the data to extract from the page. If AgentQL query is not specified, always use the `prompt` field. Either this field or `query` field must be provided.
 
         Returns:
             dict: The extracted data.
@@ -116,27 +129,29 @@ class AgentQLToolSpec(BaseToolSpec):
         # Check that the URL scheme is valid
         validate_url_scheme(url)
 
-        # Check if one of 'query' or 'prompt' is provided
+        # Check that query and prompt cannot be both empty or both provided
         if not query and not prompt:
-            raise ValueError(QUERY_PROMPT_VALIDATION_ERROR_MESSAGE)
+            raise ValueError(QUERY_PROMPT_REQUIRED_ERROR_MESSAGE)
+        if query and prompt:
+            raise ValueError(QUERY_PROMPT_EXCLUSIVE_ERROR_MESSAGE)
 
-        params = {
+        _params = {
             "wait_for": self.wait_for_page_load,
             "is_scroll_to_bottom_enabled": self.is_scroll_to_bottom_enabled,
-            "mode": self.response_mode,
+            "mode": self.mode,
             "is_screenshot_enabled": self.is_screenshot_enabled,
         }
-        metadata = {
-            "experimental_stealth_mode_enabled": self.stealth_mode,
+        _metadata = {
+            "experimental_stealth_mode_enabled": self.is_stealth_mode_enabled,
         }
 
         return await aload_data(
             url=url,
             query=query,
             prompt=prompt,
-            params=params,
-            metadata=metadata,
-            api_key=self.api_key,
+            params=_params,
+            metadata=_metadata,
+            api_key=self._api_key,
             timeout=self.api_timeout,
         )
 
@@ -146,12 +161,11 @@ class AgentQLToolSpec(BaseToolSpec):
         prompt: Optional[str] = None,
     ) -> dict:
         """
-        Extract structure data from the current web page on a running browser instance.
-        The data is extracted with either a agentql query or a description of the data to extract.
+        Extracts structured data as a JSON from the active web page in a running browser instance using either an AgentQL query or a Natural Language description of the data.
 
         Args:
-            query: The AgentQL query used to extract the data. The query must be enclosed with curly braces `{}`. Either this field or prompt field must be provided.
-            prompt: The natural language description of the data you want to extract. Either this field or query field must be provided.
+            query: Accepts AgentQL query used to extract the data. The query must be enclosed with curly braces `{}`. Either this field or `prompt` field must be provided.
+            prompt: Accepts Natural Language description of the data to extract from the page. If AgentQL query is not specified, always use the `prompt` field. Either this field or `query` field must be provided.
 
         Returns:
             dict: The extracted data.
@@ -160,6 +174,12 @@ class AgentQLToolSpec(BaseToolSpec):
         if not self.async_browser:
             raise ValueError(MISSING_BROWSER_ERROR_MESSAGE)
 
+        # Check that query and prompt cannot be both empty or both provided
+        if not query and not prompt:
+            raise ValueError(QUERY_PROMPT_REQUIRED_ERROR_MESSAGE)
+        if query and prompt:
+            raise ValueError(QUERY_PROMPT_EXCLUSIVE_ERROR_MESSAGE)
+
         page = await _aget_current_agentql_page(self.async_browser)
         if query:
             return await page.query_data(
@@ -167,32 +187,28 @@ class AgentQLToolSpec(BaseToolSpec):
                 self.extract_data_timeout,
                 self.wait_for_network_idle,
                 self.include_hidden_data,
-                self.response_mode,
-                request_origin="llamaindex",
+                self.mode,
+                request_origin=REQUEST_ORIGIN,
             )
-        elif prompt:
+        else:
             return await page.get_data_by_prompt_experimental(
                 prompt,
                 self.extract_data_timeout,
                 self.wait_for_network_idle,
                 self.include_hidden_data,
-                self.response_mode,
-                request_origin="llamaindex",
+                self.mode,
+                request_origin=REQUEST_ORIGIN,
             )
-        else:
-            # Check if one of 'query' or 'prompt' is provided
-            raise ValueError(QUERY_PROMPT_VALIDATION_ERROR_MESSAGE)
 
-    async def extract_web_element_from_browser(
+    async def get_web_element_from_browser(
         self,
         prompt: str,
     ) -> str:
         """
-        Extract CSS selector of the target element the current web page on a running browser instance.
-        The target element is identified by a natural language description.
+        Finds a web element on the active web page in a running browser instance using element’s Natural Language description and returns its CSS selector for further interaction, like clicking, filling a form field, etc.
 
         Args:
-            prompt: The natural language description of the target element you want to extract.
+            prompt: Accepts Natural Language description of the web element to find on the page.
 
         Returns:
             str: The CSS selector of the target element.
@@ -207,8 +223,8 @@ class AgentQLToolSpec(BaseToolSpec):
             self.extract_elements_timeout,
             self.wait_for_network_idle,
             self.include_hidden_elements,
-            self.response_mode,
-            request_origin="llamaindex",
+            self.mode,
+            request_origin=REQUEST_ORIGIN,
         )
         tf_id = await element.get_attribute("tf623_id")
         return f"[tf623_id='{tf_id}']"
