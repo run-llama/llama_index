@@ -111,7 +111,19 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
             raise ValueError(msg)
 
     for tool_call in message.additional_kwargs.get("tool_calls", []):
-        parts.append(tool_call)
+        parts.append(
+            types.Part.from_function_call(name=tool_call.name, args=tool_call.args)
+        )
+
+    # the tool call id is the name of the tool
+    # the tool call response is the content of the message, overriding the existing content
+    # (the only content before this should be the tool call)
+    if message.additional_kwargs.get("tool_call_id"):
+        function_response_part = types.Part.from_function_response(
+            name=message.additional_kwargs.get("tool_call_id"),
+            response={"result": message.content},
+        )
+        return types.Content(role="tool", parts=[function_response_part])
 
     return types.Content(
         role=ROLES_TO_GEMINI[message.role],
@@ -174,14 +186,17 @@ def convert_schema_to_function_declaration(tool: "BaseTool"):
     json_schema = tool.metadata.fn_schema.model_json_schema()
 
     # Create the root schema
-    root_schema = types.Schema(
-        type=types.Type.OBJECT,
-        required=json_schema.get("required", []),
-        properties={
-            name: process_property(prop_schema, json_schema)
-            for name, prop_schema in json_schema["properties"].items()
-        },
-    )
+    if json_schema.get("properties"):
+        root_schema = types.Schema(
+            type=types.Type.OBJECT,
+            required=json_schema.get("required", []),
+            properties={
+                name: process_property(prop_schema, json_schema)
+                for name, prop_schema in json_schema["properties"].items()
+            },
+        )
+    else:
+        root_schema = None
 
     description_parts = tool.metadata.description.split("\n", maxsplit=1)
     # Create the function declaration

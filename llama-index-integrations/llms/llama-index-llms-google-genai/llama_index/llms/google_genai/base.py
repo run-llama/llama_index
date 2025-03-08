@@ -2,7 +2,6 @@
 
 import os
 import typing
-import uuid
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -118,15 +117,21 @@ class GoogleGenAI(FunctionCallingLLM):
         # API keys are optional. The API can be authorised via OAuth (detected
         # environmentally) or by the GOOGLE_API_KEY environment variable.
         api_key = api_key or os.getenv("GOOGLE_API_KEY", None)
-        vertexai = vertexai or os.getenv("GOOGLE_GENAI_USE_VERTEXAI", False)
-        project = project or os.getenv("GOOGLE_CLOUD_PROJECT", None)
-        location = location or os.getenv("GOOGLE_CLOUD_LOCATION", None)
+        vertexai = vertexai_config is not None or os.getenv(
+            "GOOGLE_GENAI_USE_VERTEXAI", False
+        )
+        project = (vertexai_config or {}).get("project") or os.getenv(
+            "GOOGLE_CLOUD_PROJECT", None
+        )
+        location = (vertexai_config or {}).get("location") or os.getenv(
+            "GOOGLE_CLOUD_LOCATION", None
+        )
 
         config_params: Dict[str, Any] = {
             "api_key": api_key,
         }
 
-        if vertexai_config:
+        if vertexai_config is not None:
             config_params.update(vertexai_config)
             config_params["vertexai"] = True
         elif vertexai:
@@ -252,6 +257,9 @@ class GoogleGenAI(FunctionCallingLLM):
             content = ""
             existing_tool_calls = []
             for r in response:
+                if not r.candidates:
+                    continue
+
                 top_candidate = r.candidates[0]
                 content_delta = top_candidate.content.parts[0].text
                 if content_delta:
@@ -284,6 +292,9 @@ class GoogleGenAI(FunctionCallingLLM):
             existing_tool_calls = []
             async for r in await chat.send_message_stream(next_msg.parts):
                 if candidates := r.candidates:
+                    if not candidates:
+                        continue
+
                     top_candidate = candidates[0]
                     if response_content := top_candidate.content:
                         if parts := response_content.parts:
@@ -388,7 +399,7 @@ class GoogleGenAI(FunctionCallingLLM):
         for tool_call in tool_calls:
             tool_selections.append(
                 ToolSelection(
-                    tool_id=str(uuid.uuid4()),
+                    tool_id=tool_call.name,
                     tool_name=tool_call.name,
                     tool_kwargs=dict(tool_call.args),
                 )
@@ -440,7 +451,7 @@ class GoogleGenAI(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
 
-        if self._is_function_call_model:
+        if self.is_function_calling_model:
             llm_kwargs["tool_choice"] = (
                 "required"
                 if "tool_choice" not in all_kwargs
@@ -463,7 +474,7 @@ class GoogleGenAI(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
 
-        if self._is_function_call_model:
+        if self.is_function_calling_model:
             llm_kwargs["tool_choice"] = (
                 "required"
                 if "tool_choice" not in all_kwargs
@@ -486,7 +497,7 @@ class GoogleGenAI(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
 
-        if self._is_function_call_model:
+        if self.is_function_calling_model:
             llm_kwargs["tool_choice"] = (
                 "required"
                 if "tool_choice" not in all_kwargs
@@ -508,7 +519,7 @@ class GoogleGenAI(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
 
-        if self._is_function_call_model:
+        if self.is_function_calling_model:
             llm_kwargs["tool_choice"] = (
                 "required"
                 if "tool_choice" not in all_kwargs
