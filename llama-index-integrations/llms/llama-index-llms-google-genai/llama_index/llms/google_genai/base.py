@@ -133,10 +133,12 @@ class GoogleGenAI(FunctionCallingLLM):
 
         if vertexai_config is not None:
             config_params.update(vertexai_config)
+            config_params["api_key"] = None
             config_params["vertexai"] = True
         elif vertexai:
             config_params["project"] = project
             config_params["location"] = location
+            config_params["api_key"] = None
             config_params["vertexai"] = True
 
         if http_options:
