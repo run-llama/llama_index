@@ -87,7 +87,9 @@ class SimpleMongoReader(BaseReader):
 
         for item in cursor:
             try:
-                texts = [field_extractors.get(name, str)(item[name]) for name in field_names]
+                texts = [
+                    field_extractors.get(name, str)(item[name]) for name in field_names
+                ]
             except KeyError as err:
                 raise ValueError(
                     f"{err.args[0]} field not found in Mongo document."
