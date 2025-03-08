@@ -15,7 +15,7 @@ If you're ready to dive in, here’s a quick setup guide to get you going:
    ```
 3. Set up a new virtual environment with `Poetry`:
    ```bash
-   poetry shell
+   eval $(poetry env activate)
    ```
 4. Install development (and/or docs) dependencies:
    ```bash
