@@ -266,6 +266,11 @@ class OpenAI(FunctionCallingLLM):
         audio_config: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
+        # TODO: Support deprecated max_new_tokens
+        if "max_new_tokens" in kwargs:
+            max_tokens = kwargs["max_new_tokens"]
+            del kwargs["max_new_tokens"]
+
         additional_kwargs = additional_kwargs or {}
 
         api_key, api_base, api_version = resolve_openai_credentials(

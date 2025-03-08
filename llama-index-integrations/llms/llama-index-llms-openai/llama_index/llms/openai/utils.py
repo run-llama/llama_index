@@ -77,6 +77,8 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4o-2024-05-13": 128000,
     "gpt-4o-2024-08-06": 128000,
     "gpt-4o-2024-11-20": 128000,
+    "gpt-4.5-preview": 128000,
+    "gpt-4.5-preview-2025-02-27": 128000,
     # Intended for research and evaluation
     "chatgpt-4o-latest": 128000,
     "gpt-4o-mini": 128000,
@@ -323,11 +325,16 @@ def to_openai_message_dict(
             raise ValueError(msg)
 
     # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
-    # It's only Allowed to send None if it's an Assistant Message
+    # It's only Allowed to send None if it's an Assistant Message and either a function call or tool calls were performed
     # Reference: https://platform.openai.com/docs/api-reference/chat/create
     content_txt = (
         None
-        if content_txt == "" and message.role == MessageRole.ASSISTANT
+        if content_txt == ""
+        and message.role == MessageRole.ASSISTANT
+        and (
+            "function_call" in message.additional_kwargs
+            or "tool_calls" in message.additional_kwargs
+        )
         else content_txt
     )
 
@@ -354,7 +361,11 @@ def to_openai_message_dict(
         }
 
     # TODO: O1 models do not support system prompts
-    if model is not None and model in O1_MODELS:
+    if (
+        model is not None
+        and model in O1_MODELS
+        and model not in O1_MODELS_WITHOUT_FUNCTION_CALLING
+    ):
         if message_dict["role"] == "system":
             message_dict["role"] = "developer"
 
@@ -617,10 +628,19 @@ def update_tool_calls(
             # validations to get passed by mypy
             assert t.function is not None
             assert tc_delta.function is not None
-            assert t.function.arguments is not None
-            assert t.function.name is not None
-            assert t.id is not None
 
+            # Initialize fields if they're None
+            # OpenAI(or Compatible)'s streaming API can return partial tool call
+            # information across multiple chunks where some fields may be None in
+            # initial chunks and populated in subsequent ones
+            if t.function.arguments is None:
+                t.function.arguments = ""
+            if t.function.name is None:
+                t.function.name = ""
+            if t.id is None:
+                t.id = ""
+
+            # Update with delta values
             t.function.arguments += tc_delta.function.arguments or ""
             t.function.name += tc_delta.function.name or ""
             t.id += tc_delta.id or ""

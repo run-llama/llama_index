@@ -1,12 +1,14 @@
 from typing import List, Sequence
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentOutput,
     AgentStream,
     ToolCallResult,
 )
+from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import BaseMemory
@@ -14,7 +16,7 @@ from llama_index.core.tools import AsyncBaseTool
 from llama_index.core.workflow import Context
 
 
-class FunctionAgent(BaseWorkflowAgent):
+class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
     """Function calling agent implementation."""
 
     scratchpad_key: str = "scratchpad"
@@ -40,15 +42,22 @@ class FunctionAgent(BaseWorkflowAgent):
         response = await self.llm.astream_chat_with_tools(  # type: ignore
             tools, chat_history=current_llm_input, allow_parallel_tool_calls=True
         )
-        async for r in response:
+        # last_chat_response will be used later, after the loop.
+        # We initialize it so it's valid even when 'response' is empty
+        last_chat_response = ChatResponse(message=ChatMessage())
+        async for last_chat_response in response:
             tool_calls = self.llm.get_tool_calls_from_response(  # type: ignore
-                r, error_on_no_tool_call=False
+                last_chat_response, error_on_no_tool_call=False
             )
-            raw = r.raw.model_dump() if isinstance(r.raw, BaseModel) else r.raw
+            raw = (
+                last_chat_response.raw.model_dump()
+                if isinstance(last_chat_response.raw, BaseModel)
+                else last_chat_response.raw
+            )
             ctx.write_event_to_stream(
                 AgentStream(
-                    delta=r.delta or "",
-                    response=r.message.content or "",
+                    delta=last_chat_response.delta or "",
+                    response=last_chat_response.message.content or "",
                     tool_calls=tool_calls or [],
                     raw=raw,
                     current_agent_name=self.name,
@@ -56,16 +65,20 @@ class FunctionAgent(BaseWorkflowAgent):
             )
 
         tool_calls = self.llm.get_tool_calls_from_response(  # type: ignore
-            r, error_on_no_tool_call=False
+            last_chat_response, error_on_no_tool_call=False
         )
 
         # only add to scratchpad if we didn't select the handoff tool
-        scratchpad.append(r.message)
+        scratchpad.append(last_chat_response.message)
         await ctx.set(self.scratchpad_key, scratchpad)
 
-        raw = r.raw.model_dump() if isinstance(r.raw, BaseModel) else r.raw
+        raw = (
+            last_chat_response.raw.model_dump()
+            if isinstance(last_chat_response.raw, BaseModel)
+            else last_chat_response.raw
+        )
         return AgentOutput(
-            response=r.message,
+            response=last_chat_response.message,
             tool_calls=tool_calls or [],
             raw=raw,
             current_agent_name=self.name,

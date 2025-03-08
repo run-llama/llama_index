@@ -1,9 +1,10 @@
-from llama_index.core.base.llms.base import BaseLLM
-from llama_index.llms.anthropic import Anthropic
-from llama_index.core.llms import ChatMessage
 import os
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.llms import ChatMessage
+from llama_index.llms.anthropic import Anthropic
 
 
 def test_text_inference_embedding_class():
@@ -203,3 +204,9 @@ def test_anthropic_tokenizer():
         messages=[{"role": "user", "content": test_text}],
         model="claude-3-5-sonnet-20241022",
     )
+
+
+def test__prepare_chat_with_tools_empty():
+    llm = Anthropic()
+    retval = llm._prepare_chat_with_tools(tools=[])
+    assert retval["tools"] == []

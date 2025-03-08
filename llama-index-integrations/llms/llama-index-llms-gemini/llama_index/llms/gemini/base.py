@@ -50,8 +50,12 @@ dispatcher = instrument.get_dispatcher(__name__)
 GEMINI_MODELS = (
     "models/gemini-2.0-flash",
     "models/gemini-2.0-flash-thinking",
+    "models/gemini-2.0-flash-thinking-exp-01-21",
     "models/gemini-2.0-flash-lite",
+    "models/gemini-2.0-flash-lite-preview-02-05",
+    "models/gemini-2.0-pro-exp-02-05",
     "models/gemini-1.5-flash",
+    "models/gemini-1.5-flash-8b",
     "models/gemini-1.0-pro",
 )
 
@@ -80,7 +84,7 @@ class Gemini(FunctionCallingLLM):
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
         ge=0.0,
-        le=1.0,
+        le=2.0,
     )
     max_tokens: int = Field(
         default=DEFAULT_NUM_OUTPUTS,
@@ -400,9 +404,11 @@ class Gemini(FunctionCallingLLM):
 
         return {
             "messages": messages,
-            "tools": ToolDict(function_declarations=tool_declarations)
-            if tool_declarations
-            else None,
+            "tools": (
+                ToolDict(function_declarations=tool_declarations)
+                if tool_declarations
+                else None
+            ),
             "tool_config": tool_config,
             **kwargs,
         }
@@ -447,9 +453,12 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
 
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
-        )
+        if self._is_function_call_model:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in all_kwargs
+                else all_kwargs["tool_choice"]
+            )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return super().structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
@@ -462,9 +471,12 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
 
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
-        )
+        if self._is_function_call_model:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in all_kwargs
+                else all_kwargs["tool_choice"]
+            )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return await super().astructured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
@@ -477,9 +489,12 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
 
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
-        )
+        if self._is_function_call_model:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in all_kwargs
+                else all_kwargs["tool_choice"]
+            )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
@@ -492,9 +507,12 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
 
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
-        )
+        if self._is_function_call_model:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in all_kwargs
+                else all_kwargs["tool_choice"]
+            )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return await super().astream_structured_predict(

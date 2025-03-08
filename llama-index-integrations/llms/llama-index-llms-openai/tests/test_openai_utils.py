@@ -156,6 +156,22 @@ def test_to_openai_message_dicts_basic_string() -> None:
     ]
 
 
+def test_to_openai_message_dicts_empty_content() -> None:
+    """If neither `tool_calls` nor `function_call` is set, content must not be set to None,
+    see: https://platform.openai.com/docs/api-reference/chat/create"""
+    chat_messages = [
+        ChatMessage(role="user", content="test question"),
+        ChatMessage(role="assistant", content=""),
+    ]
+    openai_messages = to_openai_message_dicts(
+        chat_messages,
+    )
+    assert openai_messages == [
+        {"role": "user", "content": "test question"},
+        {"role": "assistant", "content": ""},
+    ]
+
+
 def test_to_openai_message_dicts_function_calling(
     chat_messages_with_function_calling: List[ChatMessage],
     openai_message_dicts_with_function_calling: List[ChatCompletionMessageParam],

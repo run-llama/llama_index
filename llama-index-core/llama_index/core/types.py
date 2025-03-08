@@ -12,6 +12,7 @@ from typing import (
     Generic,
     List,
     Optional,
+    TYPE_CHECKING,
     Tuple,
     Type,
     TypeVar,
@@ -32,6 +33,9 @@ Model = TypeVar("Model", bound=BaseModel)
 TokenGen = Generator[str, None, None]
 TokenAsyncGen = AsyncGenerator[str, None]
 RESPONSE_TEXT_TYPE = Union[BaseModel, str, TokenGen, TokenAsyncGen]
+
+if TYPE_CHECKING:
+    from llama_index.core.program.utils import FlexibleModel
 
 
 # TODO: move into a `core` folder
@@ -108,20 +112,24 @@ class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
         pass
 
     @abstractmethod
-    def __call__(self, *args: Any, **kwargs: Any) -> Model:
+    def __call__(self, *args: Any, **kwargs: Any) -> Union[Model, List[Model]]:
         pass
 
-    async def acall(self, *args: Any, **kwargs: Any) -> Model:
+    async def acall(self, *args: Any, **kwargs: Any) -> Union[Model, List[Model]]:
         return self(*args, **kwargs)
 
     def stream_call(
         self, *args: Any, **kwargs: Any
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+    ) -> Generator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None, None
+    ]:
         raise NotImplementedError("stream_call is not supported by default.")
 
     async def astream_call(
         self, *args: Any, **kwargs: Any
-    ) -> AsyncGenerator[Union[Model, List[Model]], None]:
+    ) -> AsyncGenerator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None
+    ]:
         raise NotImplementedError("astream_call is not supported by default.")
 
 

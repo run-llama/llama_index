@@ -121,7 +121,13 @@ def _format_file_timestamp(
     if timestamp is None:
         return None
 
-    timestamp_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    # Convert timestamp to UTC
+    # Check if timestamp is already a datetime object
+    if isinstance(timestamp, datetime):
+        timestamp_dt = timestamp.astimezone(timezone.utc)
+    else:
+        timestamp_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+
     if include_time:
         return timestamp_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
     return timestamp_dt.strftime("%Y-%m-%d")

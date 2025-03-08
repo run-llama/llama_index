@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union, Dict
 import urllib.parse
 from httpx import Request
 
@@ -171,8 +171,14 @@ def image_nodes_to_node_with_score(
             project_id=project_id,
         )
         image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+        image_node_metadata: Dict[str, Any] = {
+            **(raw_image_node.node.metadata or {}),
+            "file_id": raw_image_node.node.file_id,
+            "page_index": raw_image_node.node.page_index,
+        }
         image_node_with_score = NodeWithScore(
-            node=ImageNode(image=image_base64), score=raw_image_node.score
+            node=ImageNode(image=image_base64, metadata=image_node_metadata),
+            score=raw_image_node.score,
         )
         image_nodes.append(image_node_with_score)
     return image_nodes
@@ -197,8 +203,14 @@ async def aimage_nodes_to_node_with_score(
     image_bytes_list = await run_jobs(tasks)
     for image_bytes, raw_image_node in zip(image_bytes_list, raw_image_nodes):
         image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+        image_node_metadata: Dict[str, Any] = {
+            **(raw_image_node.node.metadata or {}),
+            "file_id": raw_image_node.node.file_id,
+            "page_index": raw_image_node.node.page_index,
+        }
         image_node_with_score = NodeWithScore(
-            node=ImageNode(image=image_base64), score=raw_image_node.score
+            node=ImageNode(image=image_base64, metadata=image_node_metadata),
+            score=raw_image_node.score,
         )
         image_nodes.append(image_node_with_score)
     return image_nodes

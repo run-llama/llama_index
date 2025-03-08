@@ -11,7 +11,7 @@ from llama_index.core.prompts.base import ChatPromptTemplate
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.llms.gemini import Gemini
 from llama_index.llms.gemini.utils import chat_message_to_gemini
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 def test_embedding_class() -> None:
@@ -128,3 +128,91 @@ def test_is_function_calling_model() -> None:
     manual_override._is_function_call_model = False
     assert not manual_override._is_function_call_model
     assert not manual_override.metadata.is_function_calling_model
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_structure_gen_without_function_call() -> None:
+    class Test(BaseModel):
+        test: str
+
+    gemini_flash = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+    gemini_flash._is_function_call_model = False
+    output = gemini_flash.as_structured_llm(Test).complete("test")
+    assert output.raw.test
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_function_call_deeply_nested_structured_generation() -> None:
+    class Column(BaseModel):
+        name: str = Field(description="Column field")
+        data_type: str = Field(description="Data type field")
+
+    class Table(BaseModel):
+        name: str = Field(description="Table name field")
+        columns: list[Column] = Field(description="List of random Column objects")
+
+    class Schema(BaseModel):
+        schema_name: str = Field(description="Schema name")
+        columns: list[Table] = Field(description="List of random Table objects")
+
+    prompt = ChatPromptTemplate.from_messages(
+        [ChatMessage(role="user", content="Generate a simple database structure")]
+    )
+
+    gemini_flash = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+    prompt = ChatPromptTemplate.from_messages(
+        [ChatMessage(role="user", content="Generate a simple database structure")]
+    )
+
+    gemini_flash._is_function_call_model = (
+        True  # this is the default, but let's be explicit
+    )
+    schema = gemini_flash.structured_predict(output_cls=Schema, prompt=prompt)
+    assert schema.columns
+    assert schema.columns[0].columns
+    assert schema.columns[0].columns[0].name
+
+
+# this is the same test as above, but with function call disabled
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_deeply_nested_structured_generation() -> None:
+    class Column(BaseModel):
+        name: str = Field(description="Column field")
+        data_type: str = Field(description="Data type field")
+
+    class Table(BaseModel):
+        name: str = Field(description="Table name field")
+        columns: list[Column] = Field(description="List of random Column objects")
+
+    class Schema(BaseModel):
+        schema_name: str = Field(description="Schema name")
+        columns: list[Table] = Field(description="List of random Table objects")
+
+    prompt = ChatPromptTemplate.from_messages(
+        [ChatMessage(role="user", content="Generate a simple database structure")]
+    )
+
+    gemini_flash = Gemini(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+    prompt = ChatPromptTemplate.from_messages(
+        [ChatMessage(role="user", content="Generate a simple database structure")]
+    )
+    gemini_flash._is_function_call_model = False
+    schema = gemini_flash.structured_predict(output_cls=Schema, prompt=prompt)
+    assert schema.columns
+    assert schema.columns[0].columns
+    assert schema.columns[0].columns[0].name
