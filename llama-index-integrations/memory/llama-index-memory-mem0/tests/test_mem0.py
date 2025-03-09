@@ -1,4 +1,5 @@
 from unittest.mock import patch, MagicMock
+
 from llama_index.memory.mem0.base import Mem0Memory, Mem0Context
 from llama_index.core.memory.chat_memory_buffer import ChatMessage, MessageRole
 from llama_index.memory.mem0.utils import (
@@ -28,8 +29,8 @@ def test_mem0_memory_from_client():
             context=context,
             api_key=api_key,
             host=host,
-            org_id=organization,
-            project_id=project,
+            org_id=org_id,
+            project_id=project_id,
             search_msg_limit=search_msg_limit,  # Add this line
         )
 
