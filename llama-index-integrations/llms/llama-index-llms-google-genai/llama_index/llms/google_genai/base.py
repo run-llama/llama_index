@@ -53,7 +53,7 @@ import google.genai.types as types
 
 dispatcher = instrument.get_dispatcher(__name__)
 
-DEFAULT_MODEL = "models/gemini-2.0-flash"
+DEFAULT_MODEL = "gemini-2.0-flash"
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -75,7 +75,7 @@ class GoogleGenAI(FunctionCallingLLM):
         ```python
         from llama_index.llms.google_genai import GoogleGenAI
 
-        llm = GoogleGenAI(model="models/gemini-2.0-flash", api_key="YOUR_API_KEY")
+        llm = GoogleGenAI(model="gemini-2.0-flash", api_key="YOUR_API_KEY")
         resp = llm.complete("Write a poem about a magic backpack")
         print(resp)
         ```
