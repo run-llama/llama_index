@@ -15,8 +15,8 @@ dispatcher = get_dispatcher(__name__)
 # Maximum cumulative word count per batch.
 MAX_WORDS_PER_BATCH = 10000
 
-class AIMonRerank(BaseNodePostprocessor):
 
+class AIMonRerank(BaseNodePostprocessor):
     model: str = Field(description="AIMon's reranking model name.")
     top_n: int = Field(description="Top N nodes to return.")
     task_definition: str = Field(
@@ -49,8 +49,8 @@ class AIMonRerank(BaseNodePostprocessor):
             raise ImportError(
                 "Cannot import AIMon package, please `pip install aimon`."
             )
-        
-        self._client = Client(auth_header="Bearer {}".format(api_key))
+
+        self._client = Client(auth_header=f"Bearer {api_key}")
 
     @classmethod
     def class_name(cls) -> str:
@@ -81,9 +81,9 @@ class AIMonRerank(BaseNodePostprocessor):
         ]
 
         # Build batches where the total number of words is <= MAX_WORDS_PER_BATCH.
-        batches = []           # List of (batch_texts, corresponding indices)
-        current_batch = []     # List of texts for the current batch.
-        current_indices = []   # Corresponding indices of texts in the original list.
+        batches = []  # List of (batch_texts, corresponding indices)
+        current_batch = []  # List of texts for the current batch.
+        current_indices = []  # Corresponding indices of texts in the original list.
         current_word_count = 0
 
         for i, text in enumerate(texts):
@@ -105,9 +105,11 @@ class AIMonRerank(BaseNodePostprocessor):
 
         # Prepare a list to hold scores for each text in the original order.
         all_scores = [None] * len(texts)
-        
+
         for batch_num, (batch_texts, indices) in enumerate(batches, start=1):
-            print(f"Processing batch {batch_num}/{len(batches)} with {len(batch_texts)} context documents.")
+            print(
+                f"Processing batch {batch_num}/{len(batches)} with {len(batch_texts)} context documents."
+            )
             scores_batch = self._client.retrieval.rerank(
                 context_docs=batch_texts,
                 queries=[query_bundle.query_str],
@@ -130,7 +132,9 @@ class AIMonRerank(BaseNodePostprocessor):
         scored_nodes.sort(key=lambda x: x.score, reverse=True)
         new_nodes = scored_nodes[: self.top_n]
 
-        print(f"Finished processing. Total batches sent to AIMon reranker: {len(batches)}")
+        print(
+            f"Finished processing. Total batches sent to AIMon reranker: {len(batches)}"
+        )
         print(f"Top {self.top_n} nodes selected after reranking.")
 
         dispatcher.event(ReRankEndEvent(nodes=new_nodes))
