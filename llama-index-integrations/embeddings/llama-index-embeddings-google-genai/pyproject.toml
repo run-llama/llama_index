@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.google_genai"
+import_path = "llama_index.embeddings.google_genai"
 
 [tool.llamahub.class_authors]
-Gemini = "llama-index"
+GoogleGenAIEmbedding = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,18 +22,17 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index llms google genai integration"
+description = "llama-index embeddings google genai integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-llms-google-genai"
+name = "llama-index-embeddings-google-genai"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-pillow = "^10.2.0"
 google-genai = ">=1.4.0"
-llama-index-core = "^0.12.12"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
