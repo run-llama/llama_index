@@ -38,7 +38,7 @@ class AgentQLToolSpec(BaseToolSpec):
     """
 
     spec_functions = [
-        "extract_web_data_from_rest_api",
+        "extract_web_data_with_rest_api",
         "extract_web_data_from_browser",
         "get_web_element_from_browser",
     ]
@@ -112,7 +112,7 @@ class AgentQLToolSpec(BaseToolSpec):
         self.mode = mode
         self.is_screenshot_enabled = is_screenshot_enabled
 
-    async def extract_web_data_from_rest_api(
+    async def extract_web_data_with_rest_api(
         self, url: str, query: Optional[str] = None, prompt: Optional[str] = None
     ) -> dict:
         """
