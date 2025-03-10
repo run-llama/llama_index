@@ -44,7 +44,7 @@ await agentql_tool.extract_web_data(
 In order to use the `extract_web_data_from_browser` and `get_web_element_from_browser`, you need to have a Playwright browser instance. If you do not have an active instance, you can initiate one using the `create_async_playwright_browser` utility method from LlamaIndex's Playwright ToolSpec.
 
 > **Note**
-> Agentql browser tools are best used along with LlamaIndex's [Playwright](https://docs.llamaindex.ai/en/stable/api_reference/tools/playwright/) tools.
+> Agentql browser tools are best used along with LlamaIndex's [Playwright tools](https://docs.llamaindex.ai/en/stable/api_reference/tools/playwright/).
 
 ```python
 from llama_index.tools.playwright.base import PlaywrightToolSpec
