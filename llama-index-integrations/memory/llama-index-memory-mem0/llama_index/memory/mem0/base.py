@@ -92,8 +92,8 @@ class Mem0Memory(BaseMem0):
         context: Dict[str, Any],
         api_key: Optional[str] = None,
         host: Optional[str] = None,
-        organization: Optional[str] = None,
-        project: Optional[str] = None,
+        org_id: Optional[str] = None,
+        project_id: Optional[str] = None,
         search_msg_limit: int = 5,
         **kwargs: Any,
     ):
@@ -105,7 +105,7 @@ class Mem0Memory(BaseMem0):
             raise ValidationError(f"Context validation error: {e}")
 
         client = MemoryClient(
-            api_key=api_key, host=host, organization=organization, project=project
+            api_key=api_key, host=host, org_id=org_id, project_id=project_id
         )
         return cls(
             primary_memory=primary_memory,

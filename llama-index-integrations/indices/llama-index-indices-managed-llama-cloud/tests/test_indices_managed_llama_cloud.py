@@ -299,7 +299,8 @@ def test_image_retrieval() -> None:
         base_url=base_url,
     )
 
-    file_path = "llama-index-integrations/indices/llama-index-indices-managed-llama-cloud/tests/data/Simple PDF Slides.pdf"
+    file_name = "Simple PDF Slides.pdf"
+    file_path = f"llama-index-integrations/indices/llama-index-indices-managed-llama-cloud/tests/data/{file_name}"
     file_id = index.upload_file(file_path, wait_for_ingestion=True)
 
     retriever = index.as_retriever(retrieve_image_nodes=True)
@@ -310,6 +311,8 @@ def test_image_retrieval() -> None:
     assert len(image_nodes) > 0
     assert all(n.metadata["file_id"] == file_id for n in image_nodes)
     assert all(n.metadata["page_index"] >= 0 for n in image_nodes)
+    # ensure metadata is added from the image node
+    assert all(n.metadata["file_name"] == file_name for n in image_nodes)
 
 
 @pytest.mark.skipif(

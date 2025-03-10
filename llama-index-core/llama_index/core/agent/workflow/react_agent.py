@@ -1,13 +1,6 @@
 import uuid
 from typing import List, Sequence, cast
 
-from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
-from llama_index.core.agent.workflow.workflow_events import (
-    AgentInput,
-    AgentOutput,
-    AgentStream,
-    ToolCallResult,
-)
 from llama_index.core.agent.react.formatter import ReActChatFormatter
 from llama_index.core.agent.react.output_parser import ReActOutputParser
 from llama_index.core.agent.react.types import (
@@ -16,6 +9,15 @@ from llama_index.core.agent.react.types import (
     ObservationReasoningStep,
     ResponseReasoningStep,
 )
+from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
+from llama_index.core.agent.workflow.workflow_events import (
+    AgentInput,
+    AgentOutput,
+    AgentStream,
+    ToolCallResult,
+)
+from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import ToolSelection
@@ -26,12 +28,12 @@ from llama_index.core.tools import AsyncBaseTool
 from llama_index.core.workflow import Context
 
 
-def default_formatter() -> ReActChatFormatter:
+def default_formatter(fields: dict) -> ReActChatFormatter:
     """Sets up a default formatter so that the proper react header is set."""
-    return ReActChatFormatter.from_defaults(context="some context")
+    return ReActChatFormatter.from_defaults(context=fields["system_prompt"])
 
 
-class ReActAgent(BaseWorkflowAgent):
+class ReActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
     """React agent implementation."""
 
     reasoning_key: str = "current_reasoning"
@@ -90,12 +92,19 @@ class ReActAgent(BaseWorkflowAgent):
 
         # Initial LLM call
         response = await self.llm.astream_chat(input_chat)
-        async for r in response:
-            raw = r.raw.model_dump() if isinstance(r.raw, BaseModel) else r.raw
+        # last_chat_response will be used later, after the loop.
+        # We initialize it so it's valid even when 'response' is empty
+        last_chat_response = ChatResponse(message=ChatMessage())
+        async for last_chat_response in response:
+            raw = (
+                last_chat_response.raw.model_dump()
+                if isinstance(last_chat_response.raw, BaseModel)
+                else last_chat_response.raw
+            )
             ctx.write_event_to_stream(
                 AgentStream(
-                    delta=r.delta or "",
-                    response=r.message.content or "",
+                    delta=last_chat_response.delta or "",
+                    response=last_chat_response.message.content or "",
                     tool_calls=[],
                     raw=raw,
                     current_agent_name=self.name,
@@ -103,7 +112,7 @@ class ReActAgent(BaseWorkflowAgent):
             )
 
         # Parse reasoning step and check if done
-        message_content = r.message.content
+        message_content = last_chat_response.message.content
         if not message_content:
             raise ValueError("Got empty message")
 
@@ -111,12 +120,16 @@ class ReActAgent(BaseWorkflowAgent):
             reasoning_step = output_parser.parse(message_content, is_streaming=False)
         except ValueError as e:
             error_msg = f"Error: Could not parse output. Please follow the thought-action-input format. Try again. Details: {e!s}"
-            await memory.aput(r.message)
+            await memory.aput(last_chat_response.message)
             await memory.aput(ChatMessage(role="user", content=error_msg))
 
-            raw = r.raw.model_dump() if isinstance(r.raw, BaseModel) else r.raw
+            raw = (
+                last_chat_response.raw.model_dump()
+                if isinstance(last_chat_response.raw, BaseModel)
+                else last_chat_response.raw
+            )
             return AgentOutput(
-                response=r.message,
+                response=last_chat_response.message,
                 tool_calls=[],
                 raw=raw,
                 current_agent_name=self.name,
@@ -127,10 +140,14 @@ class ReActAgent(BaseWorkflowAgent):
         await ctx.set(self.reasoning_key, current_reasoning)
 
         # If response step, we're done
-        raw = r.raw.model_dump() if isinstance(r.raw, BaseModel) else r.raw
+        raw = (
+            last_chat_response.raw.model_dump()
+            if isinstance(last_chat_response.raw, BaseModel)
+            else last_chat_response.raw
+        )
         if reasoning_step.is_done:
             return AgentOutput(
-                response=r.message,
+                response=last_chat_response.message,
                 tool_calls=[],
                 raw=raw,
                 current_agent_name=self.name,
@@ -149,9 +166,8 @@ class ReActAgent(BaseWorkflowAgent):
             )
         ]
 
-        raw = r.raw.model_dump() if isinstance(r.raw, BaseModel) else r.raw
         return AgentOutput(
-            response=r.message,
+            response=last_chat_response.message,
             tool_calls=tool_calls,
             raw=raw,
             current_agent_name=self.name,

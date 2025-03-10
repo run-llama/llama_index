@@ -541,24 +541,29 @@ class LlamaMultiModal(HuggingFaceMultiModal):
         """
         Prepares the input messages and images for Llama3.2 models. Images are appended in a custom format.
         """
+        prompt = messages[0].content
         messages = [
             {
                 "role": "user",
-                "content": [
-                    {"type": "image"},
-                    {"type": "text", "text": messages[0].content},
-                ],
+                "content": [],
             }
         ]
         images = []
 
         for img_doc in image_documents:
+            messages[0]["content"].append({"type": "image"})
             images.append(Image.open(img_doc.image_path))
+
+        messages[0]["content"].append({"type": "text", "text": prompt})
 
         # Apply a chat template to format the message with the processor
         input_text = self._processor.tokenizer.apply_chat_template(
             messages, add_generation_prompt=True, tokenize=False
         )
+
+        # If no images are present then we should pass None to deactivate image processing in the processor
+        if len(images) == 0:
+            images = None
 
         # Prepare the model inputs (text + images) and convert to tensor
         inputs = self._processor(images, input_text, return_tensors="pt")

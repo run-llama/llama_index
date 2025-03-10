@@ -9,6 +9,7 @@ import pickle
 import textwrap
 import uuid
 from abc import abstractmethod
+from binascii import Error as BinasciiError
 from dataclasses import dataclass
 from enum import Enum, auto
 from hashlib import sha256
@@ -531,14 +532,10 @@ class MediaResource(BaseModel):
 
         try:
             # Check if data is already base64 encoded.
-            # b64decode() can succeed on random binary data, we make
-            # a full roundtrip to make sure it's not a false positive
-            decoded = base64.b64decode(v)
-            encoded = base64.b64encode(decoded)
-            if encoded != v:
-                # Roundtrip failed, this is a false positive, return encoded
-                return base64.b64encode(v)
-        except Exception:
+            # b64decode() can succeed on random binary data, so we
+            # pass verify=True to make sure it's not a false positive
+            decoded = base64.b64decode(v, validate=True)
+        except BinasciiError:
             # b64decode failed, return encoded
             return base64.b64encode(v)
 

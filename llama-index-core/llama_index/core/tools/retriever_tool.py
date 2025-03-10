@@ -88,8 +88,6 @@ class RetrieverTool(AsyncBaseTool):
         for doc in docs:
             assert isinstance(doc.node, (Node, TextNode))
             node_copy = doc.node.model_copy()
-            node_copy.text_template = "{metadata_str}\n{content}"
-            node_copy.metadata_template = "{key} = {value}"
             content += node_copy.get_content(MetadataMode.LLM) + "\n\n"
         return ToolOutput(
             content=content,
@@ -114,8 +112,6 @@ class RetrieverTool(AsyncBaseTool):
         for doc in docs:
             assert isinstance(doc.node, (Node, TextNode))
             node_copy = doc.node.model_copy()
-            node_copy.text_template = "{metadata_str}\n{content}"
-            node_copy.metadata_template = "{key} = {value}"
             content += node_copy.get_content(MetadataMode.LLM) + "\n\n"
         return ToolOutput(
             content=content,

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import base64
+import filetype
+from binascii import Error as BinasciiError
 from enum import Enum
 from io import BytesIO
+from pathlib import Path
 from typing import (
     Annotated,
     Any,
@@ -60,10 +63,13 @@ class ImageBlock(BaseModel):
 
     @field_validator("url", mode="after")
     @classmethod
-    def urlstr_to_anyurl(cls, url: str | AnyUrl) -> AnyUrl:
+    def urlstr_to_anyurl(cls, url: str | AnyUrl | None) -> AnyUrl | None:
         """Store the url as Anyurl."""
         if isinstance(url, AnyUrl):
             return url
+        if url is None:
+            return None
+
         return AnyUrl(url=url)
 
     @model_validator(mode="after")
@@ -75,14 +81,23 @@ class ImageBlock(BaseModel):
         operations, we won't load the path or the URL to guess the mimetype.
         """
         if not self.image:
+            if not self.image_mimetype:
+                path = self.path or self.url
+                if path:
+                    suffix = Path(str(path)).suffix.replace(".", "") or None
+                    mimetype = filetype.get_type(ext=suffix)
+                    if mimetype and str(mimetype.mime).startswith("image/"):
+                        self.image_mimetype = str(mimetype.mime)
+
             return self
 
         try:
-            # Check if image is already base64 encoded
-            decoded_img = base64.b64decode(self.image)
-        except Exception:
+            # Check if self.image is already base64 encoded.
+            # b64decode() can succeed on random binary data, so we
+            # pass verify=True to make sure it's not a false positive
+            decoded_img = base64.b64decode(self.image, validate=True)
+        except BinasciiError:
             decoded_img = self.image
-            # Not base64 - encode it
             self.image = base64.b64encode(self.image)
 
         self._guess_mimetype(decoded_img)

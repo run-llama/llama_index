@@ -7,6 +7,16 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import fsspec
+from redis import Redis
+from redis.exceptions import RedisError
+from redis.exceptions import TimeoutError as RedisTimeoutError
+from redisvl.index import SearchIndex
+from redisvl.query import CountQuery, FilterQuery, VectorQuery
+from redisvl.query.filter import FilterExpression, Tag
+from redisvl.redis.utils import array_to_buffer
+from redisvl.schema import IndexSchema
+from redisvl.schema.fields import BaseField
+
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
@@ -17,8 +27,8 @@ from llama_index.core.schema import (
 )
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    MetadataFilters,
     MetadataFilter,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -27,26 +37,14 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 from llama_index.vector_stores.redis.schema import (
-    NODE_ID_FIELD_NAME,
-    NODE_CONTENT_FIELD_NAME,
     DOC_ID_FIELD_NAME,
+    NODE_CONTENT_FIELD_NAME,
+    NODE_ID_FIELD_NAME,
     TEXT_FIELD_NAME,
     VECTOR_FIELD_NAME,
     RedisVectorStoreSchema,
 )
 from llama_index.vector_stores.redis.utils import REDIS_LLAMA_FIELD_SPEC
-
-from redis import Redis
-from redis.exceptions import RedisError
-from redis.exceptions import TimeoutError as RedisTimeoutError
-
-from redisvl.index import SearchIndex
-from redisvl.schema import IndexSchema
-from redisvl.query import VectorQuery, FilterQuery, CountQuery
-from redisvl.query.filter import Tag, FilterExpression
-from redisvl.schema.fields import BaseField
-from redisvl.redis.utils import array_to_buffer
-
 
 logger = logging.getLogger(__name__)
 
@@ -136,18 +134,10 @@ class RedisVectorStore(BasePydanticVectorStore):
             TEXT_FIELD_NAME,
             NODE_CONTENT_FIELD_NAME,
         ]
-        self._index = SearchIndex(schema=schema)
+        self._index = SearchIndex(
+            schema=schema, redis_client=redis_client, redis_url=redis_url
+        )
         self._overwrite = overwrite
-
-        # Establish redis connection
-        if redis_client:
-            self._index.set_client(redis_client)
-        elif redis_url:
-            self._index.connect(redis_url)
-        else:
-            raise ValueError(
-                "Failed to connect to Redis. Must provide a valid redis client or url"
-            )
 
         # Create index
         self.create_index()
