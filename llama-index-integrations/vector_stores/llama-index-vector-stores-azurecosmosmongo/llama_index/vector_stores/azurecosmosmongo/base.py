@@ -110,7 +110,7 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
                 )
             self._mongodb_client = pymongo.MongoClient(
                 os.environ["AZURE_COSMOSDB_MONGODB_URI"],
-                appname="LlamaIndex-CDBMongoVCore-VectorStore-Python",
+                appname="LLAMAINDEX_PYTHON",
             )
 
         self._collection = self._mongodb_client[db_name][collection_name]
