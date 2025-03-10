@@ -25,9 +25,9 @@ from llama_index.tools.agentql.messages import (
     UNSET_API_KEY_ERROR_MESSAGE,
     MISSING_BROWSER_ERROR_MESSAGE,
 )
-from llama_index.tools.agentql.load_data import aload_data
 from llama_index.tools.agentql.utils import (
     _aget_current_agentql_page,
+    _aload_data,
 )
 
 
@@ -135,7 +135,7 @@ class AgentQLToolSpec(BaseToolSpec):
             "experimental_stealth_mode_enabled": self.is_stealth_mode_enabled,
         }
 
-        return await aload_data(
+        return await _aload_data(
             url=url,
             query=query,
             prompt=prompt,
