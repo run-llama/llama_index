@@ -3,5 +3,5 @@ from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
 
 def test_embedding_class():
-    emb = GoogleGenAIEmbedding()
+    emb = GoogleGenAIEmbedding(api_key="...")
     assert isinstance(emb, BaseEmbedding)
