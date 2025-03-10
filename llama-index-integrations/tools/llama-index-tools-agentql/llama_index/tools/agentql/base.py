@@ -125,12 +125,6 @@ class AgentQLToolSpec(BaseToolSpec):
         Returns:
             dict: The extracted data.
         """
-        # Check that query and prompt cannot be both empty or both provided
-        if not query and not prompt:
-            raise ValueError(QUERY_PROMPT_REQUIRED_ERROR_MESSAGE)
-        if query and prompt:
-            raise ValueError(QUERY_PROMPT_EXCLUSIVE_ERROR_MESSAGE)
-
         _params = {
             "wait_for": self.wait_for_page_load,
             "is_scroll_to_bottom_enabled": self.is_scroll_to_bottom_enabled,
