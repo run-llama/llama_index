@@ -1,5 +1,4 @@
 import agentql
-from urllib.parse import urlparse
 
 try:
     from playwright.async_api import Browser as AsyncBrowser
@@ -23,11 +22,3 @@ async def _aget_current_agentql_page(browser: AsyncBrowser) -> AsyncPage:
     context = browser.contexts[0] if browser.contexts else await browser.new_context()
     page = context.pages[-1] if context.pages else await context.new_page()
     return await agentql.wrap_async(page)
-
-
-def validate_url_scheme(url: str) -> None:
-    """Check that the URL scheme is valid."""
-    if url:
-        parsed_url = urlparse(url)
-        if parsed_url.scheme not in ("http", "https"):
-            raise ValueError("URL scheme must be 'http' or 'https'")

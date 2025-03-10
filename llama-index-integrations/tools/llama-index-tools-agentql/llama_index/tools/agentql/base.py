@@ -28,7 +28,6 @@ from llama_index.tools.agentql.messages import (
 from llama_index.tools.agentql.load_data import aload_data
 from llama_index.tools.agentql.utils import (
     _aget_current_agentql_page,
-    validate_url_scheme,
 )
 
 
@@ -126,9 +125,6 @@ class AgentQLToolSpec(BaseToolSpec):
         Returns:
             dict: The extracted data.
         """
-        # Check that the URL scheme is valid
-        validate_url_scheme(url)
-
         # Check that query and prompt cannot be both empty or both provided
         if not query and not prompt:
             raise ValueError(QUERY_PROMPT_REQUIRED_ERROR_MESSAGE)
