@@ -25,7 +25,13 @@ def _marshal_llm_to_json(output: str) -> str:
     left_square = output.find("[")
     left_brace = output.find("{")
 
-    if left_square < left_brace and left_square != -1:
+    if left_square == -1:
+        left = left_brace
+        right = output.rfind("}")
+    elif left_brace == -1:
+        left = left_square
+        right = output.rfind("]")
+    elif left_square < left_brace and left_square != -1:
         left = left_square
         right = output.rfind("]")
     else:
