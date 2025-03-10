@@ -3,7 +3,7 @@
 [AgentQL](https://www.agentql.com/) provides web interaction and structured data extraction from any web page using an [AgentQL query](https://docs.agentql.com/agentql-query) or a Natural Language prompt. AgentQL can be used across multiple languages and web pages without breaking over time and change.
 
 > **Warning**
-> Only support async functions and playwright browser APIs.
+> Only support async functions and playwright browser APIs, please refer to the following PR for more details: https://github.com/run-llama/llama_index/pull/17808
 
 ## Installation
 
