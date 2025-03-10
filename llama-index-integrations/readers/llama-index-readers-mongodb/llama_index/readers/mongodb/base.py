@@ -1,5 +1,6 @@
 """Mongo client."""
 
+from collections.abc import Callable
 from typing import Dict, Iterable, List, Optional
 
 from llama_index.core.readers.base import BaseReader
@@ -49,6 +50,7 @@ class SimpleMongoReader(BaseReader):
         query_dict: Optional[Dict] = None,
         max_docs: int = 0,
         metadata_names: Optional[List[str]] = None,
+        field_extractors: Optional[Dict[str, Callable[..., str]]] = None,
     ) -> Iterable[Document]:
         """Load data from the input directory.
 
@@ -66,6 +68,9 @@ class SimpleMongoReader(BaseReader):
                 Defaults to 0 (no limit)
             metadata_names (Optional[List[str]]): names of the fields to be added
                 to the metadata attribute of the Document. Defaults to None
+            field_extractors (Optional[Dict[str, Callable[..., str]]]): dictionary
+                containing field name and a function to extract text from the field.
+                The default extractor function is `str`. Defaults to None.
 
         Returns:
             List[Document]: A list of documents.
@@ -78,9 +83,11 @@ class SimpleMongoReader(BaseReader):
             projection={name: 1 for name in field_names + (metadata_names or [])},
         )
 
+        field_extractors = field_extractors or {}
+
         for item in cursor:
             try:
-                texts = [str(item[name]) for name in field_names]
+                texts = [field_extractors.get(name, str)(item[name]) for name in field_names]
             except KeyError as err:
                 raise ValueError(
                     f"{err.args[0]} field not found in Mongo document."
