@@ -73,7 +73,7 @@ await agentql_tool.extract_web_data_from_browser(
 #### Find a web element on the active browser page
 
 ```python
-next_page_button = await agentql_tool.extract_web_element_from_browser(
+next_page_button = await agentql_tool.get_web_element_from_browser(
     prompt="The next page navigation button",
 )
 await playwright_tool.click(next_page_button)
