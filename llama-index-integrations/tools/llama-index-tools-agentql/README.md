@@ -17,7 +17,7 @@ You also need to configure the `AGENTQL_API_KEY` environment variable. You can a
 
 AgentQL provides the following three tools:
 
-- **`extract_web_data`**: Extracts structured data as JSON from a web page given a URL using either an [AgentQL query](https://docs.agentql.com/agentql-query/query-intro) or a Natural Language description of the data.
+- **`extract_web_data_with_rest_api`**: Extracts structured data as JSON from a web page given a URL using either an [AgentQL query](https://docs.agentql.com/agentql-query/query-intro) or a Natural Language description of the data.
 
 - **`extract_web_data_from_browser`**: Extracts structured data as JSON from the active web page in a browser using either an [AgentQL query](https://docs.agentql.com/agentql-query/query-intro) or a Natural Language description. **This tool must be used with a Playwright browser.**
 
@@ -31,9 +31,9 @@ You can learn more about how to use AgentQL tools in this [Jupyter notebook](htt
 from llama_index.tools.agentql.base import AgentQLToolSpec
 
 agentql_tool = AgentQLToolSpec()
-await agentql_tool.extract_web_data(
-    "https://www.agentql.com/blog",
-    query="{ blogs[] { title url author date }}",
+await agentql_tool.extract_web_data_with_rest_api(
+    url="https://www.agentql.com/blog",
+    query="{ posts[] { title url author date }}",
 )
 ```
 
@@ -49,9 +49,7 @@ In order to use the `extract_web_data_from_browser` and `get_web_element_from_br
 ```python
 from llama_index.tools.playwright.base import PlaywrightToolSpec
 
-async_browser = await PlaywrightToolSpec.create_async_playwright_browser(
-    headless=False
-)
+async_browser = await PlaywrightToolSpec.create_async_playwright_browser()
 ```
 
 You can also use an existing browser instance via Chrome DevTools Protocol (CDP) connection URL:
@@ -68,7 +66,7 @@ playwright_tool = PlaywrightToolSpec(async_browser=async_browser)
 
 await playwright_tool.navigate_to("https://www.agentql.com/blog")
 await agentql_tool.extract_web_data_from_browser(
-    prompt="Extract all the blog titles and urls from the current page.",
+    prompt="The blog posts with title, url, date of post and author",
 )
 ```
 
@@ -76,7 +74,7 @@ await agentql_tool.extract_web_data_from_browser(
 
 ```python
 next_page_button = await agentql_tool.extract_web_element_from_browser(
-    prompt="Button to navigate to the next blog page.",
+    prompt="The next page navigation button",
 )
 await playwright_tool.click(next_page_button)
 ```
