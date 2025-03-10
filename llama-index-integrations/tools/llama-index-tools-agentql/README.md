@@ -63,8 +63,9 @@ async_browser = await p.chromium.connect_over_cdp("CDP_CONNECTION_URL")
 
 ```python
 playwright_tool = PlaywrightToolSpec(async_browser=async_browser)
-
 await playwright_tool.navigate_to("https://www.agentql.com/blog")
+
+agentql_tool = AgentQLToolSpec(async_browser=async_browser)
 await agentql_tool.extract_web_data_from_browser(
     prompt="The blog posts with title, url, date of post and author",
 )
