@@ -253,7 +253,7 @@ class Context:
         raise ValueError(msg)
 
     @property
-    def data(self) -> Dict[str, Any]:
+    def data(self) -> Dict[str, Any]:  # pragma: no cover
         """This property is provided for backward compatibility.
 
         Use `get` and `set` instead.
@@ -268,7 +268,7 @@ class Context:
         return self._lock
 
     @property
-    def session(self) -> "Context":
+    def session(self) -> "Context":  # pragma: no cover
         """This property is provided for backward compatibility."""
         msg = "`session` is deprecated, please use the Context instance directly."
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
@@ -312,6 +312,7 @@ class Context:
         """Returns a copy of the list of events holding the stepwise execution."""
         if self._step_events_holding is None:
             return []
+
         return list(self._step_events_holding)
 
     def send_event(self, message: Event, step: Optional[str] = None) -> None:

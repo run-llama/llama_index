@@ -394,7 +394,7 @@ class Workflow(metaclass=WorkflowMeta):
                         # this way, the user can access and respond to the event
                         if isinstance(new_ev, InputRequiredEvent):
                             ctx.write_event_to_stream(new_ev)
-                        else:
+                        elif new_ev is not None:
                             ctx.send_event(new_ev)
 
             for _ in range(step_config.num_workers):
@@ -581,7 +581,11 @@ class Workflow(metaclass=WorkflowMeta):
         # only kick off the workflow if there are no in-progress events
         # in-progress events are already started in self.run()
         num_in_progress = sum(len(v) for v in ctx._in_progress.values())
-        if num_in_progress == 0 and handler.ctx is not None:
+        if (
+            num_in_progress == 0
+            and handler.ctx is not None
+            and checkpoint.output_event is not None
+        ):
             handler.ctx.send_event(checkpoint.output_event)
 
         return handler
