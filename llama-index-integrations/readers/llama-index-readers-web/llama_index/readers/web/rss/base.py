@@ -1,6 +1,6 @@
 """Rss reader."""
 
-from typing import List, Any
+from typing import List, Any, Union
 import logging
 
 from llama_index.core.readers.base import BasePydanticReader
@@ -18,7 +18,7 @@ class RssReader(BasePydanticReader):
 
     is_remote: bool = True
     html_to_text: bool = False
-    user_agent: str | None = None
+    user_agent: Union[str, None] = None
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
