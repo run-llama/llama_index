@@ -1,6 +1,6 @@
 """Mongo client."""
 
-from typing import Dict, Iterable, List, Optional, Union
+from typing import Dict, Iterable, List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -39,12 +39,6 @@ class SimpleMongoReader(BaseReader):
             raise ValueError("Either `host` and `port` or `uri` must be provided.")
 
         self.client = client
-
-    def _flatten(self, texts: List[Union[str, List[str]]]) -> List[str]:
-        result = []
-        for text in texts:
-            result += text if isinstance(text, list) else [text]
-        return result
 
     def lazy_load_data(
         self,
@@ -92,7 +86,6 @@ class SimpleMongoReader(BaseReader):
                     f"{err.args[0]} field not found in Mongo document."
                 ) from err
 
-            texts = self._flatten(texts)
             text = separator.join(texts)
 
             if metadata_names is None:
