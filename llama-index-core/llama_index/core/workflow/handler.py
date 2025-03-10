@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, List, Optional
 
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.errors import WorkflowDone
@@ -39,7 +39,7 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
             if type(ev) is StopEvent:
                 break
 
-    async def run_step(self) -> Optional[Event]:
+    async def run_step(self) -> Optional[List[Event]]:
         """Runs the next workflow step and returns the output Event.
 
         If return is None, then the workflow is considered done.
@@ -63,6 +63,9 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
 
         if self.ctx:
             try:
+                # Reset the events collected in current step
+                self.ctx._step_events_holding = None
+
                 # Unblock all pending steps
                 for flag in self.ctx._step_flags.values():
                     flag.set()
@@ -114,7 +117,7 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
                     # Wait to be notified that the new_ev has been written
                     async with self.ctx._step_event_written:
                         await self.ctx._step_event_written.wait()
-                        retval = self.ctx._step_event_holding
+                        retval = self.ctx.get_holding_events()
             except Exception as e:
                 if not self.is_done():  # Avoid InvalidStateError edge case
                     self.set_exception(e)

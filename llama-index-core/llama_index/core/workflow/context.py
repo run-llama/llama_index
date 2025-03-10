@@ -55,7 +55,7 @@ class Context:
         self._broker_log: List[Event] = []
         self._cancel_flag: asyncio.Event = asyncio.Event()
         self._step_flags: Dict[str, asyncio.Event] = {}
-        self._step_event_holding: Optional[Event] = None
+        self._step_events_holding: Optional[List[Event]] = None
         self._step_lock: asyncio.Lock = asyncio.Lock()
         self._step_condition: asyncio.Condition = asyncio.Condition(
             lock=self._step_lock
@@ -297,12 +297,31 @@ class Context:
 
         return None
 
+    def add_holding_event(self, event: Event) -> None:
+        """Add an event to the list of those collected in current step.
+
+        This is only relevant for stepwise execution.
+        """
+        if self.stepwise:
+            if self._step_events_holding is None:
+                self._step_events_holding = []
+
+            self._step_events_holding.append(event)
+
+    def get_holding_events(self) -> List[Event]:
+        """Returns a copy of the list of events holding the stepwise execution."""
+        if self._step_events_holding is None:
+            return []
+        return list(self._step_events_holding)
+
     def send_event(self, message: Event, step: Optional[str] = None) -> None:
         """Sends an event to a specific step in the workflow.
 
         If step is None, the event is sent to all the receivers and we let
         them discard events they don't want.
         """
+        self.add_holding_event(message)
+
         if step is None:
             for queue in self._queues.values():
                 queue.put_nowait(message)
