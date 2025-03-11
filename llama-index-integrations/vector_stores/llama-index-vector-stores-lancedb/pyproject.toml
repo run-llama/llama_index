@@ -31,7 +31,7 @@ version = "0.3.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-lancedb = ">=0.13.0"
+lancedb = ">=0.21.1"
 tantivy = "*"
 llama-index-core = "^0.12.0"
 
