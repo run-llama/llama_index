@@ -15,7 +15,7 @@ You also need to configure the `AGENTQL_API_KEY` environment variable. You can a
 
 ## Overview
 
-AgentQL provides the following three tools:
+AgentQL provides the following three function tools:
 
 - **`extract_web_data_with_rest_api`**: Extracts structured data as JSON from a web page given a URL using either an [AgentQL query](https://docs.agentql.com/agentql-query/query-intro) or a Natural Language description of the data.
 
@@ -28,12 +28,12 @@ You can learn more about how to use AgentQL tools in this [Jupyter notebook](htt
 ### Extract data using REST API
 
 ```python
-from llama_index.tools.agentql.base import AgentQLToolSpec
+from llama_index.tools.agentql import ExtractWebDataRestAPISpec
 
-agentql_tool = AgentQLToolSpec()
-await agentql_tool.extract_web_data_with_rest_api(
+extract_web_data_rest_api_tool = ExtractWebDataRestAPISpec()
+await extract_web_data_rest_api_tool.extract_web_data_with_rest_api(
     url="https://www.agentql.com/blog",
-    query="{ posts[] { title url author date }}",
+    query="{ blogs[] { title url author date }}",
 )
 ```
 
@@ -65,17 +65,24 @@ async_browser = await p.chromium.connect_over_cdp("CDP_CONNECTION_URL")
 playwright_tool = PlaywrightToolSpec(async_browser=async_browser)
 await playwright_tool.navigate_to("https://www.agentql.com/blog")
 
-agentql_tool = AgentQLToolSpec(async_browser=async_browser)
-await agentql_tool.extract_web_data_from_browser(
-    prompt="The blog posts with title, url, date of post and author",
+extract_web_data_browser_tool = ExtractWebDataBrowserSpec(
+    async_browser=async_browser
+)
+await extract_web_data_browser_tool.extract_web_data_from_browser(
+    prompt="the blog posts' title and url",
 )
 ```
 
 #### Find a web element on the active browser page
 
 ```python
-next_page_button = await agentql_tool.get_web_element_from_browser(
-    prompt="The next page navigation button",
+get_web_element_browser_tool = GetWebElementBrowserSpec(
+    async_browser=async_browser
+)
+next_page_button = (
+    await get_web_element_browser_tool.get_web_element_from_browser(
+        prompt="The next page navigation button",
+    )
 )
 await playwright_tool.click(next_page_button)
 ```
