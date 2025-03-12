@@ -628,7 +628,7 @@ class Node(BaseNode):
         """
         if self.text_resource:
             if metadata_mode == MetadataMode.NONE:
-                return self.text_resource.text
+                return self.text_resource.text or ""
             return self.text_template.format(
                 content=self.text_resource.text or "",
                 metadata_str=self.get_metadata_str(metadata_mode),
