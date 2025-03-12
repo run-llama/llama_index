@@ -29,8 +29,7 @@ class CacheManager:
     """Manages caching of processed PDF documents."""
 
     def __init__(
-        self, enable_caching: bool, cache_dir: str,
-        cache_ttl: int, verbose: bool
+        self, enable_caching: bool, cache_dir: str, cache_ttl: int, verbose: bool
     ):
         """
         Initialize the cache manager.
@@ -68,11 +67,8 @@ class CacheManager:
                             cache_item = CacheItem(**cache_data)
 
                             # Check if the cache entry is still valid
-                            if (
-                             time.time() - cache_item.timestamp) < (
-                             self.cache_ttl):
-                                self._cache[
-                                    cache_item.document_hash] = cache_item
+                            if (time.time() - cache_item.timestamp) < (self.cache_ttl):
+                                self._cache[cache_item.document_hash] = cache_item
                     except Exception as e:
                         if self.verbose:
                             logger.warning(
@@ -133,8 +129,7 @@ class CacheManager:
 
             if self.verbose:
                 logger.info(
-                    f"Cached results for {file_hash} (documents: {len(
-                        documents)})"
+                    f"Cached results for {file_hash} (documents: {len(documents)})"
                 )
 
         except Exception as e:
@@ -166,12 +161,10 @@ class CacheManager:
         # Convert cached dictionaries back to Documents
         documents = []
         for doc_dict in cache_item.documents:
-            doc = Document(
-                text=doc_dict["text"], metadata=doc_dict["metadata"])
+            doc = Document(text=doc_dict["text"], metadata=doc_dict["metadata"])
             documents.append(doc)
 
         if self.verbose:
-            logger.info(
-             f"Loaded {len(documents)} documents from cache for {file_hash}")
+            logger.info(f"Loaded {len(documents)} documents from cache for {file_hash}")
 
         return documents
