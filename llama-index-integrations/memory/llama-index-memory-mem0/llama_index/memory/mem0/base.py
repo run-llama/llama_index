@@ -92,8 +92,8 @@ class Mem0Memory(BaseMem0):
         context: Dict[str, Any],
         api_key: Optional[str] = None,
         host: Optional[str] = None,
-        organization: Optional[str] = None,
-        project: Optional[str] = None,
+        org_id: Optional[str] = None,
+        project_id: Optional[str] = None,
         search_msg_limit: int = 5,
         **kwargs: Any,
     ):
@@ -105,7 +105,7 @@ class Mem0Memory(BaseMem0):
             raise ValidationError(f"Context validation error: {e}")
 
         client = MemoryClient(
-            api_key=api_key, host=host, organization=organization, project=project
+            api_key=api_key, host=host, org_id=org_id, project_id=project_id
         )
         return cls(
             primary_memory=primary_memory,
@@ -144,12 +144,7 @@ class Mem0Memory(BaseMem0):
 
         search_results = self.search(query=input, **self.context.get_context())
 
-        version = (
-            self._client.api_version
-            if hasattr(self._client, "api_version")
-            else self._client.version
-        )
-        if isinstance(self._client, Memory) and version == "v1.1":
+        if isinstance(self._client, Memory) and self._client.api_version == "v1.1":
             search_results = search_results["results"]
 
         system_message = convert_memory_to_system_message(search_results)

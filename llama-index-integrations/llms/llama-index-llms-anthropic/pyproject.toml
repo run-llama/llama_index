@@ -18,7 +18,7 @@ Anthropic = "llama-index"
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.9"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
@@ -27,11 +27,11 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-anthropic"
 readme = "README.md"
-version = "0.6.3"
+version = "0.6.10"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-anthropic = {extras = ["bedrock", "vertex"], version = ">=0.41.0"}
+anthropic = {extras = ["bedrock", "vertex"], version = ">=0.49.0"}
 llama-index-core = "^0.12.5"
 
 [tool.poetry.group.dev.dependencies]

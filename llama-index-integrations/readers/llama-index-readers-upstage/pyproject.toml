@@ -26,7 +26,7 @@ python_version = "3.8"
 [tool.poetry]
 authors = ["JunKeon Park <junkeon@upstage.ai>"]
 description = "llama-index readers upstage integration"
-license = "MIT"
+license = "GNU AFFERO GPL 3.0"
 name = "llama-index-readers-upstage"
 packages = [{include = "llama_index/"}]
 readme = "README.md"

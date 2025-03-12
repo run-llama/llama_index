@@ -4,6 +4,8 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
+from functools import partial
+from inspect import iscoroutinefunction
 from queue import Queue, Empty
 from threading import Event
 from typing import AsyncGenerator, Callable, Generator, List, Optional, Union, Dict, Any
@@ -122,6 +124,7 @@ class StreamingAgentChatResponse:
     is_writing_to_memory: bool = True
     # Track if an exception occurred
     exception: Optional[Exception] = None
+    awrite_response_to_history_task: Optional[asyncio.Task] = None
 
     def set_source_nodes(self) -> None:
         if self.sources and not self.source_nodes:
@@ -265,7 +268,14 @@ class StreamingAgentChatResponse:
         self.is_function_false_event.set()
         self.new_item_event.set()
         if on_stream_end_fn is not None and not self.is_function:
-            on_stream_end_fn()
+            if iscoroutinefunction(
+                on_stream_end_fn.func
+                if isinstance(on_stream_end_fn, partial)
+                else on_stream_end_fn
+            ):
+                await on_stream_end_fn()
+            else:
+                on_stream_end_fn()
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
@@ -291,34 +301,44 @@ class StreamingAgentChatResponse:
         self.response = self.unformatted_response.strip()
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
-        self._ensure_async_setup()
-        assert self.aqueue is not None
+        try:
+            self._ensure_async_setup()
+            assert self.aqueue is not None
 
-        if self.is_writing_to_memory:
-            while True:
-                if not self.aqueue.empty() or not self.is_done:
-                    if self.exception is not None:
-                        raise self.exception
+            if self.is_writing_to_memory:
+                while True:
+                    if not self.aqueue.empty() or not self.is_done:
+                        if self.exception is not None:
+                            raise self.exception
 
-                    try:
-                        delta = await asyncio.wait_for(self.aqueue.get(), timeout=0.1)
-                    except asyncio.TimeoutError:
-                        if self.is_done:
-                            break
-                        continue
-                    if delta is not None:
-                        self.unformatted_response += delta
-                        yield delta
-                else:
-                    break
-        else:
-            if self.achat_stream is None:
-                raise ValueError("achat_stream is None!")
+                        try:
+                            delta = await asyncio.wait_for(
+                                self.aqueue.get(), timeout=0.1
+                            )
+                        except asyncio.TimeoutError:
+                            if self.is_done:
+                                break
+                            continue
+                        if delta is not None:
+                            self.unformatted_response += delta
+                            yield delta
+                    else:
+                        break
+            else:
+                if self.achat_stream is None:
+                    raise ValueError("achat_stream is None!")
 
-            async for chat_response in self.achat_stream:
-                self.unformatted_response += chat_response.delta or ""
-                yield chat_response.delta or ""
-        self.response = self.unformatted_response.strip()
+                async for chat_response in self.achat_stream:
+                    self.unformatted_response += chat_response.delta or ""
+                    yield chat_response.delta or ""
+            self.response = self.unformatted_response.strip()
+        finally:
+            if self.awrite_response_to_history_task:
+                # Make sure that the background task ran to completion, retrieve any exceptions
+                await self.awrite_response_to_history_task
+                self.awrite_response_to_history_task = (
+                    None  # No need to keep the reference to the finished task
+                )
 
     def print_response_stream(self) -> None:
         for token in self.response_gen:

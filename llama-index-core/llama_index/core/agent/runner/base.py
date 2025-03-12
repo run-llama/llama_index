@@ -141,6 +141,14 @@ class BaseAgentRunner(BaseAgent):
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Finalize response."""
 
+    async def afinalize_response(
+        self,
+        task_id: str,
+        step_output: Optional[TaskStepOutput] = None,
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
+        """Finalize response."""
+        return self.finalize_response(task_id, step_output)
+
     @abstractmethod
     def undo_step(self, task_id: str) -> None:
         """Undo previous step."""
@@ -560,6 +568,43 @@ class AgentRunner(BaseAgentRunner):
         return cast(AGENT_CHAT_RESPONSE_TYPE, step_output.output)
 
     @dispatcher.span
+    async def afinalize_response(
+        self,
+        task_id: str,
+        step_output: Optional[TaskStepOutput] = None,
+    ) -> AGENT_CHAT_RESPONSE_TYPE:
+        """Finalize response."""
+        if step_output is None:
+            step_output = self.state.get_completed_steps(task_id)[-1]
+        if not step_output.is_last:
+            raise ValueError(
+                "finalize_response can only be called on the last step output"
+            )
+
+        if not isinstance(
+            step_output.output,
+            (AgentChatResponse, StreamingAgentChatResponse),
+        ):
+            raise ValueError(
+                "When `is_last` is True, cur_step_output.output must be "
+                f"AGENT_CHAT_RESPONSE_TYPE: {step_output.output}"
+            )
+
+        # finalize task
+        await self.agent_worker.afinalize_task(self.state.get_task(task_id))
+
+        if self.delete_task_on_finish:
+            self.delete_task(task_id)
+
+        # Attach all sources generated across all steps
+        step_output.output.sources = self.get_task(task_id).extra_state.get(
+            "sources", []
+        )
+        step_output.output.set_source_nodes()
+
+        return cast(AGENT_CHAT_RESPONSE_TYPE, step_output.output)
+
+    @dispatcher.span
     def _chat(
         self,
         message: str,
@@ -622,7 +667,7 @@ class AgentRunner(BaseAgentRunner):
             # ensure tool_choice does not cause endless loops
             tool_choice = "auto"
 
-        result = self.finalize_response(
+        result = await self.afinalize_response(
             task.task_id,
             result_output,
         )

@@ -34,7 +34,16 @@ class VertexAIRetriever(BaseRetriever):
 
         if response.contexts:
             return [
-                NodeWithScore(node=TextNode(text=context.text), score=context.distance)
+                NodeWithScore(
+                    node=TextNode(
+                        text=context.text,
+                        metadata={
+                            "source_uri": context.source_uri,
+                            "source_display_name": context.source_display_name,
+                        },
+                    ),
+                    score=context.distance,
+                )
                 for context in response.contexts.contexts
             ]
         else:

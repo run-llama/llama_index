@@ -1,14 +1,14 @@
 import inspect
 from importlib import import_module
 from typing import (
-    get_args,
-    get_origin,
     Any,
+    Callable,
+    Dict,
     List,
     Optional,
     Union,
-    Callable,
-    Dict,
+    get_args,
+    get_origin,
     get_type_hints,
 )
 
@@ -16,12 +16,14 @@ from typing import (
 try:
     from types import UnionType  # type: ignore[attr-defined]
 except ImportError:  # pragma: no cover
-    from typing import Union as UnionType
+    from typing import Union as UnionType  # type: ignore[assignment]
 
 from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
-from .events import Event, EventType
 from .errors import WorkflowValidationError
+from .events import Event, EventType
+
+BUSY_WAIT_DELAY = 0.01
 
 
 class ServiceDefinition(BaseModel):

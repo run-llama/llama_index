@@ -446,7 +446,7 @@ index = PropertyGraphIndex.from_existing(
 
 ### Using the Property Graph Store Directly
 
-The base storage class for property graphs is the `PropertyGraphStore`. These property graph stores are constructured using different types of `LabeledNode` objects, and connected using `Relation` objects.
+The base storage class for property graphs is the `PropertyGraphStore`. These property graph stores are constructed using different types of `LabeledNode` objects, and connected using `Relation` objects.
 
 We can create these ourselves, and also insert ourselves!
 

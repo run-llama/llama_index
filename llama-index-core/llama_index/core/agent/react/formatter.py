@@ -13,7 +13,7 @@ from llama_index.core.agent.react.types import (
     ObservationReasoningStep,
 )
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict, Field
 from llama_index.core.tools import BaseTool
 
 logger = logging.getLogger(__name__)
@@ -53,6 +53,14 @@ class ReActChatFormatter(BaseAgentChatFormatter):
 
     system_header: str = REACT_CHAT_SYSTEM_HEADER  # default
     context: str = ""  # not needed w/ default
+    observation_role: MessageRole = Field(
+        default=MessageRole.USER,
+        description=(
+            "Message role of tool outputs. If the LLM you use supports function/tool "
+            "calling, you may set it to `MessageRole.TOOL` to avoid the tool outputs "
+            "being misinterpreted as new user messages."
+        ),
+    )
 
     def format(
         self,
@@ -73,13 +81,13 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         fmt_sys_header = self.system_header.format(**format_args)
 
         # format reasoning history as alternating user and assistant messages
-        # where the assistant messages are thoughts and actions and the user
+        # where the assistant messages are thoughts and actions and the tool
         # messages are observations
         reasoning_history = []
         for reasoning_step in current_reasoning:
             if isinstance(reasoning_step, ObservationReasoningStep):
                 message = ChatMessage(
-                    role=MessageRole.USER,
+                    role=self.observation_role,
                     content=reasoning_step.get_content(),
                 )
             else:
@@ -100,6 +108,7 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         cls,
         system_header: Optional[str] = None,
         context: Optional[str] = None,
+        observation_role: MessageRole = MessageRole.USER,
     ) -> "ReActChatFormatter":
         """Create ReActChatFormatter from defaults."""
         if not system_header:
@@ -112,6 +121,7 @@ class ReActChatFormatter(BaseAgentChatFormatter):
         return ReActChatFormatter(
             system_header=system_header,
             context=context or "",
+            observation_role=observation_role,
         )
 
     @classmethod

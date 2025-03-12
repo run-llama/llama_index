@@ -34,16 +34,17 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-indices-managed-llama-cloud"
 readme = "README.md"
-version = "0.6.3"
+version = "0.6.8"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-cloud = ">=0.1.5"
+llama-cloud = "^0.1.13"
 llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
 jupyter = "^1.0.0"
+llama-index-embeddings-openai = "^0.3.1"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"

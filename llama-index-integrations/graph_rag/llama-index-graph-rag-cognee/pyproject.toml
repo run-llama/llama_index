@@ -27,11 +27,11 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-graph-rag-cognee"
 readme = "README.md"
-version = "0.1.0"
+version = "0.1.3"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
-cognee = "^0.1.20"
+cognee = {extras = ["neo4j", "postgres", "qdrant", "weaviate"], version = "0.1.26"}
 httpx = "~=0.27.0"
 llama-index-core = "^0.12.5"
 pytest-cov = "^6.0.0"
@@ -40,7 +40,7 @@ pytest-cov = "^6.0.0"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"
-pre-commit = "3.2.0"
+pre-commit = "^4.0.0"
 pylint = "2.15.10"
 pytest = "8.2"
 pytest-asyncio = "^0.25.0"

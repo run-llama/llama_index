@@ -177,7 +177,7 @@ def test_retreiver_tool() -> None:
     )
     output = vs_ret_tool.call("arg1", "arg2", key1="v1", key2="v2")
     formated_doc = (
-        "file_path = /data/personal/essay.md\n"
+        "file_path: /data/personal/essay.md\n\n"
         "# title1:Hello world.\n"
         "This is a test."
     )

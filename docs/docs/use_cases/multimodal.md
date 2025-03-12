@@ -23,7 +23,6 @@ Check out our guides below:
 - [Structured Image Retrieval](../examples/multi_modal/structured_image_retrieval.ipynb)
 - [Chroma Multi-Modal](../examples/multi_modal/ChromaMultiModalDemo.ipynb)
 - [Gemini Multi-Modal](../examples/multi_modal/gemini.ipynb)
-- [Ollama Multi-Modal](../examples/multi_modal/ollama_cookbook.ipynb)
 
 ### Structured Outputs
 
@@ -79,4 +78,3 @@ Here are notebook guides showing you how to interact with different multimodal m
 
 - [OpenAI Multi-Modal](../examples/multi_modal/openai_multi_modal.ipynb)
 - [Replicate Multi-Modal](../examples/multi_modal/replicate_multi_modal.ipynb)
-- [Ollama Multi-Modal](../examples/multi_modal/ollama_cookbook.ipynb)

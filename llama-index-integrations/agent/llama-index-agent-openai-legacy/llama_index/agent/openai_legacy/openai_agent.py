@@ -244,7 +244,7 @@ class BaseOpenAIAgent(BaseAgent):
             sources=self.sources,
         )
         # create task to write chat response to history
-        asyncio.create_task(
+        chat_stream_response.awrite_response_to_history_task = asyncio.create_task(
             chat_stream_response.awrite_response_to_history(self.memory)
         )
         # wait until openAI functions stop executing

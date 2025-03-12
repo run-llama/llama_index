@@ -102,7 +102,7 @@ class TreeSummarize(BaseSynthesizer):
         else:
             # summarize each chunk
             if self._output_cls is None:
-                tasks = [
+                str_tasks = [
                     self._llm.apredict(
                         summary_template,
                         context_str=text_chunk,
@@ -110,8 +110,9 @@ class TreeSummarize(BaseSynthesizer):
                     )
                     for text_chunk in text_chunks
                 ]
+                summaries = await asyncio.gather(*str_tasks)
             else:
-                tasks = [
+                model_tasks = [
                     self._llm.astructured_predict(
                         self._output_cls,
                         summary_template,
@@ -120,12 +121,8 @@ class TreeSummarize(BaseSynthesizer):
                     )
                     for text_chunk in text_chunks
                 ]
-
-            summary_responses = await asyncio.gather(*tasks)
-            if self._output_cls is not None:
-                summaries = [summary.model_dump_json() for summary in summary_responses]
-            else:
-                summaries = summary_responses
+                summary_models = await asyncio.gather(*model_tasks)
+                summaries = [summary.model_dump_json() for summary in summary_models]
 
             # recursively summarize the summaries
             return await self.aget_response(
