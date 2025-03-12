@@ -80,8 +80,7 @@ class PDFProcessor:
             raise FileNotFoundError(f"PDF not found: {pdf_path}")
 
         if self.verbose:
-            logger.info(
-                f"Converting PDF to images: {pdf_path} (DPI: {self.dpi})")
+            logger.info(f"Converting PDF to images: {pdf_path} (DPI: {self.dpi})")
 
         try:
             # Convert PDF to images using pdf2image
@@ -115,8 +114,7 @@ class PDFProcessor:
         self._stats.total_chunks += chunks_count
 
         # Update progress
-        self._update_progress(
-            self._stats.processed_pages, self._stats.total_pages)
+        self._update_progress(self._stats.processed_pages, self._stats.total_pages)
 
     def process_pages_parallel(
         self,
@@ -141,8 +139,7 @@ class PDFProcessor:
 
         # Create arguments for each page
         page_args = [
-            (image, pdf_path, i, total_pages) for i, image in enumerate(
-                images, start=1)
+            (image, pdf_path, i, total_pages) for i, image in enumerate(images, start=1)
         ]
 
         all_documents = []
@@ -161,9 +158,7 @@ class PDFProcessor:
                     all_documents.extend(page_documents)
                 except Exception as e:
                     if not self.ignore_errors:
-                        raise RuntimeError(
-                            f"Error processing page: {e!s}"
-                        ) from e
+                        raise RuntimeError(f"Error processing page: {e!s}") from e
 
         # Sort documents by page number and chunk number if needed
         if split_by_page:
@@ -174,8 +169,7 @@ class PDFProcessor:
                 )
             )
         else:
-            all_documents.sort(
-                key=lambda doc: doc.metadata.get("page_number", 0))
+            all_documents.sort(key=lambda doc: doc.metadata.get("page_number", 0))
 
         return all_documents
 
@@ -237,8 +231,7 @@ class PDFProcessor:
                     documents.append(doc)
             else:
                 # Create a single Document per page with all chunks
-                combined_text = "\n\n".join(
-                    [chunk.text for chunk in text_chunks])
+                combined_text = "\n\n".join([chunk.text for chunk in text_chunks])
 
                 # Create metadata
                 metadata = {
@@ -297,15 +290,13 @@ class PDFProcessor:
             Documents extracted from the PDF
         """
         if self.verbose:
-            logger.info(
-                f"Processing PDF in continuous mode with {len(images)} pages")
+            logger.info(f"Processing PDF in continuous mode with {len(images)} pages")
 
         total_pages = len(images)
 
         # Create arguments for each page
         page_args = [
-            (image, pdf_path, i, total_pages) for i, image in enumerate(
-                images, start=1)
+            (image, pdf_path, i, total_pages) for i, image in enumerate(images, start=1)
         ]
 
         # Process all pages in parallel to extract chunks
@@ -336,8 +327,7 @@ class PDFProcessor:
 
             # Submit all tasks
             future_to_page = {
-                executor.submit(
-                    extract_page_chunks, args): args for args in page_args
+                executor.submit(extract_page_chunks, args): args for args in page_args
             }
 
             # Collect results as they complete
@@ -384,8 +374,7 @@ class PDFProcessor:
                     metadata = {
                         "file_path": pdf_path,
                         "file_name": os.path.basename(pdf_path),
-                        "page_range": f"{min(current_pages)}-{max(
-                            current_pages)}",
+                        "page_range": f"{min(current_pages)}-{max(current_pages)}",
                         "pages": current_pages,
                         "total_pages": total_pages,
                         "source_type": "pdf_continuous",
