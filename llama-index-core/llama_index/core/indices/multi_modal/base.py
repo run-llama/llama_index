@@ -139,6 +139,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever(**kwargs))
 
         llm = llm or Settings.llm
+        if "multi" not in llm.class_name():
+            logger.warning(
+                f"Warning: {llm.class_name()} does not appear to be a multi-modal LLM. This may not work as expected."
+            )
 
         return SimpleMultiModalQueryEngine(
             retriever,
