@@ -25,7 +25,6 @@ from llama_index.core.indices.multi_modal.retriever import (
 )
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.llms.utils import LLMType
-from llama_index.core.multi_modal_llms import MultiModalLLM
 from llama_index.core.query_engine.multi_modal import SimpleMultiModalQueryEngine
 from llama_index.core.schema import BaseNode, ImageNode, TextNode
 from llama_index.core.settings import Settings
@@ -140,7 +139,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever(**kwargs))
 
         llm = llm or Settings.llm
-        assert isinstance(llm, MultiModalLLM)
 
         return SimpleMultiModalQueryEngine(
             retriever,
