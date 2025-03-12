@@ -64,7 +64,8 @@ def chat_from_gemini_response(
         raw["usage_metadata"] = response.usage_metadata.model_dump()
 
     try:
-        text = response.text
+        parts = response.candidates[0].content.parts
+        text = "".join([part.text for part in parts if part.text])
     except ValueError:
         text = None
 
@@ -111,9 +112,16 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
             raise ValueError(msg)
 
     for tool_call in message.additional_kwargs.get("tool_calls", []):
-        parts.append(
-            types.Part.from_function_call(name=tool_call.name, args=tool_call.args)
-        )
+        if isinstance(tool_call, dict):
+            parts.append(
+                types.Part.from_function_call(
+                    name=tool_call.get("name"), args=tool_call.get("args")
+                )
+            )
+        else:
+            parts.append(
+                types.Part.from_function_call(name=tool_call.name, args=tool_call.args)
+            )
 
     # the tool call id is the name of the tool
     # the tool call response is the content of the message, overriding the existing content
@@ -123,7 +131,9 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
             name=message.additional_kwargs.get("tool_call_id"),
             response={"result": message.content},
         )
-        return types.Content(role="tool", parts=[function_response_part])
+        return types.Content(
+            role=ROLES_TO_GEMINI[message.role], parts=[function_response_part]
+        )
 
     return types.Content(
         role=ROLES_TO_GEMINI[message.role],
