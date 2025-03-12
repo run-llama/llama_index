@@ -22,6 +22,6 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-pdf2image = ">=1.17.0,<2.0.0"
-google-genai = ">=1.4.0,<2.0.0"
-llama-index = ">=0.12.22,<0.13.0"
+pdf2image = "^1.17.0"
+google-genai = "^1.5.0"
+llama-index-core = "^0.12.22"
