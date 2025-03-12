@@ -17,7 +17,7 @@ def mock_rebel_predict(
     if "context_str" not in prompt_args:
         # Return a simple template for the choice selection prompt
         return "Doc: {doc_id}, Relevance: {relevance}"
-        
+
     # This is the second call with context_str
     context_str = prompt_args["context_str"]
     node_strs = context_str.split("\n")
