@@ -1,15 +1,11 @@
-from llama_index.tools.agentql.extract_web_data_browser.base import (
-    ExtractWebDataBrowserSpec,
+from llama_index.tools.agentql.agentql_browser_tool.base import (
+    AgentQLBrowserToolSpec,
 )
-from llama_index.tools.agentql.extract_web_data_rest_api.base import (
-    ExtractWebDataRestAPISpec,
-)
-from llama_index.tools.agentql.get_web_element_browser.base import (
-    GetWebElementBrowserSpec,
+from llama_index.tools.agentql.agentql_rest_api_tool.base import (
+    AgentQLRestAPIToolSpec,
 )
 
 __all__ = [
-    "ExtractWebDataBrowserSpec",
-    "ExtractWebDataRestAPISpec",
-    "GetWebElementBrowserSpec",
+    "AgentQLBrowserToolSpec",
+    "AgentQLRestAPIToolSpec",
 ]
