@@ -15,7 +15,7 @@ from llama_index.core.node_parser.node_utils import (
     default_id_func,
 )
 from llama_index.core.node_parser.text.utils import split_by_sentence_tokenizer
-from llama_index.core.schema import BaseNode, Document
+from llama_index.core.schema import BaseNode, Document, NodeRelationship
 from llama_index.core.utils import get_tqdm_iterable
 
 DEFAULT_OG_TEXT_METADATA_KEY = "original_text"
@@ -192,7 +192,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
 
         for node in nodes_with_progress:
-            nodes = self.build_semantic_nodes_from_documents([node])
+            nodes = self.build_semantic_nodes_from_nodes([node])
             all_nodes.extend(nodes)
         return all_nodes
 
@@ -201,21 +201,39 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         documents: Sequence[Document],
     ) -> List[BaseNode]:
         """Build window nodes from documents."""
+        return self.build_semantic_nodes_from_nodes(documents)
+
+    def build_semantic_nodes_from_nodes(
+        self,
+        nodes: Sequence[BaseNode],
+    ) -> List[BaseNode]:
+        """Build window nodes from nodes."""
         all_nodes: List[BaseNode] = []
 
-        for doc in documents:
-            text = doc.text
+        for node in nodes:
+            text = node.get_content()
             sentences = self.sentence_splitter(text)
             sentences = [s.strip() for s in sentences]
             initial_chunks = self._create_initial_chunks(sentences)
             chunks = self._merge_initial_chunks(initial_chunks)
 
-            nodes = build_nodes_from_splits(
+            split_nodes = build_nodes_from_splits(
                 chunks,
-                doc,
+                node,
                 id_func=self.id_func,
             )
-            all_nodes.extend(nodes)
+
+            previous_node: BaseNode | None = None
+            for split_node in split_nodes:
+                if previous_node:
+                    split_node.relationships[
+                        NodeRelationship.PREVIOUS
+                    ] = previous_node.as_related_node_info()
+                    previous_node.relationships[
+                        NodeRelationship.NEXT
+                    ] = split_node.as_related_node_info()
+                previous_node = split_node
+            all_nodes.extend(split_nodes)
 
         return all_nodes
 
