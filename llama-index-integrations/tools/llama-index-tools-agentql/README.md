@@ -69,7 +69,7 @@ await playwright_tool.navigate_to("https://www.agentql.com/blog")
 
 agentql_browser_tool = AgentQLBrowserToolSpec(async_browser=async_browser)
 await agentql_browser_tool.extract_web_data_from_browser(
-    prompt="the blog posts' title and url",
+    prompt="the blog posts with title and url",
 )
 ```
 
