@@ -150,7 +150,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         return SimpleMultiModalQueryEngine(
             retriever,
-            multi_modal_llm=llm,
+            multi_modal_llm=llm,  # type: ignore
             **kwargs,
         )
 
