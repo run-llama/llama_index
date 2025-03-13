@@ -45,11 +45,11 @@ class AgentQLBrowserToolSpec(BaseToolSpec):
 
         Args:
             async_browser: An async playwright browser instance.
-            data_timeout: The number of seconds to wait for a extract data request before timing out. Defaults to 900.
-            element_timeout: The number of seconds to wait for a get element request before timing out. Defaults to 300.
+            timeout_for_data: The number of seconds to wait for a extract data request before timing out. Defaults to 900.
+            timeout_for_element: The number of seconds to wait for a get element request before timing out. Defaults to 300.
             wait_for_network_idle: Whether to wait for network idle state. Defaults to `True`.
-            data_include_hidden: Whether to take into account visually hidden elements on the page for extract data. Defaults to `True`.
-            element_include_hidden: Whether to take into account visually hidden elements on the page for get element. Defaults to `False`.
+            include_hidden_for_data: Whether to take into account visually hidden elements on the page for extract data. Defaults to `True`.
+            include_hidden_for_element: Whether to take into account visually hidden elements on the page for get element. Defaults to `False`.
 
             mode: `standard` uses deep data analysis, while `fast` trades some depth of analysis for speed and is adequate for most usecases.
             Learn more about the modes in this guide: https://docs.agentql.com/accuracy/standard-mode. Defaults to `fast`.
