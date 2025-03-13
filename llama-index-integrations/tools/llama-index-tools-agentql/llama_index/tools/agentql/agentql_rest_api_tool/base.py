@@ -27,23 +27,6 @@ class AgentQLRestAPIToolSpec(BaseToolSpec):
     def __init__(
         self,
         timeout: Optional[int] = DEFAULT_API_TIMEOUT_SECONDS,
-    ):
-        """
-        Initialize AgentQL Rest API Tool Spec.
-
-        Args:
-            timeout: The number of seconds to wait for a request before timing out. **Defaults to `900`.**
-        """
-        self._api_key = os.getenv("AGENTQL_API_KEY")
-        if not self._api_key:
-            raise ValueError(UNSET_API_KEY_ERROR_MESSAGE)
-        self.timeout = timeout
-
-    async def extract_web_data_with_rest_api(
-        self,
-        url: str,
-        query: Optional[str] = None,
-        prompt: Optional[str] = None,
         is_stealth_mode_enabled: Optional[bool] = DEFAULT_IS_STEALTH_MODE_ENABLED,
         wait_for: Optional[int] = DEFAULT_WAIT_FOR_PAGE_LOAD_SECONDS,
         is_scroll_to_bottom_enabled: Optional[
@@ -51,33 +34,59 @@ class AgentQLRestAPIToolSpec(BaseToolSpec):
         ] = DEFAULT_IS_SCROLL_TO_BOTTOM_ENABLED,
         mode: Optional[str] = DEFAULT_RESPONSE_MODE,
         is_screenshot_enabled: Optional[bool] = DEFAULT_IS_SCREENSHOT_ENABLED,
-    ) -> dict:
+    ):
         """
-        Extracts structured JSON data from a webpage URL using an AgentQL query or Natural Language Description.
+        Initialize AgentQL Rest API Tool Spec.
 
         Args:
-            url: Webpage URL to extract data from.
-            query: AgentQL query enclosed in `{}`. One of `query` or `prompt` required.
-            prompt: Natural Language description of data to extract.
+            timeout: The number of seconds to wait for a request before timing out. Defaults to 900.
 
-            timeout: Seconds before request times out.
-            is_stealth_mode_enabled: enable experimental anti-bot evasion strategies.
-            wait_for: Seconds to wait for page load.
-            is_scroll_to_bottom_enabled: Scroll to bottom before extraction.
-            mode: 'standard' provides deeper analysis, 'fast' prioritizes speed.
-            is_screenshot_enabled: take screenshot, return as Base64.
+            is_stealth_mode_enabled: Whether to enable experimental anti-bot evasion strategies. This feature may not work for all websites at all times.
+            Data extraction may take longer to complete with this mode enabled. Defaults to `False`.
+
+            wait_for: The number of seconds to wait for the page to load before extracting data. Defaults to 0.
+            is_scroll_to_bottom_enabled: Whether to scroll to bottom of the page before extracting data. Defaults to `False`.
+
+            mode: 'standard' uses deep data analysis, while 'fast' trades some depth of analysis for speed and is adequate for most usecases.
+            Learn more about the modes in this guide: https://docs.agentql.com/accuracy/standard-mode) Defaults to 'fast'.
+
+            is_screenshot_enabled: Whether to take a screenshot before extracting data. Returned in 'metadata' as a Base64 string. Defaults to `False`.
+        """
+        self._api_key = os.getenv("AGENTQL_API_KEY")
+        if not self._api_key:
+            raise ValueError(UNSET_API_KEY_ERROR_MESSAGE)
+        self.timeout = timeout
+        self.is_stealth_mode_enabled = is_stealth_mode_enabled
+        self.wait_for = wait_for
+        self.is_scroll_to_bottom_enabled = is_scroll_to_bottom_enabled
+        self.mode = mode
+        self.is_screenshot_enabled = is_screenshot_enabled
+
+    async def extract_web_data_with_rest_api(
+        self,
+        url: str,
+        query: Optional[str] = None,
+        prompt: Optional[str] = None,
+    ) -> dict:
+        """
+        Extracts structured data as a JSON from the active web page in a running browser instance using either an AgentQL query or a Natural Language description of the data.
+
+        Args:
+            url: URL of the public webpage to extract data from.
+            query: AgentQL query used to extract the data. The query must be enclosed with curly braces `{}`. Either this field or `prompt` field must be provided.
+            prompt: Natural Language description of the data to extract from the page. If AgentQL query is not specified, always use the `prompt` field. Either this field or `query` field must be provided.
 
         Returns:
             dict: Extracted data.
         """
         _params = {
-            "wait_for": wait_for,
-            "is_scroll_to_bottom_enabled": is_scroll_to_bottom_enabled,
-            "mode": mode,
-            "is_screenshot_enabled": is_screenshot_enabled,
+            "wait_for": self.wait_for,
+            "is_scroll_to_bottom_enabled": self.is_scroll_to_bottom_enabled,
+            "mode": self.mode,
+            "is_screenshot_enabled": self.is_screenshot_enabled,
         }
         _metadata = {
-            "experimental_stealth_mode_enabled": is_stealth_mode_enabled,
+            "experimental_stealth_mode_enabled": self.is_stealth_mode_enabled,
         }
 
         return await _aload_data(
