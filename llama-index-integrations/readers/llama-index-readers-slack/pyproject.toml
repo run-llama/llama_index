@@ -28,12 +28,12 @@ license = "MIT"
 maintainers = ["jerryjliu"]
 name = "llama-index-readers-slack"
 readme = "README.md"
-version = "0.3.1"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-slack-sdk = "^3.26.2"
 llama-index-core = "^0.12.0"
+slack-sdk = "^3.26.2"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -43,6 +43,7 @@ pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
 pytest-mock = "3.11.1"
+pytest-asyncio = "0.20.3"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
 types-Deprecated = ">=0.1.0"

@@ -1,330 +1,203 @@
-"""Slack reader."""
+"""Slack reader for fetching and processing messages from Slack channels."""
+
 import logging
 import os
-import re
-import time
-from datetime import datetime
-from ssl import SSLContext
-from typing import Any, List, Optional, Dict
-
-from llama_index.core.bridge.pydantic import PrivateAttr
+from typing import Any, Dict, List, Optional
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
-
 
 logger = logging.getLogger(__name__)
 
 
 class SlackReader(BasePydanticReader):
-    """Slack reader.
-
-    Reads conversations from channels. If an earliest_date is provided, an
-    optional latest_date can also be provided. If no latest_date is provided,
-    we assume the latest date is the current timestamp.
+    """Slack reader for processing channel messages and threads.
 
     Args:
-        slack_token (Optional[str]): Slack token. If not provided, we
-            assume the environment variable `SLACK_BOT_TOKEN` is set.
-        ssl (Optional[str]): Custom SSL context. If not provided, it is assumed
-            there is already an SSL context available.
-        earliest_date (Optional[datetime]): Earliest date from which
-            to read conversations. If not provided, we read all messages.
-        latest_date (Optional[datetime]): Latest date from which to
-            read conversations. If not provided, defaults to current timestamp
-            in combination with earliest_date.
+        slack_token (Optional[str]): Slack bot token. If not provided, reads from SLACK_TOKEN env var.
     """
 
     is_remote: bool = True
     slack_token: str
-    earliest_date_timestamp: Optional[float]
-    latest_date_timestamp: float
-    channel_types: str
 
-    _client: Any = PrivateAttr()
-
-    def __init__(
-        self,
-        slack_token: Optional[str] = None,
-        ssl: Optional[SSLContext] = None,
-        earliest_date: Optional[datetime] = None,
-        latest_date: Optional[datetime] = None,
-        earliest_date_timestamp: Optional[float] = None,
-        latest_date_timestamp: Optional[float] = None,
-        channel_types: Optional[str] = None,
-    ) -> None:
-        """Initialize with parameters."""
-        from slack_sdk import WebClient
-
-        if slack_token is None:
-            slack_token = os.environ["SLACK_BOT_TOKEN"]
-        if slack_token is None:
-            raise ValueError(
-                "Must specify `slack_token` or set environment "
-                "variable `SLACK_BOT_TOKEN`."
+    def __init__(self, slack_token: Optional[str] = None) -> None:
+        """Initialize the Slack reader."""
+        try:
+            import slack_sdk  # noqa: F401
+        except ImportError:
+            raise ImportError(
+                "Package `slack_sdk` not found. Please install with `pip install slack_sdk`"
             )
-        if ssl is None:
-            client = WebClient(token=slack_token)
-        else:
-            client = WebClient(token=slack_token, ssl=ssl)
-        if latest_date is not None and earliest_date is None:
-            raise ValueError(
-                "Must specify `earliest_date` if `latest_date` is specified."
-            )
-        if earliest_date is not None:
-            earliest_date_timestamp = earliest_date.timestamp()
-        else:
-            earliest_date_timestamp = None or earliest_date_timestamp
-        if latest_date is not None:
-            latest_date_timestamp = latest_date.timestamp()
-        else:
-            latest_date_timestamp = datetime.now().timestamp() or latest_date_timestamp
-        if channel_types is not None:
-            channel_types = channel_types
-        else:
-            channel_types = "public_channel,private_channel"
-        res = client.api_test()
-        if not res["ok"]:
-            raise ValueError(f"Error initializing Slack API: {res['error']}")
 
-        super().__init__(
-            slack_token=slack_token,
-            earliest_date_timestamp=earliest_date_timestamp,
-            latest_date_timestamp=latest_date_timestamp,
-            channel_types=channel_types,
+        token = slack_token or os.environ.get("SLACK_TOKEN")
+        if not token:
+            raise ValueError(
+                "Slack token not found. Provide `slack_token` or set `SLACK_TOKEN` env var."
+            )
+
+        super().__init__(slack_token=token)
+
+    def _process_message(self, message: Dict[str, Any], include_bots: bool) -> Optional[Document]:
+        """Convert a Slack message to a Document.
+        
+        Args:
+            message: Raw message from Slack API
+            include_bots: Whether to include bot messages
+            
+        Returns:
+            Document if message should be included, None otherwise
+        """
+        # Skip empty messages
+        if message["text"] == "":
+            return None
+
+        # Skip bot messages if specified
+        if not include_bots and "bot_id" in message:
+            return None
+        
+        return Document(
+            text=message["text"],
+            id_=message["ts"],
+            metadata={
+                "message_id": message["ts"],
+                "channel_id": message.get("channel", ""),
+                "user_id": message["user"],
+                "created_at": message["ts"],
+                "edited_at": message.get("edited", {}).get("ts"),
+            },
         )
-        self._client = client
 
-    @classmethod
-    def class_name(cls) -> str:
-        return "SlackReader"
-
-    def _read_message(self, channel_id: str, message_ts: str) -> str:
+    def _get_channel_messages(
+        self, 
+        client: Any, 
+        channel_id: str, 
+        limit: Optional[int],
+    ) -> List[Dict[str, Any]]:
+        """Fetch messages and their thread replies from a channel.
+        
+        Args:
+            client: Slack WebClient instance
+            channel_id: Channel to fetch messages from
+            limit: Max number of messages to fetch
+            
+        Returns:
+            List of messages including thread replies
+        """
         from slack_sdk.errors import SlackApiError
 
-        """Read a message."""
-
-        messages_text: List[str] = []
-        next_cursor = None
+        all_messages = []
+        latest_ts = None
+        remaining_limit = limit
+        
         while True:
             try:
-                # https://slack.com/api/conversations.replies
-                # List all replies to a message, including the message itself.
-                if self.earliest_date_timestamp is None:
-                    result = self._client.conversations_replies(
-                        channel=channel_id, ts=message_ts, cursor=next_cursor
-                    )
-                else:
-                    conversations_replies_kwargs = {
-                        "channel": channel_id,
-                        "ts": message_ts,
-                        "cursor": next_cursor,
-                        "latest": str(self.latest_date_timestamp),
-                    }
-                    if self.earliest_date_timestamp is not None:
-                        conversations_replies_kwargs["oldest"] = str(
-                            self.earliest_date_timestamp
-                        )
-                    result = self._client.conversations_replies(
-                        **conversations_replies_kwargs  # type: ignore
-                    )
+                # Calculate batch size (max 999 per request)
+                batch_limit = 999 if limit is None else min(remaining_limit, 999)
+                
+                result = client.conversations_history(
+                    channel=channel_id,
+                    limit=batch_limit,
+                    latest=latest_ts
+                )
+                
                 messages = result["messages"]
-                messages_text.extend(message["text"] for message in messages)
-                if not result["has_more"]:
+                if not messages:
                     break
 
-                next_cursor = result["response_metadata"]["next_cursor"]
+                for msg in messages:
+                    # Add channel_id to message data
+                    msg["channel"] = channel_id
+                    
+                    # Add non-thread messages immediately
+                    if not msg.get("thread_ts") or msg["thread_ts"] == msg["ts"]:
+                        all_messages.append(msg)
+                    
+                    # Batch fetch thread replies
+                    if msg.get("reply_count", 0) > 0:
+                        try:
+                            thread = client.conversations_replies(
+                                channel=channel_id,
+                                ts=msg["ts"],
+                            )
+                            all_messages.extend(
+                                reply for reply in thread["messages"]
+                                if reply["ts"] != msg["ts"]
+                            )
+                        except SlackApiError as e:
+                            logger.warning(f"Failed to fetch thread replies: {e}")
+
+                latest_ts = messages[0]["ts"]
+                
+                # Only check remaining limit if we have a limit
+                if limit is not None:
+                    remaining_limit = limit - len(all_messages)
+                    if remaining_limit <= 0:
+                        return all_messages[:limit]
+                
+                if not result.get("has_more", False):
+                    break
+                    
             except SlackApiError as e:
-                error = e.response["error"]
-                if error == "ratelimited":
-                    retry_after = int(e.response.headers.get("retry-after", 1))
-                    logger.error(
-                        f"Rate limit error reached, sleeping for: {retry_after} seconds"
-                    )
-                    time.sleep(retry_after)
-                elif error == "not_in_channel":
-                    logger.error(
-                        f"Error: Bot not in channel: {channel_id}, cannot read messages."
-                    )
-                    break
-                else:
-                    logger.error(
-                        f"Error parsing conversation replies for channel {channel_id}: {e}"
-                    )
-                    break
-
-        return "\n\n".join(messages_text)
-
-    def _read_channel(self, channel_id: str, reverse_chronological: bool) -> str:
-        from slack_sdk.errors import SlackApiError
-
-        """Read a channel."""
-
-        result_messages: List[str] = []
-        next_cursor = None
-        while True:
-            try:
-                # Call the conversations.history method using the WebClient
-                # conversations.history returns the first 100 messages by default
-                # These results are paginated,
-                # see: https://api.slack.com/methods/conversations.history$pagination
-                conversations_history_kwargs = {
-                    "channel": channel_id,
-                    "cursor": next_cursor,
-                    "latest": str(self.latest_date_timestamp),
-                }
-                if self.earliest_date_timestamp is not None:
-                    conversations_history_kwargs["oldest"] = str(
-                        self.earliest_date_timestamp
-                    )
-                result = self._client.conversations_history(
-                    **conversations_history_kwargs  # type: ignore
-                )
-                conversation_history = result["messages"]
-                # Print results
-                logger.info(
-                    f"{len(conversation_history)} messages found in {channel_id}"
-                )
-                result_messages.extend(
-                    self._read_message(channel_id, message["ts"])
-                    for message in conversation_history
-                )
-                if not result["has_more"]:
-                    break
-                next_cursor = result["response_metadata"]["next_cursor"]
-
-            except SlackApiError as e:
-                error = e.response["error"]
-                if error == "ratelimited":
-                    retry_after = int(e.response.headers.get("retry-after", 1))
-                    logger.error(
-                        f"Rate limit error reached, sleeping for: {retry_after} seconds"
-                    )
-                    time.sleep(retry_after)
-                elif error == "not_in_channel":
-                    logger.error(
-                        f"Error: Bot not in channel: {channel_id}, cannot read messages."
-                    )
-                    break
-                else:
-                    logger.error(
-                        f"Error parsing conversation replies for channel {channel_id}: {e}"
-                    )
-                    break
-
-        return (
-            "\n\n".join(result_messages)
-            if reverse_chronological
-            else "\n\n".join(result_messages[::-1])
-        )
+                logger.error(f"Failed to fetch channel messages: {e}")
+                break
+        
+        return all_messages
 
     def load_data(
-        self, channel_ids: List[str], reverse_chronological: bool = True
+        self,
+        channel_ids: List[str],
+        include_bots: bool = False,
+        limit: Optional[int] = 100
     ) -> List[Document]:
-        """Load data from the input slack channel ids.
+        """Load messages from specified Slack channels.
 
         Args:
-            channel_ids (List[str]): List of channel ids to read.
+            channel_ids: List of channel IDs to fetch messages from
+            include_bots: Whether to include bot messages (default True)
+            limit: Max messages per channel (Default 100, None = all messages)
 
         Returns:
-            List[Document]: List of documents.
+            List of Documents containing messages
+
+        Raises:
+            ValueError: If channel access fails
         """
-        results = []
-        for channel_id in channel_ids:
-            channel_content = self._read_channel(
-                channel_id, reverse_chronological=reverse_chronological
-            )
-            results.append(
-                Document(
-                    id_=channel_id,
-                    text=channel_content,
-                    metadata={"channel": channel_id},
-                )
-            )
-        return results
-
-    def _is_regex(self, pattern: str) -> bool:
-        """Check if a string is a regex pattern."""
-        try:
-            re.compile(pattern)
-            return True
-        except re.error:
-            return False
-
-    def _list_channels(self) -> List[Dict[str, Any]]:
-        """List channels based on the types."""
+        from slack_sdk import WebClient
         from slack_sdk.errors import SlackApiError
 
-        try:
-            result = self._client.conversations_list(types=self.channel_types)
-            return result["channels"]
-        except SlackApiError as e:
-            logger.error(f"Error fetching channels: {e.response['error']}")
-            raise
+        client = WebClient(token=self.slack_token)
+        documents = []
 
-    def _filter_channels(
-        self, channels: List[Dict[str, Any]], patterns: List[str]
-    ) -> List[Dict[str, Any]]:
-        """Filter channels based on the provided names and regex patterns."""
-        regex_patterns = [pattern for pattern in patterns if self._is_regex(pattern)]
-        exact_names = [pattern for pattern in patterns if not self._is_regex(pattern)]
+        for channel_id in channel_ids:
+            if not isinstance(channel_id, str):
+                raise ValueError(
+                    f"Channel id {channel_id} must be a string, "
+                    f"not {type(channel_id)}."
+                )
+            
+            try:
+                client.conversations_info(channel=channel_id)
+            except SlackApiError as e:
+                if "not_in_channel" in str(e):
+                    raise ValueError(
+                        f"Bot needs to be added to channel {channel_id}. "
+                        "Use `/invite @BotName` in channel"
+                    )
+                elif "channel_not_found" in str(e):
+                    raise ValueError(f"Channel {channel_id} not found")
+                raise ValueError(f"Failed to access channel {channel_id}: {e}")
 
-        # Match Exact Channel names
-        filtered_channels = [
-            channel for channel in channels if channel["name"] in exact_names
-        ]
-
-        # Match Regex Patterns
-        for channel in channels:
-            for pattern in regex_patterns:
-                if re.match(pattern, channel["name"]):
-                    filtered_channels.append(channel)
-        return filtered_channels
-
-    def get_channel_ids(self, channel_patterns: List[str]) -> List[str]:
-        """Get list of channel IDs based on names and regex patterns.
-
-        Args:
-            channel_patterns List[str]: List of channel name patterns (names or regex) to read.
-
-        Returns:
-            List[Document]: List of documents.
-        """
-        if not channel_patterns:
-            raise ValueError("No channel patterns provided.")
-
-        channels = self._list_channels()
-        logger.info(f"Total channels fetched: {len(channels)}")
-
-        if not channels:
-            logger.info("No channels found in Slack.")
-            return []
-
-        filtered_channels = self._filter_channels(
-            channels=channels, patterns=channel_patterns
-        )
-        logger.info(f"Channels matching patterns: {len(filtered_channels)}")
-
-        if not filtered_channels:
-            logger.info(
-                "None of the channel names or pattern matched with Slack Channels."
+            # Fetch and process messages
+            messages = self._get_channel_messages(client, channel_id, limit)
+            documents.extend(
+                doc for msg in messages
+                if (doc := self._process_message(msg, include_bots)) is not None
             )
-            return []
 
-        channel_ids = [channel["id"] for channel in filtered_channels]
-
-        return list(set(channel_ids))
+        return documents
 
 
 if __name__ == "__main__":
     reader = SlackReader()
-
-    # load data using only channel ids
-    logger.info(reader.load_data(channel_ids=["C079KD1M8J3", "C078YQP5B51"]))
-
-    # load data using exact channel names and regex patterns
-    # get the channel ids first
-    channel_ids = reader.get_channel_ids(
-        channel_patterns=["^dev.*", "^qa.*", "test_channel"]
-    )
-    # load data using above channel_ids
-    logger.info(reader.load_data(channel_ids=channel_ids))
+    logger.info("initialized reader")
+    output = reader.load_data(channel_ids=["C08J3PZD5B2"], limit=10)
+    logger.info(output)
