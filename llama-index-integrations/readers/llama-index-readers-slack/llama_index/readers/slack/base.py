@@ -36,13 +36,15 @@ class SlackReader(BasePydanticReader):
 
         super().__init__(slack_token=token)
 
-    def _process_message(self, message: Dict[str, Any], include_bots: bool) -> Optional[Document]:
+    def _process_message(
+        self, message: Dict[str, Any], include_bots: bool
+    ) -> Optional[Document]:
         """Convert a Slack message to a Document.
-        
+
         Args:
             message: Raw message from Slack API
             include_bots: Whether to include bot messages
-            
+
         Returns:
             Document if message should be included, None otherwise
         """
@@ -53,7 +55,7 @@ class SlackReader(BasePydanticReader):
         # Skip bot messages if specified
         if not include_bots and "bot_id" in message:
             return None
-        
+
         return Document(
             text=message["text"],
             id_=message["ts"],
@@ -67,18 +69,18 @@ class SlackReader(BasePydanticReader):
         )
 
     def _get_channel_messages(
-        self, 
-        client: Any, 
-        channel_id: str, 
+        self,
+        client: Any,
+        channel_id: str,
         limit: Optional[int],
     ) -> List[Dict[str, Any]]:
         """Fetch messages and their thread replies from a channel.
-        
+
         Args:
             client: Slack WebClient instance
             channel_id: Channel to fetch messages from
             limit: Max number of messages to fetch
-            
+
         Returns:
             List of messages including thread replies
         """
@@ -87,18 +89,16 @@ class SlackReader(BasePydanticReader):
         all_messages = []
         latest_ts = None
         remaining_limit = limit
-        
+
         while True:
             try:
                 # Calculate batch size (max 999 per request)
                 batch_limit = 999 if limit is None else min(remaining_limit, 999)
-                
+
                 result = client.conversations_history(
-                    channel=channel_id,
-                    limit=batch_limit,
-                    latest=latest_ts
+                    channel=channel_id, limit=batch_limit, latest=latest_ts
                 )
-                
+
                 messages = result["messages"]
                 if not messages:
                     break
@@ -106,11 +106,11 @@ class SlackReader(BasePydanticReader):
                 for msg in messages:
                     # Add channel_id to message data
                     msg["channel"] = channel_id
-                    
+
                     # Add non-thread messages immediately
                     if not msg.get("thread_ts") or msg["thread_ts"] == msg["ts"]:
                         all_messages.append(msg)
-                    
+
                     # Batch fetch thread replies
                     if msg.get("reply_count", 0) > 0:
                         try:
@@ -119,34 +119,35 @@ class SlackReader(BasePydanticReader):
                                 ts=msg["ts"],
                             )
                             all_messages.extend(
-                                reply for reply in thread["messages"]
+                                reply
+                                for reply in thread["messages"]
                                 if reply["ts"] != msg["ts"]
                             )
                         except SlackApiError as e:
                             logger.warning(f"Failed to fetch thread replies: {e}")
 
                 latest_ts = messages[0]["ts"]
-                
+
                 # Only check remaining limit if we have a limit
                 if limit is not None:
                     remaining_limit = limit - len(all_messages)
                     if remaining_limit <= 0:
                         return all_messages[:limit]
-                
+
                 if not result.get("has_more", False):
                     break
-                    
+
             except SlackApiError as e:
                 logger.error(f"Failed to fetch channel messages: {e}")
                 break
-        
+
         return all_messages
 
     def load_data(
         self,
         channel_ids: List[str],
         include_bots: bool = False,
-        limit: Optional[int] = 100
+        limit: Optional[int] = 100,
     ) -> List[Document]:
         """Load messages from specified Slack channels.
 
@@ -167,13 +168,16 @@ class SlackReader(BasePydanticReader):
         client = WebClient(token=self.slack_token)
         documents = []
 
+        if not channel_ids:
+            raise ValueError("Channel IDs list cannot be empty")
+
         for channel_id in channel_ids:
             if not isinstance(channel_id, str):
                 raise ValueError(
                     f"Channel id {channel_id} must be a string, "
                     f"not {type(channel_id)}."
                 )
-            
+
             try:
                 client.conversations_info(channel=channel_id)
             except SlackApiError as e:
@@ -189,7 +193,8 @@ class SlackReader(BasePydanticReader):
             # Fetch and process messages
             messages = self._get_channel_messages(client, channel_id, limit)
             documents.extend(
-                doc for msg in messages
+                doc
+                for msg in messages
                 if (doc := self._process_message(msg, include_bots)) is not None
             )
 
