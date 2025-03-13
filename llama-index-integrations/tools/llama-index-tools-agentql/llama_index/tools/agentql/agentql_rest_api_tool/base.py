@@ -26,14 +26,12 @@ class AgentQLRestAPIToolSpec(BaseToolSpec):
 
     def __init__(
         self,
-        timeout: Optional[int] = DEFAULT_API_TIMEOUT_SECONDS,
-        is_stealth_mode_enabled: Optional[bool] = DEFAULT_IS_STEALTH_MODE_ENABLED,
-        wait_for: Optional[int] = DEFAULT_WAIT_FOR_PAGE_LOAD_SECONDS,
-        is_scroll_to_bottom_enabled: Optional[
-            bool
-        ] = DEFAULT_IS_SCROLL_TO_BOTTOM_ENABLED,
-        mode: Optional[str] = DEFAULT_RESPONSE_MODE,
-        is_screenshot_enabled: Optional[bool] = DEFAULT_IS_SCREENSHOT_ENABLED,
+        timeout: int = DEFAULT_API_TIMEOUT_SECONDS,
+        is_stealth_mode_enabled: bool = DEFAULT_IS_STEALTH_MODE_ENABLED,
+        wait_for: int = DEFAULT_WAIT_FOR_PAGE_LOAD_SECONDS,
+        is_scroll_to_bottom_enabled: bool = DEFAULT_IS_SCROLL_TO_BOTTOM_ENABLED,
+        mode: str = DEFAULT_RESPONSE_MODE,
+        is_screenshot_enabled: bool = DEFAULT_IS_SCREENSHOT_ENABLED,
     ):
         """
         Initialize AgentQL Rest API Tool Spec.

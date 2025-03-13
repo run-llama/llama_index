@@ -33,12 +33,12 @@ class AgentQLBrowserToolSpec(BaseToolSpec):
     def __init__(
         self,
         async_browser: AsyncBrowser,
-        timeout_for_data: Optional[int] = DEFAULT_EXTRACT_DATA_TIMEOUT_SECONDS,
-        timeout_for_element: Optional[int] = DEFAULT_EXTRACT_ELEMENTS_TIMEOUT_SECONDS,
-        wait_for_network_idle: Optional[bool] = DEFAULT_WAIT_FOR_NETWORK_IDLE,
-        include_hidden_for_data: Optional[bool] = DEFAULT_INCLUDE_HIDDEN_DATA,
-        include_hidden_for_element: Optional[bool] = DEFAULT_INCLUDE_HIDDEN_ELEMENTS,
-        mode: Optional[str] = DEFAULT_RESPONSE_MODE,
+        timeout_for_data: int = DEFAULT_EXTRACT_DATA_TIMEOUT_SECONDS,
+        timeout_for_element: int = DEFAULT_EXTRACT_ELEMENTS_TIMEOUT_SECONDS,
+        wait_for_network_idle: bool = DEFAULT_WAIT_FOR_NETWORK_IDLE,
+        include_hidden_for_data: bool = DEFAULT_INCLUDE_HIDDEN_DATA,
+        include_hidden_for_element: bool = DEFAULT_INCLUDE_HIDDEN_ELEMENTS,
+        mode: str = DEFAULT_RESPONSE_MODE,
     ):
         """
         Initialize AgentQL Browser Tool Spec.
