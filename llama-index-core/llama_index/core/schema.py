@@ -627,11 +627,13 @@ class Node(BaseNode):
         Provided for backward compatibility, use self.text_resource directly instead.
         """
         if self.text_resource:
-            if metadata_mode == MetadataMode.NONE:
+            metadata_str = self.get_metadata_str(metadata_mode)
+            if metadata_mode == MetadataMode.NONE or not metadata_str:
                 return self.text_resource.text or ""
+
             return self.text_template.format(
                 content=self.text_resource.text or "",
-                metadata_str=self.get_metadata_str(metadata_mode),
+                metadata_str=metadata_str,
             ).strip()
         return ""
 
@@ -714,7 +716,7 @@ class TextNode(BaseNode):
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
         """Get object content."""
         metadata_str = self.get_metadata_str(mode=metadata_mode).strip()
-        if not metadata_str or metadata_mode == MetadataMode.NONE:
+        if metadata_mode == MetadataMode.NONE or not metadata_str:
             return self.text
 
         return self.text_template.format(
