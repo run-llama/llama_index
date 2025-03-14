@@ -477,6 +477,7 @@ nav:
           - ./examples/node_parsers/semantic_double_merging_chunking.ipynb
           - ./examples/node_parsers/topic_parser.ipynb
       - Node Postprocessors:
+          - ./examples/node_postprocessor/AIMonRerank.ipynb
           - ./examples/node_postprocessor/CohereRerank.ipynb
           - ./examples/node_postprocessor/ColPaliRerank.ipynb
           - ./examples/node_postprocessor/ColbertRerank.ipynb
@@ -609,6 +610,7 @@ nav:
           - ./examples/retrievers/videodb_retriever.ipynb
           - ./examples/retrievers/you_retriever.ipynb
       - Tools:
+          - ./examples/tools/AgentQL_browser_agent.ipynb
           - ./examples/tools/OnDemandLoaderTool.ipynb
           - ./examples/tools/azure_code_interpreter.ipynb
           - ./examples/tools/cassandra.ipynb
@@ -863,6 +865,7 @@ nav:
       - Agents:
           - ./api_reference/agent/coa.md
           - ./api_reference/agent/dashscope.md
+          - ./api_reference/agent/function.md
           - ./api_reference/agent/index.md
           - ./api_reference/agent/introspective.md
           - ./api_reference/agent/lats.md
@@ -1244,6 +1247,7 @@ nav:
       - Node Postprocessors:
           - ./api_reference/postprocessor/NER_PII.md
           - ./api_reference/postprocessor/PII.md
+          - ./api_reference/postprocessor/aimon_rerank.md
           - ./api_reference/postprocessor/alibabacloud_aisearch_rerank.md
           - ./api_reference/postprocessor/auto_prev_next.md
           - ./api_reference/postprocessor/bedrock_rerank.md
@@ -1675,6 +1679,7 @@ nav:
               - ./api_reference/storage/vector_store/wordlift.md
               - ./api_reference/storage/vector_store/zep.md
       - Tools:
+          - ./api_reference/tools/agentql.md
           - ./api_reference/tools/arxiv.md
           - ./api_reference/tools/azure_code_interpreter.md
           - ./api_reference/tools/azure_cv.md
@@ -2414,6 +2419,8 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-google-genai
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-contextual-rerank
             - ../llama-index-integrations/llms/llama-index-llms-contextual
+            - ../llama-index-integrations/tools/llama-index-tools-agentql
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-aimon-rerank
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
