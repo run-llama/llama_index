@@ -22,8 +22,8 @@ class NovitaAI(OpenAILike):
 
     def __init__(
             self,
-            model: str,
-            api_key: str,
+            model: str = DEFAULT_MODEL,
+            api_key: Optional[str] = None,
             temperature: float = 0.95,
             max_tokens: int = 1024,
             is_chat_model: bool = True,
