@@ -22,14 +22,10 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = [
-    {email = "jason@tinyfish.io", name = "Jason Zhang"},
-]
+authors = ["Jason Zhang <jason@tinyfish.io>"]
 description = "llama-index tools agentql integration"
 license = "MIT"
-maintainers = [
-    {email = "jason@tinyfish.io", name = "Jason Zhang"},
-]
+maintainers = ["Jason Zhang <jason@tinyfish.io>"]
 name = "llama-index-tools-agentql"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
