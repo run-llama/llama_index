@@ -9,7 +9,7 @@ from llama_index.tools.playwright import PlaywrightToolSpec
 
 from llama_index.llms.openai import OpenAI
 
-from llama_index.tools.agentql.test_data import TEST_DATA, TEST_URL, TEST_QUERY
+from tests.conftest import get_testing_data
 
 
 def test_class():
@@ -20,10 +20,11 @@ def test_class():
 class TestExtractDataBrowserTool:
     @pytest.fixture(autouse=True)
     async def agentql_browser_tool(self):
+        test_data = get_testing_data()
         # Use playwright tool to navigate to the test url
         async_browser = await PlaywrightToolSpec.create_async_playwright_browser()
         playwright_tool = PlaywrightToolSpec.from_async_browser(async_browser)
-        await playwright_tool.navigate_to(TEST_URL)
+        await playwright_tool.navigate_to(test_data["TEST_URL"])
 
         # initialize extract data browser tool
         agentql_browser_tool = AgentQLBrowserToolSpec(async_browser=async_browser)
@@ -42,17 +43,18 @@ class TestExtractDataBrowserTool:
         reason="OPENAI_API_KEY or AGENTQL_API_KEY is not set",
     )
     def test_extract_web_data_browser_tool_call(self, agent):
+        test_data = get_testing_data()
         res = agent.chat(
             f"""
-        extract data with the following agentql query: {TEST_QUERY}
+        extract data with the following agentql query: {test_data["TEST_QUERY"]}
         """
         )
         tool_output = res.sources[0]
         assert tool_output.tool_name == "extract_web_data_from_browser"
         assert tool_output.raw_input["kwargs"] == {
-            "query": TEST_QUERY,
+            "query": test_data["TEST_QUERY"],
         }
-        assert tool_output.raw_output == TEST_DATA
+        assert tool_output.raw_output == test_data["TEST_DATA"]
 
     @pytest.mark.skipif(
         "AGENTQL_API_KEY" not in os.environ,
