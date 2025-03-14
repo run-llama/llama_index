@@ -249,6 +249,7 @@ nav:
           - ./examples/embeddings/fireworks.ipynb
           - ./examples/embeddings/gemini.ipynb
           - ./examples/embeddings/gigachat.ipynb
+          - ./examples/embeddings/google_genai.ipynb
           - ./examples/embeddings/google_palm.ipynb
           - ./examples/embeddings/huggingface.ipynb
           - ./examples/embeddings/ibm_watsonx.ipynb
@@ -346,6 +347,7 @@ nav:
           - ./examples/llm/fireworks_cookbook.ipynb
           - ./examples/llm/friendli.ipynb
           - ./examples/llm/gemini.ipynb
+          - ./examples/llm/google_genai.ipynb
           - ./examples/llm/groq.ipynb
           - ./examples/llm/huggingface.ipynb
           - ./examples/llm/ibm_watsonx.ipynb
@@ -915,6 +917,7 @@ nav:
           - ./api_reference/embeddings/gemini.md
           - ./api_reference/embeddings/gigachat.md
           - ./api_reference/embeddings/google.md
+          - ./api_reference/embeddings/google_genai.md
           - ./api_reference/embeddings/gradient.md
           - ./api_reference/embeddings/huggingface.md
           - ./api_reference/embeddings/huggingface_api.md
@@ -1016,6 +1019,7 @@ nav:
           - ./api_reference/llms/clarifai.md
           - ./api_reference/llms/cleanlab.md
           - ./api_reference/llms/cohere.md
+          - ./api_reference/llms/contextual.md
           - ./api_reference/llms/cortex.md
           - ./api_reference/llms/custom_llm.md
           - ./api_reference/llms/dashscope.md
@@ -1028,6 +1032,7 @@ nav:
           - ./api_reference/llms/gaudi.md
           - ./api_reference/llms/gemini.md
           - ./api_reference/llms/gigachat.md
+          - ./api_reference/llms/google_genai.md
           - ./api_reference/llms/gradient.md
           - ./api_reference/llms/groq.md
           - ./api_reference/llms/huggingface.md
@@ -1245,6 +1250,7 @@ nav:
           - ./api_reference/postprocessor/cohere_rerank.md
           - ./api_reference/postprocessor/colbert_rerank.md
           - ./api_reference/postprocessor/colpali_rerank.md
+          - ./api_reference/postprocessor/contextual_rerank.md
           - ./api_reference/postprocessor/dashscope_rerank.md
           - ./api_reference/postprocessor/embedding_recency.md
           - ./api_reference/postprocessor/fixed_recency.md
@@ -2405,6 +2411,9 @@ plugins:
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-ibm
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-mongo
             - ../llama-index-integrations/llms/llama-index-llms-google-genai
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-google-genai
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-contextual-rerank
+            - ../llama-index-integrations/llms/llama-index-llms-contextual
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
