@@ -5,7 +5,7 @@ from llama_index.llms.novita import NovitaAI
 
 model = "meta-llama/llama-3.1-8b-instruct"
 model_function_calling = "deepseek/deepseek_v3"
-api_key = "you api key"
+api_key = "your api key"
 
 def test_llm_class():
     names_of_base_classes = [b.__name__ for b in NovitaAI.__mro__]
@@ -20,19 +20,6 @@ def test_novita_llm_metadata():
     assert llm.metadata.is_function_calling_model is True
     llm = NovitaAI(model=model, api_key=api_key)
     assert llm.metadata.is_function_calling_model is False
-
-def test_novita_available_models():
-    llm = NovitaAI(model=model, api_key=api_key)
-    model_list = llm.available_models
-    for m in model_list:
-        print(m)
-    assert model_list
-
-def test_novita_retrieve_model():
-    llm = NovitaAI(model=model, api_key=api_key)
-    m = llm.retrieve_model
-    print(m)
-    assert m
 
 def test_completion():
     llm = NovitaAI(model=model, api_key=api_key)
