@@ -46,7 +46,10 @@ class Context:
     ) -> None:
         self.stepwise = stepwise
         self.is_running = False
-        self._workflow = workflow
+        # Store the step configs of this workflow, to be used in send_event
+        self._step_configs: dict[str, Optional[StepConfig]] = {}
+        for step_name, step_func in workflow._get_steps().items():
+            self._step_configs[step_name] = getattr(step_func, "__step_config", None)
 
         # Init broker machinery
         self._init_broker_data()
@@ -330,14 +333,10 @@ class Context:
             for queue in self._queues.values():
                 queue.put_nowait(message)
         else:
-            if step not in self._workflow._get_steps():
+            if step not in self._step_configs:
                 raise WorkflowRuntimeError(f"Step {step} does not exist")
 
-            step_func = self._workflow._get_steps()[step]
-            step_config: Optional[StepConfig] = getattr(
-                step_func, "__step_config", None
-            )
-
+            step_config = self._step_configs[step]
             if step_config and type(message) in step_config.accepted_events:
                 self._queues[step].put_nowait(message)
             else:

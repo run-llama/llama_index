@@ -4,7 +4,7 @@ from typing import Optional, Union
 from unittest import mock
 
 import pytest
-from llama_index.core.workflow.decorators import step
+from llama_index.core.workflow.decorators import StepConfig, step
 from llama_index.core.workflow.errors import WorkflowRuntimeError
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import (
@@ -85,7 +85,15 @@ def test_send_event_to_non_existent_step(ctx):
 
 
 def test_send_event_to_wrong_step(ctx):
-    ctx._workflow._get_steps = mock.MagicMock(return_value={"step": mock.MagicMock()})
+    ctx._step_configs["step"] = StepConfig(  # type: ignore[attr-defined]
+        accepted_events=[],
+        event_name="test_event",
+        return_types=[],
+        context_parameter="",
+        num_workers=99,
+        requested_services=[],
+        retry_policy=None,
+    )
 
     with pytest.raises(
         WorkflowRuntimeError,
@@ -94,20 +102,22 @@ def test_send_event_to_wrong_step(ctx):
         ctx.send_event(Event(), "step")
 
 
-def test_send_event_to_step(ctx):
+def test_send_event_to_step(workflow):
     step2 = mock.MagicMock()
     step2.__step_config.accepted_events = [Event]
 
-    ctx._workflow._get_steps = mock.MagicMock(
+    workflow._get_steps = mock.MagicMock(
         return_value={"step1": mock.MagicMock(), "step2": step2}
     )
+
+    ctx = Context(workflow=workflow)
     ctx._queues = {"step1": mock.MagicMock(), "step2": mock.MagicMock()}
 
     ev = Event(foo="bar")
     ctx.send_event(ev, "step2")
 
-    ctx._queues["step1"].put_nowait.assert_not_called()
-    ctx._queues["step2"].put_nowait.assert_called_with(ev)
+    ctx._queues["step1"].put_nowait.assert_not_called()  # type: ignore
+    ctx._queues["step2"].put_nowait.assert_called_with(ev)  # type: ignore
 
 
 def test_get_result(ctx):
