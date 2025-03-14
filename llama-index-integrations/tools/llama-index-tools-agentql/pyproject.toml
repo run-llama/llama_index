@@ -40,6 +40,7 @@ python = ">=3.9,<4.0"
 llama-index-core = "^0.10.0"
 agentql = "^1.8.1"
 playwright = "^1.50.0"
+httpx = "^0.28.1"
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
