@@ -199,12 +199,17 @@ def messages_to_converse_messages(
         else:
             if message.content:
                 # get the text of the message
-                converse_messages.append(
-                    {
-                        "role": message.role.value,
-                        "content": [{"text": message.content}],
-                    }
-                )
+                converse_message = {
+                    "role": message.role.value,
+                    "content": [{"text": message.content}],
+                }
+                if "cachePoint" in message.additional_kwargs or "cache_control" in message.additional_kwargs:
+                    # https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html
+                    converse_message["content"].append({
+                        "cachePoint": { "type": "default" }
+                    })
+
+                converse_messages.append(converse_message)
         # convert tool calls to the AWS Bedrock Converse format
         # NOTE tool calls might show up within any message,
         # e.g. within assistant message or in consecutive tool calls,
