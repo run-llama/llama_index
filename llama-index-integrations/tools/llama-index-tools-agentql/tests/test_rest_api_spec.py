@@ -7,7 +7,7 @@ from llama_index.core.agent import FunctionCallingAgent
 from llama_index.tools.agentql import AgentQLRestAPIToolSpec
 from llama_index.llms.openai import OpenAI
 
-from .test_data import TEST_DATA, TEST_URL, TEST_QUERY
+from llama_index.tools.agentql.test_data import TEST_DATA, TEST_URL, TEST_QUERY
 
 
 def test_class():
