@@ -9,7 +9,7 @@ from llama_index.tools.playwright import PlaywrightToolSpec
 
 from llama_index.llms.openai import OpenAI
 
-from tests.test_data import TEST_DATA, TEST_URL, TEST_QUERY
+from .test_data import TEST_DATA, TEST_URL, TEST_QUERY
 
 
 def test_class():
