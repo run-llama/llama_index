@@ -16,6 +16,7 @@ from typing import (
 
 from llama_index.core.bridge.pydantic import ValidationError
 from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.workflow.types import RunResultT
 
 from .checkpointer import Checkpoint, CheckpointCallback
 from .context import Context
@@ -126,7 +127,7 @@ class Workflow(metaclass=WorkflowMeta):
         else:
             return start_events_found.pop()
 
-    def _ensure_stop_event_class(self) -> type[StopEvent]:
+    def _ensure_stop_event_class(self) -> type[RunResultT]:
         """Returns the StopEvent type used in this workflow.
 
         It works by inspecting the events returned.
@@ -235,7 +236,7 @@ class Workflow(metaclass=WorkflowMeta):
             # clean up the context from the previous run
             ctx._tasks = set()
             ctx._retval = None
-            ctx._step_event_holding = None
+            ctx._step_events_holding = None
             ctx._cancel_flag.clear()
 
         for name, step_func in self._get_steps().items():
@@ -349,41 +350,26 @@ class Workflow(metaclass=WorkflowMeta):
                         else:
                             print(f"Step {name} produced no event")
 
-                    # handle the return value
-                    if new_ev is None:
-                        await ctx.remove_from_in_progress(name=name, ev=ev)
-                        continue
-
                     # Store the accepted event for the drawing operations
-                    ctx._accepted_events.append((name, type(ev).__name__))
+                    if new_ev is not None:
+                        ctx._accepted_events.append((name, type(ev).__name__))
 
-                    if not isinstance(new_ev, Event):
-                        warnings.warn(
-                            f"Step function {name} returned {type(new_ev).__name__} instead of an Event instance."
-                        )
-                    elif isinstance(new_ev, InputRequiredEvent):
-                        ctx.write_event_to_stream(new_ev)
-                    else:
-                        if stepwise:
-                            async with ctx._step_condition:
-                                await ctx._step_condition.wait()
-                                ctx._step_event_holding = new_ev
-                                ctx._step_event_written.notify()  # shares same lock
+                    # Fail if the step returned something that's not an event
+                    if new_ev is not None and not isinstance(new_ev, Event):
+                        msg = f"Step function {name} returned {type(new_ev).__name__} instead of an Event instance."
+                        raise WorkflowRuntimeError(msg)
 
-                                await ctx.remove_from_in_progress(name=name, ev=ev)
+                    if stepwise:
+                        async with ctx._step_condition:
+                            await ctx._step_condition.wait()
 
-                                # for stepwise Checkpoint after handler.run_step() call
-                                if checkpoint_callback:
-                                    await checkpoint_callback(
-                                        run_id=run_id,
-                                        ctx=ctx,
-                                        last_completed_step=name,
-                                        input_ev=ev,
-                                        output_ev=new_ev,
-                                    )
-                        else:
-                            # for regular execution, Checkpoint just before firing the next event
+                            if new_ev is not None:
+                                ctx.add_holding_event(new_ev)
+                            ctx._step_event_written.notify()  # shares same lock
+
                             await ctx.remove_from_in_progress(name=name, ev=ev)
+
+                            # for stepwise Checkpoint after handler.run_step() call
                             if checkpoint_callback:
                                 await checkpoint_callback(
                                     run_id=run_id,
@@ -392,6 +378,23 @@ class Workflow(metaclass=WorkflowMeta):
                                     input_ev=ev,
                                     output_ev=new_ev,
                                 )
+                    else:
+                        # for regular execution, Checkpoint just before firing the next event
+                        await ctx.remove_from_in_progress(name=name, ev=ev)
+                        if checkpoint_callback:
+                            await checkpoint_callback(
+                                run_id=run_id,
+                                ctx=ctx,
+                                last_completed_step=name,
+                                input_ev=ev,
+                                output_ev=new_ev,
+                            )
+
+                        # InputRequiredEvent's are special case and need to be written to the stream
+                        # this way, the user can access and respond to the event
+                        if isinstance(new_ev, InputRequiredEvent):
+                            ctx.write_event_to_stream(new_ev)
+                        elif new_ev is not None:
                             ctx.send_event(new_ev)
 
             for _ in range(step_config.num_workers):
@@ -578,7 +581,11 @@ class Workflow(metaclass=WorkflowMeta):
         # only kick off the workflow if there are no in-progress events
         # in-progress events are already started in self.run()
         num_in_progress = sum(len(v) for v in ctx._in_progress.values())
-        if num_in_progress == 0 and handler.ctx is not None:
+        if (
+            num_in_progress == 0
+            and handler.ctx is not None
+            and checkpoint.output_event is not None
+        ):
             handler.ctx.send_event(checkpoint.output_event)
 
         return handler
@@ -590,7 +597,11 @@ class Workflow(metaclass=WorkflowMeta):
     @step
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
-        ctx._retval = ev.result
+        if self._stop_event_class is StopEvent:
+            ctx._retval = ev.result
+        else:
+            ctx._retval = ev
+
         ctx.write_event_to_stream(ev)
 
         # Signal we want to stop the workflow

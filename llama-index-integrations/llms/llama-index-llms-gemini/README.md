@@ -1,5 +1,7 @@
 # LlamaIndex Llms Integration: Gemini
 
+**NOTE:** Gemini has largely been replaced by Google GenAI. Visit the [Google GenAI page](https://docs.llamaindex.ai/en/stable/examples/llm/google_genai/) for the latest examples and documentation.
+
 ## Installation
 
 1. Install the required Python packages:

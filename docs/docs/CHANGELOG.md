@@ -1,5 +1,108 @@
 # ChangeLog
 
+## [2025-03-13]
+
+### `llama-index-core` [0.12.24]
+
+- fix get content node metadata duplicated templates (#18110)
+- remove assert for multimodal llms in multimodal vector store/query engine (#18112)
+- fix: make run_step return all the events produced by a step (#18082)
+- fix(multimodal nodes): check image path is file before open (#18043)
+
+### `llama-index-embeddings-google-genai` [0.1.0]
+
+- Google genai embeddings (#18079)
+
+### `llama-index-graph-stores-neptune` [0.3.2]
+
+- Fix the TypeError in the upsert_triplet method of the Neptune (#18051)
+
+### `llama-index-indices-managed-vectara` [0.4.2]
+
+- Update Vectara Index to return both document level and page level metadata (#17976)
+
+### `llama-index-llms-contextual` [0.1.0]
+
+- Contextual Generate model (#17913)
+
+### `llama-index-llms-google-genai` [0.1.3]
+
+- Use GenAI package for google (#17939)
+- fix gemini roles (#18108)
+- fix null model meta references (#18109)
+- [BUG FIX] Google genai vertexai error (#18070)
+
+### `llama-index-memory-mem0` [0.3.0]
+
+- Mem0Memory Integration Issue: Update Required for Mem0 API Parameter Changes (#18066)
+
+### `llama-index-postprocessor-contextual-rerank` [0.1.0]
+
+- Contextual reranker (#18075)
+
+### `llama-index-readers-elasticsearch` [0.3.1]
+
+- Fix the redundancy of ElasticsearchReader (#18106)
+
+### `llama-index-readers-google` [0.6.1]
+
+- Use int type for redirect URI port (#18097)
+
+## [2025-03-07]
+
+### `llama-index-core` [0.12.23]
+
+- added `merging_separator` argument to allow for specifying chunk merge separator in semantic splitter (#18027)
+- Add support for running single-agent workflows within the BaseWorkflowAgent class (#18038)
+- Fix the error raised when ReactAgent is created without an explicit system message (#18041)
+- add a field keep_whitespaces to TokenTextSplitter (#17998)
+- do not convert raw tool output to string in AgentWorkflow (#18006)
+
+### `llama-index-embeddings-ollama` [0.6.0]
+
+- feat: add client_kwargs Parameter to OllamaEmbedding Class (#18012)
+
+### `llama-index-llms-anthropic` [0.6.10]
+
+- anthropic caching and thinking updates (#18039)
+- allow caching of tool results (#18028)
+- support caching of anthropic system prompt (#18008)
+- Ensure resuming a workflow actually works (#18023)
+- [MarkdownNodeParser] Adding customizable header path separator char (#17964)
+- feat: return event instance from run() when stop event is custom (#18001)
+
+### `llama-index-llms-azure-openai` [0.3.2]
+
+- AzureOpenAI: api_base and azure_endpoint are mutually exclusive (#18037)
+- Add base_url to AzureOpenAI (#17996)
+
+### `llama-index-llms-bedrock-converse` [0.4.8]
+
+- message text is required in boto3 model (#17989)
+
+### `llama-index-llms-ollama` [0.5.3]
+
+- Make request_timeout in Ollama LLM optional (#18007)
+
+### `llama-index-llms-mistralai` [0.4.0]
+
+- MistralAI support for multImodal content blocks (#17997)
+
+### `llama-index-readers-file` [0.4.6]
+
+- Bugfix: Use `torch.no grad()` in inference in ImageVisionLLMReader when PyTorch is installed (#17970)
+
+### `llama-index-storage-chat-store-mongo` [0.1.0]
+
+- Feat/mongo chat store (#17979)
+
+### `llama-index-core` [0.12.23]
+
+- added `merging_separator` argument to allow for specifying chunk merge separator in semantic splitter (#18027)
+- Add support for running single-agent workflows within the BaseWorkflowAgent class (#18038)
+- Fix the error raised when ReactAgent is created without an explicit system message (#18041)
+- add a field keep_whitespaces to TokenTextSplitter (#17998)
+
 ## [2025-02-28]
 
 ### `llama-index-core` [0.12.22]

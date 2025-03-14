@@ -56,6 +56,8 @@ def test_base_url_priority(public_class: type, monkeypatch) -> None:
         assert get_base_url(base_url=PARAM_URL) == PARAM_URL
 
 
+# marking as skip because base_url validation is removed
+@pytest.mark.skip(reason="base_url validation is removed")
 @pytest.mark.parametrize(
     "base_url",
     [
@@ -75,6 +77,8 @@ def test_param_base_url_negative(
     assert "Invalid base_url" in str(e.value)
 
 
+# marking as skip because base_url validation is removed
+@pytest.mark.skip(reason="base_url validation is removed")
 @pytest.mark.parametrize(
     "base_url",
     [
