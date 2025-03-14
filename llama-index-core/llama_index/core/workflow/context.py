@@ -46,9 +46,19 @@ class Context:
     ) -> None:
         self.stepwise = stepwise
         self.is_running = False
+        # Store the step configs of this workflow, to be used in send_event
+        self._step_configs: dict[str, Optional[StepConfig]] = {}
+        for step_name, step_func in workflow._get_steps().items():
+            self._step_configs[step_name] = getattr(step_func, "__step_config", None)
 
-        self._workflow = workflow
-        # Broker machinery
+        # Init broker machinery
+        self._init_broker_data()
+
+        # Global data storage
+        self._lock = asyncio.Lock()
+        self._globals: Dict[str, Any] = {}
+
+    def _init_broker_data(self) -> None:
         self._waiter_id = str(uuid.uuid4())
         self._queues: Dict[str, asyncio.Queue] = {self._waiter_id: asyncio.Queue()}
         self._tasks: Set[asyncio.Task] = set()
@@ -65,7 +75,6 @@ class Context:
         )
         self._accepted_events: List[Tuple[str, str]] = []
         self._retval: RunResultT = None
-
         # Map the step names that were executed to a list of events they received.
         # This will be serialized, and is needed to resume a Workflow run passing
         # an existing context.
@@ -76,9 +85,6 @@ class Context:
         self._currently_running_steps: DefaultDict[str, int] = defaultdict(int)
         # Streaming machinery
         self._streaming_queue: asyncio.Queue = asyncio.Queue()
-        # Global data storage
-        self._lock = asyncio.Lock()
-        self._globals: Dict[str, Any] = {}
         # Step-specific instance
         self._events_buffer: Dict[str, List[Event]] = defaultdict(list)
 
@@ -327,14 +333,10 @@ class Context:
             for queue in self._queues.values():
                 queue.put_nowait(message)
         else:
-            if step not in self._workflow._get_steps():
+            if step not in self._step_configs:
                 raise WorkflowRuntimeError(f"Step {step} does not exist")
 
-            step_func = self._workflow._get_steps()[step]
-            step_config: Optional[StepConfig] = getattr(
-                step_func, "__step_config", None
-            )
-
+            step_config = self._step_configs[step]
             if step_config and type(message) in step_config.accepted_events:
                 self._queues[step].put_nowait(message)
             else:
@@ -387,3 +389,10 @@ class Context:
     @property
     def streaming_queue(self) -> asyncio.Queue:
         return self._streaming_queue
+
+    def clear(self) -> None:
+        """Clear any data stored in the context."""
+        # Re-init broker machinery
+        self._init_broker_data()
+        # Clear the user data storage
+        self._globals = {}
