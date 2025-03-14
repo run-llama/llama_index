@@ -181,3 +181,11 @@ async def test_wait_for_event_in_workflow():
 def test_get_holding_events(ctx):
     ctx._step_events_holding = None
     assert ctx.get_holding_events() == []
+
+
+@pytest.mark.asyncio()
+async def test_clear(ctx):
+    await ctx.set("test_key", 42)
+    ctx.clear()
+    res = await ctx.get("test_key", default=None)
+    assert res is None

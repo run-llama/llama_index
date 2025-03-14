@@ -46,9 +46,16 @@ class Context:
     ) -> None:
         self.stepwise = stepwise
         self.is_running = False
-
         self._workflow = workflow
-        # Broker machinery
+
+        # Init broker machinery
+        self._init_broker_data()
+
+        # Global data storage
+        self._lock = asyncio.Lock()
+        self._globals: Dict[str, Any] = {}
+
+    def _init_broker_data(self) -> None:
         self._waiter_id = str(uuid.uuid4())
         self._queues: Dict[str, asyncio.Queue] = {self._waiter_id: asyncio.Queue()}
         self._tasks: Set[asyncio.Task] = set()
@@ -65,7 +72,6 @@ class Context:
         )
         self._accepted_events: List[Tuple[str, str]] = []
         self._retval: RunResultT = None
-
         # Map the step names that were executed to a list of events they received.
         # This will be serialized, and is needed to resume a Workflow run passing
         # an existing context.
@@ -76,9 +82,6 @@ class Context:
         self._currently_running_steps: DefaultDict[str, int] = defaultdict(int)
         # Streaming machinery
         self._streaming_queue: asyncio.Queue = asyncio.Queue()
-        # Global data storage
-        self._lock = asyncio.Lock()
-        self._globals: Dict[str, Any] = {}
         # Step-specific instance
         self._events_buffer: Dict[str, List[Event]] = defaultdict(list)
 
@@ -387,3 +390,10 @@ class Context:
     @property
     def streaming_queue(self) -> asyncio.Queue:
         return self._streaming_queue
+
+    def clear(self) -> None:
+        """Clear any data stored in the context."""
+        # Re-init broker machinery
+        self._init_broker_data()
+        # Clear the user data storage
+        self._globals = {}
