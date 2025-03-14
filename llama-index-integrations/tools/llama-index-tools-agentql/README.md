@@ -86,3 +86,11 @@ await playwright_tool.click(next_page_button)
 ## Agentic Usage
 
 This tool has a more extensive example for agentic usage documented in this [Jupyter notebook](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-agentql/examples/AgentQL_browser_agent.ipynb).
+
+## Run tests
+
+In order to run integration tests, you need to configure LLM credentials by setting the `OPENAI_API_KEY` and `AGENTQL_API_KEY` environment variables first. Then run the tests with the following command:
+
+```bash
+make test
+```
