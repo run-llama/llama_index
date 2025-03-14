@@ -63,14 +63,25 @@ def chat_from_gemini_response(
     if response.usage_metadata:
         raw["usage_metadata"] = response.usage_metadata.model_dump()
 
-    try:
+    content_blocks = []
+    if (
+        len(response.candidates) > 0
+        and response.candidates[0].content
+        and response.candidates[0].content.parts
+    ):
         parts = response.candidates[0].content.parts
-        text = "".join([part.text for part in parts if part.text])
-    except ValueError:
-        text = None
+        for part in parts:
+            if part.text:
+                content_blocks.append(TextBlock(text=part.text))
+            if part.inline_data:
+                content_blocks.append(
+                    ImageBlock(
+                        image=part.inline_data.data,
+                        image_mimetype=part.inline_data.mime_type,
+                    )
+                )
 
     additional_kwargs: Dict[str, Any] = {}
-
     if response.function_calls:
         for fn in response.function_calls:
             if "tool_calls" not in additional_kwargs:
@@ -80,7 +91,7 @@ def chat_from_gemini_response(
     role = ROLES_FROM_GEMINI[top_candidate.content.role]
     return ChatResponse(
         message=ChatMessage(
-            role=role, content=text, additional_kwargs=additional_kwargs
+            role=role, blocks=content_blocks, additional_kwargs=additional_kwargs
         ),
         raw=raw,
         additional_kwargs=additional_kwargs,
