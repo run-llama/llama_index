@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Sequence
+import json
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.base.llms.generic_utils import (
@@ -74,6 +75,7 @@ CHAT_ONLY_MODELS = {
     "us.meta.llama3-2-1b-instruct-v1:0": 8192,
     "us.meta.llama3-2-3b-instruct-v1:0": 8192,
     "us.meta.llama3-2-90b-instruct-v1:0": 8192,
+    "us.meta.llama3-3-70b-instruct-v1:0": 128000,
     "eu.anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "eu.anthropic.claude-3-opus-20240229-v1:0": 200000,
     "eu.anthropic.claude-3-sonnet-20240229-v1:0": 200000,
@@ -87,7 +89,10 @@ CHAT_ONLY_MODELS = {
     "eu.meta.llama3-2-1b-instruct-v1:0": 8192,
     "eu.meta.llama3-2-3b-instruct-v1:0": 8192,
     "eu.meta.llama3-2-90b-instruct-v1:0": 8192,
+    "eu.meta.llama3-3-70b-instruct-v1:0": 128000,
+    "us.deepseek.r1-v1:0": 128000,
 }
+
 BEDROCK_FOUNDATION_LLMS = {**COMPLETION_MODELS, **CHAT_ONLY_MODELS}
 
 # Only the following models support streaming as
@@ -125,6 +130,7 @@ STREAMING_MODELS = {
     "eu.anthropic.claude-3-5-sonnet-20240620-v1:0",
     "eu.anthropic.claude-3-5-sonnet-20241022-v2:0",
     "eu.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "us.deepseek.r1-v1:0",
 }
 
 
@@ -252,6 +258,54 @@ class MistralProvider(Provider):
         return response["outputs"][0]["text"]
 
 
+class DeepseekProvider(Provider):
+    max_tokens_key = "maxTokens"
+
+    def __init__(self) -> None:
+        self.messages_to_prompt = self.messages_to_prompt
+        self.completion_to_prompt = self.completion_to_prompt
+
+    def get_text_from_response(self, response: dict) -> str:
+        return response["output"]["message"]["content"][0]["text"]
+
+    def messages_to_prompt(self, messages: Sequence[ChatMessage]) -> List[Dict]:
+        formatted_messages = []
+
+        for message in messages:
+            formatted_message = {
+                "role": message.role.value,
+                "content": [{"text": message.content}],
+            }
+            formatted_messages.append(formatted_message)
+
+        return formatted_messages
+
+    def completion_to_prompt(self, completion: str) -> List[Dict]:
+        return [{"role": "user", "content": [{"text": completion}]}]
+
+    def get_request_body(self, prompt: Any, inference_parameters: dict) -> dict:
+        # Extract and format inference parameters
+        inference_config = {}
+        if "temperature" in inference_parameters:
+            inference_config["temperature"] = inference_parameters["temperature"]
+        if self.max_tokens_key in inference_parameters:
+            inference_config["maxTokens"] = inference_parameters[self.max_tokens_key]
+
+        # Add any other parameters that aren't in our known list
+        for key, value in inference_parameters.items():
+            if key not in ["temperature", self.max_tokens_key, "system"]:
+                inference_config[key] = value
+
+        # If prompt is a string (from completion), convert it to messages format
+        if isinstance(prompt, str):
+            messages = [{"role": "user", "content": [{"text": prompt}]}]
+        else:
+            # This is already in messages format
+            messages = prompt
+
+        return {"messages": messages, "inferenceConfig": inference_config}
+
+
 PROVIDERS = {
     "amazon": AmazonProvider(),
     "ai21": Ai21Provider(),
@@ -259,6 +313,7 @@ PROVIDERS = {
     "cohere": CohereProvider(),
     "meta": MetaProvider(),
     "mistral": MistralProvider(),
+    "deepseek": DeepseekProvider(),
 }
 
 
@@ -311,9 +366,24 @@ def completion_with_retry(
     """Use tenacity to retry the completion call."""
     retry_decorator = _create_retry_decorator(client=client, max_retries=max_retries)
 
+    # Check if the model is a DeepSeek model
+    model_split = model.split(".")
+    provider_name = model_split[0]
+    if len(model_split) == 3:
+        provider_name = model_split[1]
+    is_deepseek = provider_name == "deepseek"
+
     @retry_decorator
     def _completion_with_retry(**kwargs: Any) -> Any:
-        if stream:
+        # For DeepSeek models, use the converse method
+        if is_deepseek:
+            request_dict = json.loads(request_body)
+            return client.converse(
+                modelId=model,
+                messages=request_dict["messages"],
+                inferenceConfig=request_dict["inferenceConfig"],
+            )
+        elif stream:
             if guardrail_identifier is None or guardrail_version is None:
                 return client.invoke_model_with_response_stream(
                     modelId=model,

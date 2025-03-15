@@ -96,7 +96,7 @@ class Bedrock(LLM):
     )
     guardrail_identifier: Optional[str] = (
         Field(
-            description="The unique identifier of the guardrail that you want to use. If you don’t provide a value, no guardrail is applied to the invocation."
+            description="The unique identifier of the guardrail that you want to use. If you don't provide a value, no guardrail is applied to the invocation."
         ),
     )
     guardrail_version: Optional[str] = (
@@ -283,9 +283,16 @@ class Bedrock(LLM):
             trace=self.trace,
             **all_kwargs,
         )
-        response_body = response["body"].read()
-        response_headers = response["ResponseMetadata"]["HTTPHeaders"]
-        response_body = json.loads(response_body)
+
+        # Handle DeepSeek response format differently
+        if self.model.split(".")[0] == "us" and self.model.split(".")[1] == "deepseek":
+            response_body = response
+            response_headers = {}
+        else:
+            response_body = response["body"].read()
+            response_headers = response["ResponseMetadata"]["HTTPHeaders"]
+            response_body = json.loads(response_body)
+
         return CompletionResponse(
             text=self._provider.get_text_from_response(response_body),
             raw=response_body,
@@ -299,11 +306,45 @@ class Bedrock(LLM):
         if self.model in BEDROCK_FOUNDATION_LLMS and self.model not in STREAMING_MODELS:
             raise ValueError(f"Model {self.model} does not support streaming")
 
+        # Check if this is a DeepSeek model
+        model_parts = self.model.split(".")
+        provider_name = model_parts[0]
+        if len(model_parts) == 3:
+            provider_name = model_parts[1]
+
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
         all_kwargs = self._get_all_kwargs(**kwargs)
         request_body = self._provider.get_request_body(prompt, all_kwargs)
+
+        # Use converse_stream for DeepSeek models
+        if provider_name == "deepseek":
+            request_dict = json.loads(json.dumps(request_body))
+            response = self._client.converse_stream(
+                modelId=self.model,
+                messages=request_dict["messages"],
+                inferenceConfig=request_dict["inferenceConfig"],
+            )
+
+            def gen() -> CompletionResponseGen:
+                content = ""
+                for event in response.get("stream", []):
+                    if "contentBlockDelta" in event:
+                        content_delta = event["contentBlockDelta"]["delta"].get(
+                            "text", ""
+                        )
+                        content += content_delta
+                        yield CompletionResponse(
+                            text=content,
+                            delta=content_delta,
+                            raw=event,
+                            additional_kwargs={},
+                        )
+
+            return gen()
+
+        # For other models, use the existing streaming implementation
         request_body_str = json.dumps(request_body)
         response = completion_with_retry(
             client=self._client,
