@@ -8,6 +8,7 @@ from llama_cloud import (
     Retriever,
     RetrieverPipeline,
     PresetRetrievalParams,
+    RerankerProvider,
 )
 from llama_cloud.resources.pipelines.client import OMIT
 
@@ -45,6 +46,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         # composite retrieval params
         mode: Optional[CompositeRetrievalMode] = None,
         rerank_top_n: Optional[int] = None,
+        reranker_provider: Optional[RerankerProvider] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the Composite Retriever."""
@@ -78,6 +80,9 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         # composite retrieval params
         self._mode = mode if mode is not None else OMIT
         self._rerank_top_n = rerank_top_n if rerank_top_n is not None else OMIT
+        self._reranker_provider = (
+            reranker_provider if reranker_provider is not None else OMIT
+        )
 
         super().__init__(
             callback_manager=kwargs.get("callback_manager", None),
@@ -199,13 +204,20 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         mode: Optional[CompositeRetrievalMode] = None,
         rerank_top_n: Optional[int] = None,
+        reranker_provider: Optional[RerankerProvider] = None,
     ) -> List[NodeWithScore]:
         mode = mode if mode is not None else self._mode
         rerank_top_n = rerank_top_n if rerank_top_n is not None else self._rerank_top_n
+        reranker_provider = (
+            reranker_provider
+            if reranker_provider is not None
+            else self._reranker_provider
+        )
         result = self._client.retrievers.retrieve(
             self.retriever.id,
             mode=mode,
             rerank_top_n=rerank_top_n,
+            reranker_provider=reranker_provider,
             query=query_bundle.query_str,
         )
         node_w_scores = [
@@ -223,13 +235,20 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         mode: Optional[CompositeRetrievalMode] = None,
         rerank_top_n: Optional[int] = None,
+        reranker_provider: Optional[RerankerProvider] = None,
     ) -> List[NodeWithScore]:
         mode = mode if mode is not None else self._mode
         rerank_top_n = rerank_top_n if rerank_top_n is not None else self._rerank_top_n
+        reranker_provider = (
+            reranker_provider
+            if reranker_provider is not None
+            else self._reranker_provider
+        )
         result = await self._aclient.retrievers.retrieve(
             self.retriever.id,
             mode=mode,
             rerank_top_n=rerank_top_n,
+            reranker_provider=reranker_provider,
             query=query_bundle.query_str,
         )
         node_w_scores = [
