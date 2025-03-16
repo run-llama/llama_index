@@ -1,9 +1,9 @@
-import pytest
+from typing import Any, cast
 
-from llama_index.core.workflow.events import Event
+import pytest
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.workflow.context_serializers import JsonSerializer
-from typing import Any, cast
+from llama_index.core.workflow.events import Event
 
 
 class _TestEvent(Event):
@@ -91,7 +91,7 @@ def test_event_dict_api():
 
 
 def test_event_serialization():
-    ev = _TestEvent(param="foo", not_a_field="bar")
+    ev = _TestEvent(param="foo", not_a_field="bar")  # type: ignore
     serializer = JsonSerializer()
     serialized_ev = serializer.serialize(ev)
     deseriazlied_ev = serializer.deserialize(serialized_ev)
@@ -103,3 +103,7 @@ def test_event_serialization():
     )
     assert ev.param == deseriazlied_ev.param
     assert ev._data == deseriazlied_ev._data
+
+
+def test_bool():
+    assert bool(_TestEvent(param="foo")) is True

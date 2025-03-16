@@ -1,10 +1,9 @@
 import pytest
-
-from llama_index.core.workflow.decorators import step
-from llama_index.core.workflow.events import StartEvent, StopEvent, Event
-from llama_index.core.workflow.context import Context
-from llama_index.core.workflow.workflow import Workflow
 from llama_index.core.bridge.pydantic import Field
+from llama_index.core.workflow.context import Context
+from llama_index.core.workflow.decorators import step
+from llama_index.core.workflow.events import Event, StartEvent, StopEvent
+from llama_index.core.workflow.workflow import Workflow
 
 
 class OneTestEvent(Event):
@@ -45,4 +44,4 @@ def events():
 
 @pytest.fixture()
 def ctx():
-    return Context(workflow=Workflow())
+    return Context(workflow=DummyWorkflow())

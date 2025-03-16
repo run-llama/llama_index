@@ -243,3 +243,146 @@ chat_memory = ChatMemoryBuffer.from_defaults(
     chat_store_key="user1",
 )
 ```
+
+## TablestoreChatStore
+
+Using `TablestoreChatStore`, you can store your chat history remotely, without having to worry about manually persisting and loading the chat history.
+
+#### Installation
+
+```bash
+pip install llama-index-storage-chat-store-tablestore
+```
+
+#### Usage
+
+```python
+from llama_index.storage.chat_store.tablestore import TablestoreChatStore
+from llama_index.core.memory import ChatMemoryBuffer
+
+# 1. create tablestore vector store
+chat_store = TablestoreChatStore(
+    endpoint="<end_point>",
+    instance_name="<instance_name>",
+    access_key_id="<access_key_id>",
+    access_key_secret="<access_key_secret>",
+)
+# You need to create a table for the first use
+chat_store.create_table_if_not_exist()
+
+chat_memory = ChatMemoryBuffer.from_defaults(
+    token_limit=3000,
+    chat_store=chat_store,
+    chat_store_key="user1",
+)
+```
+
+## Google AlloyDB ChatStore
+
+Using `AlloyDBChatStore`, you can store your chat history in AlloyDB, without having to worry about manually persisting and loading the chat history.
+
+This tutorial demonstrates the synchronous interface. All synchronous methods have corresponding asynchronous methods.
+
+#### Installation
+
+```bash
+pip install llama-index
+pip install llama-index-alloydb-pg
+pip install llama-index-llms-vertex
+```
+
+#### Usage
+
+```python
+from llama_index.core.chat_engine import SimpleChatEngine
+from llama_index.core.memory import ChatMemoryBuffer
+from llama_index_alloydb_pg import AlloyDBChatStore, AlloyDBEngine
+from llama_index.llms.vertex import Vertex
+import asyncio
+
+# Replace with your own AlloyDB info
+engine = AlloyDBEngine.from_instance(
+    project_id=PROJECT_ID,
+    region=REGION,
+    cluster=CLUSTER,
+    instance=INSTANCE,
+    database=DATABASE,
+    user=USER,
+    password=PASSWORD,
+)
+
+engine.init_chat_store_table(table_name=TABLE_NAME)
+
+chat_store = AlloyDBChatStore.create_sync(
+    engine=engine,
+    table_name=TABLE_NAME,
+)
+
+memory = ChatMemoryBuffer.from_defaults(
+    token_limit=3000,
+    chat_store=chat_store,
+    chat_store_key="user1",
+)
+
+llm = Vertex(model="gemini-1.5-flash-002", project=PROJECT_ID)
+
+chat_engine = SimpleChatEngine(memory=memory, llm=llm, prefix_messages=[])
+
+response = chat_engine.chat("Hello.")
+
+print(response)
+```
+## Google Cloud SQL for PostgreSQL ChatStore
+
+Using `PostgresChatStore`, you can store your chat history in Cloud SQL for Postgres, without having to worry about manually persisting and loading the chat history.
+
+This tutorial demonstrates the synchronous interface. All synchronous methods have corresponding asynchronous methods.
+
+#### Installation
+
+```bash
+pip install llama-index
+pip install llama-index-cloud-sql-pg
+pip install llama-index-llms-vertex
+```
+
+#### Usage
+
+```python
+from llama_index.core.chat_engine import SimpleChatEngine
+from llama_index.core.memory import ChatMemoryBuffer
+from llama_index_cloud_sql_pg import PostgresChatStore, PostgresEngine
+from llama_index.llms.vertex import Vertex
+import asyncio
+
+# Replace with your own Cloud SQL info
+engine = PostgresEngine.from_instance(
+    project_id=PROJECT_ID,
+    region=REGION,
+    instance=INSTANCE,
+    database=DATABASE,
+    user=USER,
+    password=PASSWORD,
+)
+
+engine.init_chat_store_table(table_name=TABLE_NAME)
+
+chat_store = PostgresChatStore.create_sync(
+    engine=engine,
+    table_name=TABLE_NAME,
+)
+
+memory = ChatMemoryBuffer.from_defaults(
+    token_limit=3000,
+    chat_store=chat_store,
+    chat_store_key="user1",
+)
+
+llm = Vertex(model="gemini-1.5-flash-002", project=PROJECT_ID)
+
+chat_engine = SimpleChatEngine(memory=memory, llm=llm, prefix_messages=[])
+
+response = chat_engine.chat("Hello.")
+
+print(response)
+```

@@ -33,7 +33,7 @@ DEFAULT_PERSIST_FILENAME = "retriever.json"
 
 
 class BM25Retriever(BaseRetriever):
-    """A BM25 retriever that uses the BM25 algorithm to retrieve nodes.
+    r"""A BM25 retriever that uses the BM25 algorithm to retrieve nodes.
 
     Args:
         nodes (List[BaseNode], optional):
@@ -52,6 +52,10 @@ class BM25Retriever(BaseRetriever):
             The objects to retrieve. Defaults to None.
         object_map (dict, optional):
             A map of object IDs to nodes. Defaults to None.
+        token_pattern (str, optional):
+            The token pattern to use. Defaults to (?u)\\b\\w\\w+\\b.
+        skip_stemming (bool, optional):
+            Whether to skip stemming. Defaults to False.
         verbose (bool, optional):
             Whether to show progress. Defaults to False.
     """
@@ -67,9 +71,13 @@ class BM25Retriever(BaseRetriever):
         objects: Optional[List[IndexNode]] = None,
         object_map: Optional[dict] = None,
         verbose: bool = False,
+        skip_stemming: bool = False,
+        token_pattern: str = r"(?u)\b\w\w+\b",
     ) -> None:
         self.stemmer = stemmer or Stemmer.Stemmer("english")
         self.similarity_top_k = similarity_top_k
+        self.token_pattern = token_pattern
+        self.skip_stemming = skip_stemming
 
         if existing_bm25 is not None:
             self.bm25 = existing_bm25
@@ -83,7 +91,8 @@ class BM25Retriever(BaseRetriever):
             corpus_tokens = bm25s.tokenize(
                 [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
                 stopwords=language,
-                stemmer=self.stemmer,
+                stemmer=self.stemmer if not skip_stemming else None,
+                token_pattern=self.token_pattern,
                 show_progress=verbose,
             )
             self.bm25 = bm25s.BM25()
@@ -105,6 +114,8 @@ class BM25Retriever(BaseRetriever):
         language: str = "en",
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         verbose: bool = False,
+        skip_stemming: bool = False,
+        token_pattern: str = r"(?u)\b\w\w+\b",
         # deprecated
         tokenizer: Optional[Callable[[str], List[str]]] = None,
     ) -> "BM25Retriever":
@@ -134,6 +145,8 @@ class BM25Retriever(BaseRetriever):
             language=language,
             similarity_top_k=similarity_top_k,
             verbose=verbose,
+            skip_stemming=skip_stemming,
+            token_pattern=token_pattern,
         )
 
     def get_persist_args(self) -> Dict[str, Any]:
@@ -144,24 +157,31 @@ class BM25Retriever(BaseRetriever):
             if hasattr(self, key)
         }
 
-    def persist(self, path: str, **kwargs: Any) -> None:
+    def persist(self, path: str, encoding: str = "utf-8", **kwargs: Any) -> None:
         """Persist the retriever to a directory."""
         self.bm25.save(path, corpus=self.corpus, **kwargs)
-        with open(os.path.join(path, DEFAULT_PERSIST_FILENAME), "w") as f:
+        with open(
+            os.path.join(path, DEFAULT_PERSIST_FILENAME), "w", encoding=encoding
+        ) as f:
             json.dump(self.get_persist_args(), f, indent=2)
 
     @classmethod
-    def from_persist_dir(cls, path: str, **kwargs: Any) -> "BM25Retriever":
+    def from_persist_dir(
+        cls, path: str, encoding: str = "utf-8", **kwargs: Any
+    ) -> "BM25Retriever":
         """Load the retriever from a directory."""
         bm25 = bm25s.BM25.load(path, load_corpus=True, **kwargs)
-        with open(os.path.join(path, DEFAULT_PERSIST_FILENAME)) as f:
+        with open(os.path.join(path, DEFAULT_PERSIST_FILENAME), encoding=encoding) as f:
             retriever_data = json.load(f)
         return cls(existing_bm25=bm25, **retriever_data)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         query = query_bundle.query_str
         tokenized_query = bm25s.tokenize(
-            query, stemmer=self.stemmer, show_progress=self._verbose
+            query,
+            stemmer=self.stemmer if not self.skip_stemming else None,
+            token_pattern=self.token_pattern,
+            show_progress=self._verbose,
         )
         indexes, scores = self.bm25.retrieve(
             tokenized_query, k=self.similarity_top_k, show_progress=self._verbose

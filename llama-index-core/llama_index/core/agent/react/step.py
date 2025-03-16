@@ -486,7 +486,9 @@ class ReActAgentWorker(BaseAgentWorker):
         Returns:
             bool: Boolean on whether the chunk is the start of the final response
         """
-        latest_content = chunk.message.content
+        latest_content = (
+            None if chunk.message.content is None else chunk.message.content.strip()
+        )
         if latest_content:
             # doesn't follow thought-action format
             # keep first chunks
@@ -689,8 +691,8 @@ class ReActAgentWorker(BaseAgentWorker):
                     start_idx + len("Answer:") :
                 ].strip()
 
-            # set delta to the content, minus the "Answer: "
-            latest_chunk.delta = latest_chunk.message.content
+                # set delta to the content, minus the "Answer: "
+                latest_chunk.delta = latest_chunk.message.content
 
             # add back the chunks that were missed
             response_stream = self._add_back_chunk_to_stream(
@@ -795,7 +797,7 @@ class ReActAgentWorker(BaseAgentWorker):
                 sources=task.extra_state["sources"],
             )
             # create task to write chat response to history
-            asyncio.create_task(
+            agent_response_stream.awrite_response_to_history_task = asyncio.create_task(
                 agent_response_stream.awrite_response_to_history(
                     task.extra_state["new_memory"],
                     on_stream_end_fn=partial(self.finalize_task, task),

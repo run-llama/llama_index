@@ -18,7 +18,7 @@ DatabricksVectorSearch = "NickhilN"
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.9"
 
 [tool.poetry]
 authors = ["Alberto Da Costa <alberto@bamelevate.com>", "Nickhil Nabar <nickhil@bamelevate.com"]
@@ -26,10 +26,10 @@ description = "llama-index vector_stores databricks vector search integration"
 license = "MIT"
 name = "llama-index-vector-stores-databricks"
 readme = "README.md"
-version = "0.3.0"
+version = "0.4.0"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.9,<4.0"
 databricks-vectorsearch = "^0.21"
 llama-index-core = "^0.12.0"
 

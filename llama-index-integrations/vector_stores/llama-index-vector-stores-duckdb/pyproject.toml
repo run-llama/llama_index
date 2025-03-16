@@ -18,7 +18,7 @@ DuckDBVectorStore = "krish-adi"
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.9"
 
 [tool.poetry]
 authors = ["Adithya Krishnan <me@krishadi.com>"]
@@ -28,7 +28,7 @@ license = "MIT"
 maintainers = ["krish-adi"]
 name = "llama-index-vector-stores-duckdb"
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

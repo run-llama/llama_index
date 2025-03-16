@@ -46,7 +46,7 @@ See the [ScrapFly documentation](https://scrapfly.io/docs/scrape-api/getting-sta
 
 ### Example Usage
 
-Here is an example demonstrating how to initialize the FireCrawlWebReader, load documents from a URL, and then create a summary index from those documents for querying.
+Here is an example demonstrating how to initialize the ScrapflyReader, load documents from a URL, and then create a summary index from those documents for querying.
 
 ```python
 from llama_index.core import SummaryIndex

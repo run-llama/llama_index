@@ -119,7 +119,7 @@ class GoogleDocsReader(BasePydanticReader):
                     client_config = json.load(json_file)
                     redirect_uris = client_config["web"].get("redirect_uris", [])
                     if len(redirect_uris) > 0:
-                        port = redirect_uris[0].strip("/").split(":")[-1]
+                        port = int(redirect_uris[0].strip("/").split(":")[-1])
 
                 creds = flow.run_local_server(port=port)
             # Save the credentials for the next run

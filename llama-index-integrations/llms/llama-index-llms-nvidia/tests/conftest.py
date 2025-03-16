@@ -11,13 +11,24 @@ from typing import Generator
 @pytest.fixture()
 def masked_env_var() -> Generator[str, None, None]:
     var = "NVIDIA_API_KEY"
+    # Save the current value of the environment variable, if it exists
+    val = os.environ.get(var, None)
+
+    # Remove the environment variable to simulate it being masked during the test
+    if val is not None:
+        del os.environ[var]
+
     try:
-        if val := os.environ.get(var, None):
-            del os.environ[var]
+        # Yield the original value so it can be used in the test
         yield val
     finally:
-        if val:
+        # Restore the original environment variable if it was set
+        if val is not None:
             os.environ[var] = val
+        else:
+            # If the variable was not originally set, ensure it's removed
+            if var in os.environ:
+                del os.environ[var]
 
 
 def pytest_collection_modifyitems(config, items):

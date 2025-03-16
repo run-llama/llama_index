@@ -207,10 +207,6 @@ class KuzuGraphStore(GraphStore):
         rel_table_name: str = "links",
     ) -> "KuzuGraphStore":
         """Load from persist dir."""
-        try:
-            import kuzu
-        except ImportError:
-            raise ImportError("Please install kuzu: pip install kuzu")
         database = kuzu.Database(persist_dir)
         return cls(database, node_table_name, rel_table_name)
 

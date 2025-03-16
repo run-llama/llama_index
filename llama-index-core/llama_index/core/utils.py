@@ -1,15 +1,18 @@
 """General utils functions."""
 
 import asyncio
+import base64
 import os
 import random
 import sys
 import time
 import traceback
 import uuid
+from binascii import Error as BinasciiError
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial, wraps
+from io import BytesIO
 from itertools import islice
 from pathlib import Path
 from typing import (
@@ -27,6 +30,8 @@ from typing import (
     Union,
     runtime_checkable,
 )
+
+import requests
 
 
 class GlobalsHelper:
@@ -59,12 +64,12 @@ class GlobalsHelper:
         try:
             nltk.data.find("corpora/stopwords")
         except LookupError:
-            nltk.download("stopwords", download_dir=self._nltk_data_dir)
+            nltk.download("stopwords", download_dir=self._nltk_data_dir, quiet=True)
 
         try:
             nltk.data.find("tokenizers/punkt_tab")
         except LookupError:
-            nltk.download("punkt_tab", download_dir=self._nltk_data_dir)
+            nltk.download("punkt_tab", download_dir=self._nltk_data_dir, quiet=True)
 
     @property
     def stopwords(self) -> List[str]:
@@ -81,7 +86,7 @@ class GlobalsHelper:
             try:
                 nltk.data.find("corpora/stopwords", paths=[self._nltk_data_dir])
             except LookupError:
-                nltk.download("stopwords", download_dir=self._nltk_data_dir)
+                nltk.download("stopwords", download_dir=self._nltk_data_dir, quiet=True)
             self._stopwords = stopwords.words("english")
         return self._stopwords
 
@@ -570,3 +575,63 @@ async def async_unit_generator(x: Any) -> AsyncGenerator[Any, None]:
         Any: the single element
     """
     yield x
+
+
+def resolve_binary(
+    raw_bytes: Optional[bytes] = None,
+    path: Optional[Union[str, Path]] = None,
+    url: Optional[str] = None,
+    as_base64: bool = False,
+) -> BytesIO:
+    """Resolve binary data from various sources into a BytesIO object.
+
+    Args:
+        raw_bytes: Raw bytes data
+        path: File path to read bytes from
+        url: URL to fetch bytes from
+        as_base64: Whether to base64 encode the output bytes
+
+    Returns:
+        BytesIO object containing the binary data
+
+    Raises:
+        ValueError: If no valid source is provided
+    """
+    if raw_bytes is not None:
+        # check if raw_bytes is base64 encoded
+        try:
+            decoded_bytes = base64.b64decode(raw_bytes)
+        except Exception:
+            decoded_bytes = raw_bytes
+
+        try:
+            # Check if raw_bytes is already base64 encoded.
+            # b64decode() can succeed on random binary data, so we
+            # pass verify=True to make sure it's not a false positive
+            decoded_bytes = base64.b64decode(raw_bytes, validate=True)
+        except BinasciiError:
+            # b64decode failed, leave as is
+            decoded_bytes = raw_bytes
+
+        if as_base64:
+            return BytesIO(base64.b64encode(decoded_bytes))
+        return BytesIO(decoded_bytes)
+
+    elif path is not None:
+        path = Path(path) if isinstance(path, str) else path
+        data = path.read_bytes()
+        if as_base64:
+            return BytesIO(base64.b64encode(data))
+        return BytesIO(data)
+
+    elif url is not None:
+        headers = {
+            "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
+        }
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        if as_base64:
+            return BytesIO(base64.b64encode(response.content))
+        return BytesIO(response.content)
+
+    raise ValueError("No valid source provided to resolve binary data!")

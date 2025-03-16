@@ -32,13 +32,15 @@ We are actively adding more integrations and improving feature coverage for each
 | DynamoDB                 | cloud                   |                    |               | ✓      |                 |       |
 | Elasticsearch            | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | FAISS                    | in-memory               |                    |               |        |                 |       |
+| Google AlloyDB           | cloud                   | ✓                  |               | ✓      | ✓               | ✓     |
+| Google Cloud SQL Postgres| cloud                   | ✓                  |               | ✓      | ✓               | ✓     |
 | Hnswlib                  | in-memory               |                    |               |        |                 |       |
 | txtai                    | in-memory               |                    |               |        |                 |       |
 | Jaguar                   | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | LanceDB                  | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Lantern                  | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Metal                    | cloud                   | ✓                  |               | ✓      | ✓               |       |
-| MongoDB Atlas            | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
+| MongoDB Atlas            | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | MyScale                  | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Milvus / Zilliz          | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | Neo4jVector              | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
@@ -84,6 +86,8 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [DocArray in-Memory](../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb)
 - [DuckDB](../../examples/vector_stores/DuckDBDemo.ipynb)
 - [Espilla](../../examples/vector_stores/EpsillaIndexDemo.ipynb)
+- [Google AlloyDB for PostgreSQL](../../examples/vector_stores/AlloyDBVectorStoreDemo.ipynb)
+- [Google Cloud SQL for PostgreSQL](../../examples/vector_stores/CloudSQLPgVectorStoreDemo.ipynb)
 - [Jaguar](../../examples/vector_stores/JaguarIndexDemo.ipynb)
 - [LanceDB](../../examples/vector_stores/LanceDBIndexDemo.ipynb)
 - [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
@@ -118,4 +122,5 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Vertex AI Vector Search](../../examples/vector_stores/VertexAIVectorSearchDemo.ipynb)
 - [Weaviate](../../examples/vector_stores/WeaviateIndexDemo.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
+- [WordLift](../../examples/vector_stores/WordLiftDemo.ipynb)
 - [Zep](../../examples/vector_stores/ZepIndexDemo.ipynb)

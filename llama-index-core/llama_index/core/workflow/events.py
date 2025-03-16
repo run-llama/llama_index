@@ -1,11 +1,11 @@
+from _collections_abc import dict_items, dict_keys, dict_values
 from typing import Any, Dict, Type
-from _collections_abc import dict_keys, dict_items, dict_values
 
 from llama_index.core.bridge.pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     PrivateAttr,
-    ConfigDict,
     model_serializer,
 )
 
@@ -124,6 +124,10 @@ class Event(BaseModel):
     def dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         return self._data
 
+    def __bool__(self) -> bool:
+        """Make test `if event:` pass on Event instances."""
+        return True
+
     @model_serializer(mode="wrap")
     def custom_model_dump(self, handler: Any) -> Dict[str, Any]:
         data = handler(self)
@@ -140,11 +144,19 @@ class StartEvent(Event):
 class StopEvent(Event):
     """EndEvent signals the workflow to stop."""
 
-    result: Any = Field(default=None)
+    _result: Any = PrivateAttr(default=None)
 
-    def __init__(self, result: Any = None) -> None:
+    def __init__(self, result: Any = None, **kwargs: Any) -> None:
         # forces the user to provide a result
-        super().__init__(result=result)
+        super().__init__(_result=result, **kwargs)
+
+    def _get_result(self) -> Any:
+        """This can be overridden by subclasses to return the desired result."""
+        return self._result
+
+    @property
+    def result(self) -> Any:
+        return self._get_result()
 
 
 class InputRequiredEvent(Event):

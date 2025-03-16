@@ -27,11 +27,11 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-retrievers-bm25"
 readme = "README.md"
-version = "0.5.0"
+version = "0.5.2"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-bm25s = "^0.2.0"
+bm25s = ">=0.2.7.post1"
 pystemmer = "^2.2.0.1"
 llama-index-core = "^0.12.0"
 

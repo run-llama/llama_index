@@ -1,7 +1,8 @@
 from enum import Enum
-import json
+from fsspec import AbstractFileSystem
 from pathlib import Path
-from typing import Any, Dict, Iterable, Protocol, runtime_checkable
+from typing import Any, Dict, Iterable, Optional, Protocol, runtime_checkable
+import json
 import uuid
 
 from docling.document_converter import DocumentConverter
@@ -45,6 +46,7 @@ class DoclingReader(BasePydanticReader):
         self,
         file_path: str | Path | Iterable[str] | Iterable[Path],
         extra_info: dict | None = None,
+        fs: Optional[AbstractFileSystem] = None,
     ) -> Iterable[LIDocument]:
         """Lazily load from given source.
 

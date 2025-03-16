@@ -658,9 +658,10 @@ class QueryPipeline(QueryComponent):
                 CBEventType.QUERY,
                 payload={EventPayload.QUERY_STR: json.dumps(module_input_dict)},
             ) as query_event:
-                return await self._arun_multi(
+                outputs, _ = await self._arun_multi(
                     module_input_dict, show_intermediates=True
                 )
+                return outputs
 
     def _get_root_key_and_kwargs(
         self, *args: Any, **kwargs: Any

@@ -27,11 +27,11 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-langchain"
 readme = "README.md"
-version = "0.5.0"
+version = "0.6.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-langchain = ">=0.1.3"
+langchain = ">=0.1.7"
 llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
