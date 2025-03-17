@@ -8,11 +8,23 @@ from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 
 
-@retry(
-    reraise=True,
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=4, max=10),
-)
+def create_retry_decorator(func_name: str):
+    """
+    Create a retry decorator with standard settings.
+    
+    Args:
+        func_name (str): Name of the function for logging
+        
+    Returns:
+        Callable: Retry decorator
+    """
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+    )
+
+@create_retry_decorator("eval_response")
 async def eval_response_worker(
     semaphore: asyncio.Semaphore,
     evaluator: BaseEvaluator,
