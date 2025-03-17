@@ -27,6 +27,16 @@ BUSY_WAIT_DELAY = 0.01
 
 
 class ServiceDefinition(BaseModel):
+    """A Pydantic model representing a service definition in a workflow step.
+
+    This class defines a service that can be injected into a workflow step.
+    It is made hashable through Pydantic's ConfigDict to enable its use in collections.
+
+    Attributes:
+        name (str): The name of the service parameter in the step function.
+        service (Any): The type or class of the service to be injected.
+        default_value (Optional[Any]): Default value for the service if not provided.
+    """
     # Make the service definition hashable
     model_config = ConfigDict(frozen=True)
 
@@ -164,7 +174,17 @@ def get_steps_from_instance(workflow: object) -> Dict[str, Callable]:
 
 
 def _get_param_types(param: inspect.Parameter) -> List[Any]:
-    """Extract the types of a parameter. Handles Union and Optional types."""
+    """Extract and process the types of a parameter.
+
+    This helper function handles Union and Optional types, returning a list of the actual types.
+    For Union[A, None] (Optional[A]), it returns [A].
+
+    Args:
+        param (inspect.Parameter): The parameter to analyze.
+
+    Returns:
+        List[Any]: A list of extracted types, excluding None from Unions/Optionals.
+    """
     typ = param.annotation
     if typ is inspect.Parameter.empty:
         return [Any]
@@ -194,7 +214,17 @@ def _get_return_types(func: Callable) -> List[Any]:
 def is_free_function(qualname: str) -> bool:
     """Determines whether a certain qualified name points to a free function.
 
-    The strategy should be able to spot nested functions, for details see PEP-3155.
+    A free function is either a module-level function or a nested function.
+    This implementation follows PEP-3155 for handling nested function detection.
+
+    Args:
+        qualname (str): The qualified name to analyze.
+
+    Returns:
+        bool: True if the name represents a free function, False otherwise.
+
+    Raises:
+        ValueError: If the qualified name is empty.
     """
     if not qualname:
         msg = "The qualified name cannot be empty"
