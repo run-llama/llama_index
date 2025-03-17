@@ -336,6 +336,7 @@ class BedrockConverse(FunctionCallingLLM):
                 },
             ),
             raw=dict(response),
+            additional_kwargs=self._get_response_token_counts(dict(response)),
         )
 
     @llm_completion_callback()
@@ -392,6 +393,9 @@ class BedrockConverse(FunctionCallingLLM):
                         ),
                         delta=content_delta.get("text", ""),
                         raw=response,
+                        additional_kwargs=self._get_response_token_counts(
+                            dict(response)
+                        ),
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
                     tool_use = content_block_start["start"]["toolUse"]
@@ -414,6 +418,9 @@ class BedrockConverse(FunctionCallingLLM):
                             },
                         ),
                         raw=response,
+                        additional_kwargs=self._get_response_token_counts(
+                            dict(response)
+                        ),
                     )
 
         return gen()
@@ -462,6 +469,7 @@ class BedrockConverse(FunctionCallingLLM):
                 },
             ),
             raw=dict(response),
+            additional_kwargs=self._get_response_token_counts(dict(response)),
         )
 
     @llm_completion_callback()
@@ -519,6 +527,7 @@ class BedrockConverse(FunctionCallingLLM):
                         ),
                         delta=content_delta.get("text", ""),
                         raw=chunk,
+                        additional_kwargs=self._get_response_token_counts(dict(chunk)),
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
                     tool_use = content_block_start["start"]["toolUse"]
@@ -641,3 +650,21 @@ class BedrockConverse(FunctionCallingLLM):
             )
 
         return tool_selections
+
+    def _get_response_token_counts(
+        self, response: Optional[Dict[str, Any]] = None
+    ) -> dict:
+        """Get the token usage reported by the response."""
+        if not response or not isinstance(response, dict):
+            return {}
+
+        usage = response.get("usage", {})
+        if not usage:
+            return {}
+
+        # Convert Bedrock's token count format to match OpenAI's format
+        return {
+            "prompt_tokens": usage.get("inputTokens", 0),
+            "completion_tokens": usage.get("outputTokens", 0),
+            "total_tokens": usage.get("totalTokens", 0),
+        }
