@@ -63,20 +63,20 @@ async def test_workflow_run(workflow):
 async def test_workflow_run_step(workflow):
     handler = workflow.run(stepwise=True)
 
-    event = await handler.run_step()
-    assert isinstance(event, OneTestEvent)
+    events = await handler.run_step()
+    assert isinstance(events[0], OneTestEvent)
     assert not handler.is_done()
-    handler.ctx.send_event(event)
+    handler.ctx.send_event(events[0])
 
-    event = await handler.run_step()
-    assert isinstance(event, LastEvent)
+    events = await handler.run_step()
+    assert isinstance(events[0], LastEvent)
     assert not handler.is_done()
-    handler.ctx.send_event(event)
+    handler.ctx.send_event(events[0])
 
-    event = await handler.run_step()
-    assert isinstance(event, StopEvent)
+    events = await handler.run_step()
+    assert isinstance(events[0], StopEvent)
     assert not handler.is_done()
-    handler.ctx.send_event(event)
+    handler.ctx.send_event(events[0])
 
     event = await handler.run_step()
     assert event is None
@@ -93,10 +93,10 @@ async def test_workflow_run_step(workflow):
 async def test_workflow_cancelled_by_user(workflow):
     handler = workflow.run(stepwise=True)
 
-    event = await handler.run_step()
-    assert isinstance(event, OneTestEvent)
+    events = await handler.run_step()
+    assert isinstance(events[0], OneTestEvent)
     assert not handler.is_done()
-    handler.ctx.send_event(event)
+    handler.ctx.send_event(events[0])
 
     await handler.cancel_run()
     await asyncio.sleep(0.1)  # let workflow get cancelled
@@ -332,8 +332,8 @@ async def test_workflow_step_returning_bogus():
             return StopEvent(result="step2")
 
     workflow = TestWorkflow()
-    with pytest.warns(
-        UserWarning,
+    with pytest.raises(
+        WorkflowRuntimeError,
         match="Step function step1 returned str instead of an Event instance.",
     ):
         await workflow.run()
@@ -558,10 +558,10 @@ async def test_workflow_pickle():
 async def test_workflow_context_to_dict_mid_run(workflow):
     handler = workflow.run(stepwise=True)
 
-    event = await handler.run_step()
-    assert isinstance(event, OneTestEvent)
+    events = await handler.run_step()
+    assert isinstance(events[0], OneTestEvent)
     assert not handler.is_done()
-    handler.ctx.send_event(event)
+    handler.ctx.send_event(events[0])
 
     # get the context dict
     data = handler.ctx.to_dict()
@@ -575,20 +575,19 @@ async def test_workflow_context_to_dict_mid_run(workflow):
     )
 
     # run the second step
-    ev = await new_handler.run_step()
-    assert isinstance(ev, LastEvent)
+    events = await new_handler.run_step()
+    assert isinstance(events[0], LastEvent)
     assert not new_handler.is_done()
-    new_handler.ctx.send_event(ev)
+    new_handler.ctx.send_event(events[0])
 
     # run third step
-    ev = await new_handler.run_step()
-    assert isinstance(ev, StopEvent)
+    events = await new_handler.run_step()
+    assert isinstance(events[0], StopEvent)
     assert not new_handler.is_done()
-    new_handler.ctx.send_event(ev)
+    new_handler.ctx.send_event(events[0])
 
     # Let the workflow finish
-    ev = await new_handler.run_step()
-    assert ev is None
+    assert await new_handler.run_step() is None
 
     result = await new_handler
     assert new_handler.is_done()
