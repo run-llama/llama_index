@@ -66,7 +66,13 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
             - return_types: List of return type annotations
             - context_parameter: Name of the context parameter if present
             - requested_services: List of required service definitions
+
+    Raises:
+        TypeError: If fn is not a callable object
     """
+    if not callable(fn):
+        raise TypeError("Expected a callable object, got {}".format(type(fn).__name__))
+
     sig = inspect.signature(fn)
 
     accepted_events: Dict[str, List[EventType]] = {}
@@ -249,8 +255,14 @@ def get_qualified_name(value: Any) -> str:
 
     Returns:
         str: The qualified name in the format 'module.class'.
+
+    Raises:
+        AttributeError: If value does not have __module__ or __class__ attributes
     """
-    return value.__module__ + "." + value.__class__.__name__
+    try:
+        return value.__module__ + "." + value.__class__.__name__
+    except AttributeError as e:
+        raise AttributeError(f"Object {value} does not have required attributes: {e}")
 
 
 def import_module_from_qualified_name(qualified_name: str) -> Any:
@@ -261,7 +273,20 @@ def import_module_from_qualified_name(qualified_name: str) -> Any:
 
     Returns:
         Any: The imported module object.
+
+    Raises:
+        ValueError: If qualified_name is empty or malformed
+        ImportError: If module cannot be imported
+        AttributeError: If attribute cannot be found in module
     """
-    module_path = qualified_name.rsplit(".", 1)
-    module = import_module(module_path[0])
-    return getattr(module, module_path[1])
+    if not qualified_name or "." not in qualified_name:
+        raise ValueError("Qualified name must be in format 'module.attribute'")
+
+    try:
+        module_path = qualified_name.rsplit(".", 1)
+        module = import_module(module_path[0])
+        return getattr(module, module_path[1])
+    except ImportError as e:
+        raise ImportError(f"Failed to import module {module_path[0]}: {e}")
+    except AttributeError as e:
+        raise AttributeError(f"Attribute {module_path[1]} not found in module {module_path[0]}: {e}")
