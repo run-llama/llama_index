@@ -12,7 +12,8 @@ DISCONTINUED_MODELS: Dict[str, int] = {}
 
 
 def everlyai_modelname_to_contextsize(modelname: str) -> int:
-    """Calculate the maximum number of tokens possible to generate for a model.
+    """
+    Calculate the maximum number of tokens possible to generate for a model.
 
     Args:
         modelname: The modelname we want to know the context size for.
@@ -31,7 +32,7 @@ def everlyai_modelname_to_contextsize(modelname: str) -> int:
             "Please choose another model."
         )
 
-    context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
+    context_size = ALL_AVAILABLE_MODELS.get(modelname)
 
     if context_size is None:
         raise ValueError(

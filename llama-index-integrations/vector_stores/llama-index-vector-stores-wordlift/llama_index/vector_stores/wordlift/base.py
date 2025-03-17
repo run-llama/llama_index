@@ -55,7 +55,7 @@ def _trailing_slash(value: str) -> str:
 
 
 def _make_metadata_as_node_request_metadata_value(
-    metadata: Dict[str, Any]
+    metadata: Dict[str, Any],
 ) -> Dict[str, NodeRequestMetadataValue]:
     values: Dict[str, NodeRequestMetadataValue] = {}
     for key, value in metadata.items():

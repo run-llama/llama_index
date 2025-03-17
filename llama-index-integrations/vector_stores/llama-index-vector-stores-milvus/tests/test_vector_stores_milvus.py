@@ -222,7 +222,7 @@ def test_milvus_filter_with_nested_filters():
     assert expr == "(a == 1 and (b == 2 or c == 3))"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestMilvusAsync:
     @pytest_asyncio.fixture
     def vector_store(self, event_loop) -> MilvusVectorStore:
@@ -411,7 +411,7 @@ class TestMilvusAsync:
 
 
 class TestMilvusSync:
-    @pytest.fixture()
+    @pytest.fixture
     def vector_store(self) -> MilvusVectorStore:
         return MilvusVectorStore(
             uri=TEST_URI,

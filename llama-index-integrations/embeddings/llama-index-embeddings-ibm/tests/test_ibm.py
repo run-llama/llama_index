@@ -77,7 +77,7 @@ class TestWasonxLLMInference:
             == self.mock_embed_texts()
         )
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     @patch("llama_index.embeddings.ibm.base.Embeddings")
     async def test_get_query_embedding_async(self, MockEmbedding: MagicMock) -> None:
         mock_instance = MockEmbedding.return_value

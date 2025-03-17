@@ -17,7 +17,7 @@ else:
     MEMGRAPH_AVAILABLE = True
 
 
-@pytest.fixture()
+@pytest.fixture
 def pg_store() -> MemgraphPropertyGraphStore:
     """Define Memgraph graph store."""
     if not MEMGRAPH_AVAILABLE:

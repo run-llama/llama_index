@@ -1,4 +1,5 @@
 """Load Documents from a set of persistent Steamship Files."""
+
 from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
@@ -6,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class SteamshipFileReader(BaseReader):
-    """Reads persistent Steamship Files and converts them to Documents.
+    """
+    Reads persistent Steamship Files and converts them to Documents.
 
     Args:
         api_key: Steamship API key. Defaults to STEAMSHIP_API_KEY value if not provided.
@@ -38,7 +40,8 @@ class SteamshipFileReader(BaseReader):
         collapse_blocks: bool = True,
         join_str: str = "\n\n",
     ) -> List[Document]:
-        """Load data from persistent Steamship Files into Documents.
+        """
+        Load data from persistent Steamship Files into Documents.
 
         Args:
             workspace: the handle for a Steamship workspace

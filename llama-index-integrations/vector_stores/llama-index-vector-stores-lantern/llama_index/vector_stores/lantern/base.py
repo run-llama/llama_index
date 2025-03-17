@@ -128,7 +128,8 @@ def get_data_model(
 
 
 class LanternVectorStore(BasePydanticVectorStore):
-    """Latern vector store.
+    """
+    Latern vector store.
 
     Examples:
         `pip install llama-index-vector-stores-lantern`

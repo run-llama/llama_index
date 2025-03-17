@@ -1,4 +1,5 @@
-"""Remote file reader.
+"""
+Remote file reader.
 
 A loader that fetches an arbitrary remote page or file by URL and parses its contents.
 

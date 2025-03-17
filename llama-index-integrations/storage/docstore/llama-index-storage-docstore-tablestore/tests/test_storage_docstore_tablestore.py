@@ -15,7 +15,7 @@ def test_class():
     assert TablestoreDocumentStore.__name__ in names_of_base_classes
 
 
-@pytest.fixture()
+@pytest.fixture
 def documents() -> List[Document]:
     return [
         Document(text="doc_1", id_="1", metadata={"key1": "value1"}),
@@ -24,7 +24,7 @@ def documents() -> List[Document]:
 
 
 # noinspection DuplicatedCode
-@pytest.fixture()
+@pytest.fixture
 def tablestore_doc_store() -> TablestoreDocumentStore:
     end_point = os.getenv("tablestore_end_point")
     instance_name = os.getenv("tablestore_instance_name")

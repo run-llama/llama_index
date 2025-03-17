@@ -1,4 +1,5 @@
-"""Tencent Vector store index.
+"""
+Tencent Vector store index.
 
 An index that is built with Tencent Vector Database.
 
@@ -91,7 +92,8 @@ class FilterField:
 
 
 class CollectionParams:
-    r"""Tencent vector DB Collection params.
+    r"""
+    Tencent vector DB Collection params.
     See the following documentation for details:
     https://cloud.tencent.com/document/product/1709/95826.
 
@@ -144,7 +146,8 @@ class CollectionParams:
 
 
 class TencentVectorDB(BasePydanticVectorStore):
-    """Tencent Vector Store.
+    """
+    Tencent Vector Store.
 
     In this vector store, embeddings and docs are stored within a Collection.
     If the Collection does not exist, it will be automatically created.
@@ -426,7 +429,8 @@ class TencentVectorDB(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -493,7 +497,8 @@ class TencentVectorDB(BasePydanticVectorStore):
         return self._database.describe_collection(self._collection.collection_name)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): contains

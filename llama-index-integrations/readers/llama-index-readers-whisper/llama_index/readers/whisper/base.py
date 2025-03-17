@@ -13,7 +13,8 @@ from llama_index.core.schema import Document
 
 
 class WhisperReader(BaseReader):
-    """Whisper reader.
+    """
+    Whisper reader.
 
     Reads audio files and transcribes them using the OpenAI Whisper API.
 

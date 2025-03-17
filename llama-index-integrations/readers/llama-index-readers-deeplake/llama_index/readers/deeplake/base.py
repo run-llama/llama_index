@@ -1,4 +1,5 @@
 """DeepLake reader."""
+
 from typing import List, Optional, Union
 
 import numpy as np
@@ -21,7 +22,8 @@ def vector_search(
     distance_metric: str = "l2",
     limit: Optional[int] = 4,
 ) -> List:
-    """Naive search for nearest neighbors
+    """
+    Naive search for nearest neighbors
     args:
         query_vector: Union[List, np.ndarray]
         data_vectors: np.ndarray
@@ -49,7 +51,8 @@ def vector_search(
 
 
 class DeepLakeReader(BaseReader):
-    """DeepLake reader.
+    """
+    DeepLake reader.
 
     Retrieve documents from existing DeepLake datasets.
 
@@ -78,7 +81,8 @@ class DeepLakeReader(BaseReader):
         limit: int = 4,
         distance_metric: str = "l2",
     ) -> List[Document]:
-        """Load data from DeepLake.
+        """
+        Load data from DeepLake.
 
         Args:
             dataset_name (str): Name of the DeepLake dataset.

@@ -1,6 +1,5 @@
 """Node PostProcessor module."""
 
-
 from llama_index.core.postprocessor.llm_rerank import LLMRerank
 from llama_index.core.postprocessor.metadata_replacement import (
     MetadataReplacementPostProcessor,

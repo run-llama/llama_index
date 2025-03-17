@@ -13,7 +13,8 @@ from .step import CoAAgentWorker
 
 
 class CoAAgentPack(BaseLlamaPack):
-    """Chain-of-abstraction Agent Pack.
+    """
+    Chain-of-abstraction Agent Pack.
 
     Args:
         tools (List[BaseTool]): List of tools to use.

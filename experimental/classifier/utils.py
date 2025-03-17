@@ -55,7 +55,8 @@ def get_train_str(
 
 
 def extract_float_given_response(response: str, n: int = 1) -> Optional[float]:
-    """Extract number given the GPT-generated response.
+    """
+    Extract number given the GPT-generated response.
 
     Used by tree-structured indices.
 

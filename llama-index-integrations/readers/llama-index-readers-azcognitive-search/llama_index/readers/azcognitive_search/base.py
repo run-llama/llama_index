@@ -1,4 +1,5 @@
-"""Azure Cognitive Search reader.
+"""
+Azure Cognitive Search reader.
 A loader that fetches documents from specific index.
 
 """
@@ -12,7 +13,8 @@ from llama_index.core.schema import Document
 
 
 class AzCognitiveSearchReader(BaseReader):
-    """General reader for any Azure Cognitive Search index reader.
+    """
+    General reader for any Azure Cognitive Search index reader.
 
     Args:
         service_name (str): the name of azure cognitive search service.
@@ -39,7 +41,8 @@ class AzCognitiveSearchReader(BaseReader):
     def load_data(
         self, query: str, content_field: str, filter: Optional[str] = None
     ) -> List[Document]:
-        """Read data from azure cognitive search index.
+        """
+        Read data from azure cognitive search index.
 
         Args:
             query (str): search term in Azure Search index

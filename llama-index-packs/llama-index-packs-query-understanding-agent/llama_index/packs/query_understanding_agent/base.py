@@ -13,7 +13,8 @@ from .step import QueryUnderstandingAgentWorker
 
 
 class QueryUnderstandingAgentPack(BaseLlamaPack):
-    """LLMCompilerAgent pack.
+    """
+    LLMCompilerAgent pack.
 
     Args:
         tools (List[BaseTool]): List of tools to use.

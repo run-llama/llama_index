@@ -24,7 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):
-    """BaseEvaporate program.
+    """
+    BaseEvaporate program.
 
     You should provide the fields you want to extract.
     Then when you call the program you should pass in a list of training_data nodes
@@ -123,7 +124,8 @@ class BaseEvaporateProgram(BasePydanticProgram, Generic[Model]):
 
 
 class DFEvaporateProgram(BaseEvaporateProgram[DataFrameRowsOnly]):
-    """Evaporate DF program.
+    """
+    Evaporate DF program.
 
     Given a set of fields, extracts a dataframe from a set of nodes.
     Each node corresponds to a row in the dataframe - each value in the row
@@ -183,7 +185,8 @@ class DFEvaporateProgram(BaseEvaporateProgram[DataFrameRowsOnly]):
 
 
 class MultiValueEvaporateProgram(BaseEvaporateProgram[DataFrameValuesPerColumn]):
-    """Multi-Value Evaporate program.
+    """
+    Multi-Value Evaporate program.
 
     Given a set of fields, and texts extracts a list of `DataFrameRow` objects across
     that texts.

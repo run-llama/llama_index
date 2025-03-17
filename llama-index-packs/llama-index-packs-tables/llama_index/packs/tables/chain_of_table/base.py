@@ -1,4 +1,5 @@
-"""Chain of table.
+"""
+Chain of table.
 
 All prompts adapted from original paper by Wang et al.:
 https://arxiv.org/pdf/2401.04398v1.pdf
@@ -584,7 +585,8 @@ def _dynamic_plan_parser(dynamic_plan: Any) -> Dict[str, Any]:
 
 
 def serialize_chain(op_chain: List[Tuple[str, str]]) -> str:
-    """Serialize operation chain.
+    """
+    Serialize operation chain.
 
     Operation chain is list of (fn, args) tuples.
 

@@ -11,7 +11,8 @@ from llama_index.core.schema import Document
 
 
 class BoardDocsReader(BaseReader):
-    """BoardDocs doc reader.
+    """
+    BoardDocs doc reader.
 
     Read public agendas included on a BoardDocs site.
 
@@ -111,7 +112,8 @@ class BoardDocsReader(BaseReader):
     def load_data(
         self, meeting_ids: Optional[List[str]] = None, **load_kwargs: Any
     ) -> List[Document]:
-        """Load all meetings of the committee.
+        """
+        Load all meetings of the committee.
 
         Args:
             meeting_ids (List[str]): A list of meeting IDs to load. If None, load all meetings.

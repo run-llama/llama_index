@@ -10,7 +10,8 @@ from llama_index.core.schema import MetadataMode, TextNode
 
 
 class EmbeddingQAFinetuneDataset(BaseModel):
-    """Embedding QA Finetuning Dataset.
+    """
+    Embedding QA Finetuning Dataset.
 
     Args:
         queries (Dict[str, str]): Dict id -> query.
@@ -32,7 +33,8 @@ class EmbeddingQAFinetuneDataset(BaseModel):
         ]
 
     def save_json(self, path: str) -> None:
-        """Save the dataset to a JSON file.
+        """
+        Save the dataset to a JSON file.
 
         Args:
             path (str): The file path to save the JSON.
@@ -42,7 +44,8 @@ class EmbeddingQAFinetuneDataset(BaseModel):
 
     @classmethod
     def from_json(cls, path: str) -> "EmbeddingQAFinetuneDataset":
-        """Load the dataset from a JSON file.
+        """
+        Load the dataset from a JSON file.
 
         Args:
             path (str): The file path to load the JSON from.
@@ -76,7 +79,8 @@ context information provided."
 def load_existing_data(
     path: str,
 ) -> Tuple[Dict[str, str], Dict[str, str], Dict[str, List[str]]]:
-    """Load existing data from a JSON file if it exists.
+    """
+    Load existing data from a JSON file if it exists.
 
     Args:
         path (str): The file path to load the JSON from.
@@ -103,7 +107,8 @@ def generate_qa_embedding_pairs(
     output_path: str = "qa_finetune_dataset.json",
     verbose: bool = True,
 ) -> EmbeddingQAFinetuneDataset:
-    """Generate QA pairs from a set of nodes and save periodically.
+    """
+    Generate QA pairs from a set of nodes and save periodically.
 
     Args:
         nodes (List[TextNode]): List of TextNode objects to process.

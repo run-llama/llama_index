@@ -6,7 +6,8 @@ from llama_index.llms.openai_like.base import OpenAILike
 
 
 class OPEA(OpenAILike):
-    """Adapter for a OPEA LLM.
+    """
+    Adapter for a OPEA LLM.
 
     Examples:
         `pip install llama-index-llms-opea`

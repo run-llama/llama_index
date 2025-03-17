@@ -1,4 +1,5 @@
-"""Paged CSV reader.
+"""
+Paged CSV reader.
 
 A parser for tabular data files.
 
@@ -12,7 +13,8 @@ from llama_index.core.schema import Document
 
 
 class PagedCSVReader(BaseReader):
-    """Paged CSV parser.
+    """
+    Paged CSV parser.
 
     Displayed each row in an LLM-friendly format on a separate document.
 

@@ -42,7 +42,7 @@ except Exception:
     clickhouse_not_available = True
 
 
-@pytest.fixture()
+@pytest.fixture
 def table_name() -> str:
     """Return the table name."""
     return f"test_{uuid.uuid4().hex}"
@@ -67,7 +67,7 @@ def clickhouse_client() -> Generator:
 
 
 @pytest.mark.skipif(clickhouse_not_available, reason="clickhouse not available")
-@pytest.fixture()
+@pytest.fixture
 def clickhouse_store(table_name: str, clickhouse_client: Any) -> ClickHouseVectorStore:
     return ClickHouseVectorStore(
         clickhouse_client,

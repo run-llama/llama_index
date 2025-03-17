@@ -342,7 +342,7 @@ class LindormVectorClient:
         filter: Union[Dict, List, None] = None,
     ) -> Dict:
         """
-        construct search query with pre-filter or post-filter.
+        Construct search query with pre-filter or post-filter.
 
         Args:
             query_vector(List[float]): Vector embedding to query.

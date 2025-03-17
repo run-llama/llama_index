@@ -107,6 +107,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         graph_store.close()
         ```
     """
+
     supports_structured_queries: bool = True
     supports_vector_queries: bool = True
     text_to_cypher_template: PromptTemplate = DEFAULT_CYPHER_TEMPALTE

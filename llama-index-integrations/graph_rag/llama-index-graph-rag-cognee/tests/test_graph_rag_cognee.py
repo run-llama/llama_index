@@ -11,7 +11,7 @@ from llama_index.graph_rag.cognee import CogneeGraphRAG
     os.getenv("OPENAI_API_KEY") is None,
     reason="OPENAI_API_KEY not available to test Cognee integration",
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_graph_rag_cognee():
     documents = [
         Document(

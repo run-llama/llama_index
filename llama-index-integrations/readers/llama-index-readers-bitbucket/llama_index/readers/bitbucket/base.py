@@ -10,7 +10,8 @@ from llama_index.core.schema import Document
 
 
 class BitbucketReader(BaseReader):
-    """Bitbucket reader.
+    """
+    Bitbucket reader.
 
     Reads the content of files in Bitbucket repositories.
 

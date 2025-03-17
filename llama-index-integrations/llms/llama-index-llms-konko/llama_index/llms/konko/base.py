@@ -49,7 +49,8 @@ class ModelInfo:
 
 
 class Konko(LLM):
-    """Konko LLM.
+    """
+    Konko LLM.
 
     Examples:
         `pip install llama-index-llms-konko`

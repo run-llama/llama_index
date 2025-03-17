@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 class GaudiLLM(HuggingFaceLLM):
-    r"""GaudiLLM LLM.
+    r"""
+    GaudiLLM LLM.
 
     Examples:
         `pip install llama-index-llms-gaudi`

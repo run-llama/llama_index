@@ -152,8 +152,7 @@ class GitBranchResponseModel(DataClassJsonMixin):
 
 
 class BaseGithubClient(Protocol):
-    def get_all_endpoints(self) -> Dict[str, str]:
-        ...
+    def get_all_endpoints(self) -> Dict[str, str]: ...
 
     async def request(
         self,
@@ -161,32 +160,28 @@ class BaseGithubClient(Protocol):
         method: str,
         headers: Dict[str, Any] = {},
         **kwargs: Any,
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     async def get_tree(
         self,
         owner: str,
         repo: str,
         tree_sha: str,
-    ) -> GitTreeResponseModel:
-        ...
+    ) -> GitTreeResponseModel: ...
 
     async def get_blob(
         self,
         owner: str,
         repo: str,
         file_sha: str,
-    ) -> Optional[GitBlobResponseModel]:
-        ...
+    ) -> Optional[GitBlobResponseModel]: ...
 
     async def get_commit(
         self,
         owner: str,
         repo: str,
         commit_sha: str,
-    ) -> GitCommitResponseModel:
-        ...
+    ) -> GitCommitResponseModel: ...
 
     async def get_branch(
         self,
@@ -194,8 +189,7 @@ class BaseGithubClient(Protocol):
         repo: str,
         branch: Optional[str],
         branch_name: Optional[str],
-    ) -> GitBranchResponseModel:
-        ...
+    ) -> GitBranchResponseModel: ...
 
 
 class GithubClient:

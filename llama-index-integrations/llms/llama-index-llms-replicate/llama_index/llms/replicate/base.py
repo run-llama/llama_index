@@ -21,7 +21,8 @@ DEFAULT_REPLICATE_TEMP = 0.75
 
 
 class Replicate(CustomLLM):
-    """Replicate LLM.
+    """
+    Replicate LLM.
 
     Examples:
         `pip install llama-index-llms-replicate`

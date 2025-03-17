@@ -1,4 +1,5 @@
-"""Reader that uses a Github Repo.
+"""
+Reader that uses a Github Repo.
 
 Repo taken from: https://github.com/mpoon/gpt-repository-loader
 
@@ -91,7 +92,8 @@ def process_repository(
 
 
 class GPTRepoReader(BaseReader):
-    """GPTRepoReader.
+    """
+    GPTRepoReader.
 
     Reads a github repo in a prompt-friendly format.
 
@@ -108,7 +110,8 @@ class GPTRepoReader(BaseReader):
         extensions: Optional[List[str]] = None,
         encoding: Optional[str] = "utf-8",
     ) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             pages (List[str]): List of pages to read.

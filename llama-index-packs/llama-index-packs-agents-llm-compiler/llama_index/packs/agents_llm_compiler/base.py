@@ -13,7 +13,8 @@ from .step import LLMCompilerAgentWorker
 
 
 class LLMCompilerAgentPack(BaseLlamaPack):
-    """LLMCompilerAgent pack.
+    """
+    LLMCompilerAgent pack.
 
     Args:
         tools (List[BaseTool]): List of tools to use.

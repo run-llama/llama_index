@@ -207,7 +207,7 @@ class QueryPlanTool(BaseTool):
     def _find_root_nodes(self, nodes_dict: Dict[int, QueryNode]) -> List[QueryNode]:
         """Find root node."""
         # the root node is the one that isn't a dependency of any other node
-        node_counts = {node_id: 0 for node_id in nodes_dict}
+        node_counts = dict.fromkeys(nodes_dict, 0)
         for node in nodes_dict.values():
             for dep in node.dependencies:
                 node_counts[dep] += 1

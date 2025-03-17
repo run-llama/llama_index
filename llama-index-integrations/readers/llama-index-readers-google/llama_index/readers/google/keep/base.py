@@ -9,14 +9,16 @@ from llama_index.core.schema import Document
 
 
 class GoogleKeepReader(BaseReader):
-    """Google Keep reader.
+    """
+    Google Keep reader.
 
     Reads notes from Google Keep
 
     """
 
     def load_data(self, document_ids: List[str]) -> List[Document]:
-        """Load data from the document_ids.
+        """
+        Load data from the document_ids.
 
         Args:
             document_ids (List[str]): a list of note ids.

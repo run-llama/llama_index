@@ -29,7 +29,8 @@ def _default_stringify_rule_for_arguments(args: Union[List, Tuple]) -> str:
 
 
 class LLMCompilerTask(BaseModel):
-    """LLM Compiler Task.
+    """
+    LLM Compiler Task.
 
     Object taken from
     https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/task_fetching_unit.py.

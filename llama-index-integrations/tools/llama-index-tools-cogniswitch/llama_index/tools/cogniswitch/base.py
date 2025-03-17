@@ -6,7 +6,8 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class CogniswitchToolSpec(BaseToolSpec):
-    """Cogniswitch Tool Spec.
+    """
+    Cogniswitch Tool Spec.
     A toolspec to have store_data and query_knowledge as tools to store the data from a file or a url
     and answer questions from the knowledge stored respectively.
     """

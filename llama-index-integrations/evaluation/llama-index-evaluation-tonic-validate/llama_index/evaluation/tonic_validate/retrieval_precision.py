@@ -10,7 +10,8 @@ from tonic_validate.services.openai_service import OpenAIService
 
 
 class RetrievalPrecisionEvaluator(BaseEvaluator):
-    """Tonic Validate's retrieval precision metric.
+    """
+    Tonic Validate's retrieval precision metric.
 
     The output score is a float between 0.0 and 1.0.
 

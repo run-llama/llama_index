@@ -7,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class WeaviateReader(BaseReader):
-    """Weaviate reader.
+    """
+    Weaviate reader.
 
     Retrieves documents from Weaviate through vector lookup. Allows option
     to concatenate retrieved documents into one Document, or to return
@@ -43,7 +44,8 @@ class WeaviateReader(BaseReader):
         graphql_query: Optional[str] = None,
         separate_documents: Optional[bool] = True,
     ) -> List[Document]:
-        """Load data from Weaviate.
+        """
+        Load data from Weaviate.
 
         If `graphql_query` is not found in load_kwargs, we assume that
         `class_name` and `properties` are provided.

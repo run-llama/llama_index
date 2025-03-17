@@ -17,6 +17,7 @@ Each collaborator is converted to a document by doing the following:
         - permissions: str, the permissions of the user, if available
 
 """
+
 import asyncio
 import enum
 import logging

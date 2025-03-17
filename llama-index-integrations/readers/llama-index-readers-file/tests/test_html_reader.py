@@ -7,7 +7,7 @@ import pytest
 from llama_index.readers.file import HTMLTagReader
 
 
-@pytest.fixture()
+@pytest.fixture
 def html_str() -> str:
     return """
 <!DOCTYPE html>

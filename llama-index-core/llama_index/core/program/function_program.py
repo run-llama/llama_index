@@ -306,9 +306,11 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
             **(llm_kwargs or {}),
         )
 
-        async def gen() -> AsyncGenerator[
-            Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None
-        ]:
+        async def gen() -> (
+            AsyncGenerator[
+                Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None
+            ]
+        ):
             cur_objects = None
             async for partial_resp in chat_response_gen:
                 try:

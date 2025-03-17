@@ -14,7 +14,8 @@ if TYPE_CHECKING:
 
 
 class LangchainEmbedding(BaseEmbedding):
-    """External embeddings (taken from Langchain).
+    """
+    External embeddings (taken from Langchain).
 
     Args:
         langchain_embedding (langchain.embeddings.Embeddings): Langchain

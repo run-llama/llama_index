@@ -14,7 +14,8 @@ from llama_index.core.llama_pack.base import BaseLlamaPack
 
 
 class EvaluatorBenchmarkerPack(BaseLlamaPack):
-    """A pack for benchmarking/evaluating your own evaluator.
+    """
+    A pack for benchmarking/evaluating your own evaluator.
 
     Args:
         evaluator (BaseEvaluator): The evaluator to evaluate/benchmark.

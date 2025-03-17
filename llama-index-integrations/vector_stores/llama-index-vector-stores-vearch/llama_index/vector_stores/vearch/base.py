@@ -334,7 +334,8 @@ class VearchVectorStore(BasePydanticVectorStore):
             )
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete nodes using with ref_doc_id.
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.

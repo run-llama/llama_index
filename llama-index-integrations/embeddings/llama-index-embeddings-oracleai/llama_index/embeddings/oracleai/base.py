@@ -47,7 +47,8 @@ class OracleEmbeddings(BaseEmbedding):
 
     @staticmethod
     def load_onnx_model(conn: Connection, dir: str, onnx_file: str, model_name: str):
-        """Load an ONNX model to Oracle Database.
+        """
+        Load an ONNX model to Oracle Database.
 
         Args:
             conn: Oracle Connection,
@@ -124,7 +125,8 @@ class OracleEmbeddings(BaseEmbedding):
             raise
 
     def _get_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Compute doc embeddings using an OracleEmbeddings.
+        """
+        Compute doc embeddings using an OracleEmbeddings.
 
         Args:
             texts: The list of texts to embed.

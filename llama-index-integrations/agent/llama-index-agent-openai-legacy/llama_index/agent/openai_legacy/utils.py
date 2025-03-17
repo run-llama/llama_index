@@ -14,7 +14,8 @@ def get_function_by_name(tools: List[BaseTool], name: str) -> BaseTool:
 
 
 def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
-    """Resolve tool choice.
+    """
+    Resolve tool choice.
 
     If tool_choice is a function name string, return the appropriate dict.
     """

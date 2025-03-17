@@ -192,7 +192,8 @@ class _ChunkNodeOutput(BaseModel):
 
 
 class CodeHierarchyNodeParser(NodeParser):
-    """Split code using a AST parser.
+    """
+    Split code using a AST parser.
 
     Add metadata about the scope of the code block and relationships between
     code blocks.
@@ -433,9 +434,9 @@ class CodeHierarchyNodeParser(NodeParser):
                             ].append(  # type: ignore
                                 d.as_related_node_info()
                             )
-                            d.relationships[
-                                NodeRelationship.PARENT
-                            ] = this_document.as_related_node_info()
+                            d.relationships[NodeRelationship.PARENT] = (
+                                this_document.as_related_node_info()
+                            )
                 # Otherwise we pass the children upstream
                 else:
                     # If we have been given a document, that means it's
@@ -587,9 +588,9 @@ class CodeHierarchyNodeParser(NodeParser):
                         assert parent_tag in tag_to_type
                         parent_type = tag_to_type[parent_tag]
                         if parent_type not in self.signature_identifiers:
-                            self.signature_identifiers[
-                                parent_type
-                            ] = _SignatureCaptureOptions(name_identifier=_node.type)
+                            self.signature_identifiers[parent_type] = (
+                                _SignatureCaptureOptions(name_identifier=_node.type)
+                            )
 
             if (
                 not tree.root_node.children
@@ -607,9 +608,9 @@ class CodeHierarchyNodeParser(NodeParser):
                         **chunk.metadata,
                         **node.metadata,
                     }
-                    chunk.relationships[
-                        NodeRelationship.SOURCE
-                    ] = node.as_related_node_info()
+                    chunk.relationships[NodeRelationship.SOURCE] = (
+                        node.as_related_node_info()
+                    )
 
                 if self.skeleton:
                     self._skeletonize_list(chunks)
@@ -664,9 +665,9 @@ class CodeHierarchyNodeParser(NodeParser):
                                         new_split_nodes[0].as_related_node_info()
                                     )
                                 new_children.append(old_nodes_child)
-                            old_node.relationships[
-                                NodeRelationship.CHILD
-                            ] = new_children
+                            old_node.relationships[NodeRelationship.CHILD] = (
+                                new_children
+                            )
 
                             # Handle parent node
                             if (
@@ -674,9 +675,9 @@ class CodeHierarchyNodeParser(NodeParser):
                                 and old_node.parent_node.node_id
                                 == original_node.node_id
                             ):
-                                old_node.relationships[
-                                    NodeRelationship.PARENT
-                                ] = new_split_nodes[0].as_related_node_info()
+                                old_node.relationships[NodeRelationship.PARENT] = (
+                                    new_split_nodes[0].as_related_node_info()
+                                )
 
                         # Now save new_nodes_
                         new_nodes += new_split_nodes

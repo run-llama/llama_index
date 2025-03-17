@@ -12,7 +12,8 @@ class ElevenLabsToolSpec(BaseToolSpec):
     def __init__(
         self, api_key: str, base_url: Optional[str] = "https://api.elevenlabs.io"
     ) -> None:
-        """Initialize with parameters.
+        """
+        Initialize with parameters.
 
         Args:
             api_key (str): Your ElevenLabs API key

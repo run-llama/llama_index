@@ -71,7 +71,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
             )
 
         # Validate tokenizer -- this avoids errors when loading from json/dict
-        tokenizer_fn = values.get("tokenizer_fn", None)
+        tokenizer_fn = values.get("tokenizer_fn")
         if tokenizer_fn is None:
             values["tokenizer_fn"] = get_tokenizer()
 

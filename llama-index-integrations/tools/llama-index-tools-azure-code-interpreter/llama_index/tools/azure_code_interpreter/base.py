@@ -47,7 +47,8 @@ class RemoteFileMetadata:
 
 
 def _sanitize_input(query: str) -> str:
-    """Sanitize input and remove whitespace, backtick, and markdown.
+    """
+    Sanitize input and remove whitespace, backtick, and markdown.
 
     Args:
         query: The query to sanitize
@@ -66,7 +67,8 @@ def _sanitize_input(query: str) -> str:
 
 
 class AzureCodeInterpreterToolSpec(BaseToolSpec):
-    """Azure Code Interpreter tool spec.
+    """
+    Azure Code Interpreter tool spec.
 
     Leverages Azure Dynamic Sessions to execute Python code.
     """
@@ -100,9 +102,9 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
 
             return access_token_provider
 
-        self.access_token_provider: Callable[
-            [], Optional[str]
-        ] = _access_token_provider_factory()
+        self.access_token_provider: Callable[[], Optional[str]] = (
+            _access_token_provider_factory()
+        )
         """A function that returns the access token to use for the session pool."""
 
         self.session_id: str = session_id or str(uuid4())
@@ -208,7 +210,8 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         data: Optional[Any] = None,
         local_file_path: Optional[str] = None,
     ) -> List[RemoteFileMetadata]:
-        """Upload a file to the session under the path /mnt/data.
+        """
+        Upload a file to the session under the path /mnt/data.
 
         Args:
             data: The data to upload.
@@ -249,7 +252,8 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
     def download_file_to_local(
         self, remote_file_path: str, local_file_path: Optional[str] = None
     ) -> Optional[BufferedReader]:
-        """Download a file from the session back to your local environment.
+        """
+        Download a file from the session back to your local environment.
 
         Args:
             remote_file_path: The path to download the file from, relative to `/mnt/data`.
@@ -277,7 +281,8 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
         return BytesIO(response.content)
 
     def list_files(self) -> List[RemoteFileMetadata]:
-        """List the files in the session.
+        """
+        List the files in the session.
 
         Returns:
             List[RemoteFileMetadata]: The metadata for the files in the session

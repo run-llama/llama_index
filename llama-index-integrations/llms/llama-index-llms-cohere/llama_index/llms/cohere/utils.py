@@ -240,7 +240,7 @@ async def acompletion_with_retry(
 
 
 def cohere_modelname_to_contextsize(modelname: str) -> int:
-    context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
+    context_size = ALL_AVAILABLE_MODELS.get(modelname)
     if context_size is None:
         raise ValueError(
             f"Unknown model: {modelname}. Please provide a valid Cohere model name."
@@ -474,7 +474,8 @@ def _message_to_cohere_tool_results(
 
 
 def get_role(message: ChatMessage) -> str:
-    """Get the role of the message.
+    """
+    Get the role of the message.
 
     Args:
         message: The message.
@@ -508,7 +509,8 @@ def _get_message_cohere_format(
         None,
     ],
 ]:
-    """Get the formatted message as required in cohere's api.
+    """
+    Get the formatted message as required in cohere's api.
 
     Args:
         message: The BaseMessage.

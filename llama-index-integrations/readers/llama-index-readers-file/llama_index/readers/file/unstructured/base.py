@@ -216,9 +216,9 @@ class UnstructuredReader(BaseReader):
                     id_=hash_id,
                     **doc_kwargs,
                 )
-                node.relationships[
-                    NodeRelationship.SOURCE
-                ] = source.as_related_node_info()
+                node.relationships[NodeRelationship.SOURCE] = (
+                    source.as_related_node_info()
+                )
                 docs.append(node)
         else:
             docs = [source]

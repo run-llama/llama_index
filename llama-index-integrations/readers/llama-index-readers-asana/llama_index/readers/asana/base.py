@@ -7,7 +7,8 @@ import asana
 
 
 class AsanaReader(BaseReader):
-    """Asana reader. Reads data from an Asana workspace.
+    """
+    Asana reader. Reads data from an Asana workspace.
 
     Args:
         asana_token (str): Asana token.
@@ -20,7 +21,8 @@ class AsanaReader(BaseReader):
     def load_data(
         self, workspace_id: Optional[str] = None, project_id: Optional[str] = None
     ) -> List[Document]:
-        """Load data from the workspace.
+        """
+        Load data from the workspace.
 
         Args:
             workspace_id (Optional[str], optional): Workspace ID. Defaults to None.

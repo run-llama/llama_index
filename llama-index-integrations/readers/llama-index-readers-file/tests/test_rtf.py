@@ -11,7 +11,7 @@ SAMPLE_RTF = """{\\rtf
 
 
 # Fixture to create a temporary XML file
-@pytest.fixture()
+@pytest.fixture
 def rtf_file(tmp_path):
     file = tmp_path / "test.rtf"
     with open(file, "w") as f:

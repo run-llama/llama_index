@@ -1,4 +1,5 @@
-"""Weaviate-specific serializers for LlamaIndex data structures.
+"""
+Weaviate-specific serializers for LlamaIndex data structures.
 
 Contain conversion to and from dataclasses that LlamaIndex uses.
 

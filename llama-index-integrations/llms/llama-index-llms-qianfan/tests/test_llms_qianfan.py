@@ -389,7 +389,9 @@ def test_achat(mock_client: httpx.AsyncClient):
             "https://127.0.0.1/test",
             8192,
         )
-        resp = await llm.achat([ChatMessage(role=MessageRole.USER, content="介绍一下北京")])
+        resp = await llm.achat(
+            [ChatMessage(role=MessageRole.USER, content="介绍一下北京")]
+        )
         assert resp.message.content == mock_chat_response["result"]
 
     asyncio.run(async_process())
@@ -412,7 +414,9 @@ def test_stream_chat(mock_client: httpx.Client):
         "https://127.0.0.1/test",
         8192,
     )
-    resp = llm.stream_chat([ChatMessage(role=MessageRole.USER, content="给我推荐一些自驾游路线")])
+    resp = llm.stream_chat(
+        [ChatMessage(role=MessageRole.USER, content="给我推荐一些自驾游路线")]
+    )
     last_content = ""
     content = ""
     for part in resp:

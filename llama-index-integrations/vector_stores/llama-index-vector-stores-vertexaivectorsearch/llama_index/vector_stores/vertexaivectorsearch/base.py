@@ -1,4 +1,5 @@
-"""Vertex AI Vector store index.
+"""
+Vertex AI Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -31,7 +32,8 @@ _logger = logging.getLogger(__name__)
 
 
 class VertexAIVectorStore(BasePydanticVectorStore):
-    """Vertex AI Vector Search vector store.
+    """
+    Vertex AI Vector Search vector store.
 
     In this vector store, embeddings are stored in Vertex AI Vector Store and
     docs are stored within Cloud Storage bucket.
@@ -189,7 +191,8 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         is_complete_overwrite: bool = False,
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings

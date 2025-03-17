@@ -7,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class CouchbaseReader(BaseReader):
-    """Couchbase document loader.
+    """
+    Couchbase document loader.
 
     Loads data from a Couchbase cluster into Document used by LlamaIndex.
 
@@ -57,7 +58,8 @@ class CouchbaseReader(BaseReader):
         text_fields: Optional[List[str]] = None,
         metadata_fields: Optional[List[str]] = [],
     ) -> Iterable[Document]:
-        """Load data from the Couchbase cluster lazily.
+        """
+        Load data from the Couchbase cluster lazily.
 
         Args:
             query (str): The SQL++ query to execute.
@@ -95,7 +97,8 @@ class CouchbaseReader(BaseReader):
         text_fields: Optional[List[str]] = None,
         metadata_fields: Optional[List[str]] = None,
     ) -> List[Document]:
-        """Load data from the Couchbase cluster.
+        """
+        Load data from the Couchbase cluster.
 
         Args:
             query (str): The SQL++ query to execute.

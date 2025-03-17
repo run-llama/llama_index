@@ -31,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 class OpenVINOGenAILLM(CustomLLM):
-    r"""OpenVINO GenAI LLM.
+    r"""
+    OpenVINO GenAI LLM.
 
     Examples:
         `pip install llama-index-llms-openvino-genai`
@@ -364,7 +365,7 @@ class OpenVINOGenAILLM(CustomLLM):
 
         def generate_and_signal_complete() -> None:
             """
-            generation function for single thread.
+            Generation function for single thread.
             """
             self._streamer.reset()
             self._pipe.generate(full_prompt, self.config, self._streamer, **kwargs)

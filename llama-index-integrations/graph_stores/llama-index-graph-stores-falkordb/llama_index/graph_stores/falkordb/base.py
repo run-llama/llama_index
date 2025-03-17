@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class FalkorDBGraphStore(GraphStore):
-    """FalkorDB Graph Store.
+    """
+    FalkorDB Graph Store.
 
     In this graph store, triplets are stored within FalkorDB.
 
@@ -184,7 +185,8 @@ class FalkorDBGraphStore(GraphStore):
         return result.result_set
 
     def switch_graph(self, graph_name: str) -> None:
-        """Switch to the given graph name (`graph_name`).
+        """
+        Switch to the given graph name (`graph_name`).
 
         This method allows users to change the active graph within the same
         database connection.

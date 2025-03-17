@@ -72,7 +72,7 @@ class MockAsyncSession:
         return AsyncMockClient()
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_boto3_session(monkeypatch):
     def mock_client(*args, **kwargs):
         return MockClient()
@@ -80,12 +80,12 @@ def mock_boto3_session(monkeypatch):
     monkeypatch.setattr("boto3.Session.client", mock_client)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_aioboto3_session(monkeypatch):
     monkeypatch.setattr("aioboto3.Session", MockAsyncSession)
 
 
-@pytest.fixture()
+@pytest.fixture
 def bedrock_converse(mock_boto3_session, mock_aioboto3_session):
     return BedrockConverse(
         model=EXP_MODEL,
@@ -130,7 +130,7 @@ def test_stream_chat(bedrock_converse):
         assert response.delta in EXP_STREAM_RESPONSE
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat(bedrock_converse):
     response = await bedrock_converse.achat(messages)
 
@@ -139,7 +139,7 @@ async def test_achat(bedrock_converse):
     assert response.message.content == EXP_RESPONSE
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat(bedrock_converse):
     response_stream = await bedrock_converse.astream_chat(messages)
 
@@ -149,7 +149,7 @@ async def test_astream_chat(bedrock_converse):
         assert response.delta in EXP_STREAM_RESPONSE
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete(bedrock_converse):
     response = await bedrock_converse.acomplete(prompt)
 
@@ -160,7 +160,7 @@ async def test_acomplete(bedrock_converse):
     assert response.additional_kwargs["tool_calls"] == []
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete(bedrock_converse):
     response_stream = await bedrock_converse.astream_complete(prompt)
 

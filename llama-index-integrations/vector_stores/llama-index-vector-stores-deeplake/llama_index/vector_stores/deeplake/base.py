@@ -1,4 +1,5 @@
-"""DeepLake vector store index.
+"""
+DeepLake vector store index.
 
 An index that is built within DeepLake.
 
@@ -252,7 +253,8 @@ logger = logging.getLogger(__name__)
 
 
 class DeepLakeVectorStore(BasePydanticVectorStore):
-    """The DeepLake Vector Store.
+    """
+    The DeepLake Vector Store.
 
     In this vector store we store the text, its embedding and
     a few pieces of its metadata in a deeplake dataset. This implementation
@@ -351,7 +353,8 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
 
     @property
     def client(self) -> Any:
-        """Get client.
+        """
+        Get client.
 
         Returns:
             Any: DeepLake vectorstore dataset.
@@ -444,7 +447,8 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
             self.vectorstore.delete(filter=lambda x: True)
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add the embeddings and their nodes into DeepLake.
+        """
+        Add the embeddings and their nodes into DeepLake.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -502,7 +506,8 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         self.vectorstore.delete(filter={"metadata": {"doc_id": ref_doc_id}})
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): VectorStoreQuery class input, it has

@@ -6,7 +6,7 @@ import httpx
 import json
 
 
-@pytest.fixture()
+@pytest.fixture
 def mocked_route() -> respx.Route:
     all_urls = re.compile(r".*/embeddings")
     fake_response = httpx.Response(
@@ -31,7 +31,7 @@ def test_single_tuncate(mocked_route: respx.Route, method_name: str, truncate: s
 
 @pytest.mark.parametrize("method_name", ["aget_query_embedding", "aget_text_embedding"])
 @pytest.mark.parametrize("truncate", ["END", "START", "NONE"])
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_asingle_tuncate(
     mocked_route: respx.Route, method_name: str, truncate: str
 ):
@@ -64,7 +64,7 @@ def test_batch_tuncate(mocked_route: respx.Route, method_name: str, truncate: st
 
 @pytest.mark.parametrize("method_name", ["aget_text_embedding_batch"])
 @pytest.mark.parametrize("truncate", ["END", "START", "NONE"])
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_abatch_tuncate(
     mocked_route: respx.Route, method_name: str, truncate: str
 ):

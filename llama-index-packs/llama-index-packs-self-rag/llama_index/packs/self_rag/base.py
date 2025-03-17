@@ -86,7 +86,8 @@ def _postprocess_answer(answer: str) -> str:
 
 
 def _relevance_score(pred_log_probs: Dict[str, float]) -> float:
-    """Compute relevance score.
+    """
+    Compute relevance score.
 
     Args:
         pred_log_probs (Dict[str, float]): log probabilities of tokens
@@ -102,7 +103,8 @@ def _relevance_score(pred_log_probs: Dict[str, float]) -> float:
 def _is_supported_score(
     pred_tokens: List[int], pred_log_probs_dict: List[Dict[str, float]]
 ) -> float:
-    """Compute support score.
+    """
+    Compute support score.
 
     Args:
         pred_tokens (List[int]): List of predicted tokens
@@ -132,7 +134,8 @@ def _is_supported_score(
 def _is_useful_score(
     pred_tokens: List[int], pred_log_probs_dict: List[Dict[str, float]]
 ) -> float:
-    """Compute usefulness score.
+    """
+    Compute usefulness score.
 
     Args:
         pred_tokens (List[int]): List of predicted tokens
@@ -192,7 +195,8 @@ class SelfRAGQueryEngine(CustomQueryEngine):
         self.retriever = retriever
 
     def _run_critic(self, paragraphs: List[str]) -> CriticOutput:
-        """Run Critic component, the llm will generate responses based on the paragraphs and then evaluate them.
+        """
+        Run Critic component, the llm will generate responses based on the paragraphs and then evaluate them.
 
         Args:
             paragraphs (List[str]): List of paragraphs to evaluate

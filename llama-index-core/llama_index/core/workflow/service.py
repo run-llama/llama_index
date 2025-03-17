@@ -17,7 +17,7 @@ class ServiceManager:
     """
 
     def __init__(self) -> None:
-        self._services: Dict[str, "Workflow"] = {}
+        self._services: Dict[str, Workflow] = {}
 
     def get(self, name: str, default: Optional["Workflow"] = None) -> "Workflow":
         try:

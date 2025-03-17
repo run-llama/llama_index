@@ -74,7 +74,8 @@ def _split_and_clean(cstext):
 
 
 class IndexLoader(pn.viewable.Viewer):
-    """The IndexLoader enables the user to interactively create a VectorStoreIndex from a
+    """
+    The IndexLoader enables the user to interactively create a VectorStoreIndex from a
     github repository of choice.
     """
 
@@ -232,7 +233,8 @@ class IndexLoader(pn.viewable.Viewer):
 
     @param.depends("_load", watch=True)
     async def load(self):
-        """Loads the repository index either from the cache or by downloading from
+        """
+        Loads the repository index either from the cache or by downloading from
         the repository.
         """
         self._update_status("Loading ...")

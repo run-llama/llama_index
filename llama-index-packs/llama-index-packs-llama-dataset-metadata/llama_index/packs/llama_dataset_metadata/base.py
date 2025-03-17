@@ -95,7 +95,8 @@ class DatasetCard(BaseMetadata):
 
     @staticmethod
     def _format_metric(val: float):
-        """Formats a metric to 3 decimal places.
+        """
+        Formats a metric to 3 decimal places.
 
         Args:
             val (float): the value to format.
@@ -114,7 +115,8 @@ class DatasetCard(BaseMetadata):
         source_urls: Optional[List[str]] = None,
         code_url: Optional[str] = None,
     ) -> "DatasetCard":
-        """Convenience constructor method for building a DatasetCard.
+        """
+        Convenience constructor method for building a DatasetCard.
 
         Args:
             index (BaseIndex): the index from which query_engine is derived and
@@ -196,7 +198,8 @@ class DatasetCard(BaseMetadata):
 
 
 class LlamaDatasetMetadataPack(BaseLlamaPack):
-    """A llamapack for creating and saving the necessary metadata files for
+    """
+    A llamapack for creating and saving the necessary metadata files for
     submitting a llamadataset: card.json and README.md.
     """
 
@@ -211,7 +214,8 @@ class LlamaDatasetMetadataPack(BaseLlamaPack):
         source_urls: Optional[List[str]] = None,
         code_url: Optional[str] = None,
     ):
-        """Main usage for a llamapack. This will build the card.json and README.md
+        """
+        Main usage for a llamapack. This will build the card.json and README.md
         and save them to local disk.
 
         Args:

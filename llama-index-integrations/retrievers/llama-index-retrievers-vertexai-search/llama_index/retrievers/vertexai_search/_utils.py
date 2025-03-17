@@ -1,4 +1,5 @@
 """Utilities to init Vertex AI."""
+
 from importlib import metadata
 from typing import Optional
 
@@ -6,7 +7,8 @@ from google.api_core.gapic_v1.client_info import ClientInfo
 
 
 def get_user_agent(module: Optional[str] = None) -> str:
-    r"""Returns a custom user agent header.
+    r"""
+    Returns a custom user agent header.
 
     Args:
         module (Optional[str]):
@@ -26,7 +28,8 @@ def get_user_agent(module: Optional[str] = None) -> str:
 
 
 def get_client_info(module: Optional[str] = None) -> "ClientInfo":
-    r"""Returns a client info object with a custom user agent header.
+    r"""
+    Returns a client info object with a custom user agent header.
 
     Args:
         module (Optional[str]):

@@ -1,4 +1,5 @@
-r"""AgentSearch reader.
+r"""
+AgentSearch reader.
 
 Example as of 1/8/2024:
 

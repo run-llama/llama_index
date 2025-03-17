@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class HyperbrowserWebReader(BaseReader):
-    """Hyperbrowser Web Reader.
+    """
+    Hyperbrowser Web Reader.
 
     Scrape or crawl web pages with optional parameters for configuring content extraction.
     Requires the `hyperbrowser` package.
@@ -89,7 +90,8 @@ class HyperbrowserWebReader(BaseReader):
         operation: Literal["scrape", "crawl"] = "scrape",
         params: Optional[Dict] = {},
     ) -> Iterable[Document]:
-        """Lazy load documents.
+        """
+        Lazy load documents.
 
         Args:
             urls: List of URLs to scrape or crawl
@@ -135,7 +137,8 @@ class HyperbrowserWebReader(BaseReader):
         operation: Literal["scrape", "crawl"] = "scrape",
         params: Optional[Dict] = {},
     ) -> AsyncIterable[Document]:
-        """Async lazy load documents.
+        """
+        Async lazy load documents.
 
         Args:
             urls: List of URLs to scrape or crawl

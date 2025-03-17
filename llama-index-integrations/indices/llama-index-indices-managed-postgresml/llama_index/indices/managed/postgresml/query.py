@@ -107,7 +107,8 @@ class PostgresMLQueryEngine(BaseQueryEngine):
         retriever: PostgresMLRetriever,
         **kwargs: Any,
     ) -> "PostgresMLQueryEngine":
-        """Initialize a PostgresMLQueryEngine object.".
+        """
+        Initialize a PostgresMLQueryEngine object.".
 
         Args:
             retriever (PostgresMLRetriever): A PostgresML retriever object.
@@ -192,22 +193,24 @@ class PostgresMLQueryEngine(BaseQueryEngine):
                 self._retriever._index.pipeline,
             )
             source_nodes = [
-                NodeWithScore(
-                    node=TextNode(
-                        id_=r["document"]["id"],
-                        text=r["chunk"],
-                        metadata=r["document"]["metadata"],
-                    ),
-                    score=r["score"],
-                )
-                if self._vector_search_rerank is None
-                else NodeWithScore(
-                    node=TextNode(
-                        id_=r["document"]["id"],
-                        text=r["chunk"],
-                        metadata=r["document"]["metadata"],
-                    ),
-                    score=r["rerank_score"],
+                (
+                    NodeWithScore(
+                        node=TextNode(
+                            id_=r["document"]["id"],
+                            text=r["chunk"],
+                            metadata=r["document"]["metadata"],
+                        ),
+                        score=r["score"],
+                    )
+                    if self._vector_search_rerank is None
+                    else NodeWithScore(
+                        node=TextNode(
+                            id_=r["document"]["id"],
+                            text=r["chunk"],
+                            metadata=r["document"]["metadata"],
+                        ),
+                        score=r["rerank_score"],
+                    )
                 )
                 for r in results["sources"]["CONTEXT"]
             ]

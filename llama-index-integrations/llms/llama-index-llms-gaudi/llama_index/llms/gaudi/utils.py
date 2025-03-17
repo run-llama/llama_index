@@ -294,9 +294,11 @@ def setup_distributed_model(args, model_dtype, model_kwargs, logger):
             torch.distributed.barrier()
 
         write_checkpoints_json(
-            merged_model_dir
-            if args.peft_model is not None
-            else args.model_name_or_path,
+            (
+                merged_model_dir
+                if args.peft_model is not None
+                else args.model_name_or_path
+            ),
             args.local_rank,
             checkpoints_json,
             token=args.token,

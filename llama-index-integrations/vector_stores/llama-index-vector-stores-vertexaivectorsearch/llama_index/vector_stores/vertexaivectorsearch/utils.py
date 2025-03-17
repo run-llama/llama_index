@@ -1,4 +1,5 @@
-"""Vertex AI Vector Search specific serializers for LlamaIndex data structures.
+"""
+Vertex AI Vector Search specific serializers for LlamaIndex data structures.
 
 Contain conversion to and from dataclasses that LlamaIndex uses.
 
@@ -68,7 +69,8 @@ def _import_vertexai(minimum_expected_version: str = "1.44.0") -> Any:
 
 
 def get_user_agent(module: Optional[str] = None) -> Tuple[str, str]:
-    r"""Returns a custom user agent header.
+    r"""
+    Returns a custom user agent header.
 
     Args:
         module (Optional[str]):
@@ -93,7 +95,8 @@ def get_user_agent(module: Optional[str] = None) -> Tuple[str, str]:
 
 
 def get_client_info(module: Optional[str] = None) -> "ClientInfo":
-    r"""Returns a client info object with a custom user agent header.
+    r"""
+    Returns a client info object with a custom user agent header.
 
     Args:
         module (Optional[str]):
@@ -148,7 +151,8 @@ def to_node(match: MatchNeighbor, text_key: str) -> TextNode:
 def stream_update_index(
     index: MatchingEngineIndex, data_points: List["meidx_types.IndexDataPoint"]
 ) -> None:
-    """Updates an index using stream updating.
+    """
+    Updates an index using stream updating.
 
     Args:
         index: Vector search index.
@@ -166,7 +170,8 @@ def batch_update_index(
     file_name: str = "documents.json",
     is_complete_overwrite: bool = False,
 ) -> None:
-    """Updates an index using batch updating.
+    """
+    Updates an index using batch updating.
 
     Args:
         index: Vector search index.
@@ -201,7 +206,8 @@ def to_data_points(
     embeddings: List[List[float]],
     metadatas: Union[List[Dict[str, Any]], None],
 ) -> List["meidx_types.IndexDataPoint"]:
-    """Converts triplets id, embedding, metadata into IndexDataPoints instances.
+    """
+    Converts triplets id, embedding, metadata into IndexDataPoints instances.
 
     Only metadata with values of type string, numeric or list of string will be
     considered for the filtering.
@@ -267,7 +273,8 @@ def to_data_points(
 def data_points_to_batch_update_records(
     data_points: List["meidx_types.IndexDataPoint"],
 ) -> List[Dict[str, Any]]:
-    """Given a list of datapoints, generates a list of records in the input format
+    """
+    Given a list of datapoints, generates a list of records in the input format
     required to do a bactch update.
 
     Args:
@@ -309,7 +316,8 @@ def find_neighbors(
     numeric_filter: Union[List[NumericNamespace], None] = None,
     return_full_datapoint: bool = True,
 ) -> List[MatchNeighbor]:
-    """Finds the k closes neighbors of each instance of embeddings.
+    """
+    Finds the k closes neighbors of each instance of embeddings.
 
     Args:
         embedding: List of embeddings vectors.
@@ -339,7 +347,8 @@ def find_neighbors(
 def _get_deployed_index_id(
     index: MatchingEngineIndex, endpoint: MatchingEngineIndexEndpoint
 ) -> str:
-    """Gets the deployed index id that matches with the provided index.
+    """
+    Gets the deployed index id that matches with the provided index.
 
     Raises:
         ValueError if the index provided is not found in the endpoint.
@@ -356,7 +365,8 @@ def _get_deployed_index_id(
 
 
 def to_vectorsearch_filter(filters: MetadataFilters):  # type: ignore
-    """Converts llamaindex filters to Vertex AI Vector Search filter syntax
+    """
+    Converts llamaindex filters to Vertex AI Vector Search filter syntax
     based on data type of value and operator passed in filters.
 
     Raises:
@@ -403,7 +413,8 @@ def get_datapoints_by_filter(
     metadata: dict = {},
     max_datapoints: int = MAX_DATA_POINTS,
 ) -> List[str]:
-    """Gets all the datapoints matching the metadata filters (text only)
+    """
+    Gets all the datapoints matching the metadata filters (text only)
     on the specified deployed index.
     """
     # configure filter based on metadata

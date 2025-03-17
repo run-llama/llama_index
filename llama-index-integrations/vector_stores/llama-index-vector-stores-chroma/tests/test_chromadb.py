@@ -65,7 +65,7 @@ def test_instance_creation_from_persist_dir() -> None:
     assert isinstance(store, ChromaVectorStore)
 
 
-@pytest.fixture()
+@pytest.fixture
 def vector_store() -> Generator[ChromaVectorStore, None, None]:
     chroma_client = chromadb.Client()
     collection = chroma_client.get_or_create_collection(COLLECTION_NAME)
@@ -141,7 +141,7 @@ def node_embeddings() -> List[TextNode]:
     ]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_chromadb_and_query(
     vector_store: ChromaVectorStore,
@@ -162,7 +162,7 @@ async def test_add_to_chromadb_and_query(
     assert res.nodes[0].get_content() == "lorem ipsum"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_chromadb_and_query_by_metafilters_only(
     vector_store: ChromaVectorStore,

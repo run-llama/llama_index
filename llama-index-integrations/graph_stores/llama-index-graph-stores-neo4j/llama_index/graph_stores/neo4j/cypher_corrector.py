@@ -9,7 +9,8 @@ class Schema(NamedTuple):
 
 
 class CypherQueryCorrector:
-    """Used to correct relationship direction in generated Cypher statements.
+    """
+    Used to correct relationship direction in generated Cypher statements.
 
     This code is copied from the winner's submission to the Cypher competition:
     https://github.com/sakusaku-rich/cypher-direction-competition
@@ -26,7 +27,8 @@ class CypherQueryCorrector:
     relation_type_pattern = re.compile(r":(?P<relation_type>.+?)?(\{.+\})?]")
 
     def __init__(self, schemas: List[Schema]):
-        """Init function.
+        """
+        Init function.
 
         Args:
             schemas: list of schemas
@@ -34,7 +36,8 @@ class CypherQueryCorrector:
         self.schemas = schemas
 
     def clean_node(self, node: str) -> str:
-        """Strip node of parenthesis.
+        """
+        Strip node of parenthesis.
 
         Args:
             node: node in string format
@@ -48,7 +51,8 @@ class CypherQueryCorrector:
         )
 
     def detect_node_variables(self, query: str) -> Dict[str, List[str]]:
-        """Detect node variables.
+        """
+        Detect node variables.
 
         Args:
             query: cypher query
@@ -66,7 +70,8 @@ class CypherQueryCorrector:
         return res
 
     def extract_paths(self, query: str) -> "List[str]":
-        """Extract paths.
+        """
+        Extract paths.
 
         Args:
             query: cypher query
@@ -84,7 +89,8 @@ class CypherQueryCorrector:
         return paths
 
     def judge_direction(self, relation: str) -> str:
-        """Judge direction.
+        """
+        Judge direction.
 
         Args:
             relation: relation in string format
@@ -97,7 +103,8 @@ class CypherQueryCorrector:
         return direction
 
     def extract_node_variable(self, part: str) -> Optional[str]:
-        """Extract node variable.
+        """
+        Extract node variable.
 
         Args:
             part: node in string format
@@ -111,7 +118,8 @@ class CypherQueryCorrector:
     def detect_labels(
         self, str_node: str, node_variable_dict: Dict[str, Any]
     ) -> List[str]:
-        """Detect node labels.
+        """
+        Detect node labels.
 
         Args:
             str_node: node in string format
@@ -132,7 +140,8 @@ class CypherQueryCorrector:
         relation_types: List[str],
         to_node_labels: List[str],
     ) -> bool:
-        """Verify schema.
+        """
+        Verify schema.
 
         Args:
             from_node_labels: labels of the from node
@@ -158,7 +167,8 @@ class CypherQueryCorrector:
         return valid_schemas != []
 
     def detect_relation_types(self, str_relation: str) -> Tuple[str, List[str]]:
-        """Detect relation types.
+        """
+        Detect relation types.
 
         Args:
             str_relation: relation in string format
@@ -174,7 +184,8 @@ class CypherQueryCorrector:
         return relation_direction, relation_types
 
     def correct_query(self, query: str) -> str:
-        """Correct query.
+        """
+        Correct query.
 
         Args:
             query: cypher query
@@ -266,7 +277,8 @@ class CypherQueryCorrector:
         return query
 
     def __call__(self, query: str) -> str:
-        """Correct the query to make it valid.
+        """
+        Correct the query to make it valid.
 
         Args:
             query: cypher query

@@ -22,7 +22,8 @@ from transformers import AutoTokenizer
 
 
 class OpenAILike(OpenAI):
-    """OpenaAILike LLM.
+    """
+    OpenaAILike LLM.
 
     OpenAILike is a thin wrapper around the OpenAI model that makes it compatible with
     3rd party tools that provide an openai-compatible api.

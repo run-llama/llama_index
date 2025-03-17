@@ -172,7 +172,8 @@ def format_attachments(
 
 
 class OpenAIAssistantAgent(BaseAgent):
-    """OpenAIAssistant agent.
+    """
+    OpenAIAssistant agent.
 
     Wrapper around OpenAI assistant API: https://platform.openai.com/docs/assistants/overview
 
@@ -227,7 +228,8 @@ class OpenAIAssistantAgent(BaseAgent):
         top_p: Optional[float] = None,
         temperature: Optional[float] = None,
     ) -> "OpenAIAssistantAgent":
-        """From new assistant.
+        """
+        From new assistant.
 
         Args:
             name: name of assistant
@@ -299,7 +301,8 @@ class OpenAIAssistantAgent(BaseAgent):
         api_key: Optional[str] = None,
         verbose: bool = False,
     ) -> "OpenAIAssistantAgent":
-        """From existing assistant id.
+        """
+        From existing assistant id.
 
         Args:
             assistant_id: id of assistant

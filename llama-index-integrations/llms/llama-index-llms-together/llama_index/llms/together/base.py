@@ -5,7 +5,8 @@ from llama_index.llms.openai_like import OpenAILike
 
 
 class TogetherLLM(OpenAILike):
-    """Together LLM.
+    """
+    Together LLM.
 
     Examples:
         `pip install llama-index-llms-together`

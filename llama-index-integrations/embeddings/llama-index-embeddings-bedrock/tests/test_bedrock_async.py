@@ -41,12 +41,12 @@ class AsyncMockSession:
         return AsyncMockClient()
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_aioboto3_session(monkeypatch):
     monkeypatch.setattr("aioboto3.Session", AsyncMockSession)
 
 
-@pytest.fixture()
+@pytest.fixture
 def bedrock_embedding(mock_aioboto3_session):
     return BedrockEmbedding(
         model_name=Models.TITAN_EMBEDDING,
@@ -54,7 +54,7 @@ def bedrock_embedding(mock_aioboto3_session):
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_aget_text_embedding(bedrock_embedding):
     response = await bedrock_embedding._aget_text_embedding(EXP_REQUEST)
     assert response == EXP_RESPONSE["embedding"]

@@ -1,4 +1,5 @@
 """Utils for jupyter notebook."""
+
 import os
 from io import BytesIO
 from typing import Any, Dict, List, Tuple

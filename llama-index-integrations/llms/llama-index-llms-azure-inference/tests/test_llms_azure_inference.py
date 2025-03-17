@@ -30,7 +30,7 @@ def loop():
     loop.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_params() -> dict:
     return {
         "messages": [
@@ -46,7 +46,7 @@ def test_params() -> dict:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_llm():
     with mock.patch(
         "llama_index.llms.azure_inference.base.ChatCompletionsClient", autospec=True
@@ -87,7 +87,7 @@ def test_llm():
     return llm
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_llm_json():
     with mock.patch(
         "llama_index.llms.azure_inference.base.ChatCompletionsClient", autospec=True
@@ -108,7 +108,7 @@ def test_llm_json():
     return llm
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_llm_tools():
     with mock.patch(
         "llama_index.llms.azure_inference.base.ChatCompletionsClient", autospec=True
@@ -291,7 +291,8 @@ def test_chat_completion_gpt4o_api_version(test_params: dict):
 
 
 def test_get_metadata(test_llm: AzureAICompletionsModel, caplog):
-    """Tests if we can get model metadata back from the endpoint. If so,
+    """
+    Tests if we can get model metadata back from the endpoint. If so,
     model_name should not be 'unknown'. Some endpoints may not support this
     and in those cases a warning should be logged.
     """

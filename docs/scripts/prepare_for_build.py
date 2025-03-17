@@ -299,9 +299,11 @@ def main():
                                 mkdocs["nav"][api_ref_idx]["API Reference"][
                                     label_idx
                                 ][label][sub_label_idx][sub_label],
-                                key=lambda x: next(iter(x.keys()))
-                                if isinstance(x, dict)
-                                else x,
+                                key=lambda x: (
+                                    next(iter(x.keys()))
+                                    if isinstance(x, dict)
+                                    else x
+                                ),
                             )
                         else:
                             mkdocs["nav"][api_ref_idx]["API Reference"][
@@ -315,9 +317,9 @@ def main():
                         mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][
                             label
                         ],
-                        key=lambda x: next(iter(x.keys()))
-                        if isinstance(x, dict)
-                        else x,
+                        key=lambda x: (
+                            next(iter(x.keys())) if isinstance(x, dict) else x
+                        ),
                     )
 
     # add existing api reference pages to nav
@@ -403,9 +405,9 @@ def main():
                         mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][
                             label
                         ][sub_label_idx][sub_label],
-                        key=lambda x: next(iter(x.keys()))
-                        if isinstance(x, dict)
-                        else x,
+                        key=lambda x: (
+                            next(iter(x.keys())) if isinstance(x, dict) else x
+                        ),
                     )
                 elif (
                     toc_path_name
@@ -424,9 +426,9 @@ def main():
                         mkdocs["nav"][api_ref_idx]["API Reference"][label_idx][
                             label
                         ],
-                        key=lambda x: next(iter(x.keys()))
-                        if isinstance(x, dict)
-                        else x,
+                        key=lambda x: (
+                            next(iter(x.keys())) if isinstance(x, dict) else x
+                        ),
                     )
 
     # sort the API Reference nav section
@@ -441,9 +443,9 @@ def main():
             for key in item:
                 mkdocs["nav"][examples_idx]["Examples"][idx][key] = sorted(
                     mkdocs["nav"][examples_idx]["Examples"][idx][key],
-                    key=lambda x: next(iter(x.keys()))
-                    if isinstance(x, dict)
-                    else x,
+                    key=lambda x: (
+                        next(iter(x.keys())) if isinstance(x, dict) else x
+                    ),
                 )
 
     # update search paths

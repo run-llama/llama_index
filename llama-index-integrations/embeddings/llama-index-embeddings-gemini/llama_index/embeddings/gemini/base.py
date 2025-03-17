@@ -13,7 +13,8 @@ from llama_index.core.callbacks.base import CallbackManager
 
 
 class GeminiEmbedding(BaseEmbedding):
-    """Google Gemini embeddings.
+    """
+    Google Gemini embeddings.
 
     Args:
         model_name (str): Model for embedding.

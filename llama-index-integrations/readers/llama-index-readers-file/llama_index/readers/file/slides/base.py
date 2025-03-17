@@ -1,4 +1,5 @@
-"""Slides parser.
+"""
+Slides parser.
 
 Contains parsers for .pptx files.
 
@@ -16,7 +17,8 @@ from llama_index.core.utils import infer_torch_device
 
 
 class PptxReader(BaseReader):
-    """Powerpoint parser.
+    """
+    Powerpoint parser.
 
     Extract text, caption images, and specify slides.
 

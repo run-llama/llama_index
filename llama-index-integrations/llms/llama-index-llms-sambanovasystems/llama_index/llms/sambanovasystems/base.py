@@ -35,7 +35,8 @@ load_dotenv()
 
 
 def _convert_message_to_dict(message: ChatMessage) -> Dict[str, Any]:
-    """Converts a ChatMessage to a dictionary with Role / content.
+    """
+    Converts a ChatMessage to a dictionary with Role / content.
 
     Args:
         message: ChatMessage
@@ -50,7 +51,8 @@ def _convert_message_to_dict(message: ChatMessage) -> Dict[str, Any]:
 
 
 def _create_message_dicts(messages: Sequence[ChatMessage]) -> List[Dict[str, Any]]:
-    """Converts a list of ChatMessages to a list of dictionaries with Role / content.
+    """
+    Converts a list of ChatMessages to a list of dictionaries with Role / content.
 
     Args:
         messages: list of ChatMessages
@@ -61,7 +63,8 @@ def _create_message_dicts(messages: Sequence[ChatMessage]) -> List[Dict[str, Any
 
 
 class SambaNovaCloud(LLM):
-    """SambaNova Cloud models.
+    """
+    SambaNova Cloud models.
 
     Setup:
         To use, you should have the environment variables:
@@ -639,7 +642,8 @@ class SambaNovaCloud(LLM):
 
 
 class SambaStudio(LLM):
-    """SambaStudio model.
+    """
+    SambaStudio model.
 
     Setup:
         To use, you should have the environment variables:
@@ -861,7 +865,8 @@ class SambaStudio(LLM):
         super().__init__(**kwargs)
 
     def _messages_to_string(self, messages: Sequence[ChatMessage]) -> str:
-        """Convert a sequence of ChatMessages to:
+        """
+        Convert a sequence of ChatMessages to:
         - dumped json string with Role / content dict structure when process_prompt is true,
         - string with special tokens if process_prompt is false for generic V1 and V2 endpoints.
 
@@ -896,7 +901,8 @@ class SambaStudio(LLM):
         return messages_string
 
     def _get_sambastudio_urls(self, url: str) -> Tuple[str, str]:
-        """Get streaming and non streaming URLs from the given URL.
+        """
+        Get streaming and non streaming URLs from the given URL.
 
         Args:
             url: string with sambastudio base or streaming endpoint url
@@ -925,7 +931,8 @@ class SambaStudio(LLM):
         stop: Optional[List[str]] = None,
         streaming: Optional[bool] = False,
     ) -> Response:
-        """Performs a post request to the LLM API.
+        """
+        Performs a post request to the LLM API.
 
         Args:
         messages_dicts: List of role / content dicts to use as input.
@@ -1032,7 +1039,8 @@ class SambaStudio(LLM):
         stop: Optional[List[str]] = None,
         streaming: Optional[bool] = False,
     ) -> Response:
-        """Performs an async post request to the LLM API.
+        """
+        Performs an async post request to the LLM API.
 
         Args:
         messages_dicts: List of role / content dicts to use as input.
@@ -1142,7 +1150,8 @@ class SambaStudio(LLM):
                 return response_dict
 
     def _process_response(self, response: Response) -> ChatMessage:
-        """Process a non streaming response from the api.
+        """
+        Process a non streaming response from the api.
 
         Args:
             response: A request Response object
@@ -1192,7 +1201,8 @@ class SambaStudio(LLM):
         )
 
     def _process_stream_response(self, response: Response) -> Iterator[ChatMessage]:
-        """Process a streaming response from the api.
+        """
+        Process a streaming response from the api.
 
         Args:
             response: An iterable request Response object
@@ -1398,7 +1408,8 @@ class SambaStudio(LLM):
     async def _process_response_async(
         self, response_dict: Dict[str, Any]
     ) -> ChatMessage:
-        """Process a non streaming response from the api.
+        """
+        Process a non streaming response from the api.
 
         Args:
             response: A request Response object
@@ -1445,7 +1456,8 @@ class SambaStudio(LLM):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> ChatResponse:
-        """Calls the chat implementation of the SambaStudio model.
+        """
+        Calls the chat implementation of the SambaStudio model.
 
         Args:
             messages: the prompt composed of a list of messages.
@@ -1477,7 +1489,8 @@ class SambaStudio(LLM):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> ChatResponseGen:
-        """Stream the output of the SambaStudio model.
+        """
+        Stream the output of the SambaStudio model.
 
         Args:
             messages: the prompt composed of a list of messages.
@@ -1517,7 +1530,8 @@ class SambaStudio(LLM):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> ChatResponse:
-        """Calls the chat implementation of the SambaStudio model.
+        """
+        Calls the chat implementation of the SambaStudio model.
 
         Args:
             messages: the prompt composed of a list of messages.

@@ -16,7 +16,8 @@ DEFAULT_MAX_RETRIES = 5
 
 
 class OCIDataScienceEmbedding(BaseEmbedding):
-    """Embedding class for OCI Data Science models.
+    """
+    Embedding class for OCI Data Science models.
 
     This class provides methods to generate embeddings using models deployed on
     Oracle Cloud Infrastructure (OCI) Data Science. It supports both synchronous
@@ -155,7 +156,8 @@ class OCIDataScienceEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any
     ) -> None:
-        """Initialize the OCIDataScienceEmbedding instance.
+        """
+        Initialize the OCIDataScienceEmbedding instance.
 
         Args:
             endpoint (str): The URI of the endpoint from the deployed model.
@@ -185,7 +187,8 @@ class OCIDataScienceEmbedding(BaseEmbedding):
     @model_validator(mode="before")
     # @_validate_dependency
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate the environment and dependencies before initialization.
+        """
+        Validate the environment and dependencies before initialization.
 
         Args:
             values (Dict[str, Any]): The values passed to the model.
@@ -200,7 +203,8 @@ class OCIDataScienceEmbedding(BaseEmbedding):
 
     @property
     def client(self) -> Client:
-        """Return the synchronous client instance.
+        """
+        Return the synchronous client instance.
 
         Returns:
             Client: The synchronous client for interacting with the OCI Data Science Model Deployment endpoint.
@@ -216,7 +220,8 @@ class OCIDataScienceEmbedding(BaseEmbedding):
 
     @property
     def async_client(self) -> AsyncClient:
-        """Return the asynchronous client instance.
+        """
+        Return the asynchronous client instance.
 
         Returns:
             AsyncClient: The asynchronous client for interacting with the OCI Data Science Model Deployment endpoint.
@@ -232,7 +237,8 @@ class OCIDataScienceEmbedding(BaseEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the class name.
+        """
+        Get the class name.
 
         Returns:
             str: The name of the class.
@@ -240,7 +246,8 @@ class OCIDataScienceEmbedding(BaseEmbedding):
         return "OCIDataScienceEmbedding"
 
     def _get_query_embedding(self, query: str) -> List[float]:
-        """Generate an embedding for a query string.
+        """
+        Generate an embedding for a query string.
 
         Args:
             query (str): The query string for which to generate an embedding.
@@ -253,7 +260,8 @@ class OCIDataScienceEmbedding(BaseEmbedding):
         )["data"][0]["embedding"]
 
     def _get_text_embedding(self, text: str) -> List[float]:
-        """Generate an embedding for a text string.
+        """
+        Generate an embedding for a text string.
 
         Args:
             text (str): The text string for which to generate an embedding.
@@ -266,7 +274,8 @@ class OCIDataScienceEmbedding(BaseEmbedding):
         )["data"][0]["embedding"]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
-        """Asynchronously generate an embedding for a text string.
+        """
+        Asynchronously generate an embedding for a text string.
 
         Args:
             text (str): The text string for which to generate an embedding.
@@ -280,7 +289,8 @@ class OCIDataScienceEmbedding(BaseEmbedding):
         return response["data"][0]["embedding"]
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings for a list of text strings.
+        """
+        Generate embeddings for a list of text strings.
 
         Args:
             texts (List[str]): A list of text strings for which to generate embeddings.
@@ -294,7 +304,8 @@ class OCIDataScienceEmbedding(BaseEmbedding):
         return [raw["embedding"] for raw in response["data"]]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
-        """Asynchronously generate an embedding for a query string.
+        """
+        Asynchronously generate an embedding for a query string.
 
         Args:
             query (str): The query string for which to generate an embedding.
@@ -308,7 +319,8 @@ class OCIDataScienceEmbedding(BaseEmbedding):
         return response["data"][0]["embedding"]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Asynchronously generate embeddings for a list of text strings.
+        """
+        Asynchronously generate embeddings for a list of text strings.
 
         Args:
             texts (List[str]): A list of text strings for which to generate embeddings.

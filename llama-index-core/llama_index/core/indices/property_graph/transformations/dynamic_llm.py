@@ -304,12 +304,16 @@ class DynamicLLMPathExtractor(TransformComponent):
             self.extract_prompt,
             text=text,
             max_knowledge_triplets=self.max_triplets_per_chunk,
-            allowed_entity_types=", ".join(self.allowed_entity_types)
-            if len(self.allowed_entity_types or []) > 0
-            else "No entity types provided, You are free to define them.",
-            allowed_relation_types=", ".join(self.allowed_relation_types or [])
-            if len(self.allowed_relation_types or []) > 0
-            else "No relation types provided, You are free to define them.",
+            allowed_entity_types=(
+                ", ".join(self.allowed_entity_types)
+                if len(self.allowed_entity_types or []) > 0
+                else "No entity types provided, You are free to define them."
+            ),
+            allowed_relation_types=(
+                ", ".join(self.allowed_relation_types or [])
+                if len(self.allowed_relation_types or []) > 0
+                else "No relation types provided, You are free to define them."
+            ),
         )
 
     async def _apredict_with_props(self, text: str) -> str:
@@ -326,18 +330,26 @@ class DynamicLLMPathExtractor(TransformComponent):
             self.extract_prompt,
             text=text,
             max_knowledge_triplets=self.max_triplets_per_chunk,
-            allowed_entity_types=", ".join(self.allowed_entity_types)
-            if len(self.allowed_entity_types or []) > 0
-            else "No entity types provided, You are free to define them.",
-            allowed_relation_types=", ".join(self.allowed_relation_types or [])
-            if len(self.allowed_relation_types or []) > 0
-            else "No relation types provided, You are free to define them.",
-            allowed_entity_properties=", ".join(self.allowed_entity_props)
-            if self.allowed_entity_props
-            else "No entity properties provided, You are free to define them.",
-            allowed_relation_properties=", ".join(self.allowed_relation_props)
-            if self.allowed_relation_props
-            else "No relation properties provided, You are free to define them.",
+            allowed_entity_types=(
+                ", ".join(self.allowed_entity_types)
+                if len(self.allowed_entity_types or []) > 0
+                else "No entity types provided, You are free to define them."
+            ),
+            allowed_relation_types=(
+                ", ".join(self.allowed_relation_types or [])
+                if len(self.allowed_relation_types or []) > 0
+                else "No relation types provided, You are free to define them."
+            ),
+            allowed_entity_properties=(
+                ", ".join(self.allowed_entity_props)
+                if self.allowed_entity_props
+                else "No entity properties provided, You are free to define them."
+            ),
+            allowed_relation_properties=(
+                ", ".join(self.allowed_relation_props)
+                if self.allowed_relation_props
+                else "No relation properties provided, You are free to define them."
+            ),
         )
 
     async def _aextract(self, node: BaseNode) -> BaseNode:

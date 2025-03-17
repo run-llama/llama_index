@@ -1,4 +1,5 @@
 """Simple Web scraper."""
+
 from typing import List, Optional, Dict, Callable
 
 import requests
@@ -9,7 +10,8 @@ from llama_index.core.schema import Document
 
 
 class SimpleWebPageReader(BasePydanticReader):
-    """Simple web page reader.
+    """
+    Simple web page reader.
 
     Reads pages from the web.
 
@@ -46,7 +48,8 @@ class SimpleWebPageReader(BasePydanticReader):
         return "SimpleWebPageReader"
 
     def load_data(self, urls: List[str]) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             urls (List[str]): List of URLs to scrape.

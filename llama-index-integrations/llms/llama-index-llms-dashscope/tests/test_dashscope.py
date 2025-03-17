@@ -10,12 +10,12 @@ from llama_index.core.base.llms.types import (
 from llama_index.llms.dashscope.base import DashScope
 
 
-@pytest.fixture()
+@pytest.fixture
 def dashscope_llm():
     return DashScope(api_key="test")
 
 
-@pytest.fixture()
+@pytest.fixture
 def dashscope_api_response():
     return {
         "status_code": 200,
@@ -34,7 +34,7 @@ def dashscope_api_response():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def prompt() -> str:
     return "hi, there!"
 

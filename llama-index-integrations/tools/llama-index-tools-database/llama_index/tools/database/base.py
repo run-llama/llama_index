@@ -13,7 +13,8 @@ from sqlalchemy.schema import CreateTable
 
 
 class DatabaseToolSpec(BaseToolSpec, BaseReader):
-    """Simple Database tool.
+    """
+    Simple Database tool.
 
     Concatenates each row into Document used by LlamaIndex.
 
@@ -79,7 +80,8 @@ class DatabaseToolSpec(BaseToolSpec, BaseReader):
         self._metadata.reflect(bind=self.sql_database.engine)
 
     def load_data(self, query: str) -> List[Document]:
-        """Query and load data from the Database, returning a list of Documents.
+        """
+        Query and load data from the Database, returning a list of Documents.
 
         Args:
             query (str): an SQL query to filter tables and rows.

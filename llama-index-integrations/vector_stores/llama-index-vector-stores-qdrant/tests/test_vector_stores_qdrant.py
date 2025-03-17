@@ -40,7 +40,7 @@ def test_clear(vector_store: QdrantVectorStore) -> None:
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_adelete_and_aget(vector_store: QdrantVectorStore) -> None:
     await vector_store.adelete_nodes(node_ids=["11111111-1111-1111-1111-111111111111"])
 
@@ -54,7 +54,7 @@ async def test_adelete_and_aget(vector_store: QdrantVectorStore) -> None:
     assert len(existing_nodes) == 2
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_aclear(vector_store: QdrantVectorStore) -> None:
     await vector_store.aclear()
     with pytest.raises(ValueError, match="Collection test not found"):
@@ -97,7 +97,7 @@ def test_parse_query_result(vector_store: QdrantVectorStore) -> None:
     assert results.nodes[0].embedding == [1, 2, 3]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_get_with_embedding(vector_store: QdrantVectorStore) -> None:
     existing_nodes = await vector_store.aget_nodes(
         node_ids=[

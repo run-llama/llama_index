@@ -10,7 +10,8 @@ from tonic_validate.services.openai_service import OpenAIService
 
 
 class AnswerConsistencyBinaryEvaluator(BaseEvaluator):
-    """Tonic Validate's answer consistency binary metric.
+    """
+    Tonic Validate's answer consistency binary metric.
 
     The output score is a float that is either 0.0 or 1.0.
 

@@ -46,7 +46,8 @@ def create_vector_search_index(
     wait_until_complete: Optional[float] = None,
     **kwargs: Any,
 ) -> None:
-    """Experimental Utility function to create a vector search index.
+    """
+    Experimental Utility function to create a vector search index.
 
     Args:
         collection (Collection): MongoDB Collection
@@ -90,7 +91,8 @@ def drop_vector_search_index(
     *,
     wait_until_complete: Optional[float] = None,
 ) -> None:
-    """Drop a created vector search index.
+    """
+    Drop a created vector search index.
 
     Args:
         collection (Collection): MongoDB Collection with index to be dropped
@@ -128,7 +130,8 @@ def update_vector_search_index(
     wait_until_complete: Optional[float] = None,
     **kwargs: Any,
 ) -> None:
-    """Update a search index.
+    """
+    Update a search index.
 
     Replace the existing index definition with the provided definition.
 
@@ -167,7 +170,8 @@ def update_vector_search_index(
 
 
 def _is_index_ready(collection: Collection, index_name: str) -> bool:
-    """Check for the index name in the list of available search indexes.
+    """
+    Check for the index name in the list of available search indexes.
 
      This confirms that the specified index is of status READY.
 
@@ -189,7 +193,8 @@ def _is_index_ready(collection: Collection, index_name: str) -> bool:
 def _wait_for_predicate(
     predicate: Callable, err: str, timeout: float = 120, interval: float = 0.5
 ) -> None:
-    """Generic to block until the predicate returns true.
+    """
+    Generic to block until the predicate returns true.
 
     Args:
         predicate (Callable[, bool]): A function that returns a boolean value
@@ -216,7 +221,8 @@ def create_fulltext_search_index(
     wait_until_complete: Optional[float] = None,
     **kwargs: Any,
 ) -> None:
-    """Experimental Utility function to create an Atlas Search index.
+    """
+    Experimental Utility function to create an Atlas Search index.
 
     Args:
         collection (Collection): MongoDB Collection

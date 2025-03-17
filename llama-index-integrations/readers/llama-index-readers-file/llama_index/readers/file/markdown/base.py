@@ -1,4 +1,5 @@
-"""Markdown parser.
+"""
+Markdown parser.
 
 Contains parser for md files.
 
@@ -13,7 +14,8 @@ from llama_index.core.schema import Document
 
 
 class MarkdownReader(BaseReader):
-    """Markdown parser.
+    """
+    Markdown parser.
 
     Extract text from markdown files.
     Returns dictionary with keys as headers and values as the text between headers.

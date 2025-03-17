@@ -13,7 +13,8 @@ import google.generativeai as gemini
 
 
 class GeminiEmbedding(BaseEmbedding):
-    """Google Gemini embeddings.
+    """
+    Google Gemini embeddings.
 
     Args:
         model_name (str): Model for embedding.

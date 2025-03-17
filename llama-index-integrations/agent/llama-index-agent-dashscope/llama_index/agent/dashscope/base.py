@@ -1,4 +1,5 @@
-""" Dashscope Agent for Alibaba cloud bailian. """
+"""Dashscope Agent for Alibaba cloud bailian."""
+
 from http import HTTPStatus
 from typing import (
     List,
@@ -30,7 +31,8 @@ class DashScopeAgent(BaseAgent):
         api_key: str = None,
         verbose: bool = False,
     ) -> None:
-        """Init params.
+        """
+        Init params.
 
         Args:
             app_id (str): id of Alibaba cloud bailian application
@@ -87,7 +89,8 @@ class DashScopeAgent(BaseAgent):
         chat_history: Optional[List[ChatMessage]] = None,
         **kwargs,
     ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
-        """Call app completion service.
+        """
+        Call app completion service.
 
         Args:
             message (str): Message for chatting with LLM.

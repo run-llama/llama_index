@@ -52,7 +52,8 @@ class BagelReader(BaseReader):
     """Reader for Bagel files."""
 
     def __init__(self, collection_name: str) -> None:
-        """Initialize BagelReader.
+        """
+        Initialize BagelReader.
 
         Args: collection_name: Name of the collection to load from.
 
@@ -80,7 +81,8 @@ class BagelReader(BaseReader):
         self._collection = self.client.get_cluster(collection_name)
 
     def create_documents(self, results: Any) -> Any:
-        """Create documents from the results.
+        """
+        Create documents from the results.
 
         Args:
             results: Results from the query.
@@ -120,7 +122,8 @@ class BagelReader(BaseReader):
         where_document: Optional[WhereDocument] = None,
         include: Include = ["metadatas", "documents", "embeddings", "distances"],
     ) -> Any:
-        """Get the top n_results documents for provided query_embeddings or query_texts.
+        """
+        Get the top n_results documents for provided query_embeddings or query_texts.
 
         Args:
             query_embeddings: The embeddings to get the closes neighbors of. Optional.

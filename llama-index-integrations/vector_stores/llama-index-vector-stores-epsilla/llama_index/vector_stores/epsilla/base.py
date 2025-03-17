@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class EpsillaVectorStore(BasePydanticVectorStore):
-    """The Epsilla Vector Store.
+    """
+    The Epsilla Vector Store.
 
     In this vector store we store the text, its embedding and
     a few pieces of its metadata in a Epsilla collection. This implemnetation
@@ -218,7 +219,8 @@ class EpsillaVectorStore(BasePydanticVectorStore):
         raise NotImplementedError("Delete with filtering will be coming soon.")
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query.

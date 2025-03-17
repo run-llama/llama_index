@@ -48,7 +48,8 @@ if TYPE_CHECKING:
 
 
 class DeepInfraLLM(FunctionCallingLLM):
-    """DeepInfra LLM.
+    """
+    DeepInfra LLM.
 
     Examples:
         `pip install llama-index-llms-deepinfra`

@@ -776,10 +776,10 @@ class LLM(BaseLLM):
             callback_manager=self.callback_manager,
             verbose=verbose,
             max_iterations=kwargs.get("max_iterations", 10),
-            react_chat_formatter=kwargs.get("react_chat_formatter", None),
-            output_parser=kwargs.get("output_parser", None),
-            tool_retriever=kwargs.get("tool_retriever", None),
-            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
+            react_chat_formatter=kwargs.get("react_chat_formatter"),
+            output_parser=kwargs.get("output_parser"),
+            tool_retriever=kwargs.get("tool_retriever"),
+            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn"),
         )
 
         if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
@@ -839,10 +839,10 @@ class LLM(BaseLLM):
             callback_manager=self.callback_manager,
             verbose=verbose,
             max_iterations=kwargs.get("max_iterations", 10),
-            react_chat_formatter=kwargs.get("react_chat_formatter", None),
-            output_parser=kwargs.get("output_parser", None),
-            tool_retriever=kwargs.get("tool_retriever", None),
-            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
+            react_chat_formatter=kwargs.get("react_chat_formatter"),
+            output_parser=kwargs.get("output_parser"),
+            tool_retriever=kwargs.get("tool_retriever"),
+            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn"),
         )
 
         if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):

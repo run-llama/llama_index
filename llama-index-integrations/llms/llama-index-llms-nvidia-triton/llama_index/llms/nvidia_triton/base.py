@@ -68,7 +68,8 @@ DEFAULT_TRITON_LOAD_MODEL = False
 
 
 class NvidiaTriton(LLM):
-    """Nvidia Triton LLM.
+    """
+    Nvidia Triton LLM.
 
     Nvidia's Triton is an inference server that provides API access to hosted LLM models. This connector allows for llama_index to remotely interact with a Triton inference server over GRPC to
     accelerate inference operations.

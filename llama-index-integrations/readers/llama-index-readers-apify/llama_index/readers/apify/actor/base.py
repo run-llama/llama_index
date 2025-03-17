@@ -8,7 +8,8 @@ from llama_index.readers.apify.dataset.base import ApifyDataset
 
 
 class ApifyActor(BaseReader):
-    """Apify Actor reader.
+    """
+    Apify Actor reader.
     Calls an Actor on the Apify platform and reads its resulting dataset when it finishes.
 
     Args:
@@ -38,7 +39,8 @@ class ApifyActor(BaseReader):
         memory_mbytes: Optional[int] = None,
         timeout_secs: Optional[int] = None,
     ) -> List[Document]:
-        """Call an Actor on the Apify platform, wait for it to finish, and return its resulting dataset.
+        """
+        Call an Actor on the Apify platform, wait for it to finish, and return its resulting dataset.
 
         Args:
             actor_id (str): The ID or name of the Actor.

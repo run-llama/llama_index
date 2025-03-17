@@ -30,7 +30,7 @@ def test_sync_embedding():
 @pytest.mark.skipif(
     os.environ.get("CO_API_KEY") is None, reason="Cohere API key required"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_embedding():
     emb = CohereEmbedding(
         api_key=os.environ["CO_API_KEY"],

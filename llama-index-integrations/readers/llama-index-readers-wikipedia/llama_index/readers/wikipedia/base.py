@@ -7,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class WikipediaReader(BasePydanticReader):
-    """Wikipedia reader.
+    """
+    Wikipedia reader.
 
     Reads a page.
 
@@ -31,7 +32,8 @@ class WikipediaReader(BasePydanticReader):
     def load_data(
         self, pages: List[str], lang_prefix: str = "en", **load_kwargs: Any
     ) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             pages (List[str]): List of pages to read.

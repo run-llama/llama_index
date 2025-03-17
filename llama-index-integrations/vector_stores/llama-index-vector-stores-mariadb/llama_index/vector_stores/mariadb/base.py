@@ -35,7 +35,8 @@ _logger = logging.getLogger(__name__)
 
 
 class MariaDBVectorStore(BasePydanticVectorStore):
-    """MariaDB Vector Store.
+    """
+    MariaDB Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-mariadb`
@@ -86,7 +87,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         perform_setup: bool = True,
         debug: bool = False,
     ) -> None:
-        """Constructor.
+        """
+        Constructor.
 
         Args:
             connection_string (Union[str, sqlalchemy.engine.URL]): Connection string for the MariaDB server.
@@ -142,7 +144,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         perform_setup: bool = True,
         debug: bool = False,
     ) -> "MariaDBVectorStore":
-        """Construct from params.
+        """
+        Construct from params.
 
         Args:
             host (Optional[str], optional): Host of MariaDB connection. Defaults to None.
@@ -485,7 +488,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
 
 
 def _meets_min_server_version(version: str, min_version: str) -> bool:
-    """Check if a MariaDB server version meets minimum required version.
+    """
+    Check if a MariaDB server version meets minimum required version.
 
     Args:
         version: Version string from MariaDB server (e.g. "11.7.1-MariaDB-ubu2404")

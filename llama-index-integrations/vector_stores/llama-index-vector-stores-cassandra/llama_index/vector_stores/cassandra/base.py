@@ -1,4 +1,5 @@
-"""Cassandra / Astra DB Vector store index.
+"""
+Cassandra / Astra DB Vector store index.
 
 An index based on a DB table with vector search capabilities,
 powered by the cassIO library
@@ -139,7 +140,8 @@ class CassandraVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of node with embeddings

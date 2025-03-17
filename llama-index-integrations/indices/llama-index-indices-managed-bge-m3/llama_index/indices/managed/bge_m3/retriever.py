@@ -10,7 +10,8 @@ from llama_index.indices.managed.bge_m3.base import BGEM3Index
 
 
 class BGEM3Retriever(BaseRetriever):
-    """Vector index retriever.
+    """
+    Vector index retriever.
 
     Args:
         index (BGEM3Index): BGEM3 index.

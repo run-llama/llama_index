@@ -23,7 +23,8 @@ DEFAULT_RUNGPT_TEMP = 0.75
 
 
 class RunGptLLM(LLM):
-    """RunGPT LLM.
+    """
+    RunGPT LLM.
 
     The opengpt of Jina AI models.
 

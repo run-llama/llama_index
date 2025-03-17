@@ -30,7 +30,8 @@ def _to_bagel_filter(standard_filters: MetadataFilters) -> dict:
 
 
 class BagelVectorStore(BasePydanticVectorStore):
-    """Vector store for Bagel.
+    """
+    Vector store for Bagel.
 
     Examples:
         `pip install llama-index-vector-stores-bagel`

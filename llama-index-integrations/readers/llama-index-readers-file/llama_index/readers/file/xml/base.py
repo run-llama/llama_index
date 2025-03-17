@@ -10,7 +10,8 @@ from llama_index.core.schema import Document
 
 
 def _get_leaf_nodes_up_to_level(root: ET.Element, level: int) -> List[ET.Element]:
-    """Get collection of nodes up to certain level including leaf nodes.
+    """
+    Get collection of nodes up to certain level including leaf nodes.
 
     Args:
         root (ET.Element): XML Root Element
@@ -35,7 +36,8 @@ def _get_leaf_nodes_up_to_level(root: ET.Element, level: int) -> List[ET.Element
 
 
 class XMLReader(BaseReader):
-    """XML reader.
+    """
+    XML reader.
 
     Reads XML documents with options to help suss out relationships between nodes.
 
@@ -53,7 +55,8 @@ class XMLReader(BaseReader):
     def _parse_xmlelt_to_document(
         self, root: ET.Element, extra_info: Optional[Dict] = None
     ) -> List[Document]:
-        """Parse the xml object into a list of Documents.
+        """
+        Parse the xml object into a list of Documents.
 
         Args:
             root: The XML Element to be converted.
@@ -77,7 +80,8 @@ class XMLReader(BaseReader):
         file: Path,
         extra_info: Optional[Dict] = None,
     ) -> List[Document]:
-        """Load data from the input file.
+        """
+        Load data from the input file.
 
         Args:
             file (Path): Path to the input file.

@@ -1,4 +1,5 @@
 """Utilities for GPT indices."""
+
 import logging
 import re
 from llama_index.core.base.embeddings.base import BaseEmbedding

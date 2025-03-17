@@ -39,7 +39,7 @@ def test_serialize():
     assert new_reader.user_email == reader.user_email
 
 
-@pytest.fixture()
+@pytest.fixture
 def outlook_reader():
     return OutlookEmailReader(
         client_id="dummy_client_id",

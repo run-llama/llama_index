@@ -13,7 +13,8 @@ import google.generativeai as palm
 
 
 class GooglePaLMEmbedding(BaseEmbedding):
-    """Class for Google PaLM embeddings.
+    """
+    Class for Google PaLM embeddings.
 
     Args:
         model_name (str): Model for embedding.

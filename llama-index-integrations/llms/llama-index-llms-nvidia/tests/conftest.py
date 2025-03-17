@@ -8,7 +8,7 @@ from typing import Generator
 # this fixture is used to mask the NVIDIA_API_KEY environment variable and restore it
 # after the test. it also returns the value of the NVIDIA_API_KEY environment variable
 # before it was masked so that it can be used in the test.
-@pytest.fixture()
+@pytest.fixture
 def masked_env_var() -> Generator[str, None, None]:
     var = "NVIDIA_API_KEY"
     # Save the current value of the environment variable, if it exists
@@ -83,6 +83,6 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
         metafunc.parametrize("chat_model", models, ids=models)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mode(request: pytest.FixtureRequest) -> dict:
     return get_mode(request.config)

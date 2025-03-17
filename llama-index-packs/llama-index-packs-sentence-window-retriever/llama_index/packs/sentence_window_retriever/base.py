@@ -14,7 +14,8 @@ from llama_index.llms.openai import OpenAI
 
 
 class SentenceWindowRetrieverPack(BaseLlamaPack):
-    """Sentence Window Retriever pack.
+    """
+    Sentence Window Retriever pack.
 
     Build input nodes from a text file by inserting metadata,
     build a vector index over the input nodes,

@@ -1,4 +1,5 @@
 """Embedding utils for queries."""
+
 import heapq
 import math
 from typing import Any, Callable, List, Optional, Tuple

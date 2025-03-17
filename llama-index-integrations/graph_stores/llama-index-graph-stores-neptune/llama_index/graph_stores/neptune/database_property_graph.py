@@ -28,7 +28,8 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
         use_https: bool = True,
         **kwargs: Any,
     ) -> None:
-        """Init.
+        """
+        Init.
 
         Args:
             host (str): The host endpoint
@@ -44,7 +45,8 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
         )
 
     def structured_query(self, query: str, param_map: Dict[str, Any] = None) -> Any:
-        """Run the structured query.
+        """
+        Run the structured query.
 
         Args:
             query (str): The query to run
@@ -77,7 +79,8 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
             )
 
     def vector_query(self, query: VectorStoreQuery, **kwargs: Any) -> Tuple[List[Any]]:
-        """NOT SUPPORTED.
+        """
+        NOT SUPPORTED.
 
         Args:
             query (VectorStoreQuery): _description_
@@ -91,7 +94,8 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
         raise NotImplementedError
 
     def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
-        """Upsert the nodes in the graph.
+        """
+        Upsert the nodes in the graph.
 
         Args:
             nodes (List[LabelledNode]): The list of nodes to upsert
@@ -143,7 +147,8 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
                 )
 
     def _get_summary(self) -> Dict:
-        """Get the Summary of the graph schema.
+        """
+        Get the Summary of the graph schema.
 
         Returns:
             Dict: The graph summary

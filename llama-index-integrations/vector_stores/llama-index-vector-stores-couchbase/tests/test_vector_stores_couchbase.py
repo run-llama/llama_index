@@ -73,7 +73,7 @@ def get_cluster() -> Any:
     return cluster
 
 
-@pytest.fixture()
+@pytest.fixture
 def cluster() -> Any:
     """Get a couchbase cluster object."""
     return get_cluster()

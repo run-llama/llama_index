@@ -221,7 +221,7 @@ class NomicHFEmbedding(HuggingFaceEmbedding):
             model_output = self._model(**encoded_input)
 
         if self.pooling == Pooling.CLS:
-            context_layer: "torch.Tensor" = model_output[0]
+            context_layer: torch.Tensor = model_output[0]
             embeddings = self.pooling.cls_pooling(context_layer)
         else:
             embeddings = self._mean_pooling(

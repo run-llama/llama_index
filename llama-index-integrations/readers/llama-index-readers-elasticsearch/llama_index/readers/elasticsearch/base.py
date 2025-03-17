@@ -1,9 +1,9 @@
-"""Elasticsearch (or Opensearch) reader over REST api.
+"""
+Elasticsearch (or Opensearch) reader over REST api.
 
 This only uses the basic search api, so it will work with Elasticsearch and Opensearch.
 
 """
-
 
 from typing import Any, List, Optional
 
@@ -58,7 +58,8 @@ class ElasticsearchReader(BasePydanticReader):
         embedding_field: Optional[str] = None,
         metadata_fields: Optional[List[str]] = None,
     ) -> List[Document]:
-        """Read data from the Elasticsearch index.
+        """
+        Read data from the Elasticsearch index.
 
         Args:
             field (str): Field in the document to retrieve text from

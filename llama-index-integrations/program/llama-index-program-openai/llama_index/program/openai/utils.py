@@ -2,7 +2,8 @@ import json
 
 
 def parse_partial_json(s):
-    """Parse an incomplete JSON string into a valid python dictionary.
+    """
+    Parse an incomplete JSON string into a valid python dictionary.
 
     NOTE: This is adapted from
     https://github.com/OpenInterpreter/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py

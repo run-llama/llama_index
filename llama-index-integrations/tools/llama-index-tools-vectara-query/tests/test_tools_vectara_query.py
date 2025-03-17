@@ -91,7 +91,7 @@ def get_nodes() -> List[Node]:
     return nodes
 
 
-@pytest.fixture()
+@pytest.fixture
 def vectara1():
     docs = get_docs()
     try:
@@ -277,7 +277,7 @@ def test_custom_prompt(vectara1) -> None:
     assert res["factual_consistency_score"] > 0
 
 
-@pytest.fixture()
+@pytest.fixture
 def vectara2():
     try:
         vectara2 = VectaraIndex()
@@ -338,7 +338,7 @@ def test_citations(vectara2) -> None:
     assert re.search(r"\[\d+\]", summary)
 
 
-@pytest.fixture()
+@pytest.fixture
 def vectara3():
     nodes = get_nodes()
     try:

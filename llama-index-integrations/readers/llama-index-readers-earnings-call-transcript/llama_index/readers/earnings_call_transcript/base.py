@@ -8,7 +8,8 @@ from llama_index.readers.earnings_call_transcript.utils import get_earnings_tran
 
 class EarningsCallTranscript(BaseReader):
     def __init__(self, year: int, ticker: str, quarter: str):
-        """Get the earning call transcripts for a given company, in a given year and quarter.
+        """
+        Get the earning call transcripts for a given company, in a given year and quarter.
 
         Args:
             year (int): Year of the transcript

@@ -135,7 +135,8 @@ def _to_neo4j_operator(operator: FilterOperator) -> str:
 def collect_params(
     input_data: List[Tuple[str, Dict[str, str]]],
 ) -> Tuple[List[str], Dict[str, Any]]:
-    """Transform the input data into the desired format.
+    """
+    Transform the input data into the desired format.
 
     Args:
     - input_data (list of tuples): Input data to transform.
@@ -180,7 +181,8 @@ def construct_metadata_filter(filters: MetadataFilters):
 
 
 class Neo4jVectorStore(BasePydanticVectorStore):
-    """Neo4j Vector Store.
+    """
+    Neo4j Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-neo4jvector`
@@ -392,7 +394,8 @@ class Neo4jVectorStore(BasePydanticVectorStore):
             return False
 
     def retrieve_existing_fts_index(self) -> Optional[str]:
-        """Check if the fulltext index exists in the Neo4j database.
+        """
+        Check if the fulltext index exists in the Neo4j database.
 
         This method queries the Neo4j database for existing fts indexes
         with the specified name.

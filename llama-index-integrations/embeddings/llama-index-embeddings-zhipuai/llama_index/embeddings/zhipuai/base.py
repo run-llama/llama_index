@@ -7,7 +7,8 @@ from llama_index.core.callbacks import CallbackManager
 
 
 class ZhipuAIEmbedding(BaseEmbedding):
-    """ZhipuAI LLM.
+    """
+    ZhipuAI LLM.
 
     Visit https://open.bigmodel.cn to get more information about ZhipuAI.
 

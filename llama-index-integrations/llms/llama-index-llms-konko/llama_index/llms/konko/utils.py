@@ -161,7 +161,8 @@ def resolve_konko_credentials(
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[str, str, str, str, str]:
-    """ "Resolve KonkoAI credentials.
+    """
+    "Resolve KonkoAI credentials.
 
     The order of precedence is:
     1. param

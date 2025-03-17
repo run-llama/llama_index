@@ -6,7 +6,7 @@ from llama_index.core.graph_stores.types import Relation, EntityNode
 from llama_index.core.schema import TextNode
 
 
-@pytest.fixture()
+@pytest.fixture
 def pg_store() -> KuzuPropertyGraphStore:
     import kuzu
 

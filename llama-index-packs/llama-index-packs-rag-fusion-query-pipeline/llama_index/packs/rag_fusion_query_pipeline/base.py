@@ -20,7 +20,8 @@ DEFAULT_CHUNK_SIZES = [128, 256, 512, 1024]
 def reciprocal_rank_fusion(
     results: List[NodeWithScore],
 ) -> List[NodeWithScore]:
-    """Apply reciprocal rank fusion.
+    """
+    Apply reciprocal rank fusion.
 
     The original paper uses k=60 for best results:
     https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf
@@ -54,7 +55,8 @@ def reciprocal_rank_fusion(
 
 
 class RAGFusionPipelinePack(BaseLlamaPack):
-    """RAG Fusion pipeline.
+    """
+    RAG Fusion pipeline.
 
     Create a bunch of vector indexes of different chunk sizes.
 

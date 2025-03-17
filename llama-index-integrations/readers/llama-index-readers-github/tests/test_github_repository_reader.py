@@ -27,7 +27,7 @@ BLOB_JSON = '{"sha":"c3c8a7f594d936e2f3b908c6d3b73bbccb11886f","node_id":"B_kwDO
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_error(monkeypatch):
     async def mock_get_blob(self, *args, **kwargs):
         if self._fail_on_http_error:

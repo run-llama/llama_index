@@ -1,4 +1,5 @@
-"""Demonstrates how to use filters in Vector Search.
+"""
+Demonstrates how to use filters in Vector Search.
 
 If one wishes to use filter by fields in vectorSearch,
 these fields also need to be indexed. These are full-text 'Atlas Search' Indexes.
@@ -36,7 +37,7 @@ TIMEOUT = 120
 DIMENSIONS = 10
 
 
-@pytest.fixture()
+@pytest.fixture
 def text_nodes() -> List[TextNode]:
     return [
         TextNode(
@@ -57,7 +58,7 @@ def text_nodes() -> List[TextNode]:
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def vector_store(atlas_client: MongoClient) -> MongoDBAtlasVectorSearch:
     return MongoDBAtlasVectorSearch(
         mongodb_client=atlas_client,
@@ -68,7 +69,7 @@ def vector_store(atlas_client: MongoClient) -> MongoDBAtlasVectorSearch:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def collection(
     vector_store: MongoDBAtlasVectorSearch, text_nodes: List[TextNode]
 ) -> Collection:
@@ -81,9 +82,10 @@ def collection(
     return clxn
 
 
-@pytest.fixture()
+@pytest.fixture
 def vector_indexed(collection: Collection) -> str:
-    """This creates a vector search index
+    """
+    This creates a vector search index
     with a filter on the year field within the metadata document.
 
     To be able to filter on another field, said field must be indexed.
@@ -106,9 +108,10 @@ def vector_indexed(collection: Collection) -> str:
     return VECTOR_INDEX_NAME
 
 
-@pytest.fixture()
+@pytest.fixture
 def year_indexed(collection: Collection) -> str:
-    """Search Index on metadata.year nested field of type number.
+    """
+    Search Index on metadata.year nested field of type number.
 
     This is required to do filtered vector search.
     """
@@ -129,7 +132,7 @@ def year_indexed(collection: Collection) -> str:
     return FILTER_INDEX_NAME
 
 
-@pytest.fixture()
+@pytest.fixture
 def metadata_filters() -> MetadataFilters:
     return MetadataFilters(
         filters=[
@@ -159,7 +162,8 @@ def test_search_with_filter(
     year_indexed: str,
     metadata_filters: MetadataFilters,
 ) -> None:
-    """Tests vector search with a filter.
+    """
+    Tests vector search with a filter.
 
     similarity_top_k=3 > len(vector_store.query(query).nodes)
     """

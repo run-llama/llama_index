@@ -16,7 +16,8 @@ from llama_index.readers.box.BoxAPI.box_llama_adaptors import box_file_to_llama_
 
 
 class BoxTextExtractToolSpec(BaseToolSpec):
-    """Box Text Extraction Tool Specification.
+    """
+    Box Text Extraction Tool Specification.
 
     This class provides a specification for extracting text content from Box files
     and creating Document objects. It leverages the Box API to retrieve the

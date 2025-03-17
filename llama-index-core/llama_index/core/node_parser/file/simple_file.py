@@ -1,4 +1,5 @@
 """Simple file node parser."""
+
 from typing import Any, Dict, List, Optional, Sequence, Type
 
 from llama_index.core.callbacks.base import CallbackManager

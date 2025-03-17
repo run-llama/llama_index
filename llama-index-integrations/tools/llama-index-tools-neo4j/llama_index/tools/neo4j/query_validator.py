@@ -240,7 +240,8 @@ class CypherQueryCorrector:
         return query
 
     def __call__(self, query: str) -> str:
-        """Correct the query to make it valid. If
+        """
+        Correct the query to make it valid. If
         Args:
             query: cypher query.
         """

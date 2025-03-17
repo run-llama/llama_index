@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class VllmEmbedding(MultiModalEmbedding):
-    """Vllm LLM.
+    """
+    Vllm LLM.
 
     This class runs a vLLM embedding model locally.
     """

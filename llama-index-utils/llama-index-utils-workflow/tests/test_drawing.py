@@ -8,7 +8,7 @@ from llama_index.utils.workflow import (
 )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_draw_methods(workflow):
     with patch("pyvis.network.Network") as mock_network:
         draw_all_possible_flows(workflow, filename="test_all_flows.html")

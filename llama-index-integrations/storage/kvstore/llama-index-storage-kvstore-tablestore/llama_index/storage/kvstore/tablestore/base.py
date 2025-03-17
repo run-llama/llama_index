@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class TablestoreKVStore(BaseKVStore):
-    """Tablestore Key-Value Store.
+    """
+    Tablestore Key-Value Store.
 
     Args:
         tablestore_client (OTSClient, optional): External tablestore(ots) client.
@@ -91,7 +92,8 @@ class TablestoreKVStore(BaseKVStore):
         logger.info(f"Tablestore create kv store table[{collection}] successfully.")
 
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -108,7 +110,8 @@ class TablestoreKVStore(BaseKVStore):
     async def aput(
         self, key: str, val: dict, collection: str = DEFAULT_COLLECTION
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -118,7 +121,8 @@ class TablestoreKVStore(BaseKVStore):
         raise NotImplementedError
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -146,7 +150,8 @@ class TablestoreKVStore(BaseKVStore):
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
     ) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -155,7 +160,8 @@ class TablestoreKVStore(BaseKVStore):
         raise NotImplementedError
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -231,7 +237,8 @@ class TablestoreKVStore(BaseKVStore):
         return ret
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -239,7 +246,8 @@ class TablestoreKVStore(BaseKVStore):
         raise NotImplementedError
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key
@@ -252,7 +260,8 @@ class TablestoreKVStore(BaseKVStore):
         return True
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key

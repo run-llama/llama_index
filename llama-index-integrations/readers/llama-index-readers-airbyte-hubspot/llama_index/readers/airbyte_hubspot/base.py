@@ -4,7 +4,8 @@ from llama_index.readers.airbyte_cdk.base import AirbyteCDKReader, RecordHandler
 
 
 class AirbyteHubspotReader(AirbyteCDKReader):
-    """AirbyteHubspotReader reader.
+    """
+    AirbyteHubspotReader reader.
 
     Retrieve documents from Hubspot
 

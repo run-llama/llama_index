@@ -28,7 +28,8 @@ import atexit
 
 
 class Vllm(LLM):
-    r"""Vllm LLM.
+    r"""
+    Vllm LLM.
 
     This class runs a vLLM model locally.
 
@@ -318,7 +319,8 @@ class Vllm(LLM):
 
 
 class VllmServer(Vllm):
-    r"""Vllm LLM.
+    r"""
+    Vllm LLM.
 
     This class connects to a vLLM server (non-openai versions).
 
@@ -410,8 +412,7 @@ class VllmServer(Vllm):
     def class_name(cls) -> str:
         return "VllmServer"
 
-    def __del__(self) -> None:
-        ...
+    def __del__(self) -> None: ...
 
     @llm_completion_callback()
     def complete(

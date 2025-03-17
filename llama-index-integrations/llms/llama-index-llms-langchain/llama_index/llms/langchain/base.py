@@ -24,7 +24,8 @@ from langchain.base_language import BaseLanguageModel
 
 
 class LangChainLLM(LLM):
-    """Adapter for a LangChain LLM.
+    """
+    Adapter for a LangChain LLM.
 
     Examples:
         `pip install llama-index-llms-langchain`

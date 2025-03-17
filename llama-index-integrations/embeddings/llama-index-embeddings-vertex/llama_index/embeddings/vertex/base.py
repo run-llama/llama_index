@@ -16,7 +16,8 @@ from google.auth import credentials as auth_credentials
 
 
 class VertexEmbeddingMode(str, Enum):
-    """VertexAI embedding mode.
+    """
+    VertexAI embedding mode.
 
     Attributes:
         DEFAULT_MODE (str): The default embedding mode, for older models before August 2023,
@@ -56,7 +57,8 @@ def init_vertexai(
     location: Optional[str] = None,
     credentials: Optional[auth_credentials.Credentials] = None,
 ) -> None:
-    """Init vertexai.
+    """
+    Init vertexai.
 
     Args:
         project: The default GCP project to use when making Vertex API calls.

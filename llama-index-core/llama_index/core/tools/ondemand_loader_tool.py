@@ -4,7 +4,6 @@ Tool that wraps any data loader, and is able to load data on-demand.
 
 """
 
-
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 from llama_index.core.bridge.pydantic import BaseModel

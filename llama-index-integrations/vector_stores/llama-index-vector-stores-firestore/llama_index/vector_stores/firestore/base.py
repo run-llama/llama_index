@@ -1,4 +1,5 @@
-"""Firestore vector store index.
+"""
+Firestore vector store index.
 
 An index that is built on top of an existing vector store.
 

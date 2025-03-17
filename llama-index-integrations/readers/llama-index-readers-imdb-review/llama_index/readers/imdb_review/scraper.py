@@ -19,7 +19,8 @@ except ImportError:
 
 
 def clean_text(text: str) -> str:
-    """Clean raw text string.
+    """
+    Clean raw text string.
 
     Args:
         text (str): Raw text to clean.
@@ -45,7 +46,8 @@ def clean_text(text: str) -> str:
 
 
 def scrape_data(revs):
-    """Multiprocessing function to get the data from the IMDB reviews page.
+    """
+    Multiprocessing function to get the data from the IMDB reviews page.
 
     Args:
         revs (selenium element): element for all the reviews
@@ -95,7 +97,8 @@ def scrape_data(revs):
 
 
 def process_muted_text(mute_text: str) -> (float, float):
-    """Post processing the muted text.
+    """
+    Post processing the muted text.
 
     Args:
         mute_text (str): text on how many people people found it helpful
@@ -122,7 +125,8 @@ def main_scraper(
     max_workers: int = 0,
     reviews_folder: str = "movie_reviews",
 ):
-    """The main helper function to scrape data.
+    """
+    The main helper function to scrape data.
 
     Args:
         movie_name (str): The name of the movie along with the year

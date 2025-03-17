@@ -104,7 +104,8 @@ class ColbertIndex(BaseIndex[IndexDict]):
     def _build_index_from_nodes(
         self, nodes: Sequence[BaseNode], **kwargs: Any
     ) -> IndexDict:
-        """Generate a PLAID index from the ColBERT checkpoint via its hugging face
+        """
+        Generate a PLAID index from the ColBERT checkpoint via its hugging face
         model_name.
         """
         from colbert import Indexer, Searcher

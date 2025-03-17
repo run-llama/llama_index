@@ -264,7 +264,8 @@ class VectorStoreIndexWithCitationsChat(VectorStoreIndex):
 
 
 class CitationsContextChatEngine(ContextChatEngine):
-    """Cohere Context + Citations Chat Engine.
+    """
+    Cohere Context + Citations Chat Engine.
 
     Uses a retriever to retrieve a context, set the context in the Cohere
     documents param(https://docs.cohere.com/docs/retrieval-augmented-generation-rag),

@@ -16,7 +16,7 @@ def mock_jira():
         yield mock_jira
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_issue():
     issue = MagicMock()
     # Setup basic issue fields

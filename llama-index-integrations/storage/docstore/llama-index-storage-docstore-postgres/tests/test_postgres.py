@@ -17,7 +17,7 @@ except ImportError:
     no_packages = True
 
 
-@pytest.fixture()
+@pytest.fixture
 def documents() -> List[Document]:
     return [
         Document(text="doc_1"),
@@ -25,7 +25,7 @@ def documents() -> List[Document]:
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def postgres_docstore(postgres_kvstore: PostgresKVStore) -> PostgresDocumentStore:
     return PostgresDocumentStore(postgres_kvstore=postgres_kvstore)
 

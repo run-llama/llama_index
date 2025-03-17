@@ -19,7 +19,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def neo4j_graph_store() -> Neo4jGraphStore:
     """
     Provides a fresh Neo4jGraphStore for each test.

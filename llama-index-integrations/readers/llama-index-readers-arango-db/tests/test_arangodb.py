@@ -4,7 +4,7 @@ import pytest
 from llama_index.readers.arango_db import SimpleArangoDBReader
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_arangodb_client():
     with patch("arango.ArangoClient") as mock_client:
         # Mock the behavior of the db and collection

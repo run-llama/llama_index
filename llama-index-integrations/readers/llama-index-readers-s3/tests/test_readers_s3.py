@@ -33,7 +33,7 @@ def s3_base():
     s3_server.stop()
 
 
-@pytest.fixture()
+@pytest.fixture
 def init_s3_files(s3_base):
     requests.post(f"{endpoint_url}/moto-api/reset")
     s3fs = S3FileSystem(

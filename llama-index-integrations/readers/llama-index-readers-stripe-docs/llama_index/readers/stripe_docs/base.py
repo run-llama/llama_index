@@ -13,7 +13,8 @@ DEFAULT_FILTERS = ["/docs"]
 
 
 class StripeDocsReader(BaseReader):
-    """Asynchronous Stripe documentation reader.
+    """
+    Asynchronous Stripe documentation reader.
 
     Reads pages from the Stripe documentation based on the sitemap.xml.
 

@@ -130,7 +130,7 @@ def test_completions_model_streaming(MockSyncOpenAI: MagicMock, model: str) -> N
         assert responses[-1].text == "TestSecond Test"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 @pytest.mark.parametrize("model", COMPLETION_MODEL_TABLE.keys())
 async def test_async_model_completions(MockAsyncOpenAI: MagicMock, model: str) -> None:
@@ -147,7 +147,7 @@ async def test_async_model_completions(MockAsyncOpenAI: MagicMock, model: str) -
         assert response.text == "Cool Test Message"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 @pytest.mark.parametrize("model", COMPLETION_MODEL_TABLE.keys())
 async def test_async_streaming_completion_model(

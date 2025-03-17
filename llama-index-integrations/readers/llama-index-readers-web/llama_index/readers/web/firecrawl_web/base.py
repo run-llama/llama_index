@@ -1,4 +1,5 @@
 """Firecrawl Web Reader."""
+
 from typing import List, Optional, Dict, Callable
 from pydantic import Field
 
@@ -8,7 +9,8 @@ from llama_index.core.schema import Document
 
 
 class FireCrawlWebReader(BasePydanticReader):
-    """turn a url to llm accessible markdown with `Firecrawl.dev`.
+    """
+    turn a url to llm accessible markdown with `Firecrawl.dev`.
 
     Args:
     api_key: The Firecrawl API key.
@@ -63,7 +65,8 @@ class FireCrawlWebReader(BasePydanticReader):
         query: Optional[str] = None,
         urls: Optional[List[str]] = None,
     ) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             url (Optional[str]): URL to scrape or crawl.

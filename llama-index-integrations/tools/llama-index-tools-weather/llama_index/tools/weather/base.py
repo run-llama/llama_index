@@ -37,7 +37,8 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
     def _format_weather(
         self, place: str, temp_str: str, w: Any, time_str: str = "now"
     ) -> str:
-        """Format weather response from OpenWeatherMap.
+        """
+        Format weather response from OpenWeatherMap.
 
         Function thanks to
         langchain/utilities/openweathermap.py

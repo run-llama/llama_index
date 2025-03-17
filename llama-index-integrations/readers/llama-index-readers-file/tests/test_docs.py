@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict
 
 
-@pytest.fixture()
+@pytest.fixture
 def multi_page_pdf() -> FPDF:
     pdf = FPDF()
     pdf.add_page()
@@ -20,7 +20,7 @@ def multi_page_pdf() -> FPDF:
     return pdf
 
 
-@pytest.fixture()
+@pytest.fixture
 def extra_info() -> Dict[str, str]:
     return {"ABC": "abc", "DEF": "def"}
 

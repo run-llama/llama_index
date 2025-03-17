@@ -94,7 +94,8 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
         }
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize.
+        """
+        Initialize.
 
         Args:
             kwargs: See the class-level Fields.

@@ -40,8 +40,7 @@ def instrument_tags(new_tags: Dict[str, Any]) -> Generator[None, None, None]:
 
 # Keep for backwards compatibility
 class EventDispatcher(Protocol):
-    def __call__(self, event: BaseEvent, **kwargs: Any) -> None:
-        ...
+    def __call__(self, event: BaseEvent, **kwargs: Any) -> None: ...
 
 
 class Dispatcher(BaseModel):
@@ -123,7 +122,7 @@ class Dispatcher(BaseModel):
 
     def event(self, event: BaseEvent, **kwargs: Any) -> None:
         """Dispatch event to all registered handlers."""
-        c: Optional["Dispatcher"] = self
+        c: Optional[Dispatcher] = self
 
         # Attach tags from the active context
         event.tags.update(active_instrument_tags.get())
@@ -167,7 +166,7 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ has started."""
-        c: Optional["Dispatcher"] = self
+        c: Optional[Dispatcher] = self
         while c:
             for h in c.span_handlers:
                 try:
@@ -195,7 +194,7 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ is being dropped."""
-        c: Optional["Dispatcher"] = self
+        c: Optional[Dispatcher] = self
         while c:
             for h in c.span_handlers:
                 try:
@@ -222,7 +221,7 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ is exiting."""
-        c: Optional["Dispatcher"] = self
+        c: Optional[Dispatcher] = self
         while c:
             for h in c.span_handlers:
                 try:

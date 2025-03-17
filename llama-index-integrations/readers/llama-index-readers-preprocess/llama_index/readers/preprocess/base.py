@@ -124,7 +124,8 @@ class PreprocessReader(BaseReader):
         self._chunks = None
 
     def load_data(self, return_whole_document=False) -> List[Document]:
-        """Load data from Preprocess.
+        """
+        Load data from Preprocess.
 
         Args:
             return_whole_document (bool):
@@ -184,7 +185,8 @@ class PreprocessReader(BaseReader):
                 ]
 
     def get_process_id(self):
-        """Get process's hash id from Preprocess.
+        """
+        Get process's hash id from Preprocess.
 
         Examples:
             >>> process_id = loader.get_process_id()
@@ -196,7 +198,8 @@ class PreprocessReader(BaseReader):
         return self._process_id
 
     def get_nodes(self) -> List[TextNode]:
-        """Get nodes from Preprocess's chunks.
+        """
+        Get nodes from Preprocess's chunks.
 
         Examples:
             >>> nodes = loader.get_nodes()

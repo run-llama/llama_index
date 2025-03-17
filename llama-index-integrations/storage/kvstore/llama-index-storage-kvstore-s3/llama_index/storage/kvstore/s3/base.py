@@ -8,7 +8,8 @@ from llama_index.core.storage.kvstore.types import DEFAULT_COLLECTION, BaseKVSto
 
 
 class S3DBKVStore(BaseKVStore):
-    """S3 Key-Value store.
+    """
+    S3 Key-Value store.
     Stores key-value pairs in a S3 bucket. Can optionally specify a path to a folder
         where KV data is stored.
     The KV data is further divided into collections, which are subfolders in the path.
@@ -34,7 +35,8 @@ class S3DBKVStore(BaseKVStore):
         bucket_name: str,
         path: Optional[str] = None,
     ) -> "S3DBKVStore":
-        """Load a S3DBKVStore from a S3 URI.
+        """
+        Load a S3DBKVStore from a S3 URI.
 
         Args:
             bucket_name (str): S3 bucket name
@@ -56,7 +58,8 @@ class S3DBKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -76,7 +79,8 @@ class S3DBKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -87,7 +91,8 @@ class S3DBKVStore(BaseKVStore):
         raise NotImplementedError
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -105,7 +110,8 @@ class S3DBKVStore(BaseKVStore):
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
     ) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -115,7 +121,8 @@ class S3DBKVStore(BaseKVStore):
         raise NotImplementedError
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -132,7 +139,8 @@ class S3DBKVStore(BaseKVStore):
         return collection_kv_dict
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -141,7 +149,8 @@ class S3DBKVStore(BaseKVStore):
         raise NotImplementedError
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key
@@ -157,7 +166,8 @@ class S3DBKVStore(BaseKVStore):
         return True
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key

@@ -12,7 +12,7 @@ from llama_index.vector_stores.objectbox import ObjectBoxVectorStore
 EMBEDDING_DIM = 3
 
 
-@pytest.fixture()
+@pytest.fixture
 def vectorstore():
     obx = ObjectBoxVectorStore(embedding_dimensions=EMBEDDING_DIM)
     db_default_path = "objectbox"
@@ -26,7 +26,7 @@ def vectorstore():
     return obx
 
 
-@pytest.fixture()
+@pytest.fixture
 def node_embeddings() -> Sequence[BaseNode]:
     return [
         TextNode(

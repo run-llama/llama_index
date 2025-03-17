@@ -41,7 +41,8 @@ DEFAULT_LLAMA_CPP_MODEL_VERBOSITY = True
 
 
 class LlamaCPP(CustomLLM):
-    r"""LlamaCPP LLM.
+    r"""
+    LlamaCPP LLM.
 
     Examples:
         Install llama-cpp-python following instructions:

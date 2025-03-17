@@ -1,4 +1,5 @@
-"""MyScale vector store.
+"""
+MyScale vector store.
 
 An index that is built on top of an existing MyScale cluster.
 
@@ -33,7 +34,8 @@ logger = logging.getLogger(__name__)
 
 
 class MyScaleVectorStore(BasePydanticVectorStore):
-    """MyScale Vector Store.
+    """
+    MyScale Vector Store.
 
     In this vector store, embeddings and docs are stored within an existing
     MyScale cluster.
@@ -243,7 +245,8 @@ class MyScaleVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -281,7 +284,8 @@ class MyScaleVectorStore(BasePydanticVectorStore):
         )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query

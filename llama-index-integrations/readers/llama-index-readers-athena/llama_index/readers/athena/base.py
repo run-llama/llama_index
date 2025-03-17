@@ -1,4 +1,5 @@
 """Athena Reader."""
+
 import warnings
 from typing import Optional
 
@@ -8,7 +9,8 @@ from sqlalchemy.engine import create_engine
 
 
 class AthenaReader(BaseReader):
-    """Athena reader.
+    """
+    Athena reader.
 
     Follow AWS best practices for security.
     AWS discourages hardcoding credentials in code.

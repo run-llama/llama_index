@@ -73,7 +73,8 @@ class GigaChatEmbedding(BaseEmbedding):
         return "GigaChatEmbedding"
 
     def _get_query_embeddings(self, queries: List[str]) -> List[List[float]]:
-        """Synchronously Embed documents using a GigaChat embeddings model.
+        """
+        Synchronously Embed documents using a GigaChat embeddings model.
 
         Args:
             queries: The list of documents to embed.
@@ -85,7 +86,8 @@ class GigaChatEmbedding(BaseEmbedding):
         return [embeds_obj.embedding for embeds_obj in embeddings]
 
     async def _aget_query_embeddings(self, queries: List[str]) -> List[List[float]]:
-        """Asynchronously embed documents using a GigaChat embeddings model.
+        """
+        Asynchronously embed documents using a GigaChat embeddings model.
 
         Args:
             queries: The list of documents to embed.
@@ -97,7 +99,8 @@ class GigaChatEmbedding(BaseEmbedding):
         return [embeds_obj.embedding for embeds_obj in embeddings]
 
     def _get_query_embedding(self, query: List[str]) -> List[float]:
-        """Synchronously embed a document using GigaChat embeddings model.
+        """
+        Synchronously embed a document using GigaChat embeddings model.
 
         Args:
             query: The document to embed.
@@ -108,7 +111,8 @@ class GigaChatEmbedding(BaseEmbedding):
         return self._client.embeddings(query).data[0].embedding
 
     async def _aget_query_embedding(self, query: List[str]) -> List[float]:
-        """Asynchronously embed a query using GigaChat embeddings model.
+        """
+        Asynchronously embed a query using GigaChat embeddings model.
 
         Args:
             query: The document to embed.
@@ -119,7 +123,8 @@ class GigaChatEmbedding(BaseEmbedding):
         return (await self._client.aembeddings(query)).data[0].embedding
 
     def _get_text_embedding(self, text: str) -> List[float]:
-        """Synchronously embed a text using GigaChat embeddings model.
+        """
+        Synchronously embed a text using GigaChat embeddings model.
 
         Args:
             text: The text to embed.
@@ -130,7 +135,8 @@ class GigaChatEmbedding(BaseEmbedding):
         return self._client.embeddings([text]).data[0].embedding
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
-        """Asynchronously embed a text using GigaChat embeddings model.
+        """
+        Asynchronously embed a text using GigaChat embeddings model.
 
         Args:
             text: The text to embed.

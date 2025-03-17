@@ -131,12 +131,10 @@ STREAMING_MODELS = {
 class Provider(ABC):
     @property
     @abstractmethod
-    def max_tokens_key(self) -> str:
-        ...
+    def max_tokens_key(self) -> str: ...
 
     @abstractmethod
-    def get_text_from_response(self, response: dict) -> str:
-        ...
+    def get_text_from_response(self, response: dict) -> str: ...
 
     def get_text_from_stream_response(self, response: dict) -> str:
         return self.get_text_from_response(response)

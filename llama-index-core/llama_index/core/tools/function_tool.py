@@ -156,9 +156,11 @@ class FunctionTool(AsyncBaseTool):
             # Handle FieldInfo defaults
             fn_sig = fn_sig.replace(
                 parameters=[
-                    param.replace(default=inspect.Parameter.empty)
-                    if isinstance(param.default, FieldInfo)
-                    else param
+                    (
+                        param.replace(default=inspect.Parameter.empty)
+                        if isinstance(param.default, FieldInfo)
+                        else param
+                    )
                     for param in fn_sig.parameters.values()
                 ]
             )
@@ -169,9 +171,9 @@ class FunctionTool(AsyncBaseTool):
                     f"{name}",
                     fn_to_parse,
                     additional_fields=None,
-                    ignore_fields=[ctx_param_name]
-                    if ctx_param_name is not None
-                    else None,
+                    ignore_fields=(
+                        [ctx_param_name] if ctx_param_name is not None else None
+                    ),
                 )
             tool_metadata = ToolMetadata(
                 name=name,

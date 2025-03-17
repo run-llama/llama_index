@@ -1,10 +1,10 @@
-"""Prompts for implementing Chain of Abstraction.
+"""
+Prompts for implementing Chain of Abstraction.
 
 While official prompts are not given (and the paper finetunes models for the task),
 we can take inspiration and use few-shot prompting to generate a prompt for implementing
 chain of abstraction in an LLM agent.
 """
-
 
 REASONING_PROMPT_TEMPALTE = """Generate an abstract plan of reasoning using placeholders for the specific values and function calls needed.
 The placeholders should be labeled y1, y2, etc.

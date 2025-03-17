@@ -108,7 +108,6 @@ def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
 
     return wrapper
 
-
 @runtime_checkable
 class Tokenizer(Protocol):
     """Tokenizers support an encode function that returns a list of ints."""
@@ -118,9 +117,9 @@ class Tokenizer(Protocol):
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
-    if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+    """Force response to have at most one tool call."""
+    if response.tool_calls and len(response.tool_calls) > 1:
+        response.tool_calls = response.tool_calls[:1]
 
 
 class OpenAI(FunctionCallingLLM):

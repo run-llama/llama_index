@@ -67,7 +67,8 @@ logger = logging.getLogger(__name__)
 
 
 class HuggingFaceLLM(CustomLLM):
-    r"""HuggingFace LLM.
+    r"""
+    HuggingFace LLM.
 
     Examples:
         `pip install llama-index-llms-huggingface`
@@ -547,7 +548,8 @@ class HuggingFaceInferenceAPI(CustomLLM):
         }
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize.
+        """
+        Initialize.
 
         Args:
             kwargs: See the class-level Fields.

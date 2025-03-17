@@ -22,7 +22,8 @@ class VertexAIConfig(TypedDict):
 
 
 class GoogleGenAIEmbedding(BaseEmbedding):
-    """Google GenAI embeddings.
+    """
+    Google GenAI embeddings.
 
     Args:
         model_name (str): Model for embedding.

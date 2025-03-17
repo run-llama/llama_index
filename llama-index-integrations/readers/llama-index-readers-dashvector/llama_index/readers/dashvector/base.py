@@ -7,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class DashVectorReader(BaseReader):
-    """DashVector reader.
+    """
+    DashVector reader.
 
     Args:
         api_key (str): DashVector API key.
@@ -38,7 +39,8 @@ class DashVectorReader(BaseReader):
         output_fields: Optional[List[str]] = None,
         sparse_vector: Optional[Dict[int, float]] = None,
     ) -> List[Document]:
-        """Load data from DashVector.
+        """
+        Load data from DashVector.
 
         Args:
             collection_name (str): Name of the collection.

@@ -76,7 +76,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     ) -> None:
         """Initialize params."""
         image_embed_model = resolve_embed_model(
-            image_embed_model, callback_manager=kwargs.get("callback_manager", None)
+            image_embed_model, callback_manager=kwargs.get("callback_manager")
         )
         assert isinstance(image_embed_model, MultiModalEmbedding)
         self._image_embed_model = image_embed_model
@@ -177,7 +177,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             image_embed_model=image_embed_model,
             embed_model=(
                 resolve_embed_model(
-                    embed_model, callback_manager=kwargs.get("callback_manager", None)
+                    embed_model, callback_manager=kwargs.get("callback_manager")
                 )
                 if embed_model
                 else Settings.embed_model

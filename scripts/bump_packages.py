@@ -16,9 +16,9 @@ def bump_minor_version(version: str) -> str:
 
 def update_package_versions(pyproject_paths: List[str]) -> None:
     # First pass: read all current versions and calculate new ones
-    package_versions: Dict[
-        str, tuple[str, str]
-    ] = {}  # name -> (old_version, new_version)
+    package_versions: Dict[str, tuple[str, str]] = (
+        {}
+    )  # name -> (old_version, new_version)
 
     for path in pyproject_paths:
         with open(path, "rb") as f:

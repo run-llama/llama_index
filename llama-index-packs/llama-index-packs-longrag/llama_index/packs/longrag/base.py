@@ -37,7 +37,8 @@ DEFAULT_TOP_K = 8
 
 
 def split_doc(chunk_size: int, documents: t.List[BaseNode]) -> t.List[TextNode]:
-    """Splits documents into smaller pieces.
+    """
+    Splits documents into smaller pieces.
 
     Args:
         chunk_size (int): Chunk size
@@ -56,7 +57,8 @@ def group_docs(
     adj: t.Dict[str, t.List[str]],
     max_group_size: t.Optional[int] = DEFAULT_MAX_GROUP_SIZE,
 ) -> t.Set[t.FrozenSet[str]]:
-    """Groups documents.
+    """
+    Groups documents.
 
     Args:
         nodes (List[str]): documents IDs
@@ -88,7 +90,8 @@ def group_docs(
 def get_grouped_docs(
     nodes: t.List[TextNode], max_group_size: t.Optional[int] = DEFAULT_MAX_GROUP_SIZE
 ) -> t.List[TextNode]:
-    """Gets list of documents that are grouped.
+    """
+    Gets list of documents that are grouped.
 
     Args:
         nodes (t.List[TextNode]): Input list
@@ -131,7 +134,8 @@ class LongRAGRetriever(BaseRetriever):
         vector_store: BasePydanticVectorStore,
         similarity_top_k: int = DEFAULT_TOP_K,
     ) -> None:
-        """Constructor.
+        """
+        Constructor.
 
         Args:
             grouped_nodes (t.List[TextNode]): Long retrieval units, nodes with docs grouped together based on relationships
@@ -149,7 +153,8 @@ class LongRAGRetriever(BaseRetriever):
         self._embed_model = Settings.embed_model
 
     def _retrieve(self, query_bundle: QueryBundle) -> t.List[NodeWithScore]:
-        """Retrieves.
+        """
+        Retrieves.
 
         Args:
             query_bundle (QueryBundle): query bundle
@@ -202,7 +207,8 @@ class LongRAGWorkflow(Workflow):
 
     @step()
     async def ingest(self, ev: StartEvent) -> t.Optional[LoadNodeEvent]:
-        """Ingestion step.
+        """
+        Ingestion step.
 
         Args:
             ctx (Context): Context
@@ -254,7 +260,8 @@ class LongRAGWorkflow(Workflow):
 
     @step(pass_context=True)
     async def make_query_engine(self, ctx: Context, ev: LoadNodeEvent) -> StopEvent:
-        """Query engine construction step.
+        """
+        Query engine construction step.
 
         Args:
             ctx (Context): context
@@ -283,7 +290,8 @@ class LongRAGWorkflow(Workflow):
 
     @step(pass_context=True)
     async def query(self, ctx: Context, ev: StartEvent) -> t.Optional[StopEvent]:
-        """Query step.
+        """
+        Query step.
 
         Args:
             ctx (Context): context
@@ -304,7 +312,8 @@ class LongRAGWorkflow(Workflow):
 
 
 class LongRAGPack(BaseLlamaPack):
-    """Implements Long RAG.
+    """
+    Implements Long RAG.
 
     This implementation is based on the following paper: https://arxiv.org/pdf/2406.15319
     """
@@ -320,7 +329,8 @@ class LongRAGPack(BaseLlamaPack):
         index_kwargs: t.Optional[t.Dict[str, t.Any]] = None,
         verbose: bool = False,
     ):
-        """Constructor.
+        """
+        Constructor.
 
         Args:
             data_dir (str): Data directory

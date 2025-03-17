@@ -220,15 +220,19 @@ async def test_workflow_execution(calculator_agent, retriever_agent):
 
     # Verify we got events indicating handoff and calculation
     assert any(
-        ev.current_agent_name == "retriever"
-        if hasattr(ev, "current_agent_name")
-        else False
+        (
+            ev.current_agent_name == "retriever"
+            if hasattr(ev, "current_agent_name")
+            else False
+        )
         for ev in events
     )
     assert any(
-        ev.current_agent_name == "calculator"
-        if hasattr(ev, "current_agent_name")
-        else False
+        (
+            ev.current_agent_name == "calculator"
+            if hasattr(ev, "current_agent_name")
+            else False
+        )
         for ev in events
     )
     assert "8" in str(response.response)

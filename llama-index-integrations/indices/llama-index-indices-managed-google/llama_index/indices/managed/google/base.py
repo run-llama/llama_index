@@ -1,4 +1,5 @@
-"""Google GenerativeAI Semantic Vector Store & Attributed Question and Answering.
+"""
+Google GenerativeAI Semantic Vector Store & Attributed Question and Answering.
 
 Google Generative AI Semantic Retriever API is a managed end to end service that
 allows developers to create a corpus of documents to perform semantic search on
@@ -51,7 +52,8 @@ class GoogleIndex(BaseManagedIndex):
         # deprecated
         **kwargs: Any,
     ) -> None:
-        """Creates an instance of GoogleIndex.
+        """
+        Creates an instance of GoogleIndex.
 
         Prefer to use the factories `from_corpus` or `create_corpus` instead.
         """
@@ -71,7 +73,8 @@ class GoogleIndex(BaseManagedIndex):
     def from_corpus(
         cls: Type[IndexType], *, corpus_id: str, **kwargs: Any
     ) -> IndexType:
-        """Creates a GoogleIndex from an existing corpus.
+        """
+        Creates a GoogleIndex from an existing corpus.
 
         Args:
             corpus_id: ID of an existing corpus on Google's server.
@@ -92,7 +95,8 @@ class GoogleIndex(BaseManagedIndex):
         display_name: Optional[str] = None,
         **kwargs: Any,
     ) -> IndexType:
-        """Creates a GoogleIndex from a new corpus.
+        """
+        Creates a GoogleIndex from a new corpus.
 
         Args:
             corpus_id: ID of the new corpus to be created. If not provided,
@@ -182,7 +186,8 @@ class GoogleIndex(BaseManagedIndex):
         safety_setting: List[Any] = [],
         **kwargs: Any,
     ) -> BaseQueryEngine:
-        """Returns the AQA engine for this index.
+        """
+        Returns the AQA engine for this index.
 
         Example:
           query_engine = index.as_query_engine(

@@ -2,13 +2,13 @@ import pytest
 from llama_index.embeddings.llm_rails import LLMRailsEmbedding
 
 
-@pytest.fixture()
+@pytest.fixture
 def model_id() -> str:
     # Replace with model name
     return "your_model_id"
 
 
-@pytest.fixture()
+@pytest.fixture
 def api_key() -> str:
     # Replace with your api key
     return "your_api_key"

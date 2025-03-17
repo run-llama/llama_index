@@ -6,7 +6,8 @@ from llama_index.storage.kvstore.firestore import FirestoreKVStore
 
 
 class FirestoreDocumentStore(KVDocumentStore):
-    """Firestore Document (Node) store.
+    """
+    Firestore Document (Node) store.
 
     A Firestore store for Document and Node objects.
 

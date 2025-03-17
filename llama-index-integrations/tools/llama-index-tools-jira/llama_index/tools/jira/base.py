@@ -1,4 +1,5 @@
 """Jira tool spec."""
+
 from typing import Optional, Union
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -176,21 +177,25 @@ class JiraToolSpec(BaseToolSpec):
                 "project_name": issue.fields.project.name,
                 "priority": issue.fields.priority.name,
                 "status": issue.fields.status.name,
-                "reporter": issue.fields.reporter.displayName
-                if issue.fields.reporter
-                else None,
-                "reporter_email": issue.fields.reporter.emailAddress
-                if issue.fields.reporter
-                else None,
+                "reporter": (
+                    issue.fields.reporter.displayName if issue.fields.reporter else None
+                ),
+                "reporter_email": (
+                    issue.fields.reporter.emailAddress
+                    if issue.fields.reporter
+                    else None
+                ),
                 "labels": issue.fields.labels,
                 "created_at": issue.fields.created,
                 "updated_at": issue.fields.updated,
-                "assignee": issue.fields.assignee.displayName
-                if issue.fields.assignee
-                else None,
-                "assignee_email": issue.fields.assignee.emailAddress
-                if issue.fields.assignee
-                else None,
+                "assignee": (
+                    issue.fields.assignee.displayName if issue.fields.assignee else None
+                ),
+                "assignee_email": (
+                    issue.fields.assignee.emailAddress
+                    if issue.fields.assignee
+                    else None
+                ),
             }
 
             message = f"Details of the issue: {issue.key}"

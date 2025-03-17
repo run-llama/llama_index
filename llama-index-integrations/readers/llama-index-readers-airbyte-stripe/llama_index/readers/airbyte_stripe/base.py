@@ -4,7 +4,8 @@ from llama_index.readers.airbyte_cdk.base import AirbyteCDKReader, RecordHandler
 
 
 class AirbyteStripeReader(AirbyteCDKReader):
-    """AirbyteStripeReader reader.
+    """
+    AirbyteStripeReader reader.
 
     Retrieve documents from Stripe
 

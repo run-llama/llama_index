@@ -33,7 +33,8 @@ DEFAULT_PERSIST_FILENAME = "retriever.json"
 
 
 class BM25Retriever(BaseRetriever):
-    r"""A BM25 retriever that uses the BM25 algorithm to retrieve nodes.
+    r"""
+    A BM25 retriever that uses the BM25 algorithm to retrieve nodes.
 
     Args:
         nodes (List[BaseNode], optional):

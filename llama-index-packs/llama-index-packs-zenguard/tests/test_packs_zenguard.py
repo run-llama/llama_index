@@ -15,7 +15,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def zenguard_pack():
     api_key = os.environ.get("ZEN_API_KEY")
     config = ZenGuardConfig(credentials=Credentials(api_key=api_key))

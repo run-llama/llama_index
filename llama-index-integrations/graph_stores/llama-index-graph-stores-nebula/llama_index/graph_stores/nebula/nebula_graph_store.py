@@ -121,7 +121,8 @@ class NebulaGraphStore(GraphStore):
         session_pool_kwargs: Optional[Dict[str, Any]] = {},
         **kwargs: Any,
     ) -> None:
-        """Initialize NebulaGraph graph store.
+        """
+        Initialize NebulaGraph graph store.
 
         Args:
             session_pool: NebulaGraph session pool.
@@ -246,7 +247,8 @@ class NebulaGraphStore(GraphStore):
         stop=stop_after_attempt(RETRY_TIMES),
     )
     def execute(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
-        """Execute query.
+        """
+        Execute query.
 
         Args:
             query: Query.
@@ -298,7 +300,8 @@ class NebulaGraphStore(GraphStore):
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "GraphStore":
-        """Initialize graph store from configuration dictionary.
+        """
+        Initialize graph store from configuration dictionary.
 
         Args:
             config_dict: Configuration dictionary.
@@ -325,7 +328,8 @@ class NebulaGraphStore(GraphStore):
         }
 
     def get(self, subj: str) -> List[List[str]]:
-        """Get triplets.
+        """
+        Get triplets.
 
         Args:
             subj: Subject.
@@ -524,7 +528,8 @@ class NebulaGraphStore(GraphStore):
         ), f"Failed to upsert triplet: {subj} {rel} {obj}, query: {dml_query}"
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
-        """Delete triplet.
+        """
+        Delete triplet.
         1. Similar to upsert_triplet(),
            we have to assume rel to be the first edge_type.prop_name.
         2. After edge being deleted, we need to check if the subj or

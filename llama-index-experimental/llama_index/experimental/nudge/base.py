@@ -13,7 +13,8 @@ PYTORCH_IMPORT_ERROR_MSG = "Pytorch is not installed. Please install it with 'pi
 
 
 class Nudge:
-    """The algorithm implemented here and the current state of the art is called [NUDGE](https://www.arxiv.org/abs/2409.02343).
+    """
+    The algorithm implemented here and the current state of the art is called [NUDGE](https://www.arxiv.org/abs/2409.02343).
     If a validation dataset is provided, the best model is evaluated and saved based on the validation loss at the end of every epoch.
 
     Args:

@@ -21,7 +21,7 @@ def test_class():
     assert BasePydanticVectorStore.__name__ in names_of_base_classes
 
 
-@pytest.fixture()
+@pytest.fixture
 def vs_ids():
     vs = DeepLakeVectorStore(dataset_path="mem://test", overwrite=True)
     ids = vs.add(

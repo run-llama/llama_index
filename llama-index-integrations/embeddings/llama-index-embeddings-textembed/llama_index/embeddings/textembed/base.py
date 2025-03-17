@@ -1,4 +1,5 @@
-"""TextEmbed: Embedding Inference Server.
+"""
+TextEmbed: Embedding Inference Server.
 
 TextEmbed offers a high-throughput, low-latency service for generating embeddings using various sentence-transformer models.
 It now also supports image embedding models, providing flexibility and scalability for diverse applications.

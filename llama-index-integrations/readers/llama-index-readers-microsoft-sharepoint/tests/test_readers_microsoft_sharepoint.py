@@ -41,7 +41,7 @@ def test_serialize():
     assert new_reader.tenant_id == reader.tenant_id
 
 
-@pytest.fixture()
+@pytest.fixture
 def sharepoint_reader():
     sharepoint_reader = SharePointReader(
         client_id="dummy_client_id",

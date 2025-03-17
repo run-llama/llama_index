@@ -78,7 +78,8 @@ def default_output_processor(
 
 
 class PandasInstructionParser(ChainableOutputParser):
-    """Pandas instruction parser.
+    """
+    Pandas instruction parser.
 
     This 'output parser' takes in pandas instructions (in Python code) and
     executes them to return an output.

@@ -13,7 +13,8 @@ IMPORT_ERROR_MSG = (
 
 
 class FirestoreReader(BaseReader):
-    """Simple Firestore reader.
+    """
+    Simple Firestore reader.
 
     Args:
         project_id (str): The Google Cloud Project ID.
@@ -47,7 +48,8 @@ class FirestoreReader(BaseReader):
         )
 
     def load_data(self, collection: str) -> List[Document]:
-        """Load data from a Firestore collection, returning a list of Documents.
+        """
+        Load data from a Firestore collection, returning a list of Documents.
 
         Args:
             collection (str): The name of the Firestore collection to read from.
@@ -63,7 +65,8 @@ class FirestoreReader(BaseReader):
         return documents
 
     def load_document(self, document_url: str) -> Document:
-        """Load a single document from Firestore.
+        """
+        Load a single document from Firestore.
 
         Args:
             document_url (str): The absolute path to the Firestore document to read.

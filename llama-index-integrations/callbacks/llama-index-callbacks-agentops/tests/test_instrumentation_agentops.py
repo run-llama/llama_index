@@ -77,13 +77,11 @@ class MockLLM(CustomLLM):
 
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
-        ...
+    ) -> CompletionResponse: ...
 
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> Generator[CompletionResponse, None, None]:
-        ...
+    ) -> Generator[CompletionResponse, None, None]: ...
 
 
 class MockFunctionCallingLLM(FunctionCallingLLM):
@@ -100,48 +98,39 @@ class MockFunctionCallingLLM(FunctionCallingLLM):
 
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
-        ...
+    ) -> CompletionResponse: ...
 
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> Generator[CompletionResponse, None, None]:
-        ...
+    ) -> Generator[CompletionResponse, None, None]: ...
 
     def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> Coroutine[Any, Any, ChatResponse]:
-        ...
+    ) -> Coroutine[Any, Any, ChatResponse]: ...
 
     def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> Coroutine[Any, Any, CompletionResponse]:
-        ...
+    ) -> Coroutine[Any, Any, CompletionResponse]: ...
 
     def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> Coroutine[Any, Any, AsyncGenerator[ChatResponse, None]]:
-        ...
+    ) -> Coroutine[Any, Any, AsyncGenerator[ChatResponse, None]]: ...
 
     def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> Coroutine[Any, Any, AsyncGenerator[CompletionResponse, None]]:
-        ...
+    ) -> Coroutine[Any, Any, AsyncGenerator[CompletionResponse, None]]: ...
 
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
-        ...
+    ) -> CompletionResponse: ...
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
-        ...
+    ) -> ChatResponseGen: ...
 
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> ChatResponseGen:
-        ...
+    ) -> ChatResponseGen: ...
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -210,30 +199,29 @@ class MockAgentWorker(BaseAgentWorker):
     ) -> TaskStepOutput:
         return self.stream_step(step=step, task=task, **kwargs)
 
-    def finalize_task(self, task: Task, **kwargs: Any) -> None:
-        ...
+    def finalize_task(self, task: Task, **kwargs: Any) -> None: ...
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_agent() -> AgentRunner:
     return AgentRunner(agent_worker=MockAgentWorker(llm=MockLLM()))
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_error_throwing_agent() -> AgentRunner:
     llm = MockLLM()
     llm.throw_chat_error = True
     return AgentRunner(agent_worker=MockAgentWorker(llm=llm))
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_basic_function_calling_agent() -> AgentRunner:
     return AgentRunner(
         agent_worker=FunctionCallingAgentWorker.from_tools(llm=MockFunctionCallingLLM())
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_function_calling_agent() -> AgentRunner:
     llm = MockFunctionCallingLLM()
     llm.use_tools = True
@@ -247,7 +235,7 @@ def test_class():
     assert AgentOpsHandler.__name__ in names_of_base_classes
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("method", ["chat", "achat", "stream_chat", "astream_chat"])
 @pytest.mark.parametrize(
     "agent_runner_fixture", ["mock_agent", "mock_basic_function_calling_agent"]
@@ -296,7 +284,7 @@ async def test_agentops_event_handler_emits_llmevents(
     assert agent_end_chat_event.model == MOCK_MODEL_NAME
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("method", ["chat", "achat"])
 @patch("llama_index.callbacks.agentops.base.AOClient")
 async def test_agentops_event_handler_emits_toolevents(
@@ -333,7 +321,7 @@ async def test_agentops_event_handler_emits_toolevents(
     assert agent_tool_event.name == expected_tool_event_name
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("method", ["chat", "achat", "stream_chat", "astream_chat"])
 @patch("llama_index.callbacks.agentops.base.AOClient")
 async def test_agentops_event_handler_emits_errorevents(

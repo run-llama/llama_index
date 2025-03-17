@@ -7,7 +7,7 @@ import os
 from typing import Generator, Any
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_local_models(httpx_mock: HTTPXMock, base_url: str):
     mock_response = {
         "data": [

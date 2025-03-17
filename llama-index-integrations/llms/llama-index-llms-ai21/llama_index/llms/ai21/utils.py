@@ -21,7 +21,8 @@ _SYSTEM_ERR_MESSAGE = "System message must be at beginning of message list."
 
 
 def ai21_model_to_context_size(model: str) -> Union[int, None]:
-    """Calculate the maximum number of tokens possible to generate for a model.
+    """
+    Calculate the maximum number of tokens possible to generate for a model.
 
     Args:
         model: The modelname we want to know the context size for.
@@ -30,7 +31,7 @@ def ai21_model_to_context_size(model: str) -> Union[int, None]:
         The maximum context size
 
     """
-    token_limit = JAMBA_MODELS.get(model, None)
+    token_limit = JAMBA_MODELS.get(model)
 
     if token_limit is None:
         raise ValueError(f"Model name {model} not found in {JAMBA_MODELS.keys()}")
@@ -86,7 +87,9 @@ def from_ai21_message_to_chat_message(ai21_message: AssistantMessage) -> ChatMes
     return ChatMessage(
         role=ai21_message.role,
         content=ai21_message.content,
-        additional_kwargs={}
-        if ai21_message.tool_calls is None
-        else {"tool_calls": ai21_message.tool_calls},
+        additional_kwargs=(
+            {}
+            if ai21_message.tool_calls is None
+            else {"tool_calls": ai21_message.tool_calls}
+        ),
     )

@@ -16,7 +16,7 @@ def test_embedding_class():
 @pytest.mark.skipif(
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_streaming_async():
     response = requests.get(
         "https://storage.googleapis.com/generativeai-downloads/data/scene.jpg",

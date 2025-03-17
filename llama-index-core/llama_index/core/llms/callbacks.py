@@ -38,16 +38,17 @@ dispatcher = get_dispatcher(__name__)
 
 def llm_chat_callback() -> Callable:
     """Decorator for LLM chat methods to handle callbacks and event tracking.
-    
+
     This decorator wraps LLM chat methods to provide:
     - Automatic callback management
     - Event tracking for chat interactions
     - Error handling and reporting
     - Support for both streaming and non-streaming responses
-    
+
     Returns:
         Callable: A decorator function that can be applied to chat methods
     """
+
     def wrap(f: Callable) -> Callable:
         @contextmanager
         def wrapper_logic(_self: Any) -> Generator[CallbackManager, None, None]:
@@ -296,16 +297,17 @@ def llm_chat_callback() -> Callable:
 
 def llm_completion_callback() -> Callable:
     """Decorator for LLM completion methods to handle callbacks and event tracking.
-    
+
     This decorator wraps LLM completion methods to provide:
     - Automatic callback management
     - Event tracking for completion requests
     - Error handling and reporting
     - Support for both streaming and non-streaming responses
-    
+
     Returns:
         Callable: A decorator function that can be applied to completion methods
     """
+
     def wrap(f: Callable) -> Callable:
         @contextmanager
         def wrapper_logic(_self: Any) -> Generator[CallbackManager, None, None]:

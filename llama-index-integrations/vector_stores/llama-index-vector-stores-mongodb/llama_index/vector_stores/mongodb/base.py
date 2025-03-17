@@ -1,9 +1,9 @@
-"""MongoDB Vector store index.
+"""
+MongoDB Vector store index.
 
 An index that is built on top of an existing vector store.
 
 """
-
 
 import logging
 import os
@@ -45,7 +45,8 @@ logger = logging.getLogger(__name__)
 
 
 class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
-    """MongoDB Atlas Vector Store.
+    """
+    MongoDB Atlas Vector Store.
 
     To use, you should have both:
     - the ``pymongo`` python package installed
@@ -136,7 +137,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         oversampling_factor: int = 10,
         **kwargs: Any,
     ) -> None:
-        """Initialize the vector store.
+        """
+        Initialize the vector store.
 
         Args:
             mongodb_client: A MongoDB client.
@@ -199,7 +201,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -390,7 +393,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         return result
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        r"""Query index for top k most similar nodes.
+        r"""
+        Query index for top k most similar nodes.
 
         The type of search to be performed is based on the VectorStoreQuery.mode.
         Choose from DEFAULT (vector), HYBRID (hybrid), or TEXT_SEARCH (full-text).
@@ -431,7 +435,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         wait_until_complete: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
-        """Experimental Utility function to create the vector search index for this store.
+        """
+        Experimental Utility function to create the vector search index for this store.
 
         Args:
             dimensions (int): Number of dimensions in embedding
@@ -458,7 +463,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         *,
         wait_until_complete: Optional[float] = None,
     ) -> None:
-        """Drop the created vector search index for this store.
+        """
+        Drop the created vector search index for this store.
 
         Args:
             wait_until_complete (Optional[float]): If provided, number of seconds to wait
@@ -480,7 +486,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         wait_until_complete: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
-        """Update the vector search index for this store.
+        """
+        Update the vector search index for this store.
 
         Replace the existing index definition with the provided definition.
 
@@ -512,7 +519,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         wait_until_complete: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
-        """Experimental Utility function to create the Atlas Search index for this store.
+        """
+        Experimental Utility function to create the Atlas Search index for this store.
 
         Args:
             field (str): Field to index

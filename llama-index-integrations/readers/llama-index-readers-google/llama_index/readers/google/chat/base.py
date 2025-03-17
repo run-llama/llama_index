@@ -15,7 +15,8 @@ SCOPES = [
 
 
 class GoogleChatReader(BasePydanticReader):
-    """Google Chat Reader.
+    """
+    Google Chat Reader.
 
     Reads messages from Google Chat
     """
@@ -35,7 +36,8 @@ class GoogleChatReader(BasePydanticReader):
         before: datetime = None,
         order_asc: bool = True,
     ) -> List[Document]:
-        """Loads documents from Google Chat.
+        """
+        Loads documents from Google Chat.
 
         Args:
             space_name (List[str]): List of Space ID names found at top of URL (without the "space/").
@@ -69,7 +71,8 @@ class GoogleChatReader(BasePydanticReader):
         return res
 
     def _sort_msgs(self, space_name: str, all_msgs: List[Dict[str, Any]]) -> Document:
-        """Sorts messages from space and puts them into Document.
+        """
+        Sorts messages from space and puts them into Document.
 
         Args:
             space_name (str): Space ID
@@ -126,7 +129,8 @@ class GoogleChatReader(BasePydanticReader):
         return res
 
     def _id_to_text(self, all_msgs: List[Dict[str, Any]]) -> Dict[str, str]:
-        """Maps message ID to text, used for quote replies.
+        """
+        Maps message ID to text, used for quote replies.
 
         Args:
             all_msgs (List[Dict[str, Any]]): All messages
@@ -145,7 +149,8 @@ class GoogleChatReader(BasePydanticReader):
         return res
 
     def _get_thread_msg_cnt(self, all_msgs: List[Dict[str, Any]]) -> Dict[str, int]:
-        """Gets message count for each thread ID.
+        """
+        Gets message count for each thread ID.
 
         Args:
             all_msgs (List[Dict[str, Any]]): All messages
@@ -174,7 +179,8 @@ class GoogleChatReader(BasePydanticReader):
         before: datetime = None,
         order_asc: bool = True,
     ) -> List[Dict[str, Any]]:
-        """Puts raw API output of chat messages from one space into a list.
+        """
+        Puts raw API output of chat messages from one space into a list.
 
         Args:
             service (Any): Google Chat API service object
@@ -236,7 +242,8 @@ class GoogleChatReader(BasePydanticReader):
         return all_msgs
 
     def _get_credentials(self) -> Any:
-        """Get valid user credentials from storage.
+        """
+        Get valid user credentials from storage.
 
         The file token.json stores the user's access and refresh tokens, and is
         created automatically when the authorization flow completes for the first

@@ -1,4 +1,5 @@
-"""LLM Compiler.
+"""
+LLM Compiler.
 
 A lot of this code was adapted from the source code of the LLM Compiler repo:
 https://github.com/SqueezeAILab/LLMCompiler
@@ -125,7 +126,8 @@ def generate_llm_compiler_prompt(
 
 
 class LLMCompilerAgentWorker(BaseAgentWorker):
-    """LLMCompiler Agent Worker.
+    """
+    LLMCompiler Agent Worker.
 
     LLMCompiler is an agent framework that allows async multi-function calling and query planning.
     Here is the implementation.
@@ -196,7 +198,8 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "LLMCompilerAgentWorker":
-        """Convenience constructor method from set of BaseTools (Optional).
+        """
+        Convenience constructor method from set of BaseTools (Optional).
 
         Returns:
             LLMCompilerAgentWorker: the LLMCompilerAgentWorker instance

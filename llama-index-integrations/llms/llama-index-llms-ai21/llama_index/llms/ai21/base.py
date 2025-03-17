@@ -50,7 +50,8 @@ _TOKENIZER_MAP = {
 
 
 class AI21(FunctionCallingLLM):
-    """AI21 Labs LLM.
+    """
+    AI21 Labs LLM.
 
     Examples:
         `pip install llama-index-llms-ai21`

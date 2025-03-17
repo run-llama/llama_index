@@ -5,7 +5,8 @@ from llama_index.storage.kvstore.firestore import FirestoreKVStore
 
 
 class FirestoreIndexStore(KVIndexStore):
-    """Firestore Index store.
+    """
+    Firestore Index store.
 
     Args:
         firestore_kvstore (FirestoreKVStore): Firestore key-value store

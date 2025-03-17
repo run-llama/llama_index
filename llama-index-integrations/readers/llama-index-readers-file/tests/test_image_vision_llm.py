@@ -23,7 +23,7 @@ from llama_index.readers.file.image_vision_llm.base import ImageVisionLLMReader
 
 
 # Fixture to create a temporary 16x16 pixel image file
-@pytest.fixture()
+@pytest.fixture
 def test_16x16_png_image_file(tmp_path) -> str:
     # Create a checkerboard pattern (alternating 0 and 255)
     img_array = np.zeros((16, 16), dtype=np.uint8)
@@ -46,7 +46,8 @@ class TokenizerFake:
     """
 
     def __call__(self, img, prompt, return_tensors) -> TokenizerFake:
-        """This is just a stub for the purposes of the test,
+        """
+        This is just a stub for the purposes of the test,
         so we just return the instance itself.
         """
         return self
@@ -122,7 +123,8 @@ class ModelFake:
         ]
 
     def to(self, device) -> None:
-        """This is just a dummy method for the purposes of the test (it
+        """
+        This is just a dummy method for the purposes of the test (it
         needs to be defined, but is not used). Hence, we return nothing.
         """
 

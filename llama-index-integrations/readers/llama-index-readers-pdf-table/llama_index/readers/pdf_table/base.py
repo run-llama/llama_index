@@ -9,7 +9,8 @@ from llama_index.core.schema import Document
 
 
 class PDFTableReader(BaseReader):
-    """PDF Table Reader. Reads table from PDF.
+    """
+    PDF Table Reader. Reads table from PDF.
 
     Args:
         row_separator (str): Row separator used to join rows of a DataFrame.
@@ -30,7 +31,8 @@ class PDFTableReader(BaseReader):
     def load_data(
         self, file: Path, pages: str = "1", extra_info: Optional[Dict] = None
     ) -> List[Document]:
-        """Load data and extract table from PDF file.
+        """
+        Load data and extract table from PDF file.
 
         Args:
             file (Path): Path for the PDF file.

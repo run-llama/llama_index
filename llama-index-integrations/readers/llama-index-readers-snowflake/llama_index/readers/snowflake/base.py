@@ -105,7 +105,8 @@ class SnowflakeReader(BaseReader):
             session.close()
 
     def load_data(self, query: str) -> List[Document]:
-        """Query and load data from the Database, returning a list of Documents.
+        """
+        Query and load data from the Database, returning a list of Documents.
 
         Args:
             query (str): Query parameter to filter tables and rows.

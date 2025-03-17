@@ -17,11 +17,11 @@ dispatcher = get_dispatcher(__name__)
 # pinecone itself supports 3 rerank models out of its sdk
 # https://app.pinecone.io/organizations/-Nn577_974iRsvC6nVxg/projects/a4fe57a4-b1cc-4a99-bf1d-c35a595cae4a/models
 class PineconeNativeRerank(BaseNodePostprocessor):
-    model: Literal[
-        "bge-reranker-v2-m3", "cohere-rerank-3.5", "pinecone-rerank-v0"
-    ] = Field(
-        description="supported Pinecone inference rerank model name",
-        default="bge-reranker-v2-m3",
+    model: Literal["bge-reranker-v2-m3", "cohere-rerank-3.5", "pinecone-rerank-v0"] = (
+        Field(
+            description="supported Pinecone inference rerank model name",
+            default="bge-reranker-v2-m3",
+        )
     )
     top_n: int = Field(description="Top N nodes to return")
 

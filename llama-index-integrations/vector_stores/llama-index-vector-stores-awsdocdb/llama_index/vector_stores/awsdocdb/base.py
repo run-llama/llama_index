@@ -1,4 +1,5 @@
-"""AWS Document DB Vector store index.
+"""
+AWS Document DB Vector store index.
 
 An index that that is built on top of an existing vector store.
 
@@ -110,7 +111,8 @@ class DocDbIndex:
 
 
 class AWSDocDbVectorStore(BasePydanticVectorStore):
-    """AWS DocumentDB Vector Store.
+    """
+    AWS DocumentDB Vector Store.
 
     To use, you should have both:
     - the ``pymongo`` python package installed
@@ -148,7 +150,8 @@ class AWSDocDbVectorStore(BasePydanticVectorStore):
         similarity_score="cosine",
         **kwargs: Any,
     ) -> None:
-        """Initialize the vector store.
+        """
+        Initialize the vector store.
 
         Args:
             docdb_client: A DocumentDB client.
@@ -186,7 +189,8 @@ class AWSDocDbVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -295,7 +299,8 @@ class AWSDocDbVectorStore(BasePydanticVectorStore):
         projection: Optional[Dict[str, int]] = None,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query: a VectorStoreQuery object.

@@ -1,4 +1,5 @@
 """Rayyan review reader."""
+
 import logging
 from typing import List
 
@@ -7,7 +8,8 @@ from llama_index.core.schema import Document
 
 
 class RayyanReader(BaseReader):
-    """Rayyan reader. Reads articles from a Rayyan review.
+    """
+    Rayyan reader. Reads articles from a Rayyan review.
 
     Args:
         credentials_path (str): Rayyan credentials path.
@@ -28,7 +30,8 @@ class RayyanReader(BaseReader):
         logging.info(f"Signed in successfully to Rayyan as: {user['displayName']}!")
 
     def load_data(self, review_id: str, filters: dict = {}) -> List[Document]:
-        """Load articles from a review.
+        """
+        Load articles from a review.
 
         Args:
             review_id (int): Rayyan review ID.

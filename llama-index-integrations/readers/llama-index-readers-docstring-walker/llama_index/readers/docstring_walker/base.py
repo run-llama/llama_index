@@ -14,7 +14,8 @@ log = logging.getLogger(__name__)
 
 
 class DocstringWalker(BaseReader):
-    """A loader for docstring extraction and building structured documents from them.
+    """
+    A loader for docstring extraction and building structured documents from them.
     Recursively walks a directory and extracts docstrings from each Python
     module - starting from the module itself, then classes, then functions.
     Builds a graph of dependencies between the extracted docstrings.
@@ -95,7 +96,8 @@ class DocstringWalker(BaseReader):
         return llama_docs
 
     def read_module_text(self, path: str) -> str:
-        """Read the text of a Python module. For tests this function can be mocked.
+        """
+        Read the text of a Python module. For tests this function can be mocked.
 
         Parameters
         ----------
@@ -111,7 +113,8 @@ class DocstringWalker(BaseReader):
             return f.read()
 
     def parse_module(self, module_name: str, path: str) -> Document:
-        """Function for parsing a single Python module.
+        """
+        Function for parsing a single Python module.
 
         Parameters
         ----------

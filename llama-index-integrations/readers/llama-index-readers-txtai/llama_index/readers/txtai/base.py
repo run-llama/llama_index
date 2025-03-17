@@ -8,7 +8,8 @@ from llama_index.core.schema import Document
 
 
 class TxtaiReader(BaseReader):
-    """txtai reader.
+    """
+    txtai reader.
 
     Retrieves documents through an existing in-memory txtai index.
     These documents can then be used in a downstream LlamaIndex data structure.
@@ -42,7 +43,8 @@ class TxtaiReader(BaseReader):
         k: int = 4,
         separate_documents: bool = True,
     ) -> List[Document]:
-        """Load data from txtai index.
+        """
+        Load data from txtai index.
 
         Args:
             query (np.ndarray): A 2D numpy array of query vectors.

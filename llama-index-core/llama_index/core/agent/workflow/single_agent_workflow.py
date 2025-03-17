@@ -18,7 +18,7 @@ class SingleAgentRunnerMixin(ABC):
     """
 
     def run(
-        self: T,
+        self,
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,

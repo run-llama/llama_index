@@ -157,7 +157,7 @@ async def mock_achat_stream(
     return _mock_achat_stream(*args, **kwargs)
 
 
-@pytest.fixture()
+@pytest.fixture
 def add_tool() -> FunctionTool:
     def add(a: int, b: int) -> int:
         """Add two integers and returns the result integer."""
@@ -166,7 +166,7 @@ def add_tool() -> FunctionTool:
     return FunctionTool.from_defaults(fn=add)
 
 
-@pytest.fixture()
+@pytest.fixture
 def echo_tool() -> FunctionTool:
     def echo(query: str) -> str:
         """Echos input."""
@@ -175,13 +175,13 @@ def echo_tool() -> FunctionTool:
     return FunctionTool.from_defaults(fn=echo)
 
 
-@pytest.fixture()
+@pytest.fixture
 def malformed_echo_function() -> Function:
     test_result: str = "This is a test"
     return Function(name="echo", arguments=f'query = "{test_result}"')
 
 
-@pytest.fixture()
+@pytest.fixture
 def echo_function() -> Function:
     test_result: str = "This is a test"
     return Function(name="echo", arguments=json.dumps({"query": test_result}))
@@ -233,7 +233,7 @@ def test_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
 
 
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_basic(MockAsyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
     mock_instance = MockAsyncOpenAI.return_value
     mock_instance.chat.completions.create.return_value = mock_achat_completion()
@@ -274,7 +274,7 @@ def test_stream_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) ->
 
 
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skip(reason="currently failing when working on an independent project.")
 async def test_astream_chat_basic(
     MockAsyncOpenAI: MagicMock, add_tool: FunctionTool
@@ -435,7 +435,7 @@ def test_add_step(
 
 
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_add_step(
     MockAsyncOpenAI: MagicMock,
     add_tool: FunctionTool,
@@ -508,7 +508,7 @@ def test_run_step_returns_message_if_tool_not_found(
 
 
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_arun_step_returns_message_if_tool_not_found(
     MockAsyncOpenAI: MagicMock,
     echo_function: Function,
@@ -535,7 +535,7 @@ async def test_arun_step_returns_message_if_tool_not_found(
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("method", ["run_step", "arun_step"])
 @patch("llama_index.llms.openai.base.SyncOpenAI")
 @patch("llama_index.llms.openai.base.AsyncOpenAI")

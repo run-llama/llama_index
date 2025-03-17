@@ -377,7 +377,8 @@ def drop_index_if_exists(connection: Connection, index_name: str):
 
 
 class OraLlamaVS(BasePydanticVectorStore):
-    """`OraLlamaVS` vector store.
+    """
+    `OraLlamaVS` vector store.
 
     To use, you should have both:
     - the ``oracledb`` python package installed

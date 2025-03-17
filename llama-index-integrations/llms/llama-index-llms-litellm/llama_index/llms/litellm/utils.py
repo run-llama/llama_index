@@ -161,7 +161,7 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = message_dict["role"]
     # NOTE: Azure OpenAI returns function calling messages without a content key
-    content = message_dict.get("content", None)
+    content = message_dict.get("content")
 
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")

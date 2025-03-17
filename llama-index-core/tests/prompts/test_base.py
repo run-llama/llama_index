@@ -1,6 +1,5 @@
 """Test prompts."""
 
-
 from typing import Any
 
 import pytest

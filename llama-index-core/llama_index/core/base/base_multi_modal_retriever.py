@@ -1,4 +1,5 @@
 """base multi modal retriever."""
+
 from abc import abstractmethod
 from typing import List
 

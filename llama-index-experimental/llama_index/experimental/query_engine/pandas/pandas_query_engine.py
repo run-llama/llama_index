@@ -1,4 +1,5 @@
-"""Default query for PandasIndex.
+"""
+Default query for PandasIndex.
 
 WARNING: This tool provides the LLM with access to the `eval` function.
 Arbitrary code execution is possible on the machine running this tool.
@@ -51,7 +52,8 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
 
 
 class PandasQueryEngine(BaseQueryEngine):
-    """Pandas query engine.
+    """
+    Pandas query engine.
 
     Convert natural language to Pandas python code.
 

@@ -15,7 +15,7 @@ except ImportError:
     no_packages = True
 
 
-@pytest.fixture()
+@pytest.fixture
 def postgres_indexstore(postgres_kvstore: PostgresKVStore) -> PostgresIndexStore:
     return PostgresIndexStore(postgres_kvstore=postgres_kvstore)
 

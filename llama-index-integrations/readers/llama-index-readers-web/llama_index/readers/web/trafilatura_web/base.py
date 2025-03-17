@@ -5,7 +5,8 @@ from llama_index.core.schema import Document
 
 
 class TrafilaturaWebReader(BasePydanticReader):
-    """Trafilatura web page reader.
+    """
+    Trafilatura web page reader.
 
     Reads pages from the web.
     Requires the `trafilatura` package.
@@ -32,7 +33,8 @@ class TrafilaturaWebReader(BasePydanticReader):
         no_ssl=False,
         **kwargs,
     ) -> List[Document]:
-        """Load data from the urls.
+        """
+        Load data from the urls.
 
         Args:
             urls (List[str]): List of URLs to scrape.

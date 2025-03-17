@@ -1,4 +1,5 @@
 """Tools for interacting with an Apache Cassandra database."""
+
 from typing import List
 
 from llama_index.core.bridge.pydantic import Field
@@ -26,7 +27,8 @@ class CassandraDatabaseToolSpec(BaseToolSpec):
         self.db = db
 
     def cassandra_db_query(self, query: str) -> List[Document]:
-        """Execute a CQL query and return the results as a list of Documents.
+        """
+        Execute a CQL query and return the results as a list of Documents.
 
         Args:
             query (str): A CQL query to execute.
@@ -42,7 +44,8 @@ class CassandraDatabaseToolSpec(BaseToolSpec):
         return documents
 
     def cassandra_db_schema(self, keyspace: str) -> List[Document]:
-        """Input to this tool is a keyspace name, output is a table description
+        """
+        Input to this tool is a keyspace name, output is a table description
             of Apache Cassandra tables.
             If the query is not correct, an error message will be returned.
             If an error is returned, report back to the user that the keyspace
@@ -59,7 +62,8 @@ class CassandraDatabaseToolSpec(BaseToolSpec):
     def cassandra_db_select_table_data(
         self, keyspace: str, table: str, predicate: str, limit: int
     ) -> List[Document]:
-        """Tool for getting data from a table in an Apache Cassandra database.
+        """
+        Tool for getting data from a table in an Apache Cassandra database.
             Use the WHERE clause to specify the predicate for the query that uses the
             primary key. A blank predicate will return all rows. Avoid this if possible.
             Use the limit to specify the number of rows to return. A blank limit will

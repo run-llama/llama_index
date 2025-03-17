@@ -28,7 +28,8 @@ class VectorDBToolSpec(BaseToolSpec):
         filter_key_list: List[str],
         filter_value_list: List[str],
     ) -> str:
-        """Auto retrieval function.
+        """
+        Auto retrieval function.
 
         Performs auto-retrieval from a vector database, and then applies a set of filters.
 

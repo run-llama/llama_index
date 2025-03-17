@@ -149,7 +149,7 @@ def test_delete_node(vespa_app, added_node_ids):
 
 
 @pytest.mark.skipif(not docker_available, reason="Docker not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_add_and_query(vespa_app, nodes):
     # Testing async add and query
     await asyncio.gather(*[vespa_app.async_add(nodes)])

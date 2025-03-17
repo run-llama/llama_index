@@ -12,7 +12,8 @@ warnings.filterwarnings("ignore")
 
 
 class OpenMap(BaseReader):
-    """OpenMap Reader.
+    """
+    OpenMap Reader.
 
     Get the map Features from the overpass api(osm) for the given location/area
 

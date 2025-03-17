@@ -1,4 +1,4 @@
-""" GitLab issues reader. """
+"""GitLab issues reader."""
 
 from datetime import datetime
 import enum

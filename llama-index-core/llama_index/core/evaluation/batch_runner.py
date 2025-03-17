@@ -16,13 +16,13 @@ def create_retry_decorator(
 ) -> Callable:
     """
     Create a retry decorator with configurable settings.
-    
+
     Args:
         func_name (str): Name of the function for logging
         attempts (int): Maximum number of retry attempts
         min_wait (int): Minimum wait time between retries in seconds
         max_wait (int): Maximum wait time between retries in seconds
-        
+
     Returns:
         Callable: Configured retry decorator
     """
@@ -31,6 +31,7 @@ def create_retry_decorator(
         stop=stop_after_attempt(attempts),
         wait=wait_exponential(multiplier=1, min=min_wait, max=max_wait),
     )
+
 
 # Apply the decorator to workers
 @create_retry_decorator("eval_response")
@@ -96,7 +97,7 @@ async def response_worker(
 class BatchEvalRunner:
     """
     Batch evaluation runner for parallel processing of evaluation tasks.
-    
+
     This class manages concurrent evaluation of multiple queries and responses
     using a configurable number of worker threads.
 
@@ -104,39 +105,39 @@ class BatchEvalRunner:
         evaluators (Dict[str, BaseEvaluator]): Mapping of evaluator names to instances
         workers (int): Number of concurrent workers (default: 2)
         show_progress (bool): Whether to display progress bars (default: False)
-        
+
     Attributes:
         evaluators: Dictionary of registered evaluators
         semaphore: Asyncio semaphore for controlling concurrency
         asyncio_mod: Module for async operations with optional progress tracking
     """
-    
+
     def _validate_eval_kwargs(
-        self, 
-        eval_kwargs_lists: Dict[str, Any],
-        evaluator_name: Optional[str] = None
+        self, eval_kwargs_lists: Dict[str, Any], evaluator_name: Optional[str] = None
     ) -> Dict[str, List[Any]]:
         """
         Validate and normalize evaluation kwargs.
-        
+
         Args:
             eval_kwargs_lists: Raw kwargs dictionary
             evaluator_name: Optional specific evaluator to validate for
-            
+
         Returns:
             Dict[str, List[Any]]: Normalized kwargs with list values
-            
+
         Raises:
             ValueError: If kwargs format is invalid
         """
         if not isinstance(eval_kwargs_lists, dict):
-            raise ValueError(f"eval_kwargs_lists must be a dict, got {type(eval_kwargs_lists)}")
-            
+            raise ValueError(
+                f"eval_kwargs_lists must be a dict, got {type(eval_kwargs_lists)}"
+            )
+
         normalized = {}
         for name, kwargs in eval_kwargs_lists.items():
             if evaluator_name and name != evaluator_name:
                 continue
-                
+
             if isinstance(kwargs, list):
                 normalized[name] = kwargs
             elif isinstance(kwargs, dict):
@@ -146,7 +147,7 @@ class BatchEvalRunner:
                 }
             else:
                 raise ValueError(f"Invalid kwargs format for {name}: {kwargs}")
-                
+
         return normalized
 
     def __init__(

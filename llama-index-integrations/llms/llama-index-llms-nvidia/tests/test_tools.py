@@ -108,19 +108,19 @@ def mock_chat_stream(
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def mock_achat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
     return mock_chat_completion(*args, **kwargs)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def mock_achat_completion_tool_call(
     function: Function, *args: Any, **kwargs: Any
 ) -> ChatCompletion:
     return mock_chat_completion_tool_call(function, *args, **kwargs)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def mock_achat_stream(
     *args: Any, **kwargs: Any
 ) -> AsyncGenerator[ChatCompletionChunk, None]:
@@ -149,7 +149,7 @@ async def mock_achat_stream(
     return _mock_achat_stream(*args, **kwargs)
 
 
-@pytest.fixture()
+@pytest.fixture
 def add_tool() -> FunctionTool:
     def add(a: int, b: int) -> int:
         """Add two integers and returns the result integer."""
@@ -158,7 +158,7 @@ def add_tool() -> FunctionTool:
     return FunctionTool.from_defaults(fn=add)
 
 
-@pytest.fixture()
+@pytest.fixture
 def echo_tool() -> FunctionTool:
     def echo(query: str) -> str:
         """Echos input."""
@@ -167,13 +167,13 @@ def echo_tool() -> FunctionTool:
     return FunctionTool.from_defaults(fn=echo)
 
 
-@pytest.fixture()
+@pytest.fixture
 def malformed_echo_function() -> Function:
     test_result: str = "This is a test"
     return Function(name="echo", arguments=f'query = "{test_result}"')
 
 
-@pytest.fixture()
+@pytest.fixture
 def echo_function() -> Function:
     test_result: str = "This is a test"
     return Function(name="echo", arguments=json.dumps({"query": test_result}))
@@ -212,7 +212,7 @@ def test_chat_basic(
     assert agent.chat_history[1].content == "\n\nThis is a test!"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_achat_basic(
     MockAsyncOpenAI: MagicMock, add_tool: FunctionTool, masked_env_var
@@ -237,7 +237,7 @@ async def test_achat_basic(
 @pytest.mark.xfail(
     reason="streaming not yet implemented, see https://github.com/run-llama/llama_index/discussions/14653 and https://github.com/run-llama/llama_index/issues/15079"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_astream_chat_basic(
     MockAsyncOpenAI: MagicMock, add_tool: FunctionTool, masked_env_var
@@ -320,7 +320,7 @@ def test_add_step(
 @pytest.mark.xfail(
     reason="streaming not yet implemented, see https://github.com/run-llama/llama_index/discussions/14653 and https://github.com/run-llama/llama_index/issues/15079"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_async_add_step(
     MockAsyncOpenAI: MagicMock, add_tool: FunctionTool, masked_env_var
@@ -366,7 +366,7 @@ async def test_async_add_step(
     assert "tmp" in [m.content for m in chat_history]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("method", ["run_step", "arun_step"])
 @patch("llama_index.llms.openai.base.SyncOpenAI")
 @patch("llama_index.llms.openai.base.AsyncOpenAI")

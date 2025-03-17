@@ -33,7 +33,8 @@ def safe_get(obj, *attrs):
 
 
 class JiraReader(BaseReader):
-    """Jira reader. Reads data from Jira issues from passed query.
+    """
+    Jira reader. Reads data from Jira issues from passed query.
 
     Args:
         Optional basic_auth:{

@@ -1,4 +1,5 @@
 """Program utils."""
+
 import logging
 from typing import Any, List, Type, Sequence, Union, Optional, Dict
 
@@ -28,7 +29,7 @@ def create_flexible_model(model: Type[BaseModel]) -> Type[FlexibleModel]:
     return create_model(
         f"Flexible{model.__name__}",
         __base__=FlexibleModel,
-        **{field: (Optional[Any], None) for field in model.model_fields},
+        **dict.fromkeys(model.model_fields, (Optional[Any], None)),
     )  # type: ignore
 
 
@@ -258,7 +259,7 @@ def process_streaming_objects(
 
 
 def num_valid_fields(
-    obj: Union[BaseModel, Sequence[BaseModel], Dict[str, BaseModel]]
+    obj: Union[BaseModel, Sequence[BaseModel], Dict[str, BaseModel]],
 ) -> int:
     """
     Recursively count the number of fields in a Pydantic object (including nested objects) that aren't None.

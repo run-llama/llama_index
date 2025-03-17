@@ -88,7 +88,8 @@ class WholeSiteReader(BaseReader):
         return self.driver.execute_script(js_script)
 
     def load_data(self, base_url: str) -> List[Document]:
-        """Load data from the base URL using BFS algorithm.
+        """
+        Load data from the base URL using BFS algorithm.
 
         Args:
             base_url (str): Base URL to start scraping.

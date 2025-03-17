@@ -112,7 +112,8 @@ class _VectorStoreClient:
 
 
 class PathwayRetriever(BaseRetriever):
-    """Pathway retriever.
+    """
+    Pathway retriever.
 
     Pathway is an open data processing framework.
     It allows you to easily develop data transformation pipelines

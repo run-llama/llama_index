@@ -16,7 +16,7 @@ def mock_local_models(respx_mock: respx.MockRouter) -> None:
     )
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_available_models(mode: dict) -> None:
     models = NVIDIARerank(**mode).available_models
     assert models

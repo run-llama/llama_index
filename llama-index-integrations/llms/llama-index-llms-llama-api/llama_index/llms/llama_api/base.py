@@ -23,7 +23,8 @@ from llamaapi import LlamaAPI as Client
 
 
 class LlamaAPI(CustomLLM):
-    """LlamaAPI LLM.
+    """
+    LlamaAPI LLM.
 
     Examples:
         `pip install llama-index-llms-llama-api`

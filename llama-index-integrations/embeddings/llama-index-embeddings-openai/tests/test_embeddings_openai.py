@@ -10,7 +10,7 @@ def test_openai_embedding_class():
     assert BaseEmbedding.__name__ in names_of_base_classes
 
 
-@pytest.fixture()
+@pytest.fixture
 def embedding_instance():
     """Fixture for creating an OpenAIEmbedding instance."""
     return OpenAIEmbedding(

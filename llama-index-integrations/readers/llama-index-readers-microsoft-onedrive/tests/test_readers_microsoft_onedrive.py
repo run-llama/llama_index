@@ -33,7 +33,7 @@ def test_serialize():
     assert new_reader.required_exts == reader.required_exts
 
 
-@pytest.fixture()
+@pytest.fixture
 def real_onedrive_reader():
     raise pytest.skip("Fill in redacted values to run this test")
     return OneDriveReader(

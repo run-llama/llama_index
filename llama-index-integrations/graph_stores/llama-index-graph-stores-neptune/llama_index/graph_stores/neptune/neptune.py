@@ -48,7 +48,8 @@ def create_neptune_database_client(
     sign: bool,
     use_https: bool,
 ):
-    """Create a Neptune Database Client.
+    """
+    Create a Neptune Database Client.
 
     Args:
             host (str): The host endpoint
@@ -115,7 +116,8 @@ def create_neptune_analytics_client(
     credentials_profile_name: str,
     region_name: str,
 ):
-    """Creates a Neptune Analytics Client.
+    """
+    Creates a Neptune Analytics Client.
 
     Args:
         graph_identifier (str): The geaph identifier

@@ -1,4 +1,5 @@
-"""Chain of Abstraction Agent Worker.
+"""
+Chain of Abstraction Agent Worker.
 
 A lot of this code was adapted from the source code of the LLM Compiler repo:
 https://github.com/SqueezeAILab/LLMCompiler
@@ -84,7 +85,8 @@ class CoAAgentWorker(BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "CoAAgentWorker":
-        """Convenience constructor method from set of BaseTools (Optional).
+        """
+        Convenience constructor method from set of BaseTools (Optional).
 
         Returns:
             LLMCompilerAgentWorker: the LLMCompilerAgentWorker instance

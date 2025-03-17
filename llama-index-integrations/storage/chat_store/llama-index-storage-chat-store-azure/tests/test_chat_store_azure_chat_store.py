@@ -12,7 +12,7 @@ def test_class():
     assert BaseChatStore.__name__ in names_of_base_classes
 
 
-@pytest.fixture()
+@pytest.fixture
 def azure_chat_store():
     mock_table_service_client = MagicMock(spec=TableServiceClient)
     mock_atable_service_client = AsyncMock(spec=AsyncTableServiceClient)

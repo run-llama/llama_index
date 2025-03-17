@@ -57,7 +57,7 @@ def conn() -> Any:
     return psycopg2.connect(**PARAMS)  # type: ignore
 
 
-@pytest.fixture()
+@pytest.fixture
 def db(conn: Any) -> Generator:
     conn.autocommit = True
 
@@ -71,7 +71,7 @@ def db(conn: Any) -> Generator:
         conn.commit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def lantern(db: None) -> Any:
     lantern_db = LanternVectorStore.from_params(
         **PARAMS,  # type: ignore
@@ -87,7 +87,7 @@ def lantern(db: None) -> Any:
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_instance_creation(db: None) -> None:
     lantern_db = LanternVectorStore.from_params(
         **PARAMS,  # type: ignore
@@ -102,7 +102,7 @@ async def test_instance_creation(db: None) -> None:
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query(
     lantern_db: LanternVectorStore, node_embeddings: List[TextNode], use_async: bool
@@ -124,7 +124,7 @@ async def test_add_to_db_and_query(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_index_nodes(
     lantern_db: LanternVectorStore,

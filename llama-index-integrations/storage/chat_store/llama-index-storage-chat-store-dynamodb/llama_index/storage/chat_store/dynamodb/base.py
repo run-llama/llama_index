@@ -26,7 +26,8 @@ def _dict_to_message(d: dict) -> ChatMessage:
 
 
 class DynamoDBChatStore(BaseChatStore):
-    """DynamoDB Chat Store.
+    """
+    DynamoDB Chat Store.
 
     Args:
         table_name (str): The name of the preexisting DynamoDB table.
@@ -187,7 +188,8 @@ class DynamoDBChatStore(BaseChatStore):
         return "DynamoDBChatStore"
 
     def set_messages(self, key: str, messages: List[ChatMessage]) -> None:
-        """Assign all provided messages to the row with the given key.
+        """
+        Assign all provided messages to the row with the given key.
         Any pre-existing messages for that key will be overwritten.
 
         Args:
@@ -208,7 +210,8 @@ class DynamoDBChatStore(BaseChatStore):
         )
 
     def get_messages(self, key: str) -> List[ChatMessage]:
-        """Retrieve all messages for the given key.
+        """
+        Retrieve all messages for the given key.
 
         Args:
             key (str): The key specifying a row.
@@ -237,7 +240,8 @@ class DynamoDBChatStore(BaseChatStore):
         return [_dict_to_message(message) for message in message_history]
 
     def add_message(self, key: str, message: ChatMessage) -> None:
-        """Add a message to the end of the chat history for the given key.
+        """
+        Add a message to the end of the chat history for the given key.
         Creates a new row if the key does not exist.
 
         Args:
@@ -262,7 +266,8 @@ class DynamoDBChatStore(BaseChatStore):
         )
 
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
-        """Deletes the entire chat history for the given key (i.e. the row).
+        """
+        Deletes the entire chat history for the given key (i.e. the row).
 
         Args:
             key (str): The key specifying a row.
@@ -282,7 +287,8 @@ class DynamoDBChatStore(BaseChatStore):
         return messages_to_delete
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
-        """Deletes the message at the given index for the given key.
+        """
+        Deletes the message at the given index for the given key.
 
         Args:
             key (str): The key specifying a row.
@@ -319,7 +325,8 @@ class DynamoDBChatStore(BaseChatStore):
             return None
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
-        """Deletes the last message in the chat history for the given key.
+        """
+        Deletes the last message in the chat history for the given key.
 
         Args:
             key (str): The key specifying a row.
@@ -334,7 +341,8 @@ class DynamoDBChatStore(BaseChatStore):
         return self.adelete_message(key, -1)
 
     def get_keys(self) -> List[str]:
-        """Retrieve all keys in the table.
+        """
+        Retrieve all keys in the table.
 
         Returns:
             List[str]: The keys in the table.

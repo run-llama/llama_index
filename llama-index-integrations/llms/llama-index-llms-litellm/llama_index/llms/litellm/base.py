@@ -41,7 +41,8 @@ DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
 
 class LiteLLM(LLM):
-    """LiteLLM.
+    """
+    LiteLLM.
 
     Examples:
         `pip install llama-index-llms-litellm`

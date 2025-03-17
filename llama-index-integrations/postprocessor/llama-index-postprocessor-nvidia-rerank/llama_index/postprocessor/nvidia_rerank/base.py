@@ -149,7 +149,8 @@ class NVIDIARerank(BaseNodePostprocessor):
         return self.base_url.rstrip("/")
 
     def _get_headers(self, auth_required: bool = False) -> dict:
-        """Return default headers for HTTP requests.
+        """
+        Return default headers for HTTP requests.
 
         If auth_required is True or the client is hosted, includes an Authorization header.
         """

@@ -8,7 +8,8 @@ from llama_index.core.schema import Document
 
 
 class GraphQLReader(BaseReader):
-    """GraphQL reader.
+    """
+    GraphQL reader.
 
     Combines all GraphQL results into the Document used by LlamaIndex.
 
@@ -39,7 +40,8 @@ class GraphQLReader(BaseReader):
             self.client = Client(transport=transport, fetch_schema_from_transport=True)
 
     def load_data(self, query: str, variables: Optional[Dict] = None) -> List[Document]:
-        """Run query with optional variables and turn results into documents.
+        """
+        Run query with optional variables and turn results into documents.
 
         Args:
             query (str): GraphQL query string.

@@ -22,7 +22,7 @@ class MockResponse:
         return self.json_data
 
 
-@pytest.fixture()
+@pytest.fixture
 def create_empty_file():
     with open(csv_empty_file_name, "w"):
         pass
@@ -32,7 +32,7 @@ def create_empty_file():
         os.remove(csv_empty_file_name)
 
 
-@pytest.fixture()
+@pytest.fixture
 def create_csv_file():
     data = "column1,column2,column3\nvalue1,value2,value3\nvalue4,value5,value6\n"
     with open(csv_file_name, "w") as csv_file:

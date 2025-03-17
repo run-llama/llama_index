@@ -530,9 +530,9 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         if not allow_parallel_tool_calls and response.message.additional_kwargs.get(
             "tool_calls", []
         ):
-            response.additional_kwargs[
-                "tool_calls"
-            ] = response.message.additional_kwargs["tool_calls"][0]
+            response.additional_kwargs["tool_calls"] = (
+                response.message.additional_kwargs["tool_calls"][0]
+            )
 
         return response
 
@@ -542,9 +542,9 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         error_on_no_tool_call: bool = True,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls: List[
-            ChatCompletionOutputToolCall
-        ] = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls: List[ChatCompletionOutputToolCall] = (
+            response.message.additional_kwargs.get("tool_calls", [])
+        )
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
                 raise ValueError(

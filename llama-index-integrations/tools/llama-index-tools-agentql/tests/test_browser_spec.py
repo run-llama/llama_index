@@ -31,7 +31,7 @@ class TestExtractDataBrowserTool:
         yield agentql_browser_tool
         await async_browser.close()
 
-    @pytest.fixture()
+    @pytest.fixture
     def agent(self, agentql_browser_tool):
         return FunctionCallingAgent.from_tools(
             agentql_browser_tool.to_tool_list(),

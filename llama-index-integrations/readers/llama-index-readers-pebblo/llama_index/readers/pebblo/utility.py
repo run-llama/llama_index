@@ -28,7 +28,8 @@ logger = logging.getLogger(__name__)
 
 
 class Runtime(BaseModel):
-    """This class represents a Runtime.
+    """
+    This class represents a Runtime.
 
     Args:
         type (Optional[str]): Runtime type. Defaults to ""
@@ -56,7 +57,8 @@ class Runtime(BaseModel):
 
 
 class Framework(BaseModel):
-    """This class represents a Framework instance.
+    """
+    This class represents a Framework instance.
 
     Args:
         name (str): Name of the Framework.
@@ -68,7 +70,8 @@ class Framework(BaseModel):
 
 
 class App(BaseModel):
-    """This class represents an AI application.
+    """
+    This class represents an AI application.
 
     Args:
         name (str): Name of the app.
@@ -90,7 +93,8 @@ class App(BaseModel):
 
 
 class Doc(BaseModel):
-    """This class represents a pebblo document.
+    """
+    This class represents a pebblo document.
 
     Args:
         name (str): Name of app originating this document.
@@ -114,7 +118,8 @@ class Doc(BaseModel):
 
 
 def get_full_path(path: str) -> str:
-    """Return absolute local path for a local file/directory,
+    """
+    Return absolute local path for a local file/directory,
     for network related path, return as is.
 
     Args:
@@ -135,7 +140,8 @@ def get_full_path(path: str) -> str:
 
 
 def get_reader_type(reader: str) -> str:
-    """Return loader type among, file, dir or in-memory.
+    """
+    Return loader type among, file, dir or in-memory.
 
     Args:
         loader (str): Name of the loader, whose type is to be resolved.
@@ -150,7 +156,8 @@ def get_reader_type(reader: str) -> str:
 
 
 def get_reader_full_path(reader: BaseReader, reader_type: str, **kwargs) -> str:
-    """Return absolute source path of source of reader based on the
+    """
+    Return absolute source path of source of reader based on the
     keys present in Document object from reader.
 
     Args:
@@ -167,9 +174,9 @@ def get_reader_full_path(reader: BaseReader, reader_type: str, **kwargs) -> str:
         if reader_type == "SimpleDirectoryReader":
             if loader_dict.get("input_dir", None):
                 location = loader_dict.get("input_dir")
-        elif kwargs.get("file", None):
+        elif kwargs.get("file"):
             location = kwargs.get("file")
-        elif kwargs.get("input_file", None):
+        elif kwargs.get("input_file"):
             location = kwargs.get("input_file")
     except Exception:
         pass
@@ -177,7 +184,8 @@ def get_reader_full_path(reader: BaseReader, reader_type: str, **kwargs) -> str:
 
 
 def get_runtime() -> Tuple[Framework, Runtime]:
-    """Fetch the current Framework and Runtime details.
+    """
+    Fetch the current Framework and Runtime details.
 
     Returns:
         Tuple[Framework, Runtime]: Framework and Runtime for the current app instance.
@@ -211,7 +219,8 @@ def get_runtime() -> Tuple[Framework, Runtime]:
 
 
 def get_ip() -> str:
-    """Fetch local runtime IP address.
+    """
+    Fetch local runtime IP address.
 
     Returns:
         str: IP address

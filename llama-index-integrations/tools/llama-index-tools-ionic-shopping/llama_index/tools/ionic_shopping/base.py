@@ -9,7 +9,8 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class IonicShoppingToolSpec(BaseToolSpec):
-    """Ionic Shopping tool spec.
+    """
+    Ionic Shopping tool spec.
 
     This tool can be used to build e-commerce experiences with LLMs.
     """
@@ -17,7 +18,8 @@ class IonicShoppingToolSpec(BaseToolSpec):
     spec_functions = ["query"]
 
     def __init__(self, api_key: Optional[str] = None) -> None:
-        """Ionic API Key.
+        """
+        Ionic API Key.
 
         Learn more about attribution with Ionic API Keys
         https://docs.ioniccommerce.com/guides/attribution
@@ -36,7 +38,8 @@ class IonicShoppingToolSpec(BaseToolSpec):
         min_price: Optional[int] = None,
         max_price: Optional[int] = None,
     ) -> list[Product]:
-        """Use this function to search for products and to get product recommendations.
+        """
+        Use this function to search for products and to get product recommendations.
 
         Args:
             query (str): A precise query of a product name or product category

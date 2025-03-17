@@ -35,7 +35,8 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
     def get(
         self, properties: Dict = None, ids: List[str] = None, exact_match: bool = True
     ) -> List[LabelledNode]:
-        """Get the nodes from the graph.
+        """
+        Get the nodes from the graph.
 
         Args:
             properties (Dict | None, optional): The properties to retrieve. Defaults to None.
@@ -110,7 +111,8 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
         properties: Optional[dict] = None,
         ids: Optional[List[str]] = None,
     ) -> List[Triplet]:
-        """Get the triplets of the entities in the graph.
+        """
+        Get the triplets of the entities in the graph.
 
         Args:
             entity_names (Optional[List[str]], optional): The entity names to find. Defaults to None.
@@ -184,7 +186,8 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
         limit: int = 30,
         ignore_rels: List[str] = None,
     ) -> List[Tuple[Any]]:
-        """Get a depth aware map of relations.
+        """
+        Get a depth aware map of relations.
 
         Args:
             graph_nodes (List[LabelledNode]): The nodes
@@ -260,7 +263,8 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
         raise NotImplementedError
 
     def upsert_relations(self, relations: List[Relation]) -> None:
-        """Upsert relations in the graph.
+        """
+        Upsert relations in the graph.
 
         Args:
             relations (List[Relation]): Relations to upsert
@@ -289,7 +293,8 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
         properties: Dict = None,
         ids: List[str] = None,
     ) -> None:
-        """Delete data matching the criteria.
+        """
+        Delete data matching the criteria.
 
         Args:
             entity_names (List[str] | None, optional): The entity names to delete. Defaults to None.
@@ -328,7 +333,8 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
         raise NotImplementedError
 
     def query(self, query: str, params: dict = {}) -> Dict[str, Any]:
-        """Run the query.
+        """
+        Run the query.
 
         Args:
             query (str): The query to run
@@ -356,7 +362,8 @@ class NeptuneBasePropertyGraph(PropertyGraphStore):
         return self.structured_schema
 
     def get_schema_str(self, refresh: bool = False) -> str:
-        """Get the schema as a string.
+        """
+        Get the schema as a string.
 
         Args:
             refresh (bool, optional): True to force refresh of the schema. Defaults to False.

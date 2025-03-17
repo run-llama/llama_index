@@ -15,7 +15,7 @@ sambastudio_url = os.environ.get("SAMBASTUDIO_URL", None)
 sambastudio_api_key = os.environ.get("SAMBASTUDIO_API_KEY", None)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def run_async_test(fn, chat_msgs, number, verbose=False):
     tasks = [fn(chat_msgs) for _ in range(number)]
     if verbose:

@@ -7,25 +7,25 @@ except ImportError:
     elasticsearch = None  # type: ignore
 
 
-@pytest.fixture()
+@pytest.fixture
 def model_id() -> str:
     # Replace with your actual model_id
     return "your_model_id"
 
 
-@pytest.fixture()
+@pytest.fixture
 def es_url() -> str:
     # Replace with your actual Elasticsearch URL
     return "http://localhost:9200"
 
 
-@pytest.fixture()
+@pytest.fixture
 def es_username() -> str:
     # Replace with your actual Elasticsearch username
     return "foo"
 
 
-@pytest.fixture()
+@pytest.fixture
 def es_password() -> str:
     # Replace with your actual Elasticsearch password
     return "bar"

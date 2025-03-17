@@ -14,7 +14,8 @@ from tqdm.autonotebook import trange
 
 
 class MyMultipleNegativesRankingLoss(nn.Module):
-    """Multiple negatives ranking loss.
+    """
+    Multiple negatives ranking loss.
 
     This loss is similar to the one in sentence_transformers,
     but optimized for our own embeddings.

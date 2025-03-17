@@ -30,7 +30,8 @@ DEFAULT_PARTITION_KEY = "default"
 
 
 class AzureKVStore(BaseKVStore):
-    """Provides a key-value store interface for Azure Table Storage and Cosmos
+    """
+    Provides a key-value store interface for Azure Table Storage and Cosmos
     DB. This class supports both synchronous and asynchronous operations on
     Azure Table Storage and Cosmos DB. It supports connecting to the service
     using different credentials and manages table creation and data

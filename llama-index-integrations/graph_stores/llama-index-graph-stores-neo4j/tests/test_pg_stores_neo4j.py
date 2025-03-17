@@ -21,7 +21,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def neo4j_store() -> Neo4jPropertyGraphStore:
     if not neo4j_available:
         pytest.skip("No Neo4j credentials provided")

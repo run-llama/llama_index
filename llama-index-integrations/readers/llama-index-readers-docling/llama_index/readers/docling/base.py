@@ -13,7 +13,8 @@ from pydantic import Field
 
 
 class DoclingReader(BasePydanticReader):
-    """Docling Reader.
+    """
+    Docling Reader.
 
     Extracts PDF, DOCX, and other document formats into LlamaIndex Documents as either Markdown or JSON-serialized Docling native format.
 
@@ -30,8 +31,7 @@ class DoclingReader(BasePydanticReader):
 
     @runtime_checkable
     class DocIDGenCallable(Protocol):
-        def __call__(self, doc: DLDocument, file_path: str | Path) -> str:
-            ...
+        def __call__(self, doc: DLDocument, file_path: str | Path) -> str: ...
 
     @staticmethod
     def _uuid4_doc_id_gen(doc: DLDocument, file_path: str | Path) -> str:
@@ -48,7 +48,8 @@ class DoclingReader(BasePydanticReader):
         extra_info: dict | None = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> Iterable[LIDocument]:
-        """Lazily load from given source.
+        """
+        Lazily load from given source.
 
         Args:
             file_path (str | Path | Iterable[str] | Iterable[Path]): Document file source as single str (URL or local file) or pathlib.Path — or iterable thereof

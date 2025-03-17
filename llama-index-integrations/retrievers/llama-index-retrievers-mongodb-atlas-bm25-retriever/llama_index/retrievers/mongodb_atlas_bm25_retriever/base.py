@@ -22,7 +22,8 @@ class MongoDBAtlasBM25Retriever(BaseRetriever):
         metadata_key: str = "metadata",
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> None:
-        """Initialize the vector store.
+        """
+        Initialize the vector store.
 
         Args:
             mongodb_client: A MongoDB client.

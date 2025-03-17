@@ -63,7 +63,8 @@ def force_single_tool_call(response: ChatResponse) -> None:
 
 
 class Ollama(FunctionCallingLLM):
-    """Ollama LLM.
+    """
+    Ollama LLM.
 
     Visit https://ollama.com/ to download and install Ollama.
 
@@ -580,7 +581,8 @@ class Ollama(FunctionCallingLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> Generator[Union[BaseModel, List[BaseModel]], None, None]:
-        """Stream structured predictions as they are generated.
+        """
+        Stream structured predictions as they are generated.
 
         Args:
             output_cls: The Pydantic class to parse responses into

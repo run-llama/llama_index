@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class ConfluenceReader(BaseReader):
-    """Confluence reader.
+    """
+    Confluence reader.
 
     Reads a set of confluence pages given a space key and optionally a list of page ids
 
@@ -125,7 +126,8 @@ class ConfluenceReader(BaseReader):
         limit: Optional[int] = None,
         max_num_results: Optional[int] = None,
     ) -> List[Document]:
-        """Load Confluence pages from Confluence, specifying by one of four mutually exclusive methods:
+        """
+        Load Confluence pages from Confluence, specifying by one of four mutually exclusive methods:
         `space_key`, `page_ids`, `label`, or `cql`
         (Confluence Query Language https://developer.atlassian.com/cloud/confluence/advanced-searching-using-cql/ ).
 
@@ -512,9 +514,7 @@ class ConfluenceReader(BaseReader):
         try:
             response = requests.get(link)
             if response.status_code != 200:
-                return "Error fetching HTML content: HTTP Status Code {}".format(
-                    response.status_code
-                )
+                return f"Error fetching HTML content: HTTP Status Code {response.status_code}"
 
             # Parse the HTML content and extract text
             soup = BeautifulSoup(response.content, "html.parser")
@@ -534,9 +534,7 @@ class ConfluenceReader(BaseReader):
         try:
             response = requests.get(link)
             if response.status_code != 200:
-                return "Error fetching text content: HTTP Status Code {}".format(
-                    response.status_code
-                )
+                return f"Error fetching text content: HTTP Status Code {response.status_code}"
             return response.text
         except Exception as e:
             logger.error(f"Error processing text file at {link}: {e}")

@@ -1,4 +1,5 @@
 """Markdown node parser."""
+
 import re
 from typing import Any, List, Optional, Sequence
 

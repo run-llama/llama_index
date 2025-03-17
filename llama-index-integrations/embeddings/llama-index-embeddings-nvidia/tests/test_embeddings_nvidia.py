@@ -10,7 +10,7 @@ from openai import AuthenticationError
 from pytest_httpx import HTTPXMock
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_integration_api(httpx_mock: HTTPXMock):
     BASE_URL = "https://integrate.api.nvidia.com/v1"
     mock_response = {"object": "list", "data": [{"index": 0, "embedding": ""}]}

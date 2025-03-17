@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class DocArrayVectorStore(VectorStore, ABC):
-    """DocArray Vector Store Base Class.
+    """
+    DocArray Vector Store Base Class.
 
 
     This is an abstract base class for creating a DocArray vector store.
@@ -40,14 +41,16 @@ class DocArrayVectorStore(VectorStore, ABC):
 
     @abstractmethod
     def _init_index(self, **kwargs: Any):  # type: ignore[no-untyped-def]
-        """Initializes the index.
+        """
+        Initializes the index.
 
         This method should be overridden by the subclasses.
         """
 
     @abstractmethod
     def _find_docs_to_be_removed(self, doc_id: str) -> List[str]:
-        """Finds the documents to be removed from the vector store.
+        """
+        Finds the documents to be removed from the vector store.
 
         Args:
             doc_id (str): Document ID that should be removed.
@@ -64,7 +67,8 @@ class DocArrayVectorStore(VectorStore, ABC):
         return None
 
     def num_docs(self) -> int:
-        """Retrieves the number of documents in the index.
+        """
+        Retrieves the number of documents in the index.
 
         Returns:
             int: The number of documents in the index.
@@ -73,7 +77,8 @@ class DocArrayVectorStore(VectorStore, ABC):
 
     @staticmethod
     def _get_schema(**embeddings_params: Any) -> Type:
-        """Fetches the schema for DocArray indices.
+        """
+        Fetches the schema for DocArray indices.
 
         Args:
             **embeddings_params: Variable length argument list for the embedding.
@@ -97,7 +102,8 @@ class DocArrayVectorStore(VectorStore, ABC):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Adds nodes to the vector store.
+        """
+        Adds nodes to the vector store.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings.
@@ -127,7 +133,8 @@ class DocArrayVectorStore(VectorStore, ABC):
         return [doc.id for doc in docs]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Deletes a document from the vector store.
+        """
+        Deletes a document from the vector store.
 
         Args:
             ref_doc_id (str): Document ID to be deleted.
@@ -142,7 +149,8 @@ class DocArrayVectorStore(VectorStore, ABC):
         logger.info(f"Deleted {len(docs_to_be_removed)} documents from the index")
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Queries the vector store and retrieves the results.
+        """
+        Queries the vector store and retrieves the results.
 
         Args:
             query (VectorStoreQuery): Query for the vector store.

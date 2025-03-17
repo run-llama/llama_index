@@ -1,4 +1,5 @@
-"""Google GenerativeAI Attributed Question and Answering (AQA) service.
+"""
+Google GenerativeAI Attributed Question and Answering (AQA) service.
 
 The GenAI Semantic AQA API is a managed end to end service that allows
 developers to create responses grounded on specified passages based on
@@ -42,7 +43,8 @@ class SynthesizedResponse(BaseModel):
 
 
 class GoogleTextSynthesizer(BaseSynthesizer):
-    """Google's Attributed Question and Answering service.
+    """
+    Google's Attributed Question and Answering service.
 
     Given a user's query and a list of passages, Google's server will return
     a response that is grounded to the provided list of passages. It will not
@@ -62,7 +64,8 @@ class GoogleTextSynthesizer(BaseSynthesizer):
         safety_setting: List[Any],
         **kwargs: Any,
     ):
-        """Create a new Google AQA.
+        """
+        Create a new Google AQA.
 
         Prefer to use the factory `from_defaults` instead for type safety.
         See `from_defaults` for more documentation.
@@ -91,7 +94,8 @@ class GoogleTextSynthesizer(BaseSynthesizer):
         answer_style: int = 1,
         safety_setting: List["genai.SafetySetting"] = [],
     ) -> "GoogleTextSynthesizer":
-        """Create a new Google AQA.
+        """
+        Create a new Google AQA.
 
         Example:
           responder = GoogleTextSynthesizer.create(
@@ -126,7 +130,8 @@ class GoogleTextSynthesizer(BaseSynthesizer):
         text_chunks: Sequence[str],
         **response_kwargs: Any,
     ) -> SynthesizedResponse:
-        """Generate a grounded response on provided passages.
+        """
+        Generate a grounded response on provided passages.
 
         Args:
             query_str: The user's question.
@@ -177,7 +182,8 @@ class GoogleTextSynthesizer(BaseSynthesizer):
         additional_source_nodes: Optional[Sequence[NodeWithScore]] = None,
         **response_kwargs: Any,
     ) -> Response:
-        """Returns a grounded response based on provided passages.
+        """
+        Returns a grounded response based on provided passages.
 
         Returns:
             Response's `source_nodes` will begin with a list of attributed

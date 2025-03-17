@@ -9,7 +9,8 @@ VALID_METADATA_FIELDS = {"path", "title", "description", "parent"}
 
 
 class SimpleGitbookReader(BaseReader):
-    """Simple gitbook reader.
+    """
+    Simple gitbook reader.
 
     Convert each gitbook page into Document used by LlamaIndex.
 
@@ -28,7 +29,8 @@ class SimpleGitbookReader(BaseReader):
         metadata_names: Optional[List[str]] = None,
         show_progress=False,
     ) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             space_id (str): Gitbook space id

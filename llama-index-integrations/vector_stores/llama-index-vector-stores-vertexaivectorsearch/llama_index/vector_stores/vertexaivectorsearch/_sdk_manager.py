@@ -15,7 +15,8 @@ from llama_index.vector_stores.vertexaivectorsearch.utils import (
 
 
 class VectorSearchSDKManager:
-    """Class in charge of building all Google Cloud SDK Objects needed to build
+    """
+    Class in charge of building all Google Cloud SDK Objects needed to build
     VectorStores from project_id, credentials or other specifications. Abstracts
     away the authentication layer.
     """
@@ -28,7 +29,8 @@ class VectorSearchSDKManager:
         credentials: Union[Credentials, None] = None,
         credentials_path: Union[str, None] = None,
     ) -> None:
-        """Constructor.
+        """
+        Constructor.
         If `credentials` is provided, those credentials are used. If not provided
         `credentials_path` is used to retrieve credentials from a file. If also not
         provided, falls back to default credentials.
@@ -60,7 +62,8 @@ class VectorSearchSDKManager:
         )
 
     def get_gcs_client(self) -> storage.Client:
-        """Retrieves a Google Cloud Storage client.
+        """
+        Retrieves a Google Cloud Storage client.
 
         Returns:
             Google Cloud Storage Agent.
@@ -74,7 +77,8 @@ class VectorSearchSDKManager:
         )
 
     def get_gcs_bucket(self, bucket_name: str) -> storage.Bucket:
-        """Retrieves a Google Cloud Bucket by bucket name.
+        """
+        Retrieves a Google Cloud Bucket by bucket name.
 
         Args:
             bucket_name: Name of the bucket to be retrieved.
@@ -86,7 +90,8 @@ class VectorSearchSDKManager:
         return client.get_bucket(bucket_name)
 
     def get_index(self, index_id: str) -> MatchingEngineIndex:
-        """Retrieves a MatchingEngineIndex (VectorSearchIndex) by id.
+        """
+        Retrieves a MatchingEngineIndex (VectorSearchIndex) by id.
 
         Args:
             index_id: Id of the index to be retrieved.
@@ -104,7 +109,8 @@ class VectorSearchSDKManager:
             )
 
     def get_endpoint(self, endpoint_id: str) -> MatchingEngineIndexEndpoint:
-        """Retrieves a MatchingEngineIndexEndpoint (VectorSearchIndexEndpoint) by id.
+        """
+        Retrieves a MatchingEngineIndexEndpoint (VectorSearchIndexEndpoint) by id.
 
         Args:
             endpoint_id: Id of the endpoint to be retrieved.

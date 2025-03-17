@@ -174,44 +174,48 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         self, chat_history: List[ChatMessage], latest_message: str
     ) -> str:
         """Async version of _condense_question."""
-        return await self._condense_question_impl(chat_history, latest_message, is_async=True)
+        return await self._condense_question_impl(
+            chat_history, latest_message, is_async=True
+        )
 
     def _condense_question(
         self, chat_history: List[ChatMessage], latest_message: str
     ) -> str:
         """Sync version of _condense_question."""
-        return self._condense_question_impl(chat_history, latest_message, is_async=False)
+        return self._condense_question_impl(
+            chat_history, latest_message, is_async=False
+        )
 
     def _condense_question_impl(
-        self, 
-        chat_history: List[ChatMessage], 
+        self,
+        chat_history: List[ChatMessage],
         latest_message: str,
-        is_async: bool = False
+        is_async: bool = False,
     ) -> str:
         """
         Implementation of question condensing logic.
-        
+
         Args:
             chat_history (List[ChatMessage]): Previous chat messages
             latest_message (str): Latest user message to condense
             is_async (bool): Whether to use async LLM completion
-            
+
         Returns:
             str: Condensed standalone question
         """
         if self._skip_condense or len(chat_history) == 0:
             return latest_message
-    
+
         chat_history_str = messages_to_history_str(chat_history)
         logger.debug(chat_history_str)
-    
+
         llm_input = self._condense_prompt_template.format(
-            chat_history=chat_history_str, 
-            question=latest_message
+            chat_history=chat_history_str, question=latest_message
         )
-    
+
         return str(
-            self._llm.acomplete(llm_input) if is_async 
+            self._llm.acomplete(llm_input)
+            if is_async
             else self._llm.complete(llm_input)
         )
 

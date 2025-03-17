@@ -7,12 +7,12 @@ MOCK_EMBEDDING_DATA = [1.0, 2.0, 3.0]
 UPSTAGE_TEST_API_KEY = "UPSTAGE_TEST_API_KEY"
 
 
-@pytest.fixture()
+@pytest.fixture
 def setup_environment(monkeypatch):
     monkeypatch.setenv("UPSTAGE_API_KEY", UPSTAGE_TEST_API_KEY)
 
 
-@pytest.fixture()
+@pytest.fixture
 def upstage_embedding():
     UpstageEmbedding = pytest.importorskip(
         "llama_index.embeddings.upstage", reason="Cannot import UpstageEmbedding"

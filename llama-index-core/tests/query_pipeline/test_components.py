@@ -1,4 +1,5 @@
 """Test components."""
+
 from typing import Any, List, Sequence, Dict
 
 import pytest

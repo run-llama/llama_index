@@ -39,7 +39,7 @@ class SemanticScholarReader(BaseReader):
 
     def _clear_cache(self):
         """
-        delete the .citation* folder.
+        Delete the .citation* folder.
         """
         import shutil
 

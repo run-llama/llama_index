@@ -32,11 +32,11 @@ class DummyWorkflow(Workflow):
         return StopEvent(result="Workflow completed")
 
 
-@pytest.fixture()
+@pytest.fixture
 def workflow():
     return DummyWorkflow()
 
 
-@pytest.fixture()
+@pytest.fixture
 def events():
     return [OneTestEvent, AnotherTestEvent]

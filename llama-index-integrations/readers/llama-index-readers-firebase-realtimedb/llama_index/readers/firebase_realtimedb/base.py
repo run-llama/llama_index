@@ -7,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class FirebaseRealtimeDatabaseReader(BaseReader):
-    """Firebase Realtime Database reader.
+    """
+    Firebase Realtime Database reader.
 
     Retrieves data from Firebase Realtime Database and converts it into the Document used by LlamaIndex.
 
@@ -42,7 +43,8 @@ class FirebaseRealtimeDatabaseReader(BaseReader):
                 firebase_admin.initialize_app(options={"databaseURL": database_url})
 
     def load_data(self, path: str, field: Optional[str] = None) -> List[Document]:
-        """Load data from Firebase Realtime Database and convert it into documents.
+        """
+        Load data from Firebase Realtime Database and convert it into documents.
 
         Args:
             path (str): Path to the data in the Firebase Realtime Database.

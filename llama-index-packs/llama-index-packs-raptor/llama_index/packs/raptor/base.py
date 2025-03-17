@@ -76,7 +76,8 @@ class SummaryModule(BaseModel):
     async def generate_summaries(
         self, documents_per_cluster: List[List[BaseNode]]
     ) -> List[str]:
-        """Generate summaries of documents per cluster.
+        """
+        Generate summaries of documents per cluster.
 
         Args:
             documents_per_cluster (List[List[BaseNode]]): List of documents per cluster
@@ -139,7 +140,8 @@ class RaptorRetriever(BaseRetriever):
             asyncio.run(self.insert(documents))
 
     def _get_embeddings_per_level(self, level: int = 0) -> List[float]:
-        """Retrieve embeddings per level in the abstraction tree.
+        """
+        Retrieve embeddings per level in the abstraction tree.
 
         Args:
             level (int, optional): Target level. Defaults to 0 which stands for leaf nodes.
@@ -157,7 +159,8 @@ class RaptorRetriever(BaseRetriever):
         return [x.node for x in source_nodes]
 
     async def insert(self, documents: List[BaseNode]) -> None:
-        """Given a set of documents, this function inserts higher level of abstractions within the index.
+        """
+        Given a set of documents, this function inserts higher level of abstractions within the index.
 
         For later retrieval
 

@@ -1,4 +1,5 @@
-"""Weaviate Vector store index.
+"""
+Weaviate Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -110,7 +111,8 @@ def _to_weaviate_filter(
 
 
 class WeaviateVectorStore(BasePydanticVectorStore):
-    """Weaviate vector store.
+    """
+    Weaviate vector store.
 
     In this vector store, embeddings and docs are stored within a
     Weaviate collection.
@@ -260,7 +262,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -286,7 +289,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -344,7 +348,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         result = await collection.data.delete_many(where=where_filter)
 
     def delete_index(self) -> None:
-        """Delete the index associated with the client.
+        """
+        Delete the index associated with the client.
 
         Raises:
         - Exception: If the deletion fails, for some reason.
@@ -367,7 +372,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
@@ -395,7 +401,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
@@ -425,7 +432,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
         self.delete_index()
 
     async def aclear(self) -> None:
-        """Delete the index associated with the client.
+        """
+        Delete the index associated with the client.
 
         Raises:
         - Exception: If the deletion fails, for some reason.
@@ -522,7 +530,8 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Raises:
             AsyncClientNotProvidedError: If trying to use async methods without aclient

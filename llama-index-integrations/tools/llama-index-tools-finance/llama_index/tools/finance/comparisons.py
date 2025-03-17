@@ -1,4 +1,4 @@
-""" Find similar companies across different indexes based on available open source models."""
+"""Find similar companies across different indexes based on available open source models."""
 
 from typing import Dict
 

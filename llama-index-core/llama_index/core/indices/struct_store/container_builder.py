@@ -1,6 +1,5 @@
 """SQL Container builder."""
 
-
 from typing import Any, Dict, List, Optional, Type
 
 from llama_index.core.indices.base import BaseIndex

@@ -1,4 +1,5 @@
-"""ClickHouse vector store.
+"""
+ClickHouse vector store.
 
 An index that is built on top of an existing ClickHouse cluster.
 
@@ -62,7 +63,8 @@ DISTANCE_MAPPING = {
 
 
 class ClickHouseSettings:
-    """ClickHouse Client Configuration.
+    """
+    ClickHouse Client Configuration.
 
     Args:
         table (str): Table name to operate on.
@@ -115,7 +117,8 @@ class ClickHouseSettings:
 
 
 class ClickHouseVectorStore(BasePydanticVectorStore):
-    """ClickHouse Vector Store.
+    """
+    ClickHouse Vector Store.
     In this vector store, embeddings and docs are stored within an existing
     ClickHouse cluster.
     During query time, the index uses ClickHouse to query for the top
@@ -359,7 +362,8 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -395,7 +399,8 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
     def query(
         self, query: VectorStoreQuery, where: Optional[str] = None, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query

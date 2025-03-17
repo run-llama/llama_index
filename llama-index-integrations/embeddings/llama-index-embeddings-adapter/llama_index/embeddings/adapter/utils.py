@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class BaseAdapter(nn.Module):
-    """Base adapter.
+    """
+    Base adapter.
 
     Can be subclassed to implement custom adapters.
     To implement a custom adapter, subclass this class and implement the
@@ -55,7 +56,8 @@ class BaseAdapter(nn.Module):
 
 
 class LinearLayer(BaseAdapter):
-    """Linear transformation.
+    """
+    Linear transformation.
 
     Args:
         in_features (int): Input dimension.
@@ -89,7 +91,8 @@ class LinearLayer(BaseAdapter):
 
 
 def get_activation_function(name: str) -> Callable:
-    """Get activation function.
+    """
+    Get activation function.
 
     Args:
         name (str): Name of activation function.
@@ -108,7 +111,8 @@ def get_activation_function(name: str) -> Callable:
 
 
 class TwoLayerNN(BaseAdapter):
-    """Two-layer transformation.
+    """
+    Two-layer transformation.
 
     Args:
         in_features (int): Input dimension.
@@ -149,7 +153,8 @@ class TwoLayerNN(BaseAdapter):
         self.residual_weight = nn.Parameter(torch.zeros(1))
 
     def forward(self, embed: Tensor) -> Tensor:
-        """Forward pass (Wv).
+        """
+        Forward pass (Wv).
 
         Args:
             embed (Tensor): Input tensor.

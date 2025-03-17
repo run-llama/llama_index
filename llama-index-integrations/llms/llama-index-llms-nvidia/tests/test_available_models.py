@@ -3,7 +3,7 @@ import pytest
 from llama_index.llms.nvidia import NVIDIA
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_available_models(mode: dict) -> None:
     models = NVIDIA(**mode).available_models
     assert models

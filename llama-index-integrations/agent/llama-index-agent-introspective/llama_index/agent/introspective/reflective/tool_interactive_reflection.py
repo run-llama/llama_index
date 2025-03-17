@@ -64,12 +64,12 @@ class Correction(BaseModel):
 
 @runtime_checkable
 class StoppingCallable(Protocol):
-    def __call__(self, critique_str: str) -> bool:
-        ...
+    def __call__(self, critique_str: str) -> bool: ...
 
 
 class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
-    """Tool-Interactive Reflection Agent Worker.
+    """
+    Tool-Interactive Reflection Agent Worker.
 
     This agent worker implements the CRITIC reflection framework introduced
     by Gou, Zhibin, et al. (2024) ICLR. (source: https://arxiv.org/pdf/2305.11738)

@@ -12,7 +12,7 @@ from tests.koda_mocking import KVMockLLM
 from tests.monkeypatch import monkey_patch_vector_store_index
 
 
-@pytest.fixture()
+@pytest.fixture
 def setup() -> dict:  # monkey
     """Sets up fixtures for simple vector stores to be used within retriever testing."""
     Settings.llm = KVMockLLM()

@@ -1,4 +1,5 @@
-"""Video audio parser.
+"""
+Video audio parser.
 
 Contains parsers for mp3, mp4 files.
 
@@ -16,7 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 class VideoAudioReader(BaseReader):
-    """Video audio parser.
+    """
+    Video audio parser.
 
     Extract text from transcript of video/audio files.
 

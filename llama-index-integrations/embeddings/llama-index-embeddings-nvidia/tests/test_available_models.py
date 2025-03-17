@@ -3,7 +3,7 @@ import pytest
 from llama_index.embeddings.nvidia import NVIDIAEmbedding as Interface
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_available_models() -> None:
     models = Interface().available_models
     assert models

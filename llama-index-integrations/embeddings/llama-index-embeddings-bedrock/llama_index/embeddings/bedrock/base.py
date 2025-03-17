@@ -333,7 +333,8 @@ class BedrockEmbedding(BaseEmbedding):
     def _get_embedding(
         self, payload: Union[str, List[str]], type: Literal["text", "query"]
     ) -> Union[Embedding, List[Embedding]]:
-        """Get the embedding for the given payload.
+        """
+        Get the embedding for the given payload.
 
         Args:
             payload (Union[str, List[str]]): The text or list of texts for which the embeddings are to be obtained.
@@ -359,7 +360,7 @@ class BedrockEmbedding(BaseEmbedding):
         )
 
         resp = json.loads(response.get("body").read().decode("utf-8"))
-        identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider, None)
+        identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider)
         if identifiers is None:
             raise ValueError("Provider not supported")
         return identifiers["get_embeddings_func"](resp, isinstance(payload, list))
@@ -382,7 +383,8 @@ class BedrockEmbedding(BaseEmbedding):
         payload: Union[str, List[str]],
         input_type: Literal["text", "query"],
     ) -> Any:
-        """Build the request body as per the provider.
+        """
+        Build the request body as per the provider.
         Currently supported providers are amazon, cohere.
 
         amazon:
@@ -445,7 +447,8 @@ class BedrockEmbedding(BaseEmbedding):
     async def _aget_embedding(
         self, payload: Union[str, List[str]], type: Literal["text", "query"]
     ) -> Union[Embedding, List[Embedding]]:
-        """Get the embedding asynchronously for the given payload.
+        """
+        Get the embedding asynchronously for the given payload.
 
         Args:
             payload (Union[str, List[str]]): The text or list of texts for which the embeddings are to be obtained.
@@ -472,7 +475,7 @@ class BedrockEmbedding(BaseEmbedding):
             streaming_body = await response.get("body").read()
             resp = json.loads(streaming_body.decode("utf-8"))
 
-        identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider, None)
+        identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider)
         if identifiers is None:
             raise ValueError("Provider not supported")
         return identifiers["get_embeddings_func"](resp, isinstance(payload, list))

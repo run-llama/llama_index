@@ -8,7 +8,7 @@ from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
 from llama_index.core.schema import NodeWithScore, Document
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_v1_models(respx_mock: respx.MockRouter) -> None:
     respx_mock.get("https://integrate.api.nvidia.com/v1/models").respond(
         json={
@@ -24,7 +24,7 @@ def mock_v1_models(respx_mock: respx.MockRouter) -> None:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_v1_ranking(respx_mock: respx.MockRouter) -> None:
     respx_mock.post(
         re.compile(r"https://ai\.api\.nvidia\.com/v1/.*/reranking")
@@ -37,7 +37,7 @@ def mock_v1_ranking(respx_mock: respx.MockRouter) -> None:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock(mock_v1_models: None, mock_v1_ranking: None) -> None:
     pass
 
@@ -82,7 +82,7 @@ def test_truncate_invalid(truncate: Any) -> None:
         NVIDIARerank(truncate=truncate)
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 @pytest.mark.parametrize("truncate", ["END"])
 def test_truncate_positive(model: str, mode: dict, truncate: str) -> None:
     query = "What is acceleration?"
@@ -96,7 +96,7 @@ def test_truncate_positive(model: str, mode: dict, truncate: str) -> None:
     assert len(response) == len(nodes)
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 @pytest.mark.parametrize("truncate", [None, "NONE"])
 def test_truncate_negative(model: str, mode: dict, truncate: str) -> None:
     if model == "nv-rerank-qa-mistral-4b:1":

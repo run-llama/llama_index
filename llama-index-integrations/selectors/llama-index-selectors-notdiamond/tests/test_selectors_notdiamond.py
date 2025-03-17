@@ -15,12 +15,12 @@ from llama_index.selectors.notdiamond.base import NotDiamondSelector, LLMSingleS
 from notdiamond import LLMConfig
 
 
-@pytest.fixture()
+@pytest.fixture
 def session_id() -> str:
     return str(uuid.uuid4())
 
 
-@pytest.fixture()
+@pytest.fixture
 def choices() -> List[ToolMetadata]:
     return [
         ToolMetadata(
@@ -30,7 +30,7 @@ def choices() -> List[ToolMetadata]:
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def nd_selector(session_id):
     from notdiamond import NotDiamond
 
@@ -80,7 +80,7 @@ class TestNotDiamondSelector:
         assert result.selections[0].index == 0
         assert openai_mock.is_called
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     @patch("llama_index.llms.anthropic.Anthropic")
     async def test_aselect(self, anthropic_mock, nd_selector, choices, session_id):
         """_aselect should call anthropic, as mocked."""

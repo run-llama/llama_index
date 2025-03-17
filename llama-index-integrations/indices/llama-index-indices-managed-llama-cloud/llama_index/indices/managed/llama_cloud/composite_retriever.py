@@ -80,7 +80,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         self._rerank_top_n = rerank_top_n if rerank_top_n is not None else OMIT
 
         super().__init__(
-            callback_manager=kwargs.get("callback_manager", None),
+            callback_manager=kwargs.get("callback_manager"),
             verbose=kwargs.get("verbose", False),
         )
 
@@ -116,9 +116,9 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         current_retriever_pipelines_by_name = {
             pipeline.name: pipeline for pipeline in (self.retriever_pipelines or [])
         }
-        current_retriever_pipelines_by_name[
-            retriever_pipeline.name
-        ] = retriever_pipeline
+        current_retriever_pipelines_by_name[retriever_pipeline.name] = (
+            retriever_pipeline
+        )
         return self.update_retriever_pipelines(
             list(current_retriever_pipelines_by_name.values())
         )
@@ -163,9 +163,9 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         current_retriever_pipelines_by_name = {
             pipeline.name: pipeline for pipeline in (self.retriever_pipelines or [])
         }
-        current_retriever_pipelines_by_name[
-            retriever_pipeline.name
-        ] = retriever_pipeline
+        current_retriever_pipelines_by_name[retriever_pipeline.name] = (
+            retriever_pipeline
+        )
         return await self.aupdate_retriever_pipelines(
             list(current_retriever_pipelines_by_name.values())
         )

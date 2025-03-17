@@ -5,7 +5,8 @@ from llama_index.core.schema import Document
 
 
 class MetalReader(BaseReader):
-    """Metal reader.
+    """
+    Metal reader.
 
     Args:
         api_key (str): Metal API key.
@@ -37,7 +38,8 @@ class MetalReader(BaseReader):
         separate_documents: bool = True,
         **query_kwargs: Any
     ) -> List[Document]:
-        """Load data from Metal.
+        """
+        Load data from Metal.
 
         Args:
             query_embedding (Optional[List[float]]): Query embedding for search.

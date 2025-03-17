@@ -23,7 +23,7 @@ except ImportError:
     upstash_installed = False
 
 
-@pytest.fixture()
+@pytest.fixture
 def upstash_vector_store() -> UpstashVectorStore:
     return UpstashVectorStore(
         url=os.environ.get("UPSTASH_VECTOR_URL") or "",
@@ -31,7 +31,7 @@ def upstash_vector_store() -> UpstashVectorStore:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def text_nodes() -> List[TextNode]:
     return [
         TextNode(

@@ -1,4 +1,5 @@
 """Feishu docs reader."""
+
 import json
 import os
 import time
@@ -24,7 +25,8 @@ from llama_index.core.schema import Document
 
 
 class FeishuDocsReader(BaseReader):
-    """Feishu Docs reader.
+    """
+    Feishu Docs reader.
 
     Reads a page from Google Docs
 
@@ -51,7 +53,8 @@ class FeishuDocsReader(BaseReader):
         self.expire = 0
 
     def load_data(self, document_ids: List[str]) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             document_ids (List[str]): a list of document ids.
@@ -66,7 +69,8 @@ class FeishuDocsReader(BaseReader):
         return results
 
     def _load_doc(self, document_id) -> str:
-        """Load a document from Feishu Docs.
+        """
+        Load a document from Feishu Docs.
 
         Args:
             document_id: the document id.

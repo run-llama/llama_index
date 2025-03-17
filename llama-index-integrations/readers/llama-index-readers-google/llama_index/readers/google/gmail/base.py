@@ -12,7 +12,8 @@ SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
 
 class GmailReader(BaseReader, BaseModel):
-    """Gmail reader.
+    """
+    Gmail reader.
 
     Reads emails
 
@@ -49,7 +50,8 @@ class GmailReader(BaseReader, BaseModel):
         return results
 
     def _get_credentials(self) -> Any:
-        """Get valid user credentials from storage.
+        """
+        Get valid user credentials from storage.
 
         The file token.json stores the user's access and refresh tokens, and is
         created automatically when the authorization flow completes for the first

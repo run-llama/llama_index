@@ -40,7 +40,8 @@ class OllamaQueryEnginePack(BaseLlamaPack):
 
 
 class OllamaEmbedding(BaseEmbedding):
-    """Class for Ollama embeddings.
+    """
+    Class for Ollama embeddings.
 
     Args:
         model_name (str): Model for embedding.

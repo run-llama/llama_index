@@ -104,7 +104,8 @@ class _VectorStoreClient:
 
 
 class PathwayReader(BaseReader):
-    """Pathway reader.
+    """
+    Pathway reader.
 
     Retrieve documents from Pathway data indexing pipeline.
 
@@ -132,7 +133,8 @@ class PathwayReader(BaseReader):
         k: Optional[int] = 4,
         metadata_filter: Optional[str] = None,
     ) -> List[Document]:
-        """Load data from Pathway.
+        """
+        Load data from Pathway.
 
         Args:
             query_text (str): The text to get the closest neighbors of.

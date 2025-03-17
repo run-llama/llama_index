@@ -17,7 +17,8 @@ class Article:
 
 
 class HatenaBlogReader(BaseReader):
-    """Hatena Blog reader.
+    """
+    Hatena Blog reader.
 
     Args:
         root_endpoint (str): AtomPub root endpoint.

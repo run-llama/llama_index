@@ -44,7 +44,7 @@ from llama_index.vector_stores.elasticsearch.base import _to_elasticsearch_filte
 logging.basicConfig(level=logging.DEBUG)
 
 
-@pytest.fixture()
+@pytest.fixture
 def index_name() -> str:
     """Return the index name."""
     return f"test_{uuid.uuid4().hex}"
@@ -221,7 +221,7 @@ def test_mode_must_match_retrieval_strategy() -> None:
         _mode_must_match_retrieval_strategy(mode, retrieval_strategy)
 
 
-@pytest.fixture()
+@pytest.fixture
 def es_store(
     index_name: str, es_client: AsyncElasticsearch
 ) -> Generator[ElasticsearchStore, None, None]:
@@ -236,7 +236,7 @@ def es_store(
         store.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def es_hybrid_store(
     index_name: str, es_client: AsyncElasticsearch
 ) -> Generator[ElasticsearchStore, None, None]:
@@ -252,7 +252,7 @@ def es_hybrid_store(
         store.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def es_bm25_store(
     index_name: str, es_client: AsyncElasticsearch
 ) -> Generator[ElasticsearchStore, None, None]:
@@ -267,7 +267,7 @@ def es_bm25_store(
         store.close()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_query(
     es_store: ElasticsearchStore,
@@ -288,7 +288,7 @@ async def test_add_to_es_and_query(
     assert res.nodes[0].get_content() == "lorem ipsum"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_text_query(
     es_bm25_store: ElasticsearchStore,
@@ -317,7 +317,7 @@ async def test_add_to_es_and_text_query(
     assert res.nodes[0].get_content() == "lorem ipsum"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_hybrid_query(
     es_client: AsyncElasticsearch,
@@ -352,7 +352,7 @@ async def test_add_to_es_and_hybrid_query(
     assert res.nodes[0].get_content() == "lorem ipsum"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_query_with_filters(
     es_store: ElasticsearchStore,
@@ -376,7 +376,7 @@ async def test_add_to_es_query_with_filters(
     assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_query_with_es_filters(
     es_store: ElasticsearchStore,
@@ -399,7 +399,7 @@ async def test_add_to_es_query_with_es_filters(
     assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_query_and_delete(
     es_store: ElasticsearchStore,
@@ -429,7 +429,7 @@ async def test_add_to_es_query_and_delete(
     assert res.nodes[0].node_id == "f658de3b-8cef-4d1c-8bed-9a263c907251"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_embed_query_ranked(
     es_store: ElasticsearchStore,
@@ -449,7 +449,7 @@ async def test_add_to_es_and_embed_query_ranked(
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_text_query_ranked(
     es_bm25_store: ElasticsearchStore,
@@ -474,7 +474,7 @@ async def test_add_to_es_and_text_query_ranked(
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_text_query_ranked_hybrid(
     es_hybrid_store: ElasticsearchStore,
@@ -495,7 +495,7 @@ async def test_add_to_es_and_text_query_ranked_hybrid(
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_text_query_ranked_hybrid_large_top_k(
     es_hybrid_store: ElasticsearchStore,
@@ -592,7 +592,7 @@ def test_metadata_filter_to_es_filter() -> None:
     }
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_delete_nodes(
     es_store: ElasticsearchStore,

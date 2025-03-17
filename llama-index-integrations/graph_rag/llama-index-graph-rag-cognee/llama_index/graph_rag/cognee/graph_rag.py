@@ -10,7 +10,8 @@ from .base import GraphRAG
 
 
 class CogneeGraphRAG(GraphRAG):
-    """Cognee GraphRAG, handles adding, storing, processing and retrieving information from knowledge graphs.
+    """
+    Cognee GraphRAG, handles adding, storing, processing and retrieving information from knowledge graphs.
 
     Unlike traditional RAG models that retrieve unstructured text snippets, graphRAG utilizes knowledge graphs.
     A knowledge graph represents entities as nodes and their relationships as edges, often in a structured semantic format.
@@ -110,7 +111,8 @@ class CogneeGraphRAG(GraphRAG):
     async def add(
         self, data: Union[Document, List[Document]], dataset_name: str
     ) -> None:
-        """Add data to the specified dataset.
+        """
+        Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
 
         Args:
@@ -126,7 +128,8 @@ class CogneeGraphRAG(GraphRAG):
         await cognee.add(data, dataset_name)
 
     async def process_data(self, dataset_names: str) -> None:
-        """Process and structure data in the dataset and make a knowledge graph out of it.
+        """
+        Process and structure data in the dataset and make a knowledge graph out of it.
 
         Args:
             dataset_name (str): The dataset name to process.
@@ -138,7 +141,8 @@ class CogneeGraphRAG(GraphRAG):
         await cognee.cognify(datasets, user)
 
     async def get_graph_url(self, graphistry_password, graphistry_username) -> str:
-        """Retrieve the URL or endpoint for visualizing or interacting with the graph.
+        """
+        Retrieve the URL or endpoint for visualizing or interacting with the graph.
 
         Returns:
             str: The URL endpoint of the graph.
@@ -163,7 +167,8 @@ class CogneeGraphRAG(GraphRAG):
         return graph_url
 
     async def rag_search(self, query: str) -> list:
-        """Answer query based on data chunk most relevant to query.
+        """
+        Answer query based on data chunk most relevant to query.
 
         Args:
             query (str): The query string.
@@ -176,7 +181,8 @@ class CogneeGraphRAG(GraphRAG):
         )
 
     async def search(self, query: str) -> list:
-        """Search the graph for relevant information based on a query.
+        """
+        Search the graph for relevant information based on a query.
 
         Args:
             query (str): The query string to match against data from the graph.
@@ -189,7 +195,8 @@ class CogneeGraphRAG(GraphRAG):
         )
 
     async def get_related_nodes(self, node_id: str) -> list:
-        """Search the graph for relevant nodes or relationships based on node id.
+        """
+        Search the graph for relevant nodes or relationships based on node id.
 
         Args:
             node_id (str): The name of the node to match against nodes in the graph.

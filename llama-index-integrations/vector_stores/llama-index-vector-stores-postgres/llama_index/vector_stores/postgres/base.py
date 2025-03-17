@@ -120,7 +120,8 @@ def get_data_model(
 
 
 class PGVectorStore(BasePydanticVectorStore):
-    """Postgres Vector Store.
+    """
+    Postgres Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-postgres`
@@ -190,7 +191,8 @@ class PGVectorStore(BasePydanticVectorStore):
         initialization_fail_on_error: bool = False,
         use_halfvec: bool = False,
     ) -> None:
-        """Constructor.
+        """
+        Constructor.
 
         Args:
             connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to postgres db.
@@ -289,7 +291,8 @@ class PGVectorStore(BasePydanticVectorStore):
         create_engine_kwargs: Optional[Dict[str, Any]] = None,
         use_halfvec: bool = False,
     ) -> "PGVectorStore":
-        """Construct from params.
+        """
+        Construct from params.
 
         Args:
             host (Optional[str], optional): Host of postgres connection. Defaults to None.
@@ -942,7 +945,8 @@ class PGVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
@@ -972,7 +976,8 @@ class PGVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes asynchronously.
+        """
+        Deletes nodes asynchronously.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.

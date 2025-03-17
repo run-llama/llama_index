@@ -44,7 +44,8 @@ class ExaToolSpec(BaseToolSpec):
         use_autoprompt: bool = True,
         type: str = "magic",
     ) -> List:
-        """Exa allows you to use a natural language query to search the internet.
+        """
+        Exa allows you to use a natural language query to search the internet.
 
         Args:
             query (str): A natural language query phrased as an answer for what the link provides, ie: "This is the latest news about space:"
@@ -72,7 +73,8 @@ class ExaToolSpec(BaseToolSpec):
         ]
 
     def retrieve_documents(self, ids: List[str]) -> List[Document]:
-        """Retrieve a list of document texts returned by `exa_search`, using the ID field.
+        """
+        Retrieve a list of document texts returned by `exa_search`, using the ID field.
 
         Args:
             ids (List(str)): the ids of the documents to retrieve
@@ -87,7 +89,8 @@ class ExaToolSpec(BaseToolSpec):
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
     ) -> List:
-        """Retrieve a list of similar documents to a given url.
+        """
+        Retrieve a list of similar documents to a given url.
 
         Args:
             url (str): The web page to find similar results of
@@ -117,7 +120,8 @@ class ExaToolSpec(BaseToolSpec):
         use_autoprompt: bool = True,
         type: str = "magic",
     ) -> List[Document]:
-        """Combines the functionality of `search` and `retrieve_documents`.
+        """
+        Combines the functionality of `search` and `retrieve_documents`.
 
         Args:
             query (str): the natural language query
@@ -153,7 +157,8 @@ class ExaToolSpec(BaseToolSpec):
         use_autoprompt: bool = True,
         type: str = "magic",
     ) -> List[Document]:
-        """Searches and retrieves highlights (intelligent snippets from the document).
+        """
+        Searches and retrieves highlights (intelligent snippets from the document).
 
         Args:
             query (str): the natural language query
@@ -179,7 +184,8 @@ class ExaToolSpec(BaseToolSpec):
         return [Document(text=document.highlights[0]) for document in response.results]
 
     def current_date(self):
-        """A function to return todays date.
+        """
+        A function to return todays date.
 
         Call this before any other functions that take timestamps as an argument
         """

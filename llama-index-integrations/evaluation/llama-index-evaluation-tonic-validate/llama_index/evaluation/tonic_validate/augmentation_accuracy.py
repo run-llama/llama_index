@@ -10,7 +10,8 @@ from tonic_validate.services.openai_service import OpenAIService
 
 
 class AugmentationAccuracyEvaluator(BaseEvaluator):
-    """Tonic Validate's augmentation accuracy metric.
+    """
+    Tonic Validate's augmentation accuracy metric.
 
     The output score is a float between 0.0 and 1.0.
 

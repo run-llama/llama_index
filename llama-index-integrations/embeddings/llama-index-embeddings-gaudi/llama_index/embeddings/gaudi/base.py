@@ -40,12 +40,14 @@ class GaudiSentenceTransformer(SentenceTransformer):
         """Override tokenize method from SentenceTransformer."""
         return self._first_module().tokenizer(
             texts,
-            max_length=self.max_seq_length
-            if (
-                self.embedding_input_size == -1
-                or self.embedding_input_size > self.max_seq_length
-            )
-            else self.embedding_input_size,
+            max_length=(
+                self.max_seq_length
+                if (
+                    self.embedding_input_size == -1
+                    or self.embedding_input_size > self.max_seq_length
+                )
+                else self.embedding_input_size
+            ),
             padding="max_length",
             return_tensors="pt",
             truncation=True,

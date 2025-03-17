@@ -1,4 +1,5 @@
-"""Minio file and directory reader.
+"""
+Minio file and directory reader.
 
 A loader that fetches a file or iterates through a directory on Minio.
 
@@ -35,7 +36,8 @@ class MinioReader(BaseReader):
         minio_session_token: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize Minio bucket and key, along with credentials if needed.
+        """
+        Initialize Minio bucket and key, along with credentials if needed.
 
         If key is not set, the entire bucket (filtered by prefix) is parsed.
 

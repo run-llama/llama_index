@@ -15,7 +15,8 @@ MAX_CONTEXT_WINDOW = 200000
 
 
 class Neutrino(OpenAILike):
-    """Neutrino LLM.
+    """
+    Neutrino LLM.
 
     Examples:
         `pip install llama-index-llms-neutrino`

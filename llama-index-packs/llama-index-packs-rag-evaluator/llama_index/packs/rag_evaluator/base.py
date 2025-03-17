@@ -31,7 +31,8 @@ from tqdm.asyncio import tqdm_asyncio
 
 
 class RagEvaluatorPack(BaseLlamaPack):
-    """A pack for performing evaluation with your own RAG pipeline.
+    """
+    A pack for performing evaluation with your own RAG pipeline.
 
     Args:
         query_engine: The RAG pipeline to evaluate.
@@ -125,7 +126,8 @@ class RagEvaluatorPack(BaseLlamaPack):
         return judges
 
     async def _areturn_null_eval_result(self, query) -> EvaluationResult:
-        """A dummy async method that returns None.
+        """
+        A dummy async method that returns None.
 
         NOTE: this is used to handle case when creating async tasks for evaluating
         predictions where contexts do not exist.
@@ -135,7 +137,8 @@ class RagEvaluatorPack(BaseLlamaPack):
         )
 
     def _return_null_eval_result(self, query) -> EvaluationResult:
-        """A dummy async method that returns None.
+        """
+        A dummy async method that returns None.
 
         NOTE: this is used to handle case when creating async tasks for evaluating
         predictions where contexts do not exist.

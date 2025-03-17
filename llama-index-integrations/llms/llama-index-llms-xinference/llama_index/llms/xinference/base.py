@@ -29,7 +29,8 @@ DEFAULT_XINFERENCE_TEMP = 1.0
 
 
 class Xinference(CustomLLM):
-    """Xinference LLM.
+    """
+    Xinference LLM.
 
     Examples:
         `pip install llama-index-llms-xinference`

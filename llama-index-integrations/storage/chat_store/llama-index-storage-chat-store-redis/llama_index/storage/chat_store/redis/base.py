@@ -337,7 +337,7 @@ class RedisChatStore(BaseChatStore):
                 )
         """
         # Initialize with necessary components.
-        redis_client: "Redis"
+        redis_client: Redis
         # check if normal redis:// or redis+sentinel:// url
         if redis_url.startswith("redis+sentinel"):
             redis_client = self._redis_sentinel_client(redis_url, **kwargs)
@@ -357,7 +357,7 @@ class RedisChatStore(BaseChatStore):
         return redis_client
 
     def _aget_client(self, redis_url: str, **kwargs: Any) -> "AsyncRedis":
-        redis_client: "AsyncRedis"
+        redis_client: AsyncRedis
         # check if normal redis:// or redis+sentinel:// url
         if redis_url.startswith("redis+sentinel"):
             redis_client = self._aredis_sentinel_client(redis_url, **kwargs)

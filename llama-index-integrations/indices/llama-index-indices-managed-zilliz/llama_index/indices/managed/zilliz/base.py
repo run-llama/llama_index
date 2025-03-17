@@ -1,4 +1,5 @@
-"""Managed index.
+"""
+Managed index.
 
 A managed Index - where the index is accessible via some API that
 interfaces a managed service.
@@ -44,7 +45,8 @@ class ZillizCloudPipelineIndexStruct(IndexDict):
 
 
 class ZillizCloudPipelineIndex(BaseManagedIndex):
-    """Zilliz Cloud Pipeline's Index.
+    """
+    Zilliz Cloud Pipeline's Index.
 
     The Zilliz Cloud Pipeline's index implements a managed index that uses Zilliz Cloud Pipelines as the backend.
 
@@ -187,7 +189,8 @@ class ZillizCloudPipelineIndex(BaseManagedIndex):
         metadata_schema: Optional[Dict] = None,
         **kwargs: Any,
     ) -> dict:
-        """Create INGESTION, SEARCH, DELETION pipelines using self.collection_name.
+        """
+        Create INGESTION, SEARCH, DELETION pipelines using self.collection_name.
 
         Args:
             project_id (str): Zilliz Cloud's project ID.
@@ -321,7 +324,8 @@ class ZillizCloudPipelineIndex(BaseManagedIndex):
         show_progress: bool = False,
         **kwargs: Any,
     ) -> BaseManagedIndex:
-        """Zilliz Cloud Pipeline loads document from a signed url and then builds auto index for it.
+        """
+        Zilliz Cloud Pipeline loads document from a signed url and then builds auto index for it.
 
         Args:
             url: a gcs or s3 signed url.
@@ -374,7 +378,8 @@ class ZillizCloudPipelineIndex(BaseManagedIndex):
         metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> IndexType:
-        """Build a Zilliz Cloud Pipeline index from a sequence of documents.
+        """
+        Build a Zilliz Cloud Pipeline index from a sequence of documents.
 
         Args:
             documents: a sequence of llamaindex documents.

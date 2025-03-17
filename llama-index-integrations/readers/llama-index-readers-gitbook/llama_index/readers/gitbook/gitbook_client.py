@@ -5,7 +5,8 @@ DEFAULT_GITBOOK_API_URL = "https://api.gitbook.com/v1"
 
 
 class GitbookClient:
-    """Gitbook Restful API Client.
+    """
+    Gitbook Restful API Client.
 
     Helper Class to invoke gitbook restful api & parse result
 

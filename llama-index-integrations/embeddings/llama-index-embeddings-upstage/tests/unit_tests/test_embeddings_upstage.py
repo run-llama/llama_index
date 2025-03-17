@@ -5,14 +5,14 @@ from llama_index.embeddings.upstage import UpstageEmbedding
 UPSTAGE_TEST_API_KEY = "upstage_test_key"
 
 
-@pytest.fixture()
+@pytest.fixture
 def upstage_embedding():
     return pytest.importorskip(
         "llama_index.embeddings.upstage", reason="Cannot import UpstageEmbedding"
     ).UpstageEmbedding
 
 
-@pytest.fixture()
+@pytest.fixture
 def setup_environment(monkeypatch):
     monkeypatch.setenv("UPSTAGE_API_KEY", UPSTAGE_TEST_API_KEY)
 

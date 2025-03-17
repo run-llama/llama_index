@@ -16,7 +16,8 @@ from llama_index.core.storage.docstore import SimpleDocumentStore
 
 
 class AutoMergingRetrieverPack(BaseLlamaPack):
-    """Auto-merging Retriever pack.
+    """
+    Auto-merging Retriever pack.
 
     Build a hierarchical node graph from a set of documents, and
     run our auto-merging retriever.

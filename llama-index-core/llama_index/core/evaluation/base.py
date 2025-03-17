@@ -1,4 +1,5 @@
 """Evaluator."""
+
 from abc import abstractmethod
 from typing import Any, Optional, Sequence
 

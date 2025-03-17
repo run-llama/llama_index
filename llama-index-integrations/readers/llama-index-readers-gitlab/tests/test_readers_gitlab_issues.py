@@ -7,12 +7,12 @@ import gitlab
 import pytest_mock  # noqa
 
 
-@pytest.fixture()
+@pytest.fixture
 def gitlab_client_mock():
     return MagicMock(spec=gitlab.Gitlab)
 
 
-@pytest.fixture()
+@pytest.fixture
 def gitlab_issues_reader(gitlab_client_mock):
     return GitLabIssuesReader(
         gitlab_client=gitlab_client_mock, project_id=123, verbose=True

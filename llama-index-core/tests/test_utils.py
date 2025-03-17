@@ -33,7 +33,7 @@ call_count = 0
 
 
 def fn_with_exception(
-    exception_cls: Optional[Union[Type[Exception], Exception]]
+    exception_cls: Optional[Union[Type[Exception], Exception]],
 ) -> bool:
     """Return true unless exception is specified."""
     global call_count

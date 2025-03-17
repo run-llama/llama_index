@@ -4,7 +4,8 @@ from llama_index.readers.airbyte_cdk.base import AirbyteCDKReader, RecordHandler
 
 
 class AirbyteSalesforceReader(AirbyteCDKReader):
-    """AirbyteSalesforceReader reader.
+    """
+    AirbyteSalesforceReader reader.
 
     Retrieve documents from Salesforce
 

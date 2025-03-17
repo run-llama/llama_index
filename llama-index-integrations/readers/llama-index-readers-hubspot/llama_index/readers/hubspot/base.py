@@ -7,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class HubspotReader(BaseReader):
-    """Hubspot reader. Reads data from a Hubspot account.
+    """
+    Hubspot reader. Reads data from a Hubspot account.
 
     Args:
         access_token(str): Hubspot API key.
@@ -18,7 +19,8 @@ class HubspotReader(BaseReader):
         self.access_token = access_token
 
     def load_data(self) -> List[Document]:
-        """Load deals, contacts and companies data from Hubspot.
+        """
+        Load deals, contacts and companies data from Hubspot.
 
         Returns:
             List[Document]: List of documents, where each document represensts a list of Hubspot objects

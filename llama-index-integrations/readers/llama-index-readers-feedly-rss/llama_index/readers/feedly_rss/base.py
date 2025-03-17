@@ -8,7 +8,8 @@ from llama_index.core.schema import Document
 
 
 class FeedlyRssReader(BaseReader):
-    """Feedly Rss Reader.
+    """
+    Feedly Rss Reader.
 
     Get entries from Feedly Rss Reader
 
@@ -23,7 +24,8 @@ class FeedlyRssReader(BaseReader):
     def setup_auth(
         self, directory: Path = Path.home() / ".config/feedly", overwrite: bool = False
     ):
-        """Modified from python-api-client/feedly/api_client/utils.py
+        """
+        Modified from python-api-client/feedly/api_client/utils.py
         Instead promopting for user input, we take the token as an argument.
         """
         directory.mkdir(exist_ok=True, parents=True)

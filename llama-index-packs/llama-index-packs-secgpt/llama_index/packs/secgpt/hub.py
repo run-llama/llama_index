@@ -1,6 +1,7 @@
 """
 Hub is a central trustworthy that is aware of the existence of isolated apps, and that can reliably receive user queries and route them to the appropriate apps.
 """
+
 from typing import Optional, Sequence, Callable
 
 from llama_index.core.agent.react.output_parser import ReActOutputParser
@@ -24,7 +25,8 @@ from .hub_operator import HubOperator
 
 
 class SecGPTPack(BaseLlamaPack):
-    """SecGPT Hub.
+    """
+    SecGPT Hub.
 
     A central trustworthy entity that routes user queries to appropriate isolated apps.
     """
@@ -42,7 +44,8 @@ class SecGPTPack(BaseLlamaPack):
         ] = None,
         user_id: Optional[str] = "0",
     ) -> None:
-        """Initialize the SecGPTPack.
+        """
+        Initialize the SecGPTPack.
 
         Args:
             tools (Sequence[BaseTool]): A sequence of available tools.
@@ -71,7 +74,8 @@ class SecGPTPack(BaseLlamaPack):
         self,
         query: str,
     ) -> str:
-        """Process a user query and generate a response.
+        """
+        Process a user query and generate a response.
 
         Args:
             query (str): The user query to process.

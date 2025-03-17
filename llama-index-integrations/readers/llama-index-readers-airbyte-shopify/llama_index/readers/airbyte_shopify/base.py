@@ -4,7 +4,8 @@ from llama_index.readers.airbyte_cdk.base import AirbyteCDKReader, RecordHandler
 
 
 class AirbyteShopifyReader(AirbyteCDKReader):
-    """AirbyteShopifyReader reader.
+    """
+    AirbyteShopifyReader reader.
 
     Retrieve documents from Shopify
 

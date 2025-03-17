@@ -41,7 +41,8 @@ DEFAULT_PORTKEY_MODEL = "gpt-3.5-turbo"
 
 
 class Portkey(CustomLLM):
-    """Portkey LLM.
+    """
+    Portkey LLM.
 
     Examples:
         `pip install llama-index-llms-portkey`
@@ -342,7 +343,8 @@ class Portkey(CustomLLM):
 
     @property
     def _is_chat_model(self) -> bool:
-        """Check if a given model is a chat-based language model.
+        """
+        Check if a given model is a chat-based language model.
 
         Returns:
             bool: True if the provided model is a chat-based language model,

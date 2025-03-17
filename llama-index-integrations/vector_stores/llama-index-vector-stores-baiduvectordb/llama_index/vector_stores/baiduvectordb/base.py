@@ -68,7 +68,8 @@ class TableField:
 
 
 class TableParams:
-    """Baidu VectorDB table params.
+    """
+    Baidu VectorDB table params.
 
     See the following documentation for details:
     https://cloud.baidu.com/doc/VDB/s/mlrsob0p6
@@ -122,7 +123,8 @@ class TableParams:
 
 
 class BaiduVectorDB(BasePydanticVectorStore):
-    """Baidu VectorDB as a vector store.
+    """
+    Baidu VectorDB as a vector store.
 
     In order to use this you need to have a database instance.
     See the following documentation for details:
@@ -341,7 +343,8 @@ class BaiduVectorDB(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -396,7 +399,8 @@ class BaiduVectorDB(BasePydanticVectorStore):
         raise NotImplementedError("Not support.")
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): contains

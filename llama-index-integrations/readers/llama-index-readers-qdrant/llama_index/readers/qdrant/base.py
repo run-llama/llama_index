@@ -7,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class QdrantReader(BaseReader):
-    """Qdrant reader.
+    """
+    Qdrant reader.
 
     Retrieve documents from existing Qdrant collections.
 
@@ -84,7 +85,8 @@ class QdrantReader(BaseReader):
         rang_search_mapping: Optional[Dict[str, Dict[str, float]]] = None,
         limit: int = 10,
     ) -> List[Document]:
-        """Load data from Qdrant.
+        """
+        Load data from Qdrant.
 
         Args:
             collection_name (str): Name of the Qdrant collection.

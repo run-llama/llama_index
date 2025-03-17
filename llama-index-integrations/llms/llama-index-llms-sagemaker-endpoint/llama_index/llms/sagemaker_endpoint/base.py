@@ -37,7 +37,8 @@ LLAMA_COMPLETION_TO_PROMPT = completion_to_prompt
 
 
 class SageMakerLLM(LLM):
-    r"""SageMaker LLM.
+    r"""
+    SageMaker LLM.
 
     Examples:
         `pip install llama-index-llms-sagemaker-endpoint`

@@ -75,9 +75,11 @@ def _format_oci_tool_calls(
                 {
                     "toolUseId": uuid.uuid4().hex[:],
                     "name": name,
-                    "input": json.dumps(parameters)
-                    if isinstance(parameters, dict)
-                    else parameters,
+                    "input": (
+                        json.dumps(parameters)
+                        if isinstance(parameters, dict)
+                        else parameters
+                    ),
                 }
             )
 
@@ -85,7 +87,8 @@ def _format_oci_tool_calls(
 
 
 def create_client(auth_type, auth_profile, auth_file_location, service_endpoint):
-    """OCI Gen AI client.
+    """
+    OCI Gen AI client.
 
     Args:
         auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL. If not specified, API_KEY will be used
@@ -129,9 +132,9 @@ def create_client(auth_type, auth_profile, auth_file_location, service_endpoint)
                 oci_config=client_kwargs["config"]
             )
         elif auth_type == OCIAuthType(3).name:
-            client_kwargs[
-                "signer"
-            ] = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+            client_kwargs["signer"] = (
+                oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+            )
         elif auth_type == OCIAuthType(4).name:
             client_kwargs["signer"] = oci.auth.signers.get_resource_principals_signer()
         else:
@@ -201,39 +204,33 @@ def get_chat_generator() -> Any:
 
 class Provider(ABC):
     @abstractmethod
-    def completion_response_to_text(self, response: Any) -> str:
-        ...
+    def completion_response_to_text(self, response: Any) -> str: ...
 
     @abstractmethod
-    def completion_stream_to_text(self, response: Any) -> str:
-        ...
+    def completion_stream_to_text(self, response: Any) -> str: ...
 
     @abstractmethod
-    def chat_response_to_text(self, response: Any) -> str:
-        ...
+    def chat_response_to_text(self, response: Any) -> str: ...
 
     @abstractmethod
-    def chat_stream_to_text(self, event_data: Dict) -> str:
-        ...
+    def chat_stream_to_text(self, event_data: Dict) -> str: ...
 
     @abstractmethod
-    def chat_generation_info(self, response: Any) -> Dict[str, Any]:
-        ...
+    def chat_generation_info(self, response: Any) -> Dict[str, Any]: ...
 
     @abstractmethod
-    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
-        ...
+    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]: ...
 
     @abstractmethod
-    def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
-        ...
+    def messages_to_oci_params(
+        self, messages: Sequence[ChatMessage]
+    ) -> Dict[str, Any]: ...
 
     @abstractmethod
     def convert_to_oci_tool(
         self,
         tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-    ) -> Dict[str, Any]:
-        ...
+    ) -> Dict[str, Any]: ...
 
 
 class CohereProvider(Provider):
@@ -337,9 +334,11 @@ class CohereProvider(Provider):
                     tool_calls.append(
                         self.oci_tool_call(
                             name=tool_call.get("name"),
-                            parameters=json.loads(tool_call["input"])
-                            if isinstance(tool_call["input"], str)
-                            else tool_call["input"],
+                            parameters=(
+                                json.loads(tool_call["input"])
+                                if isinstance(tool_call["input"], str)
+                                else tool_call["input"]
+                            ),
                         )
                     )
 
@@ -387,9 +386,11 @@ class CohereProvider(Provider):
                             tool_result = self.oci_tool_result()
                             tool_result.call = self.oci_tool_call(
                                 name=li_tool_call.get("name"),
-                                parameters=json.loads(li_tool_call["input"])
-                                if isinstance(li_tool_call["input"], str)
-                                else li_tool_call["input"],
+                                parameters=(
+                                    json.loads(li_tool_call["input"])
+                                    if isinstance(li_tool_call["input"], str)
+                                    else li_tool_call["input"]
+                                ),
                             )
                             tool_result.outputs = [{"output": tool_message.content}]
                             oci_tool_results.append(tool_result)

@@ -12,7 +12,7 @@ UNKNOWN_URLS = [
 ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_unknown_urls(httpx_mock: HTTPXMock, base_url: str) -> None:
     mock_response = {
         "data": [

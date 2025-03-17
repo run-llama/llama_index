@@ -4,7 +4,8 @@ from llama_index.readers.airbyte_cdk.base import AirbyteCDKReader, RecordHandler
 
 
 class AirbyteTypeformReader(AirbyteCDKReader):
-    """AirbyteTypeformReader reader.
+    """
+    AirbyteTypeformReader reader.
 
     Retrieve documents from Typeform
 

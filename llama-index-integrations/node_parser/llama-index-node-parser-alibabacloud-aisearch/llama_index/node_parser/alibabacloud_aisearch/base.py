@@ -109,7 +109,8 @@ class AlibabaCloudAISearchNodeParser(NodeParser):
         show_progress: bool = False,
         **kwargs: Any,
     ) -> List[BaseNode]:
-        """Parse document into nodes.
+        """
+        Parse document into nodes.
 
         Args:
             nodes (Sequence[BaseNode]): nodes to parse

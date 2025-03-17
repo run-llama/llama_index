@@ -108,9 +108,11 @@ class RelikPathExtractor(TransformComponent):
             existing_nodes.append(
                 EntityNode(
                     name=n.text,
-                    label=DEFAULT_NODE_TYPE
-                    if n.label.strip() == "--NME--"
-                    else n.label.strip(),
+                    label=(
+                        DEFAULT_NODE_TYPE
+                        if n.label.strip() == "--NME--"
+                        else n.label.strip()
+                    ),
                     properties=metadata,
                 )
             )

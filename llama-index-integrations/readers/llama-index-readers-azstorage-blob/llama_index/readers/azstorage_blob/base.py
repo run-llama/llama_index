@@ -4,6 +4,7 @@ Azure Storage Blob file and directory reader.
 A loader that fetches a file or iterates through a directory from Azure Storage Blob.
 
 """
+
 import logging
 import math
 import os

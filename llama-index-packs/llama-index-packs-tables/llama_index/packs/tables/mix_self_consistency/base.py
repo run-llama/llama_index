@@ -1,4 +1,5 @@
-"""Mix Self Consistency Query Engine.
+"""
+Mix Self Consistency Query Engine.
 
 All prompts adapted from original paper by Liu et al. (2023):
 https://arxiv.org/pdf/2312.16702v1.pdf

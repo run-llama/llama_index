@@ -1,4 +1,5 @@
 """Patentsview reader that reads patent abstract."""
+
 from typing import List
 
 import requests
@@ -9,7 +10,8 @@ BASE_URL = "https://api.patentsview.org/patents/query"
 
 
 class PatentsviewReader(BaseReader):
-    """Patentsview reader.
+    """
+    Patentsview reader.
 
     Read patent abstract.
 

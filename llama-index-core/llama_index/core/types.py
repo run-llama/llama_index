@@ -43,10 +43,10 @@ if TYPE_CHECKING:
 class BaseOutputParser(DispatcherSpanMixin, ABC):
     """
     Base class for output parsers that process and structure LLM responses.
-    
+
     This abstract class defines the interface for parsing raw LLM outputs into structured formats.
     Implementations should handle validation, error correction, and conversion to specific data types.
-    
+
     Attributes:
         format (method): Format a query with structured output formatting instructions.
         format_messages (method): Format a list of messages with structured output formatting instructions.
@@ -56,23 +56,23 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
     @abstractmethod
     def parse(self, output: str) -> Any:
         """Parse and validate the raw LLM output string into a structured format.
-        
+
         Args:
             output (str): The raw string output from the LLM to parse.
-            
+
         Returns:
             Any: The parsed and structured output in the target format.
-            
+
         Raises:
             ValueError: If the output cannot be parsed into the expected format.
         """
 
     def format(self, query: str) -> str:
         """Format a query with structured output formatting instructions.
-        
+
         Args:
             query (str): The input query string to be formatted.
-                
+
         Returns:
             str: The formatted query with added output formatting instructions.
         """
@@ -104,8 +104,10 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
         """Format a list of messages with structured output formatting instructions."""
         if not messages:
             return messages
-            
-        target_message = messages[0] if messages[0].role == MessageRole.SYSTEM else messages[-1]
+
+        target_message = (
+            messages[0] if messages[0].role == MessageRole.SYSTEM else messages[-1]
+        )
         return [
             msg if msg != target_message else self._format_message(msg)
             for msg in messages
@@ -128,22 +130,22 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
 class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
     """
     A base class for LLM-powered functions that return a Pydantic model.
-    
+
     This class provides a structured way to convert LLM outputs into strongly-typed
     Pydantic models, enabling type safety and validation.
 
     Type Parameters:
         Model: The Pydantic model type that this program will output. Must be a subclass
             of BaseModel and will be used for validating and structuring the LLM response.
-        
+
     Attributes:
         output_cls (property): The Pydantic model class used for output validation.
         __call__ (method): Execute the program and return a validated model instance.
         acall (method): Async version of __call__.
         stream_call (method): Stream output as model instances.
         astream_call (method): Async version of stream_call.
-        
-    Note: 
+
+    Note:
         This interface is not yet stable and may change in future versions.
     """
 
@@ -151,24 +153,22 @@ class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
     @abstractmethod
     def output_cls(self) -> Type[Model]:
         """Get the output Pydantic model class.
-        
+
         Returns:
             Type[Model]: The Pydantic model class used for output validation.
         """
-        pass
 
     @abstractmethod
     def __call__(self, *args: Any, **kwargs: Any) -> Union[Model, List[Model]]:
         """Execute the program and return a validated model instance.
-        
+
         Returns:
             Union[Model, List[Model]]: A single model instance or list of instances.
         """
-        pass
 
     async def acall(self, *args: Any, **kwargs: Any) -> Union[Model, List[Model]]:
         """Async version of __call__.
-        
+
         Returns:
             Union[Model, List[Model]]: A single model instance or list of instances.
         """
@@ -203,11 +203,11 @@ class PydanticProgramMode(str, Enum):
 class Thread(threading.Thread):
     """
     A context-aware Thread wrapper that preserves the execution context.
-    
+
     This class extends the standard threading.Thread to ensure that any context variables
     from the parent thread are properly propagated to the child thread. This is particularly
     useful for maintaining context in asynchronous operations, logging, and request tracking.
-    
+
     The wrapper automatically copies the current context when the thread is created and
     ensures this context is active when the target function runs.
 

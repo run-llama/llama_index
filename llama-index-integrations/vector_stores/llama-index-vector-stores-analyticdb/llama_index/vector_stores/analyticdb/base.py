@@ -68,7 +68,8 @@ def _recursively_parse_adb_filter(filters: MetadataFilters) -> Union[str, None]:
 
 
 class AnalyticDBVectorStore(BasePydanticVectorStore):
-    """AnalyticDB vector store.
+    """
+    AnalyticDB vector store.
 
     In this vector store, embeddings and docs are stored within a
     single table.

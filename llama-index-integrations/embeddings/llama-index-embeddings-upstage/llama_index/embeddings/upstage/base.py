@@ -30,7 +30,7 @@ MAX_EMBED_BATCH_SIZE = 100
 
 def get_engine(model) -> Tuple[Any, Any]:
     """
-    get query engine and passage engine for the model.
+    Get query engine and passage engine for the model.
     """
     if model not in UPSTAGE_EMBEDDING_MODELS:
         raise ValueError(

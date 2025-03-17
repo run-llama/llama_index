@@ -1,4 +1,5 @@
 """Scrapfly Web Reader."""
+
 import logging
 from typing import List, Optional, Literal
 
@@ -9,7 +10,8 @@ logger = logging.getLogger(__file__)
 
 
 class ScrapflyReader(BasePydanticReader):
-    """Turn a url to llm accessible markdown with `Scrapfly.io`.
+    """
+    Turn a url to llm accessible markdown with `Scrapfly.io`.
 
     Args:
     api_key: The Scrapfly API key.
@@ -45,7 +47,8 @@ class ScrapflyReader(BasePydanticReader):
         scrape_format: Literal["markdown", "text"] = "markdown",
         scrape_config: Optional[dict] = None,
     ) -> List[Document]:
-        """Load data from the urls.
+        """
+        Load data from the urls.
 
         Args:
             urls: List[str]): List of URLs to scrape.

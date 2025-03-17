@@ -38,7 +38,8 @@ from llama_index.llms.bedrock.utils import (
 
 
 class Bedrock(LLM):
-    """Bedrock LLM.
+    """
+    Bedrock LLM.
 
     Examples:
         `pip install llama-index-llms-bedrock`

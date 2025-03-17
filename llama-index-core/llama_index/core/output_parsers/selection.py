@@ -41,16 +41,16 @@ class SelectionOutputParser(BaseOutputParser):
     def _filter_dict(self, json_dict: dict) -> dict:
         """
         Recursively filter dictionary to find matching required keys.
-        
+
         Args:
             json_dict (dict): Input dictionary to filter
-            
+
         Returns:
             dict: First dictionary found containing all required keys
         """
         if all(key in json_dict for key in self.REQUIRED_KEYS):
             return json_dict
-            
+
         for val in json_dict.values():
             if isinstance(val, dict):
                 result = self._filter_dict(val)

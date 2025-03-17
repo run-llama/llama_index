@@ -55,7 +55,8 @@ class EntityTypeCountAnonymizer(Operator):
 
 
 class PresidioPIINodePostprocessor(BaseNodePostprocessor):
-    """presidio PII Node processor.
+    """
+    presidio PII Node processor.
     Uses a presidio to analyse PIIs.
     """
 

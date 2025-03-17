@@ -87,7 +87,8 @@ class KalturaESearchReader(BaseReader):
     def _load_from_search_params(
         self, search_params, with_captions: bool = True, max_entries: int = 10
     ) -> List[Dict[str, Any]]:
-        """Load search parameters and returns a list of entries.
+        """
+        Load search parameters and returns a list of entries.
 
         Args:
             search_params: Search parameters for Kaltura eSearch.
@@ -156,7 +157,8 @@ class KalturaESearchReader(BaseReader):
             return []
 
     def _get_json_transcript(self, caption_asset_id):
-        """Fetch json transcript/captions from a given caption_asset_id.
+        """
+        Fetch json transcript/captions from a given caption_asset_id.
 
         Args:
             caption_asset_id: The ID of the caption asset that includes the captions to fetch json transcript for
@@ -183,7 +185,8 @@ class KalturaESearchReader(BaseReader):
         with_captions: bool = True,
         max_entries: int = 5,
     ) -> List[Dict[str, Any]]:
-        """Load data from the Kaltura based on search parameters.
+        """
+        Load data from the Kaltura based on search parameters.
         The function returns a list of dictionaries.
         Each dictionary represents a media entry, where the keys are strings (field names) and the values can be of any type.
 

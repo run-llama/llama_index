@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 
 
 class AzureAIEmbeddingsModel(BaseEmbedding):
-    """Azure AI model inference for embeddings.
+    """
+    Azure AI model inference for embeddings.
 
     Examples:
         ```python

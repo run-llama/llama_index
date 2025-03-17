@@ -498,22 +498,16 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 KnowledgeGraphQueryEngine,
             )
 
-            graph_query_synthesis_prompt = kwargs.get(
-                "graph_query_synthesis_prompt",
-                None,
-            )
+            graph_query_synthesis_prompt = kwargs.get("graph_query_synthesis_prompt")
             if graph_query_synthesis_prompt is not None:
                 del kwargs["graph_query_synthesis_prompt"]
 
-            graph_response_answer_prompt = kwargs.get(
-                "graph_response_answer_prompt",
-                None,
-            )
+            graph_response_answer_prompt = kwargs.get("graph_response_answer_prompt")
             if graph_response_answer_prompt is not None:
                 del kwargs["graph_response_answer_prompt"]
 
             refresh_schema = kwargs.get("refresh_schema", False)
-            response_synthesizer = kwargs.get("response_synthesizer", None)
+            response_synthesizer = kwargs.get("response_synthesizer")
             self._kg_query_engine = KnowledgeGraphQueryEngine(
                 llm=self._llm,
                 storage_context=self._storage_context,

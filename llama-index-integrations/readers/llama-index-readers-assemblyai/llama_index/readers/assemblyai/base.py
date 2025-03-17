@@ -68,7 +68,8 @@ class AssemblyAIAudioTranscriptReader(BaseReader):
         self.transcriber = assemblyai.Transcriber(config=config)
 
     def load_data(self) -> List[Document]:
-        """Transcribes the audio file and loads the transcript into documents.
+        """
+        Transcribes the audio file and loads the transcript into documents.
 
         It uses the AssemblyAI API to transcribe the audio file and blocks until
         the transcription is finished.

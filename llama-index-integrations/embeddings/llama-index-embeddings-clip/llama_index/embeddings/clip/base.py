@@ -15,7 +15,8 @@ DEFAULT_CLIP_MODEL = "ViT-B/32"
 
 
 class ClipEmbedding(MultiModalEmbedding):
-    """CLIP embedding models for encoding text and image for Multi-Modal purpose.
+    """
+    CLIP embedding models for encoding text and image for Multi-Modal purpose.
 
     This class provides an interface to generate embeddings using a model
     deployed in OpenAI CLIP. At the initialization it requires a model name
@@ -44,7 +45,8 @@ class ClipEmbedding(MultiModalEmbedding):
         model_name: str = DEFAULT_CLIP_MODEL,
         **kwargs: Any,
     ):
-        """Initializes the ClipEmbedding class.
+        """
+        Initializes the ClipEmbedding class.
 
         During the initialization the `clip` package is imported.
 

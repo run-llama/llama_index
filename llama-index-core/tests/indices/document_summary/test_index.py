@@ -1,4 +1,5 @@
 """Test document summary index."""
+
 from typing import List
 
 import pytest

@@ -37,7 +37,7 @@ class TokenCountingEvent:
 
 
 def get_tokens_from_response(
-    response: Union["CompletionResponse", "ChatResponse"]
+    response: Union["CompletionResponse", "ChatResponse"],
 ) -> Tuple[int, int]:
     """Get the token counts from a raw response."""
     raw_response = response.raw

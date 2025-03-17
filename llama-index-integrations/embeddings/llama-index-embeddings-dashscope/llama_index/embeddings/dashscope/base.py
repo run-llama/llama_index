@@ -51,7 +51,8 @@ def get_text_embedding(
     api_key: Optional[str] = None,
     **kwargs: Any,
 ) -> List[List[float]]:
-    """Call DashScope text embedding.
+    """
+    Call DashScope text embedding.
        ref: https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-api-details.
 
     Args:
@@ -87,7 +88,8 @@ def get_text_embedding(
 def get_batch_text_embedding(
     model: str, url: str, api_key: Optional[str] = None, **kwargs: Any
 ) -> Optional[str]:
-    """Call DashScope batch text embedding.
+    """
+    Call DashScope batch text embedding.
 
     Args:
         model (str): The `DashScopeMultiModalEmbeddingModels`
@@ -117,7 +119,8 @@ def get_batch_text_embedding(
 def get_multimodal_embedding(
     model: str, input: list, api_key: Optional[str] = None, **kwargs: Any
 ) -> List[float]:
-    """Call DashScope multimodal embedding.
+    """
+    Call DashScope multimodal embedding.
        ref: https://help.aliyun.com/zh/dashscope/developer-reference/one-peace-multimodal-embedding-api-details.
 
     Args:
@@ -148,7 +151,8 @@ def get_multimodal_embedding(
 
 
 class DashScopeEmbedding(MultiModalEmbedding):
-    """DashScope class for text embedding.
+    """
+    DashScope class for text embedding.
 
     Args:
         model_name (str): Model name for embedding.
@@ -236,7 +240,8 @@ class DashScopeEmbedding(MultiModalEmbedding):
         return self._get_query_embedding(query)
 
     def get_batch_query_embedding(self, embedding_file_url: str) -> Optional[str]:
-        """Get batch query embeddings.
+        """
+        Get batch query embeddings.
 
         Args:
             embedding_file_url (str): The url of the file to embedding which with lines of text to embedding.
@@ -253,7 +258,8 @@ class DashScopeEmbedding(MultiModalEmbedding):
         )
 
     def get_batch_text_embedding(self, embedding_file_url: str) -> Optional[str]:
-        """Get batch text embeddings.
+        """
+        Get batch text embeddings.
 
         Args:
             embedding_file_url (str): The url of the file to embedding which with lines of text to embedding.
@@ -288,7 +294,8 @@ class DashScopeEmbedding(MultiModalEmbedding):
     def get_multimodal_embedding(
         self, input: List[Dict], auto_truncation: bool = False
     ) -> List[float]:
-        """Call DashScope multimodal embedding.
+        """
+        Call DashScope multimodal embedding.
         ref: https://help.aliyun.com/zh/dashscope/developer-reference/one-peace-multimodal-embedding-api-details.
 
         Args:

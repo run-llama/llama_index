@@ -96,7 +96,8 @@ class CassandraDatabase:
     def get_table_data(
         self, keyspace: str, table: str, predicate: str, limit: int
     ) -> str:
-        """Get data from the specified table in the specified keyspace. Optionally can
+        """
+        Get data from the specified table in the specified keyspace. Optionally can
         take a predicate for the WHERE clause and a limit.
         """
         try:
@@ -460,7 +461,8 @@ class CassandraDatabase:
 
 
 class DatabaseError(Exception):
-    """Exception raised for errors in the database schema.
+    """
+    Exception raised for errors in the database schema.
 
     Attributes:
         message -- explanation of the error

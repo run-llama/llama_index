@@ -15,13 +15,13 @@ class TestSchema(BaseModel):
     description: str
 
 
-@pytest.fixture()
+@pytest.fixture
 def tool_spec():
     """Create a ScrapegraphToolSpec instance for testing."""
     return ScrapegraphToolSpec()
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_sync_client():
     """Create a mock SyncClient."""
     with patch("llama_index.tools.scrapegraph.base.Client") as mock:

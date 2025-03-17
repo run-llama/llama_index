@@ -33,7 +33,8 @@ KeywordsAIToolCall = Union[ChatCompletionMessageToolCall, ChoiceDeltaToolCall]
 
 @lru_cache
 def get_keywords_models():
-    """Get available models from KeywordsAI API.
+    """
+    Get available models from KeywordsAI API.
 
     Returns:
         List of model configurations with pricing and provider info.
@@ -137,7 +138,8 @@ def resolve_keywordsai_credentials(
     api_base: Optional[str] = None,
     api_version: Optional[str] = None,
 ) -> Tuple[Optional[str], str, str]:
-    """ "Resolve KeywordsAI credentials.
+    """
+    "Resolve KeywordsAI credentials.
 
     The order of precedence is:
     1. param

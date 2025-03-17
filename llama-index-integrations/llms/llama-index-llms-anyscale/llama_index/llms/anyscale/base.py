@@ -15,7 +15,8 @@ DEFAULT_MODEL = "meta-llama/Llama-2-70b-chat-hf"
 
 
 class Anyscale(OpenAI):
-    """Anyscale LLM.
+    """
+    Anyscale LLM.
 
     Examples:
         `pip install llama-index-llms-anyscale`

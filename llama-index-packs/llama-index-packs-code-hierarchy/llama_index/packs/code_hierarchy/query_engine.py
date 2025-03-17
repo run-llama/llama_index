@@ -81,7 +81,8 @@ class CodeHierarchyKeywordQueryEngine(CustomQueryEngine):
         return keywords
 
     def custom_query(self, query: str) -> str:
-        """Query the index. Only use exact matches.
+        """
+        Query the index. Only use exact matches.
         If there is no exact match, but there is one for a parent, returns the parent.
         """
         if self.node_dict is None or self.repo_map is None:

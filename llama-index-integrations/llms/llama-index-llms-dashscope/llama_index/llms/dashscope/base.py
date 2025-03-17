@@ -108,7 +108,8 @@ async def acall_with_messages(
 
 
 class DashScope(CustomLLM):
-    """DashScope LLM.
+    """
+    DashScope LLM.
 
     Examples:
         `pip install llama-index-llms-dashscope`

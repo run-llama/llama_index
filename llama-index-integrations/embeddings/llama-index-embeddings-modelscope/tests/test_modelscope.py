@@ -2,17 +2,17 @@ import pytest
 from llama_index.embeddings.modelscope.base import ModelScopeEmbedding
 
 
-@pytest.fixture()
+@pytest.fixture
 def modelscope_embedding():
     return ModelScopeEmbedding()
 
 
-@pytest.fixture()
+@pytest.fixture
 def query():
     return "吃完海鲜可以喝牛奶吗?"
 
 
-@pytest.fixture()
+@pytest.fixture
 def text():
     return [
         "不可以，早晨喝牛奶不科学",
@@ -22,21 +22,21 @@ def text():
     ]
 
 
-@pytest.mark.single()
+@pytest.mark.single
 def test_modelscope_query(modelscope_embedding, query):
     sentence_embedding = modelscope_embedding.get_query_embedding(query)
     assert sentence_embedding is not None
     assert len(sentence_embedding) > 0
 
 
-@pytest.mark.single()
+@pytest.mark.single
 def test_modelscope_text(modelscope_embedding, query):
     sentence_embedding = modelscope_embedding.get_text_embedding(query)
     assert sentence_embedding is not None
     assert len(sentence_embedding) > 0
 
 
-@pytest.mark.batch()
+@pytest.mark.batch
 def test_modelscope_text_embedding_batch(modelscope_embedding, text):
     sentence_embedding = modelscope_embedding.get_text_embedding_batch(text)
     assert sentence_embedding is not None
@@ -44,7 +44,7 @@ def test_modelscope_text_embedding_batch(modelscope_embedding, text):
     assert len(sentence_embedding[0]) > 0
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_modelscope_async_query(modelscope_embedding, query):
     sentence_embedding = await modelscope_embedding.aget_query_embedding(query)
     assert sentence_embedding is not None

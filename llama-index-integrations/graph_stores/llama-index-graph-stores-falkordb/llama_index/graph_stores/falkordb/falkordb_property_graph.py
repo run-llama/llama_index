@@ -593,7 +593,8 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         )
 
     def switch_graph(self, graph_name: str) -> None:
-        """Switch to the given graph name (`graph_name`).
+        """
+        Switch to the given graph name (`graph_name`).
 
         This method allows users to change the active graph within the same
         database connection.

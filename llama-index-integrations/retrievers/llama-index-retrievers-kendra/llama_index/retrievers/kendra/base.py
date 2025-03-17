@@ -10,7 +10,8 @@ import aioboto3
 
 
 class AmazonKendraRetriever(BaseRetriever):
-    """AWS Kendra retriever for LlamaIndex.
+    """
+    AWS Kendra retriever for LlamaIndex.
 
     See https://aws.amazon.com/kendra/ for more info.
 

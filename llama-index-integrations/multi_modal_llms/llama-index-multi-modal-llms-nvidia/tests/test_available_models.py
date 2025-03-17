@@ -3,7 +3,7 @@ import pytest
 from llama_index.multi_modal_llms.nvidia import NVIDIAMultiModal
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_available_models() -> None:
     models = NVIDIAMultiModal().available_models
     assert models

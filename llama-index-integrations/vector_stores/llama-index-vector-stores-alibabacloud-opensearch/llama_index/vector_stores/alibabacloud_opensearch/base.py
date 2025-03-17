@@ -78,7 +78,8 @@ def _to_ha3_engine_filter(
 
 
 class AlibabaCloudOpenSearchConfig:
-    """`Alibaba Cloud Opensearch` client configuration.
+    """
+    `Alibaba Cloud Opensearch` client configuration.
 
     Attribute:
         endpoint (str) : The endpoint of opensearch instance, You can find it
@@ -151,7 +152,8 @@ class AlibabaCloudOpenSearchConfig:
 
 
 class AlibabaCloudOpenSearchStore(BasePydanticVectorStore):
-    """The AlibabaCloud OpenSearch Vector Store.
+    """
+    The AlibabaCloud OpenSearch Vector Store.
 
     In this vector store we store the text, its embedding and its metadata
     in a OpenSearch table.
@@ -221,7 +223,8 @@ class AlibabaCloudOpenSearchStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to vector store.
+        """
+        Add nodes to vector store.
 
         Args:
             nodes (List[BaseNode]): list of nodes with embeddings

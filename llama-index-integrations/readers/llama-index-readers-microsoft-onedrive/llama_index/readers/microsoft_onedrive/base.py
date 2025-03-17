@@ -110,7 +110,8 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         self._authority = f"https://login.microsoftonline.com/{tenant_id}/"
 
     def _authenticate_with_msal(self) -> Any:
-        """Authenticate with MSAL.
+        """
+        Authenticate with MSAL.
 
         For interactive authentication to work, a browser is used to authenticate, hence the registered application should have a redirect URI set to 'localhost'
         for mobile and native applications.
@@ -617,7 +618,8 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         recursive: bool = True,
         userprincipalname: Optional[str] = None,
     ) -> List[Document]:
-        """Load data from the folder id / file ids, f both are not provided download from the root.
+        """
+        Load data from the folder id / file ids, f both are not provided download from the root.
 
         Args:
             folder_id (str, optional): folder id of the folder in OneDrive.

@@ -16,7 +16,7 @@ def test_class():
 
 
 class TestExtractDataRestApiTool:
-    @pytest.fixture()
+    @pytest.fixture
     def agent(self):
         agentql_rest_api_tool = AgentQLRestAPIToolSpec()
         return FunctionCallingAgent.from_tools(

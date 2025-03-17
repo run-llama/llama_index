@@ -4,7 +4,7 @@ import pytest
 from llama_index.graph_rag.cognee import CogneeGraphRAG
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_add_data(monkeypatch):
     # Instantiate cognee GraphRAG
     cogneeGraphRAG = CogneeGraphRAG(

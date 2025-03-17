@@ -49,7 +49,8 @@ class AzureOpenAIFinetuneEngine(OpenAIFinetuneEngine):
         data_path: str,
         **kwargs: Any,
     ) -> "AzureOpenAIFinetuneEngine":
-        """Initialize from finetuning handler.
+        """
+        Initialize from finetuning handler.
 
         Used to finetune an AzureOpenAI model into another
         AzureOpenAI model (e.g. gpt-4o-mini on top of gpt-4o).
@@ -66,7 +67,8 @@ class AzureOpenAIFinetuneEngine(OpenAIFinetuneEngine):
         resource_name: str,
         model_deployment_name: Optional[str] = None,
     ) -> LLM:
-        """Deploy finetuned model.
+        """
+        Deploy finetuned model.
 
         - token: Azure AD token.
         - subscription_id: 	The subscription ID for the associated Azure OpenAI resource.
@@ -114,7 +116,8 @@ class AzureOpenAIFinetuneEngine(OpenAIFinetuneEngine):
         return response.json()
 
     def get_finetuned_model(self, engine: str, **model_kwargs: Any) -> LLM:
-        """Get finetuned model.
+        """
+        Get finetuned model.
 
         - engine: This will correspond to the custom name you chose
             for your deployment when you deployed a model.

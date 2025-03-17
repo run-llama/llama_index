@@ -14,7 +14,8 @@ from mistralai import Mistral
 
 
 class MistralAIEmbedding(BaseEmbedding):
-    """Class for MistralAI embeddings.
+    """
+    Class for MistralAI embeddings.
 
     Args:
         model_name (str): Model for embedding.

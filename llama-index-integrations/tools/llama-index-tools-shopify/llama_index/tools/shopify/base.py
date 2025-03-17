@@ -1,6 +1,5 @@
 """Shopify tool spec."""
 
-
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 

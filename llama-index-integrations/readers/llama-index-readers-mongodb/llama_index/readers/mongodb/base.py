@@ -7,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class SimpleMongoReader(BaseReader):
-    """Simple mongo reader.
+    """
+    Simple mongo reader.
 
     Concatenates each Mongo doc into Document used by LlamaIndex.
 
@@ -56,7 +57,8 @@ class SimpleMongoReader(BaseReader):
         max_docs: int = 0,
         metadata_names: Optional[List[str]] = None,
     ) -> Iterable[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             db_name (str): name of the database.
@@ -81,7 +83,7 @@ class SimpleMongoReader(BaseReader):
         cursor = db[collection_name].find(
             filter=query_dict or {},
             limit=max_docs,
-            projection={name: 1 for name in field_names + (metadata_names or [])},
+            projection=dict.fromkeys(field_names + (metadata_names or []), 1),
         )
 
         for item in cursor:

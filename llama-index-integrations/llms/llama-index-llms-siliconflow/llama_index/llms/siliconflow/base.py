@@ -181,7 +181,8 @@ def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class SiliconFlow(FunctionCallingLLM):
-    """SiliconFlow LLM.
+    """
+    SiliconFlow LLM.
 
     Visit https://siliconflow.cn/ to get more information about SiliconFlow.
 
@@ -379,7 +380,7 @@ class SiliconFlow(FunctionCallingLLM):
                 "messages": messages_dict,
                 "stream": False,
                 "n": 1,
-                "tools": kwargs.get("tools", None),
+                "tools": kwargs.get("tools"),
                 "response_format": response_format,
                 **self.model_kwargs,
             }
@@ -414,7 +415,7 @@ class SiliconFlow(FunctionCallingLLM):
                 "messages": messages_dict,
                 "stream": False,
                 "n": 1,
-                "tools": kwargs.get("tools", None),
+                "tools": kwargs.get("tools"),
                 "response_format": response_format,
                 **self.model_kwargs,
             }
@@ -452,7 +453,7 @@ class SiliconFlow(FunctionCallingLLM):
                     "messages": messages_dict,
                     "stream": True,
                     "n": 1,
-                    "tools": kwargs.get("tools", None),
+                    "tools": kwargs.get("tools"),
                     "response_format": response_format,
                     **self.model_kwargs,
                 }
@@ -502,7 +503,7 @@ class SiliconFlow(FunctionCallingLLM):
                     "messages": messages_dict,
                     "stream": True,
                     "n": 1,
-                    "tools": kwargs.get("tools", None),
+                    "tools": kwargs.get("tools"),
                     "response_format": response_format,
                     **self.model_kwargs,
                 }

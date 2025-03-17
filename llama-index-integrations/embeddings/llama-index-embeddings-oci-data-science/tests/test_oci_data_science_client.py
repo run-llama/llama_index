@@ -383,7 +383,7 @@ class TestClient:
         client.close.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestAsyncClient:
     """Unit tests for AsyncClient class."""
 

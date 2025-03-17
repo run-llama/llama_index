@@ -5,7 +5,7 @@ from llama_index.storage.chat_store.dynamodb.base import DynamoDBChatStore
 from llama_index.core.base.llms.types import ChatMessage
 
 
-@pytest.fixture()
+@pytest.fixture
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
     import os
@@ -16,13 +16,13 @@ def aws_credentials():
     os.environ["AWS_SESSION_TOKEN"] = "testing"
 
 
-@pytest.fixture()
+@pytest.fixture
 def dynamo_db(aws_credentials):
     with mock_aws():
         yield boto3.resource("dynamodb", region_name="us-east-1")
 
 
-@pytest.fixture()
+@pytest.fixture
 def chat_store(dynamo_db):
     dynamo_db.create_table(
         TableName="TestTable",

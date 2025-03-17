@@ -28,7 +28,8 @@ class TonicValidateEvaluationResult(EvaluationResult):
 
 
 class TonicValidateEvaluator(BaseEvaluator):
-    """Tonic Validate's validate scorer. Calculates all of Tonic Validate's metrics.
+    """
+    Tonic Validate's validate scorer. Calculates all of Tonic Validate's metrics.
 
     See https://docs.tonic.ai/validate/ for more details.
 
@@ -111,7 +112,8 @@ class TonicValidateEvaluator(BaseEvaluator):
         reference_responses: List[str],
         **kwargs: Any,
     ) -> Any:
-        """Evaluates a batch of responses.
+        """
+        Evaluates a batch of responses.
 
         Returns a Tonic Validate Run object, which can be logged to the Tonic Validate
         UI. See https://docs.tonic.ai/validate/ for more details.
@@ -144,7 +146,8 @@ class TonicValidateEvaluator(BaseEvaluator):
         reference_responses: List[str],
         **kwargs: Any,
     ) -> Any:
-        """Evaluates a batch of responses.
+        """
+        Evaluates a batch of responses.
 
         Returns a Tonic Validate Run object, which can be logged to the Tonic Validate
         UI. See https://docs.tonic.ai/validate/ for more details.

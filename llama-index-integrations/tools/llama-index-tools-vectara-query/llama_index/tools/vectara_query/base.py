@@ -48,7 +48,8 @@ class VectaraQueryToolSpec(BaseToolSpec):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
-        """Initializes the Vectara API and query parameters.
+        """
+        Initializes the Vectara API and query parameters.
 
         Parameters:
         - vectara_corpus_key (str): The corpus key for the corpus you want to search for information.
@@ -213,7 +214,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
         return {
             "summary": response.response,
             "citation_metadata": response.source_nodes,
-            "factual_consistency_score": response.metadata["fcs"]
-            if "fcs" in response.metadata
-            else 0.0,
+            "factual_consistency_score": (
+                response.metadata["fcs"] if "fcs" in response.metadata else 0.0
+            ),
         }

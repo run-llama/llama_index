@@ -47,7 +47,8 @@ class OpenAIFinetuneEngine(BaseLLMFinetuneEngine):
         data_path: str,
         **kwargs: Any,
     ) -> "OpenAIFinetuneEngine":
-        """Initialize from finetuning handler.
+        """
+        Initialize from finetuning handler.
 
         Used to finetune an OpenAI model into another
         OpenAI model (e.g. gpt-3.5-turbo on top of GPT-4).

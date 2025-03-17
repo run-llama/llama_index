@@ -6,7 +6,7 @@ class MockGithubClient:
     pass
 
 
-@pytest.fixture()
+@pytest.fixture
 def github_reader():
     return GithubRepositoryReader(
         github_client=MockGithubClient(), owner="owner", repo="repo"

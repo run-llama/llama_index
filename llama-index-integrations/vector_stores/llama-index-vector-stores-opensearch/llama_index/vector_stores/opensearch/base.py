@@ -340,7 +340,8 @@ class OpensearchVectorClient:
         return query
 
     def _is_text_field(self, value: Any) -> bool:
-        """Check if value is a string and keyword filtering needs to be performed.
+        """
+        Check if value is a string and keyword filtering needs to be performed.
 
         Not applied to datetime strings.
         """
@@ -354,7 +355,8 @@ class OpensearchVectorClient:
             return False
 
     def _parse_filter(self, filter: MetadataFilter) -> dict:
-        """Parse a single MetadataFilter to equivalent OpenSearch expression.
+        """
+        Parse a single MetadataFilter to equivalent OpenSearch expression.
 
         As Opensearch does not differentiate between scalar/array keyword fields, IN and ANY are equivalent.
         """
@@ -545,7 +547,8 @@ class OpensearchVectorClient:
     def __get_painless_scripting_source(
         self, space_type: str, vector_field: str = "embedding"
     ) -> str:
-        """For Painless Scripting, it returns the script source based on space type.
+        """
+        For Painless Scripting, it returns the script source based on space type.
         This does not work with Opensearch Serverless currently.
         """
         source_value = (
@@ -586,7 +589,8 @@ class OpensearchVectorClient:
         pre_filter: Optional[Union[Dict, List]] = None,
         vector_field: str = "embedding",
     ) -> Dict:
-        """For Scoring Script Search, this is the default query. Has to account for Opensearch Service
+        """
+        For Scoring Script Search, this is the default query. Has to account for Opensearch Service
         Serverless which does not support painless scripting functions so defaults to knn_score.
         """
         if not pre_filter:
@@ -724,7 +728,8 @@ class OpensearchVectorClient:
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
@@ -748,7 +753,8 @@ class OpensearchVectorClient:
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
@@ -1007,7 +1013,8 @@ class OpensearchVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes async.
+        """
+        Deletes nodes async.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
@@ -1021,7 +1028,8 @@ class OpensearchVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Async deletes nodes async.
+        """
+        Async deletes nodes async.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.

@@ -321,9 +321,9 @@ class GoogleGenAI(FunctionCallingLLM):
                             )
                             llama_resp.delta = content_delta
                             llama_resp.message.content = content
-                            llama_resp.message.additional_kwargs[
-                                "tool_calls"
-                            ] = existing_tool_calls
+                            llama_resp.message.additional_kwargs["tool_calls"] = (
+                                existing_tool_calls
+                            )
                             yield llama_resp
 
         return gen()

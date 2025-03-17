@@ -31,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 class DocugamiReader(BaseReader):
-    """Docugami reader.
+    """
+    Docugami reader.
 
     Reads Documents as nodes in a Document XML Knowledge Graph, from Docugami.
 
@@ -153,9 +154,7 @@ class DocugamiReader(BaseReader):
             return (
                 "table"
                 if node.tag == TABLE_NAME
-                else node.attrib["structure"]
-                if "structure" in node.attrib
-                else None
+                else node.attrib["structure"] if "structure" in node.attrib else None
             )
 
         def _build_framework_chunk(dg_chunk: Chunk) -> Document:
@@ -358,7 +357,8 @@ class DocugamiReader(BaseReader):
         document_ids: Optional[List[str]] = None,
         access_token: Optional[str] = None,
     ) -> List[Document]:
-        """Load data the given docset_id in Docugami.
+        """
+        Load data the given docset_id in Docugami.
 
         Args:
             docset_id (str): Document set ID to load data for.

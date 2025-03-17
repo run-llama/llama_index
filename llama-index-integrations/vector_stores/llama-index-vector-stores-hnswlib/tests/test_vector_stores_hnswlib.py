@@ -54,7 +54,7 @@ def node_embeddings() -> List[TextNode]:
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def hnswlib_store(node_embeddings: List[TextNode]) -> HnswlibVectorStore:
     space = "ip"
     dim = 3

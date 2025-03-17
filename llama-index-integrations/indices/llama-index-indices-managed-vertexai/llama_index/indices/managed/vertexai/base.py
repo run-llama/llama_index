@@ -1,4 +1,5 @@
-"""Vertex AI Managed index.
+"""
+Vertex AI Managed index.
 
 A managed Index - where the index is accessible via some API that
 interfaces a managed service.
@@ -22,7 +23,8 @@ from llama_index.core.schema import BaseNode, Document
 
 
 def get_user_agent(module: Optional[str] = None) -> str:
-    r"""Returns a custom user agent header.
+    r"""
+    Returns a custom user agent header.
 
     Args:
         module (Optional[str]):
@@ -42,7 +44,8 @@ def get_user_agent(module: Optional[str] = None) -> str:
 
 
 class VertexAIIndex(BaseManagedIndex):
-    """Vertex AI Index.
+    """
+    Vertex AI Index.
 
     The Vertex AI RAG index implements a managed index that uses Vertex AI as the backend.
     Vertex AI performs a lot of the functions in traditional indexes in the backend:

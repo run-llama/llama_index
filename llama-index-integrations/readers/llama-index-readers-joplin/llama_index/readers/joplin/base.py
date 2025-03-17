@@ -1,4 +1,5 @@
-"""Joplin reader class.
+"""
+Joplin reader class.
 
 When Joplin is installed and running it will parse all markdown
 files into a List of Documents.

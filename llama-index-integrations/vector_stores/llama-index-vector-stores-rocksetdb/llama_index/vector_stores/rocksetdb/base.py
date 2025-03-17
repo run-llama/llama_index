@@ -24,7 +24,8 @@ T = TypeVar("T", bound="RocksetVectorStore")
 
 
 def _get_rockset() -> ModuleType:
-    """Gets the rockset module and raises an ImportError if
+    """
+    Gets the rockset module and raises an ImportError if
     the rockset package hasn't been installed.
 
     Returns:
@@ -34,7 +35,8 @@ def _get_rockset() -> ModuleType:
 
 
 def _get_client(api_key: str | None, api_server: str | None, client: Any | None) -> Any:
-    """Returns the passed in client object if valid, else
+    """
+    Returns the passed in client object if valid, else
     constructs and returns one.
 
     Returns:
@@ -57,7 +59,8 @@ def _get_client(api_key: str | None, api_server: str | None, client: Any | None)
 
 
 class RocksetVectorStore(BasePydanticVectorStore):
-    """Rockset Vector Store.
+    """
+    Rockset Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-rocksetdb`
@@ -108,7 +111,8 @@ class RocksetVectorStore(BasePydanticVectorStore):
         api_key: str | None = None,
         distance_func: DistanceFunc = DistanceFunc.COSINE_SIM,
     ) -> None:
-        """Rockset Vector Store Data container.
+        """
+        Rockset Vector Store Data container.
 
         Args:
             collection (str): The name of the collection of vectors
@@ -157,7 +161,8 @@ class RocksetVectorStore(BasePydanticVectorStore):
         return self.rs
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Stores vectors in the collection.
+        """
+        Stores vectors in the collection.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -184,7 +189,8 @@ class RocksetVectorStore(BasePydanticVectorStore):
         ]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Deletes nodes stored in the collection by their ref_doc_id.
+        """
+        Deletes nodes stored in the collection by their ref_doc_id.
 
         Args:
             ref_doc_id (str): The ref_doc_id of the document
@@ -210,7 +216,8 @@ class RocksetVectorStore(BasePydanticVectorStore):
         )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Gets nodes relevant to a query.
+        """
+        Gets nodes relevant to a query.
 
         Args:
             query (llama_index.core.vector_stores.types.VectorStoreQuery): The query
@@ -278,7 +285,8 @@ class RocksetVectorStore(BasePydanticVectorStore):
     def with_new_collection(
         cls: Type[T], dimensions: int | None = None, **rockset_vector_store_args: Any
     ) -> RocksetVectorStore:
-        """Creates a new collection and returns its RocksetVectorStore.
+        """
+        Creates a new collection and returns its RocksetVectorStore.
 
         Args:
             dimensions (Optional[int]): The length of the vectors to enforce

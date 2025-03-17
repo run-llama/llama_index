@@ -58,7 +58,8 @@ class MaritalkHTTPError(HTTPError):
 
 
 class Maritalk(LLM):
-    """Maritalk LLM.
+    """
+    Maritalk LLM.
 
     Examples:
         `pip install llama-index-llms-maritalk`

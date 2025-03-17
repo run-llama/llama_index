@@ -13,7 +13,7 @@ def load_extractor(
     if isinstance(data, BaseExtractor):
         return data
 
-    extractor_name = data.get("class_name", None)
+    extractor_name = data.get("class_name")
     if extractor_name is None:
         raise ValueError("Extractor loading requires a class_name")
 

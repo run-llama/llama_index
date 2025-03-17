@@ -24,7 +24,8 @@ class PDFMarkerReader(BaseReader):
         start_page: int = None,
         extra_info: Optional[Dict] = None,
     ) -> List[Document]:
-        """Load data from PDF
+        """
+        Load data from PDF
         Args:
             file (Path): Path for the PDF file.
             max_pages (int): is the maximum number of pages to process. Omit this to convert the entire document.

@@ -1,4 +1,5 @@
-"""Milvus vector store index.
+"""
+Milvus vector store index.
 
 An index that is built within Milvus.
 
@@ -93,7 +94,8 @@ def _to_milvus_filter(
 
 
 class MilvusVectorStore(BasePydanticVectorStore):
-    """The Milvus Vector Store.
+    """
+    The Milvus Vector Store.
 
     In this vector store we store the text, its embedding and
     a its metadata in a Milvus collection. This implementation
@@ -399,7 +401,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         return self._async_milvusclient
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add the embeddings and their nodes into Milvus.
+        """
+        Add the embeddings and their nodes into Milvus.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -426,9 +429,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
             entry[self.embedding_field] = node.embedding
 
             if self.enable_sparse is True:
-                entry[
-                    self.sparse_embedding_field
-                ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+                entry[self.sparse_embedding_field] = (
+                    self.sparse_embedding_function.encode_documents([node.text])[0]
+                )
 
             insert_ids.append(node.node_id)
             insert_list.append(entry)
@@ -465,9 +468,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
             entry[self.embedding_field] = node.embedding
 
             if self.enable_sparse is True:
-                entry[
-                    self.sparse_embedding_field
-                ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+                entry[self.sparse_embedding_field] = (
+                    self.sparse_embedding_function.encode_documents([node.text])[0]
+                )
 
             insert_ids.append(node.node_id)
             insert_list.append(entry)
@@ -538,7 +541,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
@@ -602,7 +606,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
-        """Get nodes by node ids or metadata filters.
+        """
+        Get nodes by node ids or metadata filters.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to retrieve. Defaults to None.
@@ -691,7 +696,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         return nodes
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding
@@ -872,7 +878,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform MMR search.
         """
-        mmr_threshold = kwargs.get("mmr_threshold", None)
+        mmr_threshold = kwargs.get("mmr_threshold")
         if (
             kwargs.get("mmr_prefetch_factor") is not None
             and kwargs.get("mmr_prefetch_k") is not None
@@ -931,7 +937,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous MMR search.
         """
-        mmr_threshold = kwargs.get("mmr_threshold", None)
+        mmr_threshold = kwargs.get("mmr_threshold")
         if (
             kwargs.get("mmr_prefetch_factor") is not None
             and kwargs.get("mmr_prefetch_k") is not None

@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class SingleStoreVectorStore(BasePydanticVectorStore):
-    """SingleStore vector store.
+    """
+    SingleStore vector store.
 
     This vector store stores embeddings within a SingleStore database table.
 
@@ -149,7 +150,8 @@ class SingleStoreVectorStore(BasePydanticVectorStore):
             conn.close()
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -164,9 +166,7 @@ class SingleStoreVectorStore(BasePydanticVectorStore):
                     node, remove_text=True, flat_metadata=self.flat_metadata
                 )
                 cursor.execute(
-                    "INSERT INTO {} VALUES (%s, JSON_ARRAY_PACK(%s), %s)".format(
-                        self.table_name
-                    ),
+                    f"INSERT INTO {self.table_name} VALUES (%s, JSON_ARRAY_PACK(%s), %s)",
                     (
                         node.get_content(metadata_mode=MetadataMode.NONE) or "",
                         "[{}]".format(",".join(map(str, embedding))),

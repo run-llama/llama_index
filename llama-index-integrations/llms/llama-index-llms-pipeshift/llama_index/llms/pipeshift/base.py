@@ -29,7 +29,8 @@ def validate_api_key_and_model(api_key: str, model: str) -> None:
 
 
 class Pipeshift(OpenAILike):
-    """Pipeshift LLM.
+    """
+    Pipeshift LLM.
 
     Examples:
         `pip install llama-index-llms-pipeshift`

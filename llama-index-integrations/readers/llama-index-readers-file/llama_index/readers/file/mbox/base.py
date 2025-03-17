@@ -1,4 +1,5 @@
-"""Mbox parser.
+"""
+Mbox parser.
 
 Contains simple parser for mbox files.
 
@@ -16,7 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 class MboxReader(BaseReader):
-    """Mbox parser.
+    """
+    Mbox parser.
 
     Extract messages from mailbox files.
     Returns string including date, subject, sender, receiver and

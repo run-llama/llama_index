@@ -1,4 +1,5 @@
-"""Temporary high-level library of the Google GenerativeAI API.
+"""
+Temporary high-level library of the Google GenerativeAI API.
 
 The content of this file should eventually go into the Python package
 google.generativeai.
@@ -126,7 +127,8 @@ class Document:
 
 @dataclass
 class Config:
-    """Global configuration for Google Generative AI API.
+    """
+    Global configuration for Google Generative AI API.
 
     Normally, the defaults should work fine. Use this to pass Google Auth credentials
     such as using a service account. Refer to for auth credentials documentation:
@@ -161,7 +163,8 @@ _config = Config()
 
 
 class TestCredentials(credentials.Credentials):
-    """Credentials that do not provide any authentication information.
+    """
+    Credentials that do not provide any authentication information.
 
     Useful for unit tests where the credentials are not used.
     """
@@ -177,13 +180,15 @@ class TestCredentials(credentials.Credentials):
         return True
 
     def refresh(self, request: Any) -> None:
-        """Raises :class:``InvalidOperation``, test credentials cannot be
+        """
+        Raises :class:``InvalidOperation``, test credentials cannot be
         refreshed.
         """
         raise exceptions.InvalidOperation("Test credentials cannot be refreshed.")
 
     def apply(self, headers: Any, token: Any = None) -> None:
-        """Anonymous credentials do nothing to the request.
+        """
+        Anonymous credentials do nothing to the request.
 
         The optional ``token`` argument is not supported.
 
@@ -198,7 +203,8 @@ class TestCredentials(credentials.Credentials):
 
 
 def _get_credentials() -> Optional[credentials.Credentials]:
-    """Returns a credential from the config if set or a fake credentials for unit testing.
+    """
+    Returns a credential from the config if set or a fake credentials for unit testing.
 
     If _config.testing is True, a fake credential is returned.
     Otherwise, we are in a real environment and will use credentials if provided or None is returned.

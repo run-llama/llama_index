@@ -434,7 +434,8 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
         return self._cluster
 
     def _check_bucket_exists(self) -> bool:
-        """Check if the bucket exists in the linked Couchbase cluster.
+        """
+        Check if the bucket exists in the linked Couchbase cluster.
 
         Returns:
             True if the bucket exists
@@ -448,7 +449,8 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
             return False
 
     def _check_scope_and_collection_exists(self) -> bool:
-        """Check if the scope and collection exists in the linked Couchbase bucket
+        """
+        Check if the scope and collection exists in the linked Couchbase bucket
         Returns:
             True if the scope and collection exist in the bucket
             Raises a ValueError if either is not found.
@@ -480,7 +482,8 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
         return True
 
     def _check_index_exists(self) -> bool:
-        """Check if the Search index exists in the linked Couchbase cluster
+        """
+        Check if the Search index exists in the linked Couchbase cluster
         Returns:
             bool: True if the index exists, False otherwise.
             Raises a ValueError if the index does not exist.
@@ -507,7 +510,8 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
         return True
 
     def _format_metadata(self, row_fields: Dict[str, Any]) -> Dict[str, Any]:
-        """Helper method to format the metadata from the Couchbase Search API.
+        """
+        Helper method to format the metadata from the Couchbase Search API.
 
         Args:
             row_fields (Dict[str, Any]): The fields to format.

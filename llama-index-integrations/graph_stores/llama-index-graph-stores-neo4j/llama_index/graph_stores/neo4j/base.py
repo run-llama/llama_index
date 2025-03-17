@@ -1,4 +1,5 @@
 """Neo4j graph store index."""
+
 import logging
 from typing import Any, Dict, List, Optional, Type
 from types import TracebackType
@@ -174,9 +175,9 @@ class Neo4jGraphStore(GraphStore):
             with self._driver.session(database=self._database) as session:
                 session.run(
                     (
-                        "MATCH (n1:{})-[r:{}]->(n2:{}) WHERE n1.id = $subj AND n2.id"
+                        f"MATCH (n1:{self.node_label})-[r:{rel}]->(n2:{self.node_label}) WHERE n1.id = $subj AND n2.id"
                         " = $obj DELETE r"
-                    ).format(self.node_label, rel, self.node_label),
+                    ),
                     {"subj": subj, "obj": obj},
                 )
 

@@ -21,7 +21,8 @@ DEFAULT_PALM_MODEL = "models/text-bison-001"
 
 
 class PaLM(CustomLLM):
-    """PaLM LLM.
+    """
+    PaLM LLM.
 
     Examples:
         `pip install llama-index-llms-palm`
@@ -130,7 +131,8 @@ class PaLM(CustomLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        """Predict the answer to a query.
+        """
+        Predict the answer to a query.
 
         Args:
             prompt (str): Prompt to use for prediction.
@@ -150,7 +152,8 @@ class PaLM(CustomLLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        """Stream the answer to a query.
+        """
+        Stream the answer to a query.
 
         NOTE: this is a beta feature. Will try to build or use
         better abstractions about response handling.

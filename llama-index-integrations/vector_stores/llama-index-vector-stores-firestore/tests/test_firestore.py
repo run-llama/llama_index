@@ -103,26 +103,24 @@ def _get_sample_vector(num: float) -> List[float]:
 @pytest.mark.parametrize(
     "sample_nodes",
     [
-        (
-            [
-                TextNode(
-                    text="lorem ipsum",
-                    id_="aaa",
-                    embedding=_get_sample_vector(1.0),
-                ),
-                TextNode(
-                    text="dolor sit amet",
-                    id_="bbb",
-                    extra_info={"test_key": "test_value"},
-                    embedding=_get_sample_vector(0.1),
-                ),
-                TextNode(
-                    text="The quick brown fox jumped over the lazy dog.",
-                    id_="ccc",
-                    embedding=_get_sample_vector(5.0),
-                ),
-            ]
-        )
+        [
+            TextNode(
+                text="lorem ipsum",
+                id_="aaa",
+                embedding=_get_sample_vector(1.0),
+            ),
+            TextNode(
+                text="dolor sit amet",
+                id_="bbb",
+                extra_info={"test_key": "test_value"},
+                embedding=_get_sample_vector(0.1),
+            ),
+            TextNode(
+                text="The quick brown fox jumped over the lazy dog.",
+                id_="ccc",
+                embedding=_get_sample_vector(5.0),
+            ),
+        ]
     ],
 )
 def test_add_vectors(

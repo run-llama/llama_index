@@ -157,7 +157,8 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         return self._client.execute(query)
 
     def refresh_schema(self) -> None:
-        """Refresh schema.
+        """
+        Refresh schema.
 
         Example data of self.structured_schema
         {

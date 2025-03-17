@@ -14,7 +14,8 @@ from llama_index.readers.file.flat import FlatReader
 
 
 class EmbeddedTablesUnstructuredRetrieverPack(BaseLlamaPack):
-    """Embedded Tables + Unstructured.io Retriever pack.
+    """
+    Embedded Tables + Unstructured.io Retriever pack.
 
     Use unstructured.io to parse out embedded tables from an HTML document, build
     a node graph, and then run our recursive retriever against that.

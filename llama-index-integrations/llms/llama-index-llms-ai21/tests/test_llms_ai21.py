@@ -289,7 +289,7 @@ def test_stream_complete():
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat():
     messages = ChatMessage(role="user", content="What is the meaning of life?")
     expected_chat_response = ChatResponse(
@@ -317,7 +317,7 @@ async def test_achat():
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete():
     expected_chat_response = CompletionResponse(
         text="42",
@@ -346,7 +346,7 @@ async def test_acomplete():
     llm._async_client.completion.assert_not_called()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat():
     messages = ChatMessage(role="user", content="What is the meaning of life?")
 
@@ -385,7 +385,7 @@ async def test_astream_chat():
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete():
     expected_stream_completion_chunks_response = [
         CompletionResponse(text="", delta="", raw=_FAKE_STREAM_CHUNKS[0].to_dict()),
@@ -430,7 +430,7 @@ def test_chat_complete_when_j2__should_raise_error():
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_complete_when_j2__should_raise_error():
     llm = AI21(api_key=_FAKE_API_KEY, model="j2-ultra")
 
@@ -440,7 +440,7 @@ async def test_achat_complete_when_j2__should_raise_error():
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete_when_j2__should_raise_error():
     llm = AI21(api_key=_FAKE_API_KEY, model="j2-ultra")
 

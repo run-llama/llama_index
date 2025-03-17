@@ -90,7 +90,8 @@ def extract_logprobs_stream(response) -> Optional[List[List[LogProb]]]:
 
 
 class MistralRS(CustomLLM):
-    r"""MistralRS LLM.
+    r"""
+    MistralRS LLM.
 
     Examples:
         Install `mistralrs` following instructions:

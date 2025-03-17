@@ -127,7 +127,7 @@ def test_from_new():
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def add_tool() -> FunctionTool:
     def add(a: int, b: int) -> int:
         """Add two integers and returns the result integer."""
@@ -136,7 +136,7 @@ def add_tool() -> FunctionTool:
     return FunctionTool.from_defaults(fn=add)
 
 
-@pytest.fixture()
+@pytest.fixture
 def add_function_call() -> Function:
     return Function(
         name="add",
@@ -144,17 +144,17 @@ def add_function_call() -> Function:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def nonexistent_function() -> Function:
     return NONEXISTENT_FUNCTION
 
 
-@pytest.fixture()
+@pytest.fixture
 def requires_action_nonexistent_function_run() -> Run:
     return mock_nonexistent_function_run(False)
 
 
-@pytest.fixture()
+@pytest.fixture
 def completed_nonexistent_function_run() -> Run:
     return mock_nonexistent_function_run(True)
 
@@ -175,7 +175,7 @@ def test_call_function_returns_message_if_tool_not_found(
     assert chat_message.content == NONEXISTENT_TOOL_ERR_MSG
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acall_function(
     add_tool: FunctionTool, add_function_call: Function
 ) -> None:
@@ -186,7 +186,7 @@ async def test_acall_function(
     assert tool_output.raw_output == 3
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acall_function_returns_message_if_tool_not_found(
     nonexistent_function: Function,
 ) -> None:
@@ -224,7 +224,7 @@ def test_run_assistant_returns_message_if_tool_not_found(
         assert tool_outputs[0] == NONEXISTENT_TOOL_OUTPUT
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_arun_assistant_returns_message_if_tool_not_found(
     requires_action_nonexistent_function_run: Run,
     completed_nonexistent_function_run: Run,

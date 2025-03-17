@@ -10,7 +10,8 @@ from tonic_validate.services.openai_service import OpenAIService
 
 
 class AnswerConsistencyEvaluator(BaseEvaluator):
-    """Tonic Validate's answer consistency metric.
+    """
+    Tonic Validate's answer consistency metric.
 
     The output score is a float between 0.0 and 1.0.
 

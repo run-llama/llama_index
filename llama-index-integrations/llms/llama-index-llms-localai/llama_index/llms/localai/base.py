@@ -30,7 +30,8 @@ LOCALAI_DEFAULTS: Dict[str, Any] = MappingProxyType(  # type: ignore[assignment]
 
 
 class LocalAI(OpenAI):
-    """LocalAI LLM class.
+    """
+    LocalAI LLM class.
 
     Examples:
         `pip install llama-index-llms-localai`

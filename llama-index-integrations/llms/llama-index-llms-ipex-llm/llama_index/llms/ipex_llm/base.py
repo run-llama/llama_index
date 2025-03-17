@@ -45,7 +45,8 @@ logger = logging.getLogger(__name__)
 
 
 class IpexLLM(CustomLLM):
-    r"""IPEX-LLM.
+    r"""
+    IPEX-LLM.
 
     Example:
         .. code-block:: python

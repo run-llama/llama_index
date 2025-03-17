@@ -6,7 +6,8 @@ from llama_index.storage.kvstore.redis import RedisKVStore
 
 
 class RedisDocumentStore(KVDocumentStore):
-    """Redis Document (Node) store.
+    """
+    Redis Document (Node) store.
 
     A Redis store for Document and Node objects.
 

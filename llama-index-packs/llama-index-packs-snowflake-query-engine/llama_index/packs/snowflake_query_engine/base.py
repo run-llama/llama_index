@@ -10,7 +10,8 @@ from sqlalchemy import create_engine
 
 
 class SnowflakeQueryEnginePack(BaseLlamaPack):
-    """Snowflake query engine pack.
+    """
+    Snowflake query engine pack.
     It uses snowflake-sqlalchemy to connect to Snowflake, then calls
     NLSQLTableQueryEngine to query data.
     """

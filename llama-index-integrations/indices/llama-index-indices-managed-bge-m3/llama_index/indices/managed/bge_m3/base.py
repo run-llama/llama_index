@@ -99,7 +99,8 @@ class BGEM3Index(BaseIndex[IndexDict]):
     def _build_index_from_nodes(
         self, nodes: Sequence[BaseNode], **kwargs: Any
     ) -> IndexDict:
-        """Generate a PLAID index from the BGE-M3 checkpoint via its hugging face
+        """
+        Generate a PLAID index from the BGE-M3 checkpoint via its hugging face
         model_name.
         """
         index_struct = IndexDict()

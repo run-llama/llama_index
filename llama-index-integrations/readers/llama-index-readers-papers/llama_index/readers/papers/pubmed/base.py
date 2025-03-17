@@ -7,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class PubmedReader(BaseReader):
-    """Pubmed Reader.
+    """
+    Pubmed Reader.
 
     Gets a search query, return a list of Documents of the top corresponding scientific papers on Pubmed.
     """
@@ -17,7 +18,8 @@ class PubmedReader(BaseReader):
         search_query: str,
         max_results: Optional[int] = 10,
     ) -> List[Document]:
-        """Search for a topic on Pubmed, fetch the text of the most relevant full-length papers.
+        """
+        Search for a topic on Pubmed, fetch the text of the most relevant full-length papers.
         Uses the BoiC API, which has been down a lot.
 
         Args:
@@ -99,7 +101,8 @@ class PubmedReader(BaseReader):
         search_query: str,
         max_results: Optional[int] = 10,
     ) -> List[Document]:
-        """Search for a topic on Pubmed, fetch the text of the most relevant full-length papers.
+        """
+        Search for a topic on Pubmed, fetch the text of the most relevant full-length papers.
 
         Args:
             search_query (str): A topic to search for (e.g. "Alzheimers").

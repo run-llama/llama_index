@@ -64,7 +64,8 @@ CHAT_MODELS = {
 
 
 def is_chat_model(model: str) -> bool:
-    """Check if a given model is a chat-based language model.
+    """
+    Check if a given model is a chat-based language model.
 
     This function takes a model name or identifier as input and determines whether
     the model is designed for chat-based language generation, conversation, or
@@ -81,7 +82,8 @@ def is_chat_model(model: str) -> bool:
 
 
 def modelname_to_contextsize(modelname: str) -> int:
-    """Calculate the maximum number of tokens possible to generate for a model.
+    """
+    Calculate the maximum number of tokens possible to generate for a model.
 
     Args:
         modelname: The modelname we want to know the context size for.
@@ -105,7 +107,7 @@ def modelname_to_contextsize(modelname: str) -> int:
             f"Model {modelname} has been discontinued. " "Please choose another model."
         )
 
-    context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
+    context_size = ALL_AVAILABLE_MODELS.get(modelname)
 
     if context_size is None:
         raise ValueError(

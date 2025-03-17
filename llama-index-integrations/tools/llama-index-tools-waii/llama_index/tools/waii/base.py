@@ -67,7 +67,8 @@ class WaiiToolSpec(BaseToolSpec, BaseReader):
         return documents
 
     def load_data(self, ask: str) -> List[Document]:
-        """Query using natural language and load data from the Database, returning a list of Documents.
+        """
+        Query using natural language and load data from the Database, returning a list of Documents.
 
         Args:
             ask: a natural language question.

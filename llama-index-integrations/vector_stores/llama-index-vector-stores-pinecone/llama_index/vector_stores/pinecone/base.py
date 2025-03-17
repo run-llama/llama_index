@@ -437,7 +437,8 @@ class PineconeVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes using their ids.
+        """
+        Deletes nodes using their ids.
 
         Args:
             node_ids (Optional[List[str]], optional): List of node IDs. Defaults to None.

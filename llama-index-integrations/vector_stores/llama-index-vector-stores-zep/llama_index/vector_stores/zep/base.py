@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 class ZepVectorStore(BasePydanticVectorStore):
-    """Zep Vector Store for storing and retrieving embeddings.
+    """
+    Zep Vector Store for storing and retrieving embeddings.
 
     Zep supports both normalized and non-normalized embeddings. Cosine similarity is
     used to compute distance and the returned score is normalized to be between 0 and 1.
@@ -114,7 +115,7 @@ class ZepVectorStore(BasePydanticVectorStore):
     def _prepare_documents(
         self, nodes: List[BaseNode]
     ) -> Tuple[List["ZepDocument"], List[str]]:
-        docs: List["ZepDocument"] = []
+        docs: List[ZepDocument] = []
         ids: List[str] = []
 
         for node in nodes:
@@ -138,7 +139,8 @@ class ZepVectorStore(BasePydanticVectorStore):
         return docs, ids
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to the collection.
+        """
+        Add nodes to the collection.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings.
@@ -163,7 +165,8 @@ class ZepVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Asynchronously add nodes to the collection.
+        """
+        Asynchronously add nodes to the collection.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings.
@@ -186,7 +189,8 @@ class ZepVectorStore(BasePydanticVectorStore):
     def delete(
         self, ref_doc_id: Optional[str] = None, **delete_kwargs: Any
     ) -> None:  # type: ignore
-        """Delete a document from the collection.
+        """
+        Delete a document from the collection.
 
         Args:
             ref_doc_id (Optional[str]): ID of the document to delete.
@@ -209,7 +213,8 @@ class ZepVectorStore(BasePydanticVectorStore):
     async def adelete(
         self, ref_doc_id: Optional[str] = None, **delete_kwargs: Any
     ) -> None:  # type: ignore
-        """Asynchronously delete a document from the collection.
+        """
+        Asynchronously delete a document from the collection.
 
         Args:
             ref_doc_id (Optional[str]): ID of the document to delete.
@@ -266,7 +271,8 @@ class ZepVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query the index for the top k most similar nodes to the given query.
+        """
+        Query the index for the top k most similar nodes to the given query.
 
         Args:
             query (VectorStoreQuery): Query object containing either a query string
@@ -305,7 +311,8 @@ class ZepVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Asynchronously query the index for the top k most similar nodes to the
+        """
+        Asynchronously query the index for the top k most similar nodes to the
             given query.
 
         Args:

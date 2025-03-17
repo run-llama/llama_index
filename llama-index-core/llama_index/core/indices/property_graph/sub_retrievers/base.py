@@ -45,7 +45,7 @@ class BasePGRetriever(BaseRetriever):
         self.include_text = include_text
         self._include_text_preamble = include_text_preamble
         self.include_properties = include_properties
-        super().__init__(callback_manager=kwargs.get("callback_manager", None))
+        super().__init__(callback_manager=kwargs.get("callback_manager"))
 
     def _get_nodes_with_score(
         self, triplets: List[Triplet], scores: Optional[List[float]] = None

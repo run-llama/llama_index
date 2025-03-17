@@ -34,7 +34,8 @@ DEFAULT_QA_PROMPT = PromptTemplate(DEFAULT_QA_PROMPT_TMPL)
 
 
 class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
-    """ContextRetriever OpenAI Agent.
+    """
+    ContextRetriever OpenAI Agent.
 
     This agent performs retrieval from BaseRetriever before
     calling the LLM. Allows it to augment user message with context.
@@ -98,7 +99,8 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
     ) -> "ContextRetrieverOpenAIAgent":
-        """Create a ContextRetrieverOpenAIAgent from a retriever.
+        """
+        Create a ContextRetrieverOpenAIAgent from a retriever.
 
         Args:
             retriever (BaseRetriever): A retriever.

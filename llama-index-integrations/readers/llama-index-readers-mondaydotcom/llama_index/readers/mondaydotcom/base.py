@@ -1,4 +1,5 @@
 """monday.com reader."""
+
 from typing import Dict, List
 
 import requests
@@ -7,7 +8,8 @@ from llama_index.core.schema import Document
 
 
 class MondayReader(BaseReader):
-    """monday.com reader. Reads board's data by a GraphQL query.
+    """
+    monday.com reader. Reads board's data by a GraphQL query.
 
     Args:
         api_key (str): monday.com API key.
@@ -57,7 +59,8 @@ class MondayReader(BaseReader):
         return response.json()
 
     def load_data(self, board_id: int) -> List[Document]:
-        """Load board data by board_id.
+        """
+        Load board data by board_id.
 
         Args:
             board_id (int): monday.com board id.

@@ -10,7 +10,8 @@ from sqlalchemy.engine import Engine
 
 
 class DatabaseReader(BaseReader):
-    """Simple Database reader.
+    """
+    Simple Database reader.
 
     Concatenates each row into Document used by LlamaIndex.
 
@@ -74,7 +75,8 @@ class DatabaseReader(BaseReader):
             )
 
     def load_data(self, query: str) -> List[Document]:
-        """Query and load data from the Database, returning a list of Documents.
+        """
+        Query and load data from the Database, returning a list of Documents.
 
         Args:
             query (str): Query parameter to filter tables and rows.

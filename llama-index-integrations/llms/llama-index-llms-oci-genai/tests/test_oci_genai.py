@@ -193,9 +193,11 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
         additional_kwargs={
             "model_id": test_model_id,
             "model_version": "1.0",
-            "request_id": "req-1234567890"
-            if test_model_id == "cohere.command-r-16k"
-            else "req-0987654321",
+            "request_id": (
+                "req-1234567890"
+                if test_model_id == "cohere.command-r-16k"
+                else "req-0987654321"
+            ),
             "content-length": "1234",
         },
     )

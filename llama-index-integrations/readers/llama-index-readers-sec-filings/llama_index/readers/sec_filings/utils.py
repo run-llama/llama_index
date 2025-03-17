@@ -116,7 +116,8 @@ def get_filing_urls_to_download(
     include_amends: bool,
     query: str = "",
 ) -> List[FilingMetadata]:
-    """Get the filings URL to download the data.
+    """
+    Get the filings URL to download the data.
 
     Returns:
         List[FilingMetadata]: Filing metadata from SEC

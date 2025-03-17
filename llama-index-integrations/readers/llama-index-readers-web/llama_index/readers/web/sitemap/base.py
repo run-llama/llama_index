@@ -8,7 +8,8 @@ from llama_index.readers.web.async_web.base import AsyncWebPageReader
 
 
 class SitemapReader(BaseReader):
-    """Asynchronous sitemap reader for web.
+    """
+    Asynchronous sitemap reader for web.
 
     Reads pages from the web based on their sitemap.xml.
 

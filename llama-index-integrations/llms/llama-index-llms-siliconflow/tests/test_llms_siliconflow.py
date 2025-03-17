@@ -92,7 +92,7 @@ def test_llm_complete():
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_llm_async_complete():
     input_text = "..."
     mock_response = MockAsyncResponse(json_data=RESPONSE_JSON)

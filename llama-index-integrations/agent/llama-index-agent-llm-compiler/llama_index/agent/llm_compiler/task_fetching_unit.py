@@ -1,4 +1,5 @@
-"""Task fetching unit.
+"""
+Task fetching unit.
 
 Taken from
 https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/task_fetching_unit.py
@@ -56,7 +57,8 @@ def _replace_arg_mask_with_real_value(
 
 
 class TaskFetchingUnit(BaseModel):
-    """Task fetching unit.
+    """
+    Task fetching unit.
 
     Detailed in LLMCompiler Paper.
     Code taken from https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/task_fetching_unit.py.

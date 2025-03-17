@@ -4,7 +4,7 @@ from llama_index.readers.gitlab import GitLabRepositoryReader
 from llama_index.core import Document
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_gitlab_client():
     client = mock.Mock()
     client.api_url = "https://gitlab.com/api/v4"

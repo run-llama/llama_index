@@ -575,7 +575,8 @@ class AsyncClient(BaseClient):
         return self._client.is_closed
 
     async def close(self) -> None:
-        """Close the underlying HTTPX client.
+        """
+        Close the underlying HTTPX client.
 
         The client will *not* be usable after this.
         """

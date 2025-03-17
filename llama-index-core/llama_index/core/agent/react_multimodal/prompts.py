@@ -1,6 +1,5 @@
 """Default prompt for ReAct agent."""
 
-
 # ReAct multimodal chat prompt
 # TODO: have formatting instructions be a part of react output parser
 

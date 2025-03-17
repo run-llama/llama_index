@@ -49,7 +49,8 @@ class HiveReader(BaseReader):
         )
 
     def load_data(self, query: str) -> List[Document]:
-        """Read data from the Hive.
+        """
+        Read data from the Hive.
 
         Args:
             query (str): The query used to query data from Hive

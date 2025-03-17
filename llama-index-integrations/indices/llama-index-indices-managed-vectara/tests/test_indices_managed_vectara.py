@@ -96,7 +96,7 @@ def get_nodes() -> List[Node]:
 
 
 # Normal vectara index fixture
-@pytest.fixture()
+@pytest.fixture
 def vectara1():
     docs = get_docs()
     try:
@@ -112,7 +112,7 @@ def vectara1():
 
 
 # vectara index fixture, where we specify the base url
-@pytest.fixture()
+@pytest.fixture
 def vectara1_custom():
     docs = get_docs()
     try:
@@ -316,7 +316,7 @@ def test_update_doc(vectara1) -> None:
     assert res[0].node.metadata["document"]["test_score"] == 14
 
 
-@pytest.fixture()
+@pytest.fixture
 def vectara2():
     try:
         vectara2 = VectaraIndex()
@@ -477,7 +477,7 @@ def test_chat(vectara2) -> None:
     assert len(res.source_nodes) > 0
 
 
-@pytest.fixture()
+@pytest.fixture
 def vectara3():
     nodes = get_nodes()
     try:

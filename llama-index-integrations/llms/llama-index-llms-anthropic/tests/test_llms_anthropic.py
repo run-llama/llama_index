@@ -111,7 +111,7 @@ def test_anthropic_through_bedrock():
     os.getenv("ANTHROPIC_AWS_REGION") is None,
     reason="AWS region not available to test Bedrock integration",
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_anthropic_through_bedrock_async():
     # Note: this assumes you have AWS credentials configured.
     anthropic_llm = Anthropic(

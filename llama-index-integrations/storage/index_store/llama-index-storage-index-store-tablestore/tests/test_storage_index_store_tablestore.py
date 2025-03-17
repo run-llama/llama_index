@@ -14,7 +14,7 @@ def test_class():
 
 
 # noinspection DuplicatedCode
-@pytest.fixture()
+@pytest.fixture
 def tablestore_index_store() -> TablestoreIndexStore:
     end_point = os.getenv("tablestore_end_point")
     instance_name = os.getenv("tablestore_instance_name")

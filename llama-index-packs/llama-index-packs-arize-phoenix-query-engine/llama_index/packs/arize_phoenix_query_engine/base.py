@@ -43,7 +43,7 @@ class ArizePhoenixQueryEnginePack(BaseLlamaPack):
                 "The arize-phoenix package could not be found. "
                 "Please install with `pip install arize-phoenix`."
             )
-        self._session: "PhoenixSession" = px.launch_app()
+        self._session: PhoenixSession = px.launch_app()
         set_global_handler("arize_phoenix")
         self._index = VectorStoreIndex(nodes, **kwargs)
         self._query_engine = self._index.as_query_engine()

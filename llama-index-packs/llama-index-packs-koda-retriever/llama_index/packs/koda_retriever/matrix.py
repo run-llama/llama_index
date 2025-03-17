@@ -27,12 +27,12 @@ class AlphaMatrix(BaseModel):
         """
 
         alpha: float
-        description: Optional[
-            str
-        ] = None  # optional if providing a custom LLM, its presumed this was part of your training data for the custom model
-        examples: Optional[
-            List[str]
-        ] = None  # if not providing a custom model, this is required
+        description: Optional[str] = (
+            None  # optional if providing a custom LLM, its presumed this was part of your training data for the custom model
+        )
+        examples: Optional[List[str]] = (
+            None  # if not providing a custom model, this is required
+        )
 
     data: Dict[str, AlphaCategory]
 

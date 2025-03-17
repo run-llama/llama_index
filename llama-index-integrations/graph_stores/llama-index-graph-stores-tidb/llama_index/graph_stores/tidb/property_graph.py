@@ -1,4 +1,5 @@
 """TiDB property graph store index."""
+
 import json
 from typing import Tuple, Optional, List, Dict, Any
 from sqlalchemy import (

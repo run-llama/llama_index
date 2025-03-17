@@ -47,7 +47,8 @@ class GoogleMapsTextSearchReader(BaseReader):
         text: str,
         number_of_results: Optional[int] = DEFAULT_NUMBER_OF_RESULTS,
     ) -> List[Document]:
-        """Load data from Google Maps.
+        """
+        Load data from Google Maps.
 
         Args:
             text (str): the text to search for.

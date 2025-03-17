@@ -1,4 +1,5 @@
 """Simple Reader that loads text relevant to a certain search keyword from subreddits."""
+
 from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader

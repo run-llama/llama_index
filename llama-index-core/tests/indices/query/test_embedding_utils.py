@@ -1,4 +1,4 @@
-""" Test embedding utility functions."""
+"""Test embedding utility functions."""
 
 import numpy as np
 from llama_index.core.indices.query.embedding_utils import (

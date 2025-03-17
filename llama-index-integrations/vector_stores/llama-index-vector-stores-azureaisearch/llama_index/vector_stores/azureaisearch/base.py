@@ -144,12 +144,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _hidden_field_keys: List[str] = PrivateAttr()
     _field_mapping: Dict[str, str] = PrivateAttr()
     _index_management: IndexManagement = PrivateAttr()
-    _index_mapping: Callable[
-        [Dict[str, str], Dict[str, Any]], Dict[str, str]
-    ] = PrivateAttr()
-    _metadata_to_index_field_map: Dict[
-        str, Tuple[str, MetadataIndexFieldType]
-    ] = PrivateAttr()
+    _index_mapping: Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]] = (
+        PrivateAttr()
+    )
+    _metadata_to_index_field_map: Dict[str, Tuple[str, MetadataIndexFieldType]] = (
+        PrivateAttr()
+    )
     _vector_profile_name: str = PrivateAttr()
     _compression_type: str = PrivateAttr()
     _user_agent: str = PrivateAttr()
@@ -1187,7 +1187,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         semantic_configuration_name = None
 
         # NOTE: users can provide odata_filters directly to the query
-        odata_filters = kwargs.get("odata_filters", None)
+        odata_filters = kwargs.get("odata_filters")
         if odata_filters is not None:
             odata_filter = odata_filters
         elif query.filters is not None:
@@ -1288,7 +1288,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
     ) -> Optional[str]:
-        """Build OData filter string from node IDs and metadata filters.
+        """
+        Build OData filter string from node IDs and metadata filters.
 
         Args:
             field_mapping (Dict[str, str]): Field mapping dictionary
@@ -1319,7 +1320,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         limit: Optional[int] = None,
     ) -> List[BaseNode]:
-        """Get nodes from the Azure AI Search index.
+        """
+        Get nodes from the Azure AI Search index.
 
         Args:
             node_ids (Optional[List[str]]): List of node IDs to retrieve.
@@ -1365,7 +1367,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         limit: Optional[int] = None,
     ) -> List[BaseNode]:
-        """Get nodes asynchronously from the Azure AI Search index.
+        """
+        Get nodes asynchronously from the Azure AI Search index.
 
         Args:
             node_ids (Optional[List[str]]): List of node IDs to retrieve.

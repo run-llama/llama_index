@@ -1,4 +1,5 @@
-"""Test of utility functions for working with Search Index commands.
+"""
+Test of utility functions for working with Search Index commands.
 
 Note that search index commands are only supported on Atlas Clusters >=M10.
 """
@@ -22,7 +23,7 @@ TIMEOUT = 120
 DIMENSIONS = 10
 
 
-@pytest.fixture()
+@pytest.fixture
 def collection(vector_store) -> Generator:
     """Depending on uri, this could point to any type of cluster."""
     clxn = vector_store.collection
@@ -31,7 +32,7 @@ def collection(vector_store) -> Generator:
     clxn.drop()
 
 
-@pytest.fixture()
+@pytest.fixture
 def vector_store(atlas_client: MongoClient) -> MongoDBAtlasVectorSearch:
     return MongoDBAtlasVectorSearch(
         mongodb_client=atlas_client,

@@ -12,8 +12,7 @@ class MockAsyncResponse:
     def __init__(self, json_data) -> None:
         self._json_data = json_data
 
-    def raise_for_status(self) -> None:
-        ...
+    def raise_for_status(self) -> None: ...
 
     async def __aenter__(self) -> "MockAsyncResponse":
         return self
@@ -99,7 +98,7 @@ def test_base64_format_embedding():
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_float_format_embedding_async():
     input_text = "..."
     mock_response = MockAsyncResponse(

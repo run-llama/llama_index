@@ -6,7 +6,8 @@ from llama_index.storage.kvstore.azure.base import ServiceMode
 
 
 class AzureIndexStore(KVIndexStore):
-    """Azure Table Index store.
+    """
+    Azure Table Index store.
 
     Args:
         azure_kvstore (AzureKVStore): Azure key-value store
@@ -31,7 +32,8 @@ class AzureIndexStore(KVIndexStore):
         partition_key: Optional[str] = None,
         collection_suffix: Optional[str] = None,
     ) -> "AzureIndexStore":
-        """Load an AzureIndexStore from an Azure connection string.
+        """
+        Load an AzureIndexStore from an Azure connection string.
 
         Args:
             connection_string (str): Azure connection string
@@ -54,7 +56,8 @@ class AzureIndexStore(KVIndexStore):
         partition_key: Optional[str] = None,
         collection_suffix: Optional[str] = None,
     ) -> "AzureIndexStore":
-        """Load an AzureIndexStore from an account name and key.
+        """
+        Load an AzureIndexStore from an account name and key.
 
         Args:
             account_name (str): Azure Storage Account Name
@@ -77,7 +80,8 @@ class AzureIndexStore(KVIndexStore):
         partition_key: Optional[str] = None,
         collection_suffix: Optional[str] = None,
     ) -> "AzureIndexStore":
-        """Load an AzureIndexStore from an account name and managed ID.
+        """
+        Load an AzureIndexStore from an account name and managed ID.
 
         Args:
             account_name (str): Azure Storage Account Name
@@ -99,7 +103,8 @@ class AzureIndexStore(KVIndexStore):
         partition_key: Optional[str] = None,
         collection_suffix: Optional[str] = None,
     ) -> "AzureIndexStore":
-        """Load an AzureIndexStore from a SAS token.
+        """
+        Load an AzureIndexStore from a SAS token.
 
         Args:
             endpoint (str): Azure Table service endpoint
@@ -121,7 +126,8 @@ class AzureIndexStore(KVIndexStore):
         partition_key: Optional[str] = None,
         collection_suffix: Optional[str] = None,
     ) -> "AzureIndexStore":
-        """Load an AzureIndexStore from an AAD token.
+        """
+        Load an AzureIndexStore from an AAD token.
 
         Args:
             endpoint (str): Azure Table service endpoint

@@ -38,7 +38,8 @@ class IndexType(enum.Enum):
 
 
 class NileVectorStore(BasePydanticVectorStore):
-    """Nile (Multi-tenant Postgres) Vector Store.
+    """
+    Nile (Multi-tenant Postgres) Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-nile`
@@ -367,9 +368,9 @@ class NileVectorStore(BasePydanticVectorStore):
         self, query_embedding: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
         # get and validate tenant_id
-        tenant_id = kwargs.get("tenant_id", None)
-        ivfflat_probes = kwargs.get("ivfflat_probes", None)
-        hnsw_ef_search = kwargs.get("hnsw_ef_search", None)
+        tenant_id = kwargs.get("tenant_id")
+        ivfflat_probes = kwargs.get("ivfflat_probes")
+        hnsw_ef_search = kwargs.get("hnsw_ef_search")
         if self.tenant_aware and tenant_id is None:
             raise ValueError(
                 "tenant_id must be specified in kwargs if tenant_aware is True"
@@ -389,7 +390,7 @@ class NileVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query_embedding: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        tenant_id = kwargs.get("tenant_id", None)
+        tenant_id = kwargs.get("tenant_id")
         if self.tenant_aware and tenant_id is None:
             raise ValueError(
                 "tenant_id must be specified in kwargs if tenant_aware is True"
@@ -434,8 +435,8 @@ class NileVectorStore(BasePydanticVectorStore):
         """
         _logger.info(f"Creating index of type {index_type} for {self.table_name}")
         if index_type == IndexType.PGVECTOR_HNSW:
-            m = kwargs.get("m", None)
-            ef_construction = kwargs.get("ef_construction", None)
+            m = kwargs.get("m")
+            ef_construction = kwargs.get("ef_construction")
             if m is None or ef_construction is None:
                 raise ValueError(
                     "m and ef_construction must be specified in kwargs for PGVECTOR_HSNW index"
@@ -460,7 +461,7 @@ class NileVectorStore(BasePydanticVectorStore):
                         f"Index {self.table_name}_embedding_idx already exists"
                     )
         elif index_type == IndexType.PGVECTOR_IVFFLAT:
-            nlists = kwargs.get("nlists", None)
+            nlists = kwargs.get("nlists")
             if nlists is None:
                 raise ValueError(
                     "nlist must be specified in kwargs for PGVECTOR_IVFFLAT index"
@@ -498,7 +499,7 @@ class NileVectorStore(BasePydanticVectorStore):
             self._sync_conn.commit()
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        tenant_id = delete_kwargs.get("tenant_id", None)
+        tenant_id = delete_kwargs.get("tenant_id")
         _logger.info(f"Deleting document {ref_doc_id} with tenant_id {tenant_id}")
         if self.tenant_aware and tenant_id is None:
             raise ValueError(
@@ -515,7 +516,7 @@ class NileVectorStore(BasePydanticVectorStore):
         self._sync_conn.commit()
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        tenant_id = delete_kwargs.get("tenant_id", None)
+        tenant_id = delete_kwargs.get("tenant_id")
         _logger.info(f"Deleting document {ref_doc_id} with tenant_id {tenant_id}")
         if self.tenant_aware and tenant_id is None:
             raise ValueError(

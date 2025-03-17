@@ -1,4 +1,5 @@
-"""Obsidian reader class.
+"""
+Obsidian reader class.
 
 Pass in the path to an Obsidian vault and it will parse all markdown
 files into a List of Documents. Documents are split by header in

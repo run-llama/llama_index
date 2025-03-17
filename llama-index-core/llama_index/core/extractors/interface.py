@@ -54,14 +54,14 @@ class BaseExtractor(TransformComponent):
 
         data.pop("class_name", None)
 
-        llm_predictor = data.get("llm_predictor", None)
+        llm_predictor = data.get("llm_predictor")
         if llm_predictor:
             from llama_index.core.llm_predictor.loading import load_predictor
 
             llm_predictor = load_predictor(llm_predictor)
             data["llm_predictor"] = llm_predictor
 
-        llm = data.get("llm", None)
+        llm = data.get("llm")
         if llm:
             from llama_index.core.llms.loading import load_llm
 

@@ -1,4 +1,5 @@
-"""Tabular parser.
+"""
+Tabular parser.
 
 Contains parsers for tabular data files.
 
@@ -15,7 +16,8 @@ from llama_index.core.schema import Document
 
 
 class CSVReader(BaseReader):
-    """CSV parser.
+    """
+    CSV parser.
 
     Args:
         concat_rows (bool): whether to concatenate all rows into one document.
@@ -32,7 +34,8 @@ class CSVReader(BaseReader):
     def load_data(
         self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
-        """Parse file.
+        """
+        Parse file.
 
         Returns:
             Union[str, List[str]]: a string or a List of strings.
@@ -59,7 +62,8 @@ class CSVReader(BaseReader):
 
 
 class PandasCSVReader(BaseReader):
-    r"""Pandas-based CSV parser.
+    r"""
+    Pandas-based CSV parser.
 
     Parses CSVs using the separator detection from Pandas `read_csv`function.
     If special parameters are required, use the `pandas_config` dict.
@@ -130,7 +134,8 @@ class PandasCSVReader(BaseReader):
 
 
 class PandasExcelReader(BaseReader):
-    r"""Pandas-based Excel parser.
+    r"""
+    Pandas-based Excel parser.
 
     Parses Excel files using the Pandas `read_excel`function.
     If special parameters are required, use the `pandas_config` dict.

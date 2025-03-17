@@ -23,7 +23,8 @@ import_err_msg = (
 
 
 class PGVectoRsStore(BasePydanticVectorStore):
-    """PGVectoRs Vector Store.
+    """
+    PGVectoRs Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-pgvecto-rs`

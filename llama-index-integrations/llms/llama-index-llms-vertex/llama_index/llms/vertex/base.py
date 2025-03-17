@@ -48,7 +48,8 @@ if TYPE_CHECKING:
 
 
 class Vertex(FunctionCallingLLM):
-    """Vertext LLM.
+    """
+    Vertext LLM.
 
     Examples:
         `pip install llama-index-llms-vertex`

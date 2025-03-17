@@ -364,7 +364,7 @@ def test_vlm_image_type_chat(
         [ImageDocument(image=urlToBase64(image_urls[0]), mimetype="jpeg")],
     ],
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_vlm_input_style_async(
     vlm_model: str,
     content: List[ImageDocument],
@@ -382,7 +382,7 @@ async def test_vlm_input_style_async(
     assert isinstance(response.text, str)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_vlm_chat_async(vlm_model: str) -> None:
     llm = NVIDIAMultiModal(model=vlm_model)
     messages = [
@@ -409,7 +409,7 @@ async def test_vlm_chat_async(vlm_model: str) -> None:
     assert isinstance(response.delta, str)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_vlm_chat_async_stream(vlm_model: str) -> None:
     llm = NVIDIAMultiModal(model=vlm_model)
     messages = [

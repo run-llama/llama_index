@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class UnsupportedOracleAdsVersionError(Exception):
-    """Custom exception for unsupported `oracle-ads` versions.
+    """
+    Custom exception for unsupported `oracle-ads` versions.
 
     Attributes:
         current_version: The installed version of `oracle-ads`.
@@ -30,7 +31,8 @@ class UnsupportedOracleAdsVersionError(Exception):
 
 
 def _validate_dependency(func: Callable[..., Any]) -> Callable[..., Any]:
-    """Decorator to validate the presence and version of `oracle-ads`.
+    """
+    Decorator to validate the presence and version of `oracle-ads`.
 
     This decorator checks that `oracle-ads` is installed and that its version meets
     the minimum requirement. If not, it raises an error.
@@ -66,7 +68,8 @@ def _validate_dependency(func: Callable[..., Any]) -> Callable[..., Any]:
 def _to_message_dicts(
     messages: Sequence[ChatMessage], drop_none: bool = False
 ) -> List[Dict[str, Any]]:
-    """Convert a sequence of ChatMessage objects to a list of dictionaries.
+    """
+    Convert a sequence of ChatMessage objects to a list of dictionaries.
 
     Args:
         messages: The messages to convert.
@@ -89,9 +92,10 @@ def _to_message_dicts(
 
 
 def _from_completion_logprobs_dict(
-    completion_logprobs_dict: Dict[str, Any]
+    completion_logprobs_dict: Dict[str, Any],
 ) -> List[List[LogProb]]:
-    """Convert completion logprobs to a list of generic LogProb objects.
+    """
+    Convert completion logprobs to a list of generic LogProb objects.
 
     Args:
         completion_logprobs_dict: The completion logprobs to convert.
@@ -109,9 +113,10 @@ def _from_completion_logprobs_dict(
 
 
 def _from_token_logprob_dicts(
-    token_logprob_dicts: Sequence[Dict[str, Any]]
+    token_logprob_dicts: Sequence[Dict[str, Any]],
 ) -> List[List[LogProb]]:
-    """Convert a sequence of token logprob dictionaries to a list of LogProb objects.
+    """
+    Convert a sequence of token logprob dictionaries to a list of LogProb objects.
 
     Args:
         token_logprob_dicts: The token logprob dictionaries to convert.
@@ -144,7 +149,8 @@ def _from_token_logprob_dicts(
 
 
 def _from_message_dict(message_dict: Dict[str, Any]) -> ChatMessage:
-    """Convert a message dictionary to a ChatMessage object.
+    """
+    Convert a message dictionary to a ChatMessage object.
 
     Args:
         message_dict: The message dictionary.
@@ -160,7 +166,8 @@ def _from_message_dict(message_dict: Dict[str, Any]) -> ChatMessage:
 
 
 def _get_response_token_counts(raw_response: Dict[str, Any]) -> Dict[str, int]:
-    """Extract token usage information from the response.
+    """
+    Extract token usage information from the response.
 
     Args:
         raw_response: The raw response containing token usage information.
@@ -181,7 +188,8 @@ def _get_response_token_counts(raw_response: Dict[str, Any]) -> Dict[str, int]:
 def _update_tool_calls(
     tool_calls: List[Dict[str, Any]], tool_calls_delta: Optional[List[Dict[str, Any]]]
 ) -> List[Dict[str, Any]]:
-    """Update the tool calls using delta objects received from stream chunks.
+    """
+    Update the tool calls using delta objects received from stream chunks.
 
     Args:
         tool_calls: The list of existing tool calls.
@@ -213,9 +221,10 @@ def _update_tool_calls(
 
 
 def _resolve_tool_choice(
-    tool_choice: Union[str, dict] = DEFAULT_TOOL_CHOICE
+    tool_choice: Union[str, dict] = DEFAULT_TOOL_CHOICE,
 ) -> Union[str, dict]:
-    """Resolve the tool choice into a string or a dictionary.
+    """
+    Resolve the tool choice into a string or a dictionary.
 
     If the tool_choice is a string that is not in SUPPORTED_TOOL_CHOICES, a dictionary
     representing a function call is returned.

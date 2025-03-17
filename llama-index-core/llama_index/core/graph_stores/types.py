@@ -295,7 +295,6 @@ class PropertyGraphStore(ABC):
     @property
     def client(self) -> Any:
         """Get client."""
-        ...
 
     @abstractmethod
     def get(
