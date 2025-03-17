@@ -27,12 +27,12 @@ class NetmindLLM(OpenAILike):
     """
 
     def __init__(
-            self,
-            model: str,
-            api_key: Optional[str] = None,
-            api_base: str = "https://api.netmind.ai/inference-api/openai/v1",
-            is_chat_model: bool = True,
-            **kwargs: Any,
+        self,
+        model: str,
+        api_key: Optional[str] = None,
+        api_base: str = "https://api.netmind.ai/inference-api/openai/v1",
+        is_chat_model: bool = True,
+        **kwargs: Any,
     ) -> None:
         api_key = api_key or os.environ.get("NETMIND_API_KEY", None)
         super().__init__(

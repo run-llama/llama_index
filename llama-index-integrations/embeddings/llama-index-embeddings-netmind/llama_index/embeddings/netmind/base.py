@@ -20,11 +20,11 @@ class NetmindEmbedding(BaseEmbedding):
     )
 
     def __init__(
-            self,
-            model_name: str,
-            api_key: Optional[str] = None,
-            api_base: str = "https://api.netmind.ai/inference-api/openai/v1",
-            **kwargs: Any,
+        self,
+        model_name: str,
+        api_key: Optional[str] = None,
+        api_base: str = "https://api.netmind.ai/inference-api/openai/v1",
+        **kwargs: Any,
     ) -> None:
         api_key = api_key or os.environ.get("NETMIND_API_KEY", None)
         super().__init__(
