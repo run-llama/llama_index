@@ -15,7 +15,7 @@ def truncate_text(text: str, text_splitter: TextSplitter) -> str:
 
     Returns:
         str: The first chunk of the split text that fits within the chunk size.
-    """    
+    """
     chunks = text_splitter.split_text(text)
     return chunks[0]
 

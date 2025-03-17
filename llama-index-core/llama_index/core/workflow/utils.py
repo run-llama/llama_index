@@ -37,6 +37,7 @@ class ServiceDefinition(BaseModel):
         service (Any): The type or class of the service to be injected.
         default_value (Optional[Any]): Default value for the service if not provided.
     """
+
     # Make the service definition hashable
     model_config = ConfigDict(frozen=True)
 
@@ -71,7 +72,7 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
         TypeError: If fn is not a callable object
     """
     if not callable(fn):
-        raise TypeError("Expected a callable object, got {}".format(type(fn).__name__))
+        raise TypeError(f"Expected a callable object, got {type(fn).__name__}")
 
     sig = inspect.signature(fn)
 
@@ -289,4 +290,6 @@ def import_module_from_qualified_name(qualified_name: str) -> Any:
     except ImportError as e:
         raise ImportError(f"Failed to import module {module_path[0]}: {e}")
     except AttributeError as e:
-        raise AttributeError(f"Attribute {module_path[1]} not found in module {module_path[0]}: {e}")
+        raise AttributeError(
+            f"Attribute {module_path[1]} not found in module {module_path[0]}: {e}"
+        )

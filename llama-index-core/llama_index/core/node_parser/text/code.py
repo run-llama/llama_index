@@ -151,7 +151,7 @@ class CodeSplitter(TextSplitter):
 
     def split_text(self, text: str) -> List[str]:
         """Split incoming code into chunks using the AST parser.
-        
+
         This method parses the input code into an AST and then chunks it while preserving
         syntactic structure. It handles error cases and ensures the code can be properly parsed.
 
