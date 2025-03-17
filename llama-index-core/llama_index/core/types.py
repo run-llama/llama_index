@@ -71,10 +71,10 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
         """Format a query with structured output formatting instructions.
         
         Args:
-            query (str): The input query to format.
-            
+            query (str): The input query string to be formatted.
+                
         Returns:
-            str: The formatted query with output instructions.
+            str: The formatted query with added output formatting instructions.
         """
         return query
 
@@ -130,11 +130,11 @@ class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
     A base class for LLM-powered functions that return a Pydantic model.
     
     This class provides a structured way to convert LLM outputs into strongly-typed
-    Pydantic models, enabling type safety and validation. It serves as a bridge
-    between unstructured LLM responses and structured application data.
+    Pydantic models, enabling type safety and validation.
 
     Type Parameters:
-        Model: The Pydantic model type that this program will output
+        Model: The Pydantic model type that this program will output. Must be a subclass
+            of BaseModel and will be used for validating and structuring the LLM response.
         
     Attributes:
         output_cls (property): The Pydantic model class used for output validation.
