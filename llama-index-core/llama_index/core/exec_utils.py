@@ -165,15 +165,11 @@ def _contains_protected_access(code: str) -> bool:
         bool: True if code contains protected access or disallowed operations.
     """
     # do not allow imports
-    imports_modules = False
     tree = ast.parse(code)
-    for node in ast.iter_child_nodes(tree):
-        if isinstance(node, ast.Import):
-            imports_modules = True
-        elif isinstance(node, ast.ImportFrom):
-            imports_modules = True
-        else:
-            continue
+    imports_modules = any(
+        isinstance(node, (ast.Import, ast.ImportFrom))
+        for node in ast.iter_child_nodes(tree)
+    )
 
     dunder_visitor = DunderVisitor()
     dunder_visitor.visit(tree)
