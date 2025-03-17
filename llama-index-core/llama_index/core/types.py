@@ -102,16 +102,14 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
 
     def format_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
         """Format a list of messages with structured output formatting instructions."""
-        # NOTE: apply output parser to either the first message if it's a system message
-        #       or the last message
-        if messages:
-            if messages[0].role == MessageRole.SYSTEM:
-                # get text from the last text blocks
-                messages[0] = self._format_message(messages[0])
-            else:
-                messages[-1] = self._format_message(messages[-1])
-
-        return messages
+        if not messages:
+            return messages
+            
+        target_message = messages[0] if messages[0].role == MessageRole.SYSTEM else messages[-1]
+        return [
+            msg if msg != target_message else self._format_message(msg)
+            for msg in messages
+        ]
 
     @classmethod
     def __get_pydantic_core_schema__(
@@ -232,19 +230,15 @@ class Thread(threading.Thread):
         *,
         daemon: Optional[bool] = None
     ) -> None:
-        # Wrap the target function with its arguments
-        if target is not None:
-            args = (
-                partial(target, *args, **(kwargs if isinstance(kwargs, dict) else {})),
-            )
-        else:
-            args = ()
-
-        # Initialize with context copying
+        """Initialize a context-aware thread."""
+        kwargs = kwargs or {}
+        wrapped_target = (
+            partial(target, *args, **kwargs) if target is not None else None
+        )
         super().__init__(
             group=group,
-            target=copy_context().run,
+            target=copy_context().run if wrapped_target else None,
             name=name,
-            args=args,
+            args=(wrapped_target,) if wrapped_target else (),
             daemon=daemon,
         )
