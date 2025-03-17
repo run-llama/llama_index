@@ -39,19 +39,30 @@ class SelectionOutputParser(BaseOutputParser):
     REQUIRED_KEYS = frozenset(Answer.__annotations__)
 
     def _filter_dict(self, json_dict: dict) -> dict:
-        """Filter recursively until a dictionary matches all REQUIRED_KEYS."""
-        output_dict = json_dict
-        for key, val in json_dict.items():
-            if key in self.REQUIRED_KEYS:
-                continue
-            elif isinstance(val, dict):
-                output_dict = self._filter_dict(val)
+        """
+        Recursively filter dictionary to find matching required keys.
+        
+        Args:
+            json_dict (dict): Input dictionary to filter
+            
+        Returns:
+            dict: First dictionary found containing all required keys
+        """
+        if all(key in json_dict for key in self.REQUIRED_KEYS):
+            return json_dict
+            
+        for val in json_dict.values():
+            if isinstance(val, dict):
+                result = self._filter_dict(val)
+                if result:
+                    return result
             elif isinstance(val, list):
                 for item in val:
                     if isinstance(item, dict):
-                        output_dict = self._filter_dict(item)
-
-        return output_dict
+                        result = self._filter_dict(item)
+                        if result:
+                            return result
+        return json_dict
 
     def _format_output(self, output: List[dict]) -> List[dict]:
         output_json = []
