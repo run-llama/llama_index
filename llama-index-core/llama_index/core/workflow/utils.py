@@ -45,7 +45,18 @@ class StepSignatureSpec(BaseModel):
 
 
 def inspect_signature(fn: Callable) -> StepSignatureSpec:
-    """Given a function, ensure the signature is compatible with a workflow step."""
+    """Given a function, ensure the signature is compatible with a workflow step.
+
+    Args:
+        fn (Callable): The function to inspect.
+
+    Returns:
+        StepSignatureSpec: A specification object containing:
+            - accepted_events: Dictionary mapping parameter names to their event types
+            - return_types: List of return type annotations
+            - context_parameter: Name of the context parameter if present
+            - requested_services: List of required service definitions
+    """
     sig = inspect.signature(fn)
 
     accepted_events: Dict[str, List[EventType]] = {}
@@ -93,6 +104,14 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
 
 
 def validate_step_signature(spec: StepSignatureSpec) -> None:
+    """Validate that a step signature specification meets workflow requirements.
+
+    Args:
+        spec (StepSignatureSpec): The signature specification to validate.
+
+    Raises:
+        WorkflowValidationError: If the signature is invalid for a workflow step.
+    """
     num_of_events = len(spec.accepted_events)
     if num_of_events == 0:
         msg = "Step signature must have at least one parameter annotated as type Event"
@@ -107,7 +126,14 @@ def validate_step_signature(spec: StepSignatureSpec) -> None:
 
 
 def get_steps_from_class(_class: object) -> Dict[str, Callable]:
-    """Given a class, return the list of its methods that were defined as steps."""
+    """Given a class, return the list of its methods that were defined as steps.
+
+    Args:
+        _class (object): The class to inspect for step methods.
+
+    Returns:
+        Dict[str, Callable]: A dictionary mapping step names to their corresponding methods.
+    """
     step_methods = {}
     all_methods = inspect.getmembers(_class, predicate=inspect.isfunction)
 
@@ -119,7 +145,14 @@ def get_steps_from_class(_class: object) -> Dict[str, Callable]:
 
 
 def get_steps_from_instance(workflow: object) -> Dict[str, Callable]:
-    """Given a workflow instance, return the list of its methods that were defined as steps."""
+    """Given a workflow instance, return the list of its methods that were defined as steps.
+
+    Args:
+        workflow (object): The workflow instance to inspect.
+
+    Returns:
+        Dict[str, Callable]: A dictionary mapping step names to their corresponding methods.
+    """
     step_methods = {}
     all_methods = inspect.getmembers(workflow, predicate=inspect.ismethod)
 
@@ -179,12 +212,26 @@ def is_free_function(qualname: str) -> bool:
 
 
 def get_qualified_name(value: Any) -> str:
-    """Get the qualified name of a value."""
+    """Get the qualified name of a value.
+
+    Args:
+        value (Any): The value to get the qualified name for.
+
+    Returns:
+        str: The qualified name in the format 'module.class'.
+    """
     return value.__module__ + "." + value.__class__.__name__
 
 
 def import_module_from_qualified_name(qualified_name: str) -> Any:
-    """Import a module from a qualified name."""
+    """Import a module from a qualified name.
+
+    Args:
+        qualified_name (str): The fully qualified name of the module to import.
+
+    Returns:
+        Any: The imported module object.
+    """
     module_path = qualified_name.rsplit(".", 1)
     module = import_module(module_path[0])
     return getattr(module, module_path[1])
