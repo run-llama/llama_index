@@ -1,4 +1,5 @@
 import asyncio
+import weakref
 from typing import Any, AsyncGenerator, List, Optional
 
 from llama_index.core.workflow.context import Context
@@ -19,7 +20,15 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.run_id = run_id
-        self.ctx = ctx
+        self._ctx = None
+        if ctx:
+            self._ctx = weakref.ref(ctx)
+
+    @property
+    def ctx(self) -> Optional[Context]:
+        if self._ctx is not None:
+            return self._ctx()
+        return None
 
     def __str__(self) -> str:
         return str(self.result())
@@ -28,7 +37,7 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
         return self.done()
 
     async def stream_events(self) -> AsyncGenerator[Event, None]:
-        if not self.ctx:
+        if self.ctx is None:
             raise ValueError("Context is not set!")
 
         while True:
