@@ -1,10 +1,6 @@
-import asyncio
 import os
 from typing import Any, List, Optional
-import time
-
-import httpx
-import requests
+from openai import OpenAI, AsyncOpenAI
 from llama_index.core.base.embeddings.base import BaseEmbedding, Embedding
 from llama_index.core.bridge.pydantic import Field
 
@@ -18,10 +14,20 @@ class NetmindEmbedding(BaseEmbedding):
         default="",
         description="The API key for the Netmind API. If not set, will attempt to use the NETMIND_API_KEY environment variable.",
     )
+    timeout: float = Field(
+        default=120, description="The timeout for the API request in seconds.", ge=0
+    )
+    max_retries: int = Field(
+        default=3,
+        description="The maximum number of retries for the API request.",
+        ge=0,
+    )
 
     def __init__(
         self,
         model_name: str,
+        timeout: Optional[float] = 120,
+        max_retries: Optional[int] = 3,
         api_key: Optional[str] = None,
         api_base: str = "https://api.netmind.ai/inference-api/openai/v1",
         **kwargs: Any,
@@ -33,111 +39,75 @@ class NetmindEmbedding(BaseEmbedding):
             api_base=api_base,
             **kwargs,
         )
-
-    def _generate_embedding(self, text: str, model_api_string: str) -> Embedding:
-        """Generate embeddings from Netmind API.
-
-        Args:
-            text: str. An input text sentence or document.
-            model_api_string: str. An API string for a specific embedding model of your choice.
-
-        Returns:
-            embeddings: a list of float numbers. Embeddings correspond to your given text.
-        """
-        headers = {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "Authorization": f"Bearer {self.api_key}",
-        }
-
-        session = requests.session()
-        while True:
-            response = session.post(
-                self.api_base.strip("/") + "/embeddings",
-                headers=headers,
-                json={"input": text, "model": model_api_string},
-            )
-            if response.status_code != 200:
-                if response.status_code == 429:
-                    """Rate limit exceeded, wait for reset"""
-                    reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
-                    if reset_time > 0:
-                        time.sleep(reset_time)
-                        continue
-                    else:
-                        """Rate limit reset time has passed, retry immediately"""
-                        continue
-
-                """ Handle other non-200 status codes """
-                raise ValueError(
-                    f"Request failed with status code {response.status_code}: {response.text}"
-                )
-
-            return response.json()["data"][0]["embedding"]
-
-    async def _agenerate_embedding(self, text: str, model_api_string: str) -> Embedding:
-        """Async generate embeddings from Netmind API.
-
-        Args:
-            text: str. An input text sentence or document.
-            model_api_string: str. An API string for a specific embedding model of your choice.
-
-        Returns:
-            embeddings: a list of float numbers. Embeddings correspond to your given text.
-        """
-        headers = {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "Authorization": f"Bearer {self.api_key}",
-        }
-
-        async with httpx.AsyncClient() as client:
-            while True:
-                response = await client.post(
-                    self.api_base.strip("/") + "/embeddings",
-                    headers=headers,
-                    json={"input": text, "model": model_api_string},
-                )
-                if response.status_code != 200:
-                    if response.status_code == 429:
-                        """Rate limit exceeded, wait for reset"""
-                        reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
-                        if reset_time > 0:
-                            await asyncio.sleep(reset_time)
-                            continue
-                        else:
-                            """Rate limit reset time has passed, retry immediately"""
-                            continue
-
-                    """ Handle other non-200 status codes"""
-                    raise ValueError(
-                        f"Request failed with status code {response.status_code}: {response.text}"
-                    )
-
-                return response.json()["data"][0]["embedding"]
+        self._client = OpenAI(
+            api_key=api_key,
+            base_url=self.api_base,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
+        self._aclient = AsyncOpenAI(
+            api_key=api_key,
+            base_url=self.api_base,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
 
     def _get_text_embedding(self, text: str) -> Embedding:
         """Get text embedding."""
-        return self._generate_embedding(text, self.model_name)
+        return (
+            self._client.embeddings.create(
+                input=[text],
+                model=self.model_name,
+            )
+            .data[0]
+            .embedding
+        )
 
     def _get_query_embedding(self, query: str) -> Embedding:
         """Get query embedding."""
-        return self._generate_embedding(query, self.model_name)
+        return (
+            self._client.embeddings.create(
+                input=[query],
+                model=self.model_name,
+            )
+            .data[0]
+            .embedding
+        )
 
     def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
         """Get text embeddings."""
-        return [self._generate_embedding(text, self.model_name) for text in texts]
+        data = self._client.embeddings.create(
+            input=texts,
+            model=self.model_name,
+        ).data
+        return [d.embedding for d in data]
 
     async def _aget_text_embedding(self, text: str) -> Embedding:
         """Async get text embedding."""
-        return await self._agenerate_embedding(text, self.model_name)
+        return (
+            (await self._aclient.embeddings.create(input=[text], model=self.model_name))
+            .data[0]
+            .embedding
+        )
 
     async def _aget_query_embedding(self, query: str) -> Embedding:
         """Async get query embedding."""
-        return await self._agenerate_embedding(query, self.model_name)
+        return (
+            (
+                await self._aclient.embeddings.create(
+                    input=[query], model=self.model_name
+                )
+            )
+            .data[0]
+            .embedding
+        )
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
         """Async get text embeddings."""
-        return await asyncio.gather(
-            *[self._agenerate_embedding(text, self.model_name) for text in texts]
-        )
+        data = (
+            await self._aclient.embeddings.create(
+                input=texts,
+                model=self.model_name,
+            )
+        ).data
+        return [d.embedding for d in data]
