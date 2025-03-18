@@ -303,6 +303,7 @@ class Workflow(metaclass=WorkflowMeta):
                             await ctx.add_running_step(name)
                             try:
                                 new_ev = await instrumented_step(**kwargs)
+                                kwargs.clear()
                                 break  # exit the retrying loop
                             except WorkflowDone:
                                 await ctx.remove_from_in_progress(name=name, ev=ev)
@@ -334,6 +335,7 @@ class Workflow(metaclass=WorkflowMeta):
                     else:
                         try:
                             run_task = functools.partial(instrumented_step, **kwargs)
+                            kwargs.clear()
                             new_ev = await asyncio.get_event_loop().run_in_executor(
                                 None, run_task
                             )
