@@ -392,7 +392,5 @@ class Context:
 
     def clear(self) -> None:
         """Clear any data stored in the context."""
-        # Re-init broker machinery
-        self._init_broker_data()
         # Clear the user data storage
-        self._globals = {}
+        self._globals.clear()
