@@ -1,5 +1,53 @@
 # ChangeLog
 
+## [2025-03-13]
+
+### `llama-index-core` [0.12.24]
+
+- fix get content node metadata duplicated templates (#18110)
+- remove assert for multimodal llms in multimodal vector store/query engine (#18112)
+- fix: make run_step return all the events produced by a step (#18082)
+- fix(multimodal nodes): check image path is file before open (#18043)
+
+### `llama-index-embeddings-google-genai` [0.1.0]
+
+- Google genai embeddings (#18079)
+
+### `llama-index-graph-stores-neptune` [0.3.2]
+
+- Fix the TypeError in the upsert_triplet method of the Neptune (#18051)
+
+### `llama-index-indices-managed-vectara` [0.4.2]
+
+- Update Vectara Index to return both document level and page level metadata (#17976)
+
+### `llama-index-llms-contextual` [0.1.0]
+
+- Contextual Generate model (#17913)
+
+### `llama-index-llms-google-genai` [0.1.3]
+
+- Use GenAI package for google (#17939)
+- fix gemini roles (#18108)
+- fix null model meta references (#18109)
+- [BUG FIX] Google genai vertexai error (#18070)
+
+### `llama-index-memory-mem0` [0.3.0]
+
+- Mem0Memory Integration Issue: Update Required for Mem0 API Parameter Changes (#18066)
+
+### `llama-index-postprocessor-contextual-rerank` [0.1.0]
+
+- Contextual reranker (#18075)
+
+### `llama-index-readers-elasticsearch` [0.3.1]
+
+- Fix the redundancy of ElasticsearchReader (#18106)
+
+### `llama-index-readers-google` [0.6.1]
+
+- Use int type for redirect URI port (#18097)
+
 ## [2025-03-07]
 
 ### `llama-index-core` [0.12.23]
