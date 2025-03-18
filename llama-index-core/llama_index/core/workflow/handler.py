@@ -1,5 +1,4 @@
 import asyncio
-import weakref
 from typing import Any, AsyncGenerator, List, Optional
 
 from llama_index.core.workflow.context import Context
@@ -20,15 +19,11 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.run_id = run_id
-        self._ctx = None
-        if ctx:
-            self._ctx = weakref.ref(ctx)
+        self._ctx = ctx
 
     @property
     def ctx(self) -> Optional[Context]:
-        if self._ctx is not None:
-            return self._ctx()
-        return None
+        return self._ctx
 
     def __str__(self) -> str:
         return str(self.result())
