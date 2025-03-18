@@ -403,7 +403,12 @@ class Context:
         self._globals.clear()
 
     async def shutdown(self) -> None:
-        """To be called when a workflow ends."""
+        """To be called when a workflow ends.
+
+        We clear all the tasks and set the is_running flag. Note that we
+        don't clear _globals or _queues so that the context can be still
+        used after the shutdown to fetch data or consume leftover events.
+        """
         self.is_running = False
         # Cancel all running tasks
         for task in self._tasks:
@@ -411,15 +416,6 @@ class Context:
         # Wait for all tasks to complete
         await asyncio.gather(*self._tasks, return_exceptions=True)
         self._tasks.clear()
-
-        # Clear all queues
-        for queue in self._queues.values():
-            while not queue.empty():
-                try:
-                    queue.get_nowait()
-                except asyncio.QueueEmpty:
-                    break
-        self._queues.clear()
 
     def add_step_worker(
         self,
