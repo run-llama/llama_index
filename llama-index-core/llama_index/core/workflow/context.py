@@ -429,7 +429,7 @@ class Context:
         checkpoint_callback: Optional[CheckpointCallback],
         run_id: str,
         service_manager: ServiceManager,
-    ):
+    ) -> None:
         self._tasks.add(
             asyncio.create_task(
                 self._step_worker(
@@ -592,7 +592,7 @@ class Context:
                 elif new_ev is not None:
                     self.send_event(new_ev)
 
-    def add_cancel_worker(self):
+    def add_cancel_worker(self) -> None:
         self._tasks.add(asyncio.create_task(self._cancel_worker()))
 
     async def _cancel_worker(self) -> None:
