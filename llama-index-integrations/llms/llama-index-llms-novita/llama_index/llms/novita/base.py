@@ -1,9 +1,5 @@
-import json
-
-from llama_index.core.base.llms.types import CompletionResponse
-from llama_index.core.llms.llm import ToolSelection
 from llama_index.llms.openai_like import OpenAILike
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional
 from llama_index.core.base.llms.generic_utils import (
      get_from_param_or_env,
 )
@@ -50,30 +46,6 @@ class NovitaAI(OpenAILike):
     def class_name(cls) -> str:
         return "NovitaAI"
 
-    def get_tool_calls_from_response(
-            self,
-            response: "CompletionResponse",
-            error_on_no_tool_call: bool = True,
-            **kwargs: Any,
-    ) -> List[ToolSelection]:
-        tool_calls = response.additional_kwargs.get("tool_calls", [])
-        if len(tool_calls) < 1:
-            if error_on_no_tool_call:
-                raise ValueError(
-                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
-                )
-            return []
-
-        tool_selections = []
-        for tool_call in tool_calls:
-            tool_selections.append(
-                ToolSelection(
-                    tool_id=tool_call.id,
-                    tool_name=tool_call.function.name,
-                    tool_kwargs=json.loads(tool_call.function.arguments),
-                )
-            )
-        return tool_selections
 
 
 

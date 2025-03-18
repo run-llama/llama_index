@@ -4,7 +4,6 @@
 
 ```bash
 %pip install llama-index-llms-novita
-!pip install llama-index
 ```
 ### Select Model
 Large Language Models: https://novita.ai/llm-api?utm_source=github_llama_index&utm_medium=github_readme&utm_campaign=link
@@ -44,6 +43,9 @@ print(response)
 ```py
 from llama_index.llms.novita import NovitaAI
 
+# Set your API key
+api_key = "Your API KEY"
+
 llm = NovitaAI(model="meta-llama/llama-3.1-8b-instruct", api_key=api_key)
 
 # Using stream_complete endpoint
@@ -64,34 +66,21 @@ for r in response:
 ### Function Calling
 
 ```py
+from datetime import datetime
+from llama_index.core.tools import FunctionTool
 from llama_index.llms.novita import NovitaAI
 
-llm = NovitaAI(model="meta-llama/llama-3.1-8b-instruct", api_key="YOUR API KEY")
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "query_weather",
-            "description": "Query the weather of the city provided by user",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "city": {
-                        "type": "string",
-                        "description": "City to query",
-                    },
-                },
-                "required": ["city"],
-            },
-        },
-    }
-]
-response = llm.complete(
-    "help me to find the weather in Shanghai",
-    tools=tools,
-    tool_choice="auto",
-)
-print(llm.get_tool_calls_from_response(response))
+# Set your API key
+api_key = "Your API KEY"
+
+def get_current_time() -> dict:
+    """Get the current time"""
+    return {"time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+llm = NovitaAI(model="deepseek/deepseek_v3", api_key=api_key)
+tool = FunctionTool.from_defaults(fn=get_current_time)
+response = llm.predict_and_call([tool], "What is the current time?")
+print(response)
 ```
 
 ### NovitaAI Documentation

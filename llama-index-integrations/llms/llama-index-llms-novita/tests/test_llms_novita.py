@@ -1,11 +1,14 @@
-import json
+import os
+from datetime import datetime
+
 import pytest
 from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.tools import FunctionTool
 from llama_index.llms.novita import NovitaAI
 
 model = "meta-llama/llama-3.1-8b-instruct"
 model_function_calling = "deepseek/deepseek_v3"
-api_key = "your api key"
+api_key = os.environ.get("NOVITA_API_KEY", "")
 
 def test_llm_class():
     names_of_base_classes = [b.__name__ for b in NovitaAI.__mro__]
@@ -21,12 +24,14 @@ def test_novita_llm_metadata():
     llm = NovitaAI(model=model, api_key=api_key)
     assert llm.metadata.is_function_calling_model is False
 
+@pytest.mark.skipif(not api_key, reason="No Novita API key set")
 def test_completion():
     llm = NovitaAI(model=model, api_key=api_key)
     response = llm.complete("who are you")
     print(response)
     assert response
 
+@pytest.mark.skipif(not api_key, reason="No Novita API key set")
 @pytest.mark.asyncio()
 async def test_async_completion():
     llm = NovitaAI(model=model, api_key=api_key)
@@ -34,7 +39,7 @@ async def test_async_completion():
     print(response)
     assert response
 
-
+@pytest.mark.skipif(not api_key, reason="No Novita API key set")
 def test_stream_complete():
     llm = NovitaAI(model=model, api_key=api_key)
     response = llm.stream_complete("who are you")
@@ -45,6 +50,7 @@ def test_stream_complete():
     assert responses
     assert len(responses) > 0
 
+@pytest.mark.skipif(not api_key, reason="No Novita API key set")
 @pytest.mark.asyncio()
 async def test_astream_complete():
     llm = NovitaAI(model=model, api_key=api_key)
@@ -56,36 +62,15 @@ async def test_astream_complete():
     assert responses
     assert len(responses) > 0
 
+@pytest.mark.skipif(not api_key, reason="No Novita API key set")
 def test_function_calling():
-    def get_weather(location):
-        return json.dumps({"location": location, "temperature": "60 degrees Fahrenheit"})
-    tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "get_weather",
-                "description": "Get weather of an location, the user shoud supply a location first",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "location": {
-                            "type": "string",
-                            "description": "The city and state, e.g. San Francisco, CA",
-                        }
-                    },
-                    "required": ["location"]
-                },
-            }
-        },
-    ]
+    def get_current_time() -> dict:
+        """Get the current time"""
+        return {"time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
     llm = NovitaAI(model=model_function_calling, api_key=api_key)
-    response = llm.complete(
-        "What is the weather in San Francisco?",
-        tools = tools,
-        tool_choice = "auto")
-    func_call_list = llm.get_tool_calls_from_response(response)
-    for func_call in func_call_list:
-        if func_call.tool_name == "get_weather":
-            print(get_weather(location=func_call.tool_kwargs.get("location")))
+    tool = FunctionTool.from_defaults(fn=get_current_time)
+    response = llm.predict_and_call([tool], "What is the current time?")
+    print(response)
     assert response
 
