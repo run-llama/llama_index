@@ -97,13 +97,7 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
                     exception_raised = e
 
             if we_done:
-                # Remove any reference to the tasks
-                for t in self.ctx._tasks:
-                    t.cancel()
-                    await asyncio.sleep(0)
-
-                # the context is no longer running
-                self.ctx.is_running = False
+                await self.ctx.shutdown()
 
                 if exception_raised:
                     raise exception_raised
