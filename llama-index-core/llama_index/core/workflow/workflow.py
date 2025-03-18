@@ -597,7 +597,7 @@ class Workflow(metaclass=WorkflowMeta):
         """Checks if the workflow is done."""
         return self._stepwise_context is None
 
-    @step
+    @step(num_workers=1)
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
         if self._stop_event_class is StopEvent:
