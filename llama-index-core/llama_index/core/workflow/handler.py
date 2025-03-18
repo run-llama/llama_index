@@ -19,7 +19,11 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.run_id = run_id
-        self.ctx = ctx
+        self._ctx = ctx
+
+    @property
+    def ctx(self) -> Optional[Context]:
+        return self._ctx
 
     def __str__(self) -> str:
         return str(self.result())
@@ -28,7 +32,7 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
         return self.done()
 
     async def stream_events(self) -> AsyncGenerator[Event, None]:
-        if not self.ctx:
+        if self.ctx is None:
             raise ValueError("Context is not set!")
 
         while True:
@@ -93,13 +97,7 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
                     exception_raised = e
 
             if we_done:
-                # Remove any reference to the tasks
-                for t in self.ctx._tasks:
-                    t.cancel()
-                    await asyncio.sleep(0)
-
-                # the context is no longer running
-                self.ctx.is_running = False
+                await self.ctx.shutdown()
 
                 if exception_raised:
                     raise exception_raised
