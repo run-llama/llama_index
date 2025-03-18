@@ -63,13 +63,25 @@ def chat_from_gemini_response(
     if response.usage_metadata:
         raw["usage_metadata"] = response.usage_metadata.model_dump()
 
-    try:
-        text = response.text
-    except ValueError:
-        text = None
+    content_blocks = []
+    if (
+        len(response.candidates) > 0
+        and response.candidates[0].content
+        and response.candidates[0].content.parts
+    ):
+        parts = response.candidates[0].content.parts
+        for part in parts:
+            if part.text:
+                content_blocks.append(TextBlock(text=part.text))
+            if part.inline_data:
+                content_blocks.append(
+                    ImageBlock(
+                        image=part.inline_data.data,
+                        image_mimetype=part.inline_data.mime_type,
+                    )
+                )
 
     additional_kwargs: Dict[str, Any] = {}
-
     if response.function_calls:
         for fn in response.function_calls:
             if "tool_calls" not in additional_kwargs:
@@ -79,7 +91,7 @@ def chat_from_gemini_response(
     role = ROLES_FROM_GEMINI[top_candidate.content.role]
     return ChatResponse(
         message=ChatMessage(
-            role=role, content=text, additional_kwargs=additional_kwargs
+            role=role, blocks=content_blocks, additional_kwargs=additional_kwargs
         ),
         raw=raw,
         additional_kwargs=additional_kwargs,
@@ -111,9 +123,16 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
             raise ValueError(msg)
 
     for tool_call in message.additional_kwargs.get("tool_calls", []):
-        parts.append(
-            types.Part.from_function_call(name=tool_call.name, args=tool_call.args)
-        )
+        if isinstance(tool_call, dict):
+            parts.append(
+                types.Part.from_function_call(
+                    name=tool_call.get("name"), args=tool_call.get("args")
+                )
+            )
+        else:
+            parts.append(
+                types.Part.from_function_call(name=tool_call.name, args=tool_call.args)
+            )
 
     # the tool call id is the name of the tool
     # the tool call response is the content of the message, overriding the existing content
@@ -123,7 +142,9 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
             name=message.additional_kwargs.get("tool_call_id"),
             response={"result": message.content},
         )
-        return types.Content(role="tool", parts=[function_response_part])
+        return types.Content(
+            role=ROLES_TO_GEMINI[message.role], parts=[function_response_part]
+        )
 
     return types.Content(
         role=ROLES_TO_GEMINI[message.role],

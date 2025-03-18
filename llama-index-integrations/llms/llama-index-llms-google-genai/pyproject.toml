@@ -27,13 +27,13 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-google-genai"
 readme = "README.md"
-version = "0.1.1"
+version = "0.1.4"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 pillow = "^10.2.0"
 google-genai = ">=1.4.0"
-llama-index-core = "^0.12.12"
+llama-index-core = "^0.12.24.post1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
