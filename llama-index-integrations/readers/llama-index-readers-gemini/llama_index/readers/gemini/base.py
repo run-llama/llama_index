@@ -222,7 +222,7 @@ class GeminiReader(BasePydanticReader):
             progress_callback=self._progress_callback,
         )
 
-    def process_pdf(self, pdf_path: str) -> List[Document]:
+    async def process_pdf(self, pdf_path: str) -> List[Document]:
         """
         Process a PDF file and return a list of Document objects.
 
@@ -253,11 +253,11 @@ class GeminiReader(BasePydanticReader):
 
             # Process based on mode
             if self.continuous_mode:
-                documents = self._pdf_processor.process_continuous_mode(
+                documents = await self._pdf_processor.process_continuous_mode(
                     images, pdf_path, self._api.process_image
                 )
             else:
-                documents = self._pdf_processor.process_pages_parallel(
+                documents = await self._pdf_processor.process_pages_parallel(
                     images, pdf_path, self.split_by_page, self._api.process_image
                 )
 
@@ -359,7 +359,7 @@ class GeminiReader(BasePydanticReader):
                     temp_path = download_from_url(file_path, self.verbose)
 
                     # Process the downloaded PDF
-                    documents = self.process_pdf(temp_path)
+                    documents = await self.process_pdf(temp_path)
 
                     # Add source URL to metadata
                     for doc in documents:
@@ -385,7 +385,7 @@ class GeminiReader(BasePydanticReader):
 
             # Regular file path
             try:
-                documents = self.process_pdf(file_str)
+                documents = await self.process_pdf(file_str)
 
                 # Add extra metadata if provided
                 if metadata:
@@ -415,7 +415,7 @@ class GeminiReader(BasePydanticReader):
                         # It's a buffer
                         temp_file.write(file_path.read())
 
-                documents = self.process_pdf(temp_path)
+                documents = await self.process_pdf(temp_path)
 
                 # Add file source to metadata
                 for doc in documents:

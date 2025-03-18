@@ -1,9 +1,8 @@
 """PDF processing and image conversion logic for Gemini PDF Reader."""
 
+import asyncio
 import logging
 import os
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, List, Optional, Tuple
 
 import PIL.Image
@@ -116,7 +115,7 @@ class PDFProcessor:
         # Update progress
         self._update_progress(self._stats.processed_pages, self._stats.total_pages)
 
-    def process_pages_parallel(
+    async def process_pages_parallel(
         self,
         images: List[PIL.Image.Image],
         pdf_path: str,
@@ -144,21 +143,41 @@ class PDFProcessor:
 
         all_documents = []
 
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            future_to_page = {
-                executor.submit(
-                    self._process_page, args, split_by_page, process_image_func
-                ): args
-                for args in page_args
-            }
+        semaphore = asyncio.Semaphore(self.max_workers)
+        tasks = []
 
-            for future in as_completed(future_to_page):
-                try:
-                    page_documents = future.result()
-                    all_documents.extend(page_documents)
-                except Exception as e:
-                    if not self.ignore_errors:
-                        raise RuntimeError(f"Error processing page: {e!s}") from e
+        async def process_page_with_semaphore(args):
+            async with semaphore:
+                return await asyncio.to_thread(
+                    self._process_page, args, split_by_page, process_image_func
+                )
+
+        tasks = [process_page_with_semaphore(args) for args in page_args]
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for result in results:
+            if isinstance(result, Exception):
+                if not self.ignore_errors:
+                    raise RuntimeError(f"Error processing page: {result!s}") from result
+            else:
+                all_documents.extend(result)
+
+        # with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+        #     future_to_page = {
+        #         executor.submit(
+        #             self._process_page, args, split_by_page, process_image_func
+        #         ): args
+        #         for args in page_args
+        #     }
+
+        #     for future in as_completed(future_to_page):
+        #         try:
+        #             page_documents = future.result()
+        #             all_documents.extend(page_documents)
+        #         except Exception as e:
+        #             if not self.ignore_errors:
+        #                 raise RuntimeError(f"Error processing page: {e!s}") from e
 
         # Sort documents by page number and chunk number if needed
         if split_by_page:
@@ -269,7 +288,7 @@ class PDFProcessor:
             else:
                 raise RuntimeError(error_msg) from e
 
-    def process_continuous_mode(
+    async def process_continuous_mode(
         self,
         images: List[PIL.Image.Image],
         pdf_path: str,
@@ -302,20 +321,24 @@ class PDFProcessor:
         # Process all pages in parallel to extract chunks
         all_page_chunks = []
 
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            # Define a helper function to process a single page and
-            # return its chunks
-            def extract_page_chunks(args):
+        semaphore = asyncio.Semaphore(self.max_workers)
+
+        # Replace threading.Lock with asyncio.Lock
+        stats_lock = asyncio.Lock()
+
+        # Define a function to process a single page with semaphore control
+        async def extract_page_chunks_async(args):
+            async with semaphore:
                 image, pdf_path, page_num, total_pages = args
 
                 if self.verbose:
                     logger.info(f"Processing page {page_num}/{total_pages}")
 
-                # Extract text from the page
-                text_chunks = process_image_func(image)
+                # Run the CPU-intensive process in a thread pool
+                text_chunks = await asyncio.to_thread(process_image_func, image)
 
-                # Update statistics (needs to be thread-safe)
-                with threading.Lock():
+                # Update statistics with async lock
+                async with stats_lock:
                     self._stats.processed_pages += 1
                     self._stats.total_chunks += len(text_chunks)
                     self._update_progress(
@@ -325,22 +348,22 @@ class PDFProcessor:
                 # Return the chunks with their page number
                 return [(page_num, chunk) for chunk in text_chunks]
 
-            # Submit all tasks
-            future_to_page = {
-                executor.submit(extract_page_chunks, args): args for args in page_args
-            }
+        # Create tasks for all pages
+        tasks = [extract_page_chunks_async(args) for args in page_args]
 
-            # Collect results as they complete
-            for future in as_completed(future_to_page):
-                try:
-                    page_chunks = future.result()
-                    all_page_chunks.extend(page_chunks)
-                except Exception as e:
-                    error_msg = f"Error in continuous mode processing: {e!s}"
-                    logger.error(error_msg)
-                    self._stats.errors.append(error_msg)
-                    if not self.ignore_errors:
-                        raise RuntimeError(error_msg) from e
+        # Gather results, handling exceptions
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Process results
+        for result in results:
+            if isinstance(result, Exception):
+                error_msg = f"Error in continuous mode processing: {result!s}"
+                logger.error(error_msg)
+                self._stats.errors.append(error_msg)
+                if not self.ignore_errors:
+                    raise RuntimeError(error_msg) from result
+            else:
+                all_page_chunks.extend(result)
 
         # Sort all chunks by page number to ensure proper ordering
         all_page_chunks.sort(key=lambda x: x[0])
