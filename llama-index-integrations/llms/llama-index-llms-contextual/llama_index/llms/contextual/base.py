@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from llama_index.llms.openai_like import OpenAILike
 from pydantic import Field
-from typing import List
+from typing import List, Sequence
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
@@ -13,6 +13,8 @@ from llama_index.core.base.llms.types import (
     ChatResponseGen,
     MessageRole,
     ChatMessage,
+    CompletionResponseAsyncGen,
+    ChatResponseAsyncGen,
 )
 
 

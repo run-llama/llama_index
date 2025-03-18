@@ -14,7 +14,6 @@ def test_str():
 @pytest.mark.asyncio()
 async def test_stream_no_context():
     h = WorkflowHandler()
-    h.ctx = None
     with pytest.raises(ValueError, match="Context is not set!"):
         async for ev in h.stream_events():
             pass
@@ -23,7 +22,6 @@ async def test_stream_no_context():
 @pytest.mark.asyncio()
 async def test_run_step_no_context():
     h = WorkflowHandler()
-    h.ctx = None
     with pytest.raises(
         ValueError,
         match="Context must be set to run a workflow step-wise!",
