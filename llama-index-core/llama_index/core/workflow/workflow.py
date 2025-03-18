@@ -13,6 +13,7 @@ from typing import (
     Set,
     Tuple,
 )
+from weakref import WeakSet
 
 from llama_index.core.bridge.pydantic import ValidationError
 from llama_index.core.instrumentation import get_dispatcher
@@ -100,7 +101,7 @@ class Workflow(metaclass=WorkflowMeta):
             asyncio.Semaphore(num_concurrent_runs) if num_concurrent_runs else None
         )
         # Broker machinery
-        self._contexts: Set[Context] = set()
+        self._contexts: WeakSet[Context] = WeakSet()
         self._stepwise_context: Optional[Context] = None
         # Services management
         self._service_manager = service_manager or ServiceManager()
