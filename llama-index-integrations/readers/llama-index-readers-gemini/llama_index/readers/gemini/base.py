@@ -336,7 +336,7 @@ class GeminiReader(BasePydanticReader):
                     logger.info(f"Processing file {i+1}/{len(file_path)}")
 
                 try:
-                    file_docs = self.load_data(single_path, extra_info)
+                    file_docs = await self.aload_data(single_path, extra_info)
                     all_documents.extend(file_docs)
                 except Exception as e:
                     if self.verbose:
