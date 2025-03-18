@@ -5,7 +5,9 @@
 ```bash
 %pip install llama-index-llms-novita
 ```
+
 ### Select Model
+
 Large Language Models: https://novita.ai/llm-api?utm_source=github_llama_index&utm_medium=github_readme&utm_campaign=link
 
 ### Basic usage
@@ -18,13 +20,15 @@ from llama_index.llms.novita import NovitaAI
 api_key = "Your API KEY"
 
 # Call complete function
-response = NovitaAI(model="meta-llama/llama-3.1-8b-instruct", api_key=api_key).complete("who are you")
+response = NovitaAI(
+    model="meta-llama/llama-3.1-8b-instruct", api_key=api_key
+).complete("who are you")
 print(response)
 
 # Call complete with stop
-response = NovitaAI(model="meta-llama/llama-3.1-8b-instruct", api_key=api_key).complete(
-    prompt="who are you", stop=["AI"]
-)
+response = NovitaAI(
+    model="meta-llama/llama-3.1-8b-instruct", api_key=api_key
+).complete(prompt="who are you", stop=["AI"])
 print(response)
 
 # Call chat with a list of messages
@@ -34,7 +38,9 @@ messages = [
     ChatMessage(role="user", content="who are you"),
 ]
 
-response = NovitaAI(model="meta-llama/llama-3.1-8b-instruct", api_key=api_key).chat(messages)
+response = NovitaAI(
+    model="meta-llama/llama-3.1-8b-instruct", api_key=api_key
+).chat(messages)
 print(response)
 ```
 
@@ -73,9 +79,11 @@ from llama_index.llms.novita import NovitaAI
 # Set your API key
 api_key = "Your API KEY"
 
+
 def get_current_time() -> dict:
     """Get the current time"""
     return {"time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
 
 llm = NovitaAI(model="deepseek/deepseek_v3", api_key=api_key)
 tool = FunctionTool.from_defaults(fn=get_current_time)
@@ -84,5 +92,5 @@ print(response)
 ```
 
 ### NovitaAI Documentation
-API Documentation: https://novita.ai/docs/guides/llm-api            
 
+API Documentation: https://novita.ai/docs/guides/llm-api
