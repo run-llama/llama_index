@@ -19,6 +19,8 @@ from typing import (
     TypeVar,
 )
 
+from llama_index.core.instrumentation.dispatcher import Dispatcher
+
 from .checkpointer import CheckpointCallback
 from .context_serializers import BaseSerializer, JsonSerializer
 from .decorators import StepConfig
@@ -429,6 +431,7 @@ class Context:
         checkpoint_callback: Optional[CheckpointCallback],
         run_id: str,
         service_manager: ServiceManager,
+        dispatcher: Dispatcher,
     ) -> None:
         self._tasks.add(
             asyncio.create_task(
@@ -441,6 +444,7 @@ class Context:
                     checkpoint_callback=checkpoint_callback,
                     run_id=run_id,
                     service_manager=service_manager,
+                    dispatcher=dispatcher,
                 ),
                 name=name,
             )
@@ -456,6 +460,7 @@ class Context:
         checkpoint_callback: Optional[CheckpointCallback],
         run_id: str,
         service_manager: ServiceManager,
+        dispatcher: Dispatcher,
     ) -> None:
         while True:
             ev = await self._queues[name].get()
@@ -485,7 +490,7 @@ class Context:
             kwargs[config.event_name] = ev
 
             # wrap the step with instrumentation
-            instrumented_step = step
+            instrumented_step = dispatcher.span(step)
 
             # - check if its async or not
             # - if not async, run it in an executor

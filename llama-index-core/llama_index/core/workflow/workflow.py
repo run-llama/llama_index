@@ -265,6 +265,7 @@ class Workflow(metaclass=WorkflowMeta):
                     checkpoint_callback=checkpoint_callback,
                     run_id=run_id,
                     service_manager=self._service_manager,
+                    dispatcher=dispatcher,
                 )
 
         # add dedicated cancel task
