@@ -20,7 +20,7 @@ from llama_index.core.node_parser.text.utils import (
 from llama_index.core.utils import get_tokenizer
 
 SENTENCE_CHUNK_OVERLAP = 200
-CHUNKING_REGEX = "[^,.;。？！]+[,.;。？！]?"
+CHUNKING_REGEX = "[^,.;。？！]+[,.;。？！]?|[,.;。？！]"
 DEFAULT_PARAGRAPH_SEP = "\n\n\n"
 
 

@@ -263,6 +263,7 @@ nav:
           - ./examples/embeddings/mixedbreadai.ipynb
           - ./examples/embeddings/modelscope.ipynb
           - ./examples/embeddings/nebius.ipynb
+          - ./examples/embeddings/netmind.ipynb
           - ./examples/embeddings/nomic.ipynb
           - ./examples/embeddings/nvidia.ipynb
           - ./examples/embeddings/oci_data_science.ipynb
@@ -371,6 +372,7 @@ nav:
           - ./examples/llm/monsterapi.ipynb
           - ./examples/llm/mymagic.ipynb
           - ./examples/llm/nebius.ipynb
+          - ./examples/llm/netmind.ipynb
           - ./examples/llm/neutrino.ipynb
           - ./examples/llm/nvidia.ipynb
           - ./examples/llm/nvidia_nim.ipynb
@@ -940,6 +942,7 @@ nav:
           - ./api_reference/embeddings/mixedbreadai.md
           - ./api_reference/embeddings/modelscope.md
           - ./api_reference/embeddings/nebius.md
+          - ./api_reference/embeddings/netmind.md
           - ./api_reference/embeddings/nomic.md
           - ./api_reference/embeddings/nvidia.md
           - ./api_reference/embeddings/oci_data_science.md
@@ -1060,7 +1063,9 @@ nav:
           - ./api_reference/llms/monsterapi.md
           - ./api_reference/llms/mymagic.md
           - ./api_reference/llms/nebius.md
+          - ./api_reference/llms/netmind.md
           - ./api_reference/llms/neutrino.md
+          - ./api_reference/llms/novita.md
           - ./api_reference/llms/nvidia.md
           - ./api_reference/llms/nvidia_tensorrt.md
           - ./api_reference/llms/nvidia_triton.md
@@ -2421,6 +2426,9 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-contextual
             - ../llama-index-integrations/tools/llama-index-tools-agentql
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-aimon-rerank
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-netmind
+            - ../llama-index-integrations/llms/llama-index-llms-novita
+            - ../llama-index-integrations/llms/llama-index-llms-netmind
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
