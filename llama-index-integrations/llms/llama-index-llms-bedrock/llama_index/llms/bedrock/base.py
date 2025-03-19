@@ -32,8 +32,10 @@ from llama_index.llms.bedrock.utils import (
     CHAT_ONLY_MODELS,
     STREAMING_MODELS,
     Provider,
+    ProviderType,
     completion_with_retry,
     get_provider,
+    get_provider_by_type,
 )
 
 
@@ -143,12 +145,13 @@ class Bedrock(LLM):
         guardrail_identifier: Optional[str] = None,
         guardrail_version: Optional[str] = None,
         trace: Optional[str] = None,
+        provider_type: Optional[ProviderType] = None,
         **kwargs: Any,
     ) -> None:
         if context_size is None and model not in BEDROCK_FOUNDATION_LLMS:
             raise ValueError(
                 "`context_size` argument not provided and"
-                "model provided refers to a non-foundation model."
+                " model provided refers to a non-foundation model."
                 " Please specify the context_size"
             )
 
@@ -209,7 +212,10 @@ class Bedrock(LLM):
             guardrail_version=guardrail_version,
             trace=trace,
         )
-        self._provider = get_provider(model)
+        if provider_type is not None:
+            self._provider = get_provider_by_type(provider_type)
+        else:
+            self._provider = get_provider(model)
         self.messages_to_prompt = (
             messages_to_prompt
             or self._provider.messages_to_prompt

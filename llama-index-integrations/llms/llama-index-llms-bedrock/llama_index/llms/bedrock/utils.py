@@ -1,4 +1,5 @@
 import logging
+from enum import Enum
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
@@ -252,24 +253,50 @@ class MistralProvider(Provider):
         return response["outputs"][0]["text"]
 
 
-PROVIDERS = {
-    "amazon": AmazonProvider(),
-    "ai21": Ai21Provider(),
-    "anthropic": AnthropicProvider(),
-    "cohere": CohereProvider(),
-    "meta": MetaProvider(),
-    "mistral": MistralProvider(),
-}
+class ProviderType(Enum):
+    AMAZON = ("amazon", AmazonProvider)
+    AI21 = ("ai21", Ai21Provider)
+    ANTHROPIC = ("anthropic", AnthropicProvider)
+    COHERE = ("cohere", CohereProvider)
+    META = ("meta", MetaProvider)
+    MISTRAL = ("mistral", MistralProvider)
+
+    def __init__(self, value: str, provider_class: type) -> None:
+        self._value_ = value
+        self.provider_class = provider_class
+
+    @property
+    def provider(self) -> Provider:
+        if not hasattr(self, "_provider_instance"):
+            self._provider_instance = self.provider_class()
+        return self._provider_instance
+
+
+def _get_provider_type_by_name(provider_name: str) -> ProviderType:
+    for provider_type in ProviderType:
+        if provider_type.value == provider_name:
+            return provider_type
+    raise ValueError(f"Provider {provider_name} is not supported")
 
 
 def get_provider(model: str) -> Provider:
     model_split = model.split(".")
     provider_name = model_split[0]
+
     if len(model_split) == 3:
         provider_name = model_split[1]
-    if provider_name not in PROVIDERS:
-        raise ValueError(f"Provider {provider_name} for model {model} is not supported")
-    return PROVIDERS[provider_name]
+
+    try:
+        provider_type = _get_provider_type_by_name(provider_name)
+        return provider_type.provider
+    except ValueError as e:
+        raise ValueError(
+            f"Provider {provider_name} for model {model} is not supported"
+        ) from e
+
+
+def get_provider_by_type(provider_type: ProviderType) -> Provider:
+    return _get_provider_type_by_name(provider_type.value).provider
 
 
 logger = logging.getLogger(__name__)
