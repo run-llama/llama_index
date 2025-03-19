@@ -47,7 +47,7 @@ async def hybrid_vector_store() -> QdrantVectorStore:
         client=client,
         aclient=aclient,
         enable_hybrid=True,
-        fastembed_sparse_model="qdrant/bm25",
+        fastembed_sparse_model="Qdrant/bm25",
     )
 
     nodes = [
