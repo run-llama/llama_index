@@ -45,9 +45,9 @@ class DynamoDBChatStore(BaseChatStore):
         timeout (float, optional): The timeout for API requests in seconds. Defaults to 60.0.
         session_kwargs (Dict[str, Any], optional): Additional kwargs for the `boto3.Session` object.
         resource_kwargs (Dict[str, Any], optional): Additional kwargs for the `boto3.Resource` object.
-        ttl_seconds (Optional[int], optional): Time-to-live in seconds for items in the table. 
+        ttl_seconds (Optional[int], optional): Time-to-live in seconds for items in the table.
             If set, items will expire after this many seconds. Defaults to None (no expiration).
-        ttl_attribute (str, optional): The name of the attribute to use for TTL. 
+        ttl_attribute (str, optional): The name of the attribute to use for TTL.
             Defaults to "TTL".
 
     Returns:
@@ -215,22 +215,22 @@ class DynamoDBChatStore(BaseChatStore):
             None
         """
         item = {self.primary_key: key, "History": _messages_to_dict(messages)}
-        
+
         # Add TTL if configured
         if self.ttl_seconds is not None:
             item[self.ttl_attribute] = int(time.time()) + self.ttl_seconds
-            
+
         self._table.put_item(Item=item)
 
     async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
         self.init_async_table()
-        
+
         item = {self.primary_key: key, "History": _messages_to_dict(messages)}
-        
+
         # Add TTL if configured
         if self.ttl_seconds is not None:
             item[self.ttl_attribute] = int(time.time()) + self.ttl_seconds
-            
+
         await self._atable.put_item(Item=item)
 
     def get_messages(self, key: str) -> List[ChatMessage]:
@@ -277,11 +277,11 @@ class DynamoDBChatStore(BaseChatStore):
         current_messages.append(_message_to_dict(message))
 
         item = {self.primary_key: key, "History": current_messages}
-        
+
         # Add TTL if configured
         if self.ttl_seconds is not None:
             item[self.ttl_attribute] = int(time.time()) + self.ttl_seconds
-            
+
         self._table.put_item(Item=item)
 
     async def async_add_message(self, key: str, message: ChatMessage) -> None:
@@ -290,11 +290,11 @@ class DynamoDBChatStore(BaseChatStore):
         current_messages.append(_message_to_dict(message))
 
         item = {self.primary_key: key, "History": current_messages}
-        
+
         # Add TTL if configured
         if self.ttl_seconds is not None:
             item[self.ttl_attribute] = int(time.time()) + self.ttl_seconds
-            
+
         await self._atable.put_item(Item=item)
 
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:

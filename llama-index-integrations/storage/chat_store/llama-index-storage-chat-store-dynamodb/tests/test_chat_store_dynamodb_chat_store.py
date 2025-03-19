@@ -43,9 +43,9 @@ def chat_store_with_ttl(dynamo_db):
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
     )
     return DynamoDBChatStore(
-        table_name="TestTableTTL", 
+        table_name="TestTableTTL",
         region_name="us-east-1",
-        ttl_seconds=3600  # 1 hour TTL
+        ttl_seconds=3600,  # 1 hour TTL
     )
 
 
@@ -58,10 +58,10 @@ def chat_store_with_custom_ttl(dynamo_db):
         ProvisionedThroughput={"ReadCapacityUnits": 1, "WriteCapacityUnits": 1},
     )
     return DynamoDBChatStore(
-        table_name="TestTableCustomTTL", 
+        table_name="TestTableCustomTTL",
         region_name="us-east-1",
         ttl_seconds=7200,  # 2 hour TTL
-        ttl_attribute="ExpiresAt"
+        ttl_attribute="ExpiresAt",
     )
 
 
@@ -125,16 +125,14 @@ def test_ttl_set_messages(chat_store_with_ttl):
     """Test that TTL is set when setting messages."""
     messages = [ChatMessage(content="Hello TTL")]
     chat_store_with_ttl.set_messages("TTLSession", messages)
-    
+
     # Get the raw item from DynamoDB to check TTL
-    response = chat_store_with_ttl._table.get_item(
-        Key={"SessionId": "TTLSession"}
-    )
+    response = chat_store_with_ttl._table.get_item(Key={"SessionId": "TTLSession"})
     item = response["Item"]
-    
+
     # Verify TTL attribute exists
     assert "TTL" in item
-    
+
     # Verify TTL is set to a future time (now + 3600 seconds)
     current_time = int(time.time())
     assert item["TTL"] > current_time
@@ -146,16 +144,14 @@ def test_ttl_add_message(chat_store_with_ttl):
     """Test that TTL is set when adding a message."""
     message = ChatMessage(content="Hello TTL Add")
     chat_store_with_ttl.add_message("TTLAddSession", message)
-    
+
     # Get the raw item from DynamoDB to check TTL
-    response = chat_store_with_ttl._table.get_item(
-        Key={"SessionId": "TTLAddSession"}
-    )
+    response = chat_store_with_ttl._table.get_item(Key={"SessionId": "TTLAddSession"})
     item = response["Item"]
-    
+
     # Verify TTL attribute exists
     assert "TTL" in item
-    
+
     # Verify TTL is set to a future time (now + 3600 seconds)
     current_time = int(time.time())
     assert item["TTL"] > current_time
@@ -167,17 +163,17 @@ def test_custom_ttl_attribute(chat_store_with_custom_ttl):
     """Test that custom TTL attribute name is used."""
     messages = [ChatMessage(content="Custom TTL Attribute")]
     chat_store_with_custom_ttl.set_messages("CustomTTLSession", messages)
-    
+
     # Get the raw item from DynamoDB to check TTL
     response = chat_store_with_custom_ttl._table.get_item(
         Key={"SessionId": "CustomTTLSession"}
     )
     item = response["Item"]
-    
+
     # Verify custom TTL attribute exists
     assert "ExpiresAt" in item
     assert "TTL" not in item
-    
+
     # Verify TTL is set to a future time (now + 7200 seconds)
     current_time = int(time.time())
     assert item["ExpiresAt"] > current_time
@@ -189,10 +185,10 @@ def test_no_ttl_when_disabled(chat_store):
     """Test that TTL is not set when ttl_seconds is None."""
     messages = [ChatMessage(content="No TTL")]
     chat_store.set_messages("NoTTLSession", messages)
-    
+
     # Get the raw item from DynamoDB to check TTL
     response = chat_store._table.get_item(Key={"SessionId": "NoTTLSession"})
     item = response["Item"]
-    
+
     # Verify TTL attribute does not exist
     assert "TTL" not in item
