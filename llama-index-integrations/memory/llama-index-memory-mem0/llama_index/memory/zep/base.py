@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any
 import uuid
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
@@ -9,16 +9,20 @@ from zep_cloud.types import Message
 
 class ZepMemory(BaseMemory):
     """Zep Memory for LlamaIndex."""
-    
+
     session_id: str = Field(description="Zep Cloud session ID")
-    user_id: Optional[str] = Field(default=None, description="User ID for user-specific context")
+    user_id: Optional[str] = Field(
+        default=None, description="User ID for user-specific context"
+    )
     memory_key: str = Field(default="chat_history", description="Memory key for prompt")
-    max_message_length: int = Field(default=2500, description="Maximum character length for messages")
-    
+    max_message_length: int = Field(
+        default=2500, description="Maximum character length for messages"
+    )
+
     # Private attributes
     _client = PrivateAttr(default=None)
     _primary_memory: BaseMemory = PrivateAttr(default=None)
-    
+
     def __init__(
         self,
         session_id: str,
@@ -26,7 +30,7 @@ class ZepMemory(BaseMemory):
         user_id: Optional[str] = None,
         memory_key: str = "chat_history",
         max_message_length: int = 2500,
-        **kwargs
+        **kwargs,
     ):
         """Initialize with Zep Cloud client and session."""
         super().__init__(
@@ -38,11 +42,11 @@ class ZepMemory(BaseMemory):
         self._client = zep_client
         self._primary_memory = ChatMemoryBuffer.from_defaults()
         self._sync_from_zep()
-    
+
     @classmethod
     def class_name(cls) -> str:
         return "ZepCloudMemory"
-    
+
     @classmethod
     def from_defaults(cls, zep_client=None, session_id=None, **kwargs):
         if zep_client is None:
@@ -56,7 +60,7 @@ class ZepMemory(BaseMemory):
             memory_key=kwargs.get("memory_key", "chat_history"),
             max_message_length=kwargs.get("max_message_length", 2500),
         )
-    
+
     def _convert_to_zep_message(self, message: ChatMessage) -> Any:
         role_map = {
             MessageRole.USER: "user",
@@ -67,14 +71,14 @@ class ZepMemory(BaseMemory):
         role = role_map.get(message.role, "user")
         content = message.content if message.content is not None else ""
         if len(content) > self.max_message_length:
-            content = content[:self.max_message_length]
+            content = content[: self.max_message_length]
         return Message(
             role=role,
             content=content,
             role_type=role,
             metadata=message.additional_kwargs or {},
         )
-    
+
     def _sync_from_zep(self) -> None:
         """Synchronously retrieve memory from Zep Cloud and update local memory."""
         if self._client is None:
@@ -110,7 +114,7 @@ class ZepMemory(BaseMemory):
                 self._primary_memory.set(messages)
         except Exception:
             pass  # Silently ignore errors during sync
-    
+
     def _get_context_from_memory(self, query: Optional[str] = None) -> str:
         """Retrieve and compile context from Zep memory."""
         if self._client is None:
@@ -122,8 +126,12 @@ class ZepMemory(BaseMemory):
                 context_parts.append("Facts:")
                 for fact in zep_memory.facts:
                     context_parts.append(f"- {fact}")
-            if (hasattr(zep_memory, "summary") and zep_memory.summary and
-                hasattr(zep_memory.summary, "content") and zep_memory.summary.content):
+            if (
+                hasattr(zep_memory, "summary")
+                and zep_memory.summary
+                and hasattr(zep_memory.summary, "content")
+                and zep_memory.summary.content
+            ):
                 context_parts.append("\nSummary:")
                 context_parts.append(zep_memory.summary.content)
             if hasattr(zep_memory, "context") and zep_memory.context:
@@ -137,7 +145,11 @@ class ZepMemory(BaseMemory):
                         search_scope="edges",
                         limit=5,
                     )
-                    if edge_results and hasattr(edge_results, "edges") and edge_results.edges:
+                    if (
+                        edge_results
+                        and hasattr(edge_results, "edges")
+                        and edge_results.edges
+                    ):
                         context_parts.append("\nRelevant information:")
                         for edge in edge_results.edges:
                             if hasattr(edge, "fact"):
@@ -147,7 +159,7 @@ class ZepMemory(BaseMemory):
             return "\n".join(context_parts)
         except Exception:
             return ""
-    
+
     def get(self, input: Optional[str] = None, **kwargs) -> List[ChatMessage]:
         """Retrieve chat history with context enrichment."""
         messages = self._primary_memory.get(input=input, **kwargs)
@@ -169,11 +181,11 @@ class ZepMemory(BaseMemory):
                 )
                 messages.insert(0, system_message)
         return messages
-    
+
     def get_all(self) -> List[ChatMessage]:
         """Retrieve all chat history without context enrichment."""
         return self._primary_memory.get_all()
-    
+
     def _add_msgs_to_zep(self, messages: List[ChatMessage]) -> None:
         """Add new messages to Zep Cloud memory with truncation."""
         if self._client is None or not messages:
@@ -184,7 +196,9 @@ class ZepMemory(BaseMemory):
                 zep_msg = self._convert_to_zep_message(msg)
                 if hasattr(zep_msg, "content") and zep_msg.content:
                     if len(zep_msg.content) > self.max_message_length:
-                        zep_msg.content = zep_msg.content[:self.max_message_length - 3] + "..."
+                        zep_msg.content = (
+                            zep_msg.content[: self.max_message_length - 3] + "..."
+                        )
                 zep_messages.append(zep_msg)
             try:
                 self._client.memory.get(session_id=self.session_id)
@@ -197,19 +211,19 @@ class ZepMemory(BaseMemory):
                 )
         except Exception:
             pass
-    
+
     def put(self, message: ChatMessage) -> None:
         """Add a message to memory."""
         self._primary_memory.put(message)
         self._add_msgs_to_zep([message])
-    
+
     def set(self, messages: List[ChatMessage]) -> None:
         """Replace the entire chat history."""
         initial_chat_len = len(self._primary_memory.get_all())
         self._primary_memory.set(messages)
         if len(messages) > initial_chat_len:
             self._add_msgs_to_zep(messages[initial_chat_len:])
-    
+
     def reset(self) -> None:
         """Clear the memory."""
         self._primary_memory.reset()
@@ -218,7 +232,7 @@ class ZepMemory(BaseMemory):
                 self._client.memory.delete(session_id=self.session_id)
             except Exception:
                 pass
-    
+
     def search(self, query: str, **kwargs) -> Optional[Dict[str, Any]]:
         """Search memory for relevant content."""
         if self._client is None:
@@ -228,7 +242,7 @@ class ZepMemory(BaseMemory):
                 session_ids=[self.session_id],
                 user_id=self.user_id,
                 text=query,
-                **kwargs
+                **kwargs,
             )
         except Exception:
             return None
