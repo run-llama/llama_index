@@ -106,6 +106,7 @@ async def acall_with_messages(
         model=model, messages=messages, api_key=api_key, **parameters
     )
 
+
 async def astream_call_with_messages(
     model: str,
     messages: List[Dict],
@@ -126,10 +127,13 @@ async def astream_call_with_messages(
         model=model, messages=messages, api_key=api_key, **parameters
     )
     if not hasattr(response, "__aiter__"):
-        raise TypeError(f"AioGeneration.call() did not return an async iterable, got {type(response)}")
+        raise TypeError(
+            f"AioGeneration.call() did not return an async iterable, got {type(response)}"
+        )
 
     async for partial_response in response:
         yield partial_response
+
 
 class DashScope(CustomLLM):
     """DashScope LLM.
@@ -434,7 +438,6 @@ class DashScope(CustomLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
         """Asynchronously stream completion results from DashScope."""
-
         message, parameters = self._get_input_parameters(prompt=prompt, **kwargs)
         parameters["incremental_output"] = True
         parameters["stream"] = True
@@ -469,17 +472,14 @@ class DashScope(CustomLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         """Asynchronously stream chat results from DashScope."""
-
         parameters = self._get_default_parameters()
         parameters.update(kwargs)
         parameters["incremental_output"] = True
         parameters["result_format"] = "message"
         parameters["stream"] = True
 
-        # Convert to DashScope messages
         dashscope_messages = chat_message_to_dashscope_messages(messages)
 
-        # This will return an async generator of partial responses:
         async_responses = astream_call_with_messages(
             model=self.model_name,
             messages=dashscope_messages,
