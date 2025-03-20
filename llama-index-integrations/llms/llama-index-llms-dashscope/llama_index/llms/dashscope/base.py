@@ -1,7 +1,7 @@
 """DashScope llm api."""
 
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, AsyncGenerator, Dict, List, Optional, Sequence, Tuple
 from pydantic import ConfigDict
 
 from llama_index.core.base.llms.types import (
@@ -106,6 +106,30 @@ async def acall_with_messages(
         model=model, messages=messages, api_key=api_key, **parameters
     )
 
+async def astream_call_with_messages(
+    model: str,
+    messages: List[Dict],
+    parameters: Optional[Dict] = None,
+    api_key: Optional[str] = None,
+    **kwargs: Any,
+) -> AsyncGenerator[Any, None]:
+    """Call DashScope in streaming mode, returning an async generator of partial responses."""
+    try:
+        from dashscope import AioGeneration
+    except ImportError:
+        raise ValueError(
+            "DashScope is not installed. Please install it with "
+            "`pip install dashscope`."
+        )
+
+    response = await AioGeneration.call(
+        model=model, messages=messages, api_key=api_key, **parameters
+    )
+    if not hasattr(response, "__aiter__"):
+        raise TypeError(f"AioGeneration.call() did not return an async iterable, got {type(response)}")
+
+    async for partial_response in response:
+        yield partial_response
 
 class DashScope(CustomLLM):
     """DashScope LLM.
@@ -398,6 +422,84 @@ class DashScope(CustomLLM):
                         message=ChatMessage(role=role, content=content),
                         delta=incremental_output,
                         raw=r,
+                    )
+                else:
+                    yield ChatResponse(message=ChatMessage(), raw=response)
+                    return
+
+        return gen()
+
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
+        """Asynchronously stream completion results from DashScope."""
+
+        message, parameters = self._get_input_parameters(prompt=prompt, **kwargs)
+        parameters["incremental_output"] = True
+        parameters["stream"] = True
+        dashscope_messages = chat_message_to_dashscope_messages([message])
+        async_responses = astream_call_with_messages(
+            model=self.model_name,
+            messages=dashscope_messages,
+            api_key=self.api_key,
+            parameters=parameters,
+        )
+
+        async def gen() -> AsyncGenerator[CompletionResponse, None]:
+            content = ""
+            async for response in async_responses:
+                if response.status_code == HTTPStatus.OK:
+                    top_choice = response.output.choices[0]
+                    incremental_output = top_choice["message"]["content"] or ""
+                    content += incremental_output
+                    yield CompletionResponse(
+                        text=content,
+                        delta=incremental_output,
+                        raw=response,
+                    )
+                else:
+                    yield CompletionResponse(text="", raw=response)
+                    return
+
+        return gen()
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        """Asynchronously stream chat results from DashScope."""
+
+        parameters = self._get_default_parameters()
+        parameters.update(kwargs)
+        parameters["incremental_output"] = True
+        parameters["result_format"] = "message"
+        parameters["stream"] = True
+
+        # Convert to DashScope messages
+        dashscope_messages = chat_message_to_dashscope_messages(messages)
+
+        # This will return an async generator of partial responses:
+        async_responses = astream_call_with_messages(
+            model=self.model_name,
+            messages=dashscope_messages,
+            api_key=self.api_key,
+            parameters=parameters,
+        )
+
+        async def gen() -> AsyncGenerator[ChatResponse, None]:
+            content = ""
+            async for response in async_responses:
+                if response.status_code == HTTPStatus.OK:
+                    top_choice = response.output.choices[0]
+                    role = top_choice["message"]["role"]
+                    incremental_output = top_choice["message"].get("content", "")
+                    content += incremental_output
+
+                    yield ChatResponse(
+                        message=ChatMessage(role=role, content=content),
+                        delta=incremental_output,
+                        raw=response,
                     )
                 else:
                     yield ChatResponse(message=ChatMessage(), raw=response)
