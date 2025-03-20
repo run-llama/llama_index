@@ -9,7 +9,6 @@ from typing import (
     Sequence,
     Union,
 )
-from google.protobuf.json_format import MessageToDict
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -503,7 +502,7 @@ class Vertex(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            response_dict = MessageToDict(tool_call._pb)
+            response_dict = tool_call.to_dict()
             if "args" not in response_dict or "name" not in response_dict:
                 raise ValueError("Invalid tool call.")
             argument_dict = response_dict["args"]
