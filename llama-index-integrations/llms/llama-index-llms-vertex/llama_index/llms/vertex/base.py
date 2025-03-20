@@ -9,7 +9,6 @@ from typing import (
     Sequence,
     Union,
 )
-from google.protobuf.json_format import MessageToDict
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
