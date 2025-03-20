@@ -1,7 +1,8 @@
+import deprecated
+import vertexai
 from enum import Enum
 from typing import Optional, List, Any, Dict, Union
 
-import vertexai
 from google.oauth2 import service_account
 from llama_index.core.base.embeddings.base import Embedding, BaseEmbedding
 from llama_index.core.bridge.pydantic import PrivateAttr, Field
@@ -15,6 +16,12 @@ from vertexai.vision_models import MultiModalEmbeddingModel, Image
 from google.auth import credentials as auth_credentials
 
 
+@deprecated.deprecated(
+    reason=(
+        "Should use `llama-index-embeddings-google-genai` instead, using Google's latest unified SDK. "
+        "See: https://docs.llamaindex.ai/en/stable/examples/embeddings/google_genai/"
+    )
+)
 class VertexEmbeddingMode(str, Enum):
     """VertexAI embedding mode.
 

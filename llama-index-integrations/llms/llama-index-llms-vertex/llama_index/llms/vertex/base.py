@@ -1,3 +1,4 @@
+import deprecated
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -47,6 +48,12 @@ if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
 
+@deprecated.deprecated(
+    reason=(
+        "Should use `llama-index-llms-google-genai` instead, using Google's latest unified SDK. "
+        "See: https://docs.llamaindex.ai/en/stable/examples/llm/google_genai/"
+    )
+)
 class Vertex(FunctionCallingLLM):
     """Vertext LLM.
 
