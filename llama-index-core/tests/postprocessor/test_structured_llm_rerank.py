@@ -3,6 +3,7 @@
 from typing import Any, List
 from unittest.mock import patch
 
+from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.postprocessor.structured_llm_rerank import (
     StructuredLLMRerank,
@@ -47,8 +48,14 @@ def mock_format_node_batch_fn(nodes: List[BaseNode]) -> str:
     return "\n".join([node.get_content() for node in nodes])
 
 
+class MockFunctionCallingLLM(MockLLM):
+    @property
+    def metadata(self) -> LLMMetadata:
+        return super().metadata.model_copy(update={"is_function_calling_model": True})
+
+
 @patch.object(
-    MockLLM,
+    MockFunctionCallingLLM,
     "structured_predict",
     mock_llmpredictor_structured_predict,
 )
@@ -68,8 +75,13 @@ def test_llm_rerank() -> None:
 
     # choice batch size 4 (so two batches)
     # take top-3 across all data
+    llm = MockFunctionCallingLLM()
+    llm.metadata.is_function_calling_model = True
     llm_rerank = StructuredLLMRerank(
-        format_node_batch_fn=mock_format_node_batch_fn, choice_batch_size=4, top_n=3
+        llm=llm,
+        format_node_batch_fn=mock_format_node_batch_fn,
+        choice_batch_size=4,
+        top_n=3,
     )
     query_str = "What is?"
     result_nodes = llm_rerank.postprocess_nodes(

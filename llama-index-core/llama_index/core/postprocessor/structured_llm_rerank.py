@@ -48,18 +48,9 @@ def default_parse_structured_choice_select_answer(
     """
     Parse the answer from the choice select prompt.
     """
-    if len(document_relevance_list.documents) != num_choices:
-        raise ValueError(
-            "Number of documents returned does not match number of choices"
-        )
-    return tuple(
-        zip(
-            *(
-                (doc.document_number, doc.relevance)
-                for doc in document_relevance_list.documents
-            )
-        )
-    )
+    doc_numbers = [doc.document_number for doc in document_relevance_list.documents]
+    doc_relevance_scores = [doc.relevance for doc in document_relevance_list.documents]
+    return doc_numbers, doc_relevance_scores
 
 
 class StructuredLLMRerank(BaseNodePostprocessor):
