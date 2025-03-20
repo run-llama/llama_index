@@ -48,8 +48,13 @@ def default_parse_structured_choice_select_answer(
     """
     Parse the answer from the choice select prompt.
     """
-    doc_numbers = [doc.document_number for doc in document_relevance_list.documents]
-    doc_relevance_scores = [doc.relevance for doc in document_relevance_list.documents]
+    documents = [
+        doc
+        for doc in document_relevance_list.documents
+        if doc.document_number <= num_choices
+    ]
+    doc_numbers = [doc.document_number for doc in documents]
+    doc_relevance_scores = [doc.relevance for doc in documents]
     return doc_numbers, doc_relevance_scores
 
 
@@ -130,7 +135,7 @@ class StructuredLLMRerank(BaseNodePostprocessor):
             query_str = query_bundle.query_str
             fmt_batch_str = self._format_node_batch_fn(nodes_batch)
             # call each batch independently
-            raw_response = self.llm.structured_predict(
+            result = self.llm.structured_predict(
                 output_cls=self._document_relevance_list_cls,
                 prompt=self.choice_select_prompt,
                 context_str=fmt_batch_str,
@@ -138,7 +143,7 @@ class StructuredLLMRerank(BaseNodePostprocessor):
             )
 
             raw_choices, relevances = self._parse_choice_select_answer_fn(
-                raw_response, len(nodes_batch)
+                result, len(nodes_batch)
             )
             choice_idxs = [int(choice) - 1 for choice in raw_choices]
             choice_nodes = [nodes_batch[idx] for idx in choice_idxs]
