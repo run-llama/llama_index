@@ -8,7 +8,7 @@ from zep_cloud.types import Message
 
 
 class ZepMemory(BaseMemory):
-    """Zep Cloud Memory for LlamaIndex."""
+    """Zep Memory for LlamaIndex."""
     
     session_id: str = Field(description="Zep Cloud session ID")
     user_id: Optional[str] = Field(default=None, description="User ID for user-specific context")
