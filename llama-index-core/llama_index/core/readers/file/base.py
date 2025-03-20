@@ -78,6 +78,8 @@ def _try_loading_included_file_formats() -> (
             PptxReader,
             VideoAudioReader,
         )  # pants: no-infer-dep
+
+        from llama_index.readers import JSONReader
     except ImportError:
         logger.warning(
             "`llama-index-readers-file` package not found, some file readers will not be available "
@@ -105,6 +107,7 @@ def _try_loading_included_file_formats() -> (
         ".ipynb": IPYNBReader,
         ".xls": PandasExcelReader,
         ".xlsx": PandasExcelReader,
+        ".json": JSONReader,
     }
     return default_file_reader_cls
 
