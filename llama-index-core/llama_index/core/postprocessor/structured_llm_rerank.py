@@ -3,14 +3,18 @@
 from typing import Callable, List, Optional, Tuple
 import logging
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, SerializeAsAny
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    PrivateAttr,
+    SerializeAsAny,
+)
 from llama_index.core.indices.utils import (
     default_format_node_batch_fn,
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
-from llama_index.core.schema import BaseComponent
 from llama_index.core.prompts.default_prompts import STRUCTURED_CHOICE_SELECT_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import NodeWithScore, QueryBundle
@@ -20,7 +24,7 @@ from llama_index.core.settings import Settings
 logger = logging.getLogger(__name__)
 
 
-class DocumentWithRelevance(BaseComponent):
+class DocumentWithRelevance(BaseModel):
     """
     Document rankings as selected by model.
     """
@@ -36,7 +40,7 @@ class DocumentWithRelevance(BaseComponent):
     )
 
 
-class DocumentRelevanceList(BaseComponent):
+class DocumentRelevanceList(BaseModel):
     """
     List of documents with relevance scores.
     """
