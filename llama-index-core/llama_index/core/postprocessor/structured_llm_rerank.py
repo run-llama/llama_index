@@ -1,6 +1,7 @@
 """LLM reranker."""
 
 from typing import Callable, List, Optional, Tuple
+import logging
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, SerializeAsAny
 from llama_index.core.indices.utils import (
@@ -14,6 +15,9 @@ from llama_index.core.prompts.default_prompts import STRUCTURED_CHOICE_SELECT_PR
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
+
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentWithRelevance(BaseComponent):
@@ -86,7 +90,9 @@ class StructuredLLMRerank(BaseNodePostprocessor):
 
         llm = llm or Settings.llm
         if not llm.metadata.is_function_calling_model:
-            raise ValueError("LLM must be a function-calling model.")
+            logger.warning(
+                "StructuredLLMRerank constructed with a non-function-calling LLM. This may not work as expected."
+            )
 
         super().__init__(
             llm=llm,
