@@ -52,7 +52,7 @@ class DocumentRelevanceList(BaseModel):
 
 def default_parse_structured_choice_select_answer(
     document_relevance_list: DocumentRelevanceList, num_choices: int
-) -> Tuple[int, int]:
+) -> Tuple[List[int], List[int]]:
     """
     Parse the answer from the choice select prompt.
     """
@@ -87,7 +87,7 @@ class StructuredLLMRerank(BaseNodePostprocessor):
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
-        _document_relevance_list_cls: Optional[type] = DocumentRelevanceList,
+        _document_relevance_list_cls: Optional[type] = None,
         top_n: int = 10,
     ) -> None:
         choice_select_prompt = choice_select_prompt or STRUCTURED_CHOICE_SELECT_PROMPT
@@ -111,7 +111,9 @@ class StructuredLLMRerank(BaseNodePostprocessor):
             parse_choice_select_answer_fn
             or default_parse_structured_choice_select_answer
         )
-        self._document_relevance_list_cls = _document_relevance_list_cls
+        self._document_relevance_list_cls = (
+            _document_relevance_list_cls or DocumentRelevanceList
+        )
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
