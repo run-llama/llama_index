@@ -33,7 +33,7 @@ version = "0.0.1"
 python = ">=3.9,<3.13"
 aperturedb = ">=0.4.36"
 grpcio = "^1.60.0"
-llama-index-core = "^0.11.0"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.extras]
 fastembed = ["fastembed"]
