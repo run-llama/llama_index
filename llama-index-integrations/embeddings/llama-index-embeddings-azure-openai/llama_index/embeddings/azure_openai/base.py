@@ -70,6 +70,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         api_version: Optional[str] = None,
+        api_base: Optional[str] = None,
         # azure specific
         azure_endpoint: Optional[str] = None,
         azure_deployment: Optional[str] = None,
@@ -89,6 +90,10 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
         )
 
+        # OpenAI base_url and azure_endpoint are mutually exclusive
+        if api_base:
+            azure_endpoint = None
+
         azure_deployment = resolve_from_aliases(
             azure_deployment,
             deployment_name,
@@ -101,6 +106,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             additional_kwargs=additional_kwargs,
             api_key=api_key,
             api_version=api_version,
+            api_base=api_base,
             azure_endpoint=azure_endpoint,
             azure_deployment=azure_deployment,
             azure_ad_token_provider=azure_ad_token_provider,
@@ -162,6 +168,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             "azure_ad_token_provider": self.azure_ad_token_provider,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
+            "base_url": self.api_base,
             "api_version": self.api_version,
             "default_headers": self.default_headers,
             "http_client": self._async_http_client if is_async else self._http_client,
