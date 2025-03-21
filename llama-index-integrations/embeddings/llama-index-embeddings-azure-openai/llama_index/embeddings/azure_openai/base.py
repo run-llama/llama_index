@@ -15,6 +15,7 @@ from llama_index.embeddings.openai import (
     OpenAIEmbeddingMode,
     OpenAIEmbeddingModelType,
 )
+from llama_index.embeddings.openai.utils import DEFAULT_OPENAI_API_BASE
 from llama_index.llms.azure_openai.utils import (
     resolve_from_aliases,
     refresh_openai_azuread_token,
@@ -120,6 +121,10 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             **kwargs,
         )
 
+        # reset api_base to None if it is the default
+        if self.api_base == DEFAULT_OPENAI_API_BASE:
+            self.api_base = None
+
     @model_validator(mode="before")
     @classmethod
     def validate_env(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -168,7 +173,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             "azure_ad_token_provider": self.azure_ad_token_provider,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
-            "base_url": self.api_base if not self.azure_endpoint else None,
+            "base_url": self.api_base,
             "api_version": self.api_version,
             "default_headers": self.default_headers,
             "http_client": self._async_http_client if is_async else self._http_client,
