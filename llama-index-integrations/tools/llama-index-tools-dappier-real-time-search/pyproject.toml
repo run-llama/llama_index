@@ -12,7 +12,7 @@ contains_example = false
 import_path = "llama_index.tools.dappier_real_time_search"
 
 [tool.llamahub.class_authors]
-YahooFinanceToolSpec = "llama-index"
+DappierRealTimeSearchToolSpec = "dappier"
 
 [tool.mypy]
 disallow_untyped_defs = true
