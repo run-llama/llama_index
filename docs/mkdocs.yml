@@ -78,7 +78,6 @@ nav:
           - Q&A Patterns: ./understanding/putting_it_all_together/q_and_a/
           - Chatbots: ./understanding/putting_it_all_together/chatbots/
           - Structured data: ./understanding/putting_it_all_together/structured_data/
-          - Agents: ./understanding/putting_it_all_together/agents.md
   - Use Cases:
       - ./use_cases/index.md
       - Prompting: ./use_cases/prompting.md
@@ -830,9 +829,7 @@ nav:
               - ./module_guides/querying/structured_outputs/pydantic_program.md
       - Agents:
           - ./module_guides/deploying/agents/index.md
-          - ./module_guides/deploying/agents/usage_pattern.md
-          - ./module_guides/deploying/agents/agent_runner.md
-          - ./module_guides/deploying/agents/modules.md
+          - ./module_guides/deploying/agents/memory.md
           - ./module_guides/deploying/agents/tools.md
       - Workflows:
           - ./module_guides/workflow/index.md

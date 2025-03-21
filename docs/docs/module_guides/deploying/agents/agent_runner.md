@@ -1,3 +1,5 @@
+**NOTE:** Information on this page may be outdated, see the [agent introduction](./index.md) for modern agent usage in LlamaIndex.
+
 # Lower-Level Agent API
 
 We offer a lower-level agent API that offers a host of capabilities beyond simply executing a user query end-to-end.
