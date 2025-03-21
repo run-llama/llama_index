@@ -13,12 +13,13 @@ pip install llama-index-server
 ```python
 # main.py
 from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.core.workflow import Workflow
 from llama_index.core.tools import FunctionTool
 from llama_index.server import LlamaIndexServer
 
 
-# A simple agent workflow that can fetch the weather
-def create_workflow() -> AgentWorkflow:
+# Define a factory function that returns a Workflow or AgentWorkflow
+def create_workflow() -> Workflow:
     def fetch_weather(city: str) -> str:
         return f"The weather in {city} is sunny"
 
@@ -31,8 +32,10 @@ def create_workflow() -> AgentWorkflow:
     )
 
 
-# Create an API server with the workflow
-app = LlamaIndexServer(workflow_factory=create_workflow)
+# Create an API server the workflow
+app = LlamaIndexServer(
+    workflow_factory=create_workflow  # Supports Workflow or AgentWorkflow
+)
 ```
 
 ## Running the server

@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Union
 
 from fastapi.responses import StreamingResponse
 
@@ -32,7 +32,7 @@ class VercelStreamResponse(StreamingResponse):
         return f"{cls.TEXT_PREFIX}{token}\n"
 
     @classmethod
-    def convert_data(cls, data: dict | str) -> str:
+    def convert_data(cls, data: Union[dict, str]) -> str:
         """Convert data event to Vercel format."""
         data_str = json.dumps(data) if isinstance(data, dict) else data
         return f"{cls.DATA_PREFIX}[{data_str}]\n"

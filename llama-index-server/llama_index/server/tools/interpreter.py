@@ -122,29 +122,28 @@ class E2BCodeInterpreter:
             results = [result[format] for format in formats]
 
             for ext, data in zip(formats, results):
-                match ext:
-                    case "png" | "svg" | "jpeg" | "pdf":
-                        document_file = self._save_to_disk(data, ext)
-                        output.append(
-                            InterpreterExtraResult(
-                                type=ext,
-                                filename=document_file.name,
-                                url=document_file.url,
-                            )
+                if ext in ["png", "svg", "jpeg", "pdf"]:
+                    document_file = self._save_to_disk(data, ext)
+                    output.append(
+                        InterpreterExtraResult(
+                            type=ext,
+                            filename=document_file.name,
+                            url=document_file.url,
                         )
-                    case _:
-                        # Try serialize data to string
-                        try:
-                            data = str(data)
-                        except Exception as e:
-                            data = f"Error when serializing data: {e}"
-                        output.append(
-                            InterpreterExtraResult(
-                                type=ext,
-                                content=data,
-                            )
+                    )
+                else:
+                    # Try serialize data to string
+                    try:
+                        data = str(data)
+                    except Exception as e:
+                        data = f"Error when serializing data: {e}"
+                    output.append(
+                        InterpreterExtraResult(
+                            type=ext,
+                            content=data,
                         )
-        except Exception as error:  # type: ignore
+                    )
+        except Exception as error:
             logger.exception(error, exc_info=True)
             logger.error("Error when parsing output from E2b interpreter tool", error)
 

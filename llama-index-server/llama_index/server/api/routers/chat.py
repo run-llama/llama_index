@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, AsyncGenerator, Callable
+from typing import Any, AsyncGenerator, Callable, Union
 
 from fastapi import APIRouter
 
@@ -37,7 +37,7 @@ def chat_router(
 async def _stream_content(
     handler: WorkflowHandler, request: ChatRequest, logger: logging.Logger
 ):
-    async def _text_stream(event: AgentStream | StopEvent):
+    async def _text_stream(event: Union[AgentStream, StopEvent]):
         if isinstance(event, AgentStream):
             if event.delta.strip():  # Only yield non-empty deltas
                 yield event.delta

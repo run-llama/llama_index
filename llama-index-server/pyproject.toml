@@ -28,7 +28,7 @@ readme = "README.md"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<4.0"
+python = ">=3.9,<4.0"
 fastapi = {extras = ["standard"], version = "^0.115.11"}
 cachetools = "^5.5.2"
 requests = "^2.32.3"
