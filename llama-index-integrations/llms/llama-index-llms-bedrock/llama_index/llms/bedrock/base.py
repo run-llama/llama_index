@@ -1,4 +1,5 @@
 import json
+import deprecated
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.core.base.llms.types import (
@@ -37,6 +38,12 @@ from llama_index.llms.bedrock.utils import (
 )
 
 
+@deprecated.deprecated(
+    reason=(
+        "Should use `llama-index-llms-bedrock-converse` instead, the converse API is the recommended way to use Bedrock.\n"
+        "See: https://docs.llamaindex.ai/en/stable/examples/llm/bedrock_converse/"
+    )
+)
 class Bedrock(LLM):
     """Bedrock LLM.
 
