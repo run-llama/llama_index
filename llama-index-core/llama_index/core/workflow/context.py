@@ -65,10 +65,6 @@ class Context:
         self._lock = asyncio.Lock()
         self._globals: Dict[str, Any] = {}
 
-        # Asyncio machinery for waiting on events
-        self._new_event_available = asyncio.Event()
-        self._last_seen_broker_idx: int = -1
-
     def _init_broker_data(self) -> None:
         self._waiter_id = str(uuid.uuid4())
         self._queues: Dict[str, asyncio.Queue] = {self._waiter_id: asyncio.Queue()}
@@ -195,11 +191,6 @@ class Context:
             for k, v in data["queues"].items()
         }
         context._in_progress = defaultdict(list)
-
-        # explicitly set last seen broker idx to the last index in the broker log
-        # this ensures old events are not re-processed by the wait_for_event method
-        context._last_seen_broker_idx = len(context._broker_log) - 1
-
         return context
 
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:
@@ -361,7 +352,6 @@ class Context:
                 )
 
         self._broker_log.append(message)
-        self._new_event_available.set()
 
     async def wait_for_event(
         self,
@@ -383,29 +373,18 @@ class Context:
             asyncio.TimeoutError: If the timeout is reached before receiving matching event
         """
         requirements = requirements or {}
-        start_time = time.time()
 
-        last_seen_broker_idx = self._last_seen_broker_idx
         while True:
-            await self._new_event_available.wait()
-            self._new_event_available.clear()  # Clear the event flag after being notified
-
-            # check new events in broker log
-            for i in range(last_seen_broker_idx + 1, len(self._broker_log)):
-                ev = self._broker_log[i]
-                if type(ev) is event_type:
-                    if all(
-                        ev.get(k, default=None) == v for k, v in requirements.items()
-                    ):
-                        return ev
-
-            # update last seen broker idx
-            last_seen_broker_idx = len(self._broker_log) - 1
-
-            if time.time() - start_time > timeout:
-                raise asyncio.TimeoutError(
-                    f"Timeout waiting for event type {event_type} with requirements {requirements} after {timeout} seconds"
-                )
+            event = await asyncio.wait_for(
+                self._queues[self._waiter_id].get(), timeout=timeout
+            )
+            if type(event) is event_type:
+                if all(
+                    event.get(k, default=None) == v for k, v in requirements.items()
+                ):
+                    return event
+                else:
+                    continue
 
     def write_event_to_stream(self, ev: Optional[Event]) -> None:
         self._streaming_queue.put_nowait(ev)
