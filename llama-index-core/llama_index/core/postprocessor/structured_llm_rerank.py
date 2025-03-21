@@ -1,6 +1,6 @@
 """LLM reranker."""
 
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 import logging
 
 from llama_index.core.bridge.pydantic import (
@@ -15,6 +15,11 @@ from llama_index.core.indices.utils import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.callbacks import CBEventType, EventPayload
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.rerank import (
+    ReRankEndEvent,
+    ReRankStartEvent,
+)
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import STRUCTURED_CHOICE_SELECT_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
@@ -23,6 +28,7 @@ from llama_index.core.settings import Settings
 
 
 logger = logging.getLogger(__name__)
+dispatcher = get_dispatcher(__name__)
 
 
 class DocumentWithRelevance(BaseModel):
@@ -139,6 +145,15 @@ class StructuredLLMRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        dispatcher.event(
+            ReRankStartEvent(
+                query=query_bundle,
+                nodes=nodes,
+                top_n=self.top_n,
+                model_name=self.llm.metadata.model_name,
+            )
+        )
+
         if query_bundle is None:
             raise ValueError("Query bundle must be provided.")
         if len(nodes) == 0:
@@ -162,7 +177,7 @@ class StructuredLLMRerank(BaseNodePostprocessor):
                 query_str = query_bundle.query_str
                 fmt_batch_str = self._format_node_batch_fn(nodes_batch)
                 # call each batch independently
-                result: BaseModel | str = self.llm.structured_predict(
+                result: Union[BaseModel, str] = self.llm.structured_predict(
                     output_cls=self._document_relevance_list_cls,
                     prompt=self.choice_select_prompt,
                     context_str=fmt_batch_str,
@@ -200,4 +215,6 @@ class StructuredLLMRerank(BaseNodePostprocessor):
                 initial_results, key=lambda x: x.score or 0.0, reverse=True
             )[: self.top_n]
             event.on_end(payload={EventPayload.NODES: reranked_nodes})
-            return reranked_nodes
+
+        dispatcher.event(ReRankEndEvent(nodes=reranked_nodes))
+        return reranked_nodes
