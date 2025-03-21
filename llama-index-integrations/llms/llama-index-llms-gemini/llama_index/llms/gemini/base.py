@@ -1,5 +1,6 @@
 """Google's hosted Gemini API."""
 
+import deprecated
 import os
 import uuid
 import warnings
@@ -63,6 +64,12 @@ if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
 
+@deprecated.deprecated(
+    reason=(
+        "Should use `llama-index-llms-google-genai` instead, using Google's latest unified SDK. "
+        "See: https://docs.llamaindex.ai/en/stable/examples/llm/google_genai/"
+    )
+)
 class Gemini(FunctionCallingLLM):
     """
     Gemini LLM.
