@@ -168,7 +168,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             "azure_ad_token_provider": self.azure_ad_token_provider,
             "azure_endpoint": self.azure_endpoint,
             "azure_deployment": self.azure_deployment,
-            "base_url": self.api_base,
+            "base_url": self.api_base if not self.azure_endpoint else None,
             "api_version": self.api_version,
             "default_headers": self.default_headers,
             "http_client": self._async_http_client if is_async else self._http_client,
