@@ -7,11 +7,11 @@
 The **Dappier Real Time Search Tool** is a powerful API-driven tool designed to fetch up-to-the-minute information from various sources, including real-time web search results and stock market data. It leverages Dappier's AI capabilities to deliver timely insights, making it an essential asset for businesses, financial analysts, and users seeking real-time data.
 
 ## Key Features
+
 - **Real-Time Web Search**: Fetches the latest news, weather updates, travel deals, and other relevant web content through AI-powered search.
 - **Stock Market Insights**: Retrieves real-time stock prices, financial news, and trade data from **Polygon.io**, enriched with AI-driven insights.
 - **AI-Powered Queries**: Uses pre-defined AI models to refine and enhance search results for better accuracy and relevance.
 - **Seamless Integration**: Works with the Dappier API, requiring a valid API key to access search functionalities.
-
 
 ## Installation
 
@@ -40,7 +40,9 @@ This tool has a more extensive example usage documented in a Jupyter notebook [h
 Here's an example usage of the DappierRealTimeSearchToolSpec.
 
 ```python
-from llama_index.tools.dappier_real_time_search import DappierRealTimeSearchToolSpec
+from llama_index.tools.dappier_real_time_search import (
+    DappierRealTimeSearchToolSpec,
+)
 from llama_index.core.agent import FunctionCallingAgent
 from llama_index.llms.openai import OpenAI
 
@@ -50,7 +52,9 @@ agent = FunctionCallingAgent.from_tools(
     llm=OpenAI(model="gpt-4o"),
 )
 
-agent.chat("How is the weather in Boston today ? Create a detailed analysis in markdown format.")
+agent.chat(
+    "How is the weather in Boston today ? Create a detailed analysis in markdown format."
+)
 ```
 
 The tools available in are:
