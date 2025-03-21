@@ -14,6 +14,7 @@ from llama_index.core.indices.utils import (
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
+from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import STRUCTURED_CHOICE_SELECT_PROMPT
 from llama_index.core.prompts.mixin import PromptDictType
@@ -79,6 +80,7 @@ class StructuredLLMRerank(BaseNodePostprocessor):
     _document_relevance_list_cls: type = PrivateAttr()
     _format_node_batch_fn: Callable = PrivateAttr()
     _parse_choice_select_answer_fn: Callable = PrivateAttr()
+    _raise_on_prediction_failure: bool = PrivateAttr()
 
     def __init__(
         self,
@@ -87,7 +89,8 @@ class StructuredLLMRerank(BaseNodePostprocessor):
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
-        _document_relevance_list_cls: Optional[type] = None,
+        document_relevance_list_cls: Optional[type] = None,
+        raise_on_structured_prediction_failure: bool = True,
         top_n: int = 10,
     ) -> None:
         choice_select_prompt = choice_select_prompt or STRUCTURED_CHOICE_SELECT_PROMPT
@@ -112,7 +115,10 @@ class StructuredLLMRerank(BaseNodePostprocessor):
             or default_parse_structured_choice_select_answer
         )
         self._document_relevance_list_cls = (
-            _document_relevance_list_cls or DocumentRelevanceList
+            document_relevance_list_cls or DocumentRelevanceList
+        )
+        self._raise_on_structured_prediction_failure = (
+            raise_on_structured_prediction_failure
         )
 
     def _get_prompts(self) -> PromptDictType:
@@ -139,34 +145,59 @@ class StructuredLLMRerank(BaseNodePostprocessor):
             return []
 
         initial_results: List[NodeWithScore] = []
-        for idx in range(0, len(nodes), self.choice_batch_size):
-            nodes_batch = [
-                node.node for node in nodes[idx : idx + self.choice_batch_size]
-            ]
-
-            query_str = query_bundle.query_str
-            fmt_batch_str = self._format_node_batch_fn(nodes_batch)
-            # call each batch independently
-            result = self.llm.structured_predict(
-                output_cls=self._document_relevance_list_cls,
-                prompt=self.choice_select_prompt,
-                context_str=fmt_batch_str,
-                query_str=query_str,
-            )
-
-            raw_choices, relevances = self._parse_choice_select_answer_fn(
-                result, len(nodes_batch)
-            )
-            choice_idxs = [int(choice) - 1 for choice in raw_choices]
-            choice_nodes = [nodes_batch[idx] for idx in choice_idxs]
-            relevances = relevances or [1.0 for _ in choice_nodes]
-            initial_results.extend(
-                [
-                    NodeWithScore(node=node, score=relevance)
-                    for node, relevance in zip(choice_nodes, relevances)
+        with self.callback_manager.event(
+            CBEventType.RERANKING,
+            payload={
+                EventPayload.NODES: nodes,
+                EventPayload.MODEL_NAME: self.llm.metadata.model_name,
+                EventPayload.QUERY_STR: query_bundle.query_str,
+                EventPayload.TOP_K: self.top_n,
+            },
+        ) as event:
+            for idx in range(0, len(nodes), self.choice_batch_size):
+                nodes_batch = [
+                    node.node for node in nodes[idx : idx + self.choice_batch_size]
                 ]
-            )
 
-        return sorted(initial_results, key=lambda x: x.score or 0.0, reverse=True)[
-            : self.top_n
-        ]
+                query_str = query_bundle.query_str
+                fmt_batch_str = self._format_node_batch_fn(nodes_batch)
+                # call each batch independently
+                result: BaseModel | str = self.llm.structured_predict(
+                    output_cls=self._document_relevance_list_cls,
+                    prompt=self.choice_select_prompt,
+                    context_str=fmt_batch_str,
+                    query_str=query_str,
+                )
+                # in case structured prediction fails, a str of the raised exception is returned
+                if isinstance(result, str):
+                    if self._raise_on_structured_prediction_failure:
+                        raise ValueError(
+                            f"Structured prediction failed for nodes {idx} - {idx + self.choice_batch_size}: {result}"
+                        )
+                    logger.warning(
+                        f"Structured prediction failed for nodes {idx} - {idx + self.choice_batch_size}: {result}"
+                    )
+                    # add all nodes with score 0
+                    initial_results.extend(
+                        [NodeWithScore(node=node, score=0.0) for node in nodes_batch]
+                    )
+                    continue
+
+                raw_choices, relevances = self._parse_choice_select_answer_fn(
+                    result, len(nodes_batch)
+                )
+                choice_idxs = [int(choice) - 1 for choice in raw_choices]
+                choice_nodes = [nodes_batch[idx] for idx in choice_idxs]
+                relevances = relevances or [1.0 for _ in choice_nodes]
+                initial_results.extend(
+                    [
+                        NodeWithScore(node=node, score=relevance)
+                        for node, relevance in zip(choice_nodes, relevances)
+                    ]
+                )
+
+            reranked_nodes = sorted(
+                initial_results, key=lambda x: x.score or 0.0, reverse=True
+            )[: self.top_n]
+            event.on_end(payload={EventPayload.NODES: reranked_nodes})
+            return reranked_nodes

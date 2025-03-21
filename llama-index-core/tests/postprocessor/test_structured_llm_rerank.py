@@ -2,6 +2,7 @@
 
 from typing import Any, List
 from unittest.mock import patch
+import pytest
 
 from llama_index.core.base.llms.types import LLMMetadata
 from llama_index.core.llms.mock import MockLLM
@@ -91,3 +92,47 @@ def test_llm_rerank() -> None:
     assert result_nodes[0].node.get_content() == "Test7"
     assert result_nodes[1].node.get_content() == "Test5"
     assert result_nodes[2].node.get_content() == "Test3"
+
+
+def mock_errored_structured_predict(
+    self: Any, prompt: BasePromptTemplate, **prompt_args: Any
+) -> str:
+    return "fake error"
+
+
+@patch.object(
+    MockFunctionCallingLLM,
+    "structured_predict",
+    mock_errored_structured_predict,
+)
+@pytest.mark.parametrize("raise_on_failure", [True, False])
+def test_llm_rerank_errored_structured_predict(raise_on_failure: bool) -> None:
+    """Test LLM rerank with errored structured predict."""
+    nodes = [
+        TextNode(text="Test"),
+        TextNode(text="Test2"),
+        TextNode(text="Test3"),
+        TextNode(text="Test4"),
+    ]
+    nodes_with_score = [NodeWithScore(node=n) for n in nodes]
+
+    llm = MockFunctionCallingLLM()
+    llm.metadata.is_function_calling_model = True
+    top_n = 3
+    llm_rerank = StructuredLLMRerank(
+        llm=llm,
+        format_node_batch_fn=mock_format_node_batch_fn,
+        choice_batch_size=4,
+        top_n=top_n,
+        raise_on_structured_prediction_failure=raise_on_failure,  # Set to False to test logging behavior
+    )
+    query_str = "What is?"
+    if raise_on_failure:
+        with pytest.raises(ValueError, match="Structured prediction failed for nodes"):
+            llm_rerank.postprocess_nodes(nodes_with_score, QueryBundle(query_str))
+    else:
+        result_nodes = llm_rerank.postprocess_nodes(
+            nodes_with_score, QueryBundle(query_str)
+        )
+        assert len(result_nodes) == top_n
+        assert all(n.score == 0 for n in result_nodes)
