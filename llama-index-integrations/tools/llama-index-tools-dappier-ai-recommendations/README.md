@@ -14,8 +14,7 @@ The DappierAIRecommendationsToolSpec provides AI-powered content recommendations
 
 - **Reference domain targeting**: Lets you prioritize results from a specific site or domain for more context-aware recommendations.
 
-- **Readable, structured output**: Returns responses with clear formatting, including title, summary, author, publish date, source, and links. 
-
+- **Readable, structured output**: Returns responses with clear formatting, including title, summary, author, publish date, source, and links.
 
 ## Installation
 
@@ -44,7 +43,9 @@ This tool has a more extensive example usage documented in a Jupyter notebook [h
 Here's an example usage of the DappierAIRecommendationsToolSpec.
 
 ```python
-from llama_index.tools.dappier_real_time_search import DappierAIRecommendationsToolSpec
+from llama_index.tools.dappier_real_time_search import (
+    DappierAIRecommendationsToolSpec,
+)
 from llama_index.core.agent import FunctionCallingAgent
 from llama_index.llms.openai import OpenAI
 
@@ -54,28 +55,29 @@ agent = FunctionCallingAgent.from_tools(
     llm=OpenAI(model="gpt-4o"),
 )
 
-agent.chat("Get latest sports news, lifestyle news, breaking news, dog care advice and summarize it into different sections, with source links.")
+agent.chat(
+    "Get latest sports news, lifestyle news, breaking news, dog care advice and summarize it into different sections, with source links."
+)
 ```
 
 The tools available in are:
 
 - `get_sports_news_recommendations`: A tool that fetches real-time news, updates,
-and personalized content from top sports sources like Sportsnaut, Forever Blueshirts, Minnesota Sports Fan, LAFB Network, Bounding Into Sports, and Ringside Intel.
+  and personalized content from top sports sources like Sportsnaut, Forever Blueshirts, Minnesota Sports Fan, LAFB Network, Bounding Into Sports, and Ringside Intel.
 
 - `get_lifestyle_news_recommendations`: A tool that fetches Real-time updates,
-analysis, and personalized content from top sources like The Mix, Snipdaily, 
-Nerdable, and Familyproof.
+  analysis, and personalized content from top sources like The Mix, Snipdaily,
+  Nerdable, and Familyproof.
 
 - `get_iheartdogs_recommendations`: A tool that fetches articles on health, behavior, lifestyle. grooming, ownership and more from iheartdogs.com
 
-
 - `get_iheartcats_recommendations`: A tool that fetches articles on health, behavior, lifestyle. grooming, ownership and more from iheartcats.com
 
-- `get_greenmonster_recommendations`: A tool that fetches guides to making conscious 
-and compassionate choices that help people, animals, and the planet.
+- `get_greenmonster_recommendations`: A tool that fetches guides to making conscious
+  and compassionate choices that help people, animals, and the planet.
 
 - `get_wishtv_recommendations`: A tool that fetches politics, breaking news, multicultural news, Hispanic language content, Entertainment, Health, Education
-and many more.
+  and many more.
 
 - `get_nine_and_ten_news_recommendations`: A tool that fetches up-to-date local news, weather forecasts, sports coverage, and community stories for Northern Michigan, including the Cadillac and Traverse City areas.
 

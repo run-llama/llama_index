@@ -1,7 +1,7 @@
 """Dappier AI Recommendations tool spec."""
 
 import os
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal, Optional
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -13,6 +13,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
     Provides AI-powered recommendations across various domains such as Sports News,
     Lifestyle News, iHeartDogs, iHeartCats, GreenMonster, WISH-TV and 9 and 10 News.
     """
+
     spec_functions = [
         "get_sports_news_recommendations",
         "get_lifestyle_news_recommendations",
@@ -20,7 +21,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         "get_iheartcats_recommendations",
         "get_greenmonster_recommendations",
         "get_wishtv_recommendations",
-        "get_nine_and_ten_news_recommendations"
+        "get_nine_and_ten_news_recommendations",
     ]
 
     def __init__(self, api_key: Optional[str] = None) -> None:
@@ -46,10 +47,12 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         similarity_top_k: int = 10,
         ref: Optional[str] = None,
         num_articles_ref: int = 0,
-        search_algorithm: Literal["most_recent", "semantic", "most_recent_semantic", "trending"] = "most_recent",
+        search_algorithm: Literal[
+            "most_recent", "semantic", "most_recent_semantic", "trending"
+        ] = "most_recent",
     ) -> str:
         """
-        Retrieves sports news
+        Retrieves sports news.
 
         Args:
             query (str): The user-provided input string for AI recommendations.
@@ -78,10 +81,12 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         similarity_top_k: int = 10,
         ref: Optional[str] = None,
         num_articles_ref: int = 0,
-        search_algorithm: Literal["most_recent", "semantic", "most_recent_semantic", "trending"] = "most_recent",
+        search_algorithm: Literal[
+            "most_recent", "semantic", "most_recent_semantic", "trending"
+        ] = "most_recent",
     ) -> str:
         """
-        Retrieves lifestyle news
+        Retrieves lifestyle news.
 
         Args:
             query (str): The user-provided input string for AI recommendations.
@@ -110,10 +115,12 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         similarity_top_k: int = 10,
         ref: Optional[str] = None,
         num_articles_ref: int = 0,
-        search_algorithm: Literal["most_recent", "semantic", "most_recent_semantic", "trending"] = "most_recent",
+        search_algorithm: Literal[
+            "most_recent", "semantic", "most_recent_semantic", "trending"
+        ] = "most_recent",
     ) -> str:
         """
-        Retrieves iHeartDogs articles - a dog care expert
+        Retrieves iHeartDogs articles - a dog care expert.
 
         Args:
             query (str): The user-provided input string for AI recommendations.
@@ -142,10 +149,12 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         similarity_top_k: int = 10,
         ref: Optional[str] = None,
         num_articles_ref: int = 0,
-        search_algorithm: Literal["most_recent", "semantic", "most_recent_semantic", "trending"] = "most_recent",
+        search_algorithm: Literal[
+            "most_recent", "semantic", "most_recent_semantic", "trending"
+        ] = "most_recent",
     ) -> str:
         """
-        Retrieves iHeartCats articles - a cat care expert
+        Retrieves iHeartCats articles - a cat care expert.
 
         Args:
             query (str): The user-provided input string for AI recommendations.
@@ -174,10 +183,12 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         similarity_top_k: int = 10,
         ref: Optional[str] = None,
         num_articles_ref: int = 0,
-        search_algorithm: Literal["most_recent", "semantic", "most_recent_semantic", "trending"] = "most_recent",
+        search_algorithm: Literal[
+            "most_recent", "semantic", "most_recent_semantic", "trending"
+        ] = "most_recent",
     ) -> str:
         """
-        Retrieves GreenMonster articles - Compassionate Living Guide
+        Retrieves GreenMonster articles - Compassionate Living Guide.
 
         Args:
             query (str): The user-provided input string for AI recommendations.
@@ -206,10 +217,12 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         similarity_top_k: int = 10,
         ref: Optional[str] = None,
         num_articles_ref: int = 0,
-        search_algorithm: Literal["most_recent", "semantic", "most_recent_semantic", "trending"] = "most_recent",
+        search_algorithm: Literal[
+            "most_recent", "semantic", "most_recent_semantic", "trending"
+        ] = "most_recent",
     ) -> str:
         """
-        Retrieves news articles
+        Retrieves news articles.
 
         Args:
             query (str): The user-provided input string for AI recommendations.
@@ -238,10 +251,12 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         similarity_top_k: int = 10,
         ref: Optional[str] = None,
         num_articles_ref: int = 0,
-        search_algorithm: Literal["most_recent", "semantic", "most_recent_semantic", "trending"] = "most_recent",
+        search_algorithm: Literal[
+            "most_recent", "semantic", "most_recent_semantic", "trending"
+        ] = "most_recent",
     ) -> str:
         """
-        Retrieves up-to-date local news for Northern Michigan, Cadillac and 
+        Retrieves up-to-date local news for Northern Michigan, Cadillac and
         Traverse City.
 
         Args:
@@ -265,13 +280,14 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         )
         return format_results(response)
 
+
 def format_results(response: Any) -> str:
     """
     Converts a Dappier AI Recommendations API response into a human-readable text format for LLMs.
-    
+
     Args:
         response (Any): JSON object returned by the Dappier API.
-    
+
     Returns:
         str: A formatted string representation of the recommendations.
     """
