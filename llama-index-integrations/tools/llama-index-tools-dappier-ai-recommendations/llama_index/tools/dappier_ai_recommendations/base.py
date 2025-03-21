@@ -55,7 +55,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         Retrieves sports news.
 
         Args:
-            query (str): The user-provided input string for AI recommendations.
+            query (str): Query to fetch sports news.
             similarity_top_k (int): Number of documents to return.
             ref (Optional[str]): Site domain where recommendations should be displayed.
             num_articles_ref (int): Minimum number of articles to return from the reference domain.
@@ -89,7 +89,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         Retrieves lifestyle news.
 
         Args:
-            query (str): The user-provided input string for AI recommendations.
+            query (str): Query to fetch lifestyle news.
             similarity_top_k (int): Number of documents to return.
             ref (Optional[str]): Site domain where recommendations should be displayed.
             num_articles_ref (int): Minimum number of articles to return from the reference domain.
@@ -123,7 +123,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         Retrieves iHeartDogs articles - a dog care expert.
 
         Args:
-            query (str): The user-provided input string for AI recommendations.
+            query (str): Query to fetch dog care articles.
             similarity_top_k (int): Number of documents to return.
             ref (Optional[str]): Site domain where recommendations should be displayed.
             num_articles_ref (int): Minimum number of articles to return from the reference domain.
@@ -157,7 +157,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         Retrieves iHeartCats articles - a cat care expert.
 
         Args:
-            query (str): The user-provided input string for AI recommendations.
+            query (str): Query to fetch cat care articles.
             similarity_top_k (int): Number of documents to return.
             ref (Optional[str]): Site domain where recommendations should be displayed.
             num_articles_ref (int): Minimum number of articles to return from the reference domain.
@@ -191,7 +191,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         Retrieves GreenMonster articles - Compassionate Living Guide.
 
         Args:
-            query (str): The user-provided input string for AI recommendations.
+            query (str): Query to fetch compassionate living guides.
             similarity_top_k (int): Number of documents to return.
             ref (Optional[str]): Site domain where recommendations should be displayed.
             num_articles_ref (int): Minimum number of articles to return from the reference domain.
@@ -225,7 +225,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         Retrieves news articles.
 
         Args:
-            query (str): The user-provided input string for AI recommendations.
+            query (str): Query to fetch news articles.
             similarity_top_k (int): The number of top documents to retrieve based on similarity. Defaults to 10.
             ref (Optional[str]): The site domain where recommendations should be displayed. Defaults to None.
             num_articles_ref (int): Minimum number of articles to return from the reference domain. Defaults to 0.
@@ -260,7 +260,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
         Traverse City.
 
         Args:
-            query (str): The user-provided input string for AI recommendations.
+            query (str): Query to fetch local news.
             similarity_top_k (int): Number of documents to return.
             ref (Optional[str]): Site domain where recommendations should be displayed.
             num_articles_ref (int): Minimum number of articles to return from the reference domain.
