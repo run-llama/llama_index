@@ -1698,6 +1698,8 @@ nav:
           - ./api_reference/tools/code_interpreter.md
           - ./api_reference/tools/cogniswitch.md
           - ./api_reference/tools/database.md
+          - ./api_reference/tools/dappier_ai_recommendations.md
+          - ./api_reference/tools/dappier_real_time_search.md
           - ./api_reference/tools/docker_code.md
           - ./api_reference/tools/duckduckgo.md
           - ./api_reference/tools/elevenlabs.md
@@ -1929,6 +1931,8 @@ plugins:
             - ../llama-index-integrations/tools/llama-index-tools-openai
             - ../llama-index-integrations/tools/llama-index-tools-graphql
             - ../llama-index-integrations/tools/llama-index-tools-playgrounds
+            - ../llama-index-integrations/tools/llama-index-tools-dappier-ai-recommendations
+            - ../llama-index-integrations/tools/llama-index-tools-dappier-real-time-search
             - ../llama-index-integrations/embeddings/llama-index-embeddings-clip
             - ../llama-index-integrations/embeddings/llama-index-embeddings-anyscale
             - ../llama-index-integrations/embeddings/llama-index-embeddings-llm-rails
