@@ -15,6 +15,7 @@ from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.base.llms.generic_utils import (
     achat_to_completion_decorator,
     acompletion_to_chat_decorator,
@@ -27,6 +28,7 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.tools import ToolSelection
 from llama_index.llms.litellm.utils import (
     acompletion_with_retry,
     completion_with_retry,
@@ -37,10 +39,18 @@ from llama_index.llms.litellm.utils import (
     validate_litellm_api_key,
 )
 
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
+
 DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
+def force_single_tool_call(response: ChatResponse) -> None:
+    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    if len(tool_calls) > 1:
+        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
 
-class LiteLLM(LLM):
+
+class LiteLLM(FunctionCallingLLM):
     """LiteLLM.
 
     Examples:
@@ -167,6 +177,73 @@ class LiteLLM(LLM):
             is_function_calling_model=is_function_calling_model(self._get_model_name()),
             model_name=self.model,
         )
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: List["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        tool_specs = [
+            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
+        ]
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        return {
+            "messages": messages,
+            "tools": tool_specs or None,
+        }
+
+    def _validate_chat_with_tools_response(
+        self,
+        response: ChatResponse,
+        tools: List["BaseTool"],
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Validate the response from chat_with_tools."""
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
+
+    def get_tool_calls_from_response(
+        self,
+        response: "ChatResponse",
+        error_on_no_tool_call: bool = True,
+    ) -> List[ToolSelection]:
+        """Predict and call the tool."""
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            argument_dict = tool_call["function"]["arguments"]
+
+            tool_selections.append(
+                ToolSelection(
+                    # tool ids not provided by LiteLLM
+                    tool_id=tool_call["function"]["name"],
+                    tool_name=tool_call["function"]["name"],
+                    tool_kwargs=argument_dict,
+                )
+            )
+
+        return tool_selections    
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
