@@ -1,4 +1,4 @@
-from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
+from typing import TYPE_CHECKING,Any, Awaitable, Callable, Dict, Optional, Sequence
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
