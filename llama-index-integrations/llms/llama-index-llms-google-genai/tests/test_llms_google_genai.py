@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pytest
 from google.genai import types
@@ -381,7 +381,7 @@ def test_as_structure_llm_with_config() -> None:
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
 def test_structured_predict_multiple_block() -> None:
-    chat_messaages = [
+    chat_messages = [
         ChatMessage(
             content=[
                 TextBlock(text="which logo is this?"),
@@ -401,7 +401,7 @@ def test_structured_predict_multiple_block() -> None:
         api_key=os.environ["GOOGLE_API_KEY"],
     )
     support = llm.structured_predict(
-        output_cls=Response, prompt=ChatPromptTemplate(message_templates=chat_messaages)
+        output_cls=Response, prompt=ChatPromptTemplate(message_templates=chat_messages)
     )
     assert isinstance(support, Response)
     assert "wiki" in support.answer.lower()
@@ -452,7 +452,7 @@ def test_convert_llama_index_schema_to_gemini_function_declaration() -> None:
     )
 
     assert google_openai_function.description is None
-    assert google_openai_function.parameters.required is None  # type: ignore
+    assert google_openai_function.parameters.required is None
 
     # this is our custom conversion that can take a llama index: fn_schema and convert it to a gemini compatible
     # function declaration (subset of OpenAPI v3)
@@ -460,7 +460,7 @@ def test_convert_llama_index_schema_to_gemini_function_declaration() -> None:
 
     assert converted.name == "Poem"
     assert converted.description is not None
-    assert converted.parameters.required is not None  # type: ignore
+    assert converted.parameters.required is not None
 
     assert converted.parameters
 
@@ -478,7 +478,7 @@ def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case()
     )
     function_tool = get_function_tool(Schema)
 
-    llama_index_model_json_schema = function_tool.metadata.fn_schema.model_json_schema()  # type: ignore
+    llama_index_model_json_schema = function_tool.metadata.fn_schema.model_json_schema()
     # check that the model_json_schema contains a $defs key, which is not supported by Gemini
     assert "$defs" in llama_index_model_json_schema
 
@@ -486,7 +486,7 @@ def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case()
 
     assert converted.name == "Schema"
     assert converted.description is not None
-    assert converted.parameters.required is not None  # type: ignore
+    assert converted.parameters.required is not None
 
     assert converted.parameters
     assert list(converted.parameters.properties) == [
@@ -495,3 +495,122 @@ def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case()
     ]
 
     assert converted.parameters.required == ["schema_name", "tables"]
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_anyof_not_supported_gemini() -> None:
+    class Content(BaseModel):
+        content: Union[int, str]
+
+    llm = GoogleGenAI(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+    with pytest.raises(ValueError):
+        function_tool = get_function_tool(Content)
+        _ = convert_schema_to_function_declaration(llm._client, function_tool)
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_default_value_not_supported_gemini() -> None:
+    class ContentWithDefaultValue(BaseModel):
+        content: str = Field(default="default_value")
+
+    llm = GoogleGenAI(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+    with pytest.raises(ValueError):
+        function_tool = get_function_tool(ContentWithDefaultValue)
+        _ = convert_schema_to_function_declaration(llm._client, function_tool)
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_optional_value_gemini() -> None:
+    class OptionalContent(BaseModel):
+        content: Optional[str] = Field(default=None)
+        content2: str | None
+
+    llm = GoogleGenAI(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+
+    function_tool = get_function_tool(OptionalContent)
+    decl = convert_schema_to_function_declaration(llm._client, function_tool)
+
+    assert decl.parameters.properties["content"].nullable
+    assert decl.parameters.properties["content"].default is None
+
+    assert decl.parameters.properties["content2"].nullable
+    assert decl.parameters.properties["content2"].default is None
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_optional_lists_nested_gemini() -> None:
+    class TextContent(BaseModel):
+        text: str
+        language: str
+
+    class ImageContent(BaseModel):
+        url: str
+        alt_text: Optional[str]
+        width: Optional[int]
+        height: Optional[int]
+
+    class VideoContent(BaseModel):
+        url: str
+        duration_seconds: int
+        thumbnail: Optional[str]
+
+    class Content(BaseModel):
+        title: str
+        created_at: str
+        text: Optional[TextContent] = None
+        image: Optional[ImageContent]
+        video: Optional[VideoContent]
+        tags: List[str]
+
+    class BlogPost(BaseModel):
+        id: str
+        author: str
+        published: bool
+        contents: List[Content]
+        category: Optional[str]
+
+    llm = GoogleGenAI(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+    function_tool = get_function_tool(BlogPost)
+
+    llama_index_model_json_schema = function_tool.metadata.fn_schema.model_json_schema()
+    assert "$defs" in llama_index_model_json_schema
+
+    converted = convert_schema_to_function_declaration(llm._client, function_tool)
+
+    assert converted.name == "BlogPost"
+
+    contents_property = converted.parameters.properties["contents"]
+    assert contents_property.type == types.Type.ARRAY
+
+    content_items = contents_property.items
+    assert "text" in content_items.properties
+    assert "image" in content_items.properties
+    assert "video" in content_items.properties
+
+    blogpost = (
+        llm.as_structured_llm(output_cls=BlogPost)
+        .complete(prompt="Write a blog post with at least 3 contents")
+        .raw
+    )
+    assert isinstance(blogpost, BlogPost)
+    assert len(blogpost.contents) >= 3
