@@ -75,6 +75,7 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
         raise TypeError(f"Expected a callable object, got {type(fn).__name__}")
 
     sig = inspect.signature(fn)
+    type_hints = get_type_hints(fn)
 
     accepted_events: Dict[str, List[EventType]] = {}
     context_parameter = None
@@ -86,13 +87,15 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
         if name in ("self", "cls"):
             continue
 
+        annotation = type_hints.get(name, t.annotation)
+
         # Get name and type of the Context param
-        if hasattr(t.annotation, "__name__") and t.annotation.__name__ == "Context":
+        if hasattr(annotation, "__name__") and annotation.__name__ == "Context":
             context_parameter = name
             continue
 
         # Collect name and types of the event param
-        param_types = _get_param_types(t)
+        param_types = _get_param_types(t, type_hints)
         if all(
             param_t == Event
             or (inspect.isclass(param_t) and issubclass(param_t, Event))
@@ -180,7 +183,7 @@ def get_steps_from_instance(workflow: object) -> Dict[str, Callable]:
     return step_methods
 
 
-def _get_param_types(param: inspect.Parameter) -> List[Any]:
+def _get_param_types(param: inspect.Parameter, type_hints: dict) -> List[Any]:
     """Extract and process the types of a parameter.
 
     This helper function handles Union and Optional types, returning a list of the actual types.
@@ -188,11 +191,12 @@ def _get_param_types(param: inspect.Parameter) -> List[Any]:
 
     Args:
         param (inspect.Parameter): The parameter to analyze.
+        type_hints (dict): The resolved type hints for the function.
 
     Returns:
         List[Any]: A list of extracted types, excluding None from Unions/Optionals.
     """
-    typ = param.annotation
+    typ = type_hints.get(param.name, param.annotation)
     if typ is inspect.Parameter.empty:
         return [Any]
     if get_origin(typ) in (Union, Optional, UnionType):
