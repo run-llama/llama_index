@@ -44,10 +44,12 @@ if TYPE_CHECKING:
 
 DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
+
 def force_single_tool_call(response: ChatResponse) -> None:
     tool_calls = response.message.additional_kwargs.get("tool_calls", [])
     if len(tool_calls) > 1:
         response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+
 
 class LiteLLM(FunctionCallingLLM):
     """LiteLLM.
@@ -242,7 +244,7 @@ class LiteLLM(FunctionCallingLLM):
                 )
             )
 
-        return tool_selections    
+        return tool_selections
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
