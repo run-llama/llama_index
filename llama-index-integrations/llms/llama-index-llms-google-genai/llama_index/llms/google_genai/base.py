@@ -369,7 +369,9 @@ class GoogleGenAI(FunctionCallingLLM):
         tool_declarations = []
         for tool in tools:
             if tool.metadata.fn_schema:
-                function_declaration = convert_schema_to_function_declaration(tool)
+                function_declaration = convert_schema_to_function_declaration(
+                    self._client, tool
+                )
                 tool_declarations.append(function_declaration)
 
         if isinstance(user_msg, str):

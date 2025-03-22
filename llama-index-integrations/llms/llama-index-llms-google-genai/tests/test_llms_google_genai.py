@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import List
+from typing import List, Optional
 
 import pytest
 from google.genai import types
@@ -267,6 +267,29 @@ def test_complex_structured_predict() -> None:
 @pytest.mark.skipif(
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
+def test_anyof_structured_predict() -> None:
+    """Test anyof with a complex nested schema."""
+    llm = GoogleGenAI(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
+
+    class Person(BaseModel):
+        last_name: str = Field(description="Last name")
+        first_name: Optional[str] = Field(None, description="Optional first name")
+
+    prompt = PromptTemplate("Create a fake person ")
+    response = llm.structured_predict(output_cls=Person, prompt=prompt)
+
+    assert response is not None
+    assert isinstance(response, Person)
+    assert isinstance(response.last_name, str)
+    assert isinstance(response.first_name, None | str)
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
 def test_as_structured_llm() -> None:
     llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
@@ -433,7 +456,7 @@ def test_convert_llama_index_schema_to_gemini_function_declaration() -> None:
 
     # this is our custom conversion that can take a llama index: fn_schema and convert it to a gemini compatible
     # function declaration (subset of OpenAPI v3)
-    converted = convert_schema_to_function_declaration(function_tool)
+    converted = convert_schema_to_function_declaration(llm._client, function_tool)
 
     assert converted.name == "Poem"
     assert converted.description is not None
@@ -442,17 +465,24 @@ def test_convert_llama_index_schema_to_gemini_function_declaration() -> None:
     assert converted.parameters
 
 
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
 def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case() -> (
     None
 ):
     """Test conversion of a llama_index fn_schema to a gemini function declaration."""
+    llm = GoogleGenAI(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+    )
     function_tool = get_function_tool(Schema)
 
     llama_index_model_json_schema = function_tool.metadata.fn_schema.model_json_schema()  # type: ignore
     # check that the model_json_schema contains a $defs key, which is not supported by Gemini
     assert "$defs" in llama_index_model_json_schema
 
-    converted = convert_schema_to_function_declaration(function_tool)
+    converted = convert_schema_to_function_declaration(llm._client, function_tool)
 
     assert converted.name == "Schema"
     assert converted.description is not None
