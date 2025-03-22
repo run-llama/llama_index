@@ -40,6 +40,12 @@ def get_max_total_tokens(url: str) -> Union[int, None]:
     return model_info.get("max_total_tokens", None)
 
 
+def get_model_name(url: str) -> Union[str, None]:
+    url = f"{url}/info"
+    model_info = dict(requests.get(url).json())
+    return model_info.get("model_id", None)
+
+
 def to_tgi_messages(messages: Sequence[ChatMessage]) -> Sequence[Message]:
     out_messages = []
     for m in messages:
