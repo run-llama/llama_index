@@ -49,7 +49,6 @@ def force_single_tool_call(response: ChatResponse) -> None:
     if len(tool_calls) > 1:
         response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
 
-
 class LiteLLM(FunctionCallingLLM):
     """LiteLLM.
 
