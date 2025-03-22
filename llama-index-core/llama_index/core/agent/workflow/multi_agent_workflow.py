@@ -92,7 +92,16 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         if not agents:
             raise ValueError("At least one agent must be provided")
 
-        self.agents = {cfg.name: cfg for cfg in agents}
+        # Raise an error if any agent has no name or no description
+        if len(agents) > 1 and any(agent.name is None for agent in agents):
+            raise ValueError("All agents must have a name in a multi-agent workflow")
+
+        if len(agents) > 1 and any(agent.description is None for agent in agents):
+            raise ValueError(
+                "All agents must have a description in a multi-agent workflow"
+            )
+
+        self.agents = {cfg.name: cfg for cfg in agents if cfg.name is not None}
         if len(agents) == 1:
             root_agent = agents[0].name
         elif root_agent is None:
@@ -166,6 +175,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         self, current_agent: BaseWorkflowAgent
     ) -> Optional[AsyncBaseTool]:
         """Creates a handoff tool for the given agent."""
+        # Do not create a handoff tool if there is only one agent
+        if len(self.agents) == 1:
+            return None
+
         agent_info = {cfg.name: cfg.description for cfg in self.agents.values()}
 
         # Filter out agents that the current agent cannot handoff to

@@ -31,9 +31,10 @@ class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    name: str = Field(description="The name of the agent")
-    description: str = Field(
-        description="The description of what the agent does and is responsible for"
+    name: Optional[str] = Field(default=None, description="The name of the agent")
+    description: Optional[str] = Field(
+        default=None,
+        description="The description of what the agent does and is responsible for",
     )
     system_prompt: Optional[str] = Field(
         default=None, description="The system prompt for the agent"

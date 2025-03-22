@@ -1,3 +1,5 @@
+**NOTE:** Information on this page may be outdated, see the [agent introduction](./index.md) for modern agent usage in LlamaIndex.
+
 # Module Guides
 
 These guide provide an overview of how to use our agent classes.

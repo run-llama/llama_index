@@ -2,7 +2,7 @@
 
 ## Concept
 
-Having proper tool abstractions is at the core of building [data agents](./index.md). Defining a set of Tools is similar to defining any API interface, with the exception that these Tools are meant for agent rather than human use. We allow users to define both a **Tool** as well as a **ToolSpec** containing a series of functions under the hood.
+Having proper tool abstractions is at the core of building [agentic systems in LlamaIndex](./index.md). Defining a set of Tools is similar to defining any API interface, with the exception that these Tools are meant for agent rather than human use. We allow users to define both a **Tool** as well as a **ToolSpec** containing a series of functions under the hood.
 
 When using an agent or LLM with function calling, the tool selected (and the arguments written for that tool) rely strongly on the **tool name** and **description** of the tools purpose and arguments. Spending time tuning these parameters can result in larges changes in how the LLM calls these tools.
 
@@ -10,7 +10,7 @@ A Tool implements a very generic interface - simply define `__call__` and also r
 
 We offer a few different types of Tools:
 
-- `FunctionTool`: A function tool allows users to easily convert any user-defined function into a Tool. It can also auto-infer the function schema.
+- `FunctionTool`: A function tool allows users to easily convert any user-defined function into a Tool. It can also auto-infer the function schema, or let you customize various aspects.
 - `QueryEngineTool`: A tool that wraps an existing [query engine](../query_engine/index.md). Note: since our agent abstractions inherit from `BaseQueryEngine`, these tools can also wrap other agents.
 - Community contributed `ToolSpecs` that define one or more tools around a single service (like Gmail)
 - Utility tools for wrapping other tools to handle returning large amounts of data from a tool
@@ -20,6 +20,7 @@ We offer a few different types of Tools:
 A function tool is a simple wrapper around any existing function (both sync and async are supported!).
 
 ```python
+from llama_index.core.agent.workflow import ReActAgent
 from llama_index.core.tools import FunctionTool
 
 
@@ -33,21 +34,21 @@ tool = FunctionTool.from_defaults(
     # async_fn=aget_weather,  # optional!
 )
 
-agent = ReActAgent.from_tools(tools, llm=llm, verbose=True)
+agent = ReActAgent(llm=llm, tools=tools)
 ```
 
-For a better function definition, you can also leverage pydantic for the function arguments.
+For a better function definition, you can also leverage the `Annotated` type to specify argument descriptions.
 
 ```python
-from pydantic import Field
+from typing import Annotated
 
 
 def get_weather(
-    location: str = Field(
-        description="A city name and state, formatted like '<name>, <state>'"
-    ),
+    location: Annotated[
+        str, "A city name and state, formatted like '<name>, <state>'"
+    ],
 ) -> str:
-    """Usfeful for getting the weather for a given location."""
+    """Useful for getting the weather for a given location."""
     ...
 
 
@@ -87,11 +88,11 @@ pip install llama-index-tools-google
 And then use it:
 
 ```python
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.tools.google import GmailToolSpec
 
 tool_spec = GmailToolSpec()
-agent = OpenAIAgent.from_tools(tool_spec.to_tool_list(), verbose=True)
+agent = FunctionAgent(llm=llm, tools=tool_spec.to_tool_list())
 ```
 
 See [LlamaHub](https://llamahub.ai) for a full list of community contributed tool specs.
@@ -111,6 +112,10 @@ This tool turns any existing LlamaIndex data loader ( `BaseReader` class) into a
 Oftentimes this can be preferable to figuring out how to load and index API data yourself. While this may allow for data reusability, oftentimes users just need an ad-hoc index to abstract away prompt window limitations for any API call.
 
 A usage example is given below:
+
+```bash
+pip install llama-index-readers-wikipedia
+```
 
 ```python
 from llama_index.readers.wikipedia import WikipediaReader
@@ -133,19 +138,25 @@ This is helpful for any API endpoint that will by default return large volumes o
 
 Example usage is shown below:
 
+```bash
+pip install llama-index-tools-wikipedia
+```
+
 ```python
-from llama_index.tools.wikipedia import WikipediaToolSpec
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.core.tools.tool_spec.load_and_search import (
     LoadAndSearchToolSpec,
 )
+from llama_index.tools.wikipedia import WikipediaToolSpec
+
 
 wiki_spec = WikipediaToolSpec()
 # Get the search wikipedia tool
 tool = wiki_spec.to_tool_list()[1]
 
 # Create the Agent with load/search tools
-agent = OpenAIAgent.from_tools(
-    LoadAndSearchToolSpec.from_defaults(tool).to_tool_list(), verbose=True
+agent = FunctionAgent(
+    llm=llm, tools=LoadAndSearchToolSpec.from_defaults(tool).to_tool_list()
 )
 ```
 
@@ -163,9 +174,9 @@ tool = QueryEngineTool.from_defaults(
     return_direct=True,
 )
 
-agent = OpenAIAgent.from_tools([tool])
+agent = FunctionAgent(llm=llm, tools=[tool])
 
-response = agent.chat("<question that invokes tool>")
+response = await agent.run("<question that invokes tool>")
 ```
 
 In the above example, the query engine tool would be invoked, and the response from that tool would be directly returned as the response, and the execution loop would end.

@@ -1,11 +1,13 @@
 # Agents
 
-Putting together an agent in LlamaIndex can be done by defining a set of tools and providing them to our ReActAgent implementation. We're using it here with OpenAI, but it can be used with any sufficiently capable LLM:
+Putting together an agent in LlamaIndex can be done by defining a set of tools and providing them to our ReActAgent or FunctionAgent implementation. We're using it here with OpenAI, but it can be used with any sufficiently capable LLM.
+
+In general, FunctionAgent should be preferred for LLMs that have built-in function calling/tools in their API, like Openai, Anthropic, Gemini, etc.
 
 ```python
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.openai import OpenAI
-from llama_index.core.agent import ReActAgent
+from llama_index.core.agent.workflow import ReActAgent, FunctionAgent
 
 
 # define sample Tool
@@ -14,13 +16,16 @@ def multiply(a: int, b: int) -> int:
     return a * b
 
 
-multiply_tool = FunctionTool.from_defaults(fn=multiply)
-
 # initialize llm
-llm = OpenAI(model="gpt-3.5-turbo-0613")
+llm = OpenAI(model="gpt-4o")
 
-# initialize ReAct agent
-agent = ReActAgent.from_tools([multiply_tool], llm=llm, verbose=True)
+# initialize agent
+agent = FunctionAgent(
+    name="multiply_agent",
+    description="Can multiply numbers.",
+    tools=[multiply],
+    system_prompt="You are an agent that can invoke a tool for multiplication when assisting a user.",
+)
 ```
 
 These tools can be Python functions as shown above, or they can be LlamaIndex query engines:
@@ -37,23 +42,15 @@ query_engine_tools = [
     ),
 ]
 
-agent = ReActAgent.from_tools(query_engine_tools, llm=llm, verbose=True)
+agent = FunctionAgent(
+    name="search_agent",
+    description="Can search data.",
+    tools=query_engine_tools,
+    system_prompt="You are an agent that can invoke an agent for text-to-SQL execution.",
+)
 ```
 
-You can learn more in our [Agent Module Guide](../../module_guides/deploying/agents/index.md).
-
-## Native OpenAIAgent
-
-We have an `OpenAIAgent` implementation built on the [OpenAI API for function calling](https://openai.com/blog/function-calling-and-other-api-updates) that allows you to rapidly build agents:
-
-- [OpenAIAgent](../../examples/agent/openai_agent.ipynb)
-- [OpenAIAgent with Query Engine Tools](../../examples/agent/openai_agent_with_query_engine.ipynb)
-- [OpenAIAgent Query Planning](../../examples/agent/openai_agent_query_plan.ipynb)
-- [OpenAI Assistant](../../examples/agent/openai_assistant_agent.ipynb)
-- [OpenAI Assistant Cookbook](../../examples/agent/openai_assistant_query_cookbook.ipynb)
-- [Forced Function Calling](../../examples/agent/openai_forced_function_call.ipynb)
-- [Parallel Function Calling](../../examples/agent/openai_agent_parallel_function_calling.ipynb)
-- [Context Retrieval](../../examples/agent/openai_agent_context_retrieval.ipynb)
+You can learn more in our [Agent Module Guide](../../module_guides/deploying/agents/index.md) or in our [end-to-end agent tutorial](../agent/index.md).
 
 ## Agentic Components within LlamaIndex
 
@@ -83,25 +80,3 @@ LlamaIndex provides core modules capable of automated reasoning for different us
 **Chat Engines**
 
 - [Chat Engines How-To](../../module_guides/deploying/chat_engines/index.md)
-
-## Using LlamaIndex as a Tool within an Agent Framework
-
-LlamaIndex can be used as a Tool within an agent framework - including LangChain, ChatGPT. These integrations are described below.
-
-### LangChain
-
-We have deep integrations with LangChain.
-LlamaIndex query engines can be easily packaged as Tools to be used within a LangChain agent, and LlamaIndex can also be used as a memory module / retriever. Check out our guides/tutorials below!
-
-**Resources**
-
-- [Building a Chatbot Tutorial](chatbots/building_a_chatbot.md)
-- [OnDemandLoaderTool Tutorial](../../examples/tools/OnDemandLoaderTool.ipynb)
-
-### ChatGPT
-
-LlamaIndex can be used as a ChatGPT retrieval plugin (we have a TODO to develop a more general plugin as well).
-
-**Resources**
-
-- [LlamaIndex ChatGPT Retrieval Plugin](https://github.com/openai/chatgpt-retrieval-plugin#llamaindex)

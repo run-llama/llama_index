@@ -18,7 +18,7 @@ LlamaIndex provides a comprehensive framework for building agentic systems with 
 
 The scope of possible use cases for agents is vast and ever-expanding. That said, here are some practical use cases that can deliver immediate value.
 
-- **Agentic RAG**: Build a context-augmented research assistant over your data that not only answers simple questions, but complex research tasks. Here are two resources ([resource 1](../understanding/putting_it_all_together/agents.md), [resource 2](../optimizing/agentic_strategies/agentic_strategies.md)) to help you get started.
+- **Agentic RAG**: Build a context-augmented research assistant over your data that not only answers simple questions, but complex research tasks. Our [getting started guide](../getting_started/starter_example.md) is a great place to start.
 
 - **Report Generation**: Generate a multimodal report using a multi-agent researcher + writer workflow + LlamaParse. [Notebook](https://github.com/run-llama/llama_cloud_services/examples/parse/multimodal/multimodal_report_generation_agent.ipynb).
 
