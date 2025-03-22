@@ -40,6 +40,7 @@ from llama_index.llms.text_generation_inference.utils import (
     resolve_tgi_function_call,
     get_max_total_tokens,
     resolve_tool_choice,
+    get_model_name,
 )
 from text_generation import (
     Client as TGIClient,
@@ -159,6 +160,7 @@ class TextGenerationInference(FunctionCallingLLM):
             is_function_calling_model = False
 
         context_window = get_max_total_tokens(model_url) or DEFAULT_CONTEXT_WINDOW
+        model_name = get_model_name(model_url)
 
         super().__init__(
             context_window=context_window,
