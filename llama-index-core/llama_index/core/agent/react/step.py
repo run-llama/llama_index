@@ -546,6 +546,7 @@ class ReActAgentWorker(BaseAgentWorker):
         ):
             self.confident = False
         else:
+            self.confident = True
             if logprob.token.lower() not in ["false", "true"]:
                 print(
                     "Malformed Response Error: The agent failed to return a single token respones confidence filtering failed"
