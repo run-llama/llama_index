@@ -530,6 +530,31 @@ def test_default_value_not_supported_gemini() -> None:
 
 
 @pytest.mark.skipif(
+    os.environ.get("GOOGLE_GENAI_USE_VERTEXAI") is None,
+    reason="GOOGLE_GENAI_USE_VERTEXAI not set",
+)
+def test_default_value_supported_vertexai() -> None:
+    class ContentWithDefaultValue(BaseModel):
+        content: str = Field(default="default_value")
+
+    llm = GoogleGenAI(
+        model="gemini-2.0-flash-001",
+    )
+
+    function_tool = get_function_tool(ContentWithDefaultValue)
+    function_decl = convert_schema_to_function_declaration(llm._client, function_tool)
+
+    assert function_decl.parameters.properties["content"].default == "default_value"
+
+    content = (
+        llm.as_structured_llm(output_cls=ContentWithDefaultValue)
+        .complete(prompt="Generate a small content")
+        .raw
+    )
+    assert isinstance(content, ContentWithDefaultValue)
+
+
+@pytest.mark.skipif(
     os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
 )
 def test_optional_value_gemini() -> None:
