@@ -1,4 +1,6 @@
 import asyncio
+from datetime import datetime
+from enum import Enum
 import os
 from typing import List, Optional, Union
 
@@ -22,6 +24,14 @@ from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.llms.google_genai.utils import convert_schema_to_function_declaration
 
 
+SKIP_GEMINI = (
+    os.environ.get("GOOGLE_API_KEY") is None
+    or os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "false") == "true"
+)
+
+SKIP_VERTEXAI = os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "false") == "false"
+
+
 class Poem(BaseModel):
     content: str
 
@@ -41,9 +51,7 @@ class Schema(BaseModel):
     tables: List[Table] = Field(description="List of random Table objects")
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_complete_and_acomplete() -> None:
     """Test both sync and async complete methods."""
     llm = GoogleGenAI(
@@ -64,9 +72,7 @@ def test_complete_and_acomplete() -> None:
     assert len(async_response.text) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_chat_and_achat() -> None:
     """Test both sync and async chat methods."""
     llm = GoogleGenAI(
@@ -87,9 +93,7 @@ def test_chat_and_achat() -> None:
     assert async_response.message.content and len(async_response.message.content) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_stream_chat_and_astream_chat() -> None:
     """Test both sync and async stream chat methods."""
     llm = GoogleGenAI(
@@ -116,9 +120,7 @@ def test_stream_chat_and_astream_chat() -> None:
     assert all(isinstance(chunk.message.content, str) for chunk in async_chunks)
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_stream_complete_and_astream_complete() -> None:
     """Test both sync and async stream complete methods."""
     llm = GoogleGenAI(
@@ -145,9 +147,7 @@ def test_stream_complete_and_astream_complete() -> None:
     assert all(isinstance(chunk.text, str) for chunk in async_chunks)
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_simple_astructured_predict() -> None:
     """Test async structured prediction with a simple schema."""
     llm = GoogleGenAI(
@@ -168,9 +168,7 @@ def test_simple_astructured_predict() -> None:
     assert len(response.content) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_simple_stream_structured_predict() -> None:
     """Test stream structured prediction with a simple schema."""
     llm = GoogleGenAI(
@@ -193,9 +191,7 @@ def test_simple_stream_structured_predict() -> None:
     assert len(result.content) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_simple_astream_structured_predict() -> None:
     """Test async stream structured prediction with a simple schema."""
     llm = GoogleGenAI(
@@ -221,9 +217,7 @@ def test_simple_astream_structured_predict() -> None:
     asyncio.run(run())
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_simple_structured_predict() -> None:
     """Test structured prediction with a simple schema."""
     llm = GoogleGenAI(
@@ -242,9 +236,7 @@ def test_simple_structured_predict() -> None:
     assert len(response.content) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_complex_structured_predict() -> None:
     """Test structured prediction with a complex nested schema."""
     llm = GoogleGenAI(
@@ -264,11 +256,8 @@ def test_complex_structured_predict() -> None:
     assert all(len(table.columns) > 0 for table in response.tables)
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_anyof_structured_predict() -> None:
-    """Test anyof with a complex nested schema."""
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_anyof_optional_structured_predict() -> None:
     llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
         api_key=os.environ["GOOGLE_API_KEY"],
@@ -287,9 +276,7 @@ def test_anyof_structured_predict() -> None:
     assert isinstance(response.first_name, None | str)
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_as_structured_llm() -> None:
     llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
@@ -314,9 +301,7 @@ def test_as_structured_llm() -> None:
     assert len(schema_response.raw.tables) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_as_structured_llm_async() -> None:
     llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
@@ -345,9 +330,7 @@ def test_as_structured_llm_async() -> None:
     assert len(schema_response.raw.tables) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_as_structure_llm_with_config() -> None:
     llm = GoogleGenAI(
         model="models/gemini-2.0-flash-001",
@@ -377,9 +360,7 @@ def test_as_structure_llm_with_config() -> None:
     assert isinstance(response, Poem)
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_structured_predict_multiple_block() -> None:
     chat_messages = [
         ChatMessage(
@@ -407,9 +388,7 @@ def test_structured_predict_multiple_block() -> None:
     assert "wiki" in support.answer.lower()
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_get_tool_calls_from_response() -> None:
     def add(a: int, b: int) -> int:
         """Add two integers and returns the result integer."""
@@ -433,9 +412,7 @@ def test_get_tool_calls_from_response() -> None:
     assert tool_calls[0].tool_kwargs == {"a": 2, "b": 3}
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_convert_llama_index_schema_to_gemini_function_declaration() -> None:
     """Test conversion of a llama_index schema to a gemini function declaration."""
     llm = GoogleGenAI(
@@ -465,9 +442,7 @@ def test_convert_llama_index_schema_to_gemini_function_declaration() -> None:
     assert converted.parameters
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case() -> (
     None
 ):
@@ -497,9 +472,7 @@ def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case()
     assert converted.parameters.required == ["schema_name", "tables"]
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_anyof_not_supported_gemini() -> None:
     class Content(BaseModel):
         content: Union[int, str]
@@ -514,8 +487,29 @@ def test_anyof_not_supported_gemini() -> None:
 
 
 @pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+    SKIP_VERTEXAI,
+    reason="GOOGLE_GENAI_USE_VERTEXAI not set",
 )
+def test_anyof_supported_vertexai() -> None:
+    class Content(BaseModel):
+        content: Union[int, str]
+
+    llm = GoogleGenAI(
+        model="gemini-2.0-flash-001",
+    )
+    function_tool = get_function_tool(Content)
+    _ = convert_schema_to_function_declaration(llm._client, function_tool)
+
+    content = (
+        llm.as_structured_llm(output_cls=Content)
+        .complete(prompt="Generate a small content")
+        .raw
+    )
+    assert isinstance(content, Content)
+    assert isinstance(content.content, int | str)
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_default_value_not_supported_gemini() -> None:
     class ContentWithDefaultValue(BaseModel):
         content: str = Field(default="default_value")
@@ -530,7 +524,7 @@ def test_default_value_not_supported_gemini() -> None:
 
 
 @pytest.mark.skipif(
-    os.environ.get("GOOGLE_GENAI_USE_VERTEXAI") is None,
+    SKIP_VERTEXAI,
     reason="GOOGLE_GENAI_USE_VERTEXAI not set",
 )
 def test_default_value_supported_vertexai() -> None:
@@ -554,9 +548,7 @@ def test_default_value_supported_vertexai() -> None:
     assert isinstance(content, ContentWithDefaultValue)
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_optional_value_gemini() -> None:
     class OptionalContent(BaseModel):
         content: Optional[str] = Field(default=None)
@@ -577,9 +569,7 @@ def test_optional_value_gemini() -> None:
     assert decl.parameters.properties["content2"].default is None
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_optional_lists_nested_gemini() -> None:
     class TextContent(BaseModel):
         text: str
@@ -639,3 +629,77 @@ def test_optional_lists_nested_gemini() -> None:
     )
     assert isinstance(blogpost, BlogPost)
     assert len(blogpost.contents) >= 3
+
+
+@pytest.mark.skipif(
+    SKIP_VERTEXAI,
+    reason="GOOGLE_GENAI_USE_VERTEXAI not set",
+)
+def test_optional_lists_nested_vertexai() -> None:
+    class Address(BaseModel):
+        street: str
+        city: str
+        country: str = Field(default="USA")
+
+    class ContactInfo(BaseModel):
+        email: str
+        phone: Optional[str] = None
+        address: Address
+
+    class Department(Enum):
+        ENGINEERING = "engineering"
+        MARKETING = "marketing"
+        SALES = "sales"
+        HR = "human_resources"
+
+    class Employee(BaseModel):
+        name: str
+        contact: ContactInfo
+        department: Department
+        hire_date: datetime
+
+    class Company(BaseModel):
+        name: str
+        founded_year: int
+        website: str
+        employees: List[Employee]
+        headquarters: Address
+
+    llm = GoogleGenAI(
+        model="gemini-2.0-flash-001",
+    )
+
+    function_tool = get_function_tool(Company)
+    converted = convert_schema_to_function_declaration(llm._client, function_tool)
+
+    assert converted.name == "Company"
+    assert converted.description is not None
+    assert converted.parameters.required is not None
+
+    assert list(converted.parameters.properties) == [
+        "name",
+        "founded_year",
+        "website",
+        "employees",
+        "headquarters",
+    ]
+
+    assert "name" in converted.parameters.required
+    assert "founded_year" in converted.parameters.required
+    assert "website" in converted.parameters.required
+    assert "employees" in converted.parameters.required
+    assert "headquarters" in converted.parameters.required
+
+    # call the model and check the output
+    company = (
+        llm.as_structured_llm(output_cls=Company)
+        .complete(prompt="Create a fake company with at least 3 employees")
+        .raw
+    )
+    assert isinstance(company, Company)
+
+    assert len(company.employees) >= 3
+    assert all(
+        employee.department in Department.__members__.values()
+        for employee in company.employees
+    )
