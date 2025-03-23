@@ -21,7 +21,10 @@ from typing import (
 
 from llama_index.llms.openai.base import OpenAI
 from llama_index.core.agent.react.formatter import ReActChatFormatter
-from llama_index.core.agent.react.output_parser import ReActOutputParser, COULD_NOT_PARSE_TXT
+from llama_index.core.agent.react.output_parser import (
+    ReActOutputParser,
+    COULD_NOT_PARSE_TXT,
+)
 from llama_index.core.agent.react.types import (
     ActionReasoningStep,
     BaseReasoningStep,
@@ -34,7 +37,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
-from llama_index.core.base.llms.types import MessageRole
+from llama_index.core.base.llms.types import MessageRole, LogProb
 from llama_index.core.callbacks import (
     CallbackManager,
     CBEventType,
@@ -57,6 +60,10 @@ from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
 from llama_index.core.utils import aprint_text, print_text, unit_generator
+import numpy as np
+
+LOW_CONFIDENCE_RESPONSE = "I cannot find an answer I am confident in given the data. Could you please rephrase the question or consult a member of your data team to ensure the question can be answered based on your data?"
+CONFIDENCE_THRESHOLD = 98
 
 
 def add_user_step_to_reasoning(
@@ -91,6 +98,7 @@ class ReActAgentWorker(BaseAgentWorker):
         verbose: bool = False,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         response_hook: Optional[Callable] = None,
+        check_confidence: bool = False,
     ) -> None:
         self._llm = llm
         self.callback_manager = callback_manager or llm.callback_manager
@@ -99,6 +107,8 @@ class ReActAgentWorker(BaseAgentWorker):
         self._output_parser = output_parser or ReActOutputParser()
         self._verbose = verbose
         self.response_hook = response_hook
+        self.check_confidence = check_confidence
+        self.confident: bool = True
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -219,7 +229,7 @@ class ReActAgentWorker(BaseAgentWorker):
             )
             background_tasks.add(task)
             task.add_done_callback(background_tasks.discard)
-            
+
         current_reasoning.append(reasoning_step)
 
         if reasoning_step.is_done:
@@ -305,6 +315,7 @@ class ReActAgentWorker(BaseAgentWorker):
             },
         ) as event:
             import time
+
             start_time = time.time()
             tool_output = await tool.acall(**reasoning_step.action_input)
             end_time = time.time()
@@ -509,22 +520,36 @@ class ReActAgentWorker(BaseAgentWorker):
         agent_response = self._get_response(
             task.extra_state["current_reasoning"], task.extra_state["sources"]
         )
+        if self.check_confidence:
+            # Check confidence based on the first token only
+            try:
+                logprob = chat_response.logprobs[0][0]
+                self.calculate_confidence(logprob=logprob)
+            except Exception as e:
+                print("Issue calculating confidence")
+                print("Here is the error: ", str(e))
         if is_done:
-            # if isinstance(self._llm, OpenAI):
-            #     final_response = await self._llm.check_confidence(messages=input_chat, task=task, last_response=chat_response, agent_response=agent_response)
-            #     task.extra_state["new_memory"].put(
-            #         final_response
-            #     )
-            #     agent_response.response = final_response.message.content
-            # else:
-            #     task.extra_state["new_memory"].put(
-            #         ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
-            #     )
             task.extra_state["new_memory"].put(
                 ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
             )
         return self._get_task_step_response(agent_response, step, is_done)
 
+    def calculate_confidence(self, logprob: LogProb) -> ChatResponse:
+        # Calculate linear probability
+        linear_prob = np.round(np.exp(logprob.logprob) * 100, 2)
+        # Decide on response based on confidence and linear probability
+        # TODO: may need to add linear_prob filtering to false statements
+        print("AI CONFIDENCE: ", logprob.token.lower())
+        print("CONFIDENCE PROBABILITY: ", linear_prob)
+        if (logprob.token.lower() == "true" and linear_prob < CONFIDENCE_THRESHOLD) or (
+            logprob.token.lower() == "false"
+        ):
+            self.confident = False
+        else:
+            if logprob.token.lower() not in ["false", "true"]:
+                print(
+                    "Malformed Response Error: The agent failed to return a single token respones confidence filtering failed"
+                )
 
     def _run_step_stream(
         self,

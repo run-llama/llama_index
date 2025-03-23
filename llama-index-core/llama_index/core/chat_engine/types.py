@@ -12,6 +12,7 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
     ChatResponseGen,
+    LogProb,
 )
 from llama_index.core.base.response.schema import Response, StreamingResponse
 from llama_index.core.memory import BaseMemory

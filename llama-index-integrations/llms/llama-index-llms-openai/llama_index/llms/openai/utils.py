@@ -268,26 +268,35 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
 
 
 def from_openai_token_logprob(
-    openai_token_logprob: ChatCompletionTokenLogprob,
+    openai_token_logprob: ChatCompletionTokenLogprob, top_logprobs: bool = True
 ) -> List[LogProb]:
     """Convert a single openai token logprob to generic list of logprobs."""
     try:
-        result = [
-            LogProb(token=el.token, logprob=el.logprob, bytes=el.bytes or [])
-            for el in openai_token_logprob.top_logprobs
-        ]
-    except Exception as e:
+        if top_logprobs:
+            result = [
+                LogProb(token=el.token, logprob=el.logprob, bytes=el.bytes or [])
+                for el in openai_token_logprob.top_logprobs
+            ]
+        else:
+            result = [
+                LogProb(
+                    token=openai_token_logprob.token,
+                    logprob=openai_token_logprob.logprob,
+                    bytes=openai_token_logprob.bytes or [],
+                )
+            ]
+    except Exception:
         print(openai_token_logprob)
         raise
     return result
 
 
 def from_openai_token_logprobs(
-    openai_token_logprobs: Sequence[ChatCompletionTokenLogprob],
+    openai_token_logprobs: Sequence[ChatCompletionTokenLogprob], top_logprobs: bool = True
 ) -> List[List[LogProb]]:
     """Convert openai token logprobs to generic list of LogProb."""
     return [
-        from_openai_token_logprob(token_logprob)
+        from_openai_token_logprob(token_logprob, top_logprobs=top_logprobs)
         for token_logprob in openai_token_logprobs
     ]
 
