@@ -38,6 +38,8 @@ DEFAULT_OPENAI_API_VERSION = ""
 O1_MODELS: Dict[str, int] = {
     "o1": 200000,
     "o1-2024-12-17": 200000,
+    "o1-pro": 200000,
+    "o1-pro-2025-03-19": 200000,
     "o1-preview": 128000,
     "o1-preview-2024-09-12": 128000,
     "o1-mini": 128000,

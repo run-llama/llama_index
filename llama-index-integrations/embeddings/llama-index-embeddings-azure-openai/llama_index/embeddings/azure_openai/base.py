@@ -15,6 +15,7 @@ from llama_index.embeddings.openai import (
     OpenAIEmbeddingMode,
     OpenAIEmbeddingModelType,
 )
+from llama_index.embeddings.openai.utils import DEFAULT_OPENAI_API_BASE
 from llama_index.llms.azure_openai.utils import (
     resolve_from_aliases,
     refresh_openai_azuread_token,
@@ -119,6 +120,10 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             num_workers=num_workers,
             **kwargs,
         )
+
+        # reset api_base to None if it is the default
+        if self.api_base == DEFAULT_OPENAI_API_BASE:
+            self.api_base = None
 
     @model_validator(mode="before")
     @classmethod
