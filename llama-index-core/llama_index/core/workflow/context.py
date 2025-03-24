@@ -293,6 +293,14 @@ class Context:
     def collect_events(
         self, ev: Event, expected: List[Type[Event]]
     ) -> Optional[List[Event]]:
+        """Buffer and wait for multiple events to arrive, ensuring that all expected events
+        have been received before proceeding.
+
+        It returns data in the requested order once all specified events have arrived.
+
+        This function is particularly useful in scenarios where a step needs to wait
+        for a query and retrieved nodes before proceeding with response synthesis.
+        """
         self._events_buffer[self._get_full_path(type(ev))].append(ev)
 
         retval: List[Event] = []
