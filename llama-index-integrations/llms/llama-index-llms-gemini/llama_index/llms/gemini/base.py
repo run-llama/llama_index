@@ -233,11 +233,14 @@ class Gemini(FunctionCallingLLM):
         request_options = self._request_options or kwargs.pop("request_options", None)
 
         def gen():
+            text = ""
             it = self._model.generate_content(
                 prompt, stream=True, request_options=request_options, **kwargs
             )
             for r in it:
-                yield completion_from_gemini_response(r)
+                delta = r.text
+                text += delta
+                yield completion_from_gemini_response(r, text=text, delta=delta)
 
         return gen()
 
