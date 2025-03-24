@@ -3,13 +3,20 @@ import os
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.types import ChatMessage, MessageRole
 from llama_index.core.workflow import Event
 
 logger = logging.getLogger("uvicorn")
+
+
+class ChatConfig(BaseModel):
+    next_question_suggestions: bool = Field(
+        default=True,
+        description="Whether to suggest next questions",
+    )
 
 
 class ChatAPIMessage(BaseModel):
@@ -22,6 +29,7 @@ class ChatAPIMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[ChatAPIMessage]
+    config: Optional[ChatConfig] = ChatConfig()
 
     @field_validator("messages")
     def validate_messages(cls, v):

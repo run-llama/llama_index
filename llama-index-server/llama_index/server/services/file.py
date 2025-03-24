@@ -88,7 +88,7 @@ class FileService:
         file_url_prefix = os.getenv("FILESERVER_URL_PREFIX")
         if file_url_prefix is None:
             logger.warning(
-                "FILESERVER_URL_PREFIX is not set, fallback to http://localhost:8000/api/files"
+                "FILESERVER_URL_PREFIX is not set. Some features may not work correctly."
             )
             file_url_prefix = "http://localhost:8000/api/files"
         file_size = os.path.getsize(file_path)

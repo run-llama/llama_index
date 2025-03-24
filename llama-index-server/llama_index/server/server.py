@@ -74,7 +74,6 @@ class LlamaIndexServer(FastAPI):
             chat_router(
                 self.workflow_factory,
                 self.logger,
-                self.verbose,
             ),
             prefix=self.api_prefix,
         )

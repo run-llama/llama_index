@@ -18,11 +18,11 @@ class VercelStreamResponse(StreamingResponse):
 
     def __init__(
         self,
-        content_stream: AsyncGenerator[str, None],
+        content_generator: AsyncGenerator[str, None],
         *args,
         **kwargs,
     ):
-        super().__init__(content=content_stream, *args, **kwargs)
+        super().__init__(content=content_generator, *args, **kwargs)
 
     @classmethod
     def convert_text(cls, token: str) -> str:

@@ -6,7 +6,10 @@ from fastapi import APIRouter
 
 from llama_index.core.agent.workflow.workflow_events import AgentStream
 from llama_index.core.workflow import StopEvent, Workflow
-from llama_index.core.workflow.handler import WorkflowHandler
+from llama_index.server.api.callbacks.stream_handler import StreamHandler
+from llama_index.server.api.callbacks.suggest_next_questions import (
+    SuggestNextQuestions,
+)
 from llama_index.server.api.models import ChatRequest
 from llama_index.server.api.utils.vercel_stream import VercelStreamResponse
 
@@ -14,7 +17,6 @@ from llama_index.server.api.utils.vercel_stream import VercelStreamResponse
 def chat_router(
     workflow_factory: Callable[[Any], Workflow],
     logger: logging.Logger,
-    verbose: bool = False,
 ):
     router = APIRouter(prefix="/chat")
 
@@ -24,19 +26,28 @@ def chat_router(
         chat_history = [
             message.to_llamaindex_message() for message in request.messages[:-1]
         ]
-        workflow = workflow_factory(verbose=verbose)
-        handler = workflow.run(
+        workflow = workflow_factory()
+        workflow_handler = workflow.run(
             user_msg=user_message.content,
             chat_history=chat_history,
         )
-        return VercelStreamResponse(_stream_content(handler, request, logger))
+
+        callbacks = []
+        if request.config.next_question_suggestions:
+            callbacks.append(SuggestNextQuestions(request))
+        stream_handler = StreamHandler(
+            workflow_handler=workflow_handler,
+            callbacks=callbacks,
+        )
+
+        return VercelStreamResponse(
+            content_generator=_stream_content(stream_handler, request, logger),
+        )
 
     return router
 
 
-async def _stream_content(
-    handler: WorkflowHandler, request: ChatRequest, logger: logging.Logger
-):
+async def _stream_content(handler, request: ChatRequest, logger: logging.Logger):
     async def _text_stream(event: Union[AgentStream, StopEvent]):
         if isinstance(event, AgentStream):
             if event.delta.strip():  # Only yield non-empty deltas
@@ -64,6 +75,7 @@ async def _stream_content(
             # Handle different types of events
             if isinstance(event, (AgentStream, StopEvent)):
                 async for chunk in _text_stream(event):
+                    handler.accumulate_text(chunk)
                     yield VercelStreamResponse.convert_text(chunk)
             elif isinstance(event, dict):
                 yield VercelStreamResponse.convert_data(event)
