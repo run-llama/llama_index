@@ -178,7 +178,9 @@ class BaseSparseEmbeddingFunction(ABC):
     def encode_documents(self, documents: List[str]) -> List[Dict[int, float]]:
         pass
 
-    async def async_encode_documents(self, documents: List[str]) -> List[Dict[int, float]]:
+    async def async_encode_documents(
+        self, documents: List[str]
+    ) -> List[Dict[int, float]]:
         """
         Encode documents asynchronously. Use sync method if not implemented.
         """

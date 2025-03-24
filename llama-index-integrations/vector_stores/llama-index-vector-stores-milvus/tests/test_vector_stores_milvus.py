@@ -429,15 +429,15 @@ class TestMilvusAsync:
             )
             for i in range(3)
         ]
-        
+
         await vector_store.async_add(nodes)
-        
+
         # Verify the sparse embeddings were batch encoded
         results = await vector_store.aclient.query(
             "test_batch_encoding",
             filter="",
             output_fields=["id", "sparse_embedding"],
-            limit=10
+            limit=10,
         )
         assert len(results) == 3
         for i, result in enumerate(results):
@@ -462,21 +462,21 @@ class TestMilvusAsync:
                 embedding=[0.5] * 64,
             ),
             TextNode(
-                id_="n2", 
+                id_="n2",
                 text="text_2",
                 embedding=[-0.5] * 64,
             ),
         ]
-        
+
         await vector_store.async_add(nodes)
-        
+
         query = VectorStoreQuery(
             query_embedding=[0.5] * 64,
             query_str="test_query",
             similarity_top_k=1,
             mode=VectorStoreQueryMode.HYBRID,
         )
-        
+
         result = await vector_store.aquery(query=query)
         assert len(result.nodes) == 1
         assert result.nodes[0].id_ == "n1"
