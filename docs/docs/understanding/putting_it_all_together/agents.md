@@ -21,8 +21,6 @@ llm = OpenAI(model="gpt-4o")
 
 # initialize agent
 agent = FunctionAgent(
-    name="multiply_agent",
-    description="Can multiply numbers.",
     tools=[multiply],
     system_prompt="You are an agent that can invoke a tool for multiplication when assisting a user.",
 )
@@ -34,17 +32,14 @@ These tools can be Python functions as shown above, or they can be LlamaIndex qu
 from llama_index.core.tools import QueryEngineTool
 
 query_engine_tools = [
-    QueryEngineTool(
+    QueryEngineTool.from_defaults(
         query_engine=sql_agent,
-        metadata=ToolMetadata(
-            name="sql_agent", description="Agent that can execute SQL queries."
-        ),
+        name="sql_agent",
+        description="Agent that can execute SQL queries.",
     ),
 ]
 
 agent = FunctionAgent(
-    name="search_agent",
-    description="Can search data.",
     tools=query_engine_tools,
     system_prompt="You are an agent that can invoke an agent for text-to-SQL execution.",
 )

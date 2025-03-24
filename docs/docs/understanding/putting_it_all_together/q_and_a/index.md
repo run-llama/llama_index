@@ -134,29 +134,23 @@ sub-queries against sub-documents before synthesizing the final answer.
 To do this, first define an index for each document/data source, and wrap it with a `QueryEngineTool` (similar to above):
 
 ```python
-from llama_index.core.tools import QueryEngineTool, ToolMetadata
+from llama_index.core.tools import QueryEngineTool
 
 query_engine_tools = [
-    QueryEngineTool(
+    QueryEngineTool.from_defaults(
         query_engine=sept_engine,
-        metadata=ToolMetadata(
-            name="sept_22",
-            description="Provides information about Uber quarterly financials ending September 2022",
-        ),
+        name="sept_22",
+        description="Provides information about Uber quarterly financials ending September 2022",
     ),
-    QueryEngineTool(
+    QueryEngineTool.from_defaults(
         query_engine=june_engine,
-        metadata=ToolMetadata(
-            name="june_22",
-            description="Provides information about Uber quarterly financials ending June 2022",
-        ),
+        name="june_22",
+        description="Provides information about Uber quarterly financials ending June 2022",
     ),
-    QueryEngineTool(
+    QueryEngineTool.from_defaults(
         query_engine=march_engine,
-        metadata=ToolMetadata(
-            name="march_22",
-            description="Provides information about Uber quarterly financials ending March 2022",
-        ),
+        name="march_22",
+        description="Provides information about Uber quarterly financials ending March 2022",
     ),
 ]
 ```
