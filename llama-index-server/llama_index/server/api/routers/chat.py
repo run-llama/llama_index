@@ -6,10 +6,11 @@ from fastapi import APIRouter
 
 from llama_index.core.agent.workflow.workflow_events import AgentStream
 from llama_index.core.workflow import StopEvent, Workflow
-from llama_index.server.api.callbacks.stream_handler import StreamHandler
-from llama_index.server.api.callbacks.suggest_next_questions import (
+from llama_index.server.api.callbacks import (
+    SourceNodesFromToolCall,
     SuggestNextQuestions,
 )
+from llama_index.server.api.callbacks.stream_handler import StreamHandler
 from llama_index.server.api.models import ChatRequest
 from llama_index.server.api.utils.vercel_stream import VercelStreamResponse
 
@@ -32,7 +33,9 @@ def chat_router(
             chat_history=chat_history,
         )
 
-        callbacks = []
+        callbacks = [
+            SourceNodesFromToolCall(),
+        ]
         if request.config.next_question_suggestions:
             callbacks.append(SuggestNextQuestions(request))
         stream_handler = StreamHandler(
