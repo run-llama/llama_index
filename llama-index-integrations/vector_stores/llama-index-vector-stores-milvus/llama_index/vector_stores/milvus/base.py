@@ -1071,7 +1071,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous hybrid search.
         """
-        sparse_emb = await self.sparse_embedding_function.async_encode_queries([query.query_str])[0]
+        sparse_emb = (await self.sparse_embedding_function.async_encode_queries([query.query_str]))[0]
         sparse_search_params = {"metric_type": "IP"}
         sparse_req = AnnSearchRequest(
             data=[sparse_emb],
