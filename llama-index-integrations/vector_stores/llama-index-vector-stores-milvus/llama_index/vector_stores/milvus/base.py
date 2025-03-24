@@ -420,15 +420,24 @@ class MilvusVectorStore(BasePydanticVectorStore):
             )
 
         # Process that data we are going to insert
+        sparse_embeddings_dict = {}
+        if self.enable_sparse is True:
+            sparse_embeddings = self.sparse_embedding_function.encode_documents(
+                [node.text for node in nodes]
+            )
+            sparse_embeddings_dict = {
+                node.node_id: sparse_embedding
+                for node, sparse_embedding in zip(nodes, sparse_embeddings)
+            }
         for node in nodes:
             entry = node_to_metadata_dict(node)
             entry[MILVUS_ID_FIELD] = node.node_id
             entry[self.embedding_field] = node.embedding
 
             if self.enable_sparse is True:
-                entry[
-                    self.sparse_embedding_field
-                ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+                entry[self.sparse_embedding_field] = sparse_embeddings_dict[
+                    node.node_id
+                ]
 
             insert_ids.append(node.node_id)
             insert_list.append(entry)
@@ -459,15 +468,26 @@ class MilvusVectorStore(BasePydanticVectorStore):
             )
 
         # Process that data we are going to insert
+        sparse_embeddings_dict = {}
+        if self.enable_sparse is True:
+            sparse_embeddings = (
+                await self.sparse_embedding_function.async_encode_documents(
+                    [node.text for node in nodes]
+                )
+            )
+            sparse_embeddings_dict = {
+                node.node_id: sparse_embedding
+                for node, sparse_embedding in zip(nodes, sparse_embeddings)
+            }
         for node in nodes:
             entry = node_to_metadata_dict(node)
             entry[MILVUS_ID_FIELD] = node.node_id
             entry[self.embedding_field] = node.embedding
 
             if self.enable_sparse is True:
-                entry[
-                    self.sparse_embedding_field
-                ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+                entry[self.sparse_embedding_field] = sparse_embeddings_dict[
+                    node.node_id
+                ]
 
             insert_ids.append(node.node_id)
             insert_list.append(entry)
@@ -1051,7 +1071,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous hybrid search.
         """
-        sparse_emb = self.sparse_embedding_function.encode_queries([query.query_str])[0]
+        sparse_emb = (
+            await self.sparse_embedding_function.async_encode_queries([query.query_str])
+        )[0]
         sparse_search_params = {"metric_type": "IP"}
         sparse_req = AnnSearchRequest(
             data=[sparse_emb],
