@@ -577,6 +577,8 @@ class BedrockConverse(FunctionCallingLLM):
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
             chat_history.append(user_msg)
+        elif isinstance(user_msg, ChatMessage):
+            chat_history.append(user_msg)
 
         # convert Llama Index tools to AWS Bedrock Converse tools
         tool_config = tools_to_converse_tools(tools)
