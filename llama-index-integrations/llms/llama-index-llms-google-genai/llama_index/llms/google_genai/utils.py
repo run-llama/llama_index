@@ -170,9 +170,16 @@ def convert_schema_to_function_declaration(
         root_schema = None
 
     description_parts = tool.metadata.description.split("\n", maxsplit=1)
+    if len(description_parts) > 1:
+        description = description_parts[-1]
+    elif len(description_parts) == 1:
+        description = description_parts[0]
+    else:
+        description = None
+
     # Create the function declaration
     return types.FunctionDeclaration(
-        description=description_parts[-1] if len(description_parts) > 1 else None,
+        description=description,
         name=tool.metadata.name,
         parameters=root_schema,
     )
