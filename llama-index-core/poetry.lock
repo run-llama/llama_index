@@ -383,6 +383,27 @@ files = [
 ]
 
 [[package]]
+name = "banks"
+version = "2.0.0"
+description = "A prompt programming language"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "banks-2.0.0-py3-none-any.whl", hash = "sha256:26eeca39f2d5e41ac29661cfcfbff9a3f4adf79e0ddfb05ca29e79aa15d337af"},
+    {file = "banks-2.0.0.tar.gz", hash = "sha256:036b7990f690a8282905fdc6970627efd3e7f1d05f09d6d39a565ef4e9b1971a"},
+]
+
+[package.dependencies]
+deprecated = "*"
+eval-type-backport = {version = "*", markers = "python_version < \"3.10\""}
+griffe = "*"
+jinja2 = "*"
+pydantic = "*"
+
+[package.extras]
+all = ["litellm", "redis"]
+
+[[package]]
 name = "beautifulsoup4"
 version = "4.13.3"
 description = "Screen-scraping library"
@@ -1497,6 +1518,20 @@ files = [
 [package.extras]
 docs = ["Sphinx", "furo"]
 test = ["objgraph", "psutil"]
+
+[[package]]
+name = "griffe"
+version = "1.6.2"
+description = "Signatures for entire Python programs. Extract the structure, the frame, the skeleton of your project, to generate API documentation or find breaking changes in your API."
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "griffe-1.6.2-py3-none-any.whl", hash = "sha256:6399f7e663150e4278a312a8e8a14d2f3d7bd86e2ef2f8056a1058e38579c2ee"},
+    {file = "griffe-1.6.2.tar.gz", hash = "sha256:3a46fa7bd83280909b63c12b9a975732a927dd97809efe5b7972290b606c5d91"},
+]
+
+[package.dependencies]
+colorama = ">=0.4"
 
 [[package]]
 name = "h11"
@@ -6018,4 +6053,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "369f9bcf05c514d1985af24d3dd31fd57904d90c670e634cef40f2dd6d15ef25"
+content-hash = "52e070b2e89fe42e99178fec90c2ba234ca6563f492e56a40c3e03f302f376dd"
