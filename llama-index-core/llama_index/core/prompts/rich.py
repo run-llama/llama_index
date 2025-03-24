@@ -14,7 +14,7 @@ from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.types import BaseOutputParser
 
 
-class RichPromptTemplate(BasePromptTemplate):
+class RichPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
     template_str: str = Field(description="The template string for the prompt.")
 
     def __init__(
@@ -33,7 +33,7 @@ class RichPromptTemplate(BasePromptTemplate):
 
         super().__init__(
             template_str=template_str,
-            kwargs=kwargs,
+            kwargs=kwargs or {},
             metadata=metadata or {},
             output_parser=output_parser,
             template_vars=template_vars,
