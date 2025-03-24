@@ -583,10 +583,10 @@ class OpenAI(LLM):
 
         # start_time = time.time()
         # try:
-        # for idx, msg in enumerate(message_dicts):
-        #     print("Here is the idx:", str(idx))
-        #     print("Here is the length of the string:", str(len(msg["content"])))
-        #     print("Here is the msg:", msg)
+        for idx, msg in enumerate(message_dicts):
+            print("Here is the idx:", str(idx))
+            print("Here is the length of the string:", str(len(msg["content"])))
+            print("Here is the msg:", msg)
         response = await aclient.chat.completions.create(
             messages=message_dicts,
             stream=False,
