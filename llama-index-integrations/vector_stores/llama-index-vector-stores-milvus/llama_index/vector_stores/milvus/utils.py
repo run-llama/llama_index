@@ -97,7 +97,12 @@ def parse_filter_value(filter_value: any, is_text_match: bool = False):
         # Per Milvus, "only prefix pattern match like ab% and equal match like ab(no wildcards) are supported"
         return f"'{filter_value!s}%'"
 
-    return f"'{filter_value!s}'" if isinstance(filter_value, str) else str(filter_value)
+    if isinstance(filter_value, str):
+        # Escape single quotes in strings
+        filter_value = filter_value.replace("'", "''")
+        return f"'{filter_value!s}'"
+
+    return str(filter_value)
 
 
 def parse_standard_filters(standard_filters: MetadataFilters = None):
