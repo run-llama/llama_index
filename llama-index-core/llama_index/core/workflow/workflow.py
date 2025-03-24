@@ -1,7 +1,5 @@
 import asyncio
-import functools
 import logging
-import time
 import uuid
 import warnings
 from typing import (
@@ -13,6 +11,7 @@ from typing import (
     Set,
     Tuple,
 )
+from weakref import WeakSet
 
 from llama_index.core.bridge.pydantic import ValidationError
 from llama_index.core.instrumentation import get_dispatcher
@@ -100,7 +99,7 @@ class Workflow(metaclass=WorkflowMeta):
             asyncio.Semaphore(num_concurrent_runs) if num_concurrent_runs else None
         )
         # Broker machinery
-        self._contexts: Set[Context] = set()
+        self._contexts: WeakSet[Context] = WeakSet()
         self._stepwise_context: Optional[Context] = None
         # Services management
         self._service_manager = service_manager or ServiceManager()
@@ -256,168 +255,21 @@ class Workflow(metaclass=WorkflowMeta):
             ):
                 step_config.accepted_events.append(self._stop_event_class)
 
-            async def _task(
-                name: str,
-                queue: asyncio.Queue,
-                step: Callable,
-                config: StepConfig,
-            ) -> None:
-                while True:
-                    ev = await queue.get()
-                    if type(ev) not in config.accepted_events:
-                        continue
-
-                    # do we need to wait for the step flag?
-                    if stepwise:
-                        await ctx._step_flags[name].wait()
-
-                        # clear all flags so that we only run one step
-                        for flag in ctx._step_flags.values():
-                            flag.clear()
-
-                    if self._verbose and name != "_done":
-                        print(f"Running step {name}")
-
-                    # run step
-                    kwargs: Dict[str, Any] = {}
-                    if config.context_parameter:
-                        kwargs[config.context_parameter] = ctx
-                    for service_definition in config.requested_services:
-                        service = self._service_manager.get(
-                            service_definition.name, service_definition.default_value
-                        )
-                        kwargs[service_definition.name] = service
-                    kwargs[config.event_name] = ev
-
-                    # wrap the step with instrumentation
-                    instrumented_step = dispatcher.span(step)
-
-                    # - check if its async or not
-                    # - if not async, run it in an executor
-                    if asyncio.iscoroutinefunction(step):
-                        retry_start_at = time.time()
-                        attempts = 0
-                        while True:
-                            await ctx.mark_in_progress(name=name, ev=ev)
-                            await ctx.add_running_step(name)
-                            try:
-                                new_ev = await instrumented_step(**kwargs)
-                                break  # exit the retrying loop
-                            except WorkflowDone:
-                                await ctx.remove_from_in_progress(name=name, ev=ev)
-                                raise
-                            except Exception as e:
-                                if config.retry_policy is None:
-                                    raise WorkflowRuntimeError(
-                                        f"Error in step '{name}': {e!s}"
-                                    ) from e
-
-                                delay = config.retry_policy.next(
-                                    retry_start_at + time.time(), attempts, e
-                                )
-                                if delay is None:
-                                    # We're done retrying
-                                    raise WorkflowRuntimeError(
-                                        f"Error in step '{name}': {e!s}"
-                                    ) from e
-
-                                attempts += 1
-                                if self._verbose:
-                                    print(
-                                        f"Step {name} produced an error, retry in {delay} seconds"
-                                    )
-                                await asyncio.sleep(delay)
-                            finally:
-                                await ctx.remove_running_step(name)
-
-                    else:
-                        try:
-                            run_task = functools.partial(instrumented_step, **kwargs)
-                            new_ev = await asyncio.get_event_loop().run_in_executor(
-                                None, run_task
-                            )
-                        except WorkflowDone:
-                            await ctx.remove_from_in_progress(name=name, ev=ev)
-                            raise
-                        except Exception as e:
-                            raise WorkflowRuntimeError(
-                                f"Error in step '{name}': {e!s}"
-                            ) from e
-
-                    if self._verbose and name != "_done":
-                        if new_ev is not None:
-                            print(f"Step {name} produced event {type(new_ev).__name__}")
-                        else:
-                            print(f"Step {name} produced no event")
-
-                    # Store the accepted event for the drawing operations
-                    if new_ev is not None:
-                        ctx._accepted_events.append((name, type(ev).__name__))
-
-                    # Fail if the step returned something that's not an event
-                    if new_ev is not None and not isinstance(new_ev, Event):
-                        msg = f"Step function {name} returned {type(new_ev).__name__} instead of an Event instance."
-                        raise WorkflowRuntimeError(msg)
-
-                    if stepwise:
-                        async with ctx._step_condition:
-                            await ctx._step_condition.wait()
-
-                            if new_ev is not None:
-                                ctx.add_holding_event(new_ev)
-                            ctx._step_event_written.notify()  # shares same lock
-
-                            await ctx.remove_from_in_progress(name=name, ev=ev)
-
-                            # for stepwise Checkpoint after handler.run_step() call
-                            if checkpoint_callback:
-                                await checkpoint_callback(
-                                    run_id=run_id,
-                                    ctx=ctx,
-                                    last_completed_step=name,
-                                    input_ev=ev,
-                                    output_ev=new_ev,
-                                )
-                    else:
-                        # for regular execution, Checkpoint just before firing the next event
-                        await ctx.remove_from_in_progress(name=name, ev=ev)
-                        if checkpoint_callback:
-                            await checkpoint_callback(
-                                run_id=run_id,
-                                ctx=ctx,
-                                last_completed_step=name,
-                                input_ev=ev,
-                                output_ev=new_ev,
-                            )
-
-                        # InputRequiredEvent's are special case and need to be written to the stream
-                        # this way, the user can access and respond to the event
-                        if isinstance(new_ev, InputRequiredEvent):
-                            ctx.write_event_to_stream(new_ev)
-                        elif new_ev is not None:
-                            ctx.send_event(new_ev)
-
             for _ in range(step_config.num_workers):
-                ctx._tasks.add(
-                    asyncio.create_task(
-                        _task(name, ctx._queues[name], step_func, step_config),
-                        name=name,
-                    )
+                ctx.add_step_worker(
+                    name=name,
+                    step=step_func,
+                    config=step_config,
+                    stepwise=stepwise,
+                    verbose=self._verbose,
+                    checkpoint_callback=checkpoint_callback,
+                    run_id=run_id,
+                    service_manager=self._service_manager,
+                    dispatcher=dispatcher,
                 )
 
-            # add dedicated cancel task
-            async def _cancel_workflow_task() -> None:
-                try:
-                    await ctx._cancel_flag.wait()
-                    raise WorkflowCancelledByUser
-                except asyncio.CancelledError:
-                    return
-
-            ctx._tasks.add(
-                asyncio.create_task(
-                    _cancel_workflow_task(), name="cancel_workflow_task"
-                )
-            )
+        # add dedicated cancel task
+        ctx.add_cancel_worker()
 
         return ctx, run_id
 
@@ -554,6 +406,7 @@ class Workflow(metaclass=WorkflowMeta):
             finally:
                 if self._sem:
                     self._sem.release()
+                await ctx.shutdown()
 
         asyncio.create_task(_run_workflow())
         return result
@@ -594,7 +447,7 @@ class Workflow(metaclass=WorkflowMeta):
         """Checks if the workflow is done."""
         return self._stepwise_context is None
 
-    @step
+    @step(num_workers=1)
     async def _done(self, ctx: Context, ev: StopEvent) -> None:
         """Tears down the whole workflow and stop execution."""
         if self._stop_event_class is StopEvent:
@@ -604,7 +457,9 @@ class Workflow(metaclass=WorkflowMeta):
 
         ctx.write_event_to_stream(ev)
 
-        # Signal we want to stop the workflow
+        # Signal we want to stop the workflow. Since we're about to raise, delete
+        # the reference to ctx explicitly to avoid it becoming dangling
+        del ctx
         raise WorkflowDone
 
     def _validate(self) -> bool:

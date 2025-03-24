@@ -21,6 +21,7 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
 
 from langchain.base_language import BaseLanguageModel
+from langchain.schema import AIMessage
 
 
 class LangChainLLM(LLM):
@@ -103,7 +104,9 @@ class LangChainLLM(LLM):
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
-        output_str = self._llm.predict(prompt, **kwargs)
+        output_str = self._llm.invoke(prompt, **kwargs)
+        if isinstance(output_str, AIMessage):
+            output_str = output_str.content
         return CompletionResponse(text=output_str)
 
     @llm_chat_callback()

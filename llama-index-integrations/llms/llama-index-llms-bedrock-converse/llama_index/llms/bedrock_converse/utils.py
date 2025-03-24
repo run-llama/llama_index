@@ -107,20 +107,25 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
 
 
 def get_model_name(model_name: str) -> str:
-    # us and eu are currently supported inference profile regions
-    if not model_name.startswith("us.") and not model_name.startswith("eu."):
+    """Extract base model name from region-prefixed model identifier."""
+    # Check for region prefixes (us, eu, apac)
+    REGION_PREFIXES = ["us.", "eu.", "apac."]
+
+    # If no region prefix, return the original model name
+    if not any(model_name.startswith(prefix) for prefix in REGION_PREFIXES):
         return model_name
 
-    translated_model_name = model_name[3:]
+    # Remove region prefix to get the base model name
+    base_model_name = model_name[model_name.find(".") + 1 :]
 
-    if translated_model_name not in BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS:
+    if base_model_name not in BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS:
         raise ValueError(
             f"Model does not support inference profiles but has an inference profile prefix: {model_name}. "
             "Please provide a valid Bedrock model name. "
             "Known models are: " + ", ".join(BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS)
         )
 
-    return translated_model_name
+    return base_model_name
 
 
 def is_bedrock_function_calling_model(model_name: str) -> bool:
@@ -215,11 +220,9 @@ def messages_to_converse_messages(
             assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
             assert "input" in tool_call, f"`input` not found in {tool_call}"
             assert "name" in tool_call, f"`name` not found in {tool_call}"
-            tool_input = (
-                json.loads(tool_call["input"])
-                if isinstance(tool_call["input"], str)
-                else tool_call["input"]
-            )
+            tool_input = tool_call["input"] if tool_call["input"] else {}
+            if isinstance(tool_input, str):
+                tool_input = json.loads(tool_input)
             content.append(
                 {
                     "toolUse": {

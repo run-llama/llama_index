@@ -38,6 +38,8 @@ DEFAULT_OPENAI_API_VERSION = ""
 O1_MODELS: Dict[str, int] = {
     "o1": 200000,
     "o1-2024-12-17": 200000,
+    "o1-pro": 200000,
+    "o1-pro-2025-03-19": 200000,
     "o1-preview": 128000,
     "o1-preview-2024-09-12": 128000,
     "o1-mini": 128000,
@@ -294,7 +296,13 @@ def to_openai_message_dict(
         elif isinstance(block, ImageBlock):
             if block.url:
                 content.append(
-                    {"type": "image_url", "image_url": {"url": str(block.url)}}
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": str(block.url),
+                            "detail": block.detail or "auto",
+                        },
+                    }
                 )
             else:
                 img_bytes = block.resolve_image(as_base64=True).read()
@@ -304,7 +312,7 @@ def to_openai_message_dict(
                         "type": "image_url",
                         "image_url": {
                             "url": f"data:{block.image_mimetype};base64,{img_str}",
-                            "detail": block.detail or "low",
+                            "detail": block.detail or "auto",
                         },
                     }
                 )

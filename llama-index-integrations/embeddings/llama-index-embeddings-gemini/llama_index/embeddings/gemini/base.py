@@ -1,5 +1,6 @@
 """Gemini embeddings file."""
 
+import deprecated
 import os
 from typing import Any, Dict, List, Optional
 
@@ -12,6 +13,12 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks.base import CallbackManager
 
 
+@deprecated.deprecated(
+    reason=(
+        "Should use `llama-index-embeddings-google-genai` instead, using Google's latest unified SDK. "
+        "See: https://docs.llamaindex.ai/en/stable/examples/embeddings/google_genai/"
+    )
+)
 class GeminiEmbedding(BaseEmbedding):
     """Google Gemini embeddings.
 
