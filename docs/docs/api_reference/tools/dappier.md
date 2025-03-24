@@ -1,4 +1,5 @@
-::: llama_index.tools.dappier_ai_recommendations
+::: llama_index.tools.dappier
     options:
       members:
         - DappierAIRecommendationsToolSpec
+        - DappierRealTimeSearchToolSpec

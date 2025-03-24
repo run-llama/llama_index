@@ -9,10 +9,11 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.tools.dappier_ai_recommendations"
+import_path = "llama_index.tools.dappier"
 
 [tool.llamahub.class_authors]
 DappierAIRecommendationsToolSpec = "dappier"
+DappierRealTimeSearchToolSpec = "dappier"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,10 +23,10 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index tools dappier_ai_recommendations integration"
+description = "llama-index tools dappier integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-tools-dappier-ai-recommendations"
+name = "llama-index-tools-dappier"
 readme = "README.md"
 version = "0.3.0"
 
