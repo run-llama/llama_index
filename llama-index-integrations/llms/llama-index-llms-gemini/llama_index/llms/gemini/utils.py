@@ -59,7 +59,7 @@ def completion_from_gemini_response(
     return CompletionResponse(
         text=text if text is not None else response.text,
         delta=delta if delta is not None else response.text,
-        raw=raw
+        raw=raw,
     )
 
 
