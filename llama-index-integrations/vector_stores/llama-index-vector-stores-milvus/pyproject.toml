@@ -27,7 +27,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-vector-stores-milvus"
 readme = "README.md"
-version = "0.6.0"
+version = "0.6.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

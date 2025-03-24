@@ -173,9 +173,23 @@ class BaseSparseEmbeddingFunction(ABC):
     def encode_queries(self, queries: List[str]) -> List[Dict[int, float]]:
         pass
 
+    async def async_encode_queries(self, queries: List[str]) -> List[Dict[int, float]]:
+        """
+        Encode queries asynchronously. Use sync method if not implemented.
+        """
+        return self.encode_queries(queries)
+
     @abstractmethod
     def encode_documents(self, documents: List[str]) -> List[Dict[int, float]]:
         pass
+
+    async def async_encode_documents(
+        self, documents: List[str]
+    ) -> List[Dict[int, float]]:
+        """
+        Encode documents asynchronously. Use sync method if not implemented.
+        """
+        return self.encode_documents(documents)
 
 
 class BGEM3SparseEmbeddingFunction(BaseSparseEmbeddingFunction):
