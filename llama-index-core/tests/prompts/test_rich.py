@@ -1,3 +1,4 @@
+import platformdirs  # noqa: F401
 from datetime import datetime
 
 from llama_index.core.prompts.rich import RichPromptTemplate
