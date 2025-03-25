@@ -373,6 +373,39 @@ class TestMilvusAsync:
         assert result.nodes[1].id_ == "n2"
         assert result.nodes[1].text == "n2_text"
 
+    async def test_query_sparse_mode(self, event_loop):
+        vector_store = MilvusVectorStore(
+            uri=TEST_URI,
+            collection_name="test_collection",
+            overwrite=True,
+            enable_dense=False,
+            enable_sparse=True,
+            sparse_embedding_function=MockSparseEmbeddingFunction(),
+            consistency_level="Strong",
+        )
+        node1 = TextNode(
+            id_="n1",
+            text="n1_text",
+            # embedding=[0.5] * 64,
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="n2")},
+        )
+        node2 = TextNode(
+            id_="n2",
+            text="n2_text",
+            # embedding=[-0.5] * 64,  # opposite direction of node1's embedding
+            relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="n3")},
+        )
+        await vector_store.async_add([node1, node2])
+        query = VectorStoreQuery(
+            query_str="mock_str",
+            similarity_top_k=1,
+            mode=VectorStoreQueryMode.SPARSE,
+        )
+        result = await vector_store.aquery(query=query)
+        assert len(result.nodes) == 1
+        assert result.nodes[0].id_ == "n1"
+        assert result.nodes[0].text == "n1_text"
+
     async def test_query_hybrid_mode(self, event_loop):
         vector_store = MilvusVectorStore(
             uri=TEST_URI,
