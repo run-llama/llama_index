@@ -28,12 +28,14 @@ async def test_achat(respx_mock: respx.MockRouter, llm: LiteLLM):
     chat_response = await llm.achat([message])
     assert chat_response.message.blocks[0].text == "Hello, world!"
 
+
 def add(x: Decimal, y: Decimal) -> Decimal:
     return x + y
 
+
 def test_tool_calling(respx_mock: respx.MockRouter, llm: LiteLLM):
     mock_tool_response(respx_mock)
-    message = "whats 1+1?"
+    message = "what's 1+1?"
     chat_response = llm.chat_with_tools(tools=[add_tool], user_msg=message)
     tool_calls = llm.get_tool_calls_from_response(
         chat_response, error_on_no_tool_call=True
@@ -46,7 +48,7 @@ def test_tool_calling(respx_mock: respx.MockRouter, llm: LiteLLM):
 @pytest.mark.asyncio()
 async def test_achat_tool_calling(respx_mock: respx.MockRouter, llm: LiteLLM):
     mock_tool_response(respx_mock)
-    message = "whats 1+1?"
+    message = "what's 1+1?"
     chat_response = await llm.achat_with_tools(tools=[add_tool], user_msg=message)
     tool_calls = llm.get_tool_calls_from_response(
         chat_response, error_on_no_tool_call=True
@@ -61,6 +63,7 @@ async def test_achat_tool_calling(respx_mock: respx.MockRouter, llm: LiteLLM):
 ####################################
 
 add_tool = FunctionTool.from_defaults(fn=add, name="add")
+
 
 def mock_chat_response(respx_mock: respx.MockRouter):
     respx_mock.post("https://api.openai.com/v1/chat/completions").mock(

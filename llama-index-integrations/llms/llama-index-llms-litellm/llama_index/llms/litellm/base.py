@@ -1,5 +1,15 @@
 import json
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Optional, Sequence, List, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+    List,
+    Union,
+)
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -27,7 +37,6 @@ from llama_index.core.base.llms.generic_utils import (
     stream_chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
 )
-from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.tools import ToolSelection
 from llama_index.llms.litellm.utils import (
