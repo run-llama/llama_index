@@ -238,7 +238,7 @@ class Gemini(FunctionCallingLLM):
                 prompt, stream=True, request_options=request_options, **kwargs
             )
             for r in it:
-                delta = r.text
+                delta = r.text or ""
                 text += delta
                 yield completion_from_gemini_response(r, text=text, delta=delta)
 
@@ -251,11 +251,14 @@ class Gemini(FunctionCallingLLM):
         request_options = self._request_options or kwargs.pop("request_options", None)
 
         async def gen():
+            text = ""
             it = await self._model.generate_content_async(
                 prompt, stream=True, request_options=request_options, **kwargs
             )
             async for r in it:
-                yield completion_from_gemini_response(r)
+                delta = r.text or ""
+                text += delta
+                yield completion_from_gemini_response(r, text=text, delta=delta)
 
         return gen()
 
