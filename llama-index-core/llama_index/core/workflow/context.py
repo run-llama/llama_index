@@ -293,6 +293,20 @@ class Context:
     def collect_events(
         self, ev: Event, expected: List[Type[Event]]
     ) -> Optional[List[Event]]:
+        """Collects events for buffering in workflows.
+
+        This method adds the current event to the internal buffer and attempts to collect all
+        expected event types. If all expected events are found, they will be returned in order.
+        Otherwise, it returns None and restores any collected events back to the buffer.
+
+        Args:
+            ev (Event): The current event to add to the buffer.
+            expected (List[Type[Event]]): List of expected event types to collect.
+
+        Returns:
+            Optional[List[Event]]: List of collected events in the order of expected types if all
+                                  expected events are found; otherwise None.
+        """
         self._events_buffer[self._get_full_path(type(ev))].append(ev)
 
         retval: List[Event] = []
