@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING,Any, Awaitable, Callable, Dict, Optional, Sequence
+import json
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Optional, Sequence, List, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -45,6 +46,12 @@ if TYPE_CHECKING:
 DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
 
+def force_single_tool_call(response: ChatResponse) -> None:
+    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    if len(tool_calls) > 1:
+        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+
+
 class LiteLLM(FunctionCallingLLM):
     """LiteLLM.
 
@@ -64,7 +71,7 @@ class LiteLLM(FunctionCallingLLM):
         message = ChatMessage(role="user", content="Hey! how's it going?")
 
         # Initialize LiteLLM with the desired model
-        llm = LiteLLM(model="gpt-4o")
+        llm = LiteLLM(model="gpt-3.5-turbo")
 
         # Call the chat method with the message
         chat_response = llm.chat([message])
@@ -192,10 +199,11 @@ class LiteLLM(FunctionCallingLLM):
         messages = chat_history or []
         if user_msg:
             messages.append(user_msg)
-
         return {
             "messages": messages,
             "tools": tool_specs or None,
+            "parallel_tool_calls": allow_parallel_tool_calls,
+            **kwargs,
         }
 
     def _validate_chat_with_tools_response(
@@ -227,13 +235,14 @@ class LiteLLM(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            argument_dict = tool_call["function"]["arguments"]
-
+            if tool_call["type"] != "function" or "function" not in tool_call:
+                raise ValueError(f"Invalid tool call of type {tool_call['type']}")
+            function = tool_call["function"]
+            argument_dict = json.loads(function["arguments"])
             tool_selections.append(
                 ToolSelection(
-                    # tool ids not provided by LiteLLM
-                    tool_id=tool_call["function"]["name"],
-                    tool_name=tool_call["function"]["name"],
+                    tool_id=tool_call["id"],
+                    tool_name=function["name"],
                     tool_kwargs=argument_dict,
                 )
             )
