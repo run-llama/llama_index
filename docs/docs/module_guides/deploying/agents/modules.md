@@ -20,16 +20,9 @@ For more detailed guides on how to use specific tools, check out our [tools modu
 - [Parallel Function Calling](../../../examples/agent/openai_agent_parallel_function_calling.ipynb)
 - [Agent with Planning](../../../examples/agent/structured_planner.ipynb)
 
-## [Beta] OpenAI Assistant Agent
-
-- [OpenAI Assistant](../../../examples/agent/openai_assistant_agent.ipynb)
-- [OpenAI Assistant Retrieval Benchmark](../../../examples/agent/openai_retrieval_benchmark.ipynb)
-- [Assistant Query Cookbook](../../../examples/agent/openai_assistant_query_cookbook.ipynb)
-
 ## Other Function Calling Agents
 
 - [Mistral Agent](../../../examples/agent/mistral_agent.ipynb)
-
 
 ## ReAct Agent
 
