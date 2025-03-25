@@ -376,6 +376,6 @@ class RedisChatStore(BaseChatStore):
             redis_client.close()
 
             if is_cluster:
-                aredis_client.close()
+                await aredis_client.close()
                 aredis_client = self._aredis_cluster_client(redis_url, **kwargs)
         return aredis_client
