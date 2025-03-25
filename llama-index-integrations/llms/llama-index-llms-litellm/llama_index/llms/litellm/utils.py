@@ -175,8 +175,12 @@ def from_litellm_message(message: Message) -> ChatMessage:
     role = message.get("role")
     # NOTE: Azure OpenAI returns function calling messages without a content key
     content = message.get("content", None)
+    tool_calls = message.get("tool_calls")
+    additional_kwargs = {}
+    if tool_calls:
+        additional_kwargs["tool_calls"] = tool_calls
 
-    return ChatMessage(role=role, content=content)
+    return ChatMessage(role=role, content=content, additional_kwargs=additional_kwargs)
 
 
 def from_openai_message_dicts(message_dicts: Sequence[dict]) -> List[ChatMessage]:
