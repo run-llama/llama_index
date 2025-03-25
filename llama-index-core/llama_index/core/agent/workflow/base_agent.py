@@ -21,6 +21,9 @@ from llama_index.core.settings import Settings
 from llama_index.core.workflow.checkpointer import CheckpointCallback
 from llama_index.core.workflow.handler import WorkflowHandler
 
+DEFAULT_AGENT_NAME = "Agent"
+DEFAULT_AGENT_DESCRIPTION = "An agent that can perform a task"
+
 
 def get_default_llm() -> LLM:
     return Settings.llm
@@ -31,9 +34,9 @@ class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    name: Optional[str] = Field(default=None, description="The name of the agent")
-    description: Optional[str] = Field(
-        default=None,
+    name: str = Field(default=DEFAULT_AGENT_NAME, description="The name of the agent")
+    description: str = Field(
+        default=DEFAULT_AGENT_DESCRIPTION,
         description="The description of what the agent does and is responsible for",
     )
     system_prompt: Optional[str] = Field(
