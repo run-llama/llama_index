@@ -356,7 +356,7 @@ class RedisChatStore(BaseChatStore):
                 redis_client = self._redis_cluster_client(redis_url, **kwargs)
         return redis_client
 
-    async def _aget_client(self, redis_url: str, **kwargs: Any) -> "AsyncRedis":
+    def _aget_client(self, redis_url: str, **kwargs: Any) -> "AsyncRedis":
         aredis_client: "AsyncRedis"
         # check if normal redis:// or redis+sentinel:// url
         if redis_url.startswith("redis+sentinel"):
@@ -376,6 +376,6 @@ class RedisChatStore(BaseChatStore):
             redis_client.close()
 
             if is_cluster:
-                await aredis_client.close()
+                asyncio.create_task(aredis_client.close())
                 aredis_client = self._aredis_cluster_client(redis_url, **kwargs)
         return aredis_client
