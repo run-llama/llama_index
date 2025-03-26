@@ -21,7 +21,7 @@ class SingleAgentRunnerMixin(ABC):
         """Returns all the steps from the prebuilt workflow."""
         from llama_index.core.agent.workflow import AgentWorkflow
 
-        instance = AgentWorkflow(agents=[self])
+        instance = AgentWorkflow(agents=[self])  # type: ignore
         return instance._get_steps()
 
     def run(
