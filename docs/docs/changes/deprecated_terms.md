@@ -51,3 +51,25 @@ The `ServiceContext` object has been deprecated in favour of the `Settings` obje
 The `llama-index-legacy` package has been deprecated and removed from the repository. Please see the latest getting started guide for the latest information and usage.
 
 - [Getting Started](../getting_started/installation.md)
+
+## AgentRunner/AgentWorker (and related classes)
+
+The `AgentRunner` and `AgentWorker` classes have been deprecated in favour of [AgentWorkflow](../module_guides/deploying/agents/index.md) and [Workflows](../module_guides/workflow/index.md).
+
+This includes the following deprecated classes:
+
+- `AgentRunner`
+- `FunctionCallingAgent`
+- `FunctionCallingAgentWorker`
+- `llama_index.core.agent.ReActAgent` (use [llama_index.core.agent.workflow.ReActAgent](../module_guides/workflow/index.md))
+- `ReActAgentWorker`
+- `LATSAgentWorker`
+- `CoAAgentWorker`
+- `FnAgentWorker`
+- `QueryPipelineAgentWorker`
+- `MultiModalReActAgentWorker`
+- `IntrospectiveAgentWorker`
+- `SelfReflectiveAgentWorker`
+- `ToolInteractiveReflectionAgentWorker`
+- `LLMCompilerAgentWorker`
+- `QueryUnderstandAgentWorker`

@@ -78,7 +78,6 @@ nav:
           - Q&A Patterns: ./understanding/putting_it_all_together/q_and_a/
           - Chatbots: ./understanding/putting_it_all_together/chatbots/
           - Structured data: ./understanding/putting_it_all_together/structured_data/
-          - Agents: ./understanding/putting_it_all_together/agents.md
   - Use Cases:
       - ./use_cases/index.md
       - Prompting: ./use_cases/prompting.md
@@ -91,49 +90,30 @@ nav:
   - Examples:
       - ./examples/index.md
       - Agents:
-          - ./examples/agent/Chatbot_SEC.ipynb
           - ./examples/agent/agent_builder.ipynb
-          - ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.ipynb
-          - ./examples/agent/agent_runner/agent_runner.ipynb
-          - ./examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
-          - ./examples/agent/agent_runner/query_pipeline_agent.ipynb
           - ./examples/agent/agent_workflow_basic.ipynb
           - ./examples/agent/agent_workflow_multi.ipynb
-          - ./examples/agent/agentic_rag_using_vertex_ai.ipynb
-          - ./examples/agent/agentic_rag_with_llamaindex_and_vertexai_managed_index.ipynb
           - ./examples/agent/anthropic_agent.ipynb
           - ./examples/agent/bedrock_converse_agent.ipynb
-          - ./examples/agent/coa_agent.ipynb
-          - ./examples/agent/custom_agent.ipynb
-          - ./examples/agent/dashscope_agent.ipynb
-          - ./examples/agent/introspective_agent_toxicity_reduction.ipynb
-          - ./examples/agent/lats_agent.ipynb
-          - ./examples/agent/llm_compiler.ipynb
+          - ./examples/agent/Chatbot_SEC.ipynb
+          - ./examples/agent/memory/chat_memory_buffer.ipynb
+          - ./examples/agent/memory/summary_memory_buffer.ipynb
           - ./examples/agent/memory/composable_memory.ipynb
           - ./examples/agent/memory/vector_memory.ipynb
           - ./examples/agent/mistral_agent.ipynb
           - ./examples/agent/multi_document_agents-v1.ipynb
-          - ./examples/agent/multi_document_agents.ipynb
           - ./examples/agent/nvidia_agent.ipynb
           - ./examples/agent/nvidia_document_research_assistant_for_blog_creation.ipynb
           - ./examples/agent/nvidia_sub_question_query_engine.ipynb
-          - ./examples/agent/openai_agent.ipynb
           - ./examples/agent/openai_agent_context_retrieval.ipynb
           - ./examples/agent/openai_agent_lengthy_tools.ipynb
-          - ./examples/agent/openai_agent_parallel_function_calling.ipynb
           - ./examples/agent/openai_agent_query_cookbook.ipynb
-          - ./examples/agent/openai_agent_query_plan.ipynb
           - ./examples/agent/openai_agent_retrieval.ipynb
-          - ./examples/agent/openai_agent_tool_call_parser.ipynb
           - ./examples/agent/openai_agent_with_query_engine.ipynb
-          - ./examples/agent/openai_assistant_agent.ipynb
-          - ./examples/agent/openai_assistant_query_cookbook.ipynb
-          - ./examples/agent/openai_forced_function_call.ipynb
           - ./examples/agent/openai_retrieval_benchmark.ipynb
           - ./examples/agent/react_agent.ipynb
           - ./examples/agent/react_agent_with_query_engine.ipynb
           - ./examples/agent/return_direct_agent.ipynb
-          - ./examples/agent/structured_planner.ipynb
       - Chat Engines:
           - ./examples/chat_engine/chat_engine_best.ipynb
           - ./examples/chat_engine/chat_engine_condense_plus_context.ipynb
@@ -830,9 +810,7 @@ nav:
               - ./module_guides/querying/structured_outputs/pydantic_program.md
       - Agents:
           - ./module_guides/deploying/agents/index.md
-          - ./module_guides/deploying/agents/usage_pattern.md
-          - ./module_guides/deploying/agents/agent_runner.md
-          - ./module_guides/deploying/agents/modules.md
+          - ./module_guides/deploying/agents/memory.md
           - ./module_guides/deploying/agents/tools.md
       - Workflows:
           - ./module_guides/workflow/index.md
@@ -3077,6 +3055,27 @@ plugins:
         ./use_cases/root.html: https://docs.llamaindex.ai/en/stable/use_cases/
         ./use_cases/tables_charts.html: https://docs.llamaindex.ai/en/stable/use_cases/tables_charts/
         ./use_cases/text_to_sql.html: https://docs.llamaindex.ai/en/stable/use_cases/text_to_sql/
+        ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/agent_runner/agent_runner_rag_controllable/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/agent_runner/agent_runner/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/agent_runner/query_pipeline_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/agentic_rag_using_vertex_ai/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/agentic_rag_with_llamaindex_and_vertexai_managed_index/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/coa_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/custom_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/dashscope_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/introspective_agent_toxicity_reduction/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/lats_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/llm_compiler/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/openai_agent_parallel_function_calling/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/openai_agent_query_plan/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/openai_agent_tool_call_parser/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/openai_forced_function_call/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/structured_planner/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./module_guides/deploying/agents/usage_pattern/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./module_guides/deploying/agents/agent_runner/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/multi_document_agents/index.html: https://docs.llamaindex.ai/en/stable/examples/agent/multi_document_agents-v1/
+        ./examples/agent/openai_agent/index.html: https://docs.llamaindex.ai/en/stable/examples/workflow/function_calling_agent/
       use_directory_urls: false
 site_name: LlamaIndex
 site_url: https://docs.llamaindex.ai/en/stable/

@@ -23,7 +23,7 @@ And then we'll install the LlamaIndex library and some other dependencies that w
 pip install llama-index-core llama-index-llms-openai python-dotenv
 ```
 
-If any of this gives you trouble, check out our more detailed [installation guide](../getting_started/installation/).
+If any of this gives you trouble, check out our more detailed [installation guide](../../getting_started/installation.md).
 
 ## OpenAI Key
 
@@ -73,7 +73,7 @@ As you can see, these are regular Python functions. When deciding what tool to u
 llm = OpenAI(model="gpt-4o-mini")
 ```
 
-You could also pick another popular model accessible via API, such as those from [Mistral](../../examples/llm/mistralai/), [Claude from Anthropic](../../examples/llm/anthropic/) or [Gemini from Google](../../examples/llm/gemini/).
+You could also pick another popular model accessible via API, such as those from [Mistral](../../examples/llm/mistralai.ipynb), [Claude from Anthropic](../../examples/llm/anthropic.ipynb) or [Gemini from Google](../../examples/llm/google_genai.ipynb).
 
 ## Initialize the agent
 
@@ -81,8 +81,6 @@ Now we create our agent. It needs an array of tools, an LLM, and a system prompt
 
 ```python
 workflow = FunctionAgent(
-    name="Agent",
-    description="Useful for performing basic mathematical operations.",
     tools=[multiply, add],
     llm=llm,
     system_prompt="You are an agent that can perform basic mathematical operations using tools.",
