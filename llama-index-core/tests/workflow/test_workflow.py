@@ -798,6 +798,46 @@ async def test_custom_stop_event():
     result: MyStop = await wf.run(query="foo")
     assert result.outcome == "Workflow completed"
 
+    # ensure that streaming exits
+    handler = wf.run()
+    async for event in handler.stream_events():
+        await asyncio.sleep(0.1)
+
+    _ = await handler
+
+
+@pytest.mark.asyncio()
+async def test_workflow_stream_events_exits():
+    class CustomEventsWorkflow(Workflow):
+        @step
+        async def start_step(self, ev: MyStart) -> OneTestEvent:
+            return OneTestEvent()
+
+        @step
+        async def middle_step(self, ev: OneTestEvent) -> LastEvent:
+            return LastEvent()
+
+        @step
+        async def end_step(self, ev: LastEvent) -> MyStop:
+            return MyStop(outcome="Workflow completed")
+
+    wf = CustomEventsWorkflow()
+    handler = wf.run(query="foo")
+
+    async def _stream_events():
+        async for event in handler.stream_events():
+            continue
+
+        return await handler
+
+    stream_task = asyncio.create_task(_stream_events())
+
+    result = await asyncio.wait_for(
+        stream_task,
+        timeout=1,
+    )
+    assert result.outcome == "Workflow completed"
+
 
 def test_is_done(workflow):
     assert workflow.is_done() is True
