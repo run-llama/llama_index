@@ -288,9 +288,15 @@ def _get_provider_type_by_name(provider_name: str) -> ProviderType:
 
 
 def get_provider(model: str) -> Provider:
-    model_split = model.split(".")
+    """Get provider from model ID or ARN."""
+    # Strip deployment info from ARN like arn:aws:bedrock:us-east-2::foundation-model/meta.llama3-3-70b-instruct-v1:0
+    model_name = model.split("/")[-1]
+
+    model_split = model_name.split(".")
     provider_name = model_split[0]
 
+    # Handle region prefixes like
+    # 'arn:aws:bedrock:eu-central-1:143111710283:inference-profile/eu.meta.llama3-2-1b-instruct-v1:0'
     if len(model_split) == 3:
         provider_name = model_split[1]
 

@@ -1,5 +1,84 @@
 # ChangeLog
 
+## [2025-03-26]
+
+### `llama-index-core` [0.12.26]
+
+- simplify FunctionAgent/ReActAgent usage for single-agent workflows (#18227)
+- Introduce RichPromptTemplate for jinja-like templating (#18178)
+- add implementation for structured llm reranker (#18216)
+
+### `llama-index-embeddings-azure-openai` [0.3.2]
+
+- Fix `api_base` and `azure_deployment` mutually exclusive in `AzureOpenAIEmbedding` class (#18219)
+- Fix `api_base` parameter in `AzureOpenAIEmbedding` class (#18191)
+
+### `llama-index-finetuning` [0.3.1]
+
+- Update to SentenceTransformersFinetuneEngine to expose transformer checkpoint related arguments (#18194)
+
+### `llama-index-llms-dashscope` [0.3.1]
+
+- add `astream_chat` and `astream_complete` for dashscope llm (#18196)
+
+### `llama-index-llms-bedrock` [0.3.8]
+
+- deprecate older google and bedrock packages (#18210)
+- add Bedrock application inference profile support (#18213)
+- Fixed provider-resolution for foundation-model ARNs (#18283)
+
+### `llama-index-llms-bedrock-converse` [0.4.12]
+
+- Do not append None to chat history in bedrock converse (#18206)
+- Add new apac bedrock llms (#18045)
+- handle chat message as user msg in converse chat with tools (#18187)
+
+### `llama-index-llms-gemini` [0.4.13]
+
+- Ensure `stream_complete` accumulates text and sets delta (#18246)
+
+### `llama-index-llms-google-genai` [0.1.6]
+
+- deprecate older google and bedrock packages (#18210)
+- fix google genai tool description (#18242)
+- fix: support anyof, optional and union in google-genai (#18231)
+
+### `llama-index-llms-openai` [0.3.27]
+
+- add o1-pro support (#18207)
+- improve default image quality in openai llm (#18258)
+
+### `llama-index-llms-text-generation-inference` [0.3.2]
+
+- Fix `model_name` validation error in TextGenerationInference, its not requested from TGI endpoint and results in exception (#18234)
+
+### `llama-index-llms-vertx` [0.4.4]
+
+- deprecate older google and bedrock packages (#18210)
+- Vertex LLM does not handle FunctionCall tools (#18201)
+
+### `llama-index-readers-file` [0.4.7]
+
+- feat: improve data retrieval by adding headers with the columns for pandas excel reader (#18233)
+
+### `llama-index-storage-chat-store-dynomodb` [0.3.1]
+
+- feat: Add TTL support for DynamoDB chat store (#18084)
+
+### `llama-index-storage-chat-store-redis` [0.4.1]
+
+- Fix Runtime Warning for Coroutine never awaited in Redis chat store (#18274)
+
+### `llama-index-vector-stores-milvus` [0.6.1]
+
+- Escape single quotes in milvus filters (#18244)
+- Speed up Milvus async_add (#18243)
+
+### `llama-index-vector-stores-qdrant` [0.6.0]
+
+- update qdrant to always prefer named vectors (#18192)
+- bump qdrant version python deps (#18273)
+
 ## [2025-03-18]
 
 ### `llama-index-core` [0.12.25]
