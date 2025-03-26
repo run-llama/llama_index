@@ -50,8 +50,6 @@ class GlobalsHelper:
         """Initialize NLTK data download in a background thread."""
         from nltk.data import path as nltk_path
 
-        self._download_complete = threading.Event()
-
         # Set up NLTK data directory
         self._nltk_data_dir = os.environ.get(
             "NLTK_DATA",
@@ -99,10 +97,12 @@ class GlobalsHelper:
 
     def _wait_for_download(self, resource: str) -> None:
         """Wait for NLTK download to complete and check specific resource."""
-        if self._download_complete is not None:
+        if self._download_complete is None:
+            self._download_complete = threading.Event()
+
             self.start_nltk_download()
 
-        assert self._download_complete is not None
+        assert self._download_complete
 
         # Wait for download to complete with a timeout
         if not self._download_complete.wait(timeout=60):
