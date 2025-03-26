@@ -27,7 +27,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-bedrock"
 readme = "README.md"
-version = "0.3.7"
+version = "0.3.8"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
