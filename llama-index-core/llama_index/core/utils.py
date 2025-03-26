@@ -50,8 +50,6 @@ class GlobalsHelper:
         """Initialize NLTK data download in a background thread."""
         from nltk.data import path as nltk_path
 
-        self._download_complete = threading.Event()
-
         # Set up NLTK data directory
         self._nltk_data_dir = os.environ.get(
             "NLTK_DATA",
@@ -77,6 +75,8 @@ class GlobalsHelper:
         from nltk.data import find as nltk_find
         from nltk import download
 
+        self._download_complete = threading.Event()
+
         try:
             # Download stopwords
             try:
@@ -94,11 +94,12 @@ class GlobalsHelper:
             print(f"NLTK download error: {e}")
         finally:
             # Signal that download is complete
-            self._download_complete.set()
+            if self._download_complete is not None:
+                self._download_complete.set()
 
     def _wait_for_download(self, resource: str) -> None:
         """Wait for NLTK download to complete and check specific resource."""
-        if self._download_complete is None:
+        if self._download_complete is not None:
             self.start_nltk_download()
 
         assert self._download_complete is not None
