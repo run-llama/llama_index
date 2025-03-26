@@ -24,9 +24,6 @@ The scope of possible use cases for agents is vast and ever-expanding. That said
 
 - **Customer Support**: Check out starter template for building a [multi-agent concierge with workflows](https://github.com/run-llama/multi-agent-concierge/).
 
-
-- **SQL Agent**: A "text-to-SQL assistant" that can interact with a structured database. Check out [this guide](https://docs.llamaindex.ai/en/stable/examples/agent/agent_runner/query_pipeline_agent/?h=sql+agent#setup-simple-retry-agent-pipeline-for-text-to-sql) to see how to build an agent from scratch.
-
 Others:
 - **Productivity Assistant**: Build an agent that can operate over common workflow tools like email, calendar. Check out our [GSuite agent tutorial](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-google/examples/advanced_tools_usage.ipynb).
 
@@ -58,7 +55,6 @@ If you want to leverage core agentic ingredients in your workflow, LlamaIndex ha
 
 - **Query Planning**: [Routing](../module_guides/querying/router/index.md), [Sub-Questions](../examples/query_engine/sub_question_query_engine.ipynb), [Query Transformations](../optimizing/advanced_retrieval/query_transformations.md).
 - **Function Calling and Tool Use**: Check out our [OpenAI](../examples/llm/openai.ipynb), [Mistral](../examples/llm/mistralai.ipynb) guides as examples.
-- **Memory**: [Example guide for adding memory to RAG](../examples/pipeline/query_pipeline_memory/).
 
 ## Ecosystem
 

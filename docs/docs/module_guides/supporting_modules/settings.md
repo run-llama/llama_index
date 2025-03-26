@@ -2,7 +2,7 @@
 
 The `Settings` is a bundle of commonly used resources used during the indexing and querying stage in a LlamaIndex workflow/application.
 
-You can use it to set the [global configuration](#setting-global-configuration). Local configurations (transformations, LLMs, embedding models) can be passed directly into the interfaces that make use of them.
+You can use it to set the global configuration. Local configurations (transformations, LLMs, embedding models) can be passed directly into the interfaces that make use of them.
 
 The `Settings` is a simple singleton object that lives throughout your application. Whenever a particular component is not provided, the `Settings` object is used to provide it as a global default.
 

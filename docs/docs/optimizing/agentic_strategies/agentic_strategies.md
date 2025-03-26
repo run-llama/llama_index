@@ -21,9 +21,8 @@ Our [lower-level agent API](../../module_guides/deploying/agents/index.md#manual
 
 Example guides below (using OpenAI function calling):
 
-- [OpenAIAgent](../../examples/agent/openai_agent.ipynb)
+- [OpenAIAgent](../../examples/workflow/function_calling_agent.ipynb)
 - [OpenAIAgent with Query Engine Tools](../../examples/agent/openai_agent_with_query_engine.ipynb)
 - [OpenAIAgent Retrieval](../../examples/agent/openai_agent_retrieval.ipynb)
 - [OpenAIAgent Query Cookbook](../../examples/agent/openai_agent_query_cookbook.ipynb)
-- [OpenAIAgent Query Planning](../../examples/agent/openai_agent_query_plan.ipynb)
 - [OpenAIAgent Context Retrieval](../../examples/agent/openai_agent_context_retrieval.ipynb)

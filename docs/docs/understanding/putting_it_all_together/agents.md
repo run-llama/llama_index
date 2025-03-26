@@ -46,32 +46,3 @@ agent = FunctionAgent(
 ```
 
 You can learn more in our [Agent Module Guide](../../module_guides/deploying/agents/index.md) or in our [end-to-end agent tutorial](../agent/index.md).
-
-## Agentic Components within LlamaIndex
-
-LlamaIndex provides core modules capable of automated reasoning for different use cases over your data which makes them essentially Agents. Some of these core modules are shown below along with example tutorials.
-
-**SubQuestionQueryEngine for Multi Document Analysis**
-
-- [Sub Question Query Engine (Intro)](../../examples/query_engine/sub_question_query_engine.ipynb)
-- [10Q Analysis (Uber)](../../examples/usecases/10q_sub_question.ipynb)
-- [10K Analysis (Uber and Lyft)](../../examples/usecases/10k_sub_question.ipynb)
-
-**Query Transformations**
-
-- [How-To](../../optimizing/advanced_retrieval/query_transformations.md)
-- [Multi-Step Query Decomposition](../../examples/query_transformations/HyDEQueryTransformDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
-
-**Routing**
-
-- [Usage](../../module_guides/querying/router/index.md)
-- [Router Query Engine Guide](../../examples/query_engine/RouterQueryEngine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs../../examples/query_engine/RouterQueryEngine.ipynb))
-
-**LLM Reranking**
-
-- [Second Stage Processing How-To](../../module_guides/querying/node_postprocessors/index.md)
-- [LLM Reranking Guide (Great Gatsby)](../../examples/node_postprocessor/LLMReranker-Gatsby.ipynb)
-
-**Chat Engines**
-
-- [Chat Engines How-To](../../module_guides/deploying/chat_engines/index.md)

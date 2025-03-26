@@ -79,5 +79,7 @@ In `llama_index.core.memory`, we offer a few different memory types:
 
 You can find a few examples of memory in action below:
 
+- [Chat Memory Buffer](../../../examples/agent/memory/chat_memory_buffer.ipynb)
+- [Chat Summary Memory Buffer](../../../examples/agent/memory/summary_memory_buffer.ipynb)
 - [Composable Memory](../../../examples/agent/memory/composable_memory.ipynb)
 - [Vector Memory](../../../examples/agent/memory/vector_memory.ipynb)

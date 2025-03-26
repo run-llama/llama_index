@@ -139,3 +139,7 @@ while tool_calls:
 # print the final response
 print(resp.message.content)
 ```
+
+## Examples / Module Guides
+
+You can find a more complete list of examples and module guides in the [module guides page](./modules.md).
