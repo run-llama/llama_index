@@ -297,7 +297,7 @@ def get_provider(model: str) -> Provider:
     if len(model_split) == 3:
         provider_name = model_split[1]
     # Handle foundation-model ARNs like
-    # 'arn:aws:bedrock:eu-central-1:143111710283:inference-profile/eu.meta.llama3-2-1b-instruct-v1:0'
+    # 'arn:aws:bedrock:us-east-2::foundation-model/meta.llama3-3-70b-instruct-v1:0'
     elif len(model_split) == 2 and "::foundation-model/" in provider_name:
         provider_name = provider_name.split("/")[-1]
 
