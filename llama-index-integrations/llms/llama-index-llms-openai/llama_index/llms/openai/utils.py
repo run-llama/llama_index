@@ -296,7 +296,13 @@ def to_openai_message_dict(
         elif isinstance(block, ImageBlock):
             if block.url:
                 content.append(
-                    {"type": "image_url", "image_url": {"url": str(block.url)}}
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": str(block.url),
+                            "detail": block.detail or "auto",
+                        },
+                    }
                 )
             else:
                 img_bytes = block.resolve_image(as_base64=True).read()
@@ -306,7 +312,7 @@ def to_openai_message_dict(
                         "type": "image_url",
                         "image_url": {
                             "url": f"data:{block.image_mimetype};base64,{img_str}",
-                            "detail": block.detail or "low",
+                            "detail": block.detail or "auto",
                         },
                     }
                 )

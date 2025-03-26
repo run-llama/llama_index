@@ -119,8 +119,9 @@ class GoogleGenAI(FunctionCallingLLM):
         # API keys are optional. The API can be authorised via OAuth (detected
         # environmentally) or by the GOOGLE_API_KEY environment variable.
         api_key = api_key or os.getenv("GOOGLE_API_KEY", None)
-        vertexai = vertexai_config is not None or os.getenv(
-            "GOOGLE_GENAI_USE_VERTEXAI", False
+        vertexai = (
+            vertexai_config is not None
+            or os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "false") != "false"
         )
         project = (vertexai_config or {}).get("project") or os.getenv(
             "GOOGLE_CLOUD_PROJECT", None
@@ -369,7 +370,9 @@ class GoogleGenAI(FunctionCallingLLM):
         tool_declarations = []
         for tool in tools:
             if tool.metadata.fn_schema:
-                function_declaration = convert_schema_to_function_declaration(tool)
+                function_declaration = convert_schema_to_function_declaration(
+                    self._client, tool
+                )
                 tool_declarations.append(function_declaration)
 
         if isinstance(user_msg, str):

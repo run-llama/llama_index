@@ -50,8 +50,6 @@ We create our agent as usual, passing it the tool we just defined:
 
 ```python
 workflow = FunctionAgent(
-    name="Agent",
-    description="Useful for performing dangerous tasks.",
     tools=[dangerous_task],
     llm=llm,
     system_prompt="You are a helpful assistant that can perform dangerous tasks.",

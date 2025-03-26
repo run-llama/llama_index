@@ -464,7 +464,7 @@ class MyWorkflow(Workflow):
         return StopEvent(result=result)
 ```
 
-You can see the [API docs](../../api_reference/workflow/retry_policy/) for a detailed description of the policies
+You can see the [API docs](../../api_reference/workflow/retry_policy.md) for a detailed description of the policies
 available in the framework. If you can't find a policy that's suitable for your use case, you can easily write a
 custom one. The only requirement for custom policies is to write a Python class that respects the `RetryPolicy`
 protocol. In other words, your custom policy class must have a method with the following signature:
