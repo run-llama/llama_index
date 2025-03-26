@@ -799,7 +799,7 @@ async def test_custom_stop_event():
     assert result.outcome == "Workflow completed"
 
     # ensure that streaming exits
-    handler = wf.run()
+    handler = wf.run(query="foo")
     async for event in handler.stream_events():
         await asyncio.sleep(0.1)
 
