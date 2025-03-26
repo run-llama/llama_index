@@ -22,7 +22,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
@@ -116,6 +116,8 @@ class LiteLLM(FunctionCallingLLM):
         default=10, description="The maximum number of API retries."
     )
 
+    _custom_llm_provider: Optional[str] = PrivateAttr(default=None)
+
     def __init__(
         self,
         model: str = DEFAULT_LITELLM_MODEL,
@@ -166,6 +168,8 @@ class LiteLLM(FunctionCallingLLM):
             **kwargs,
         )
 
+        self._custom_llm_provider = kwargs.get("custom_llm_provider", None)
+
     def _get_model_name(self) -> str:
         model_name = self.model
         if "ft-" in model_name:  # legacy fine-tuning
@@ -185,7 +189,9 @@ class LiteLLM(FunctionCallingLLM):
             context_window=openai_modelname_to_contextsize(self._get_model_name()),
             num_output=self.max_tokens or -1,
             is_chat_model=True,
-            is_function_calling_model=is_function_calling_model(self._get_model_name()),
+            is_function_calling_model=is_function_calling_model(
+                self._get_model_name(), self._custom_llm_provider
+            ),
             model_name=self.model,
         )
 

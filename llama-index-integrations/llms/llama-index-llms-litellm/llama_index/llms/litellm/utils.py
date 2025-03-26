@@ -125,10 +125,14 @@ def is_chat_model(model: str) -> bool:
     return model in litellm.model_list
 
 
-def is_function_calling_model(model: str) -> bool:
-    is_chat_model_ = is_chat_model(model)
-    is_old = "0314" in model or "0301" in model
-    return is_chat_model_ and not is_old
+def is_function_calling_model(
+    model: str, custom_llm_provider: Optional[str] = None
+) -> bool:
+    import litellm
+
+    return litellm.supports_function_calling(
+        model, custom_llm_provider=custom_llm_provider
+    )
 
 
 def get_completion_endpoint(is_chat_model: bool) -> CompletionClientType:
