@@ -72,7 +72,7 @@ class GlobalsHelper:
         download_thread = threading.Thread(target=self._download_nltk_data, daemon=True)
         download_thread.start()
 
-    def _download_nltk_data(self):
+    def _download_nltk_data(self) -> None:
         """Download NLTK data packages in the background."""
         from nltk.data import find as nltk_find
         from nltk import download
@@ -96,7 +96,7 @@ class GlobalsHelper:
             # Signal that download is complete
             self._download_complete.set()
 
-    def _wait_for_download(self, resource: str):
+    def _wait_for_download(self, resource: str) -> None:
         """Wait for NLTK download to complete and check specific resource."""
         if self._download_complete is None:
             self.start_nltk_download()
