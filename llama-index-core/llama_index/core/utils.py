@@ -84,9 +84,9 @@ class GlobalsHelper:
 
             # Download punkt tokenizer
             try:
-                nltk_find("tokenizers/punkt", paths=[self._nltk_data_dir])
+                nltk_find("tokenizers/punkt_tab", paths=[self._nltk_data_dir])
             except LookupError:
-                download("punkt", download_dir=self._nltk_data_dir, quiet=True)
+                download("punkt_tab", download_dir=self._nltk_data_dir, quiet=True)
 
         except Exception as e:
             print(f"NLTK download error: {e}")
