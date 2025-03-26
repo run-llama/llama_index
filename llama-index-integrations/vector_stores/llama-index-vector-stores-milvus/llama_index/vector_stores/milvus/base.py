@@ -125,35 +125,40 @@ class MilvusVectorStore(BasePydanticVectorStore):
     exist or if `overwrite` is set to True.
 
     Args:
-        uri (str, optional): The URI to connect to, comes in the form of
+        uri (str): The URI to connect to, comes in the form of
             "https://address:port" for Milvus or Zilliz Cloud service,
             or "path/to/local/milvus.db" for the lite local Milvus. Defaults to
             "./milvus_llamaindex.db".
-        token (str, optional): The token for log in. Empty if not using rbac, if
-            using rbac it will most likely be "username:password".
-        collection_name (str, optional): The name of the collection where data will be
+        token (str): The token for log in. Empty if not using rbac, if
+            using rbac it will most likely be "username:password". Defaults to "".
+        collection_name (str): The name of the collection where data will be
             stored. Defaults to "llamalection".
+        overwrite (bool, optional): Whether to overwrite existing collection with same
+            name. Defaults to False.
+        doc_id_field (str, optional): The name of the doc_id field for the collection,
+            defaults to DEFAULT_DOC_ID_KEY.
+        text_key (str, optional): What key text is stored in in the passed collection.
+            Used when bringing your own collection. Defaults to DEFAULT_TEXT_KEY.
+        scalar_field_names (list, optional): The names of the extra scalar fields to be included in the collection schema.
+        scalar_field_types (list, optional): The types of the extra scalar fields.
+        enable_dense (bool): A boolean flag to enable or disable dense embedding. Defaults to True.
         dim (int, optional): The dimension of the embedding vectors for the collection.
             Required when creating a new collection with enable_sparse is False.
         embedding_field (str, optional): The name of the dense embedding field for the
-            collection, defaults to DEFAULT_EMBEDDING_KEY. Set to None if there is no dense embedding field.
-        doc_id_field (str, optional): The name of the doc_id field for the collection,
-            defaults to DEFAULT_DOC_ID_KEY.
-        similarity_metric (str, optional): The similarity metric to use,
-            currently supports IP, COSINE and L2.
-        consistency_level (str, optional): Which consistency level to use for a newly
-            created collection. Defaults to "Session".
-        overwrite (bool, optional): Whether to overwrite existing collection with same
-            name. Defaults to False.
-        text_key (str, optional): What key text is stored in in the passed collection.
-            Used when bringing your own collection. Defaults to DEFAULT_TEXT_KEY.
+            collection, defaults to DEFAULT_EMBEDDING_KEY.
         index_config (dict, optional): The configuration used for building the
             dense embedding index. Defaults to None.
+        search_config (dict, optional): The configuration used for searching
+            the Milvus dense index. Note that this must be compatible with the index
+            type specified by `index_config`. Defaults to None.
+        similarity_metric (str, optional): The similarity metric to use for dense embedding,
+            currently supports IP, COSINE and L2.
+        enable_sparse (bool): A boolean flag to enable or disable sparse embedding. Defaults to False.
+        sparse_embedding_field (str): The name of sparse embedding field, defaults to DEFAULT_SPARSE_EMBEDDING_KEY.
+        sparse_embedding_function (Union[BaseSparseEmbeddingFunction, BaseMilvusBuiltInFunction], optional):
+            If enable_sparse is True, this object should be provided to convert text to a sparse embedding.
         sparse_index_config (dict, optional): The configuration used to build the sparse embedding index.
             Defaults to None.
-        search_config (dict, optional): The configuration used for searching
-            the Milvus index. Note that this must be compatible with the index
-            type specified by `index_config`. Defaults to None.
         collection_properties (dict, optional): The collection properties such as TTL
             (Time-To-Live) and MMAP (memory mapping). Defaults to None.
             It could include:
@@ -161,13 +166,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 current collection expires in the specified time. Expired data in the
                 collection will be cleaned up and will not be involved in searches or queries.
             - 'mmap.enabled' (bool): Whether to enable memory-mapped storage at the collection level.
+        index_management (IndexManagement): Specifies the index management strategy to use. Defaults to "create_if_not_exists".
         batch_size (int): Configures the number of documents processed in one
             batch when inserting data into Milvus. Defaults to DEFAULT_BATCH_SIZE.
-        enable_sparse (bool): A boolean flag indicating whether to enable support
-            for sparse embeddings for hybrid retrieval. Defaults to False.
-        sparse_embedding_field (str): The name of sparse embedding field, defaults to DEFAULT_SPARSE_EMBEDDING_KEY.
-        sparse_embedding_function (Union[BaseSparseEmbeddingFunction, BaseMilvusBuiltInFunction], optional):
-            If enable_sparse is True, this object should be provided to convert text to a sparse embedding.
+        consistency_level (str, optional): Which consistency level to use for a newly
+            created collection. Defaults to "Session".
         hybrid_ranker (str): Specifies the type of ranker used in hybrid search queries.
             Currently only supports ['RRFRanker','WeightedRanker']. Defaults to "RRFRanker".
         hybrid_ranker_params (dict, optional): Configuration parameters for the hybrid ranker.
@@ -183,9 +186,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                   These weights are used to adjust the importance of the dense and sparse components of the embeddings
                   in the hybrid retrieval process.
             Defaults to an empty dictionary, implying that the ranker will operate with its predefined default settings.
-        index_management (IndexManagement): Specifies the index management strategy to use. Defaults to "create_if_not_exists".
-        scalar_field_names (list): The names of the extra scalar fields to be included in the collection schema.
-        scalar_field_types (list): The types of the extra scalar fields.
+
 
     Raises:
         ImportError: Unable to import `pymilvus`.
@@ -413,15 +414,6 @@ class MilvusVectorStore(BasePydanticVectorStore):
             )
 
         # Process that data we are going to insert
-        sparse_embeddings_dict = {}
-        if self.enable_sparse is True:
-            sparse_embeddings = self.sparse_embedding_function.encode_documents(
-                [node.text for node in nodes]
-            )
-            sparse_embeddings_dict = {
-                node.node_id: sparse_embedding
-                for node, sparse_embedding in zip(nodes, sparse_embeddings)
-            }
         for node in nodes:
             entry = node_to_metadata_dict(
                 node, remove_text=True, text_field=self.text_key
@@ -469,17 +461,6 @@ class MilvusVectorStore(BasePydanticVectorStore):
             )
 
         # Process that data we are going to insert
-        sparse_embeddings_dict = {}
-        if self.enable_sparse is True:
-            sparse_embeddings = (
-                await self.sparse_embedding_function.async_encode_documents(
-                    [node.text for node in nodes]
-                )
-            )
-            sparse_embeddings_dict = {
-                node.node_id: sparse_embedding
-                for node, sparse_embedding in zip(nodes, sparse_embeddings)
-            }
         for node in nodes:
             entry = node_to_metadata_dict(
                 node, remove_text=True, text_field=self.text_key
@@ -1145,10 +1126,10 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         if isinstance(self.sparse_embedding_function, BaseSparseEmbeddingFunction):
             sparse_emb = (
-            await self.sparse_embedding_function.async_encode_queries(
-                [query.query_str]
-            )
-        )[0]
+                await self.sparse_embedding_function.async_encode_queries(
+                    [query.query_str]
+                )
+            )[0]
             query_data = [sparse_emb]
             sparse_metric_type = "IP"
         elif isinstance(self.sparse_embedding_function, BaseMilvusBuiltInFunction):
