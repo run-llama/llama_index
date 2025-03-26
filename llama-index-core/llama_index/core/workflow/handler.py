@@ -40,7 +40,7 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
 
             yield ev
 
-            if type(ev) is StopEvent:
+            if isinstance(ev, StopEvent):
                 break
 
     async def run_step(self) -> Optional[List[Event]]:

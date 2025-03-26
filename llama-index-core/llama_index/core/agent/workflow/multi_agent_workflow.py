@@ -1,7 +1,11 @@
 from abc import ABCMeta
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, cast
 
-from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from llama_index.core.agent.workflow.base_agent import (
+    BaseWorkflowAgent,
+    DEFAULT_AGENT_NAME,
+    DEFAULT_AGENT_DESCRIPTION,
+)
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
 from llama_index.core.agent.workflow.react_agent import ReActAgent
 from llama_index.core.agent.workflow.workflow_events import (
@@ -92,6 +96,19 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         if not agents:
             raise ValueError("At least one agent must be provided")
 
+        # Raise an error if any agent has no name or no description
+        if len(agents) > 1 and any(
+            agent.name == DEFAULT_AGENT_NAME for agent in agents
+        ):
+            raise ValueError("All agents must have a name in a multi-agent workflow")
+
+        if len(agents) > 1 and any(
+            agent.description == DEFAULT_AGENT_DESCRIPTION for agent in agents
+        ):
+            raise ValueError(
+                "All agents must have a description in a multi-agent workflow"
+            )
+
         self.agents = {cfg.name: cfg for cfg in agents}
         if len(agents) == 1:
             root_agent = agents[0].name
@@ -166,6 +183,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         self, current_agent: BaseWorkflowAgent
     ) -> Optional[AsyncBaseTool]:
         """Creates a handoff tool for the given agent."""
+        # Do not create a handoff tool if there is only one agent
+        if len(self.agents) == 1:
+            return None
+
         agent_info = {cfg.name: cfg.description for cfg in self.agents.values()}
 
         # Filter out agents that the current agent cannot handoff to
