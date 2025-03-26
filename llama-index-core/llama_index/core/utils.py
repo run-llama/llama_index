@@ -50,6 +50,8 @@ class GlobalsHelper:
         """Initialize NLTK data download in a background thread."""
         from nltk.data import path as nltk_path
 
+        self._download_complete = threading.Event()
+
         # Set up NLTK data directory
         self._nltk_data_dir = os.environ.get(
             "NLTK_DATA",
@@ -74,8 +76,6 @@ class GlobalsHelper:
         """Download NLTK data packages in the background."""
         from nltk.data import find as nltk_find
         from nltk import download
-
-        self._download_complete = threading.Event()
 
         try:
             # Download stopwords
