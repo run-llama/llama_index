@@ -84,9 +84,7 @@ class GitLabRepositoryReader(BaseReader):
 
         for item in repo_items:
             if item["type"] == "blob":
-                document = self._load_single_file(item["path"], ref)
-
-            documents.append(document)
+                documents.append(self._load_single_file(item["path"], ref))
 
         return documents
 

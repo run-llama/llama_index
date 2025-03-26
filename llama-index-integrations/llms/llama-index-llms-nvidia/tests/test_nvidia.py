@@ -15,11 +15,12 @@ from openai.types.chat.chat_completion_chunk import ChatCompletionChunk, ChoiceD
 from openai.types.chat.chat_completion_chunk import Choice as ChunkChoice
 from openai.types.completion import Completion, CompletionUsage
 from pytest_httpx import HTTPXMock
-from llama_index.llms.nvidia.utils import (
-    NVIDIA_FUNTION_CALLING_MODELS,
-    API_CATALOG_MODELS,
-    COMPLETION_MODELS,
-)
+from llama_index.llms.nvidia.utils import MODEL_TABLE
+
+NVIDIA_FUNTION_CALLING_MODELS = {
+    model.id if model.supports_tools else None for model in MODEL_TABLE.values()
+}
+COMPLETION_MODELS = {model.id if model else None for model in MODEL_TABLE.values()}
 
 
 class CachedNVIDIApiKeys:
@@ -308,9 +309,9 @@ def test_model_compatible_client_default_model(MockSyncOpenAI: MagicMock) -> Non
 @pytest.mark.parametrize(
     "model",
     (
-        NVIDIA_FUNTION_CALLING_MODELS[0],
-        next(iter(API_CATALOG_MODELS.keys())),
-        COMPLETION_MODELS[0],
+        next(iter(NVIDIA_FUNTION_CALLING_MODELS)),
+        next(iter(MODEL_TABLE.keys())),
+        next(iter(COMPLETION_MODELS)),
     ),
 )
 def test_model_compatible_client_model(MockSyncOpenAI: MagicMock, model: str) -> None:
@@ -323,18 +324,18 @@ def test_model_compatible_client_model(MockSyncOpenAI: MagicMock, model: str) ->
 
 def test_model_incompatible_client_model() -> None:
     model_name = "x"
-    err_msg = (
-        f"Model {model_name} is incompatible with client NVIDIA. "
-        f"Please check `NVIDIA.available_models()`."
-    )
+    err_msg = f"Model {model_name} is unknown, " "check `available_models`"
     with pytest.raises(ValueError) as msg:
         NVIDIA(model=model_name)
     assert err_msg == str(msg.value)
 
 
 def test_model_incompatible_client_known_model() -> None:
-    model_name = "google/deplot"
-    warn_msg = f"Unable to determine validity"
+    model_name = "nvidia/embed-qa-4"
+    warn_msg = (
+        f"Found {model_name} in available_models, but type is "
+        "unknown and inference may fail."
+    )
     with pytest.warns(UserWarning) as msg:
         NVIDIA(api_key="BOGUS", model=model_name)
     assert len(msg) == 1

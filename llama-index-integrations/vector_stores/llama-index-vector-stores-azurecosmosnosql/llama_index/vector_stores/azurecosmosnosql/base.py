@@ -305,7 +305,12 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self._container.delete_item(ref_doc_id, partition_key=ref_doc_id)
+        items = self._container.query_items(
+            query=f"SELECT c.id, c.id AS partitionKey FROM c WHERE c.{self._metadata_key}.ref_doc_id = '{ref_doc_id}'",
+            enable_cross_partition_query=True,
+        )
+        for item in items:
+            self._container.delete_item(item["id"], partition_key=item["partitionKey"])
 
     @property
     def client(self) -> Any:
@@ -325,25 +330,23 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
 
         # If limit_offset_clause is not specified, add TOP clause
         if pre_filter is None or pre_filter.get("limit_offset_clause") is None:
-            query += "TOP @limit "
+            query += f"TOP {params.get('k', 2)} "
 
         query += (
-            "c.id, c.{}, c.text, c.metadata, "
-            "VectorDistance(c.@embeddingKey, @embeddings) AS SimilarityScore FROM c"
+            "c.id, c.text, c.metadata, "
+            f"VectorDistance(c.{self._embedding_key}, @embeddings) AS SimilarityScore FROM c"
         )
 
         # Add where_clause if specified
         if pre_filter is not None and pre_filter.get("where_clause") is not None:
             query += " {}".format(pre_filter["where_clause"])
 
-        query += " ORDER BY VectorDistance(c.@embeddingKey, @embeddings)"
+        query += f" ORDER BY VectorDistance(c.{self._embedding_key}, @embeddings)"
 
         # Add limit_offset_clause if specified
         if pre_filter is not None and pre_filter.get("limit_offset_clause") is not None:
             query += " {}".format(pre_filter["limit_offset_clause"])
         parameters = [
-            {"name": "@limit", "value": params["k"]},
-            {"name": "@embeddingKey", "value": self._embedding_key},
             {"name": "@embeddings", "value": params["vector"]},
         ]
 

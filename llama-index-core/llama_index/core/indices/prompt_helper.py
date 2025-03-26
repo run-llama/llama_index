@@ -28,7 +28,7 @@ from llama_index.core.prompts import (
     SelectorPromptTemplate,
 )
 from llama_index.core.prompts.prompt_utils import get_empty_prompt_txt
-from llama_index.core.prompts.utils import format_string
+from llama_index.core.prompts.utils import format_content_blocks
 from llama_index.core.schema import BaseComponent
 from llama_index.core.utilities.token_counting import TokenCounter
 
@@ -198,9 +198,10 @@ class PromptHelper(BaseComponent):
             for message in messages:
                 partial_message = deepcopy(message)
 
+                # TODO: This does not count tokens in non-text blocks
                 prompt_kwargs = prompt.kwargs or {}
-                partial_message.content = format_string(
-                    partial_message.content or "", **prompt_kwargs
+                partial_message.blocks = format_content_blocks(
+                    partial_message.blocks, **prompt_kwargs
                 )
 
                 # add to list of partial messages

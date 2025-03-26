@@ -9,7 +9,7 @@ import multiprocessing
 import os
 import warnings
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import reduce
 from itertools import repeat
 from pathlib import Path, PurePosixPath
@@ -28,6 +28,9 @@ from tqdm import tqdm
 from llama_index.core.async_utils import get_asyncio_module, run_jobs
 from llama_index.core.readers.base import BaseReader, ResourcesReaderMixin
 from llama_index.core.schema import Document
+
+
+logger = logging.getLogger(__name__)
 
 
 class FileSystemReaderMixin(ABC):
@@ -68,7 +71,6 @@ def _try_loading_included_file_formats() -> (
             HWPReader,
             ImageReader,
             IPYNBReader,
-            MarkdownReader,
             MboxReader,
             PandasCSVReader,
             PandasExcelReader,
@@ -77,7 +79,11 @@ def _try_loading_included_file_formats() -> (
             VideoAudioReader,
         )  # pants: no-infer-dep
     except ImportError:
-        raise ImportError("`llama-index-readers-file` package not found")
+        logger.warning(
+            "`llama-index-readers-file` package not found, some file readers will not be available "
+            "if not provided by the `file_extractor` parameter."
+        )
+        return {}
 
     default_file_reader_cls: dict[str, Type[BaseReader]] = {
         ".hwp": HWPReader,
@@ -95,7 +101,6 @@ def _try_loading_included_file_formats() -> (
         ".mp4": VideoAudioReader,
         ".csv": PandasCSVReader,
         ".epub": EpubReader,
-        ".md": MarkdownReader,
         ".mbox": MboxReader,
         ".ipynb": IPYNBReader,
         ".xls": PandasExcelReader,
@@ -108,7 +113,9 @@ def _format_file_timestamp(
     timestamp: float | None, include_time: bool = False
 ) -> str | None:
     """
-    Format file timestamp to a %Y-%m-%d string.
+    Format file timestamp to a string.
+    The format will be %Y-%m-%d if include_time is False or missing,
+    %Y-%m-%dT%H:%M:%SZ if include_time is True.
 
     Args:
         timestamp (float): timestamp in float
@@ -121,9 +128,16 @@ def _format_file_timestamp(
     if timestamp is None:
         return None
 
+    # Convert timestamp to UTC
+    # Check if timestamp is already a datetime object
+    if isinstance(timestamp, datetime):
+        timestamp_dt = timestamp.astimezone(timezone.utc)
+    else:
+        timestamp_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+
     if include_time:
-        return datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%dT%H:%M:%SZ")
-    return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d")
+        return timestamp_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return timestamp_dt.strftime("%Y-%m-%d")
 
 
 def default_file_metadata_func(
@@ -185,9 +199,6 @@ def is_default_fs(fs: fsspec.AbstractFileSystem) -> bool:
     return isinstance(fs, LocalFileSystem) and not fs.auto_mkdir
 
 
-logger = logging.getLogger(__name__)
-
-
 class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):
     """
     Simple directory reader.
@@ -201,6 +212,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             (Optional; overrides input_dir, exclude)
         exclude (List): glob of python file paths to exclude (Optional)
         exclude_hidden (bool): Whether to exclude hidden files (dotfiles).
+        exclude_empty (bool): Whether to exclude empty files (Optional).
         encoding (str): Encoding of the files.
             Default is utf-8.
         errors (str): how encoding and decoding errors are to be handled,
@@ -233,6 +245,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         input_files: list | None = None,
         exclude: list | None = None,
         exclude_hidden: bool = True,
+        exclude_empty: bool = False,
         errors: str = "ignore",
         recursive: bool = False,
         encoding: str = "utf-8",
@@ -257,6 +270,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         self.exclude = exclude
         self.recursive = recursive
         self.exclude_hidden = exclude_hidden
+        self.exclude_empty = exclude_empty
         self.required_exts = required_exts
         self.num_files_limit = num_files_limit
         self.raise_on_error = raise_on_error
@@ -284,6 +298,11 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         return any(
             part.startswith(".") and part not in [".", ".."] for part in path.parts
         )
+
+    def is_empty_file(self, path: Path | PurePosixPath) -> bool:
+        if isinstance(path, PurePosixPath):
+            path = Path(path)
+        return path.is_file() and len(path.read_bytes()) == 0
 
     def _add_files(self, input_dir: Path | PurePosixPath) -> list[Path | PurePosixPath]:
         """Add files."""
@@ -319,6 +338,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             ref = _Path(_ref)
             is_dir = self.fs.isdir(ref)
             skip_because_hidden = self.exclude_hidden and self.is_hidden(ref)
+            skip_because_empty = self.exclude_empty and self.is_empty_file(ref)
             skip_because_bad_ext = (
                 self.required_exts is not None and ref.suffix not in self.required_exts
             )
@@ -344,6 +364,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 or skip_because_hidden
                 or skip_because_bad_ext
                 or skip_because_excluded
+                or skip_because_empty
             ):
                 continue
             else:

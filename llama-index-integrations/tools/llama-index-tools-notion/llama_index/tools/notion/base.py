@@ -54,15 +54,17 @@ class NotionToolSpec(BaseToolSpec):
             raise ValueError(f"Invalid function name: {fn_name}")
 
     def load_data(
-        self, page_ids: Optional[List[str]] = None, database_id: Optional[str] = None
+        self,
+        page_ids: Optional[List[str]] = None,
+        database_ids: Optional[List[str]] = None,
     ) -> str:
-        """Loads content from a set of page ids or a database id.
+        """Loads content from a set of page ids or database ids.
 
-        Don't use this endpoint if you don't know the page ids or database id.
+        Don't use this endpoint if you don't know the page ids or database ids.
 
         """
         page_ids = page_ids or []
-        docs = self.reader.load_data(page_ids=page_ids, database_id=database_id)
+        docs = self.reader.load_data(page_ids=page_ids, database_ids=database_ids)
         return "\n".join([doc.get_content() for doc in docs])
 
     def search_data(
@@ -73,11 +75,12 @@ class NotionToolSpec(BaseToolSpec):
         value: Optional[str] = None,
         property: Optional[str] = None,
         page_size: int = 100,
-    ) -> str:
+    ) -> List[Dict[str, Any]]:
         """Search a list of relevant pages.
 
         Contains metadata for each page (but not the page content).
-
+        params:
+           query: the title of the page or database to search for, which is fuzzy matched.
         """
         payload: Dict[str, Any] = {
             "query": query,

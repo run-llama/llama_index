@@ -1,11 +1,11 @@
 import asyncio
-import pytest
 
+import pytest
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.decorators import step
+from llama_index.core.workflow.errors import WorkflowRuntimeError, WorkflowTimeoutError
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
-from llama_index.core.workflow.errors import WorkflowRuntimeError, WorkflowTimeoutError
 
 from .conftest import OneTestEvent
 
@@ -19,7 +19,7 @@ class StreamingWorkflow(Workflow):
                 yield word
 
         async for w in stream_messages():
-            ctx.session.write_event_to_stream(Event(msg=w))
+            ctx.write_event_to_stream(Event(msg=w))
 
         return StopEvent(result=None)
 
@@ -125,6 +125,8 @@ async def test_multiple_ongoing_streams():
         if not isinstance(ev, StopEvent):
             assert "msg" in ev
 
+    await asyncio.gather(stream_1, stream_2)
+
 
 @pytest.mark.asyncio()
 async def test_resume_streams():
@@ -143,10 +145,12 @@ async def test_resume_streams():
     async for _ in handler_1.stream_events():
         pass
     await handler_1
+    assert handler_1.ctx
 
     handler_2 = wf.run(ctx=handler_1.ctx)
     async for _ in handler_2.stream_events():
         pass
     await handler_2
 
+    assert handler_2.ctx
     assert await handler_2.ctx.get("cur_count") == 2

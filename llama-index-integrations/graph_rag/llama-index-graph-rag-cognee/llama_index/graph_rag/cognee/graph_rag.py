@@ -17,13 +17,25 @@ class CogneeGraphRAG(GraphRAG):
     This enables the system to retrieve more precise and structured information about an entity, its relationships, and its properties.
 
     Attributes:
-    llm_api_key: str: Api key for desired llm.
-    llm_provider: str: Provider for desired llm.
-    llm_model: str: Model for desired llm.
-    graph_db_provider: str: The graph database provider.
-    vector_db_provider: str: The vector database provider.
-    relational_db_provider: str: The relational database provider.
-    db_name: str: The name of the databases.
+    llm_api_key: str: API key for desired LLM.
+    llm_provider: str: Provider for desired LLM (default: "openai").
+    llm_model: str: Model for desired LLM (default: "gpt-4o-mini").
+    graph_db_provider: str: The graph database provider (default: "networkx").
+                            Supported providers: "neo4j", "networkx".
+    graph_database_url: str: URL for the graph database.
+    graph_database_username: str: Username for accessing the graph database.
+    graph_database_password: str: Password for accessing the graph database.
+    vector_db_provider: str: The vector database provider (default: "lancedb").
+                             Supported providers: "lancedb", "pgvector", "qdrant", "weviate".
+    vector_db_url: str: URL for the vector database.
+    vector_db_key: str: API key for accessing the vector database.
+    relational_db_provider: str: The relational database provider (default: "sqlite").
+                            Supported providers: "sqlite", "postgres".
+    db_name: str: The name of the databases (default: "cognee_db").
+    db_host: str: Host for the relational database.
+    db_port: str: Port for the relational database.
+    db_username: str: Username for the relational database.
+    db_password: str: Password for the relational database.
     """
 
     def __init__(
@@ -32,9 +44,18 @@ class CogneeGraphRAG(GraphRAG):
         llm_provider: str = "openai",
         llm_model: str = "gpt-4o-mini",
         graph_db_provider: str = "networkx",
+        graph_database_url: str = "",
+        graph_database_username: str = "",
+        graph_database_password: str = "",
         vector_db_provider: str = "lancedb",
+        vector_db_url: str = "",
+        vector_db_key: str = "",
         relational_db_provider: str = "sqlite",
-        db_name: str = "cognee_db",
+        relational_db_name: str = "cognee_db",
+        relational_db_host: str = "",
+        relational_db_port: str = "",
+        relational_db_username: str = "",
+        relational_db_password: str = "",
     ) -> None:
         cognee.config.set_llm_config(
             {
@@ -44,11 +65,33 @@ class CogneeGraphRAG(GraphRAG):
             }
         )
 
-        cognee.config.set_vector_db_config({"vector_db_provider": vector_db_provider})
-        cognee.config.set_relational_db_config(
-            {"db_provider": relational_db_provider, "db_name": db_name}
+        cognee.config.set_vector_db_config(
+            {
+                "vector_db_url": vector_db_url,
+                "vector_db_key": vector_db_key,
+                "vector_db_provider": vector_db_provider,
+            }
         )
-        cognee.config.set_graph_database_provider(graph_db_provider)
+        cognee.config.set_relational_db_config(
+            {
+                "db_path": "",
+                "db_name": relational_db_name,
+                "db_host": relational_db_host,
+                "db_port": relational_db_port,
+                "db_username": relational_db_username,
+                "db_password": relational_db_password,
+                "db_provider": relational_db_provider,
+            }
+        )
+
+        cognee.config.set_graph_db_config(
+            {
+                "graph_database_provider": graph_db_provider,
+                "graph_database_url": graph_database_url,
+                "graph_database_username": graph_database_username,
+                "graph_database_password": graph_database_password,
+            }
+        )
 
         data_directory_path = str(
             pathlib.Path(
@@ -119,6 +162,19 @@ class CogneeGraphRAG(GraphRAG):
         print(graph_url)
         return graph_url
 
+    async def rag_search(self, query: str) -> list:
+        """Answer query based on data chunk most relevant to query.
+
+        Args:
+            query (str): The query string.
+        """
+        user = await cognee.modules.users.methods.get_default_user()
+        return await cognee.search(
+            query_type=cognee.api.v1.search.SearchType.COMPLETION,
+            query_text=query,
+            user=user,
+        )
+
     async def search(self, query: str) -> list:
         """Search the graph for relevant information based on a query.
 
@@ -127,7 +183,9 @@ class CogneeGraphRAG(GraphRAG):
         """
         user = await cognee.modules.users.methods.get_default_user()
         return await cognee.search(
-            cognee.api.v1.search.SearchType.SUMMARIES, query, user
+            query_type=cognee.api.v1.search.SearchType.GRAPH_COMPLETION,
+            query_text=query,
+            user=user,
         )
 
     async def get_related_nodes(self, node_id: str) -> list:
@@ -138,5 +196,7 @@ class CogneeGraphRAG(GraphRAG):
         """
         user = await cognee.modules.users.methods.get_default_user()
         return await cognee.search(
-            cognee.api.v1.search.SearchType.INSIGHTS, node_id, user
+            query_type=cognee.api.v1.search.SearchType.INSIGHTS,
+            query_text=node_id,
+            user=user,
         )

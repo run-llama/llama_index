@@ -1,13 +1,13 @@
-import pytest
 import os
 
-from llama_index.core.bridge.pydantic import BaseModel
+import pytest
+from ollama import Client
+
 from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.llms import ChatMessage
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.ollama import Ollama
-from ollama import Client
-
 
 test_model = os.environ.get("OLLAMA_TEST_MODEL", "llama3.1:latest")
 try:
@@ -16,14 +16,14 @@ try:
 
     model_found = False
     for model in models["models"]:
-        if model["name"] == test_model:
+        if model.model == test_model:
             model_found = True
             break
 
     if not model_found:
-        client = None
+        client = None  # type: ignore
 except Exception:
-    client = None
+    client = None  # type: ignore
 
 
 class Song(BaseModel):

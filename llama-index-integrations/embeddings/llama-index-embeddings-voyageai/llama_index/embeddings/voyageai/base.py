@@ -34,7 +34,7 @@ class VoyageEmbedding(MultiModalEmbedding):
     """
 
     _client: voyageai.Client = PrivateAttr(None)
-    _aclient: voyageai.client_async.AsyncClient = PrivateAttr()
+    _aclient: voyageai.AsyncClient = PrivateAttr()
     truncation: Optional[bool] = None
     output_dtype: Optional[str] = None
     output_dimension: Optional[int] = None
@@ -173,7 +173,7 @@ class VoyageEmbedding(MultiModalEmbedding):
 
     async def _aembed(self, texts: List[str], input_type: str) -> List[List[float]]:
         if self.model_name in MULTIMODAL_MODELS:
-            r = self._aclient.multimodal_embed(
+            r = await self._aclient.multimodal_embed(
                 inputs=self._texts_to_content(texts),
                 model=self.model_name,
                 input_type=input_type,

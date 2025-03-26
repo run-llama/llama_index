@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from tenacity import (
@@ -33,6 +34,7 @@ BEDROCK_MODELS = {
     "anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
     "anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
     "anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
+    "anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
     "cohere.command-text-v14": 4096,
@@ -49,6 +51,7 @@ BEDROCK_MODELS = {
     "meta.llama3-2-3b-instruct-v1:0": 131000,
     "meta.llama3-2-11b-instruct-v1:0": 128000,
     "meta.llama3-2-90b-instruct-v1:0": 128000,
+    "meta.llama3-3-70b-instruct-v1:0": 128000,
     "mistral.mistral-7b-instruct-v0:2": 32000,
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
     "mistral.mistral-large-2402-v1:0": 32000,
@@ -68,6 +71,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-3-5-sonnet-20240620-v1:0",
     "anthropic.claude-3-5-sonnet-20241022-v2:0",
     "anthropic.claude-3-5-haiku-20241022-v1:0",
+    "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "cohere.command-r-v1:0",
     "cohere.command-r-plus-v1:0",
     "mistral.mistral-large-2402-v1:0",
@@ -78,6 +82,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "meta.llama3-2-3b-instruct-v1:0",
     "meta.llama3-2-11b-instruct-v1:0",
     "meta.llama3-2-90b-instruct-v1:0",
+    "meta.llama3-3-70b-instruct-v1:0",
 )
 
 BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
@@ -90,30 +95,37 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-3-5-sonnet-20240620-v1:0",
     "anthropic.claude-3-5-sonnet-20241022-v2:0",
     "anthropic.claude-3-5-haiku-20241022-v1:0",
+    "anthropic.claude-3-7-sonnet-20250219-v1:0",
     "meta.llama3-1-8b-instruct-v1:0",
     "meta.llama3-1-70b-instruct-v1:0",
     "meta.llama3-2-1b-instruct-v1:0",
     "meta.llama3-2-3b-instruct-v1:0",
     "meta.llama3-2-11b-instruct-v1:0",
     "meta.llama3-2-90b-instruct-v1:0",
+    "meta.llama3-3-70b-instruct-v1:0",
 )
 
 
 def get_model_name(model_name: str) -> str:
-    # us and eu are currently supported inference profile regions
-    if not model_name.startswith("us.") and not model_name.startswith("eu."):
+    """Extract base model name from region-prefixed model identifier."""
+    # Check for region prefixes (us, eu, apac)
+    REGION_PREFIXES = ["us.", "eu.", "apac."]
+
+    # If no region prefix, return the original model name
+    if not any(model_name.startswith(prefix) for prefix in REGION_PREFIXES):
         return model_name
 
-    translated_model_name = model_name[3:]
+    # Remove region prefix to get the base model name
+    base_model_name = model_name[model_name.find(".") + 1 :]
 
-    if translated_model_name not in BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS:
+    if base_model_name not in BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS:
         raise ValueError(
             f"Model does not support inference profiles but has an inference profile prefix: {model_name}. "
             "Please provide a valid Bedrock model name. "
             "Known models are: " + ", ".join(BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS)
         )
 
-    return translated_model_name
+    return base_model_name
 
 
 def is_bedrock_function_calling_model(model_name: str) -> bool:
@@ -175,7 +187,7 @@ def messages_to_converse_messages(
                     "toolUseId": message.additional_kwargs["tool_call_id"],
                     "content": [
                         {
-                            "text": message.content,
+                            "text": message.content or "",
                         },
                     ],
                 }
@@ -208,7 +220,18 @@ def messages_to_converse_messages(
             assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
             assert "input" in tool_call, f"`input` not found in {tool_call}"
             assert "name" in tool_call, f"`name` not found in {tool_call}"
-            content.append({"toolUse": tool_call})
+            tool_input = tool_call["input"] if tool_call["input"] else {}
+            if isinstance(tool_input, str):
+                tool_input = json.loads(tool_input)
+            content.append(
+                {
+                    "toolUse": {
+                        "input": tool_input,
+                        "toolUseId": tool_call["toolUseId"],
+                        "name": tool_call["name"],
+                    }
+                }
+            )
         if len(content) > 0:
             converse_messages.append(
                 {
@@ -337,12 +360,7 @@ def converse_with_retry(
         {
             k: v
             for k, v in kwargs.items()
-            if (
-                k != "tools"
-                or k != "guardrail_identifier"
-                or k != "guardrail_version"
-                or k != "trace"
-            )
+            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
         },
     )
 
@@ -395,12 +413,7 @@ async def converse_with_retry_async(
         {
             k: v
             for k, v in kwargs.items()
-            if (
-                k != "tools"
-                or k != "guardrail_identifier"
-                or k != "guardrail_version"
-                or k != "trace"
-            )
+            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
         },
     )
 

@@ -12,10 +12,12 @@ contains_example = false
 import_path = "llama_index.readers.web"
 
 [tool.llamahub.class_authors]
+AgentQLWebReader = "jayfish0"
 AsyncWebPageReader = "Hironsan"
 BeautifulSoupWebReader = "thejessezhang"
 BrowserbaseWebReader = "llama-index"
 FireCrawlWebReader = "llama-index"
+HyperbrowserWebReader = "NikhilShahi"
 KnowledgeBaseWebReader = "jasonwcfan"
 MainContentExtractorReader = "HawkClaws"
 NewsArticleReader = "ruze00"
@@ -41,11 +43,11 @@ authors = ["Your Name <you@example.com>"]
 description = "llama-index readers web integration"
 exclude = ["**/BUILD"]
 keywords = ["BFS", "article", "atom", "documentation", "feed", "main content extractor", "news", "readthedocs", "rss", "scraper", "selenium", "seo", "sitemap", "substack", "trafilatura", "unstructured.io", "url", "web reader", "web", "website"]
-license = "MIT"
+license = "GPL-3.0-or-later"
 maintainers = ["HawkClaws", "Hironsan", "NA", "an-bluecat", "bborn", "jasonwcfan", "kravetsmic", "pandazki", "ruze00", "selamanse", "thejessezhang"]
 name = "llama-index-readers-web"
 readme = "README.md"
-version = "0.3.1"
+version = "0.3.8"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

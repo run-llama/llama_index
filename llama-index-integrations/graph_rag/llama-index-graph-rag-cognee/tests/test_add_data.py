@@ -14,10 +14,9 @@ async def test_add_data(monkeypatch):
         graph_db_provider="networkx",
         vector_db_provider="lancedb",
         relational_db_provider="sqlite",
-        db_name="cognee_db",
+        relational_db_name="cognee_db",
     )
 
-    # Mock logging to graphistry
     async def mock_add_return(add, dataset_name):
         return True
 

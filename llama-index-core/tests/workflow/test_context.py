@@ -1,17 +1,18 @@
+import asyncio
+import json
+from typing import Optional, Union
 from unittest import mock
-from typing import Union, Optional
 
 import pytest
-from llama_index.core.workflow.workflow import (
-    Workflow,
-    Context,
-)
-from llama_index.core.workflow.decorators import step
+from llama_index.core.workflow.decorators import StepConfig, step
 from llama_index.core.workflow.errors import WorkflowRuntimeError
-from llama_index.core.workflow.events import StartEvent, StopEvent, Event
-from llama_index.core.workflow.workflow import Workflow
+from llama_index.core.workflow.events import Event, StartEvent, StopEvent
+from llama_index.core.workflow.workflow import (
+    Context,
+    Workflow,
+)
 
-from .conftest import OneTestEvent, AnotherTestEvent
+from .conftest import AnotherTestEvent, OneTestEvent
 
 
 @pytest.mark.asyncio()
@@ -64,7 +65,7 @@ async def test_get_not_found(ctx):
 async def test_legacy_data(workflow):
     c1 = Context(workflow)
     await c1.set(key="test_key", value=42)
-    assert c1.data["test_key"] == 42
+    assert await c1.get("test_key") == 42
 
 
 def test_send_event_step_is_none(ctx):
@@ -84,7 +85,15 @@ def test_send_event_to_non_existent_step(ctx):
 
 
 def test_send_event_to_wrong_step(ctx):
-    ctx._workflow._get_steps = mock.MagicMock(return_value={"step": mock.MagicMock()})
+    ctx._step_configs["step"] = StepConfig(  # type: ignore[attr-defined]
+        accepted_events=[],
+        event_name="test_event",
+        return_types=[],
+        context_parameter="",
+        num_workers=99,
+        requested_services=[],
+        retry_policy=None,
+    )
 
     with pytest.raises(
         WorkflowRuntimeError,
@@ -93,25 +102,32 @@ def test_send_event_to_wrong_step(ctx):
         ctx.send_event(Event(), "step")
 
 
-def test_send_event_to_step(ctx):
+def test_send_event_to_step(workflow):
     step2 = mock.MagicMock()
     step2.__step_config.accepted_events = [Event]
 
-    ctx._workflow._get_steps = mock.MagicMock(
+    workflow._get_steps = mock.MagicMock(
         return_value={"step1": mock.MagicMock(), "step2": step2}
     )
+
+    ctx = Context(workflow=workflow)
     ctx._queues = {"step1": mock.MagicMock(), "step2": mock.MagicMock()}
 
     ev = Event(foo="bar")
     ctx.send_event(ev, "step2")
 
-    ctx._queues["step1"].put_nowait.assert_not_called()
-    ctx._queues["step2"].put_nowait.assert_called_with(ev)
+    ctx._queues["step1"].put_nowait.assert_not_called()  # type: ignore
+    ctx._queues["step2"].put_nowait.assert_called_with(ev)  # type: ignore
 
 
 def test_get_result(ctx):
     ctx._retval = 42
     assert ctx.get_result() == 42
+
+
+def test_to_dict_with_events_buffer(ctx):
+    ctx.collect_events(OneTestEvent(), [OneTestEvent, AnotherTestEvent])
+    assert json.dumps(ctx.to_dict())
 
 
 @pytest.mark.asyncio()
@@ -130,3 +146,56 @@ async def test_empty_inprogress_when_workflow_done(workflow):
     # there shouldn't be any in progress events
     for inprogress_list in h.ctx._in_progress.values():
         assert len(inprogress_list) == 0
+
+
+@pytest.mark.asyncio()
+async def test_wait_for_event(ctx):
+    wait_job = asyncio.create_task(ctx.wait_for_event(Event))
+    await asyncio.sleep(0.01)
+    ctx.send_event(Event(msg="foo"))
+    ev = await wait_job
+    assert ev.msg == "foo"
+
+
+@pytest.mark.asyncio()
+async def test_wait_for_event_with_requirements(ctx):
+    wait_job = asyncio.create_task(ctx.wait_for_event(Event, {"msg": "foo"}))
+    await asyncio.sleep(0.01)
+    ctx.send_event(Event(msg="bar"))
+    ctx.send_event(Event(msg="foo"))
+    ev = await wait_job
+    assert ev.msg == "foo"
+
+
+@pytest.mark.asyncio()
+async def test_wait_for_event_in_workflow():
+    class TestWorkflow(Workflow):
+        @step
+        async def step1(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            ctx.write_event_to_stream(Event(msg="foo"))
+            result = await ctx.wait_for_event(Event)
+            return StopEvent(result=result.msg)
+
+    workflow = TestWorkflow()
+    handler = workflow.run()
+    assert handler.ctx
+    async for ev in handler.stream_events():
+        if isinstance(ev, Event) and ev.msg == "foo":
+            handler.ctx.send_event(Event(msg="bar"))
+            break
+
+    result = await handler
+    assert result == "bar"
+
+
+def test_get_holding_events(ctx):
+    ctx._step_events_holding = None
+    assert ctx.get_holding_events() == []
+
+
+@pytest.mark.asyncio()
+async def test_clear(ctx):
+    await ctx.set("test_key", 42)
+    ctx.clear()
+    res = await ctx.get("test_key", default=None)
+    assert res is None

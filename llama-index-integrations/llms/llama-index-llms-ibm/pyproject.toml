@@ -31,10 +31,10 @@ license = "MIT"
 name = "llama-index-llms-ibm"
 packages = [{include = "llama_index/"}]
 readme = "README.md"
-version = "0.3.1"
+version = "0.3.3"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<4.0"
+python = ">=3.10,<3.13"
 ibm-watsonx-ai = ">=1.1.24"
 pyarrow = "*"
 llama-index-core = "^0.12.0"

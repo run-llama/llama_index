@@ -12,13 +12,14 @@ from typing import (
     Generic,
     List,
     Optional,
+    TYPE_CHECKING,
     Tuple,
     Type,
     TypeVar,
     Union,
 )
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     GetCoreSchemaHandler,
@@ -32,6 +33,9 @@ Model = TypeVar("Model", bound=BaseModel)
 TokenGen = Generator[str, None, None]
 TokenAsyncGen = AsyncGenerator[str, None]
 RESPONSE_TEXT_TYPE = Union[BaseModel, str, TokenGen, TokenAsyncGen]
+
+if TYPE_CHECKING:
+    from llama_index.core.program.utils import FlexibleModel
 
 
 # TODO: move into a `core` folder
@@ -47,17 +51,38 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
         """Format a query with structured output formatting instructions."""
         return query
 
+    def _format_message(self, message: ChatMessage) -> ChatMessage:
+        text_blocks: list[tuple[int, TextBlock]] = [
+            (idx, block)
+            for idx, block in enumerate(message.blocks)
+            if isinstance(block, TextBlock)
+        ]
+
+        # add text to the last text block, or add a new text block
+        format_text = ""
+        if text_blocks:
+            format_idx = text_blocks[-1][0]
+            format_text = text_blocks[-1][1].text
+
+            if format_idx != -1:
+                # this should always be a text block
+                assert isinstance(message.blocks[format_idx], TextBlock)
+                message.blocks[format_idx].text = self.format(format_text)  # type: ignore
+        else:
+            message.blocks.append(TextBlock(text=self.format(format_text)))
+
+        return message
+
     def format_messages(self, messages: List[ChatMessage]) -> List[ChatMessage]:
         """Format a list of messages with structured output formatting instructions."""
         # NOTE: apply output parser to either the first message if it's a system message
         #       or the last message
         if messages:
             if messages[0].role == MessageRole.SYSTEM:
-                message_content = messages[0].content or ""
-                messages[0].content = self.format(message_content)
+                # get text from the last text blocks
+                messages[0] = self._format_message(messages[0])
             else:
-                message_content = messages[-1].content or ""
-                messages[-1].content = self.format(message_content)
+                messages[-1] = self._format_message(messages[-1])
 
         return messages
 
@@ -87,20 +112,24 @@ class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
         pass
 
     @abstractmethod
-    def __call__(self, *args: Any, **kwargs: Any) -> Model:
+    def __call__(self, *args: Any, **kwargs: Any) -> Union[Model, List[Model]]:
         pass
 
-    async def acall(self, *args: Any, **kwargs: Any) -> Model:
+    async def acall(self, *args: Any, **kwargs: Any) -> Union[Model, List[Model]]:
         return self(*args, **kwargs)
 
     def stream_call(
         self, *args: Any, **kwargs: Any
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+    ) -> Generator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None, None
+    ]:
         raise NotImplementedError("stream_call is not supported by default.")
 
     async def astream_call(
         self, *args: Any, **kwargs: Any
-    ) -> AsyncGenerator[Union[Model, List[Model]], None]:
+    ) -> AsyncGenerator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None
+    ]:
         raise NotImplementedError("astream_call is not supported by default.")
 
 

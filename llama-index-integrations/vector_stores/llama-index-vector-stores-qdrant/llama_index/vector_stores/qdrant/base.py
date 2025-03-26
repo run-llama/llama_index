@@ -36,6 +36,7 @@ from llama_index.vector_stores.qdrant.utils import (
     fastembed_sparse_encoder,
 )
 from qdrant_client.conversions.common_types import QuantizationConfig
+from qdrant_client.local.qdrant_local import QdrantLocal
 from qdrant_client.http import models as rest
 from qdrant_client.http.models import (
     FieldCondition,
@@ -57,9 +58,13 @@ import_err_msg = (
     "`qdrant-client` package not found, please run `pip install qdrant-client`"
 )
 
-DENSE_VECTOR_NAME = "text-dense"
-SPARSE_VECTOR_NAME_OLD = "text-sparse"
-SPARSE_VECTOR_NAME = "text-sparse-new"
+# Default vector names
+DEFAULT_DENSE_VECTOR_NAME = "text-dense"
+DEFAULT_SPARSE_VECTOR_NAME_OLD = "text-sparse"
+DEFAULT_SPARSE_VECTOR_NAME = "text-sparse-new"
+LEGACY_UNNAMED_VECTOR = (
+    ""  # The empty string used for unnamed vectors in older collections
+)
 DOCUMENT_ID_KEY = "doc_id"
 
 
@@ -90,6 +95,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
         hybrid_fusion_fn (Optional[HybridFusionCallable]): function to fuse hybrid search results
         index_doc_id (bool): whether to create a payload index for the document ID. Defaults to True
         text_key (str): Name of the field holding the text information, Defaults to 'text'
+        dense_vector_name (Optional[str]): Custom name for the dense vector field. Defaults to 'text-dense'
+        sparse_vector_name (Optional[str]): Custom name for the sparse vector field. Defaults to 'text-sparse-new'
+
+    Notes:
+        For backward compatibility, the vector store will automatically detect the vector format
+        of existing collections and adapt accordingly:
+        - For collections created with older versions using unnamed vectors (empty string ""),
+          the vector store will use the legacy format for queries.
+        - For collections with named vectors, it will use the existing vector names.
+        - For new collections, it will use the vector names provided or the defaults.
 
     Examples:
         `pip install llama-index-vector-stores-qdrant`
@@ -120,6 +135,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
     index_doc_id: bool
     fastembed_sparse_model: Optional[str]
     text_key: Optional[str]
+    dense_vector_name: str
+    sparse_vector_name: str
 
     _client: QdrantClient = PrivateAttr()
     _aclient: AsyncQdrantClient = PrivateAttr()
@@ -130,6 +147,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     _dense_config: Optional[rest.VectorParams] = PrivateAttr()
     _sparse_config: Optional[rest.SparseVectorParams] = PrivateAttr()
     _quantization_config: Optional[QuantizationConfig] = PrivateAttr()
+    _legacy_vector_format: Optional[bool] = PrivateAttr()
 
     def __init__(
         self,
@@ -152,9 +170,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
         hybrid_fusion_fn: Optional[HybridFusionCallable] = None,
         index_doc_id: bool = True,
         text_key: Optional[str] = "text",
+        dense_vector_name: Optional[str] = None,
+        sparse_vector_name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        # Set default vector names if not provided
+        dense_vector_name = dense_vector_name or DEFAULT_DENSE_VECTOR_NAME
+        sparse_vector_name = sparse_vector_name or DEFAULT_SPARSE_VECTOR_NAME
+
         super().__init__(
             collection_name=collection_name,
             url=url,
@@ -167,6 +191,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             index_doc_id=index_doc_id,
             fastembed_sparse_model=fastembed_sparse_model,
             text_key=text_key,
+            dense_vector_name=dense_vector_name,
+            sparse_vector_name=sparse_vector_name,
         )
 
         if (
@@ -188,21 +214,32 @@ class QdrantVectorStore(BasePydanticVectorStore):
             )
         else:
             if client is not None and aclient is not None:
-                logger.warning(
-                    "Both client and aclient are provided. If using `:memory:` "
-                    "mode, the data between clients is not synced."
-                )
+                possible_local_clients = [
+                    getattr(client, "_client", None),
+                    getattr(aclient, "_client", None),
+                ]
+                if any(
+                    isinstance(client, QdrantLocal) for client in possible_local_clients
+                ):
+                    logger.warning(
+                        "Both client and aclient are provided. If using `:memory:` "
+                        "mode, the data between clients is not synced."
+                    )
 
             self._client = client
             self._aclient = aclient
 
+        # Check if collection exists and detect vector format
+        self._legacy_vector_format = None
         if self._client is not None:
             self._collection_initialized = self._collection_exists(collection_name)
+            if self._collection_initialized:
+                self._detect_vector_format(collection_name)
         else:
-            #  need to do lazy init for async clients
+            # Need to do lazy init for async clients
             self._collection_initialized = False
 
-        # setup hybrid search if enabled
+        # Setup hybrid search if enabled
         if enable_hybrid or fastembed_sparse_model is not None:
             enable_hybrid = True
             self._sparse_doc_fn = sparse_doc_fn or self.get_default_sparse_doc_encoder(
@@ -241,6 +278,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     ) -> Tuple[List[Any], List[str]]:
         ids = []
         points = []
+
         for node_batch in iter_batch(nodes, self.batch_size):
             node_ids = []
             vectors: List[Any] = []
@@ -273,17 +311,17 @@ class QdrantVectorStore(BasePydanticVectorStore):
                                     indices=sparse_indices[i],
                                     values=sparse_vectors[i],
                                 ),
-                                DENSE_VECTOR_NAME: node.get_embedding(),
+                                self.dense_vector_name: node.get_embedding(),
                             }
                         )
                     else:
                         vectors.append(
                             {
-                                DENSE_VECTOR_NAME: node.get_embedding(),
+                                self.dense_vector_name: node.get_embedding(),
                             }
                         )
                 else:
-                    vectors.append(node.get_embedding())
+                    vectors.append({self.dense_vector_name: node.get_embedding()})
 
                 metadata = node_to_metadata_dict(
                     node, remove_text=False, flat_metadata=self.flat_metadata
@@ -301,6 +339,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
             ids.extend(node_ids)
 
         return points, ids
+
+    def _ensure_async_client(self) -> None:
+        if self._aclient is None:
+            raise ValueError(
+                "Async client is not initialized!\nPlease pass in `aclient` to the constructor: "
+                "`QdrantVectorStore(..., aclient=AsyncQdrantClient(...))`"
+            )
 
     def get_nodes(
         self,
@@ -373,6 +418,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Returns:
             List[BaseNode]: List of nodes retrieved from the index.
         """
+        self._ensure_async_client()
+
         should = []
         if node_ids is not None:
             should = [
@@ -417,8 +464,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 vector_size=len(nodes[0].get_embedding()),
             )
 
-        sparse_vector_name = self.sparse_vector_name()
-        points, ids = self._build_points(nodes, sparse_vector_name)
+        if self._collection_initialized and self._legacy_vector_format is None:
+            self._detect_vector_format(self.collection_name)
+
+        points, ids = self._build_points(nodes, self.sparse_vector_name)
 
         self._client.upload_points(
             collection_name=self.collection_name,
@@ -446,6 +495,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """
         from qdrant_client.http.exceptions import UnexpectedResponse
 
+        self._ensure_async_client()
+
         collection_initialized = await self._acollection_exists(self.collection_name)
 
         if len(nodes) > 0 and not collection_initialized:
@@ -453,9 +504,11 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 collection_name=self.collection_name,
                 vector_size=len(nodes[0].get_embedding()),
             )
+        if collection_initialized and self._legacy_vector_format is None:
+            # If collection exists but we haven't detected the vector format yet
+            await self._adetect_vector_format(self.collection_name)
 
-        sparse_vector_name = await self.asparse_vector_name()
-        points, ids = self._build_points(nodes, sparse_vector_name)
+        points, ids = self._build_points(nodes, self.sparse_vector_name)
 
         for batch in iter_batch(points, self.batch_size):
             retries = 0
@@ -500,6 +553,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
+        self._ensure_async_client()
+
         await self._aclient.delete(
             collection_name=self.collection_name,
             points_selector=rest.Filter(
@@ -559,6 +614,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]): List of node IDs to delete.
             filters (Optional[MetadataFilters]): Metadata filters to apply.
         """
+        self._ensure_async_client()
+
         should = []
         if node_ids is not None:
             should = [
@@ -592,6 +649,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         """
         Asynchronous method to clear the index.
         """
+        self._ensure_async_client()
+
         await self._aclient.delete_collection(collection_name=self.collection_name)
         self._collection_initialized = False
 
@@ -624,10 +683,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 self._client.create_collection(
                     collection_name=collection_name,
                     vectors_config={
-                        DENSE_VECTOR_NAME: dense_config,
+                        self.dense_vector_name: dense_config,
                     },
                     # Newly created collection will have the new sparse vector name
-                    sparse_vectors_config={SPARSE_VECTOR_NAME: sparse_config},
+                    sparse_vectors_config={self.sparse_vector_name: sparse_config},
                     quantization_config=self._quantization_config,
                 )
             else:
@@ -678,8 +737,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
             if self.enable_hybrid:
                 await self._aclient.create_collection(
                     collection_name=collection_name,
-                    vectors_config={DENSE_VECTOR_NAME: dense_config},
-                    sparse_vectors_config={SPARSE_VECTOR_NAME: sparse_config},
+                    vectors_config={self.dense_vector_name: dense_config},
+                    sparse_vectors_config={self.sparse_vector_name: sparse_config},
                     quantization_config=self._quantization_config,
                 )
             else:
@@ -754,7 +813,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedVector(
-                            name=DENSE_VECTOR_NAME,
+                            name=self.dense_vector_name,
                             vector=query_embedding,
                         ),
                         limit=query.similarity_top_k,
@@ -763,8 +822,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     ),
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
-                            # Dynamically switch between the old and new sparse vector name
-                            name=self.sparse_vector_name(),
+                            name=self.sparse_vector_name,
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -806,8 +864,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
-                            # Dynamically switch between the old and new sparse vector name
-                            name=self.sparse_vector_name(),
+                            name=self.sparse_vector_name,
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -819,8 +876,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     ),
                 ],
             )
-            return self.parse_to_query_result(sparse_response[0])
 
+            return self.parse_to_query_result(sparse_response[0])
         elif self.enable_hybrid:
             # search for dense vectors only
             response = self._client.search_batch(
@@ -828,7 +885,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedVector(
-                            name=DENSE_VECTOR_NAME,
+                            name=self.dense_vector_name,
                             vector=query_embedding,
                         ),
                         limit=query.similarity_top_k,
@@ -840,9 +897,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
             return self.parse_to_query_result(response[0])
         else:
+            # Regular non-hybrid search
             response = self._client.search(
                 collection_name=self.collection_name,
-                query_vector=query_embedding,
+                query_vector=(
+                    rest.NamedVector(
+                        name=self.dense_vector_name,
+                        vector=query_embedding,
+                    )
+                ),
                 limit=query.similarity_top_k,
                 query_filter=query_filter,
             )
@@ -857,6 +920,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             query (VectorStoreQuery): query
         """
+        self._ensure_async_client()
+
         query_embedding = cast(List[float], query.query_embedding)
 
         #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
@@ -866,6 +931,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
         else:
             # build metadata filters
             query_filter = cast(Filter, self._build_query_filter(query))
+
+        # Check if we need to detect vector format
+        if self._legacy_vector_format is None:
+            await self._adetect_vector_format(self.collection_name)
 
         if query.mode == VectorStoreQueryMode.HYBRID and not self.enable_hybrid:
             raise ValueError(
@@ -888,7 +957,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedVector(
-                            name=DENSE_VECTOR_NAME,
+                            name=self.dense_vector_name,
                             vector=query_embedding,
                         ),
                         limit=query.similarity_top_k,
@@ -897,8 +966,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     ),
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
-                            # Dynamically switch between the old and new sparse vector name
-                            name=await self.asparse_vector_name(),
+                            name=self.sparse_vector_name,
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -939,8 +1007,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedSparseVector(
-                            # Dynamically switch between the old and new sparse vector name
-                            name=await self.asparse_vector_name(),
+                            name=self.sparse_vector_name,
                             vector=rest.SparseVector(
                                 indices=sparse_indices[0],
                                 values=sparse_embedding[0],
@@ -960,7 +1027,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 requests=[
                     rest.SearchRequest(
                         vector=rest.NamedVector(
-                            name=DENSE_VECTOR_NAME,
+                            name=self.dense_vector_name,
                             vector=query_embedding,
                         ),
                         limit=query.similarity_top_k,
@@ -974,7 +1041,12 @@ class QdrantVectorStore(BasePydanticVectorStore):
         else:
             response = await self._aclient.search(
                 collection_name=self.collection_name,
-                query_vector=query_embedding,
+                query_vector=(
+                    rest.NamedVector(
+                        name=self.dense_vector_name,
+                        vector=query_embedding,
+                    )
+                ),
                 limit=query.similarity_top_k,
                 query_filter=query_filter,
             )
@@ -998,7 +1070,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             embedding = None
 
             if isinstance(vector, dict):
-                embedding = vector.get(DENSE_VECTOR_NAME, vector.get("", None))
+                embedding = vector.get(self.dense_vector_name, vector.get("", None))
             elif isinstance(vector, list):
                 embedding = vector
 
@@ -1083,7 +1155,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         range=Range(lte=subfilter.value),
                     )
                 )
-            elif subfilter.operator == FilterOperator.TEXT_MATCH:
+            elif (
+                subfilter.operator == FilterOperator.TEXT_MATCH
+                or subfilter.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
+            ):
                 conditions.append(
                     FieldCondition(
                         key=subfilter.key,
@@ -1141,9 +1216,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return filter
 
     def _build_query_filter(self, query: VectorStoreQuery) -> Optional[Any]:
-        if not query.doc_ids and not query.query_str:
-            return None
-
         must_conditions = []
 
         if query.doc_ids:
@@ -1154,7 +1226,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 )
             )
 
-        # Point id is a “service” id, it is not stored in payload. There is ‘HasId’ condition to filter by point id
+        # Point id is a "service" id, it is not stored in payload. There is 'HasId' condition to filter by point id
         # https://qdrant.tech/documentation/concepts/filtering/#has-id
         if query.node_ids:
             must_conditions.append(
@@ -1168,46 +1240,48 @@ class QdrantVectorStore(BasePydanticVectorStore):
         if query.filters and query.filters.filters:
             must_conditions.append(self._build_subfilter(query.filters))
 
+        if len(must_conditions) == 0:
+            return None
+
         return Filter(must=must_conditions)
 
     def use_old_sparse_encoder(self, collection_name: str) -> bool:
+        """
+        Check if the collection uses the old sparse encoder format.
+        This is used during initialization to determine which sparse vector name to use.
+        """
         collection_exists = self._collection_exists(collection_name)
         if collection_exists:
             cur_collection = self.client.get_collection(collection_name)
-            return SPARSE_VECTOR_NAME_OLD in (
+            return DEFAULT_SPARSE_VECTOR_NAME_OLD in (
                 cur_collection.config.params.sparse_vectors or {}
             )
 
         return False
 
-    def sparse_vector_name(self) -> str:
-        return (
-            SPARSE_VECTOR_NAME_OLD
-            if self.use_old_sparse_encoder(self.collection_name)
-            else SPARSE_VECTOR_NAME
-        )
-
     async def ause_old_sparse_encoder(self, collection_name: str) -> bool:
+        """
+        Asynchronous method to check if the collection uses the old sparse encoder format.
+        """
         collection_exists = await self._acollection_exists(collection_name)
         if collection_exists:
             cur_collection = await self._aclient.get_collection(collection_name)
-            return SPARSE_VECTOR_NAME_OLD in (
+            return DEFAULT_SPARSE_VECTOR_NAME_OLD in (
                 cur_collection.config.params.sparse_vectors or {}
             )
 
         return False
-
-    async def asparse_vector_name(self) -> str:
-        return (
-            SPARSE_VECTOR_NAME_OLD
-            if await self.ause_old_sparse_encoder(self.collection_name)
-            else SPARSE_VECTOR_NAME
-        )
 
     def get_default_sparse_doc_encoder(
         self, collection_name: str, fastembed_sparse_model: Optional[str] = None
     ) -> SparseEncoderCallable:
+        """
+        Get the default sparse document encoder.
+        Use old format for backward compatibility if detected.
+        """
         if self.use_old_sparse_encoder(collection_name):
+            # Update the sparse vector name to use the old format
+            self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
             return default_sparse_encoder("naver/efficient-splade-VI-BT-large-doc")
 
         if fastembed_sparse_model is not None:
@@ -1218,10 +1292,66 @@ class QdrantVectorStore(BasePydanticVectorStore):
     def get_default_sparse_query_encoder(
         self, collection_name: str, fastembed_sparse_model: Optional[str] = None
     ) -> SparseEncoderCallable:
+        """
+        Get the default sparse query encoder.
+        Use old format for backward compatibility if detected.
+        """
         if self.use_old_sparse_encoder(collection_name):
+            # Update the sparse vector name to use the old format
+            self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
             return default_sparse_encoder("naver/efficient-splade-VI-BT-large-query")
 
         if fastembed_sparse_model is not None:
             return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
 
         return fastembed_sparse_encoder()
+
+    def _detect_vector_format(self, collection_name: str) -> None:
+        """
+        Detect the vector format of an existing collection.
+        This allows backward compatibility with collections that were created before
+        the refactoring to use named vectors consistently.
+        """
+        try:
+            collection_info = self._client.get_collection(collection_name)
+            vectors_config = collection_info.config.params.vectors
+
+            # Check if we have an unnamed vector format (where name is empty string)
+            if isinstance(vectors_config, dict):
+                # Using named vectors format
+                if LEGACY_UNNAMED_VECTOR in vectors_config:
+                    self._legacy_vector_format = True
+                    self.dense_vector_name = LEGACY_UNNAMED_VECTOR
+            else:
+                # Using unnamed vector format from earlier versions
+                self._legacy_vector_format = True
+                self.dense_vector_name = LEGACY_UNNAMED_VECTOR
+
+        except Exception as e:
+            logger.warning(
+                f"Could not detect vector format for collection {collection_name}: {e}"
+            )
+
+    async def _adetect_vector_format(self, collection_name: str) -> None:
+        """
+        Asynchronous method to detect the vector format of an existing collection.
+        """
+        try:
+            collection_info = await self._aclient.get_collection(collection_name)
+            vectors_config = collection_info.config.params.vectors
+
+            # Check if we have an unnamed vector format (where name is empty string)
+            if isinstance(vectors_config, dict):
+                # Using named vectors format
+                if LEGACY_UNNAMED_VECTOR in vectors_config:
+                    self._legacy_vector_format = True
+                    self.dense_vector_name = LEGACY_UNNAMED_VECTOR
+            else:
+                # Using unnamed vector format from earlier versions
+                self._legacy_vector_format = True
+                self.dense_vector_name = LEGACY_UNNAMED_VECTOR
+
+        except Exception as e:
+            logger.warning(
+                f"Could not detect vector format for collection {collection_name}: {e}"
+            )

@@ -3,8 +3,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.llms.huggingface_api import HuggingFaceInferenceAPI
+from huggingface_hub.inference._generated.types import ChatCompletionOutput
 
-STUB_MODEL_NAME = "placeholder_model"
+STUB_MODEL_NAME = "microsoft/Phi-4-multimodal-instruct"
 
 
 @pytest.fixture(name="hf_inference_api")
@@ -45,20 +46,21 @@ class TestHuggingFaceInferenceAPI:
         generated_response = (
             " It's based on the book of the same name by James Fenimore Cooper."
         )
-        conversational_return = {
-            "generated_text": generated_response,
-            "conversation": {
-                "generated_responses": ["It's Die Hard for sure.", generated_response],
-                "past_user_inputs": [
-                    "Which movie is the best?",
-                    "Can you explain why?",
+        conversational_return = ChatCompletionOutput.parse_obj(
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "content": generated_response,
+                        }
+                    }
                 ],
-            },
-        }
+            }
+        )
 
         with patch.object(
             hf_inference_api._sync_client,
-            "conversational",
+            "chat_completion",
             return_value=conversational_return,
         ) as mock_conversational:
             response = hf_inference_api.chat(messages=messages)
@@ -66,9 +68,10 @@ class TestHuggingFaceInferenceAPI:
         assert response.message.role == MessageRole.ASSISTANT
         assert response.message.content == generated_response
         mock_conversational.assert_called_once_with(
-            text="Can you explain why?",
-            past_user_inputs=["Which movie is the best?"],
-            generated_responses=["It's Die Hard for sure."],
+            messages=[{"role": m.role.value, "content": m.content} for m in messages],
+            model=STUB_MODEL_NAME,
+            temperature=0.1,
+            max_tokens=256,
         )
 
     def test_chat_text_generation(
@@ -99,6 +102,8 @@ class TestHuggingFaceInferenceAPI:
         assert response.message.content == conversational_return
         mock_complete.assert_called_once_with(
             "System: You are an expert movie reviewer\nUser: Which movie is the best?\nAssistant:",
+            model=STUB_MODEL_NAME,
+            temperature=0.1,
             max_new_tokens=256,
         )
 
@@ -111,5 +116,7 @@ class TestHuggingFaceInferenceAPI:
             return_value=generated_text,
         ) as mock_text_generation:
             response = hf_inference_api.complete(prompt)
-        mock_text_generation.assert_called_once_with(prompt, max_new_tokens=256)
+        mock_text_generation.assert_called_once_with(
+            prompt, model=STUB_MODEL_NAME, temperature=0.1, max_new_tokens=256
+        )
         assert response.text == generated_text

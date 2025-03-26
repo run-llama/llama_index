@@ -4,17 +4,20 @@ MISTRALAI_MODELS: Dict[str, int] = {
     "mistral-tiny": 32000,
     "mistral-small": 32000,
     "mistral-medium": 32000,
-    "mistral-large": 32000,
+    "mistral-large": 131000,
+    "mistral-saba-latest": 32000,
     "open-mixtral-8x7b": 32000,
     "open-mistral-7b": 32000,
     "open-mixtral-8x22b": 64000,
     "mistral-small-latest": 32000,
     "mistral-medium-latest": 32000,
     "mistral-large-latest": 32000,
-    "codestral-latest": 32000,
-    "open-mistral-nemo-latest": 128000,
-    "ministral-8b-latest": 128000,
-    "ministral-3b-latest": 128000,
+    "codestral-latest": 256000,
+    "open-mistral-nemo-latest": 131000,
+    "ministral-8b-latest": 131000,
+    "ministral-3b-latest": 131000,
+    "pixtral-large-latest": 131000,
+    "pixtral-12b-2409": 131000,
 }
 
 MISTRALAI_FUNCTION_CALLING_MODELS = (
@@ -22,6 +25,11 @@ MISTRALAI_FUNCTION_CALLING_MODELS = (
     "open-mixtral-8x22b",
     "ministral-8b-latest",
     "ministral-3b-latest",
+    "mistral-small-latest",
+    "codestral-latest",
+    "open-mistral-nemo-latest",
+    "pixtral-large-latest",
+    "pixtral-12b-2409",
 )
 
 MISTRALAI_CODE_MODELS = "codestral-latest"

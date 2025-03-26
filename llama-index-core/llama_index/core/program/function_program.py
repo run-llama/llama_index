@@ -14,7 +14,6 @@ from typing import (
 )
 
 from llama_index.core.bridge.pydantic import (
-    BaseModel,
     ValidationError,
 )
 from llama_index.core.base.llms.types import ChatResponse
@@ -26,29 +25,12 @@ from llama_index.core.types import BasePydanticProgram, Model
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.chat_engine.types import AgentChatResponse
 from llama_index.core.program.utils import (
+    FlexibleModel,
     process_streaming_objects,
     num_valid_fields,
 )
 
 _logger = logging.getLogger(__name__)
-
-
-def _parse_tool_outputs(
-    agent_response: AgentChatResponse,
-    allow_parallel_tool_calls: bool = False,
-) -> Union[BaseModel, List[BaseModel]]:
-    """Parse tool outputs."""
-    outputs = [cast(BaseModel, s.raw_output) for s in agent_response.sources]
-    if allow_parallel_tool_calls:
-        return outputs
-    else:
-        if len(outputs) > 1:
-            _logger.warning(
-                "Multiple outputs found, returning first one. "
-                "If you want to return all outputs, set output_multiple=True."
-            )
-
-        return outputs[0]
 
 
 def get_function_tool(output_cls: Type[Model]) -> FunctionTool:
@@ -58,7 +40,7 @@ def get_function_tool(output_cls: Type[Model]) -> FunctionTool:
 
     # NOTE: this does not specify the schema in the function signature,
     # so instead we'll directly provide it in the fn_schema in the ToolMetadata
-    def model_fn(**kwargs: Any) -> BaseModel:
+    def model_fn(**kwargs: Any) -> Model:
         """Model function."""
         return output_cls(**kwargs)
 
@@ -70,7 +52,7 @@ def get_function_tool(output_cls: Type[Model]) -> FunctionTool:
     )
 
 
-class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
+class FunctionCallingProgram(BasePydanticProgram[Model]):
     """Function Calling Program.
 
     Uses function calling LLMs to obtain a structured output.
@@ -122,7 +104,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             prompt = PromptTemplate(prompt_template_str)
 
         return cls(
-            output_cls=output_cls,  # type: ignore
+            output_cls=output_cls,
             llm=llm,  # type: ignore
             prompt=cast(PromptTemplate, prompt),
             tool_choice=tool_choice,
@@ -131,7 +113,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         )
 
     @property
-    def output_cls(self) -> Type[BaseModel]:
+    def output_cls(self) -> Type[Model]:
         return self._output_cls
 
     @property
@@ -147,7 +129,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         *args: Any,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> BaseModel:
+    ) -> Union[Model, List[Model]]:
         llm_kwargs = llm_kwargs or {}
         tool = get_function_tool(self._output_cls)
 
@@ -161,17 +143,17 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
             **llm_kwargs,
         )
-        return _parse_tool_outputs(
+        return self._parse_tool_outputs(
             agent_response,
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
-        )  # type: ignore
+        )
 
     async def acall(
         self,
         *args: Any,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> BaseModel:
+    ) -> Union[Model, List[Model]]:
         llm_kwargs = llm_kwargs or {}
         tool = get_function_tool(self._output_cls)
 
@@ -182,16 +164,34 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
             **llm_kwargs,
         )
-        return _parse_tool_outputs(
+        return self._parse_tool_outputs(
             agent_response,
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
-        )  # type: ignore
+        )
+
+    def _parse_tool_outputs(
+        self,
+        agent_response: AgentChatResponse,
+        allow_parallel_tool_calls: bool = False,
+    ) -> Union[Model, List[Model]]:
+        """Parse tool outputs."""
+        outputs = [cast(Model, s.raw_output) for s in agent_response.sources]
+        if allow_parallel_tool_calls:
+            return outputs
+        else:
+            if len(outputs) > 1:
+                _logger.warning(
+                    "Multiple outputs found, returning first one. "
+                    "If you want to return all outputs, set output_multiple=True."
+                )
+
+            return outputs[0]
 
     def _process_objects(
         self,
         chat_response: ChatResponse,
-        output_cls: Type[BaseModel],
-        cur_objects: Optional[List[BaseModel]] = None,
+        output_cls: Type[Model],
+        cur_objects: Optional[List[Model]] = None,
     ) -> Union[Model, List[Model]]:
         """Process stream."""
         tool_calls = self._llm.get_tool_calls_from_response(
@@ -202,7 +202,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
         # TODO: change
         if len(tool_calls) == 0:
             # if no tool calls, return single blank output_class
-            return output_cls()  # type: ignore
+            return output_cls()
 
         tool_fn_args = [call.tool_kwargs for call in tool_calls]
         objects = [
@@ -222,22 +222,24 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
                 new_obj = self._output_cls.model_validate(obj.model_dump())
             except ValidationError as e:
                 _logger.warning(f"Failed to parse object: {e}")
-                new_obj = obj  # type: ignore
+                new_obj = obj
             new_cur_objects.append(new_obj)
 
         if self._allow_parallel_tool_calls:
-            return new_cur_objects  # type: ignore
+            return new_cur_objects
         else:
             if len(new_cur_objects) > 1:
                 _logger.warning(
                     "Multiple outputs found, returning first one. "
                     "If you want to return all outputs, set output_multiple=True."
                 )
-            return new_cur_objects[0]  # type: ignore
+            return new_cur_objects[0]
 
-    def stream_call(  # type: ignore
+    def stream_call(
         self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+    ) -> Generator[
+        Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None, None
+    ]:
         """Stream object.
 
         Returns a generator returning partials of the same object
@@ -273,14 +275,16 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
                     llm=self._llm,
                 )
                 cur_objects = objects if isinstance(objects, list) else [objects]
-                yield objects  # type: ignore
+                yield objects
             except Exception as e:
                 _logger.warning(f"Failed to parse streaming response: {e}")
                 continue
 
-    async def astream_call(  # type: ignore
+    async def astream_call(
         self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> AsyncGenerator[Union[Model, List[Model]], None]:
+    ) -> AsyncGenerator[
+        Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None
+    ]:
         """Stream objects.
 
         Returns a generator returning partials of the same object
@@ -302,7 +306,9 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
             **(llm_kwargs or {}),
         )
 
-        async def gen() -> AsyncGenerator[Union[Model, List[Model]], None]:
+        async def gen() -> AsyncGenerator[
+            Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None
+        ]:
             cur_objects = None
             async for partial_resp in chat_response_gen:
                 try:
@@ -315,7 +321,7 @@ class FunctionCallingProgram(BasePydanticProgram[BaseModel]):
                         llm=self._llm,
                     )
                     cur_objects = objects if isinstance(objects, list) else [objects]
-                    yield objects  # type: ignore
+                    yield objects
                 except Exception as e:
                     _logger.warning(f"Failed to parse streaming response: {e}")
                     continue

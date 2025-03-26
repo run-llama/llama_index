@@ -1,4 +1,3 @@
-import json
 from typing import (
     Any,
     Callable,
@@ -36,6 +35,7 @@ from llama_index.core.base.llms.generic_utils import (
     stream_chat_to_completion_decorator,
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelection
+from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.bedrock_converse.utils import (
     bedrock_modelname_to_context_size,
@@ -288,6 +288,10 @@ class BedrockConverse(FunctionCallingLLM):
             if text := content_block.get("text", None):
                 text_content += text
             if tool_usage := content_block.get("toolUse", None):
+                if "toolUseId" not in tool_usage:
+                    tool_usage["toolUseId"] = content_block["toolUseId"]
+                if "name" not in tool_usage:
+                    tool_usage["name"] = content_block["name"]
                 tool_calls.append(tool_usage)
             if tool_result := content_block.get("toolResult", None):
                 for tool_result_content in tool_result["content"]:
@@ -302,15 +306,13 @@ class BedrockConverse(FunctionCallingLLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # convert Llama Index messages to AWS Bedrock Converse messages
         converse_messages, system_prompt = messages_to_converse_messages(messages)
-        if len(system_prompt) > 0 or self.system_prompt is None:
-            self.system_prompt = system_prompt
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = converse_with_retry(
             client=self._client,
             messages=converse_messages,
-            system_prompt=self.system_prompt,
+            system_prompt=system_prompt,
             max_retries=self.max_retries,
             stream=False,
             guardrail_identifier=self.guardrail_identifier,
@@ -334,6 +336,7 @@ class BedrockConverse(FunctionCallingLLM):
                 },
             ),
             raw=dict(response),
+            additional_kwargs=self._get_response_token_counts(dict(response)),
         )
 
     @llm_completion_callback()
@@ -349,15 +352,13 @@ class BedrockConverse(FunctionCallingLLM):
     ) -> ChatResponseGen:
         # convert Llama Index messages to AWS Bedrock Converse messages
         converse_messages, system_prompt = messages_to_converse_messages(messages)
-        if len(system_prompt) > 0 or self.system_prompt is None:
-            self.system_prompt = system_prompt
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = converse_with_retry(
             client=self._client,
             messages=converse_messages,
-            system_prompt=self.system_prompt,
+            system_prompt=system_prompt,
             max_retries=self.max_retries,
             stream=True,
             guardrail_identifier=self.guardrail_identifier,
@@ -392,9 +393,12 @@ class BedrockConverse(FunctionCallingLLM):
                         ),
                         delta=content_delta.get("text", ""),
                         raw=response,
+                        additional_kwargs=self._get_response_token_counts(
+                            dict(response)
+                        ),
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
-                    tool_use = content_block_start["toolUse"]
+                    tool_use = content_block_start["start"]["toolUse"]
                     content = join_two_dicts(content, tool_use)
                     (
                         _,
@@ -414,6 +418,9 @@ class BedrockConverse(FunctionCallingLLM):
                             },
                         ),
                         raw=response,
+                        additional_kwargs=self._get_response_token_counts(
+                            dict(response)
+                        ),
                     )
 
         return gen()
@@ -431,8 +438,6 @@ class BedrockConverse(FunctionCallingLLM):
     ) -> ChatResponse:
         # convert Llama Index messages to AWS Bedrock Converse messages
         converse_messages, system_prompt = messages_to_converse_messages(messages)
-        if len(system_prompt) > 0 or self.system_prompt is None:
-            self.system_prompt = system_prompt
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
@@ -440,7 +445,7 @@ class BedrockConverse(FunctionCallingLLM):
             session=self._asession,
             config=self._config,
             messages=converse_messages,
-            system_prompt=self.system_prompt,
+            system_prompt=system_prompt,
             max_retries=self.max_retries,
             stream=False,
             guardrail_identifier=self.guardrail_identifier,
@@ -464,6 +469,7 @@ class BedrockConverse(FunctionCallingLLM):
                 },
             ),
             raw=dict(response),
+            additional_kwargs=self._get_response_token_counts(dict(response)),
         )
 
     @llm_completion_callback()
@@ -479,8 +485,6 @@ class BedrockConverse(FunctionCallingLLM):
     ) -> ChatResponseAsyncGen:
         # convert Llama Index messages to AWS Bedrock Converse messages
         converse_messages, system_prompt = messages_to_converse_messages(messages)
-        if len(system_prompt) > 0 or self.system_prompt is None:
-            self.system_prompt = system_prompt
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
@@ -488,7 +492,7 @@ class BedrockConverse(FunctionCallingLLM):
             session=self._asession,
             config=self._config,
             messages=converse_messages,
-            system_prompt=self.system_prompt,
+            system_prompt=system_prompt,
             max_retries=self.max_retries,
             stream=True,
             guardrail_identifier=self.guardrail_identifier,
@@ -523,9 +527,10 @@ class BedrockConverse(FunctionCallingLLM):
                         ),
                         delta=content_delta.get("text", ""),
                         raw=chunk,
+                        additional_kwargs=self._get_response_token_counts(dict(chunk)),
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
-                    tool_use = content_block_start["toolUse"]
+                    tool_use = content_block_start["start"]["toolUse"]
                     content = join_two_dicts(content, tool_use)
                     (
                         _,
@@ -571,6 +576,8 @@ class BedrockConverse(FunctionCallingLLM):
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+            chat_history.append(user_msg)
+        elif isinstance(user_msg, ChatMessage):
             chat_history.append(user_msg)
 
         # convert Llama Index tools to AWS Bedrock Converse tools
@@ -624,11 +631,17 @@ class BedrockConverse(FunctionCallingLLM):
                 or "name" not in tool_call
             ):
                 raise ValueError("Invalid tool call.")
-            argument_dict = (
-                json.loads(tool_call["input"])
-                if isinstance(tool_call["input"], str)
-                else tool_call["input"]
-            )
+
+            # handle empty inputs
+            argument_dict = {}
+            if tool_call["input"] and isinstance(tool_call["input"], str):
+                # TODO parse_partial_json is not perfect
+                try:
+                    argument_dict = parse_partial_json(tool_call["input"])
+                except ValueError:
+                    argument_dict = {}
+            elif isinstance(tool_call["input"], dict):
+                argument_dict = tool_call["input"]
 
             tool_selections.append(
                 ToolSelection(
@@ -639,3 +652,21 @@ class BedrockConverse(FunctionCallingLLM):
             )
 
         return tool_selections
+
+    def _get_response_token_counts(
+        self, response: Optional[Dict[str, Any]] = None
+    ) -> dict:
+        """Get the token usage reported by the response."""
+        if not response or not isinstance(response, dict):
+            return {}
+
+        usage = response.get("usage", {})
+        if not usage:
+            return {}
+
+        # Convert Bedrock's token count format to match OpenAI's format
+        return {
+            "prompt_tokens": usage.get("inputTokens", 0),
+            "completion_tokens": usage.get("outputTokens", 0),
+            "total_tokens": usage.get("totalTokens", 0),
+        }

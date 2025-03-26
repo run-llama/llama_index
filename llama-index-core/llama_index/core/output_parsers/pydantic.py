@@ -1,7 +1,7 @@
 """Pydantic output parser."""
 
 import json
-from typing import Any, List, Optional, Type
+from typing import Any, Generic, List, Optional, Type
 
 from llama_index.core.output_parsers.base import ChainableOutputParser
 from llama_index.core.output_parsers.utils import extract_json_str
@@ -15,7 +15,7 @@ Output a valid JSON object but do not repeat the schema.
 """
 
 
-class PydanticOutputParser(ChainableOutputParser):
+class PydanticOutputParser(ChainableOutputParser, Generic[Model]):
     """Pydantic Output Parser.
 
     Args:
@@ -36,7 +36,7 @@ class PydanticOutputParser(ChainableOutputParser):
 
     @property
     def output_cls(self) -> Type[Model]:
-        return self._output_cls  # type: ignore
+        return self._output_cls
 
     @property
     def format_string(self) -> str:
