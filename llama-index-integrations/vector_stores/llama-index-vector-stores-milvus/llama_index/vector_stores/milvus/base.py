@@ -398,6 +398,18 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """Get async client."""
         return self._async_milvusclient
 
+    def _scalar_field_collector(self, entry: Dict, node: BaseNode):
+        """Collect scalar field values"""
+        if self.scalar_field_names is None:
+            return entry
+        else:
+            for scalar_field_name in self.scalar_field_names:
+                if scalar_field_name == 'content':
+                    entry['content'] = node.get_content()
+                else:
+                    entry[scalar_field_name] = node.metadata.get(scalar_field_name)
+            return entry
+
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add the embeddings and their nodes into Milvus.
 
@@ -430,7 +442,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 for node, sparse_embedding in zip(nodes, sparse_embeddings)
             }
         for node in nodes:
-            entry = node_to_metadata_dict(node)
+            entry = self._scalar_field_collector(node_to_metadata_dict(node), node)
             entry[MILVUS_ID_FIELD] = node.node_id
             entry[self.embedding_field] = node.embedding
 
@@ -480,7 +492,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 for node, sparse_embedding in zip(nodes, sparse_embeddings)
             }
         for node in nodes:
-            entry = node_to_metadata_dict(node)
+            entry = self._scalar_field_collector(node_to_metadata_dict(node), node)
             entry[MILVUS_ID_FIELD] = node.node_id
             entry[self.embedding_field] = node.embedding
 

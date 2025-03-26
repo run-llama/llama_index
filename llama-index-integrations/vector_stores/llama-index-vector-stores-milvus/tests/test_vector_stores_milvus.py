@@ -409,6 +409,41 @@ class TestMilvusAsync:
         assert result.nodes[0].id_ == "n1"
         assert result.nodes[0].text == "n1_text"
 
+    async def test_scalar_fields(self, event_loop):
+        vector_store = MilvusVectorStore(
+            uri=TEST_URI,
+            dim=64,
+            collection_name="test_batch_encoding",
+            overwrite=True,
+            enable_sparse=True,
+            sparse_embedding_function=MockSparseEmbeddingFunction(),
+            consistency_level="Strong",
+            scalar_field_names=['content'], # add scalar field content
+        )
+
+        # Test batch document encoding
+        nodes = [
+            TextNode(
+                id_=f"n{i}",
+                text=f"{i}_text",
+                embedding=[0.5] * 64,
+            )
+            for i in range(3)
+        ]
+
+        await vector_store.async_add(nodes)
+
+        # Verify the sparse embeddings were batch encoded
+        results = await vector_store.aclient.query(
+            "test_batch_encoding",
+            filter="content like '1_%'",
+            output_fields=["id", "sparse_embedding"],
+            limit=10,
+        )
+        assert len(results) == 1
+        for i, result in enumerate(results):
+            assert result["id"] == f"n1"
+
     async def test_async_batch_encoding(self, event_loop):
         vector_store = MilvusVectorStore(
             uri=TEST_URI,
