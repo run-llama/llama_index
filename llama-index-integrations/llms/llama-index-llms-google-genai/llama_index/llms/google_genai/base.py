@@ -5,11 +5,13 @@ import typing
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     Dict,
     Generator,
     List,
     Optional,
     Sequence,
+    Type,
     Union,
 )
 
@@ -36,9 +38,8 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE, DEFAULT_NUM_OUTPUTS
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.llms.llm import ToolSelection, Model
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.types import Model
 from llama_index.llms.google_genai.utils import (
     chat_from_gemini_response,
     chat_message_to_gemini,
@@ -57,6 +58,7 @@ DEFAULT_MODEL = "gemini-2.0-flash"
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
+    from llama_index.core.program.utils import FlexibleModel
 
 
 class VertexAIConfig(typing.TypedDict):
@@ -425,11 +427,11 @@ class GoogleGenAI(FunctionCallingLLM):
     @dispatcher.span
     def structured_predict_without_function_calling(
         self,
-        output_cls: type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> BaseModel:
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
@@ -457,11 +459,11 @@ class GoogleGenAI(FunctionCallingLLM):
     @dispatcher.span
     def structured_predict(
         self,
-        output_cls: type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> BaseModel:
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
@@ -480,11 +482,11 @@ class GoogleGenAI(FunctionCallingLLM):
     @dispatcher.span
     async def astructured_predict(
         self,
-        output_cls: type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> BaseModel:
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
@@ -503,11 +505,11 @@ class GoogleGenAI(FunctionCallingLLM):
     @dispatcher.span
     def stream_structured_predict(
         self,
-        output_cls: type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+    ) -> Generator[Union[Model, "FlexibleModel"], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
@@ -525,11 +527,11 @@ class GoogleGenAI(FunctionCallingLLM):
     @dispatcher.span
     async def astream_structured_predict(
         self,
-        output_cls: type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+    ) -> AsyncGenerator[Union[Model, "FlexibleModel"], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}
