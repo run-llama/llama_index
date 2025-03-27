@@ -12,9 +12,8 @@ contains_example = false
 import_path = "llama_index.llms.openai"
 
 [tool.llamahub.class_authors]
-AsyncOpenAI = "llama-index"
 OpenAI = "llama-index"
-SyncOpenAI = "llama-index"
+OpenAIResponses = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
