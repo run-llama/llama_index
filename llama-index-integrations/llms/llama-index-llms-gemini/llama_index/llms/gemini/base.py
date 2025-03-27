@@ -7,11 +7,13 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     Dict,
     Generator,
     List,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
 )
@@ -30,13 +32,14 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.llms.llm import ToolSelection
-from llama_index.core.types import Model
+from llama_index.core.llms.llm import ToolSelection, Model
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.program.utils import FlexibleModel
 from llama_index.core.utilities.gemini_utils import merge_neighboring_same_role_messages
 
 from .utils import (
@@ -460,74 +463,92 @@ class Gemini(FunctionCallingLLM):
 
     @dispatcher.span
     def structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> BaseModel:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         if self._is_function_call_model:
             llm_kwargs["tool_choice"] = (
                 "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
             )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return super().structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        return super().structured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        )
 
     @dispatcher.span
     async def astructured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> BaseModel:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         if self._is_function_call_model:
             llm_kwargs["tool_choice"] = (
                 "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
             )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return await super().astructured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        return await super().astructured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        )
 
     @dispatcher.span
     def stream_structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Generator[Union[Model, FlexibleModel], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         if self._is_function_call_model:
             llm_kwargs["tool_choice"] = (
                 "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
             )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        return super().stream_structured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        )
 
     @dispatcher.span
     async def astream_structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         if self._is_function_call_model:
             llm_kwargs["tool_choice"] = (
                 "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
             )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return await super().astream_structured_predict(
-            *args, llm_kwargs=llm_kwargs, **kwargs
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
