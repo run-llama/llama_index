@@ -2477,7 +2477,7 @@ plugins:
         ./examples/agent/agentic_rag_using_vertex_ai/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/agentic_rag_with_llamaindex_and_vertexai_managed_index/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/coa_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
-        ./examples/agent/custom_agent.html: https://docs.llamaindex.ai/en/stable/examples/agent/custom_agent/
+        ./examples/agent/custom_agent.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/custom_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/dashscope_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/introspective_agent_toxicity_reduction/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
@@ -2486,10 +2486,10 @@ plugins:
         ./examples/agent/multi_document_agents-v1.html: https://docs.llamaindex.ai/en/stable/examples/agent/multi_document_agents-v1/
         ./examples/agent/multi_document_agents.html: https://docs.llamaindex.ai/en/stable/examples/agent/multi_document_agents/
         ./examples/agent/multi_document_agents/index.html: https://docs.llamaindex.ai/en/stable/examples/agent/multi_document_agents-v1/
-        ./examples/agent/openai_agent.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent/
+        ./examples/agent/openai_agent.html: https://docs.llamaindex.ai/en/stable/examples/workflow/function_calling_agent/
         ./examples/agent/openai_agent/index.html: https://docs.llamaindex.ai/en/stable/examples/workflow/function_calling_agent/
-        ./examples/agent/openai_agent_context_retrieval.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent_context_retrieval/
-        ./examples/agent/openai_agent_parallel_function_calling.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent_parallel_function_calling/
+        ./examples/agent/openai_agent_context_retrieval.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/openai_agent_parallel_function_calling.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/openai_agent_parallel_function_calling/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/openai_agent_query_cookbook.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent_query_cookbook/
         ./examples/agent/openai_agent_query_plan.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent_query_plan/
@@ -2497,8 +2497,8 @@ plugins:
         ./examples/agent/openai_agent_retrieval.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent_retrieval/
         ./examples/agent/openai_agent_tool_call_parser/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/openai_agent_with_query_engine.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent_with_query_engine/
-        ./examples/agent/openai_assistant_agent.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_assistant_agent/
-        ./examples/agent/openai_assistant_query_cookbook.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_assistant_query_cookbook/
+        ./examples/agent/openai_assistant_agent.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/openai_assistant_query_cookbook.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/openai_forced_function_call.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_forced_function_call/
         ./examples/agent/openai_forced_function_call/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/openai_retrieval_benchmark.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_retrieval_benchmark/
