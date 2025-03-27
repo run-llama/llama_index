@@ -42,7 +42,7 @@ pip install llama-index-tools-dappier
 
 You'll need to set up your API keys for OpenAI and Dappier.
 
-Your can go to [here](https://platform.openai.com/settings/organization/api-keys) to get API Key from Open AI.
+You can go to [here](https://platform.openai.com/settings/organization/api-keys) to get API Key from Open AI.
 
 ```python
 os.environ["OPENAI_API_KEY"] = "openai_api_key"
