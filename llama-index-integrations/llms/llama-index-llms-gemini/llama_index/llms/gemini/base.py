@@ -540,7 +540,7 @@ class Gemini(FunctionCallingLLM):
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> AsyncGenerator[Union[Model, "FlexibleModel"], None, None]:
+    ) -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
         all_kwargs = {**llm_kwargs, **kwargs}

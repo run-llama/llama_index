@@ -466,13 +466,12 @@ class GoogleGenAI(FunctionCallingLLM):
     ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         if self.is_function_calling_model:
             llm_kwargs["tool_choice"] = (
                 "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
             )
 
         return super().structured_predict(
@@ -489,13 +488,12 @@ class GoogleGenAI(FunctionCallingLLM):
     ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         if self.is_function_calling_model:
             llm_kwargs["tool_choice"] = (
                 "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
             )
 
         return await super().astructured_predict(
@@ -512,13 +510,12 @@ class GoogleGenAI(FunctionCallingLLM):
     ) -> Generator[Union[Model, "FlexibleModel"], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         if self.is_function_calling_model:
             llm_kwargs["tool_choice"] = (
                 "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
             )
         return super().stream_structured_predict(
             output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
@@ -531,16 +528,15 @@ class GoogleGenAI(FunctionCallingLLM):
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> AsyncGenerator[Union[Model, "FlexibleModel"], None, None]:
+    ) -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         if self.is_function_calling_model:
             llm_kwargs["tool_choice"] = (
                 "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
             )
         return await super().astream_structured_predict(
             output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
