@@ -40,6 +40,7 @@ from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_ca
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection, Model
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.program.utils import FlexibleModel
 from llama_index.llms.google_genai.utils import (
     chat_from_gemini_response,
     chat_message_to_gemini,
@@ -58,7 +59,6 @@ DEFAULT_MODEL = "gemini-2.0-flash"
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
-    from llama_index.core.program.utils import FlexibleModel
 
 
 class VertexAIConfig(typing.TypedDict):
@@ -506,7 +506,7 @@ class GoogleGenAI(FunctionCallingLLM):
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> Generator[Union[Model, "FlexibleModel"], None, None]:
+    ) -> Generator[Union[Model, FlexibleModel], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
 
@@ -527,7 +527,7 @@ class GoogleGenAI(FunctionCallingLLM):
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
+    ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
 

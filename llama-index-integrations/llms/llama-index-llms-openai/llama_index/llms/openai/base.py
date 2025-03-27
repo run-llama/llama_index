@@ -60,6 +60,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection, Model
 from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.program.utils import FlexibleModel
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import (
     O1_MODELS,
@@ -88,7 +89,6 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
-    from llama_index.core.program.utils import FlexibleModel
 
 DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
 
@@ -1039,7 +1039,7 @@ class OpenAI(FunctionCallingLLM):
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> Generator[Union[Model, "FlexibleModel"], None, None]:
+    ) -> Generator[Union[Model, FlexibleModel], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
 
@@ -1059,7 +1059,7 @@ class OpenAI(FunctionCallingLLM):
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
+    ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
 

@@ -39,6 +39,7 @@ from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_ca
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection, Model
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.program.utils import FlexibleModel
 from llama_index.core.utilities.gemini_utils import merge_neighboring_same_role_messages
 
 from .utils import (
@@ -64,7 +65,6 @@ GEMINI_MODELS = (
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
-    from llama_index.core.program.utils import FlexibleModel
 
 
 @deprecated.deprecated(
@@ -514,7 +514,7 @@ class Gemini(FunctionCallingLLM):
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> Generator[Union[Model, "FlexibleModel"], None, None]:
+    ) -> Generator[Union[Model, FlexibleModel], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
 
@@ -537,7 +537,7 @@ class Gemini(FunctionCallingLLM):
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
+    ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
 
