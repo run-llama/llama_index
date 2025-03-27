@@ -646,6 +646,7 @@ nav:
           - ./examples/vector_stores/LanternAutoRetriever.ipynb
           - ./examples/vector_stores/LanternIndexDemo.ipynb
           - ./examples/vector_stores/LindormDemo.ipynb
+          - ./examples/vector_stores/MilvusFullTextSearchDemo.ipynb
           - ./examples/vector_stores/MilvusHybridIndexDemo.ipynb
           - ./examples/vector_stores/MilvusIndexDemo.ipynb
           - ./examples/vector_stores/MilvusOperatorFunctionDemo.ipynb
@@ -2411,6 +2412,7 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-netmind
             - ../llama-index-integrations/llms/llama-index-llms-novita
             - ../llama-index-integrations/llms/llama-index-llms-netmind
+            - ../llama-index-integrations/tools/llama-index-tools-dappier
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
