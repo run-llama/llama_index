@@ -4,10 +4,13 @@ import os
 from typing import Any, Optional, Sequence
 
 from llama_index.llms.openai_like import OpenAILike
-from llama_index.core.llms.types import (
+from llama_index.llms.openai.base import (
     ChatMessage,
+    ChatResponse,
     ChatResponseGen,
+    CompletionResponse,
     CompletionResponseGen,
+    MessageRole,
 )
 
 DEFAULT_MODEL = "asi1-mini"
