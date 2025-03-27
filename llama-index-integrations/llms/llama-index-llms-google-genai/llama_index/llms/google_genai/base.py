@@ -430,18 +430,17 @@ class GoogleGenAI(FunctionCallingLLM):
         output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
+        **prompt_args: Any,
     ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
-        messages = prompt.format_messages()
+        messages = prompt.format_messages(**prompt_args)
         response = self._client.models.generate_content(
             model=self.model,
             contents=list(map(chat_message_to_gemini, messages)),
             **{
-                **all_kwargs,
+                **llm_kwargs,
                 **{
                     "config": {
                         "response_mime_type": "application/json",
@@ -462,7 +461,7 @@ class GoogleGenAI(FunctionCallingLLM):
         output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
+        **prompt_args: Any,
     ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
@@ -475,7 +474,7 @@ class GoogleGenAI(FunctionCallingLLM):
             )
 
         return super().structured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
 
     @dispatcher.span
@@ -484,7 +483,7 @@ class GoogleGenAI(FunctionCallingLLM):
         output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
+        **prompt_args: Any,
     ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
@@ -497,7 +496,7 @@ class GoogleGenAI(FunctionCallingLLM):
             )
 
         return await super().astructured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
 
     @dispatcher.span
@@ -506,7 +505,7 @@ class GoogleGenAI(FunctionCallingLLM):
         output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
+        **prompt_args: Any,
     ) -> Generator[Union[Model, "FlexibleModel"], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
@@ -518,7 +517,7 @@ class GoogleGenAI(FunctionCallingLLM):
                 else llm_kwargs["tool_choice"]
             )
         return super().stream_structured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
 
     @dispatcher.span
@@ -527,7 +526,7 @@ class GoogleGenAI(FunctionCallingLLM):
         output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
+        **prompt_args: Any,
     ) -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
@@ -539,5 +538,5 @@ class GoogleGenAI(FunctionCallingLLM):
                 else llm_kwargs["tool_choice"]
             )
         return await super().astream_structured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
