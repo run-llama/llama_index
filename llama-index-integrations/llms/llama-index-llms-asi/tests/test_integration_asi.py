@@ -26,12 +26,12 @@ def test_chat():
 def test_stream_completion():
     asi = ASI(model="asi1-mini", temperature=0, max_tokens=10)
     resp_gen = asi.stream_complete("hello")
-    
+
     # Collect all chunks
     chunks = []
     for chunk in resp_gen:
         chunks.append(chunk)
-    
+
     # Verify we got at least one chunk with content
     assert len(chunks) > 0
     assert chunks[0].text.strip() != ""
@@ -44,11 +44,11 @@ def test_stream_chat():
         ChatMessage(role=MessageRole.USER, content="hello")
     ]
     resp_gen = asi.stream_chat(messages)
-    
+
     # Collect all chunks
     chunks = []
     for chunk in resp_gen:
         chunks.append(chunk)
-    
+
     # Verify we got at least one chunk with content
     assert len(chunks) > 0

@@ -12,3 +12,13 @@ python_tests(
         requirement("pytest"),
     ],
 )
+
+python_tests(
+    name = "test_integration_asi",
+    srcs = ["test_integration_asi.py"],
+    deps = [
+        "//llama_index/llms/asi",
+        "//llama_index/core:llama_index_core",
+        requirement("pytest"),
+    ],
+)

@@ -6,11 +6,8 @@ from typing import Any, Optional, Sequence
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.llms.openai.base import (
     ChatMessage,
-    ChatResponse,
     ChatResponseGen,
-    CompletionResponse,
     CompletionResponseGen,
-    MessageRole,
 )
 
 DEFAULT_MODEL = "asi1-mini"
@@ -51,22 +48,20 @@ class ASI(OpenAILike):
         Initialize the ASI LLM.
 
         Args:
-            model (str): The ASI model to use. Defaults to "asi1-mini".
-            api_key (Optional[str]): The API key to use. If None, the ASI_API_KEY
-                environment variable will be used. Defaults to None.
-            api_base (str): The base URL for the ASI API. Defaults to
-                "https://api.asi1.ai/v1".
+            model (str): The ASI model to use.
+            api_key (Optional[str]): The API key to use.
+            api_base (str): The base URL for the ASI API.
             is_chat_model (bool): Whether the model supports chat.
-                Defaults to True.
-            is_function_calling_model (bool): Whether the model supports function
-                calling. Defaults to False.
+            is_function_calling_model (bool): Whether the model supports
+                function calling.
             **kwargs (Any): Additional arguments to pass to the OpenAILike
                 constructor.
         """
         api_key = api_key or os.environ.get("ASI_API_KEY", None)
         if api_key is None:
             raise ValueError(
-                "Must specify `api_key` or set environment variable `ASI_API_KEY`."
+                "Must specify `api_key` or set environment variable "
+                "`ASI_API_KEY`."
             )
 
         super().__init__(
@@ -89,12 +84,43 @@ class ASI(OpenAILike):
         """
         Override stream_complete to handle ASI's limitations.
 
-        ASI doesn't support the completions endpoint at all (returns 404 error),
-        so we use a fallback mechanism that returns the complete response as a
-        single chunk.
+        ASI doesn't support the completions endpoint at all (returns 404),
+        so we use a fallback mechanism that returns the complete response as
+        a single chunk.
+
+        Note:
+            Even though is_chat_model=True by default,
+            we override this method to handle the case
+            where someone might try to use the completion API directly.
         """
         # Get a complete response using the non-streaming complete method
         response = self.complete(prompt, formatted=formatted, **kwargs)
+
+        # Create a single chunk with the complete response
+        if response and response.text:
+            # Create a copy of the response to avoid modifying the original
+            chunk = response
+
+            # Yield the chunk
+            yield chunk
+
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
+        """
+        Override astream_complete to handle ASI's limitations (async).
+
+        ASI doesn't support the completions endpoint at all (returns 404),
+        so we use a fallback mechanism that returns the complete response as
+        a single chunk.
+
+        Note:
+            Even though is_chat_model=True by default,
+            we override this method to handle the case
+            where someone might try to use the completion API directly.
+        """
+        # Get a complete response using the non-streaming complete method
+        response = await self.acomplete(prompt, formatted=formatted, **kwargs)
 
         # Create a single chunk with the complete response
         if response and response.text:
@@ -120,18 +146,46 @@ class ASI(OpenAILike):
 
         # Process the raw stream to extract meaningful content
         for chunk in raw_stream:
-            # Check if the chunk has a delta with content
             if hasattr(chunk, "delta") and hasattr(chunk.delta, "content"):
-                # If the content is None, try to extract content from other fields
                 if chunk.delta.content is None:
-                    # Check for 'thought' field in the raw response
                     if hasattr(chunk, "raw") and "thought" in chunk.raw:
-                        # Use the 'thought' field as content
                         chunk.delta.content = chunk.raw.get("thought", "")
-                    # Check for 'init_thought' field in the raw response
-                    elif hasattr(chunk, "raw") and "init_thought" in chunk.raw:
-                        # Use the 'init_thought' field as content
-                        chunk.delta.content = chunk.raw.get("init_thought", "")
+                    elif (
+                        hasattr(chunk, "raw")
+                        and "init_thought" in chunk.raw
+                    ):
+                        chunk.delta.content = chunk.raw.get(
+                            "init_thought", ""
+                        )
 
-            # Yield the processed chunk
+            yield chunk
+
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        """
+        Override astream_chat to handle ASI's unique streaming format (async).
+
+        ASI's streaming format includes custom fields like 'thought' and
+        'init_thought' that aren't part of the standard OpenAI format.
+        This method processes the raw stream to extract meaningful content
+        from these fields if available.
+        """
+        # Call the parent's astream_chat method to get the raw stream
+        raw_stream = await super().astream_chat(messages, **kwargs)
+
+        # Process the raw stream to extract meaningful content
+        for chunk in raw_stream:
+            if hasattr(chunk, "delta") and hasattr(chunk.delta, "content"):
+                if chunk.delta.content is None:
+                    if hasattr(chunk, "raw") and "thought" in chunk.raw:
+                        chunk.delta.content = chunk.raw.get("thought", "")
+                    elif (
+                        hasattr(chunk, "raw")
+                        and "init_thought" in chunk.raw
+                    ):
+                        chunk.delta.content = chunk.raw.get(
+                            "init_thought", ""
+                        )
+
             yield chunk

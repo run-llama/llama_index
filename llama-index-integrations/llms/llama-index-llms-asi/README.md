@@ -64,6 +64,29 @@ for chunk in llm.stream_chat(messages):
         print(chunk.message.content, end="", flush=True)
 ```
 
+## Async Support
+
+The ASI integration also supports async operations:
+
+```python
+# Async completion
+response = await llm.acomplete("Tell me about artificial intelligence.")
+print(response)
+
+# Async chat
+response = await llm.achat(messages)
+print(response)
+
+# Async streaming completion (simulated)
+async for chunk in llm.astream_complete("Tell me about artificial intelligence."):
+    print(chunk.text, end="", flush=True)
+
+# Async streaming chat
+async for chunk in llm.astream_chat(messages):
+    if chunk.message:
+        print(chunk.message.content, end="", flush=True)
+```
+
 ## API Key
 
 You need an API key to use ASI's API. You can provide it in two ways:
