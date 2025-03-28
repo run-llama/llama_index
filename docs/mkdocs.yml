@@ -1428,7 +1428,6 @@ nav:
           - ./api_reference/readers/minio.md
           - ./api_reference/readers/mondaydotcom.md
           - ./api_reference/readers/mongodb.md
-          - ./api_reference/readers/myscale.md
           - ./api_reference/readers/notion.md
           - ./api_reference/readers/nougat_ocr.md
           - ./api_reference/readers/obsidian.md
@@ -1631,7 +1630,6 @@ nav:
               - ./api_reference/storage/vector_store/metal.md
               - ./api_reference/storage/vector_store/milvus.md
               - ./api_reference/storage/vector_store/mongodb.md
-              - ./api_reference/storage/vector_store/myscale.md
               - ./api_reference/storage/vector_store/neo4jvector.md
               - ./api_reference/storage/vector_store/neptune.md
               - ./api_reference/storage/vector_store/nile.md
@@ -1840,7 +1838,6 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-cassandra
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-zep
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-rocksetdb
-            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-myscale
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-tencentvectordb
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-milvus
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-neo4jvector
@@ -2073,7 +2070,6 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-faiss
             - ../llama-index-integrations/readers/llama-index-readers-dad-jokes
             - ../llama-index-integrations/readers/llama-index-readers-patentsview
-            - ../llama-index-integrations/readers/llama-index-readers-myscale
             - ../llama-index-integrations/readers/llama-index-readers-guru
             - ../llama-index-integrations/readers/llama-index-readers-linear
             - ../llama-index-integrations/readers/llama-index-readers-telegram
@@ -3045,6 +3041,7 @@ plugins:
         ./optimizing/production_rag.html: https://docs.llamaindex.ai/en/stable/optimizing/production_rag/
         ./presentations/past_presentations.html: https://docs.llamaindex.ai/en/stable/presentations/past_presentations/
         ./understanding/agent/basic_agent/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/
+        ./understanding/agent/multi_agents/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/multi_agent/
         ./understanding/deployment/deployment.html: https://docs.llamaindex.ai/en/stable/understanding/deployment/deployment/
         ./understanding/evaluating/cost_analysis/root.html: understanding/evaluating/cost_analysis/index.md
         ./understanding/evaluating/cost_analysis/usage_pattern.html: https://docs.llamaindex.ai/en/stable/understanding/evaluating/cost_analysis/usage_pattern/
