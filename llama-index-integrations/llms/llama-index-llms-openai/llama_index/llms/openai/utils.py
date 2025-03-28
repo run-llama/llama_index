@@ -391,20 +391,142 @@ def to_openai_message_dict(
     return message_dict  # type: ignore
 
 
+def to_openai_responses_message_dict(
+    message: ChatMessage,
+    drop_none: bool = False,
+    model: Optional[str] = None,
+) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    """Convert a ChatMessage to an OpenAI message dict."""
+    content = []
+    content_txt = ""
+
+    for block in message.blocks:
+        if isinstance(block, TextBlock):
+            content.append({"type": "input_text", "text": block.text})
+            content_txt += block.text
+        elif isinstance(block, ImageBlock):
+            if block.url:
+                content.append(
+                    {
+                        "type": "input_image",
+                        "image_url": str(block.url),
+                        "detail": block.detail or "auto",
+                    }
+                )
+            else:
+                img_bytes = block.resolve_image(as_base64=True).read()
+                img_str = img_bytes.decode("utf-8")
+                content.append(
+                    {
+                        "type": "input_image",
+                        "image_url": f"data:{block.image_mimetype};base64,{img_str}",
+                        "detail": block.detail or "auto",
+                    }
+                )
+        else:
+            msg = f"Unsupported content block type: {type(block).__name__}"
+            raise ValueError(msg)
+
+    # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
+    # It's only Allowed to send None if it's an Assistant Message and either a function call or tool calls were performed
+    # Reference: https://platform.openai.com/docs/api-reference/chat/create
+    content_txt = (
+        None
+        if content_txt == ""
+        and message.role == MessageRole.ASSISTANT
+        and (
+            "function_call" in message.additional_kwargs
+            or "tool_calls" in message.additional_kwargs
+        )
+        else content_txt
+    )
+
+    # NOTE: Despite what the openai docs say, if the role is ASSISTANT, SYSTEM
+    # or TOOL, 'content' cannot be a list and must be string instead.
+    # Furthermore, if all blocks are text blocks, we can use the content_txt
+    # as the content. This will avoid breaking openai-like APIs.
+    if message.role.value == "tool":
+        call_id = message.additional_kwargs.get(
+            "tool_call_id", message.additional_kwargs.get("call_id")
+        )
+        if call_id is None:
+            raise ValueError(
+                "tool_call_id or call_id is required in additional_kwargs for tool messages"
+            )
+
+        message_dict = {
+            "type": "function_call_output",
+            "output": content_txt,
+            "call_id": call_id,
+        }
+
+        return message_dict
+    elif "tool_calls" in message.additional_kwargs:
+        message_dicts = [
+            tool_call if isinstance(tool_call, dict) else tool_call.model_dump()
+            for tool_call in message.additional_kwargs["tool_calls"]
+        ]
+
+        return message_dicts
+    else:
+        message_dict = {
+            "role": message.role.value,
+            "content": (
+                content_txt
+                if message.role.value in ("assistant", "system", "developer")
+                or all(isinstance(block, TextBlock) for block in message.blocks)
+                else content
+            ),
+        }
+
+    # TODO: O1 models do not support system prompts
+    if (
+        model is not None
+        and model in O1_MODELS
+        and model not in O1_MODELS_WITHOUT_FUNCTION_CALLING
+    ):
+        if message_dict["role"] == "system":
+            message_dict["role"] = "developer"
+
+    null_keys = [key for key, value in message_dict.items() if value is None]
+    # if drop_none is True, remove keys with None values
+    if drop_none:
+        for key in null_keys:
+            message_dict.pop(key)
+
+    return message_dict  # type: ignore
+
+
 def to_openai_message_dicts(
     messages: Sequence[ChatMessage],
     drop_none: bool = False,
     model: Optional[str] = None,
+    is_responses_api: bool = False,
 ) -> List[ChatCompletionMessageParam]:
     """Convert generic messages to OpenAI message dicts."""
-    return [
-        to_openai_message_dict(
-            message,
-            drop_none=drop_none,
-            model=model,
-        )
-        for message in messages
-    ]
+    if is_responses_api:
+        final_message_dicts = []
+        for message in messages:
+            message_dicts = to_openai_responses_message_dict(
+                message,
+                drop_none=drop_none,
+                model=model,
+            )
+            if isinstance(message_dicts, list):
+                final_message_dicts.extend(message_dicts)
+            else:
+                final_message_dicts.append(message_dicts)
+
+        return final_message_dicts
+    else:
+        return [
+            to_openai_message_dict(
+                message,
+                drop_none=drop_none,
+                model=model,
+            )
+            for message in messages
+        ]
 
 
 def from_openai_message(
