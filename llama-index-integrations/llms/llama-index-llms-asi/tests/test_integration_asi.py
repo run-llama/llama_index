@@ -15,9 +15,7 @@ def test_completion():
 @pytest.mark.skipif("ASI_API_KEY" not in os.environ, reason="No ASI API key")
 def test_chat():
     asi = ASI(model="asi1-mini", temperature=0, max_tokens=10)
-    messages = [
-        ChatMessage(role=MessageRole.USER, content="hello")
-    ]
+    messages = [ChatMessage(role=MessageRole.USER, content="hello")]
     resp = asi.chat(messages)
     assert resp.message.content.strip() != ""
 
@@ -40,9 +38,7 @@ def test_stream_completion():
 @pytest.mark.skipif("ASI_API_KEY" not in os.environ, reason="No ASI API key")
 def test_stream_chat():
     asi = ASI(model="asi1-mini", temperature=0, max_tokens=10)
-    messages = [
-        ChatMessage(role=MessageRole.USER, content="hello")
-    ]
+    messages = [ChatMessage(role=MessageRole.USER, content="hello")]
     resp_gen = asi.stream_chat(messages)
 
     # Collect all chunks

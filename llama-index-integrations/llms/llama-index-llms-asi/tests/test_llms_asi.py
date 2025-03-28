@@ -3,9 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.llms.openai.base import (
-    ChatMessage, CompletionResponse, MessageRole
-)
+from llama_index.llms.openai.base import ChatMessage, CompletionResponse, MessageRole
 
 from llama_index.llms.asi import ASI
 
@@ -25,8 +23,7 @@ def test_initialization():
     # Test with missing API key
     with pytest.raises(
         ValueError,
-        match="Must specify `api_key` or set environment variable "
-              "`ASI_API_KEY`"
+        match="Must specify `api_key` or set environment variable " "`ASI_API_KEY`",
     ):
         ASI(api_key=None)
 
@@ -69,12 +66,7 @@ def test_stream_chat_with_content(mock_stream_chat):
     llm = ASI(api_key="test_key")
 
     # Call stream_chat
-    messages = [
-        ChatMessage(
-            role=MessageRole.USER,
-            content="Test message"
-        )
-    ]
+    messages = [ChatMessage(role=MessageRole.USER, content="Test message")]
     stream = llm.stream_chat(messages)
 
     # Check that we get the expected response
@@ -104,12 +96,7 @@ def test_stream_chat_empty_content(mock_stream_chat):
     llm = ASI(api_key="test_key")
 
     # Call stream_chat
-    messages = [
-        ChatMessage(
-            role=MessageRole.USER,
-            content="Test message"
-        )
-    ]
+    messages = [ChatMessage(role=MessageRole.USER, content="Test message")]
     stream = llm.stream_chat(messages)
 
     # Get chunks, with the first one having content from the thought field
@@ -126,9 +113,7 @@ def test_stream_chat_init_thought(mock_stream_chat):
     mock_chunk = MagicMock()
     mock_chunk.delta = MagicMock()
     mock_chunk.delta.content = None
-    mock_chunk.raw = {
-        "init_thought": "Initial thinking..."
-    }
+    mock_chunk.raw = {"init_thought": "Initial thinking..."}
 
     # Set up the stream_chat mock to return our test chunk
     mock_stream_chat.return_value = [mock_chunk]
@@ -137,12 +122,7 @@ def test_stream_chat_init_thought(mock_stream_chat):
     llm = ASI(api_key="test_key")
 
     # Call stream_chat
-    messages = [
-        ChatMessage(
-            role=MessageRole.USER,
-            content="Test message"
-        )
-    ]
+    messages = [ChatMessage(role=MessageRole.USER, content="Test message")]
     stream = llm.stream_chat(messages)
 
     # We should get the chunk with content from the init_thought field

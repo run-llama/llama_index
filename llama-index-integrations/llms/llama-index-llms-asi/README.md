@@ -6,10 +6,10 @@ ASI-1 Mini is the world's first Web3-native Large Language Model (LLM) developed
 
 With ASI-1 Mini, you can leverage these powerful capabilities:
 
-- Advanced agentic reasoning with dynamic reasoning modes for complex tasks 
-- High performance on par with leading LLMs but with significantly lower hardware costs 
-- Specialized optimization for autonomous agent applications and multi-step tasks 
-- Seamless Web3 integration for secure and autonomous AI interactions 
+- Advanced agentic reasoning with dynamic reasoning modes for complex tasks
+- High performance on par with leading LLMs but with significantly lower hardware costs
+- Specialized optimization for autonomous agent applications and multi-step tasks
+- Seamless Web3 integration for secure and autonomous AI interactions
 
 Want to learn more about ASI? Visit the [ASI website](https://asi1.ai) or [Fetch.ai](https://fetch.ai) for more information!
 
@@ -37,8 +37,12 @@ print(response)
 from llama_index.core.llms import ChatMessage, MessageRole
 
 messages = [
-    ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful AI assistant."),
-    ChatMessage(role=MessageRole.USER, content="Tell me about artificial intelligence."),
+    ChatMessage(
+        role=MessageRole.SYSTEM, content="You are a helpful AI assistant."
+    ),
+    ChatMessage(
+        role=MessageRole.USER, content="Tell me about artificial intelligence."
+    ),
 ]
 
 response = llm.chat(messages)
@@ -78,7 +82,9 @@ response = await llm.achat(messages)
 print(response)
 
 # Async streaming completion (simulated)
-async for chunk in llm.astream_complete("Tell me about artificial intelligence."):
+async for chunk in llm.astream_complete(
+    "Tell me about artificial intelligence."
+):
     print(chunk.text, end="", flush=True)
 
 # Async streaming chat
@@ -139,4 +145,4 @@ Linting and code formatting can be executed with make.
 ```bash
 make format
 make lint
-``` 
+```
