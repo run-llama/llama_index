@@ -1364,14 +1364,12 @@ class MilvusVectorStore(BasePydanticVectorStore):
             for key in self.output_fields:
                 metadata[key] = hit["entity"].get(key)
             node = metadata_dict_to_node(metadata)
-            try:
+
+            # Set the text field if it exists
+            if self.text_key in hit["entity"]:
                 text = hit["entity"].get(self.text_key)
                 node.text = text
-            except Exception:
-                raise ValueError(
-                    "The passed in text_key value does not exist "
-                    "in the retrieved entity."
-                )
+
             nodes.append(node)
             similarities.append(hit["distance"])
             ids.append(hit["id"])
