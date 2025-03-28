@@ -91,7 +91,7 @@ class ASI(OpenAILike):
 
         def gen() -> ChatResponseGen:
             # Call the parent's stream_chat method to get the raw stream
-            raw_stream = super().stream_chat(messages, **kwargs)
+            raw_stream = super(OpenAILike, self).stream_chat(messages, **kwargs)
 
             # Process the raw stream to extract meaningful content
             for chunk in raw_stream:
@@ -120,7 +120,7 @@ class ASI(OpenAILike):
 
         async def gen() -> ChatResponseAsyncGen:
             # Call the parent's astream_chat method to get the raw stream
-            raw_stream = await super().astream_chat(messages, **kwargs)
+            raw_stream = await super(OpenAILike, self).astream_chat(messages, **kwargs)
 
             # Process the raw stream to extract meaningful content
             async for chunk in raw_stream:
