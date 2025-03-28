@@ -646,7 +646,11 @@ class Node(BaseNode):
 
     @property
     def hash(self) -> str:
-        doc_identities = []
+        """Generate a hash representing the state of the node.
+
+        The hash is generated based on the available resources (audio, image, text or video) and its metadata.
+        """
+        doc_identities = [self.get_metadata_str(mode=MetadataMode.ALL)]
         if self.audio_resource is not None:
             doc_identities.append(self.audio_resource.hash)
         if self.image_resource is not None:
