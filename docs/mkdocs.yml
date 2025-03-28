@@ -366,6 +366,7 @@ nav:
           - ./examples/llm/ollama_gemma.ipynb
           - ./examples/llm/openai.ipynb
           - ./examples/llm/openai_json_vs_function_calling.ipynb
+          - ./examples/llm/openai_responses.ipynb
           - ./examples/llm/openllm.ipynb
           - ./examples/llm/openrouter.ipynb
           - ./examples/llm/openvino-genai.ipynb
