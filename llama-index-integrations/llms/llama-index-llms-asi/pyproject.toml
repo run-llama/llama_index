@@ -10,14 +10,6 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 [tool.llamahub]
 contains_example = false
 import_path = "llama_index.llms.asi"
-package-type = "llm"
-model-name = "asi"
-description = "ASI integration for LlamaIndex"
-organization = "Fetch.ai"
-repository = "https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/llms/llama-index-llms-asi"
-release-date = "2025-03-26"
-categories = ["llm"]
-requires-api-key = true
 
 [tool.llamahub.class_authors]
 ASI = "Fetch.ai Inc."
