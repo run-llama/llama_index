@@ -53,19 +53,24 @@ print(response)
 
 The ASI integration has different streaming implementations for completion and chat:
 
-- **Streaming Completion**: ASI doesn't support the completions endpoint at all (returns 404 error). Our implementation uses a fallback mechanism that returns the complete response as a single chunk.
+- **Streaming Completion**: ASI doesn't support streaming for completions (returns 404 error). Our implementation uses a fallback mechanism that returns the complete response as a single chunk.
 
-- **Streaming Chat**: ASI supports streaming for chat, but with a unique format that includes custom fields like `thought` and `init_thought`. Our implementation processes this format to extract meaningful content.
+- **Streaming Chat**: ASI supports streaming for chat, but with a unique format that includes:
+  - Many empty content chunks during the "thinking" phase
+  - Custom fields like `thought` and `init_thought` that contain intermediate reasoning
+  - Actual content appearing later in the stream
+
+Our implementation processes this format to filter out empty chunks and extract meaningful content, providing a clean streaming experience.
 
 ```python
-# Streaming completion (simulated)
+# Streaming completion (falls back to regular completion)
 for chunk in llm.stream_complete("Tell me about artificial intelligence."):
     print(chunk.text, end="", flush=True)
 
-# Streaming chat
+# Streaming chat (handles ASI's unique streaming format)
 for chunk in llm.stream_chat(messages):
-    if chunk.message:
-        print(chunk.message.content, end="", flush=True)
+    if hasattr(chunk, 'delta') and chunk.delta.strip():
+        print(chunk.delta, end="", flush=True)
 ```
 
 ## Async Support
@@ -81,16 +86,16 @@ print(response)
 response = await llm.achat(messages)
 print(response)
 
-# Async streaming completion (simulated)
+# Async streaming completion (falls back to regular completion)
 async for chunk in llm.astream_complete(
     "Tell me about artificial intelligence."
 ):
     print(chunk.text, end="", flush=True)
 
-# Async streaming chat
+# Async streaming chat (handles ASI's unique streaming format)
 async for chunk in llm.astream_chat(messages):
-    if chunk.message:
-        print(chunk.message.content, end="", flush=True)
+    if hasattr(chunk, 'delta') and chunk.delta.strip():
+        print(chunk.delta, end="", flush=True)
 ```
 
 ## API Key
@@ -145,4 +150,4 @@ Linting and code formatting can be executed with make.
 ```bash
 make format
 make lint
-```
+``` 

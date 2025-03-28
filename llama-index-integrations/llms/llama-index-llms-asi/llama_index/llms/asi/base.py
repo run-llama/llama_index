@@ -8,6 +8,8 @@ from llama_index.llms.openai.base import (
     ChatMessage,
     ChatResponseGen,
     ChatResponseAsyncGen,
+    ChatResponse,
+    MessageRole,
 )
 
 DEFAULT_MODEL = "asi1-mini"
@@ -60,7 +62,8 @@ class ASI(OpenAILike):
         api_key = api_key or os.environ.get("ASI_API_KEY", None)
         if api_key is None:
             raise ValueError(
-                "Must specify `api_key` or set environment variable " "`ASI_API_KEY`."
+                "Must specify `api_key` or set environment variable "
+                "`ASI_API_KEY`."
             )
 
         super().__init__(
@@ -83,54 +86,97 @@ class ASI(OpenAILike):
         """
         Override stream_chat to handle ASI's unique streaming format.
 
-        ASI's streaming format includes custom fields like 'thought' and
-        'init_thought' that aren't part of the standard OpenAI format.
-        This method processes the raw stream to extract meaningful content
-        from these fields if available.
+        ASI's streaming format includes many empty content chunks during
+        the "thinking" phase before delivering the final response.
+
+        This implementation filters out empty chunks and only yields
+        chunks with actual content.
         """
 
         def gen() -> ChatResponseGen:
-            # Call the parent's stream_chat method to get the raw stream
-            raw_stream = super(OpenAILike, self).stream_chat(messages, **kwargs)
-
-            # Process the raw stream to extract meaningful content
+            raw_stream = super(OpenAILike, self).stream_chat(
+                messages, **kwargs
+            )
+            accumulated_content = ""
             for chunk in raw_stream:
-                if hasattr(chunk, "delta") and hasattr(chunk.delta, "content"):
-                    if chunk.delta.content is None:
-                        if hasattr(chunk, "raw") and "thought" in chunk.raw:
-                            chunk.delta.content = chunk.raw.get("thought", "")
-                        elif hasattr(chunk, "raw") and "init_thought" in chunk.raw:
-                            chunk.delta.content = chunk.raw.get("init_thought", "")
-
-                yield chunk
+                delta_content = ""
+                if (
+                    hasattr(chunk.delta, "content")
+                    and chunk.delta.content
+                ):
+                    delta_content = chunk.delta.content
+                elif hasattr(chunk, "raw") and chunk.raw:
+                    if (
+                        "thought" in chunk.raw
+                        and chunk.raw["thought"]
+                    ):
+                        delta_content = chunk.raw["thought"]
+                    elif (
+                        "init_thought" in chunk.raw
+                        and chunk.raw["init_thought"]
+                    ):
+                        delta_content = chunk.raw["init_thought"]
+                if delta_content:
+                    response = ChatResponse(
+                        message=ChatMessage(
+                            role=MessageRole.ASSISTANT,
+                            content=(accumulated_content + delta_content),
+                        ),
+                        delta=delta_content,
+                        raw=(
+                            chunk.raw if hasattr(chunk, "raw") else {}
+                        ),
+                    )
+                    accumulated_content += delta_content
+                    yield response
 
         return gen()
 
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
+    ) -> ChatResponseAsyncGen:
         """
-        Override astream_chat to handle ASI's unique streaming format (async).
+        Override astream_chat to handle ASI's unique streaming format.
 
-        ASI's streaming format includes custom fields like 'thought' and
-        'init_thought' that aren't part of the standard OpenAI format.
-        This method processes the raw stream to extract meaningful content
-        from these fields if available.
+        ASI's streaming format includes many empty content chunks during
+        the "thinking" phase before delivering the final response.
+
+        This implementation filters out empty chunks and only yields
+        chunks with actual content.
         """
 
-        async def gen() -> ChatResponseAsyncGen:
-            # Call the parent's astream_chat method to get the raw stream
-            raw_stream = await super(OpenAILike, self).astream_chat(messages, **kwargs)
-
-            # Process the raw stream to extract meaningful content
-            async for chunk in raw_stream:
-                if hasattr(chunk, "delta") and hasattr(chunk.delta, "content"):
-                    if chunk.delta.content is None:
-                        if hasattr(chunk, "raw") and "thought" in chunk.raw:
-                            chunk.delta.content = chunk.raw.get("thought", "")
-                        elif hasattr(chunk, "raw") and "init_thought" in chunk.raw:
-                            chunk.delta.content = chunk.raw.get("init_thought", "")
-
-                yield chunk
-
-        return gen()
+        raw_stream = await super(OpenAILike, self).astream_chat(
+            messages, **kwargs
+        )
+        accumulated_content = ""
+        async for chunk in raw_stream:
+            delta_content = ""
+            if (
+                hasattr(chunk.delta, "content")
+                and chunk.delta.content
+            ):
+                delta_content = chunk.delta.content
+            elif hasattr(chunk, "raw") and chunk.raw:
+                if (
+                    "thought" in chunk.raw
+                    and chunk.raw["thought"]
+                ):
+                    delta_content = chunk.raw["thought"]
+                elif (
+                    "init_thought" in chunk.raw
+                    and chunk.raw["init_thought"]
+                ):
+                    delta_content = chunk.raw["init_thought"]
+            if delta_content:
+                response = ChatResponse(
+                    message=ChatMessage(
+                        role=MessageRole.ASSISTANT,
+                        content=(accumulated_content + delta_content),
+                    ),
+                    delta=delta_content,
+                    raw=(
+                        chunk.raw if hasattr(chunk, "raw") else {}
+                    ),
+                )
+                accumulated_content += delta_content
+                yield response
