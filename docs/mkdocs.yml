@@ -846,17 +846,7 @@ nav:
   - API Reference:
       - ./api_reference/index.md
       - Agents:
-          - ./api_reference/agent/coa.md
-          - ./api_reference/agent/dashscope.md
-          - ./api_reference/agent/function.md
           - ./api_reference/agent/index.md
-          - ./api_reference/agent/introspective.md
-          - ./api_reference/agent/lats.md
-          - ./api_reference/agent/llm_compiler.md
-          - ./api_reference/agent/openai.md
-          - ./api_reference/agent/openai_legacy.md
-          - ./api_reference/agent/react.md
-          - ./api_reference/agent/workflow.md
       - Callbacks:
           - ./api_reference/callbacks/agentops.md
           - ./api_reference/callbacks/aim.md
@@ -2412,6 +2402,16 @@ plugins:
             - ../llama-index-integrations/tools/llama-index-tools-dappier
   - redirects:
       redirect_maps:
+        ./api_reference/agent/coa/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/dashscope/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/function/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/introspective/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/lats/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/llm_compiler/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/openai/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/openai_legacy/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/react/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/workflow/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
         ./changes/deprecated_terms.html: https://docs.llamaindex.ai/en/stable/changes/deprecated_terms/
         ./community/faq/chat_engines.html: https://docs.llamaindex.ai/en/stable/community/faq/chat_engines/
