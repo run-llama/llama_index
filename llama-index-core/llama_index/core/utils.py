@@ -7,7 +7,6 @@ import random
 import requests
 import sys
 import time
-import threading
 import traceback
 import uuid
 from binascii import Error as BinasciiError
@@ -44,10 +43,9 @@ class GlobalsHelper:
     _stopwords: Optional[List[str]] = None
     _punkt_tokenizer: Optional["PunktSentenceTokenizer"] = None
     _nltk_data_dir: Optional[str] = None
-    _download_complete: Optional[threading.Event] = None
 
-    def start_nltk_download(self) -> None:
-        """Initialize NLTK data download in a background thread."""
+    def wait_for_nltk_check(self) -> None:
+        """Initialize NLTK data download."""
         from nltk.data import path as nltk_path
 
         # Set up NLTK data directory
@@ -66,9 +64,8 @@ class GlobalsHelper:
         if self._nltk_data_dir not in nltk_path:
             nltk_path.append(self._nltk_data_dir)
 
-        # Start background download thread
-        download_thread = threading.Thread(target=self._download_nltk_data, daemon=True)
-        download_thread.start()
+        # Start downloading NLTK data / confirming it's available
+        self._download_nltk_data()
 
     def _download_nltk_data(self) -> None:
         """Download NLTK data packages in the background."""
@@ -90,42 +87,19 @@ class GlobalsHelper:
 
         except Exception as e:
             print(f"NLTK download error: {e}")
-        finally:
-            # Signal that download is complete
-            if self._download_complete is not None:
-                self._download_complete.set()
-
-    def _wait_for_download(self, resource: str) -> None:
-        """Wait for NLTK download to complete and check specific resource."""
-        if self._download_complete is None:
-            self._download_complete = threading.Event()
-
-            self.start_nltk_download()
-
-        assert self._download_complete
-
-        # Wait for download to complete with a timeout
-        if not self._download_complete.wait(timeout=60):
-            raise RuntimeError("NLTK data download timed out")
-
-        # Verify the specific resource is available
-        try:
-            from nltk.data import find as nltk_find
-
-            nltk_find(resource, paths=[self._nltk_data_dir])
-        except LookupError:
-            raise RuntimeError(f"Failed to download NLTK resource: {resource}")
 
     @property
     def stopwords(self) -> List[str]:
         """Get stopwords, ensuring data is downloaded."""
         if self._stopwords is None:
             # Wait for stopwords to be available
-            self._wait_for_download("corpora/stopwords")
+            self.wait_for_nltk_check()
 
             from nltk.corpus import stopwords
+            from nltk.tokenize import PunktSentenceTokenizer
 
             self._stopwords = stopwords.words("english")
+            self._punkt_tokenizer = PunktSentenceTokenizer()
 
         return self._stopwords
 
@@ -134,11 +108,13 @@ class GlobalsHelper:
         """Get punkt tokenizer, ensuring data is downloaded."""
         if self._punkt_tokenizer is None:
             # Wait for punkt to be available
-            self._wait_for_download("tokenizers/punkt_tab")
+            self.wait_for_nltk_check()
 
+            from nltk.corpus import stopwords
             from nltk.tokenize import PunktSentenceTokenizer
 
             self._punkt_tokenizer = PunktSentenceTokenizer()
+            self._stopwords = stopwords.words("english")
 
         return self._punkt_tokenizer
 
