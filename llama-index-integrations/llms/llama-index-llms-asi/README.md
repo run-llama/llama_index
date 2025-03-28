@@ -69,7 +69,7 @@ for chunk in llm.stream_complete("Tell me about artificial intelligence."):
 
 # Streaming chat (handles ASI's unique streaming format)
 for chunk in llm.stream_chat(messages):
-    if hasattr(chunk, 'delta') and chunk.delta.strip():
+    if hasattr(chunk, "delta") and chunk.delta.strip():
         print(chunk.delta, end="", flush=True)
 ```
 
@@ -94,7 +94,7 @@ async for chunk in llm.astream_complete(
 
 # Async streaming chat (handles ASI's unique streaming format)
 async for chunk in llm.astream_chat(messages):
-    if hasattr(chunk, 'delta') and chunk.delta.strip():
+    if hasattr(chunk, "delta") and chunk.delta.strip():
         print(chunk.delta, end="", flush=True)
 ```
 
@@ -150,4 +150,4 @@ Linting and code formatting can be executed with make.
 ```bash
 make format
 make lint
-``` 
+```

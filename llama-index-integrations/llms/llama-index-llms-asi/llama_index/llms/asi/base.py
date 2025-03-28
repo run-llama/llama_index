@@ -62,8 +62,7 @@ class ASI(OpenAILike):
         api_key = api_key or os.environ.get("ASI_API_KEY", None)
         if api_key is None:
             raise ValueError(
-                "Must specify `api_key` or set environment variable "
-                "`ASI_API_KEY`."
+                "Must specify `api_key` or set environment variable " "`ASI_API_KEY`."
             )
 
         super().__init__(
@@ -94,27 +93,16 @@ class ASI(OpenAILike):
         """
 
         def gen() -> ChatResponseGen:
-            raw_stream = super(OpenAILike, self).stream_chat(
-                messages, **kwargs
-            )
+            raw_stream = super(OpenAILike, self).stream_chat(messages, **kwargs)
             accumulated_content = ""
             for chunk in raw_stream:
                 delta_content = ""
-                if (
-                    hasattr(chunk.delta, "content")
-                    and chunk.delta.content
-                ):
+                if hasattr(chunk.delta, "content") and chunk.delta.content:
                     delta_content = chunk.delta.content
                 elif hasattr(chunk, "raw") and chunk.raw:
-                    if (
-                        "thought" in chunk.raw
-                        and chunk.raw["thought"]
-                    ):
+                    if "thought" in chunk.raw and chunk.raw["thought"]:
                         delta_content = chunk.raw["thought"]
-                    elif (
-                        "init_thought" in chunk.raw
-                        and chunk.raw["init_thought"]
-                    ):
+                    elif "init_thought" in chunk.raw and chunk.raw["init_thought"]:
                         delta_content = chunk.raw["init_thought"]
                 if delta_content:
                     response = ChatResponse(
@@ -123,9 +111,7 @@ class ASI(OpenAILike):
                             content=(accumulated_content + delta_content),
                         ),
                         delta=delta_content,
-                        raw=(
-                            chunk.raw if hasattr(chunk, "raw") else {}
-                        ),
+                        raw=(chunk.raw if hasattr(chunk, "raw") else {}),
                     )
                     accumulated_content += delta_content
                     yield response
@@ -144,28 +130,16 @@ class ASI(OpenAILike):
         This implementation filters out empty chunks and only yields
         chunks with actual content.
         """
-
-        raw_stream = await super(OpenAILike, self).astream_chat(
-            messages, **kwargs
-        )
+        raw_stream = await super(OpenAILike, self).astream_chat(messages, **kwargs)
         accumulated_content = ""
         async for chunk in raw_stream:
             delta_content = ""
-            if (
-                hasattr(chunk.delta, "content")
-                and chunk.delta.content
-            ):
+            if hasattr(chunk.delta, "content") and chunk.delta.content:
                 delta_content = chunk.delta.content
             elif hasattr(chunk, "raw") and chunk.raw:
-                if (
-                    "thought" in chunk.raw
-                    and chunk.raw["thought"]
-                ):
+                if "thought" in chunk.raw and chunk.raw["thought"]:
                     delta_content = chunk.raw["thought"]
-                elif (
-                    "init_thought" in chunk.raw
-                    and chunk.raw["init_thought"]
-                ):
+                elif "init_thought" in chunk.raw and chunk.raw["init_thought"]:
                     delta_content = chunk.raw["init_thought"]
             if delta_content:
                 response = ChatResponse(
@@ -174,9 +148,7 @@ class ASI(OpenAILike):
                         content=(accumulated_content + delta_content),
                     ),
                     delta=delta_content,
-                    raw=(
-                        chunk.raw if hasattr(chunk, "raw") else {}
-                    ),
+                    raw=(chunk.raw if hasattr(chunk, "raw") else {}),
                 )
                 accumulated_content += delta_content
                 yield response

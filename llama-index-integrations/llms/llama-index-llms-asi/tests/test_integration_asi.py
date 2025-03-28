@@ -34,7 +34,7 @@ def test_stream_completion():
     # Get the response
     response = ""
     for chunk in resp_gen:
-        if hasattr(chunk, 'text'):
+        if hasattr(chunk, "text"):
             response += chunk.text
     # Verify we got a non-empty response
     assert response.strip() != ""
@@ -44,17 +44,12 @@ def test_stream_completion():
 def test_stream_chat():
     # Import ChatMessage and MessageRole here to avoid import issues
     from llama_index.core.llms import ChatMessage, MessageRole
+
     # Test streaming chat with a longer prompt and timeout
-    asi = ASI(
-        model="asi1-mini",
-        temperature=0,
-        max_tokens=50,
-        timeout=60
-    )
+    asi = ASI(model="asi1-mini", temperature=0, max_tokens=50, timeout=60)
     messages = [
         ChatMessage(
-            role=MessageRole.USER,
-            content="Tell me about artificial intelligence"
+            role=MessageRole.USER, content="Tell me about artificial intelligence"
         )
     ]
     # First verify that regular chat works
@@ -71,7 +66,7 @@ def test_stream_chat():
         # Verify at least one chunk has content
         has_content = False
         for chunk in chunks:
-            if hasattr(chunk, 'delta') and chunk.delta.strip():
+            if hasattr(chunk, "delta") and chunk.delta.strip():
                 has_content = True
                 break
         assert has_content, "No chunk with content found in the response"
@@ -79,28 +74,20 @@ def test_stream_chat():
         # If streaming fails but regular chat works, we'll skip this test
         # This handles environment-specific issues while ensuring the
         # implementation is correct
-        pytest.skip(
-            "Streaming test skipped due to environment-specific issue: "
-            f"{e}"
-        )
+        pytest.skip("Streaming test skipped due to environment-specific issue: " f"{e}")
 
 
 @pytest.mark.skipif("ASI_API_KEY" not in os.environ, reason="No ASI API key")
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_astream_chat():
     # Import ChatMessage and MessageRole here to avoid import issues
     from llama_index.core.llms import ChatMessage, MessageRole
+
     # Test async streaming chat with a longer prompt and timeout
-    asi = ASI(
-        model="asi1-mini",
-        temperature=0,
-        max_tokens=50,
-        timeout=60
-    )
+    asi = ASI(model="asi1-mini", temperature=0, max_tokens=50, timeout=60)
     messages = [
         ChatMessage(
-            role=MessageRole.USER,
-            content="Tell me about artificial intelligence"
+            role=MessageRole.USER, content="Tell me about artificial intelligence"
         )
     ]
     # First verify that regular async chat works
@@ -117,7 +104,7 @@ async def test_astream_chat():
         # Verify at least one chunk has content
         has_content = False
         for chunk in chunks:
-            if hasattr(chunk, 'delta') and chunk.delta.strip():
+            if hasattr(chunk, "delta") and chunk.delta.strip():
                 has_content = True
                 break
         assert has_content, "No chunk with content found in the response"
@@ -126,6 +113,5 @@ async def test_astream_chat():
         # This handles environment-specific issues while ensuring the
         # implementation is correct
         pytest.skip(
-            "Async streaming test skipped due to environment-specific issue: "
-            f"{e}"
+            "Async streaming test skipped due to environment-specific issue: " f"{e}"
         )

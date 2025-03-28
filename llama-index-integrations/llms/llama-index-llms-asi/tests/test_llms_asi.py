@@ -23,8 +23,7 @@ def test_initialization():
     # Test with missing API key
     with pytest.raises(
         ValueError,
-        match="Must specify `api_key` or set environment variable "
-              "`ASI_API_KEY`",
+        match="Must specify `api_key` or set environment variable " "`ASI_API_KEY`",
     ):
         ASI(api_key=None)
 
