@@ -149,7 +149,6 @@ GROK_MODELS: Dict[str, int] = {
     "grok-2-vision-1212": 32768,
     "grok-2-vision": 32768,
     "grok-2-vision-latest": 32768,
-
     "grok-2-image-1212": 131072,
     "grok-2-image": 131072,
     "grok-2-image-latest": 131072,
