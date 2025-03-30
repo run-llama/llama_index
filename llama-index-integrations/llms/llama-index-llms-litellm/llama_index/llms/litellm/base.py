@@ -1,6 +1,5 @@
 import json
 from typing import (
-    TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
@@ -39,6 +38,7 @@ from llama_index.core.base.llms.generic_utils import (
 )
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.tools import ToolSelection
+from llama_index.core.tools.types import BaseTool
 from llama_index.llms.litellm.utils import (
     acompletion_with_retry,
     completion_with_retry,
@@ -47,10 +47,9 @@ from llama_index.llms.litellm.utils import (
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
     validate_litellm_api_key,
+    update_tool_calls,
 )
 
-if TYPE_CHECKING:
-    from llama_index.core.tools.types import BaseTool
 
 DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
@@ -197,7 +196,7 @@ class LiteLLM(FunctionCallingLLM):
 
     def _prepare_chat_with_tools(
         self,
-        tools: List["BaseTool"],
+        tools: List[BaseTool],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -224,7 +223,7 @@ class LiteLLM(FunctionCallingLLM):
     def _validate_chat_with_tools_response(
         self,
         response: ChatResponse,
-        tools: List["BaseTool"],
+        tools: List[BaseTool],
         allow_parallel_tool_calls: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
@@ -369,7 +368,7 @@ class LiteLLM(FunctionCallingLLM):
 
         def gen() -> ChatResponseGen:
             content = ""
-            function_call: Optional[dict] = None
+            tool_calls: List[dict] = []
             for response in completion_with_retry(
                 is_chat_model=self._is_chat_model,
                 max_retries=self.max_retries,
@@ -382,20 +381,15 @@ class LiteLLM(FunctionCallingLLM):
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
 
-                function_call_delta = delta.get("function_call", None)
-                if function_call_delta is not None:
-                    if function_call is None:
-                        function_call = function_call_delta
-
-                        ## ensure we do not add a blank function call
-                        if function_call.get("function_name", "") is None:
-                            del function_call["function_name"]
-                    else:
-                        function_call["arguments"] += function_call_delta["arguments"]
+                # Handle tool_calls delta
+                tool_call_delta = delta.get("tool_calls", None)
+                if tool_call_delta is not None and len(tool_call_delta) > 0:
+                    # Pass the entire list of tool call deltas
+                    tool_calls = update_tool_calls(tool_calls, tool_call_delta)
 
                 additional_kwargs = {}
-                if function_call is not None:
-                    additional_kwargs["function_call"] = function_call
+                if tool_calls:
+                    additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -537,7 +531,7 @@ class LiteLLM(FunctionCallingLLM):
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
-            function_call: Optional[dict] = None
+            tool_calls: List[dict] = []
             async for response in await acompletion_with_retry(
                 is_chat_model=self._is_chat_model,
                 max_retries=self.max_retries,
@@ -550,20 +544,15 @@ class LiteLLM(FunctionCallingLLM):
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
 
-                function_call_delta = delta.get("function_call", None)
-                if function_call_delta is not None:
-                    if function_call is None:
-                        function_call = function_call_delta
-
-                        ## ensure we do not add a blank function call
-                        if function_call.get("function_name", "") is None:
-                            del function_call["function_name"]
-                    else:
-                        function_call["arguments"] += function_call_delta["arguments"]
+                # Handle tool_calls delta
+                tool_call_delta = delta.get("tool_calls", None)
+                if tool_call_delta is not None and len(tool_call_delta) > 0:
+                    # Pass the entire list of tool call deltas
+                    tool_calls = update_tool_calls(tool_calls, tool_call_delta)
 
                 additional_kwargs = {}
-                if function_call is not None:
-                    additional_kwargs["function_call"] = function_call
+                if tool_calls:
+                    additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
                     message=ChatMessage(
