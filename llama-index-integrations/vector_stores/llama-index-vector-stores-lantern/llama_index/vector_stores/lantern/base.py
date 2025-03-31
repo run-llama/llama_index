@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, NamedTuple, Optional, Type, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, NamedTuple, Optional, Type
 
 import asyncpg  # noqa
 import psycopg2  # noqa
@@ -128,7 +128,8 @@ def get_data_model(
 
 
 class LanternVectorStore(BasePydanticVectorStore):
-    """Latern vector store.
+    """
+    Latern vector store.
 
     Examples:
         `pip install llama-index-vector-stores-lantern`
@@ -649,14 +650,15 @@ class LanternVectorStore(BasePydanticVectorStore):
         return self._db_rows_to_query_result(results)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        import sqlalchemy
+        from sqlalchemy import text
 
         self._initialize()
         with self._session() as session, session.begin():
-            stmt = sqlalchemy.text(
-                f"DELETE FROM {self.schema_name}.data_{self.table_name} where "
-                f"(metadata_->>'doc_id')::text = '{ref_doc_id}' "
-            )
+            # Use parameterized query with bind parameters
+            stmt = text(
+                f"DELETE FROM {self.schema_name}.data_{self.table_name} "
+                "WHERE (metadata_->>'doc_id')::text = :ref_doc_id"
+            ).bindparams(ref_doc_id=ref_doc_id)
 
             session.execute(stmt)
             session.commit()
