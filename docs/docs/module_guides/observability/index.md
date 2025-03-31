@@ -181,11 +181,11 @@ At the root of your LlamaIndex application, register Langfuse's `LlamaIndexInstr
 
 ```python
 import os
- 
+
 # Get keys for your project from the project settings page: https://cloud.langfuse.com
 os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-lf-..."
 os.environ["LANGFUSE_SECRET_KEY"] = "sk-lf-..."
-os.environ["LANGFUSE_HOST"] = "https://cloud.langfuse.com" # 🇪🇺 EU region
+os.environ["LANGFUSE_HOST"] = "https://cloud.langfuse.com"  # 🇪🇺 EU region
 # os.environ["LANGFUSE_HOST"] = "https://us.cloud.langfuse.com" # 🇺🇸 US region
 ```
 
@@ -205,7 +205,6 @@ index.as_query_engine().query("What is the capital of France?")
 
 # Flush events to langfuse
 instrumentor.flush()
-
 ```
 
 You can now see the logs of your LlamaIndex application in Langfuse:
