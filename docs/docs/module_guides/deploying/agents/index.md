@@ -82,7 +82,7 @@ Read on to learn more about [multi-agent systems](../../../understanding/agent/m
 
 ## Manual Agents
 
-While the agent classes like `FunctionAgent`, `ReActAgent`, and `AgentWorkflow` abstract away a lot of details, sometimes its desirable to build your own lower-level agents.
+While the agent classes like `FunctionAgent`, `ReActAgent`, `CodeActAgent`, and `AgentWorkflow` abstract away a lot of details, sometimes its desirable to build your own lower-level agents.
 
 Using the `LLM` objects directly, you can quickly implement a basic agent loop, while having full control over how the tool calling and error handling works.
 

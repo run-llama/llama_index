@@ -686,6 +686,7 @@ tools in a workflow.
 - [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb) is a great example of how to use the
 LlamaIndex framework primitives in a workflow, keeping it small and tidy even in complex scenarios like function
 calling.
+- [CodeAct Agent](../../examples/agent/from_scratch_code_act_agent.ipynb) is a great example of how to create a CodeAct Agent from scratch.
 - [Human In The Loop: Story Crafting](../../examples/workflow/human_in_the_loop_story_crafting.ipynb) is a powerful
 example showing how workflow runs can be interactive and stateful. In this case, to collect input from a human.
 - [Reliable Structured Generation](../../examples/workflow/reflection.ipynb) shows how to implement loops in a

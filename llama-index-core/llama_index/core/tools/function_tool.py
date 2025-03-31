@@ -57,6 +57,7 @@ class FunctionTool(AsyncBaseTool):
             raise ValueError("fn or async_fn must be provided.")
 
         # Handle function (sync and async)
+        self._real_fn = fn or async_fn
         if async_fn is not None:
             self._async_fn = async_fn
             self._fn = fn or async_to_sync(async_fn)
@@ -201,6 +202,11 @@ class FunctionTool(AsyncBaseTool):
     def async_fn(self) -> AsyncCallable:
         """Async function."""
         return self._async_fn
+
+    @property
+    def real_fn(self) -> Callable[..., Any]:
+        """Real function."""
+        return self._real_fn
 
     def call(
         self, *args: Any, ctx: Optional[Context] = None, **kwargs: Any
