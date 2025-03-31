@@ -87,6 +87,7 @@ def resolve_pipeline(
             project_id=project.id,
             pipeline_name=pipeline_name,
             pipeline_type=PipelineType.MANAGED.value,
+            organization_id=project.organization_id,
         )
         if len(pipelines) == 0:
             raise ValueError(
