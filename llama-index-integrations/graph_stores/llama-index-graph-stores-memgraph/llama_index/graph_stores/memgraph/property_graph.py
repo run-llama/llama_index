@@ -327,7 +327,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                 pass
         if chunk_dicts:
             for index in range(0, len(chunk_dicts), CHUNK_SIZE):
-                chunked_params = chunk_dicts[index: index + CHUNK_SIZE]
+                chunked_params = chunk_dicts[index : index + CHUNK_SIZE]
                 self.structured_query(
                     f"""
                     UNWIND $data AS row
@@ -345,7 +345,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
 
         if entity_dicts:
             for index in range(0, len(entity_dicts), CHUNK_SIZE):
-                chunked_params = entity_dicts[index: index + CHUNK_SIZE]
+                chunked_params = entity_dicts[index : index + CHUNK_SIZE]
                 self.structured_query(
                     f"""
                     UNWIND $data AS row
@@ -370,7 +370,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         """Add relations."""
         params = [r.dict() for r in relations]
         for index in range(0, len(params), CHUNK_SIZE):
-            chunked_params = params[index: index + CHUNK_SIZE]
+            chunked_params = params[index : index + CHUNK_SIZE]
 
             self.structured_query(
                 f"""
@@ -1060,8 +1060,10 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                 logger.info(
                     "Vector index %s was created with a fixed embedding dimension of 1536. "
                     "If your chosen LLM model uses a different dimension, manually create the vector index with the following query:\n"
-                    "CREATE VECTOR INDEX %s ON :%s(embedding) WITH CONFIG {\"dimension\": <INSERT_DIMENSION>, \"capacity\": 1000};",
-                    VECTOR_INDEX_NAME, VECTOR_INDEX_NAME, BASE_ENTITY_LABEL
+                    'CREATE VECTOR INDEX %s ON :%s(embedding) WITH CONFIG {"dimension": <INSERT_DIMENSION>, "capacity": 1000};',
+                    VECTOR_INDEX_NAME,
+                    VECTOR_INDEX_NAME,
+                    BASE_ENTITY_LABEL,
                 )
             except neo4j.exceptions.Neo4jError as decode_error:
                 self._supports_vector_index = False
@@ -1071,7 +1073,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                     and "vector_search.show_index_info" in decode_error.message
                 ):
                     logger.info(
-                        """Failed to create vector index entity: 
+                        """Failed to create vector index entity:
                         Given vector index already exists."""
                     )
         else:
