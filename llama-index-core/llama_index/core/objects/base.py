@@ -60,8 +60,6 @@ class ObjectRetriever(ChainableMixin, Generic[OT]):
             table_nm = node.node.metadata.get("name")
             logger.info("Node table name: %s", table_nm)
             logger.info("Node score: %s", node.score)
-            print(f"Node table name: {table_nm}")
-            print(f"Node score:: {node.score}")
             if node.score > RELEVANCE_THRESHOLD:
                 retrieved_nodes.append(self._object_node_mapping.from_node(node.node))
         return retrieved_nodes
