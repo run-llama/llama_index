@@ -25,6 +25,11 @@ For more detailed guides on how to use specific tools, check out our [tools modu
 - [ReAct Agent](../../../examples/agent/react_agent.ipynb)
 - [ReAct Agent with Query Engine Tools](../../../examples/agent/react_agent_with_query_engine.ipynb)
 
+## CodeAct Agent
+
+- [CodeAct Agent](../../../examples/agent/code_act_agent.ipynb)
+- [CodeAct Agent from-scratch](../../../examples/agent/from_scratch_code_act_agent.ipynb)
+
 ## Custom Agents
 
 - [Manual Function Calling](../../../understanding//using_llms/using_llms.md#tool-calling)
