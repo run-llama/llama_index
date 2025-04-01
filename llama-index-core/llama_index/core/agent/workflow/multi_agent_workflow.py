@@ -340,7 +340,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         state = await ctx.get("state", default=None)
         if state:
             # update last message with current state
-            for block in llm_input.blocks[::-1]:
+            for block in llm_input[-1].blocks[::-1]:
                 if isinstance(block, TextBlock):
                     block.text = self.state_prompt.format(state=state, msg=block.text)
                     break
