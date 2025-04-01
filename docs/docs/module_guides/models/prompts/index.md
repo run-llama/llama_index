@@ -45,7 +45,7 @@ See our [Usage Pattern Guide](./usage_pattern.md) for more details on taking ful
 Prompt Engineering Guides
 
 - [Advanced Prompts](../../../examples/prompts/advanced_prompts.ipynb)
-- [RAG Prompts](../../../examples/prompts/prompts_rag.ipynb)
+- [RichPromptTemplate Features](../../../examples/prompts/rich_prompt_template_features.ipynb)
 
 Simple Customization Examples
 
@@ -55,5 +55,4 @@ Simple Customization Examples
 
 Experimental
 
-- [Prompt Optimization](../../../examples/prompts/prompt_optimization.ipynb)
 - [Emotion Prompting](../../../examples/prompts/emotion_prompt.ipynb)

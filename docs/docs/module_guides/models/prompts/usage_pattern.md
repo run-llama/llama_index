@@ -233,7 +233,7 @@ In this section we show some advanced prompt capabilities in LlamaIndex.
 Related Guides:
 
 - [Advanced Prompts](../../../examples/prompts/advanced_prompts.ipynb)
-- [Prompt Engineering for RAG](../../../examples/prompts/prompts_rag.ipynb)
+- [RichPromptTemplate Features](../../../examples/prompts/rich_prompt_template_features.ipynb)
 
 ### Function Mappings
 
