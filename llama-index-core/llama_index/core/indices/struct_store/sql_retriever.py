@@ -440,7 +440,6 @@ class SQLTableRetriever:
 
         """
         table_schema_objs = await self.table_retriever.aretrieve(query_bundle.query_str)
-
         context_strs = []
         if self._context_str_prefix is not None:
             context_strs = [self._context_str_prefix]
