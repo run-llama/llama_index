@@ -96,7 +96,7 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
     ):
         tools = tools or []
         tools.append(  # type: ignore
-            FunctionTool.from_defaults(code_execute_fn, name=EXECUTE_TOOL_NAME)
+            FunctionTool.from_defaults(code_execute_fn, name=EXECUTE_TOOL_NAME)  # type: ignore
         )
         if isinstance(code_act_system_prompt, str):
             code_act_system_prompt = PromptTemplate(code_act_system_prompt)
