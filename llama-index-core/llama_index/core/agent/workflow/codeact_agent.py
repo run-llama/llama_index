@@ -312,28 +312,27 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         """Handle tool call results for code act agent."""
         scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
 
+        # handle code execution and handoff
         for tool_call_result in results:
             # Format the output as a tool response message
-            code_result = f"Result of executing the code given:\n\n{tool_call_result.tool_output.content}"
-            scratchpad.append(
-                ChatMessage(
-                    role="user",
-                    content=code_result,
-                )
-            )
-
-            if (
-                tool_call_result.return_direct
-                and tool_call_result.tool_name != "handoff"
-            ):
+            if tool_call_result.tool_name == EXECUTE_TOOL_NAME:
+                code_result = f"Result of executing the code given:\n\n{tool_call_result.tool_output.content}"
                 scratchpad.append(
                     ChatMessage(
-                        role="assistant",
+                        role="user",
+                        content=code_result,
+                    )
+                )
+            elif tool_call_result.tool_name == "handoff":
+                scratchpad.append(
+                    ChatMessage(
+                        role="tool",
                         content=str(tool_call_result.tool_output.content),
                         additional_kwargs={"tool_call_id": tool_call_result.tool_id},
                     )
                 )
-                break
+            else:
+                raise ValueError(f"Unknown tool name: {tool_call_result.tool_name}")
 
         await ctx.set(self.scratchpad_key, scratchpad)
 
