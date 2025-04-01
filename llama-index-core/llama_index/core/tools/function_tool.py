@@ -49,7 +49,7 @@ class FunctionTool(AsyncBaseTool):
         self,
         fn: Optional[Callable[..., Any]] = None,
         metadata: Optional[ToolMetadata] = None,
-        async_fn: Optional[Callable[..., Any]] = None,
+        async_fn: Optional[AsyncCallable] = None,
         callback: Optional[Callable[..., Any]] = None,
         async_callback: Optional[Callable[..., Any]] = None,
     ) -> None:
@@ -204,8 +204,11 @@ class FunctionTool(AsyncBaseTool):
         return self._async_fn
 
     @property
-    def real_fn(self) -> Callable[..., Any]:
+    def real_fn(self) -> Union[Callable[..., Any], AsyncCallable]:
         """Real function."""
+        if self._real_fn is None:
+            raise ValueError("Real function is not set!")
+
         return self._real_fn
 
     def call(
