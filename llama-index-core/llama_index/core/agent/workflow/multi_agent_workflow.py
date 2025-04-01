@@ -15,7 +15,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentSetup,
     AgentOutput,
 )
-from llama_index.core.llms import ChatMessage
+from llama_index.core.llms import ChatMessage, TextBlock
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
@@ -294,24 +294,26 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             memory.set(chat_history)
 
         # Then add user message if it exists
-        current_state = await ctx.get("state")
         if user_msg:
-            # Add the state to the user message if it exists
-            if current_state:
-                user_msg.content = self.state_prompt.format(
-                    state=current_state, msg=user_msg.content
-                )
             await memory.aput(user_msg)
-            await ctx.set("user_msg_str", user_msg.content)
+            content_str = "\n".join(
+                [
+                    block.text
+                    for block in user_msg.blocks
+                    if isinstance(block, TextBlock)
+                ]
+            )
+            await ctx.set("user_msg_str", content_str)
         elif chat_history:
             # If no user message, use the last message from chat history as user_msg_str
-            last_msg = chat_history[-1].content or ""
-            await ctx.set("user_msg_str", last_msg)
-
-            if current_state:
-                chat_history[-1].content = self.state_prompt.format(
-                    state=current_state, msg=chat_history[-1].content
-                )
+            content_str = "\n".join(
+                [
+                    block.text
+                    for block in chat_history[-1].blocks
+                    if isinstance(block, TextBlock)
+                ]
+            )
+            await ctx.set("user_msg_str", content_str)
         else:
             raise ValueError("Must provide either user_msg or chat_history")
 
@@ -335,6 +337,14 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 *llm_input,
             ]
 
+        state = await ctx.get("state", default=None)
+        if state:
+            # update last message with current state
+            for block in llm_input.blocks[::-1]:
+                if isinstance(block, TextBlock):
+                    block.text = self.state_prompt.format(state=state, msg=block.text)
+                    break
+
         return AgentSetup(
             input=llm_input,
             current_agent_name=ev.current_agent_name,
@@ -345,7 +355,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         """Run the agent."""
         memory: BaseMemory = await ctx.get("memory")
         agent = self.agents[ev.current_agent_name]
-        tools = await self.get_tools(ev.current_agent_name, ev.input[-1].content or "")
+        user_msg_str = await ctx.get("user_msg_str")
+        tools = await self.get_tools(ev.current_agent_name, user_msg_str or "")
 
         agent_output = await agent.take_step(
             ctx,
